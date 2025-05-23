@@ -1,0 +1,11 @@
+/* Chart color tokens for light/dark mode. Import this file in your main entry or global CSS. */
+:root {
+  --chart-1: 154 74% 41%;    /* emerald primary 600   #1BB072 */
+  --chart-2: 172 64% 43%;    /* teal accent           #14B8A6 */
+}
+.dark {
+  --chart-1: 154 69% 55%;
+  --chart-2: 172 58% 60%;
+}
+
+/* Usage: stroke="hsl(var(--chart-1))", fill="hsl(var(--chart-2))" in chart components. */ 
