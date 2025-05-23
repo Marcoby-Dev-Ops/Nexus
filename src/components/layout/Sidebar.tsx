@@ -1,6 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Badge } from '../Badge';
+import { Link, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Handshake, Banknote, Settings, Store, Bot, BarChart2, Users, Layers } from 'lucide-react';
 // import { Badge } from 'shadcn/ui'; // Uncomment if Badge is available
 
 /**
@@ -32,25 +34,25 @@ interface NavItem {
 }
 
 const coreModules: NavItem[] = [
-  { label: 'Dashboard', href: '#', icon: null },
-  { label: 'Sales', href: '#', icon: null },
-  { label: 'Finance', href: '#', icon: null },
-  { label: 'Operations', href: '#', icon: null },
-  { label: 'Data Warehouse', href: '#', icon: null },
+  { label: 'Dashboard', href: '/', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { label: 'Sales', href: '/sales', icon: <Handshake className="w-5 h-5" /> },
+  { label: 'Finance', href: '/finance', icon: <Banknote className="w-5 h-5" /> },
+  { label: 'Operations', href: '/operations', icon: <Layers className="w-5 h-5" /> },
+  { label: 'Data Warehouse', href: '/data-warehouse', icon: <BarChart2 className="w-5 h-5" /> },
 ];
 const marketplace: NavItem[] = [
-  { label: 'Pulse', href: '#', icon: null, badge: '3 new' },
-  { label: 'Add-ons', href: '#', icon: null, badge: 'New' },
-  { label: 'Integrations', href: '#', icon: null },
+  { label: 'Pulse', href: '/pulse', icon: <Store className="w-5 h-5" />, badge: '3 new' },
+  { label: 'Add-ons', href: '/add-ons', icon: <Settings className="w-5 h-5" />, badge: 'New' },
+  { label: 'Integrations', href: '/integrations', icon: <Bot className="w-5 h-5" /> },
 ];
 const aiAssistants: NavItem[] = [
-  { label: 'Chat', href: '#', icon: null },
-  { label: 'Automation', href: '#', icon: null },
-  { label: 'Analytics', href: '#', icon: null },
+  { label: 'Chat', href: '/chat', icon: <Bot className="w-5 h-5" /> },
+  { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> },
+  { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
 ];
 const admin: NavItem[] = [
-  { label: 'Tenants', href: '#', icon: null },
-  { label: 'Settings', href: '#', icon: null },
+  { label: 'Tenants', href: '/tenants', icon: <Users className="w-5 h-5" /> },
+  { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
 /**
@@ -59,7 +61,10 @@ const admin: NavItem[] = [
  * @param {SidebarProps} props - The props for the component.
  * @returns {JSX.Element} The rendered Sidebar component.
  */
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, activeItem = 'Dashboard' }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
+  const location = useLocation();
+  const activeItem =
+    coreModules.concat(marketplace, aiAssistants, admin).find((item) => item.href === location.pathname)?.label || 'Dashboard';
   return (
     <aside
       className={`flex flex-col h-full w-64 bg-card text-card-foreground p-4 shadow-lg border-r border-primary/20 fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-full md:w-64`}
@@ -126,8 +131,8 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, items, activeItem, b
         const isActive = item.label === activeItem;
         return (
           <li key={item.label} className="flex items-center justify-between">
-            <a
-              href={item.href}
+            <Link
+              to={item.href}
               className={
                 `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors outline-none ` +
                 (isActive
@@ -139,7 +144,7 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, items, activeItem, b
             >
               {item.icon && <span>{item.icon}</span>}
               {item.label}
-            </a>
+            </Link>
             {item.badge && (
               <Badge variant="secondary" size="xs" className="ml-2">
                 {item.badge}

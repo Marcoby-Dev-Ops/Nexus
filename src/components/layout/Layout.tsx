@@ -75,7 +75,7 @@ const Layout: React.FC<LayoutProps> = ({ children, breadcrumbs = [], subtitle })
         {/* Top Bar (Zone 2) */}
         <Header toggleSidebar={toggleSidebar} onToggleTheme={toggleTheme} isDark={isDark} breadcrumbs={breadcrumbs} subtitle={subtitle} />
         {/* Main content (Zones 3-5) */}
-        <main className="flex-1 min-h-0 overflow-x-auto overflow-y-auto bg-background p-2 sm:p-4">
+        <main className="flex-1 min-h-0 overflow-x-auto bg-background p-2 sm:p-4">
           {/* Adjust ml-64 if sidebar width changes. This is for when sidebar is static. */}
           {/* On mobile, when sidebar is an overlay, main content should not have margin. */}
           {/* We need to conditionally apply margin or adjust layout if sidebar is an overlay vs static. */}
