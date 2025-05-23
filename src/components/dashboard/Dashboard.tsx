@@ -125,7 +125,7 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="pt-4 pb-4 sm:pt-6 sm:pb-6 bg-card/80 rounded-xl shadow-lg w-full max-w-7xl mx-auto min-w-0">
+    <div className="pt-4 pb-4 sm:pt-6 sm:pb-6 bg-card/80 rounded-xl shadow-lg w-full min-w-0">
       {/* KPIs and Charts unified grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
         {/* KPI Cards */}
