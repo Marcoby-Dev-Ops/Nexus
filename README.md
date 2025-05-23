@@ -1,84 +1,51 @@
 # Nexus OS
 
-**Nexus OS** is a modern, modular, AI-powered business operating system for small and medium-sized businesses. It centralizes your core operations—Sales, Finance, Operations, and more—into a single, intuitive platform, with intelligent assistants and a pluggable marketplace for instant extensibility.
+**Nexus OS** is your business's digital command center—a single, intuitive platform that brings together all your core operations, teams, and data. With Nexus, you can manage sales, finance, operations, and more from one place, with built-in AI assistants to help you work smarter, not harder.
 
 ---
 
-## 🚀 What is Nexus OS?
-Nexus OS is your all-in-one business workspace. It provides:
-- **Department-based dashboards** for Sales, Finance, Operations, and more
-- **AI-powered Assistants** for every department, ready to answer, suggest, and automate
-- **Pulse Marketplace** for drop-in SaaS integrations and add-ons
-- **Self-hosted, white-label ready** platform for full control and branding
-
-Nexus is designed to be:
-- **Modular**: Add, remove, or upgrade departments and features as your business grows
-- **Extensible**: Integrate with 3rd party tools (HubSpot, QuickBooks, Microsoft 365, etc.)
-- **AI-first**: Built-in agents provide insights, automate tasks, and connect workflows
-- **Scalable**: Multi-tenant, secure, and ready for teams of any size
+## Why Nexus OS?
+- **Everything in One Place:** No more jumping between apps. Nexus gives you dashboards, tools, and insights for every department—Sales, Finance, Operations, and more—all in a single, unified workspace.
+- **AI That Works for You:** Each department comes with its own AI assistant. Ask questions, get recommendations, automate tasks, and make better decisions—instantly.
+- **Grows With Your Business:** Add or remove modules as your needs change. Nexus is designed to scale with you, whether you're a team of 5 or 500.
+- **Instant Upgrades:** The Pulse Marketplace lets you add new features and integrations in just a few clicks. Need invoicing, analytics, or a new CRM? It's all here.
+- **Your Brand, Your Data:** Nexus is self-hosted and white-label ready. You control your data, your branding, and your user experience.
 
 ---
 
-## ✨ Features
-- **Unified Dashboard**: See all your business metrics and workflows in one place
-- **Department Modules**: Feature-sliced dashboards for Sales, Finance, Operations, and more
-- **AI Assistants**: Context-aware chat panels and task routing for every department
-- **Pulse Marketplace**: Instantly add new SaaS tools and integrations
-- **Realtime Core**: WebSocket event bus for live metrics, sync, and notifications
-- **Automation Fabric**: Trigger actions and workflows directly from AI output
-- **Security & Multi-Tenant**: RBAC, tenant isolation, and secure credential vault
-- **Modern UI/UX**: Responsive, accessible, and themeable (dark mode, shadcn/ui, Tailwind)
+## What Can You Do With Nexus?
+- **See the Big Picture:** Get a real-time overview of your business—revenue, deals, tasks, and more—on a single dashboard.
+- **Empower Every Team:** Give Sales, Finance, and Operations their own workspaces, each tailored to their needs and powered by AI.
+- **Automate the Mundane:** Let AI handle routine questions, generate reports, and suggest next steps, so your team can focus on what matters.
+- **Make Smarter Decisions:** Use built-in analytics and AI insights to spot trends, identify opportunities, and avoid risks.
+- **Stay Flexible:** Add new tools and integrations as your business evolves, without the hassle of switching platforms.
 
 ---
 
-## 🏗️ Architecture & Tech Stack
-| Layer                       | What it does                                                                                                                        | Tech choices                                         |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| **UI Shell**                | Responsive React front-end with sidebar, dark-mode, shadcn/ui components.                                                           | React 19 + TypeScript + Vite + Tailwind              |
-| **Domain Modules**          | Feature-sliced dashboards for **Sales**, **Finance**, **Operations**, plus **Pulse** (marketplace / add-ons).                       | DDD folder structure; lazy-loaded routes             |
-| **AI Assistants**           | Context-aware agents (chat panel, task routing) that leverage OpenRouter/GPT models, vector search, and n8n for workflow execution. | Node/Express endpoints, Supabase & Qdrant for memory |
-| **Realtime Core**           | WebSocket event bus for metrics streaming, workflow sync, toast notifications.                                                      | Custom WS provider, Zustand stores                   |
-| **Automation Fabric**       | n8n subflows trigger actions (e.g., create invoice, post blog) directly from agent output.                                          | n8n + custom tool routers                            |
-| **Security & Multi-Tenant** | RBAC guards, tenant isolation, AES-256-GCM credential vault.                                                                        | Prisma, Authentik, Zod validation                    |
-| **Dev-XP**                  | ESLint 9 flat config, Jest/Playwright tests, Storybook, Husky pre-commit compliance checks.                                         | PNPM mono-repo ready                                 |
+## Who is Nexus OS For?
+- **Business Owners & Leaders:** Get a clear, up-to-date view of your entire company at a glance.
+- **Team Managers:** Empower your teams with the right tools and insights, all in one place.
+- **Growing Companies:** Scale your operations without outgrowing your software.
+- **Anyone Tired of App Overload:** Replace a patchwork of disconnected tools with a single, seamless platform.
 
 ---
 
-## 🛠️ Getting Started
-1. **Clone the repo:**
-   ```bash
-   git clone https://github.com/your-org/nexus.git
-   cd nexus
-   ```
-2. **Install dependencies:**
-   ```bash
-   npm install
-   ```
-3. **Run the app:**
-   ```bash
-   npm run dev
-   ```
-4. **Open in your browser:**
-   Visit [http://localhost:5173](http://localhost:5173)
+## Getting Started is Easy
+1. **Install Nexus OS** on your own infrastructure (or with your IT partner).
+2. **Pick your modules:** Start with Sales, Finance, Operations, or add more as you grow.
+3. **Invite your team:** Assign roles, set up departments, and get everyone working together.
+4. **Explore the Pulse Marketplace:** Add new features and integrations as needed.
+5. **Let AI help:** Use the built-in assistants to answer questions, automate tasks, and get recommendations.
 
 ---
 
-## 🧩 Design Principles
-- **Clean, professional, mobile-friendly**
-- **Modular**—easy to add new departments, agents, and features
-- **White-label ready** (replace branding for resellers)
-- **Fast to demo** for clients and stakeholders
-- **Accessible** and themeable (dark mode, responsive)
+## How it Works (Under the Hood)
+Nexus OS is built for reliability, security, and flexibility. It's powered by modern web technology, but you don't need to be a developer to use it. For those who want to know:
+- **Modular design:** Add or remove business modules as needed
+- **AI-powered:** Each department gets a smart assistant
+- **Marketplace:** Add new features and integrations instantly
+- **Self-hosted:** You control your data and branding
 
 ---
 
-## 💡 Why Nexus?
-- **Single Source of Truth** – All key data and workflows in one pane
-- **AI on Tap** – Each department gets a purpose-built assistant
-- **Pluggable Marketplace** – Drop-in integrations and add-ons
-- **Self-Hosted & Brandable** – Full control, white-label potential
-- **Scales with You** – Feature-sliced codebase, multi-tenant by design
-
----
-
-Nexus is the backbone unifying Marcoby's three pillars—**Pulse** (products), **Catalyst** (managed services), and **Nexus** (the OS itself)—into a generational, AI-first business platform.
+**Nexus OS**: The smarter, simpler way to run your business.
