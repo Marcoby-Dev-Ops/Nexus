@@ -1,20 +1,14 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/layout/Layout';
+import AppShell from './components/layout/AppShell';
 import Dashboard from './components/dashboard/Dashboard';
-import SalesDashboard from './departments/sales/SalesDashboard';
-import PropTypes from 'prop-types';
 
-// Placeholder components for missing modules
-const FinanceDashboard = () => (
-  <div className="p-8 text-center text-xl text-muted-foreground">Finance module coming soon.</div>
-);
-const OperationsDashboard = () => (
-  <div className="p-8 text-center text-xl text-muted-foreground">Operations module coming soon.</div>
-);
-const PulseMarketplace = () => (
-  <div className="p-8 text-center text-xl text-muted-foreground">Pulse Marketplace coming soon.</div>
-);
+const SalesHome = lazy(() => import('./departments/sales/SalesHome'));
+const FinanceHome = lazy(() => import('./departments/finance/FinanceHome'));
+const OperationsHome = lazy(() => import('./departments/operations/OperationsHome'));
+const Marketplace = lazy(() => import('./marketplace/Marketplace'));
+const DataWarehouseHome = lazy(() => import('./datawarehouse/DataWarehouseHome'));
+const AdminHome = lazy(() => import('./components/dashboard/AdminHome'));
 
 /**
  * @name App
@@ -24,53 +18,22 @@ const PulseMarketplace = () => (
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Layout breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Dashboard' }]} subtitle="Welcome to NEXUS - Your business operating system">
-              <Dashboard />
-            </Layout>
-          }
-        />
-        <Route
-          path="/sales"
-          element={
-            <Layout breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Sales' }]} subtitle="Sales Department">
-              <SalesDashboard />
-            </Layout>
-          }
-        />
-        <Route
-          path="/finance"
-          element={
-            <Layout breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Finance' }]} subtitle="Finance Department">
-              <FinanceDashboard />
-            </Layout>
-          }
-        />
-        <Route
-          path="/operations"
-          element={
-            <Layout breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Operations' }]} subtitle="Operations Department">
-              <OperationsDashboard />
-            </Layout>
-          }
-        />
-        <Route
-          path="/pulse"
-          element={
-            <Layout breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Pulse Marketplace' }]} subtitle="Pulse Marketplace">
-              <PulseMarketplace />
-            </Layout>
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<div className="p-8">Loading…</div>}>
+        <Routes>
+          <Route element={<AppShell />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/sales" element={<SalesHome />} />
+            <Route path="/finance" element={<FinanceHome />} />
+            <Route path="/operations" element={<OperationsHome />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/data-warehouse" element={<DataWarehouseHome />} />
+            <Route path="/admin" element={<AdminHome />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
-
-App.propTypes = {};
 
 export default App;
