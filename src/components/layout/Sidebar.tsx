@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Badge } from '../Badge';
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Handshake, Banknote, Settings, Store, Bot, BarChart2, Users, Layers } from 'lucide-react';
+import { Link, useLocation, NavLink } from 'react-router-dom';
+import { LayoutDashboard, Handshake, Banknote, Settings, Store, Bot, BarChart2, Users, Layers, DollarSign, Truck } from 'lucide-react';
 // import { Badge } from 'shadcn/ui'; // Uncomment if Badge is available
 
 /**
@@ -34,10 +34,10 @@ interface NavItem {
 }
 
 const coreModules: NavItem[] = [
-  { label: 'Dashboard', href: '/', icon: <LayoutDashboard className="w-5 h-5" /> },
-  { label: 'Sales', href: '/sales', icon: <Handshake className="w-5 h-5" /> },
+  { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { label: 'Sales', href: '/sales', icon: <DollarSign className="w-5 h-5" /> },
   { label: 'Finance', href: '/finance', icon: <Banknote className="w-5 h-5" /> },
-  { label: 'Operations', href: '/operations', icon: <Layers className="w-5 h-5" /> },
+  { label: 'Operations', href: '/operations', icon: <Truck className="w-5 h-5" /> },
   { label: 'Data Warehouse', href: '/data-warehouse', icon: <BarChart2 className="w-5 h-5" /> },
 ];
 const marketplace: NavItem[] = [
@@ -51,7 +51,7 @@ const aiAssistants: NavItem[] = [
   { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
 ];
 const admin: NavItem[] = [
-  { label: 'Tenants', href: '/tenants', icon: <Users className="w-5 h-5" /> },
+  { label: 'Admin', href: '/admin', icon: <Users className="w-5 h-5" /> },
   { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
@@ -65,9 +65,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const location = useLocation();
   const activeItem =
     coreModules.concat(marketplace, aiAssistants, admin).find((item) => item.href === location.pathname)?.label || 'Dashboard';
+  const links = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { to: '/sales', label: 'Sales', icon: DollarSign },
+    { to: '/finance', label: 'Finance', icon: Store },
+    { to: '/operations', label: 'Operations', icon: Truck },
+    { to: '/marketplace', label: 'Marketplace', icon: LayoutDashboard },
+  ];
   return (
     <aside
-      className={`flex flex-col h-full w-64 bg-card text-card-foreground p-4 shadow-lg border-r border-primary/20 fixed inset-y-0 left-0 z-30 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-full md:w-64`}
+      className={`flex flex-col h-full w-64 bg-card text-card-foreground p-4 shadow-lg border-r border-primary/20 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 md:shadow-none ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-full md:w-64`}
       role="dialog"
       aria-modal={isOpen && window.innerWidth < 768 ? 'true' : undefined}
     >
@@ -131,7 +138,7 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, items, activeItem, b
         const isActive = item.label === activeItem;
         return (
           <li key={item.label} className="flex items-center justify-between">
-            <Link
+            <NavLink
               to={item.href}
               className={
                 `flex items-center gap-2 px-3 py-2 rounded-lg transition-colors outline-none ` +
@@ -144,7 +151,7 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, items, activeItem, b
             >
               {item.icon && <span>{item.icon}</span>}
               {item.label}
-            </Link>
+            </NavLink>
             {item.badge && (
               <Badge variant="secondary" size="xs" className="ml-2">
                 {item.badge}

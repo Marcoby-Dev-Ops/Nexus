@@ -1,9 +1,10 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import StatsCard from './StatsCard';
-import QuickLaunchTiles from './QuickLaunchTiles';
+import { KpiCard } from './KpiCard';
+import { SimpleBarChart } from './SimpleBarChart';
 import { FilePlus, UserPlus, BarChart2, Zap, CalendarPlus, Bot } from 'lucide-react';
 import Spinner from '../Spinner';
 import Skeleton from '../lib/Skeleton';
+import QuickLaunchTiles from './QuickLaunchTiles';
 
 /**
  * @name Dashboard
@@ -11,62 +12,41 @@ import Skeleton from '../lib/Skeleton';
  * @returns {JSX.Element} The rendered dashboard.
  */
 const kpiData = [
-  {
-    title: 'Total Revenue',
-    value: '$124,580',
-    delta: 12.5,
-    deltaLabel: 'vs last month',
-    icon: (
-      <svg className="w-5 h-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 0V4m0 7v7m0 0h4m-4 0H8" /></svg>
-    ),
-  },
-  {
-    title: 'New Customers',
-    value: 24,
-    delta: 8.3,
-    deltaLabel: 'vs last month',
-    icon: (
-      <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m9-4a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-    ),
-  },
-  {
-    title: 'Active Projects',
-    value: 18,
-    delta: -2.1,
-    deltaLabel: 'vs last month',
-    icon: (
-      <svg className="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2a4 4 0 014-4h2a4 4 0 014 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-    ),
-  },
-  {
-    title: 'Task Completion',
-    value: '84%',
-    progress: 84,
-    delta: 1.2,
-    deltaLabel: 'vs last month',
-    icon: (
-      <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-    ),
-  },
+  { title: 'Total Revenue', value: '$124,580', delta: '+12.5%' },
+  { title: 'New Customers', value: 24, delta: '+8.3%' },
+  { title: 'Active Projects', value: 18, delta: '-2.1%' },
+  { title: 'Task Completion', value: '84%', delta: '+1.2%' },
 ];
 
-const revenueData = [
-  { date: 'Jan', revenue: 65000 },
-  { date: 'Feb', revenue: 59000 },
-  { date: 'Mar', revenue: 80000 },
-  { date: 'Apr', revenue: 81000 },
-  { date: 'May', revenue: 56000 },
-  { date: 'Jun', revenue: 85000 },
-  { date: 'Jul', revenue: 124500 },
+const revenueTrend = [
+  { name: 'Jan', value: 65000 },
+  { name: 'Feb', value: 59000 },
+  { name: 'Mar', value: 80000 },
+  { name: 'Apr', value: 81000 },
+  { name: 'May', value: 56000 },
+  { name: 'Jun', value: 85000 },
+  { name: 'Jul', value: 124500 },
 ];
 
-const pipelineData = [
-  { stage: 'Prospect', deals: 24 },
-  { stage: 'Qualified', deals: 18 },
-  { stage: 'Proposal', deals: 12 },
-  { stage: 'Negotiation', deals: 8 },
-  { stage: 'Closed Won', deals: 14 },
-  { stage: 'Closed Lost', deals: 5 },
+const pipelineFunnel = [
+  { name: 'Prospect', value: 24 },
+  { name: 'Qualified', value: 18 },
+  { name: 'Proposal', value: 12 },
+  { name: 'Negotiation', value: 8 },
+  { name: 'Closed Won', value: 14 },
+  { name: 'Closed Lost', value: 5 },
+];
+
+const activityFeed = [
+  { type: 'login', user: 'Alice', note: 'Logged in', date: '2024-06-10' },
+  { type: 'deal', user: 'Bob', note: 'Closed deal with Acme Corp', date: '2024-06-09' },
+  { type: 'invoice', user: 'Carol', note: 'Sent invoice to Beta LLC', date: '2024-06-08' },
+];
+
+const aiInsights = [
+  'Revenue is up 12% vs last month.',
+  '3 deals are likely to close this week.',
+  'No overdue invoices detected.',
 ];
 
 const quickLaunchActions = [
@@ -125,32 +105,43 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="pt-4 pb-4 sm:pt-6 sm:pb-6 bg-card/80 rounded-xl shadow-lg w-full min-w-0">
-      {/* KPIs and Charts unified grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
-        {/* KPI Cards */}
-        <div className="flex flex-col gap-4 min-w-0">
-          {kpiData.map((item, idx) => (
-            <StatsCard key={item.title} {...item} sparkline={<Sparkline data={kpiSparklines[idx]} />} loading={loading} />
-          ))}
+    <div className="p-8 space-y-8">
+      {/* KPI Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {kpiData.map((kpi) => (
+          <KpiCard key={kpi.title} title={kpi.title} value={kpi.value} delta={kpi.delta} />
+        ))}
+      </div>
+      {/* Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-xl border p-4">
+          <h3 className="font-semibold mb-2">Revenue Trend</h3>
+          <SimpleBarChart data={revenueTrend} />
         </div>
-        {/* Charts */}
-        <div className="flex flex-col gap-4 min-w-0 sm:col-span-1 lg:col-span-2 w-full">
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-              <Skeleton className="h-64 w-full min-w-0" />
-              <Skeleton className="h-64 w-full min-w-0" />
-            </div>
-          ) : showCharts ? (
-            <Suspense fallback={<div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0"><Skeleton className="h-64 w-full min-w-0" /><Skeleton className="h-64 w-full min-w-0" /></div>}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0">
-                <RevenueChart data={revenueData} />
-                <PipelineChart data={pipelineData} />
-              </div>
-            </Suspense>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 min-w-0"><Skeleton className="h-64 w-full min-w-0" /><Skeleton className="h-64 w-full min-w-0" /></div>
-          )}
+        <div className="rounded-xl border p-4">
+          <h3 className="font-semibold mb-2">Pipeline Funnel</h3>
+          <SimpleBarChart data={pipelineFunnel} />
+        </div>
+      </div>
+      {/* Activity Feed & AI Insights */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="rounded-xl border p-4">
+          <h3 className="font-semibold mb-2">Activity Feed</h3>
+          <ul className="divide-y">
+            {activityFeed.map((a, i) => (
+              <li key={i} className="py-2">
+                <span className="font-medium">{a.user}</span> - {a.note} <span className="text-xs text-muted-foreground">({a.date})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-xl border p-4">
+          <h3 className="font-semibold mb-2">AI Insights</h3>
+          <ul className="list-disc pl-5">
+            {aiInsights.map((insight, i) => (
+              <li key={i}>{insight}</li>
+            ))}
+          </ul>
         </div>
       </div>
       {/* Quick Launch and Modules unified grid */}
