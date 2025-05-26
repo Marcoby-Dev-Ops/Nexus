@@ -26,7 +26,7 @@
 - **Business Owners & Leaders:** Get a clear, up-to-date view of your entire company at a glance.
 - **Team Managers:** Empower your teams with the right tools and insights, all in one place.
 - **Growing Companies:** Scale your operations without outgrowing your software.
-- **Anyone Tired of App Overload:** Replace a patchwork of disconnected tools with a single, seamless platform.
+- **Anyone Tired of App Overload:** Replace a patchwork of disconnected proceses with a single, seamless platform.
 
 ---
 
@@ -47,5 +47,9 @@ Nexus OS is built for reliability, security, and flexibility. It's powered by mo
 - **Self-hosted:** You control your data and branding
 
 ---
+
+## Documentation
+
+For detailed feature guides, API documentation, and developer instructions, see the [`/docs`](./docs) directory. Each major module and API will have its own markdown file for easy reference and contribution.
 
 **Nexus OS**: The smarter, simpler way to run your business.

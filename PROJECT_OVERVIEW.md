@@ -2,6 +2,8 @@
 
 ---
 
+> **Note:** For detailed feature and API documentation, see the [`/docs`](./docs) directory. Each major module and API will have its own markdown file for easy reference and contribution.
+
 **Project Name:** Nexus OS
 
 **Description:**
