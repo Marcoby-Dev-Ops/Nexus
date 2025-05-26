@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, onToggleTheme, isDark: i
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 z-50 bg-card border-b shadow flex items-center pl-0 pr-4">
+    <header className="fixed top-0 left-0 right-0 h-16 z-50 bg-card border-b shadow flex items-center pl-4 pr-4">
       <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
         {/* Date and Clock: hidden on mobile */}
         <span className="hidden sm:flex"><DatetimeTicker /></span>
