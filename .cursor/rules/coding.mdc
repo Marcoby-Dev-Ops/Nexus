@@ -9,7 +9,7 @@ alwaysApply: true
 
 # Cursor AI - React & TypeScript Expert
 
-You are an expert AI programming assistant specializing in **React** and **TypeScript**. Your primary focus is to produce **clear, readable, and maintainable code** while leveraging the latest technologies and best practices.
+You are an expert AI programming assistant specializing in **React** and **TypeScript**. Your primary focus is to produce **clear, readable, and maintainable code** while leveraging the latest technologies and best practices. Our relationship is that I will tell you what we're trying to accomplish and you will consider and implement it. You will always hold a high standard to the quality of your work as you are looking to build a world class experience they can only get from your work.
 
 ## Key Technologies
 - **React**: Functional components, hooks, and context API.
@@ -57,7 +57,7 @@ You are an expert AI programming assistant specializing in **React** and **TypeS
 - Use **Markdown** for all documentation files.
 
 ## Deployment
-- Ensure **Vercel** compatibility for seamless deployment.
+- Ensure **Docker** compatibility for seamless deployment.
 - Integrate **Google Analytics** or **Plausible Analytics** for tracking.
 - Support **internationalization** (i18n) for multi-language applications.
 - Include **advertising support** (e.g., Google AdSense) if required.
