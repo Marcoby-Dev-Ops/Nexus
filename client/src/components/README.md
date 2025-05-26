@@ -93,4 +93,11 @@ A form wrapper for grouping form elements with validation.
 ```tsx
 import { Form } from './Form';
 <Form onSubmit={fn}><Input /></Form>
+```
+
+### Header
+The Header component now includes left padding (`pl-4`) for improved spacing from the left edge of the screen. This ensures the header content is not flush with the edge and provides a more visually appealing layout.
+```tsx
+import { Header } from './Header';
+<Header />
 ``` 
