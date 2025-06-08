@@ -232,7 +232,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
             value={config.instanceName}
             onChange={(e) => setConfig(prev => ({ ...prev, instanceName: e.target.value }))}
             placeholder="My n8n Instance"
-            className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-4 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -246,7 +246,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
             value={config.baseUrl}
             onChange={(e) => setConfig(prev => ({ ...prev, baseUrl: e.target.value }))}
             placeholder="https://your-n8n-instance.com"
-            className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-4 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
           <p className="text-xs text-muted-foreground dark:text-muted-foreground mt-1">
@@ -265,7 +265,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
               value={config.apiKey}
               onChange={(e) => setConfig(prev => ({ ...prev, apiKey: e.target.value }))}
               placeholder="n8n_api_xxxxxxxxxxxxxxxx"
-              className="w-full px-4 py-2 pr-10 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-4 pr-10 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
             <button
@@ -290,7 +290,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
           <button
             onClick={handleTestConnection}
             disabled={isTestingConnection || !config.baseUrl || !config.apiKey}
-            className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-secondary hover:bg-secondary/90 disabled:bg-muted disabled:cursor-not-allowed text-primary-foreground rounded-lg transition-colors"
+            className="w-full flex items-center justify-center space-x-2 px-4 py-4 bg-secondary hover:bg-secondary/90 disabled:bg-muted disabled:cursor-not-allowed text-primary-foreground rounded-lg transition-colors"
           >
             {isTestingConnection ? (
               <>
@@ -332,7 +332,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
           {onSkip && (
             <button
               onClick={onSkip}
-              className="flex-1 px-4 py-2 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-gray-200 transition-colors"
+              className="flex-1 px-4 py-4 text-muted-foreground dark:text-muted-foreground hover:text-foreground dark:hover:text-muted-foreground transition-colors"
             >
               Skip for now
             </button>
@@ -340,7 +340,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
           <button
             onClick={handleComplete}
             disabled={connectionStatus !== 'success' || isSaving}
-            className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed text-primary-foreground rounded-lg transition-colors"
+            className="flex-1 flex items-center justify-center space-x-2 px-4 py-4 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:cursor-not-allowed text-primary-foreground rounded-lg transition-colors"
           >
             {isSaving ? (
               <>

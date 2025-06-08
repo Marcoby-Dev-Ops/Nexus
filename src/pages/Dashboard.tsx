@@ -130,7 +130,7 @@ const Dashboard: React.FC = () => {
                   )}
                 </div>
                 <div className="text-right">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                  <span className={`inline-flex items-center px-4.5 py-4 rounded-full text-xs font-medium ${
                     kpi.trend === 'up' 
                       ? 'bg-success/10 text-success dark:bg-success/20 dark:text-success' 
                       : 'bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive'
@@ -155,7 +155,7 @@ const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <ContentCard variant="elevated" className="hover:shadow-xl transition-all duration-300" 
             action={
-              <button className="flex items-center space-x-2 px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
+              <button className="flex items-center space-x-2 px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
                 <span className="text-sm">View Details</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
@@ -169,7 +169,7 @@ const Dashboard: React.FC = () => {
           
           <ContentCard variant="elevated" className="hover:shadow-xl transition-all duration-300"
             action={
-              <button className="flex items-center space-x-2 px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
+              <button className="flex items-center space-x-2 px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
                 <span className="text-sm">View Details</span>
                 <ArrowUpRight className="w-4 h-4" />
               </button>
@@ -188,7 +188,7 @@ const Dashboard: React.FC = () => {
             title="Recent Activity" 
             variant="elevated"
             action={
-              <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+              <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
                 View All
               </button>
             }>
@@ -201,7 +201,7 @@ const Dashboard: React.FC = () => {
                 
                 return (
                   <div key={i} className="flex items-start space-x-4 p-4 rounded-xl hover:bg-muted/50 transition-colors duration-200">
-                    <div className={`p-2 rounded-lg bg-muted ${iconColor}`}>
+                    <div className={`p-4 rounded-lg bg-muted ${iconColor}`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -219,7 +219,7 @@ const Dashboard: React.FC = () => {
           <ContentCard variant="elevated" className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
-                <div className="p-2 rounded-lg bg-background/20">
+                <div className="p-4 rounded-lg bg-background/20">
                   <Bot className="w-6 h-6 text-primary-foreground" />
                 </div>
                 <h3 className="text-xl font-bold">AI Insights</h3>
@@ -233,7 +233,7 @@ const Dashboard: React.FC = () => {
                 </div>
               ))}
             </div>
-            <button className="mt-6 w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-2">
+            <button className="mt-6 w-full bg-background/20 hover:bg-background/30 backdrop-blur-sm rounded-xl px-4 py-4 text-sm font-medium transition-all duration-200 flex items-center justify-center space-x-2">
               <span>Get More Insights</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>

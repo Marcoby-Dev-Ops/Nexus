@@ -22,14 +22,14 @@ describe('StatsCard', () => {
   it('renders delta and deltaLabel with correct color (positive)', () => {
     render(<StatsCard title="Revenue" value={1000} delta={5} deltaLabel="vs last month" />);
     const delta = screen.getByText(/5%/);
-    expect(delta).toHaveClass('text-green-600');
+    expect(delta).toHaveClass('text-success');
     expect(screen.getByText('vs last month')).toBeInTheDocument();
   });
 
   it('renders delta with correct color (negative)', () => {
     render(<StatsCard title="Revenue" value={1000} delta={-3} />);
     const delta = screen.getByText(/3%/);
-    expect(delta).toHaveClass('text-red-600');
+    expect(delta).toHaveClass('text-destructive');
   });
 
   it('renders progress bar if progress is provided', () => {

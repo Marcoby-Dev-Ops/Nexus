@@ -135,7 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
               key={item.href}
               to={item.href}
               onClick={toggleSidebar}
-              className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-colors duration-200 ${
+              className={`group flex items-center px-4 py-4 text-sm font-medium rounded-xl transition-colors duration-200 ${
                 isActive
                   ? 'bg-accent text-accent-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
@@ -171,7 +171,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       {/* Header */}
       <div className="flex items-center justify-between p-6 border-b border-border">
         <div className="flex items-center space-x-4">
-          <div className="p-2.5 bg-transparent rounded-xl">
+          <div className="p-4.5 bg-transparent rounded-xl">
             <img
               src={enhancedUser?.company?.logo_url || "/Nexus/nexus-square-40x40-transparent.svg"}
               alt={enhancedUser?.company?.name ? `${enhancedUser.company.name} Logo` : "NEXUS Logo"}
@@ -189,7 +189,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         </div>
         <button
           onClick={toggleSidebar}
-          className="p-2 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+          className="p-4 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Close sidebar"
         >
           <X className="w-5 h-5" />
@@ -202,7 +202,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <input
             type="text"
             placeholder="Search pages..."
-            className="w-full pl-10 pr-4 py-3 bg-muted border border-border rounded-xl text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
+            className="w-full pl-10 pr-4 py-4 bg-muted border border-border rounded-xl text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -290,14 +290,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
           <div className="space-y-2">
             <button
               onClick={() => navigate('/settings')}
-              className="w-full flex items-center px-4 py-2 text-sm bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+              className="w-full flex items-center px-4 py-4 text-sm bg-transparent text-muted-foreground hover:text-foreground transition-colors"
             >
               <Settings className="w-4 h-4 mr-3" />
               Account Settings
             </button>
             <button
               onClick={handleSignOut}
-              className="w-full flex items-center px-4 py-2 text-sm bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+              className="w-full flex items-center px-4 py-4 text-sm bg-transparent text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />
@@ -336,7 +336,7 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, items, activeItem, t
             <NavLink
               to={item.href}
               className={
-                `flex items-center gap-2 px-4 py-2 rounded-lg transition-colors outline-none ` +
+                `flex items-center gap-2 px-4 py-4 rounded-lg transition-colors outline-none ` +
                 (isActive
                   ? 'bg-accent text-accent-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-accent/50')

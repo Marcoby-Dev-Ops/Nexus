@@ -181,7 +181,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               if (prevStep) goToStep(prevStep.id);
             }}
             disabled={currentStepIndex === 0}
-            className="flex items-center space-x-2 px-4 py-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center space-x-2 px-4 py-4 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Previous</span>
@@ -198,7 +198,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               if (nextStep) goToStep(nextStep.id);
             }}
             disabled={currentStepIndex === onboardingState.steps.length - 1}
-            className="flex items-center space-x-2 px-4 py-2 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center space-x-2 px-4 py-4 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             <span>Next</span>
             <ArrowRight className="h-4 w-4" />
@@ -254,7 +254,7 @@ const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => (
     
     <button
       onClick={onComplete}
-      className="px-8 py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg transition-colors"
+      className="px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg transition-colors"
     >
       Get Started
     </button>
@@ -286,7 +286,7 @@ const DepartmentSetupStep: React.FC<{ onComplete: () => void }> = ({ onComplete 
     <div className="text-center">
       <button
         onClick={onComplete}
-        className="px-8 py-3 bg-secondary hover:bg-secondary/90 text-primary-foreground font-medium rounded-lg transition-colors"
+        className="px-8 py-4 bg-secondary hover:bg-secondary/90 text-primary-foreground font-medium rounded-lg transition-colors"
       >
         Continue
       </button>
@@ -307,7 +307,7 @@ const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => (
     
     <button
       onClick={onFinish}
-      className="px-8 py-3 bg-success hover:bg-success/90 text-primary-foreground font-medium rounded-lg transition-colors"
+      className="px-8 py-4 bg-success hover:bg-success/90 text-primary-foreground font-medium rounded-lg transition-colors"
     >
       Enter Nexus OS
     </button>

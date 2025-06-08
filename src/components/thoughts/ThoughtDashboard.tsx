@@ -143,7 +143,7 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
             return (
               <div
                 key={stage.id}
-                className={`flex items-center gap-1 px-2 py-1 rounded ${
+                className={`flex items-center gap-1 px-4 py-4 rounded ${
                   isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                 } ${isCurrent ? 'ring-2 ring-blue-500' : ''}`}
               >

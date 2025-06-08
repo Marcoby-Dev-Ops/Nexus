@@ -46,7 +46,7 @@ const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = tru
         {onClose && (
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-transparent hover:bg-muted transition-colors group"
+            className="p-4 rounded-lg bg-transparent hover:bg-muted transition-colors group"
             aria-label="Close chat"
           >
             <X className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />

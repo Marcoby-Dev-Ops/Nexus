@@ -17,13 +17,13 @@ describe('KpiCard', () => {
   it('renders delta with correct color (positive)', () => {
     render(<KpiCard title="Revenue" value="$1000" delta="+10%" />);
     const delta = screen.getByText('+10%');
-    expect(delta).toHaveClass('text-green-600');
+    expect(delta).toHaveClass('text-success');
   });
 
   it('renders delta with correct color (negative)', () => {
     render(<KpiCard title="Revenue" value="$1000" delta="-5%" />);
     const delta = screen.getByText('-5%');
-    expect(delta).toHaveClass('text-red-600');
+    expect(delta).toHaveClass('text-destructive');
   });
 
   it('renders sparkline if sparklineData is provided', () => {
