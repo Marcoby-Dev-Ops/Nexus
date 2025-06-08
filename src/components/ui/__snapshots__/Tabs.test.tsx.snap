@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Tabs matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class=""
+  >
+    <div
+      class="flex border-b border-border mb-2"
+    >
+      <button
+        aria-selected="true"
+        class="px-4 py-2 -mb-px border-b-2 font-medium transition-colors border-primary text-primary"
+        role="tab"
+        tabindex="0"
+      >
+        Tab 1
+      </button>
+      <button
+        aria-selected="false"
+        class="px-4 py-2 -mb-px border-b-2 font-medium transition-colors border-transparent text-muted-foreground hover:text-foreground"
+        role="tab"
+        tabindex="-1"
+      >
+        Tab 2
+      </button>
+    </div>
+    <div
+      role="tabpanel"
+    >
+      <div>
+        Content 1
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

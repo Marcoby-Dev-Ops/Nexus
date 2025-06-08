@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Spinner matches snapshot 1`] = `
+<DocumentFragment>
+  <svg
+    aria-label="Loading"
+    class="animate-spin text-primary "
+    fill="none"
+    height="24"
+    role="status"
+    viewBox="0 0 24 24"
+    width="24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <circle
+      class="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="4"
+    />
+    <path
+      class="opacity-75"
+      d="M4 12a8 8 0 018-8v8z"
+      fill="currentColor"
+    />
+  </svg>
+</DocumentFragment>
+`;

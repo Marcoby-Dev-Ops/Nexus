@@ -1,0 +1,278 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DataWarehouseHome matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="p-8 space-y-8"
+  >
+    <div
+      class="grid grid-cols-1 md:grid-cols-4 gap-4"
+    >
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          Total Records
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            12450
+          </p>
+        </div>
+      </div>
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          Data Sources
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            5
+          </p>
+        </div>
+      </div>
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          Last Sync
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            2024-06-10
+          </p>
+        </div>
+      </div>
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          Active Reports
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            8
+          </p>
+        </div>
+      </div>
+    </div>
+    <div
+      class="rounded-xl border p-4"
+    >
+      <h3
+        class="font-semibold mb-2"
+      >
+        Data Explorer
+      </h3>
+      <table
+        class="min-w-full text-sm"
+      >
+        <thead>
+          <tr>
+            <th
+              class="text-left p-2"
+            >
+              Type
+            </th>
+            <th
+              class="text-left p-2"
+            >
+              Name
+            </th>
+            <th
+              class="text-left p-2"
+            >
+              Amount
+            </th>
+            <th
+              class="text-left p-2"
+            >
+              Date
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="p-2"
+            >
+              Invoice
+            </td>
+            <td
+              class="p-2"
+            >
+              INV-001
+            </td>
+            <td
+              class="p-2"
+            >
+              $2,500
+            </td>
+            <td
+              class="p-2"
+            >
+              2024-06-10
+            </td>
+          </tr>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="p-2"
+            >
+              Deal
+            </td>
+            <td
+              class="p-2"
+            >
+              Acme Corp
+            </td>
+            <td
+              class="p-2"
+            >
+              $5,000
+            </td>
+            <td
+              class="p-2"
+            >
+              2024-06-09
+            </td>
+          </tr>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="p-2"
+            >
+              Expense
+            </td>
+            <td
+              class="p-2"
+            >
+              AWS
+            </td>
+            <td
+              class="p-2"
+            >
+              $200
+            </td>
+            <td
+              class="p-2"
+            >
+              2024-06-08
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 gap-4"
+    >
+      <div
+        class="rounded-xl border p-4"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          Revenue Trend
+        </h3>
+        <div
+          class="recharts-responsive-container"
+          style="width: 100%; height: 200px; min-width: 0;"
+        />
+      </div>
+      <div
+        class="rounded-xl border p-4"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          Records by Month
+        </h3>
+        <div
+          class="recharts-responsive-container"
+          style="width: 100%; height: 200px; min-width: 0;"
+        />
+      </div>
+    </div>
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 gap-4"
+    >
+      <div
+        class="rounded-xl border p-4"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          AI Insights
+        </h3>
+        <ul
+          class="list-disc pl-5"
+        >
+          <li>
+            No anomalies detected in the last sync.
+          </li>
+          <li>
+            Revenue trend is up 8% over last quarter.
+          </li>
+        </ul>
+      </div>
+      <div
+        class="rounded-xl border p-4 mb-8"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          Quick Actions
+        </h3>
+        <div
+          class="flex gap-2 flex-wrap"
+        >
+          <button
+            class="bg-primary text-white rounded px-4 py-2"
+          >
+            Export Data
+          </button>
+          <button
+            class="bg-secondary text-black rounded px-4 py-2"
+          >
+            Connect Source
+          </button>
+          <button
+            class="bg-muted text-black rounded px-4 py-2"
+          >
+            Run Report
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SidebarIcon matches snapshot 1`] = `
+<DocumentFragment>
+  <span
+    class="inline-flex items-center justify-center w-5 h-5 "
+  >
+    <span>
+      🏠
+    </span>
+  </span>
+</DocumentFragment>
+`;
