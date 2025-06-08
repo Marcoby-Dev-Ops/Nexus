@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Avatar matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="inline-flex items-center justify-center rounded-full bg-muted text-foreground w-10 h-10 "
+  >
+    <img
+      alt="User Avatar"
+      class="w-full h-full object-cover rounded-full"
+      src="/avatar.png"
+    />
+  </div>
+</DocumentFragment>
+`;

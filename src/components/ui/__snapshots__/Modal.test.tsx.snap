@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Modal matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+  >
+    <div
+      aria-labelledby="modal-title"
+      aria-modal="true"
+      class="bg-popover text-popover-foreground rounded-lg shadow-lg p-6 w-full max-w-md "
+      role="dialog"
+    >
+      <button
+        aria-label="Close modal"
+        class="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M6 18L18 6M6 6l12 12"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </button>
+      <div>
+        Snapshot Modal
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;

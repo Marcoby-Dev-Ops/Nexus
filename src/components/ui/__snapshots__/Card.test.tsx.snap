@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Card matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="bg-card text-card-foreground rounded-xl shadow p-6  "
+  >
+    <div>
+      Snapshot Content
+    </div>
+  </div>
+</DocumentFragment>
+`;

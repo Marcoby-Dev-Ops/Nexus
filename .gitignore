@@ -11,8 +11,12 @@ lerna-debug.log*
 
 # Build output
 dist/
+dist-ssr/
 build/
 .vite/
+
+# Testing
+coverage/
 
 # OS
 .DS_Store
@@ -29,12 +33,6 @@ Thumbs.db
 
 # Docker
 nexus-db-data/
-
-# Client and server build artifacts
-client/dist/
-client/node_modules/
-server/node_modules/
-server/dist/
 
 # Misc
 *.local 

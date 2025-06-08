@@ -1,0 +1,150 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ActivityFeed matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="rounded-xl border p-4 bg-background"
+  >
+    <h3
+      class="font-semibold mb-3"
+    >
+      Recent Activity
+    </h3>
+    <div
+      class="flex gap-2 mb-3"
+    >
+      <select
+        class="border rounded px-2 py-1 text-sm"
+      >
+        <option
+          value="all"
+        >
+          All Types
+        </option>
+        <option
+          value="login"
+        >
+          Login
+        </option>
+        <option
+          value="deal"
+        >
+          Deal
+        </option>
+      </select>
+      <select
+        class="border rounded px-2 py-1 text-sm"
+      >
+        <option
+          value="all"
+        >
+          All Users
+        </option>
+        <option
+          value="Alice"
+        >
+          Alice
+        </option>
+        <option
+          value="Bob"
+        >
+          Bob
+        </option>
+      </select>
+    </div>
+    <ul
+      class="divide-y"
+    >
+      <li
+        class="flex items-center gap-3 py-3 transition-colors hover:bg-muted/40 rounded-lg px-2"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-user w-5 h-5 text-primary/70 shrink-0"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+          />
+          <circle
+            cx="12"
+            cy="7"
+            r="4"
+          />
+        </svg>
+        <div
+          class="flex-1"
+        >
+          <span
+            class="font-medium"
+          >
+            Alice
+          </span>
+           Logged in
+        </div>
+        <span
+          class="text-xs text-muted-foreground whitespace-nowrap"
+        >
+          2024-06-10
+        </span>
+      </li>
+      <li
+        class="flex items-center gap-3 py-3 transition-colors hover:bg-muted/40 rounded-lg px-2"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-file-text w-5 h-5 text-primary/70 shrink-0"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
+          />
+          <path
+            d="M14 2v4a2 2 0 0 0 2 2h4"
+          />
+          <path
+            d="M10 9H8"
+          />
+          <path
+            d="M16 13H8"
+          />
+          <path
+            d="M16 17H8"
+          />
+        </svg>
+        <div
+          class="flex-1"
+        >
+          <span
+            class="font-medium"
+          >
+            Bob
+          </span>
+           Closed deal with Acme Corp
+        </div>
+        <span
+          class="text-xs text-muted-foreground whitespace-nowrap"
+        >
+          2024-06-09
+        </span>
+      </li>
+    </ul>
+  </div>
+</DocumentFragment>
+`;

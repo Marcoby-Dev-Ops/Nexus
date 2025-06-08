@@ -1,0 +1,502 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FinanceHome matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="p-8 space-y-8"
+  >
+    <div
+      class="grid grid-cols-1 md:grid-cols-4 gap-4"
+    >
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          MTD Revenue
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            $12,000
+          </p>
+        </div>
+      </div>
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          YTD Revenue
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            $120,000
+          </p>
+        </div>
+      </div>
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          Cash on Hand
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            $45,000
+          </p>
+        </div>
+      </div>
+      <div
+        class="rounded-xl border p-4 shadow-sm flex flex-col gap-1"
+      >
+        <p
+          class="text-muted-foreground mb-1 text-xs uppercase"
+        >
+          Net Profit
+        </p>
+        <div
+          class="flex items-end justify-between gap-2"
+        >
+          <p
+            class="text-3xl font-semibold"
+          >
+            $4,000
+          </p>
+        </div>
+      </div>
+    </div>
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 gap-4"
+    >
+      <div
+        class="rounded-xl border p-4"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          Cash Flow
+        </h3>
+        <div
+          class="recharts-responsive-container"
+          style="width: 100%; height: 200px; min-width: 0;"
+        />
+      </div>
+      <div
+        class="rounded-xl border p-4"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          Top Expenses
+        </h3>
+        <ul
+          class="divide-y"
+        >
+          <li
+            class="flex justify-between py-2"
+          >
+            <span>
+              Salaries
+            </span>
+            <span>
+              $4,000
+            </span>
+          </li>
+          <li
+            class="flex justify-between py-2"
+          >
+            <span>
+              Software
+            </span>
+            <span>
+              $1,200
+            </span>
+          </li>
+          <li
+            class="flex justify-between py-2"
+          >
+            <span>
+              Marketing
+            </span>
+            <span>
+              $900
+            </span>
+          </li>
+          <li
+            class="flex justify-between py-2"
+          >
+            <span>
+              Travel
+            </span>
+            <span>
+              $600
+            </span>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div
+      class="rounded-xl border p-4"
+    >
+      <h3
+        class="font-semibold mb-2"
+      >
+        Invoices
+      </h3>
+      <table
+        class="min-w-full text-sm"
+      >
+        <thead>
+          <tr>
+            <th
+              class="text-left p-2"
+            >
+              Invoice #
+            </th>
+            <th
+              class="text-left p-2"
+            >
+              Client
+            </th>
+            <th
+              class="text-left p-2"
+            >
+              Amount
+            </th>
+            <th
+              class="text-left p-2"
+            >
+              Status
+            </th>
+            <th
+              class="text-left p-2"
+            >
+              Due Date
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="p-2"
+            >
+              INV-001
+            </td>
+            <td
+              class="p-2"
+            >
+              Acme Corp
+            </td>
+            <td
+              class="p-2"
+            >
+              $2,500
+            </td>
+            <td
+              class="p-2"
+            >
+              Paid
+            </td>
+            <td
+              class="p-2"
+            >
+              2024-06-01
+            </td>
+          </tr>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="p-2"
+            >
+              INV-002
+            </td>
+            <td
+              class="p-2"
+            >
+              Beta LLC
+            </td>
+            <td
+              class="p-2"
+            >
+              $1,800
+            </td>
+            <td
+              class="p-2"
+            >
+              Unpaid
+            </td>
+            <td
+              class="p-2"
+            >
+              2024-06-15
+            </td>
+          </tr>
+          <tr
+            class="border-t"
+          >
+            <td
+              class="p-2"
+            >
+              INV-003
+            </td>
+            <td
+              class="p-2"
+            >
+              Gamma Inc.
+            </td>
+            <td
+              class="p-2"
+            >
+              $3,200
+            </td>
+            <td
+              class="p-2"
+            >
+              Overdue
+            </td>
+            <td
+              class="p-2"
+            >
+              2024-05-30
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div
+      class="grid grid-cols-1 md:grid-cols-2 gap-4"
+    >
+      <div
+        class="rounded-xl border p-4"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          Recent Expenses
+        </h3>
+        <ul
+          class="divide-y"
+        >
+          <li
+            class="py-2"
+          >
+            <span>
+              2024-06-10
+            </span>
+             - 
+            <span>
+              Software
+            </span>
+             
+            <span
+              class="text-xs text-muted-foreground dark:text-gray-200"
+            >
+              $200
+            </span>
+          </li>
+          <li
+            class="py-2"
+          >
+            <span>
+              2024-06-09
+            </span>
+             - 
+            <span>
+              Travel
+            </span>
+             
+            <span
+              class="text-xs text-muted-foreground dark:text-gray-200"
+            >
+              $150
+            </span>
+          </li>
+        </ul>
+      </div>
+      <div
+        class="rounded-xl border p-4"
+      >
+        <h3
+          class="font-semibold mb-2"
+        >
+          AI Insights
+        </h3>
+        <ul
+          class="list-disc pl-5"
+        >
+          <li>
+            Upcoming bill: $1,200 due to AWS on 2024-06-20.
+          </li>
+          <li>
+            Unusual spending detected in Marketing category.
+          </li>
+          <li>
+            Cash flow risk: Low balance projected in 2 weeks.
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div
+      class="rounded-xl border p-4 bg-background"
+    >
+      <h3
+        class="font-semibold mb-3"
+      >
+        Recent Activity
+      </h3>
+      <div
+        class="flex gap-2 mb-3"
+      >
+        <select
+          class="border rounded px-2 py-1 text-sm"
+        >
+          <option
+            value="all"
+          >
+            All Types
+          </option>
+          <option
+            value="payment"
+          >
+            Payment
+          </option>
+          <option
+            value="expense"
+          >
+            Expense
+          </option>
+        </select>
+        <select
+          class="border rounded px-2 py-1 text-sm"
+        >
+          <option
+            value="all"
+          >
+            All Users
+          </option>
+          <option
+            value="Alice"
+          >
+            Alice
+          </option>
+          <option
+            value="Bob"
+          >
+            Bob
+          </option>
+        </select>
+      </div>
+      <ul
+        class="divide-y"
+      >
+        <li
+          class="flex items-center gap-3 py-3 transition-colors hover:bg-muted/40 rounded-lg px-2"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-circle-check-big w-5 h-5 text-primary/70 shrink-0"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M21.801 10A10 10 0 1 1 17 3.335"
+            />
+            <path
+              d="m9 11 3 3L22 4"
+            />
+          </svg>
+          <div
+            class="flex-1"
+          >
+            <span
+              class="font-medium"
+            >
+              Alice
+            </span>
+             received $2,500 from Acme Corp
+          </div>
+          <span
+            class="text-xs text-muted-foreground whitespace-nowrap"
+          >
+            2024-06-10
+          </span>
+        </li>
+        <li
+          class="flex items-center gap-3 py-3 transition-colors hover:bg-muted/40 rounded-lg px-2"
+        >
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-file-text w-5 h-5 text-primary/70 shrink-0"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
+            />
+            <path
+              d="M14 2v4a2 2 0 0 0 2 2h4"
+            />
+            <path
+              d="M10 9H8"
+            />
+            <path
+              d="M16 13H8"
+            />
+            <path
+              d="M16 17H8"
+            />
+          </svg>
+          <div
+            class="flex-1"
+          >
+            <span
+              class="font-medium"
+            >
+              Bob
+            </span>
+             paid $200 for software
+          </div>
+          <span
+            class="text-xs text-muted-foreground whitespace-nowrap"
+          >
+            2024-06-09
+          </span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</DocumentFragment>
+`;
