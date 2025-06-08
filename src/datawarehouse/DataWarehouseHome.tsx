@@ -136,7 +136,7 @@ const DataWarehouseHome: React.FC = () => {
           title="Data Sources" 
           variant="elevated"
           action={
-            <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+            <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
               Manage Sources
             </button>
           }
@@ -145,7 +145,7 @@ const DataWarehouseHome: React.FC = () => {
             {dataSources.map((source, index) => (
               <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
                 <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                  <div className="p-4 rounded-lg bg-primary/10">
                     <Database className="w-5 h-5 text-primary" />
                   </div>
                   <div>
@@ -154,7 +154,7 @@ const DataWarehouseHome: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                  <div className={`inline-flex px-4 py-4 rounded-full text-xs font-medium ${
                     source.status === 'Connected' ? 'bg-success/10 text-success' :
                     source.status === 'Syncing' ? 'bg-warning/10 text-yellow-800' :
                     'bg-destructive/10 text-destructive'
@@ -172,7 +172,7 @@ const DataWarehouseHome: React.FC = () => {
           title="Recent Queries" 
           variant="elevated"
           action={
-            <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+            <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
               Query History
             </button>
           }
@@ -181,7 +181,7 @@ const DataWarehouseHome: React.FC = () => {
             {recentQueries.map((query, index) => (
               <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
                 <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                  <div className="p-4 rounded-lg bg-primary/10">
                     <Search className="w-5 h-5 text-primary" />
                   </div>
                   <div>

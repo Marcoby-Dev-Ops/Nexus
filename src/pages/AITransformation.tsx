@@ -257,15 +257,15 @@ export const AITransformation: React.FC = () => {
           </p>
           
           <div className="flex justify-center items-center space-x-6 mt-8">
-            <Badge variant="secondary" className="text-lg px-6 py-3">
+            <Badge variant="secondary" className="text-lg px-6 py-4">
               <AlertTriangle className="h-5 w-5 mr-2 text-orange-500" />
               86% Untapped Potential
             </Badge>
-            <Badge variant="default" className="text-lg px-6 py-3">
+            <Badge variant="default" className="text-lg px-6 py-4">
               <DollarSign className="h-5 w-5 mr-2" />
               ${getTotalTransformationValue().toLocaleString()} Value
             </Badge>
-            <Badge variant="secondary" className="text-lg px-6 py-3">
+            <Badge variant="secondary" className="text-lg px-6 py-4">
               <Target className="h-5 w-5 mr-2 text-success" />
               First-Mover Advantage
             </Badge>
@@ -388,7 +388,7 @@ export const AITransformation: React.FC = () => {
                         <Badge variant="secondary" className="text-primary">
                           ROI: {capability.roi}
                         </Badge>
-                        <div className={`px-4 py-1 rounded-full text-xs font-medium ${usageLevel.color}`}>
+                        <div className={`px-4 py-4 rounded-full text-xs font-medium ${usageLevel.color}`}>
                           {usageLevel.label}
                         </div>
                       </div>

@@ -103,7 +103,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
             <button
               onClick={toggleSidebar}
               title="Open sidebar"
-              className="p-2 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+              className="p-4 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -159,7 +159,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
             <button
               onClick={handleToggleTheme}
               title={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              className="p-2 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+              className="p-4 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
             >
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
@@ -168,7 +168,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
             <div className="relative" ref={notificationsRef}>
               <button
                 title="Notifications"
-                className="p-2 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+                className="p-4 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell className="w-5 h-5" />
@@ -251,7 +251,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
             <button
               onClick={openAssistant}
               title="Open AI Assistant"
-              className="p-2 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+              className="p-4 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
             >
               <Sparkles className="w-5 h-5" />
             </button>
@@ -260,7 +260,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
             <div className="relative" ref={userMenuRef}>
               <button
                 title="User Profile"
-                className="p-2 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
+                className="p-4 bg-transparent text-muted-foreground hover:text-foreground transition-colors"
                 onClick={() => setShowUserMenu(!showUserMenu)}
               >
                 <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-accent-foreground font-semibold text-sm">
@@ -295,10 +295,10 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
                     </div>
                     
                     {/* Additional Profile Info */}
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-4 space-y-4">
                       {/* Company Info */}
                       {enhancedUser?.company && (
-                        <div className="flex items-center space-x-3 p-2 bg-muted/30 rounded-md">
+                        <div className="flex items-center space-x-4 p-4 bg-muted/30 rounded-md">
                           <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate">
@@ -346,7 +346,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
                             </span>
                           </div>
                           {enhancedUser.profile.work_location && (
-                            <div className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">
+                            <div className="px-4 py-4 bg-primary/10 text-primary text-xs rounded-full">
                               {enhancedUser.profile.work_location === 'remote' ? '🏠 Remote' :
                                enhancedUser.profile.work_location === 'hybrid' ? '🏢 Hybrid' : '🏢 Office'}
                             </div>
@@ -376,14 +376,14 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
                     </div>
                   </div>
 
-                  <div className="p-2 space-y-1">
+                  <div className="p-4 space-y-1">
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
                         // Navigate to profile
                         window.location.href = '/profile';
                       }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
+                      className="w-full flex items-center px-4 py-4 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
                     >
                       <User className="w-4 h-4 mr-3" />
                       View Profile
@@ -394,7 +394,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
                         // Navigate to settings
                         window.location.href = '/settings';
                       }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
+                      className="w-full flex items-center px-4 py-4 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
                     >
                       <Settings className="w-4 h-4 mr-3" />
                       Account Settings
@@ -404,7 +404,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
                         setShowUserMenu(false);
                         logout();
                       }}
-                      className="w-full flex items-center px-4 py-2 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
+                      className="w-full flex items-center px-4 py-4 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
                     >
                       <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1" />

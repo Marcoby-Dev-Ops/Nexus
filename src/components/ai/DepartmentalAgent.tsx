@@ -297,7 +297,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
           {onBack && (
             <button
               onClick={onBack}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
+                              className="p-4 rounded-lg hover:bg-muted transition-colors"
               aria-label="Back to department selection"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -339,7 +339,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                 {activeAgent.id !== agent.id && (
                   <button
                     onClick={handleBackToDepartmentHead}
-                    className="w-full flex items-center gap-2 p-2 text-left text-sm bg-muted/50 hover:bg-muted rounded-lg transition-colors"
+                    className="w-full flex items-center gap-2 p-4 text-left text-sm bg-muted/50 hover:bg-muted rounded-lg transition-colors"
                   >
                     <span className="text-base">{agent.avatar}</span>
                     <span className="font-medium">{agent.name}</span>
@@ -350,7 +350,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                   <button
                     key={specialist.id}
                     onClick={() => handleSpecialistSwitch(specialist)}
-                    className={`w-full flex items-center gap-2 p-2 text-left text-sm rounded-lg transition-colors ${
+                    className={`w-full flex items-center gap-2 p-4 text-left text-sm rounded-lg transition-colors ${
                       activeAgent.id === specialist.id
                         ? 'bg-primary/10 border border-primary/20'
                         : 'bg-muted/50 hover:bg-muted'
@@ -411,7 +411,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                   {specialists.map((specialist) => (
                     <span
                       key={specialist.id}
-                      className="px-2 py-1 bg-background text-muted-foreground text-xs rounded-full"
+                      className="px-4 py-4 bg-background text-muted-foreground text-xs rounded-full"
                     >
                       {specialist.avatar} {specialist.name}
                     </span>
@@ -430,7 +430,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
               
               if (isAgentSwitch) {
                 return (
-                  <div key={idx} className="text-center text-xs text-muted-foreground py-2 bg-muted/20 rounded-lg">
+                  <div key={idx} className="text-center text-xs text-muted-foreground py-4 bg-muted/20 rounded-lg">
                     {msg.content}
                   </div>
                 );
@@ -457,7 +457,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                         isUser 
                           ? 'bg-primary text-primary-foreground' 
                           : 'bg-muted text-foreground'
-                      } rounded-2xl px-4 py-2 break-words`}>
+                      } rounded-2xl px-4 py-4 break-words`}>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                       </div>
                     </div>
@@ -472,7 +472,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                   <span className="text-sm text-primary-foreground">{activeAgent.avatar}</span>
                 </div>
                 <div className="flex-1">
-                  <div className="inline-block bg-muted rounded-2xl px-4 py-3">
+                  <div className="inline-block bg-muted rounded-2xl px-4 py-4">
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -513,7 +513,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
             <button
               onClick={() => handleSend()}
               disabled={!input.trim() || loading}
-              className={`p-2 rounded-lg transition-colors ${
+                              className={`p-4 rounded-lg transition-colors ${
                 input.trim() && !loading
                   ? `${getDepartmentColor(agent.department || '')} hover:opacity-90 text-primary-foreground`
                   : 'bg-muted-foreground/20 text-muted-foreground cursor-not-allowed'

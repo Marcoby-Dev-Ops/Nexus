@@ -38,7 +38,7 @@ export const Badge: React.FC<BadgeProps> = ({
       className={clsx(
         'inline-flex items-center font-medium rounded select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition',
         getVariantClasses(),
-        size === 'xs' ? 'text-xs px-2 py-0.5 h-5' : 'text-sm px-4 py-1 h-6',
+        size === 'xs' ? 'text-xs px-4 py-0.5 h-5' : 'text-sm px-4 py-4 h-6',
         className
       )}
       tabIndex={0}

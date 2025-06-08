@@ -43,9 +43,9 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
 
   const categories = [
     { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-amber-100 text-amber-800' },
-    { value: 'learning', label: 'Learning', icon: BookOpen, color: 'bg-blue-100 text-blue-800' },
-    { value: 'reflection', label: 'Reflection', icon: Brain, color: 'bg-purple-100 text-purple-800' },
-    { value: 'goal', label: 'Goal', icon: Target, color: 'bg-green-100 text-green-800' }
+    { value: 'learning', label: 'Learning', icon: BookOpen, color: 'bg-primary/10 text-primary' },
+    { value: 'reflection', label: 'Reflection', icon: Brain, color: 'bg-secondary/10 text-purple-800' },
+    { value: 'goal', label: 'Goal', icon: Target, color: 'bg-success/10 text-success' }
   ];
 
   const handleSave = async () => {
@@ -87,7 +87,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-3 py-2 text-sm bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 rounded-lg border border-purple-200 text-purple-700 transition-all"
+        className="flex items-center gap-2 px-4 py-4 text-sm bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 rounded-lg border border-purple-200 text-purple-700 transition-all"
       >
         <Brain className="w-4 h-4" />
         <span>Capture Thought</span>
@@ -98,10 +98,10 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   return (
     <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-200">
       <div className="flex items-center gap-2 mb-3">
-        <Brain className="w-5 h-5 text-purple-600" />
+        <Brain className="w-5 h-5 text-secondary" />
         <h3 className="text-sm font-semibold text-purple-800">Capture Personal Thought</h3>
         {currentContext?.department && (
-          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">
+          <span className="text-xs bg-secondary/10 text-purple-700 px-4 py-4 rounded-full">
             {currentContext.department}
           </span>
         )}
@@ -113,10 +113,10 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
           <button
             key={value}
             onClick={() => setCategory(value as PersonalThought['category'])}
-            className={`flex flex-col items-center gap-1 p-2 rounded-lg text-xs transition-all ${
+            className={`flex flex-col items-center gap-1 p-4 rounded-lg text-xs transition-all ${
               category === value
                 ? color
-                : 'bg-white hover:bg-gray-50 text-gray-600'
+                : 'bg-card hover:bg-background text-muted-foreground'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -130,39 +130,39 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={`What's on your mind? This will be remembered and connected to your ${currentContext?.department || 'work'} context...`}
-        className="w-full p-3 border border-gray-200 rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        className="w-full p-4 border border-border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         rows={3}
       />
 
       {/* Tags Input */}
       <div className="flex items-center gap-2 mt-2 mb-4">
-        <Tag className="w-4 h-4 text-gray-500" />
+        <Tag className="w-4 h-4 text-muted-foreground" />
         <input
           type="text"
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="Tags (comma separated)"
-          className="flex-1 p-2 border border-gray-200 rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="flex-1 p-4 border border-border rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
         />
       </div>
 
       {/* Context Display */}
       {currentContext && (
-        <div className="mb-3 p-2 bg-white rounded border">
-          <p className="text-xs text-gray-600 mb-1">Business Context:</p>
+        <div className="mb-3 p-4 bg-card rounded border">
+          <p className="text-xs text-muted-foreground mb-1">Business Context:</p>
           <div className="flex flex-wrap gap-1">
             {currentContext.department && (
-              <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+              <span className="text-xs bg-primary/10 text-primary px-4 py-4 rounded">
                 {currentContext.department}
               </span>
             )}
             {currentContext.page && (
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+              <span className="text-xs bg-success/10 text-success px-4 py-4 rounded">
                 {currentContext.page}
               </span>
             )}
             {currentContext.conversationTopic && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+              <span className="text-xs bg-amber-100 text-amber-700 px-4 py-4 rounded">
                 Topic: {currentContext.conversationTopic}
               </span>
             )}
@@ -174,14 +174,14 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={() => setIsOpen(false)}
-          className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+          className="px-4 py-4 text-sm text-muted-foreground hover:text-foreground"
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
           disabled={!content.trim() || loading}
-          className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-4 bg-secondary text-primary-foreground text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Saving...' : 'Save Thought'}
         </button>

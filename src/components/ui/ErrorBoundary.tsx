@@ -121,7 +121,7 @@ class ErrorBoundary extends Component<Props, State> {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={this.handleReload}
-                className="flex items-center justify-center space-x-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors duration-200 font-medium"
+                className="flex items-center justify-center space-x-2 px-6 py-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors duration-200 font-medium"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Reload Page</span>
@@ -129,7 +129,7 @@ class ErrorBoundary extends Component<Props, State> {
               
               <button
                 onClick={this.handleGoHome}
-                className="flex items-center justify-center space-x-2 px-6 py-3 bg-muted text-foreground hover:bg-muted/80 dark:bg-muted/20 dark:hover:bg-muted/30 rounded-lg transition-colors duration-200 font-medium"
+                className="flex items-center justify-center space-x-2 px-6 py-4 bg-muted text-foreground hover:bg-muted/80 dark:bg-muted/20 dark:hover:bg-muted/30 rounded-lg transition-colors duration-200 font-medium"
               >
                 <Home className="w-4 h-4" />
                 <span>Go to Dashboard</span>

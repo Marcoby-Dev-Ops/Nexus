@@ -68,15 +68,15 @@ const Marketplace: React.FC = () => {
             <input
               type="text"
               placeholder="Search apps and integrations..."
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full pl-10 pr-4 py-4 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
           </div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center space-x-2 px-4 py-2 bg-muted text-foreground hover:bg-muted/80 rounded-lg transition-colors duration-200">
+            <button className="flex items-center space-x-2 px-4 py-4 bg-muted text-foreground hover:bg-muted/80 rounded-lg transition-colors duration-200">
               <Filter className="w-4 h-4" />
               <span>Filters</span>
             </button>
-            <button className="flex items-center space-x-2 px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-colors duration-200 border border-border">
+            <button className="flex items-center space-x-2 px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-colors duration-200 border border-border">
               <Plus className="w-4 h-4" />
               <span>Submit App</span>
             </button>
@@ -90,7 +90,7 @@ const Marketplace: React.FC = () => {
           {categories.map((category, index) => (
             <button
               key={index}
-              className={`px-4 py-2 rounded-lg transition-colors duration-200 border ${
+              className={`px-4 py-4 rounded-lg transition-colors duration-200 border ${
                 category.active
                   ? 'bg-primary/10 text-primary border-primary'
                   : 'bg-muted text-foreground hover:bg-muted/80 border-border'
@@ -107,7 +107,7 @@ const Marketplace: React.FC = () => {
         title="Featured Apps" 
         variant="elevated"
         action={
-          <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+          <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
             View All
           </button>
         }
@@ -136,7 +136,7 @@ const Marketplace: React.FC = () => {
                   {app.features.map((feature, idx) => (
                     <span
                       key={idx}
-                      className="px-2 py-1 bg-muted text-foreground text-xs rounded-full"
+                      className="px-4 py-4 bg-muted text-foreground text-xs rounded-full"
                     >
                       {feature}
                     </span>
@@ -148,7 +148,7 @@ const Marketplace: React.FC = () => {
                 </div>
               </div>
               
-              <button className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors duration-200 font-medium border border-primary">
+              <button className="w-full flex items-center justify-center space-x-2 px-4 py-4 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground rounded-lg transition-colors duration-200 font-medium border border-primary">
                 <Download className="w-4 h-4" />
                 <span>Install</span>
               </button>

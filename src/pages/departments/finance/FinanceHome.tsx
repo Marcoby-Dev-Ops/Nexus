@@ -90,7 +90,7 @@ const FinanceHome: React.FC = () => {
           variant="elevated"
           className="hover:shadow-xl transition-all duration-300"
           action={
-            <button className="flex items-center space-x-2 px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
+            <button className="flex items-center space-x-2 px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
               <span className="text-sm">View Details</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
@@ -107,7 +107,7 @@ const FinanceHome: React.FC = () => {
           variant="elevated"
           className="hover:shadow-xl transition-all duration-300"
           action={
-            <button className="flex items-center space-x-2 px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
+            <button className="flex items-center space-x-2 px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
               <span className="text-sm">Manage Expenses</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
@@ -125,7 +125,7 @@ const FinanceHome: React.FC = () => {
         title="Recent Transactions" 
         variant="elevated"
         action={
-          <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+          <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
             View All Transactions
           </button>
         }
@@ -134,7 +134,7 @@ const FinanceHome: React.FC = () => {
           {recentTransactions.map((transaction, index) => (
             <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
               <div className="flex items-center space-x-4">
-                <div className={`p-2 rounded-lg ${transaction.type === 'income' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                <div className={`p-4 rounded-lg ${transaction.type === 'income' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
                   {transaction.type === 'income' ? (
                     <DollarSign className="w-5 h-5" />
                   ) : (

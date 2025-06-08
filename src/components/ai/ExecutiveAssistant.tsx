@@ -213,7 +213,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
                          {messages.map((msg, idx) => {
                if (msg.role === 'system') {
                  return (
-                   <div key={idx} className="text-center text-xs text-muted-foreground py-2">
+                   <div key={idx} className="text-center text-xs text-muted-foreground py-4">
                      System initialized
                    </div>
                  );
@@ -242,7 +242,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
                          isUser 
                            ? 'bg-primary text-primary-foreground' 
                            : 'bg-muted text-foreground'
-                       } rounded-2xl px-4 py-2 break-words`}>
+                       } rounded-2xl px-4 py-4 break-words`}>
                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                        </div>
                      </div>
@@ -258,7 +258,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
                   </svg>
                 </div>
                                  <div className="flex-1">
-                   <div className="inline-block bg-muted rounded-2xl px-4 py-3">
+                   <div className="inline-block bg-muted rounded-2xl px-4 py-4">
                      <div className="flex items-center gap-1">
                        <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                        <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -323,7 +323,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
             <button
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-4 rounded-lg transition-all ${
                 loading || !input.trim()
                   ? 'bg-muted text-muted-foreground cursor-not-allowed'
                   : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'

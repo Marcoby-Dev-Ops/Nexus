@@ -158,7 +158,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
   return (
     <div className={`flex flex-col h-full bg-card dark:bg-background ${className}`}>
       {/* Header */}
-      <div className={`${getDepartmentBg(department)} px-4 py-3 border-b border-border dark:border-border`}>
+      <div className={`${getDepartmentBg(department)} px-4 py-4 border-b border-border dark:border-border`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Bot className={`h-6 w-6 ${getDepartmentColor(department)}`} />
@@ -175,14 +175,14 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowWorkflowBuilder(!showWorkflowBuilder)}
-              className="p-2 text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
+              className="p-4 text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
               title="Workflow Builder"
             >
               <Workflow className="h-5 w-5" />
             </button>
             <button
               onClick={checkHealth}
-              className="p-2 text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
+              className="p-4 text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
               title="Check Connection"
             >
               <Settings className="h-5 w-5" />
@@ -190,7 +190,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
             {onClose && (
               <button
                 onClick={onClose}
-                className="p-2 text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
+                className="p-4 text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
               >
                 ×
               </button>
@@ -201,7 +201,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="px-4 py-2 bg-destructive/5 dark:bg-destructive/20 border-b border-red-200 dark:border-red-800">
+        <div className="px-4 py-4 bg-destructive/5 dark:bg-destructive/20 border-b border-red-200 dark:border-red-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-destructive dark:text-destructive">
               <AlertCircle className="h-4 w-4" />
@@ -209,7 +209,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
             </div>
             <button
               onClick={clearError}
-              className="text-destructive hover:text-destructive dark:hover:text-red-300"
+              className="text-destructive hover:text-destructive dark:hover:text-destructive"
             >
               ×
             </button>
@@ -219,7 +219,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
 
       {/* Workflow Builder */}
       {showWorkflowBuilder && (
-        <div className="px-4 py-3 bg-primary/5 border-b border-border">
+        <div className="px-4 py-4 bg-primary/5 border-b border-border">
           <WorkflowBuilder 
             department={department}
             onCreateWorkflow={handleCreateWorkflow}
@@ -237,7 +237,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-[80%] rounded-lg px-4 py-2 ${
+              className={`max-w-[80%] rounded-lg px-4 py-4 ${
                 message.role === 'user'
                   ? 'bg-primary text-primary-foreground'
                   : `${getDepartmentBg(department)} text-foreground dark:text-primary-foreground`
@@ -264,14 +264,14 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={`Ask your ${department} assistant anything...`}
-            className="flex-1 resize-none border border-border rounded-lg px-4 py-2 bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="flex-1 resize-none border border-border rounded-lg px-4 py-4 bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             rows={2}
             disabled={isLoading}
           />
           <button
             onClick={handleSendMessage}
             disabled={isLoading || !inputValue.trim()}
-            className={`px-4 py-2 rounded-lg transition-colors ${
+            className={`px-4 py-4 rounded-lg transition-colors ${
               isLoading || !inputValue.trim()
                 ? 'bg-muted cursor-not-allowed'
                 : `bg-primary hover:bg-primary/90 text-primary-foreground`
@@ -328,20 +328,20 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
         value={requirements}
         onChange={(e) => setRequirements(e.target.value)}
         placeholder="Describe what you want this workflow to do..."
-        className="w-full border border-border rounded-lg px-4 py-2 bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        className="w-full border border-border rounded-lg px-4 py-4 bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         rows={3}
       />
       <div className="flex justify-end space-x-2">
         <button
           onClick={onClose}
-          className="px-4 py-1 text-muted-foreground hover:text-foreground"
+          className="px-4 py-4 text-muted-foreground hover:text-foreground"
         >
           Cancel
         </button>
         <button
           onClick={handleSubmit}
           disabled={isLoading || !requirements.trim()}
-          className="px-4 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-4 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Creating...' : 'Create Workflow'}
         </button>

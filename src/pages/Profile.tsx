@@ -123,7 +123,7 @@ export const Profile: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <Spinner />
         <span className="ml-3 text-lg text-muted-foreground">Loading profile...</span>
       </div>
     );
@@ -139,7 +139,7 @@ export const Profile: React.FC = () => {
             Manage your personal and professional information
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           {isEditing ? (
             <>
               <Button
@@ -156,7 +156,7 @@ export const Profile: React.FC = () => {
               >
                 {isSaving ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <Spinner />
                     Saving...
                   </>
                 ) : (
@@ -200,7 +200,7 @@ export const Profile: React.FC = () => {
                     </AvatarFallback>
                   </Avatar>
                   {isEditing && (
-                    <button className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors">
+                    <button className="absolute bottom-0 right-0 p-4 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors">
                       <Camera className="h-4 w-4" />
                     </button>
                   )}
@@ -279,7 +279,7 @@ export const Profile: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Progress</span>
                   <span className="font-semibold text-primary">{completionPercentage}%</span>
@@ -302,7 +302,7 @@ export const Profile: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
                     <h3 className="font-semibold text-foreground">{user.company.name}</h3>
                     {user.company.industry && (
