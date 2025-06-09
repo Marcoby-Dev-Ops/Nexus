@@ -34,6 +34,10 @@
     --accent-foreground: 153 73% 40%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 0%;
     --border: 210 16% 86%;
     --input: 210 16% 86%;
     --ring: 153 73% 40%;
@@ -51,7 +55,7 @@
     --card-foreground: 210 40% 98%;
     --popover: 222.2 47.4% 13%;
     --popover-foreground: 210 40% 98%;
-    --primary: 153 73% 40%;
+    --primary: 153 73% 55%;
     --primary-foreground: 0 0% 100%;
     --secondary: 168 72% 40%;
     --secondary-foreground: 210 40% 98%;
@@ -61,6 +65,10 @@
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 210 40% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 210 40% 98%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 222.2 47.4% 11.2%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 153 73% 40%;
@@ -79,7 +87,7 @@
     margin: 0;
     min-width: 320px;
     min-height: 100vh;
-    background-color: hsl(var(--background));
+    background-color: transparent;
     color: hsl(var(--foreground));
   }
   a {
@@ -97,16 +105,9 @@
   button {
     border-radius: 8px;
     border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
     font-family: inherit;
-    background-color: #1a1a1a;
     cursor: pointer;
     transition: border-color 0.25s;
-  }
-  button:hover {
-    border-color: #646cff;
   }
   button:focus,
   button:focus-visible {
@@ -124,8 +125,5 @@
   }
   a:hover {
     color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
   }
 }

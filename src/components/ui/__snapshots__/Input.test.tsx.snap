@@ -6,7 +6,7 @@ exports[`Input matches snapshot 1`] = `
     class="flex flex-col gap-1"
   >
     <div
-      class="relative flex items-center border-input border rounded-md px-3 py-2 bg-background "
+      class="relative flex items-center border-input border rounded-md px-4 py-4 bg-background "
     >
       <input
         aria-invalid="false"

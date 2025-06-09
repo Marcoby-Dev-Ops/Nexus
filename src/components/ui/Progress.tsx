@@ -1,40 +1,29 @@
-import React from 'react';
-import { cn } from '@/lib/utils';
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
-export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ProgressProps
+  extends React.HTMLAttributes<HTMLDivElement> {
   value?: number;
   max?: number;
-  className?: string;
 }
 
-/**
- * @name Progress
- * @description A progress bar component
- * @param {ProgressProps} props - The props for the component
- * @returns {JSX.Element} The rendered Progress component
- */
-export const Progress: React.FC<ProgressProps> = ({
-  value = 0,
-  max = 100,
-  className,
-  ...props
-}) => {
-  const percentage = Math.min(Math.max((value / max) * 100, 0), 100);
-
-  return (
+const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
+  ({ className, value = 0, max = 100, ...props }, ref) => (
     <div
+      ref={ref}
       className={cn(
-        "relative h-2 w-full overflow-hidden rounded-full bg-secondary",
+        "relative h-4 w-full overflow-hidden rounded-full bg-secondary",
         className
       )}
       {...props}
     >
       <div
         className="h-full w-full flex-1 bg-primary transition-all"
-        style={{ transform: `translateX(-${100 - percentage}%)` }}
+        style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
     </div>
-  );
-};
+  )
+);
+Progress.displayName = "Progress";
 
-export default Progress; 
+export { Progress }; 

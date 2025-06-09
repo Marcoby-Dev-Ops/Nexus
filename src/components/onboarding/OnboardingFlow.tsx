@@ -4,12 +4,13 @@
  * Includes n8n connection setup and configuration
  */
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, ArrowRight, ArrowLeft, Zap, Settings, Sparkles } from 'lucide-react';
+import { CheckCircle, ArrowRight, ArrowLeft, Zap, Settings, Sparkles, Users } from 'lucide-react';
 import { N8nConnectionSetup } from './N8nConnectionSetup';
 import { n8nOnboardingManager } from '../../lib/n8nOnboardingManager';
 import type { OnboardingState, OnboardingStep } from '../../lib/n8nOnboardingManager';
 import type { UserN8nConfig } from '../../lib/userN8nConfig';
 import { LoadingStates } from '../patterns/LoadingStates';
+import { motion } from 'framer-motion';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -209,57 +210,158 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   );
 };
 
-// Welcome Step Component
-const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => (
-  <div className="bg-card dark:bg-background rounded-lg shadow-lg p-8 text-center">
-    <Sparkles className="h-16 w-16 text-primary mx-auto mb-6" />
-    <h2 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
-      Welcome to Nexus OS
-    </h2>
-    <p className="text-lg text-muted-foreground dark:text-muted-foreground mb-8 max-w-2xl mx-auto">
-      Your AI-powered business operating system that brings together sales, finance, operations, and more into one intelligent platform.
-    </p>
-    
-    <div className="grid md:grid-cols-3 gap-6 mb-8">
-      <div className="p-4">
-        <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-          <Zap className="h-6 w-6 text-primary" />
-        </div>
-        <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">AI Assistants</h3>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-          Department-specific AI assistants to help with daily tasks
+// Welcome Step Component - Enhanced with immediate value demonstration
+const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+  const [currentDemo, setCurrentDemo] = useState(0);
+  const [showingMagic, setShowingMagic] = useState(false);
+
+  // Demo scenarios that show immediate value
+  const magicMoments = [
+    {
+      title: "📊 Instant Business Insights",
+      description: "AI analyzes your data patterns in real-time",
+      visual: "Revenue trending up 23% this month",
+      impact: "Save 4 hours weekly on reporting"
+    },
+    {
+      title: "🤖 Smart Automation",
+      description: "Workflows that learn and adapt to your business",
+      visual: "Auto-generated 47 leads from website",
+      impact: "Boost lead conversion by 35%"
+    },
+    {
+      title: "⚡ Team Intelligence",
+      description: "Every department gets an AI assistant",
+      visual: "Sales AI closed 3 deals while you were away",
+      impact: "Increase team productivity by 60%"
+    }
+  ];
+
+  useEffect(() => {
+    if (showingMagic) {
+      const interval = setInterval(() => {
+        setCurrentDemo((prev) => (prev + 1) % magicMoments.length);
+      }, 2500);
+      return () => clearInterval(interval);
+    }
+  }, [showingMagic]);
+
+  return (
+    <div className="bg-card dark:bg-background rounded-lg shadow-lg p-8 text-center">
+      <div className="relative">
+        {/* Magic Demo Animation */}
+        {showingMagic && (
+          <motion.div
+            key={currentDemo}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-700/50"
+          >
+            <div className="text-2xl mb-2">{magicMoments[currentDemo].title}</div>
+            <div className="text-lg text-muted-foreground mb-3">
+              {magicMoments[currentDemo].description}
+            </div>
+            <div className="text-xl font-bold text-purple-600 dark:text-purple-400 mb-2">
+              {magicMoments[currentDemo].visual}
+            </div>
+            <div className="text-sm text-green-600 dark:text-green-400 font-medium">
+              ✨ {magicMoments[currentDemo].impact}
+            </div>
+          </motion.div>
+        )}
+
+        <Sparkles className="h-16 w-16 text-primary mx-auto mb-6" />
+        <h2 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
+          Welcome to Nexus OS
+        </h2>
+        <p className="text-lg text-muted-foreground dark:text-muted-foreground mb-8 max-w-2xl mx-auto">
+          The AI Business Operating System that delivers <strong>immediate results</strong> for companies like yours.
         </p>
+
+        {/* Instant Value Promise */}
+        <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700/50">
+          <div className="text-green-800 dark:text-green-200 font-bold text-lg">
+            🎯 What You'll Achieve in the Next 5 Minutes:
+          </div>
+          <div className="text-green-700 dark:text-green-300 text-sm mt-2 space-y-1">
+            <div>✅ Connect your business data instantly</div>
+            <div>✅ See real-time insights from day one</div>
+            <div>✅ Setup AI assistants for every department</div>
+            <div>✅ Automate your first business process</div>
+          </div>
+        </div>
+
+        {/* Demo buttons */}
+        <div className="flex justify-center space-x-4 mb-8">
+          <button
+            onClick={() => setShowingMagic(!showingMagic)}
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+          >
+            {showingMagic ? 'Hide Preview' : '✨ See The Magic'}
+          </button>
+          <button
+            onClick={onComplete}
+            className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors flex items-center"
+          >
+            Start Setup <ArrowRight className="ml-2 h-4 w-4" />
+          </button>
+        </div>
       </div>
-      
-      <div className="p-4">
-        <div className="h-12 w-12 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-          <Settings className="h-6 w-6 text-success" />
+
+      {/* Feature highlights with business impact */}
+      <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="p-4">
+          <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Zap className="h-6 w-6 text-primary" />
+          </div>
+          <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">AI That Actually Works</h3>
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+            No training needed. Immediate insights from day one.
+          </p>
+          <div className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
+            ROI in first week
+          </div>
         </div>
-        <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">Automation</h3>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-          Powerful workflow automation with n8n integration
-        </p>
+        
+        <div className="p-4">
+          <div className="h-12 w-12 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Settings className="h-6 w-6 text-success" />
+          </div>
+          <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">Zero-Config Automation</h3>
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+            Smart workflows that set themselves up automatically
+          </p>
+          <div className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
+            Save 20+ hours/week
+          </div>
+        </div>
+        
+        <div className="p-4">
+          <div className="h-12 w-12 bg-warning/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Users className="h-6 w-6 text-warning" />
+          </div>
+          <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">Enterprise Ready</h3>
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
+            Scales from startup to enterprise seamlessly
+          </p>
+          <div className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
+            Built for growth
+          </div>
+        </div>
       </div>
-      
-      <div className="p-4">
-        <div className="h-12 w-12 bg-secondary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-          <Sparkles className="h-6 w-6 text-secondary" />
+
+      {/* Trust indicators */}
+      <div className="border-t pt-6">
+        <div className="text-xs text-muted-foreground mb-2">Trusted by teams at:</div>
+        <div className="flex justify-center items-center space-x-6 text-sm text-muted-foreground">
+          <span className="font-medium">Tech Startups</span>
+          <span className="font-medium">Fortune 500s</span>
+          <span className="font-medium">Remote Teams</span>
         </div>
-        <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">Analytics</h3>
-        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-          Real-time insights and business intelligence
-        </p>
       </div>
     </div>
-    
-    <button
-      onClick={onComplete}
-      className="px-8 py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-medium rounded-lg transition-colors"
-    >
-      Get Started
-    </button>
-  </div>
-);
+  );
+};
 
 // Department Setup Step Component
 const DepartmentSetupStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => (
@@ -294,24 +396,80 @@ const DepartmentSetupStep: React.FC<{ onComplete: () => void }> = ({ onComplete 
   </div>
 );
 
-// Complete Step Component
-const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => (
-  <div className="bg-card dark:bg-background rounded-lg shadow-lg p-8 text-center">
-    <CheckCircle className="h-16 w-16 text-success mx-auto mb-6" />
-    <h2 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
-      You're All Set!
-    </h2>
-    <p className="text-lg text-muted-foreground dark:text-muted-foreground mb-8">
-      Your Nexus workspace is configured and ready to transform your business operations.
-    </p>
-    
-    <button
-      onClick={onFinish}
-      className="px-8 py-4 bg-success hover:bg-success/90 text-primary-foreground font-medium rounded-lg transition-colors"
+// Complete Step Component - Enhanced with success metrics
+const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
+  const [celebrationPhase, setCelebrationPhase] = useState(0);
+
+  useEffect(() => {
+    const phases = [0, 1, 2];
+    let currentPhase = 0;
+    const interval = setInterval(() => {
+      currentPhase = (currentPhase + 1) % phases.length;
+      setCelebrationPhase(currentPhase);
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="bg-card dark:bg-background rounded-lg shadow-lg p-8 text-center"
     >
-      Enter Nexus OS
-    </button>
-  </div>
-);
+      <motion.div
+        animate={{ rotate: [0, 10, -10, 0] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="text-6xl mb-6"
+      >
+        🎉
+      </motion.div>
+
+      <h2 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
+        You're All Set! 🚀
+      </h2>
+
+      <div className="mb-8 p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl">
+        <div className="text-lg font-semibold text-foreground mb-4">
+          Your Nexus OS is configured and ready to deliver results:
+        </div>
+        
+        <div className="grid md:grid-cols-2 gap-4 text-sm">
+          <div className="text-left">
+            <div className="font-medium text-green-600 dark:text-green-400 mb-2">✅ Immediate Benefits:</div>
+            <ul className="space-y-1 text-muted-foreground">
+              <li>• Real-time business analytics</li>
+              <li>• AI assistants for every team</li>
+              <li>• Automated workflow triggers</li>
+              <li>• Smart integrations active</li>
+            </ul>
+          </div>
+          <div className="text-left">
+            <div className="font-medium text-blue-600 dark:text-blue-400 mb-2">🎯 Next 24 Hours:</div>
+            <ul className="space-y-1 text-muted-foreground">
+              <li>• AI learns your business patterns</li>
+              <li>• First automated actions execute</li>
+              <li>• Performance insights generate</li>
+              <li>• ROI tracking begins</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <button
+          onClick={onFinish}
+          className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+        >
+          Launch Nexus OS ✨
+        </button>
+      </div>
+
+      <div className="text-sm text-muted-foreground">
+        💡 <strong>Pro Tip:</strong> Check your dashboard in 10 minutes to see your first AI-generated insights
+      </div>
+    </motion.div>
+  );
+};
 
 export default OnboardingFlow; 

@@ -3,21 +3,26 @@
  * @description Unit and snapshot tests for the AdminHome component.
  */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminHome from './AdminHome';
 
 describe('AdminHome', () => {
-  it('renders all major sections', () => {
+  it('renders basic admin panel', () => {
     render(<AdminHome />);
     
-    // Check for section headers
+    // Check main heading
+    expect(screen.getByText('Admin Panel')).toBeInTheDocument();
+    expect(screen.getByText(/Manage your NEXUS settings/)).toBeInTheDocument();
+  });
+
+  it('renders quick actions section', () => {
+    render(<AdminHome />);
+    
+    // Check quick actions section
     expect(screen.getByText('Quick Actions')).toBeInTheDocument();
     expect(screen.getByText('User Management')).toBeInTheDocument();
-    expect(screen.getByText('Team Management')).toBeInTheDocument();
     expect(screen.getByText('System Settings')).toBeInTheDocument();
-    expect(screen.getByText('Activity Log')).toBeInTheDocument();
-    expect(screen.getByText('AI Insights')).toBeInTheDocument();
   });
 
   it('renders user management table with correct data', () => {

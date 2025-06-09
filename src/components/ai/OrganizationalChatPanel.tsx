@@ -18,7 +18,7 @@ import {
   departmentalAgents,
   type Agent 
 } from '@/lib/agentRegistry';
-import { ExecutiveAssistant } from './ExecutiveAssistant';
+import { ModernExecutiveAssistant } from './enhanced/ModernExecutiveAssistant';
 import { DepartmentalAgent } from './DepartmentalAgent';
 import { ChatContextBuilder } from '@/lib/chatContext';
 import { useAuth } from '@/lib/auth';
@@ -215,7 +215,7 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
 
                                {/* Executive Assistant Chat */}
           <div className="flex-1">
-            <ExecutiveAssistant onClose={onClose || (() => {})} sessionId={sessionId} />
+            <ModernExecutiveAssistant onClose={onClose || (() => {})} sessionId={sessionId} />
           </div>
         </>
       )}

@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/Badge';
 import { Progress } from '../ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
+import { Spinner } from '../ui/Spinner';
 import { intelligentSystemEvolution } from '../../lib/intelligentSystemEvolution';
 import { businessProcessMining } from '../../lib/businessProcessMining';
 import { multiModalIntelligence } from '../../lib/multiModalIntelligence';

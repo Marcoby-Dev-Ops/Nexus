@@ -13,20 +13,12 @@ import { initializeStorageCleanup, safeSetLocalStorage } from '@/lib/storageUtil
 // Initialize localStorage cleanup to prevent JSON parsing errors
 initializeStorageCleanup();
 
-// Force light theme by clearing any existing theme and setting light mode
-localStorage.removeItem('vite-ui-theme');
-safeSetLocalStorage('vite-ui-theme', 'light');
-
-// Also force light mode on the document element immediately
-document.documentElement.classList.remove('dark');
-document.documentElement.classList.add('light');
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SupabaseProvider>
       <EnhancedUserProvider>
         <AuthProvider>
-          <ThemeProvider defaultTheme="light">
+          <ThemeProvider defaultTheme="system">
             <UserProvider>
               <NotificationProvider>
                 <App />

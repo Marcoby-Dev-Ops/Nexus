@@ -42,7 +42,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   const { user } = useAuth();
 
   const categories = [
-    { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-amber-100 text-amber-800' },
+    { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-warning/10 text-warning-foreground' },
     { value: 'learning', label: 'Learning', icon: BookOpen, color: 'bg-primary/10 text-primary' },
     { value: 'reflection', label: 'Reflection', icon: Brain, color: 'bg-secondary/10 text-purple-800' },
     { value: 'goal', label: 'Goal', icon: Target, color: 'bg-success/10 text-success' }
@@ -57,13 +57,14 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         user_id: user.id,
         content: content.trim(),
         category,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-        business_context: currentContext,
+        status: 'active',
+        main_sub_categories: tags.split(',').map(t => t.trim()).filter(Boolean),
+        ai_insights: { business_context: currentContext },
         created_at: new Date().toISOString()
       };
 
       const { error } = await supabase
-        .from('personal_thoughts')
+        .from('thoughts')
         .insert([thoughtData]);
 
       if (error) throw error;
@@ -162,7 +163,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
               </span>
             )}
             {currentContext.conversationTopic && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-4 py-4 rounded">
+                                    <span className="text-xs bg-warning/10 text-warning-foreground px-4 py-4 rounded">
                 Topic: {currentContext.conversationTopic}
               </span>
             )}

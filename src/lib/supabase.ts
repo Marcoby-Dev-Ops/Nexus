@@ -1,20 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
+import { env } from './environment';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(env.supabase.url, env.supabase.anonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    // Remove flowType to use default
   },
 });
 
 // Helper function to handle Supabase errors
 export const handleSupabaseError = (error: any) => {
-  console.error('Supabase error:', error);
   if (error instanceof Error) {
     return error.message;
   }

@@ -452,22 +452,13 @@ class MultiModalIntelligence {
   }
 
   private async storeDocumentIntelligence(intelligence: DocumentIntelligence): Promise<void> {
-    const { error } = await supabase
-      .from('document_intelligence')
-      .insert({
-        id: intelligence.id,
-        type: intelligence.type,
-        confidence: intelligence.confidence,
-        extracted_data: intelligence.extractedData,
-        key_entities: intelligence.keyEntities,
-        business_insights: intelligence.businessInsights,
-        actionable_items: intelligence.actionableItems,
-        processed_at: intelligence.processedAt.toISOString()
-      });
-
-    if (error) {
-      console.error('Failed to store document intelligence:', error);
-    }
+    // Document intelligence storage disabled for 1.0 - coming in v1.1
+    console.log('Document intelligence processed:', {
+      id: intelligence.id,
+      type: intelligence.type,
+      confidence: intelligence.confidence,
+      actionableItems: intelligence.actionableItems.length
+    });
   }
 
   private async autoExecuteActions(actionItems: ActionItem[]): Promise<void> {

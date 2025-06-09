@@ -6,7 +6,11 @@
  */
 
 import { supabase, chatHistory } from './supabase';
+import { unifiedAuthService } from './unifiedAuthService';
 import type { Agent } from './agentRegistry';
+import { ContextualRAG } from './contextualRAG';
+import { ExpertPromptEngine } from './expertPromptEngine';
+import { progressiveLearningService } from './progressiveLearning';
 
 /**
  * Extended metadata interface for comprehensive context tracking
@@ -86,10 +90,14 @@ export interface ChatSession {
 export class ChatContextBuilder {
   private sessionId: string;
   private userId: string;
+  private ragSystem: ContextualRAG;
+  private expertEngine: ExpertPromptEngine;
 
   constructor(sessionId: string, userId: string) {
     this.sessionId = sessionId;
     this.userId = userId;
+    this.ragSystem = new ContextualRAG();
+    this.expertEngine = new ExpertPromptEngine();
   }
 
   /**
@@ -97,6 +105,37 @@ export class ChatContextBuilder {
    */
   static generateSessionId(userId: string): string {
     return `session_${userId}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Initialize RAG system with user context
+   */
+  async initializeRAG(): Promise<void> {
+    await this.ragSystem.initialize(this.userId);
+  }
+
+  /**
+   * Get intelligent agent routing recommendation using RAG system
+   */
+  async getIntelligentRouting(userMessage: string): Promise<{
+    recommendedAgent: string;
+    confidence: number;
+    reasoning: string;
+    contextualPrompt: string;
+  }> {
+    try {
+      await this.initializeRAG();
+      return await this.ragSystem.getRoutingIntelligence(userMessage);
+    } catch (error) {
+      console.error('Error in intelligent routing:', error);
+      // Fallback to default routing
+      return {
+        recommendedAgent: 'executive',
+        confidence: 0.5,
+        reasoning: 'Fallback to Executive Assistant due to routing error',
+        contextualPrompt: 'I\'m your Executive Assistant, ready to help with strategic guidance and coordination across all business functions.'
+      };
+    }
   }
 
   /**
@@ -146,17 +185,72 @@ export class ChatContextBuilder {
       ...conversationAnalysis.metadata,
     };
 
-    // Build contextual system prompt
-    const systemPrompt = this.buildSystemPrompt(currentAgent, userContext, sessionAnalytics);
+    // Get RAG-enhanced context if available
+    let ragContext = '';
+    try {
+      await this.initializeRAG();
+      if (currentAgent.department) {
+        ragContext = await this.ragSystem.getDepartmentContext(currentAgent.department, userMessage);
+      } else {
+        ragContext = await this.ragSystem.getExecutiveContext(userMessage);
+      }
+    } catch (error) {
+      console.warn('RAG context unavailable, using fallback:', error);
+    }
+
+    // Get contextual questions for progressive learning
+    let contextualQuestions: string[] = [];
+    try {
+      const conversationHistory = recentMessages.map(msg => msg.content || '');
+              contextualQuestions = await progressiveLearningService.getContextualQuestions(
+          this.userId,
+          userContext?.user?.company || 'default',
+          conversationHistory
+        );
+    } catch (error) {
+      console.warn('Progressive learning unavailable:', error);
+    }
+
+    // Build enhanced system prompt with expert prompting
+    const systemPrompt = this.buildEnhancedSystemPrompt(currentAgent, userContext, sessionAnalytics, ragContext);
     
     // Build contextual information for AI
-    const contextualPrompt = this.buildContextualPrompt(recentMessages, userContext, sessionAnalytics, conversationAnalysis);
+    const baseContextualPrompt = this.buildContextualPrompt(recentMessages, userContext, sessionAnalytics, conversationAnalysis);
+    
+    // Enhance contextual prompt with progressive learning questions
+    const contextualPrompt = contextualQuestions.length > 0
+      ? `${baseContextualPrompt}\n\nOPTIONAL FOLLOW-UP QUESTIONS to better understand your needs:\n${contextualQuestions.map(q => `• ${q}`).join('\n')}`
+      : baseContextualPrompt;
 
     return {
       systemPrompt,
       contextualPrompt,
       metadata,
     };
+  }
+
+  /**
+   * Process learning insights from conversation
+   */
+  async processLearningInsights(
+    userMessage: string,
+    aiResponse: string,
+    agent: Agent,
+    feedback?: 'helpful' | 'unhelpful' | 'partially_helpful'
+  ): Promise<void> {
+    try {
+      const userContext = await this.getUserContext();
+      await progressiveLearningService.analyzeUserInteraction(
+        this.userId,
+        userContext?.user?.company || 'default',
+        userMessage,
+        aiResponse,
+        agent,
+        feedback
+      );
+    } catch (error) {
+      console.warn('Error processing learning insights:', error);
+    }
   }
 
   /**
@@ -178,19 +272,31 @@ export class ChatContextBuilder {
    * Get user context and preferences
    */
   private async getUserContext() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    // Use unified auth service to get properly authenticated user
+    const unifiedUser = unifiedAuthService.getCurrentUser();
+    if (!unifiedUser || !unifiedAuthService.isAuthenticated()) {
+      console.warn('No authenticated user found for getUserContext');
+      return null;
+    }
 
     // Get user's recent activity patterns
-    const { data: recentActivity } = await supabase
+    const { data: recentActivity, error } = await supabase
       .from('conversations')
       .select('agent_id, created_at, metadata')
-      .eq('user_id', user.id)
+      .eq('user_id', unifiedUser.id)
       .order('created_at', { ascending: false })
       .limit(5);
 
+    if (error) {
+      console.error('Error fetching user context from conversations:', error);
+      return {
+        user: unifiedUser,
+        recentActivity: [],
+      };
+    }
+
     return {
-      user,
+      user: unifiedUser,
       recentActivity: recentActivity || [],
     };
   }
@@ -208,9 +314,9 @@ export class ChatContextBuilder {
 
     return {
       totalMessages: sessionMessages?.length || 0,
-      agentsUsed: new Set(sessionMessages?.map(m => m.metadata?.agent_id).filter(Boolean)).size,
+      agentsUsed: new Set(sessionMessages?.map(m => (m.metadata as any)?.agent_id).filter(Boolean)).size,
       sessionDuration: sessionMessages?.length ? 
-        new Date().getTime() - new Date(sessionMessages[0].created_at).getTime() : 0,
+        new Date().getTime() - new Date(sessionMessages[0].created_at || new Date()).getTime() : 0,
     };
   }
 
@@ -238,26 +344,64 @@ export class ChatContextBuilder {
   }
 
   /**
-   * Build comprehensive system prompt
+   * Build enhanced system prompt combining expert prompting and RAG context
+   */
+  private buildEnhancedSystemPrompt(agent: Agent, userContext: any, sessionAnalytics: any, ragContext: string): string {
+    // Get base expert prompt
+    const basePrompt = this.buildSystemPrompt(agent, userContext, sessionAnalytics);
+    
+    // Add RAG context if available
+    if (ragContext) {
+      return `${basePrompt}
+
+REAL-TIME BUSINESS CONTEXT & DATA:
+${ragContext}
+
+Use this contextual business data to provide specific, data-driven insights and recommendations. Reference actual metrics, trends, and opportunities when providing guidance.`;
+    }
+    
+    return basePrompt;
+  }
+
+  /**
+   * Build comprehensive system prompt using expert personality engine
    */
   private buildSystemPrompt(agent: Agent, userContext: any, sessionAnalytics: any): string {
-    let prompt = `You are ${agent.name}, a specialized AI assistant for ${agent.department || 'general'} tasks in the Nexus productivity platform.
+    // Import expert prompt engine for specialized personalities
+    const { getExpertSystemPrompt } = require('./expertPromptEngine');
+    
+    // Generate expert-level system prompt with personality
+    const expertPrompt = getExpertSystemPrompt(agent, {
+      userRole: userContext?.role || 'business professional',
+      businessContext: userContext?.context || 'general business',
+      urgency: sessionAnalytics.totalMessages > 10 ? 'high' : 'medium',
+      complexity: sessionAnalytics.agentsUsed > 2 ? 'complex' : 'moderate'
+    });
 
-Your specialties: ${agent.specialties?.join(', ') || 'General assistance'}
+    // Add session context to expert prompt
+    let sessionContext = `
 
-CONTEXT AWARENESS:
+SESSION CONTEXT AWARENESS:
 - User has sent ${sessionAnalytics.totalMessages} messages in this session
 - User has interacted with ${sessionAnalytics.agentsUsed} different agents
 - Session duration: ${Math.round(sessionAnalytics.sessionDuration / 1000 / 60)} minutes`;
 
     if (userContext?.recentActivity?.length > 0) {
       const recentDepts = userContext.recentActivity.map((a: any) => a.metadata?.department).filter(Boolean);
-      prompt += `\n- User's recent focus areas: ${[...new Set(recentDepts)].join(', ')}`;
+      const focusAreas = [...new Set(recentDepts)].join(', ');
+      sessionContext += `\n- User's recent focus areas: ${focusAreas}`;
     }
 
-    prompt += `\n\nProvide helpful, contextual responses. If the user's question would be better handled by a specialist, suggest they switch agents while still providing useful guidance.`;
+    const finalPrompt = expertPrompt + sessionContext + `
 
-    return prompt;
+EXPERT GUIDANCE APPROACH:
+- Draw from your ${agent.personality?.years_experience || 10}+ years of specialized experience
+- Provide specific, actionable recommendations using proven frameworks
+- Reference relevant methodologies and tools from your expertise
+- Consider business impact and ROI in all recommendations
+- If the question requires deeper specialization, suggest connecting with relevant specialists while providing valuable interim guidance`;
+
+    return finalPrompt;
   }
 
   /**
@@ -429,6 +573,13 @@ export const enhancedChatService = {
         },
       });
 
+      // Process learning insights from the conversation
+      await contextBuilder.processLearningInsights(
+        message,
+        aiResponse.content,
+        agent
+      );
+
       // Update session analytics
       await this.updateSessionAnalytics(sessionId, user.id, agent.id);
 
@@ -470,7 +621,41 @@ export const enhancedChatService = {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Edge function error:', { status: response.status, body: errorText });
-        throw new Error(`AI service error: ${response.status} - ${errorText}`);
+        
+        // Try to parse the error response for better error messages
+        let errorMessage = `AI service error: ${response.status}`;
+        try {
+          const errorJson = JSON.parse(errorText);
+          if (errorJson.error) {
+            errorMessage = errorJson.error;
+          }
+        } catch {
+          // Use the raw error text if it's not JSON
+          errorMessage = errorText || errorMessage;
+        }
+        
+        // Handle specific errors with better user messages
+        if (response.status === 401 || errorMessage.includes('Invalid or expired token')) {
+          return {
+            content: `Your session has expired. Please refresh the page and try again.`,
+            model: 'system',
+            responseTime: 0,
+            confidence: 0,
+            suggestedActions: ['Refresh page', 'Sign in again'],
+          };
+        }
+        
+        if (errorMessage.includes('Missing required environment variables') || errorMessage.includes('OpenAI')) {
+          return {
+            content: `The AI service is currently unavailable. Our team has been notified and is working to resolve this issue.`,
+            model: 'system',
+            responseTime: 0,
+            confidence: 0,
+            suggestedActions: ['Try again later', 'Contact support'],
+          };
+        }
+        
+        throw new Error(errorMessage);
       }
 
       const result = await response.json();
@@ -485,7 +670,31 @@ export const enhancedChatService = {
       };
     } catch (error) {
       console.error('AI service call failed:', error);
-      // Fallback response
+      
+      // More specific fallback responses based on error type
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      if (errorMessage.includes('session has expired') || errorMessage.includes('token')) {
+        return {
+          content: `Your session has expired. Please refresh the page and try again.`,
+          model: 'system',
+          responseTime: 0,
+          confidence: 0,
+          suggestedActions: ['Refresh page', 'Sign in again'],
+        };
+      }
+      
+      if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+        return {
+          content: `Unable to connect to the AI service. Please check your internet connection and try again.`,
+          model: 'system',
+          responseTime: 0,
+          confidence: 0,
+          suggestedActions: ['Check connection', 'Try again'],
+        };
+      }
+      
+      // Generic fallback response
       return {
         content: `I apologize, but I'm having trouble processing your request right now. Please try again in a moment.`,
         model: 'fallback',
@@ -506,7 +715,7 @@ export const enhancedChatService = {
         .from('conversations')
         .select('metadata')
         .eq('user_id', userId)
-        .single();
+        .limit(1);
 
       // For now, we'll store session data in conversation metadata
       // You can create a separate sessions table later if needed

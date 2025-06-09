@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { QuickChatTrigger } from '@/components/ai/QuickChatTrigger';
 
 export default function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -52,6 +53,15 @@ export default function AppShell() {
           <Outlet />
         </div>
       </main>
+      
+      {/* Quick Chat - Hide on chat page */}
+      {location.pathname !== '/chat' && (
+        <QuickChatTrigger 
+          position="bottom-right"
+          theme="vibrant"
+          showBadge={true}
+        />
+      )}
     </div>
   );
 } 

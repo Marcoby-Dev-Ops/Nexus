@@ -1,4 +1,8 @@
-require('@testing-library/jest-dom/extend-expect');
+require('@testing-library/jest-dom');
+
+// Polyfill for TextEncoder/TextDecoder (needed for React Router)
+global.TextEncoder = global.TextEncoder || require('util').TextEncoder;
+global.TextDecoder = global.TextDecoder || require('util').TextDecoder;
 
 // Mock IntersectionObserver
 global.IntersectionObserver = jest.fn().mockImplementation(() => ({
@@ -35,6 +39,9 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock scrollTo
 global.scrollTo = jest.fn();
+
+// Mock URL for React Router
+global.URL = global.URL || require('url').URL;
 
 // Silence console errors/warnings in tests unless explicitly needed
 const originalError = console.error;

@@ -13,6 +13,12 @@ import { AIDashboard } from './pages/AIDashboard';
 import { AITransformation } from './pages/AITransformation';
 import Nexus from './pages/Nexus';
 import Profile from './pages/Profile';
+import Integrations from './pages/Integrations';
+import IntegrationsShowcase from './pages/IntegrationsShowcase';
+import WaitlistLanding from './pages/WaitlistLanding';
+import WaitlistDashboard from './pages/WaitlistDashboard';
+import ChatPage from './pages/ChatPage';
+import { BillingPage } from './pages/billing/BillingPage';
 
 const SalesHome = lazy(() => import('@/pages/departments/sales/SalesHome'));
 const FinanceHome = lazy(() => import('@/pages/departments/finance/FinanceHome'));
@@ -32,12 +38,21 @@ function App() {
       <Router>
         <Suspense fallback={<div className="p-8">Loading…</div>}>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="/nexus" replace />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            
+            {/* Standalone Waitlist Pages (No AppShell) */}
+            <Route path="/waitlist" element={<WaitlistLanding />} />
+            <Route path="/join" element={<WaitlistLanding />} />
+            
             <Route element={<AppShell />}>
+              <Route path="/nexus" element={<ProtectedRoute><Nexus /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                        <Route path="/integrations" element={<ProtectedRoute><Integrations /></ProtectedRoute>} />
+          <Route path="/integrations-showcase" element={<ProtectedRoute><IntegrationsShowcase /></ProtectedRoute>} />
+          <Route path="/admin/waitlist" element={<ProtectedRoute><WaitlistDashboard /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/sales" element={<SalesHome />} />
@@ -49,8 +64,9 @@ function App() {
               <Route path="/ai-capabilities" element={<AICapabilities />} />
               <Route path="/ai-dashboard" element={<AIDashboard />} />
               <Route path="/ai-transformation" element={<AITransformation />} />
-              <Route path="/nexus" element={<ProtectedRoute><Nexus /></ProtectedRoute>} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+              <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
+              <Route path="*" element={<Navigate to="/nexus" replace />} />
             </Route>
           </Routes>
         </Suspense>

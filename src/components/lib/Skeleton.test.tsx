@@ -5,7 +5,7 @@
 import React from 'react';
 import { render } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Skeleton from './lib/Skeleton';
+import { Skeleton } from '../ui/Skeleton';
 
 describe('Skeleton', () => {
   it('renders without crashing', () => {
