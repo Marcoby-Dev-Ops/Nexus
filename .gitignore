@@ -14,7 +14,7 @@ dist/
 dist-ssr/
 build/
 .vite/
-
+          
 # Testing
 coverage/
 

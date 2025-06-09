@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect, type JSX } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MessageSquare, ChevronDown } from 'lucide-react';
+import { MessageSquare, ChevronDown, Send, Mic, MicOff, Paperclip, Zap } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { chatHistory, supabase, type ChatMessage as SupabaseChatMessage } from '@/lib/supabase';
 import { useRealtimeChat } from '@/lib/useRealtimeChat';
 import { useAuth } from '@/lib/auth';
 import { enhancedChatService, ChatContextBuilder } from '@/lib/chatContext';
 import { executiveAgent } from '@/lib/agentRegistry';
+import { useOnboardingContext } from '../../contexts/OnboardingContext';
 
 /**
  * ExecutiveAssistant
@@ -49,6 +50,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { user } = useAuth();
   const MAX_RETRIES = 3;
+  const { isOnboardingActive } = useOnboardingContext();
 
   // Ref for the transcript container
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -354,8 +356,8 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
         )}
       </div>
 
-      {/* Scroll to Bottom Button */}
-      {showScrollButton && (
+      {/* Scroll to Bottom Button - Hidden during onboarding */}
+      {showScrollButton && !isOnboardingActive && (
         <div className="absolute bottom-20 right-6 z-10">
           <button
             onClick={scrollToBottom}

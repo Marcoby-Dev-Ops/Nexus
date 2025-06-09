@@ -15,7 +15,9 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
+import { useOnboarding } from '@/lib/useOnboarding';
 import { ModernExecutiveAssistant } from '@/components/ai/enhanced/ModernExecutiveAssistant';
+import { OnboardingChat } from '@/components/onboarding/OnboardingChat'
 
 /**
  * Full-featured Chat Page (ChatGPT/Claude style)
@@ -246,6 +248,7 @@ export const ChatPage: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -367,6 +370,50 @@ export const ChatPage: React.FC = () => {
     navigate('/');
   };
 
+  // If user needs onboarding, show conversational onboarding in chat interface
+  if (onboardingLoading) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading Nexus...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (needsOnboarding) {
+    return (
+      <div className="h-screen bg-background flex flex-col">
+        {/* Top Bar */}
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border bg-background/95 backdrop-blur-sm flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary-foreground" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="font-semibold text-foreground text-sm sm:text-base truncate">Welcome to Nexus AI</h1>
+              <p className="text-xs text-muted-foreground hidden sm:block">
+                Let's get you set up with your AI-powered business assistant
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="text-xs text-muted-foreground whitespace-nowrap">
+              <span className="hidden sm:inline">Setup in </span>progress...
+            </div>
+          </div>
+        </div>
+
+        {/* Onboarding Chat - Full Width */}
+        <div className="flex-1 min-h-0">
+          <OnboardingChat />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-background flex">
       {/* Conversation Sidebar */}
@@ -433,7 +480,7 @@ export const ChatPage: React.FC = () => {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <Sparkles className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h2 className="text-xl font-semibold text-foreground mb-2">Welcome to Nexus AI</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Welcome back to Nexus AI</h2>
                 <p className="text-muted-foreground mb-6">
                   Select a conversation or start a new one to begin chatting
                 </p>

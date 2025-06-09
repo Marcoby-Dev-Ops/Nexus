@@ -19,11 +19,41 @@ export interface UserN8nConfig {
 class UserN8nConfigService {
   private currentConfig: UserN8nConfig | null = null;
   private configCache = new Map<string, UserN8nConfig>();
+  private isN8nEnabled = false; // Disable n8n by default until user wants to configure it
+
+  /**
+   * Enable n8n integration for the user
+   */
+  enableN8nIntegration(): void {
+    this.isN8nEnabled = true;
+  }
+
+  /**
+   * Disable n8n integration for the user
+   */
+  disableN8nIntegration(): void {
+    this.isN8nEnabled = false;
+    this.configCache.clear();
+    this.currentConfig = null;
+  }
+
+  /**
+   * Check if n8n integration is enabled
+   */
+  isEnabled(): boolean {
+    return this.isN8nEnabled;
+  }
 
   /**
    * Get the active n8n configuration for the current user
+   * Only attempts to fetch if n8n integration is enabled
    */
   async getCurrentUserConfig(): Promise<UserN8nConfig | null> {
+    // Return null immediately if n8n integration is disabled
+    if (!this.isN8nEnabled) {
+      return null;
+    }
+
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) {
@@ -111,12 +141,12 @@ class UserN8nConfigService {
       const fullConfig: UserN8nConfig = {
         id: data.id,
         userId: data.user_id,
-        instanceName: data.instance_name,
+        instanceName: data.instance_name || undefined,
         baseUrl: data.base_url,
         apiKey: data.api_key,
-        isActive: data.is_active,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
+        isActive: data.is_active || false,
+        createdAt: data.created_at || undefined,
+        updatedAt: data.updated_at || undefined
       };
 
       // Update cache
@@ -315,12 +345,12 @@ class UserN8nConfigService {
       return {
         id: data.id,
         userId: data.user_id,
-        instanceName: data.instance_name,
+        instanceName: data.instance_name || undefined,
         baseUrl: data.base_url,
         apiKey: data.api_key,
-        isActive: data.is_active,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
+        isActive: data.is_active || false,
+        createdAt: data.created_at || undefined,
+        updatedAt: data.updated_at || undefined
       };
     } catch (error) {
       console.error('Failed to get config from database:', error);
