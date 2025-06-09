@@ -1,14 +1,15 @@
 /**
  * contextualRAG.ts
  * 
- * Retrieval Augmented Generation system for Nexus AI assistants.
- * Provides contextual business data and user intelligence to enhance expert responses.
+ * Enhanced Retrieval Augmented Generation system for Nexus AI assistants.
+ * Provides deeply contextual business data and user intelligence to create
+ * the "Nexus gets me" experience across all AI interactions.
  */
 
 import type { Agent } from './agentRegistry';
 import { supabase } from './supabase';
 
-export interface UserContext {
+export interface EnhancedUserContext {
   profile: {
     id: string;
     email: string;
@@ -18,6 +19,15 @@ export interface UserContext {
     company_id: string;
     permissions: string[];
     preferences: Record<string, any>;
+    // Enhanced from onboarding
+    experience_level: 'beginner' | 'intermediate' | 'advanced';
+    communication_style: 'direct' | 'detailed' | 'visual';
+    primary_responsibilities: string[];
+    current_pain_points: string[];
+    immediate_goals: string;
+    success_metrics: string[];
+    time_availability: 'low' | 'medium' | 'high';
+    collaboration_frequency: 'solo' | 'small-team' | 'cross-functional';
   };
   activity: {
     recent_pages: string[];
@@ -25,15 +35,47 @@ export interface UserContext {
     last_active: string;
     session_duration: number;
     total_sessions: number;
+    most_used_features: string[];
+    skill_level: 'beginner' | 'intermediate' | 'advanced';
   };
   business_context: {
     company_name: string;
     industry: string;
     company_size: string;
+    business_model: string;
+    revenue_stage: string;
     growth_stage: 'startup' | 'growth' | 'enterprise';
     fiscal_year_end: string;
     key_metrics: Record<string, any>;
+    // Enhanced from onboarding
+    primary_departments: string[];
+    key_tools: string[];
+    data_sources: string[];
+    automation_maturity: 'none' | 'basic' | 'intermediate' | 'advanced';
+    business_priorities: string[];
+    success_timeframe: string;
   };
+  success_criteria: {
+    primary_success_metric: string;
+    secondary_metrics: string[];
+    time_savings_goal: string;
+    roi_expectation: string;
+    usage_frequency: string;
+    success_scenarios: string[];
+    failure_conditions: string[];
+    immediate_wins: string[];
+    long_term_vision: string;
+  };
+}
+
+export interface PersonalizationInsights {
+  user_expertise_assessment: string;
+  communication_approach: string;
+  problem_solving_style: string;
+  business_focus_areas: string[];
+  recommended_features: string[];
+  potential_automation_opportunities: string[];
+  success_likelihood_factors: string[];
 }
 
 export interface DepartmentData {
@@ -122,7 +164,7 @@ export interface DepartmentData {
 }
 
 export class ContextualRAG {
-  private userContext: UserContext | null = null;
+  private userContext: EnhancedUserContext | null = null;
   private departmentData: Partial<DepartmentData> = {};
 
   /**
@@ -142,52 +184,98 @@ export class ContextualRAG {
       throw new Error('RAG system not initialized');
     }
 
-    const userIntelligence = this.buildUserIntelligence();
+    const personalizationInsights = this.generatePersonalizationInsights();
+    const contextualResponse = this.generateContextualResponseStrategy(query);
     const businessIntelligence = await this.getBusinessIntelligence();
-    const queryContext = this.analyzeQuery(query);
+    const userIntelligence = this.buildEnhancedUserIntelligence();
 
-    return `EXECUTIVE CONTEXT & INTELLIGENCE:
+    return `EXECUTIVE CONTEXT & USER INTELLIGENCE:
 
-USER PROFILE:
-- ${this.userContext.profile.name} (${this.userContext.profile.role}) from ${this.userContext.business_context.company_name}
-- Department: ${this.userContext.profile.department}
-- Company Stage: ${this.userContext.business_context.growth_stage} (${this.userContext.business_context.company_size})
-- Industry: ${this.userContext.business_context.industry}
+🧠 WHO YOU'RE TALKING TO:
+${this.userContext.profile.name} (${this.userContext.profile.role}) at ${this.userContext.business_context.company_name}
+• Experience Level: ${this.userContext.profile.experience_level} with business intelligence tools
+• Communication Style: Prefers ${this.userContext.profile.communication_style} responses
+• Time Availability: ${this.userContext.profile.time_availability} - adjust response depth accordingly
+• Current Focus: ${this.userContext.profile.immediate_goals}
 
-CURRENT SESSION INTELLIGENCE:
-${userIntelligence}
+🎯 THEIR SUCCESS CRITERIA:
+• Primary Goal: ${this.userContext.success_criteria.primary_success_metric}
+• Time Savings Target: ${this.userContext.success_criteria.time_savings_goal}
+• Success Timeline: ${this.userContext.business_context.success_timeframe}
+• ROI Expectation: ${this.userContext.success_criteria.roi_expectation}
 
-BUSINESS INTELLIGENCE SUMMARY:
+💼 BUSINESS CONTEXT:
+• Industry: ${this.userContext.business_context.industry} (${this.userContext.business_context.business_model})
+• Company Stage: ${this.userContext.business_context.growth_stage} (${this.userContext.business_context.company_size})
+• Automation Maturity: ${this.userContext.business_context.automation_maturity}
+• Priority Departments: ${this.userContext.business_context.primary_departments.join(', ')}
+
+🎨 PERSONALIZATION INSIGHTS:
+${personalizationInsights}
+
+📊 CURRENT BUSINESS INTELLIGENCE:
 ${businessIntelligence}
 
-QUERY ANALYSIS:
-${queryContext}
+🎪 RESPONSE STRATEGY FOR THIS QUERY:
+${contextualResponse}
 
-Based on this context, provide strategic guidance that considers the user's role, company situation, and current business performance. Reference specific data points when relevant and suggest department specialists if deeper analysis is needed.`;
+INSTRUCTIONS:
+- Match their ${this.userContext.profile.communication_style} communication preference
+- Reference their specific pain points: ${this.userContext.profile.current_pain_points.join(', ')}
+- Connect advice to their success metrics: ${this.userContext.success_criteria.secondary_metrics.join(', ')}
+- Consider their ${this.userContext.profile.experience_level} experience level
+- Suggest relevant specialists based on their department focus
+- Always tie recommendations back to their immediate goals and long-term vision`;
   }
 
   /**
    * Get department-specific data context for specialized assistants
    */
   async getDepartmentContext(department: string, query: string): Promise<string> {
+    if (!this.userContext) {
+      throw new Error('RAG system not initialized');
+    }
+
     const departmentData = await this.fetchDepartmentData(department);
     const relevantData = this.extractRelevantData(departmentData, query);
     const userRole = this.userContext?.profile.role || 'Team Member';
+    const departmentExpertise = this.assessDepartmentExpertise(department);
+    const contextualRecommendations = this.generateDepartmentRecommendations(department, query);
 
-    return `DEPARTMENT CONTEXT & DATA:
+    return `DEPARTMENT CONTEXT & PERSONALIZED GUIDANCE:
 
-CURRENT ${department.toUpperCase()} PERFORMANCE:
+👤 USER PROFILE FOR ${department.toUpperCase()}:
+• ${this.userContext.profile.name} (${userRole}) - ${this.userContext.profile.experience_level} level
+• Responsibilities: ${this.userContext.profile.primary_responsibilities.join(', ')}
+• Pain Points: ${this.userContext.profile.current_pain_points.filter(p => this.isDepartmentRelevant(p, department)).join(', ')}
+• Success Metrics: ${this.userContext.success_criteria.secondary_metrics.filter(m => this.isDepartmentRelevant(m, department)).join(', ')}
+
+🏢 COMPANY CONTEXT:
+• ${this.userContext.business_context.company_name} (${this.userContext.business_context.industry})
+• Current Tools: ${this.userContext.business_context.key_tools.filter(t => this.isDepartmentRelevant(t, department)).join(', ')}
+• Data Sources: ${this.userContext.business_context.data_sources.filter(d => this.isDepartmentRelevant(d, department)).join(', ')}
+• Business Priority: ${this.userContext.business_context.business_priorities.filter(p => this.isDepartmentRelevant(p, department)).join(', ')}
+
+📊 CURRENT ${department.toUpperCase()} PERFORMANCE:
 ${this.formatDepartmentData(department, departmentData)}
 
-RELEVANT TO YOUR QUERY:
+🎯 RELEVANT TO YOUR QUERY:
 ${relevantData}
 
-USER PERSPECTIVE:
-- You are advising ${this.userContext?.profile.name} (${userRole})
-- Their department: ${this.userContext?.profile.department}
-- Company context: ${this.userContext?.business_context.company_name} (${this.userContext?.business_context.growth_stage})
+🧠 EXPERTISE ASSESSMENT:
+${departmentExpertise}
 
-Provide expert guidance using this real-time data. Reference specific metrics, trends, and opportunities from the data above.`;
+💡 CONTEXTUAL RECOMMENDATIONS:
+${contextualRecommendations}
+
+🎨 COMMUNICATION STYLE:
+Respond in a ${this.userContext.profile.communication_style} manner. User has ${this.userContext.profile.time_availability} time availability, so ${this.getResponseLengthGuidance()}.
+
+INSTRUCTIONS:
+- Reference their specific ${department} pain points and goals
+- Suggest automation opportunities based on their ${this.userContext.business_context.automation_maturity} maturity
+- Connect recommendations to their immediate wins: ${this.userContext.success_criteria.immediate_wins.join(', ')}
+- Consider their collaboration style: ${this.userContext.profile.collaboration_frequency}`;
   }
 
   /**
@@ -217,7 +305,7 @@ Provide expert guidance using this real-time data. Reference specific metrics, t
   /**
    * Fetch comprehensive user context from multiple data sources
    */
-  private async fetchUserContext(userId: string): Promise<UserContext> {
+  private async fetchUserContext(userId: string): Promise<EnhancedUserContext> {
     try {
       // Fetch user profile
       const { data: profile } = await supabase
@@ -252,27 +340,56 @@ Provide expert guidance using this real-time data. Reference specific metrics, t
           permissions: profile?.skills || [],
           preferences: typeof profile?.preferences === 'object' && profile?.preferences 
             ? profile.preferences as Record<string, any>
-            : {}
+            : {},
+          experience_level: 'intermediate',
+          communication_style: 'direct',
+          primary_responsibilities: ['Sales', 'Marketing'],
+          current_pain_points: ['Finding the right tools'],
+          immediate_goals: 'Increase sales by 20%',
+          success_metrics: ['Revenue', 'Customer Satisfaction'],
+          time_availability: 'medium',
+          collaboration_frequency: 'small-team'
         },
         activity: {
           recent_pages: activity?.slice(0, 10).map(() => 'chat') || [],
           frequent_actions: this.calculateFrequentActions(activity || []),
           last_active: activity?.[0]?.created_at || new Date().toISOString(),
           session_duration: this.calculateSessionDuration(activity || []),
-          total_sessions: activity?.length || 0
+          total_sessions: activity?.length || 0,
+          most_used_features: ['CRM', 'Marketing Automation'],
+          skill_level: 'intermediate'
         },
         business_context: {
           company_name: company?.name || 'Your Company',
           industry: company?.industry || 'Technology',
           company_size: company?.size || 'Small',
-          growth_stage: 'growth', // Using default until schema is updated
-          fiscal_year_end: '12-31', // Using default until schema is updated
+          business_model: 'B2B',
+          revenue_stage: 'growth',
+          growth_stage: 'growth',
+          fiscal_year_end: '12-31',
           key_metrics: {
             employees: 50,
             annual_revenue: 5000000,
             growth_rate: 25,
             customer_count: 150
-          }
+          },
+          primary_departments: ['Sales', 'Marketing'],
+          key_tools: ['CRM', 'Marketing Automation'],
+          data_sources: ['Customer Feedback', 'Social Media'],
+          automation_maturity: 'intermediate',
+          business_priorities: ['Revenue Growth', 'Customer Satisfaction'],
+          success_timeframe: '12 months'
+        },
+        success_criteria: {
+          primary_success_metric: 'Revenue Growth',
+          secondary_metrics: ['Customer Satisfaction', 'Marketing ROI'],
+          time_savings_goal: 'Reduce marketing costs by 20%',
+          roi_expectation: 'Return on Investment',
+          usage_frequency: 'Monthly',
+          success_scenarios: ['Successful campaign launch', 'Significant revenue increase'],
+          failure_conditions: ['Campaign underperformance', 'Revenue decrease'],
+          immediate_wins: ['First month revenue increase', 'Immediate customer feedback'],
+          long_term_vision: 'Sustainable business growth'
         }
       };
     } catch (error) {
@@ -439,7 +556,7 @@ Provide expert guidance using this real-time data. Reference specific metrics, t
     return 1800; // 30 minutes in seconds
   }
 
-  private getDefaultUserContext(userId: string): UserContext {
+  private getDefaultUserContext(userId: string): EnhancedUserContext {
     return {
       profile: {
         id: userId,
@@ -449,19 +566,31 @@ Provide expert guidance using this real-time data. Reference specific metrics, t
         department: 'General',
         company_id: 'default',
         permissions: [],
-        preferences: {}
+        preferences: {},
+        experience_level: 'beginner',
+        communication_style: 'direct',
+        primary_responsibilities: ['Sales', 'Marketing'],
+        current_pain_points: ['Finding the right tools'],
+        immediate_goals: 'Increase sales by 20%',
+        success_metrics: ['Revenue', 'Customer Satisfaction'],
+        time_availability: 'medium',
+        collaboration_frequency: 'small-team'
       },
       activity: {
         recent_pages: ['dashboard', 'chat', 'reports'],
         frequent_actions: ['view_dashboard', 'send_message', 'generate_report'],
         last_active: new Date().toISOString(),
         session_duration: 1800,
-        total_sessions: 25
+        total_sessions: 25,
+        most_used_features: ['CRM', 'Marketing Automation'],
+        skill_level: 'beginner'
       },
       business_context: {
         company_name: 'Your Company',
         industry: 'Technology',
         company_size: 'Medium',
+        business_model: 'B2B',
+        revenue_stage: 'growth',
         growth_stage: 'growth',
         fiscal_year_end: '12-31',
         key_metrics: {
@@ -469,7 +598,24 @@ Provide expert guidance using this real-time data. Reference specific metrics, t
           annual_revenue: 5000000,
           growth_rate: 25,
           customer_count: 150
-        }
+        },
+        primary_departments: ['Sales', 'Marketing'],
+        key_tools: ['CRM', 'Marketing Automation'],
+        data_sources: ['Customer Feedback', 'Social Media'],
+        automation_maturity: 'intermediate',
+        business_priorities: ['Revenue Growth', 'Customer Satisfaction'],
+        success_timeframe: '12 months'
+      },
+      success_criteria: {
+        primary_success_metric: 'Revenue Growth',
+        secondary_metrics: ['Customer Satisfaction', 'Marketing ROI'],
+        time_savings_goal: 'Reduce marketing costs by 20%',
+        roi_expectation: 'Return on Investment',
+        usage_frequency: 'Monthly',
+        success_scenarios: ['Successful campaign launch', 'Significant revenue increase'],
+        failure_conditions: ['Campaign underperformance', 'Revenue decrease'],
+        immediate_wins: ['First month revenue increase', 'Immediate customer feedback'],
+        long_term_vision: 'Sustainable business growth'
       }
     };
   }
@@ -502,5 +648,335 @@ Provide expert guidance using this real-time data. Reference specific metrics, t
       operations: this.getDemoData('operations')
     };
     return Promise.resolve();
+  }
+
+  /**
+   * Generate deep personalization insights based on user profile
+   */
+  private generatePersonalizationInsights(): string {
+    if (!this.userContext) return '';
+
+    const expertise = this.assessUserExpertise();
+    const communicationApproach = this.determineCommunicationApproach();
+    const problemSolvingStyle = this.identifyProblemSolvingStyle();
+    const focusAreas = this.identifyBusinessFocusAreas();
+
+    return `• Expertise Assessment: ${expertise}
+• Communication Approach: ${communicationApproach}
+• Problem-Solving Style: ${problemSolvingStyle}
+• Key Focus Areas: ${focusAreas.join(', ')}
+• Automation Opportunities: ${this.identifyAutomationOpportunities().join(', ')}
+• Success Likelihood: ${this.assessSuccessLikelihood()}`;
+  }
+
+  /**
+   * Generate contextual response strategy based on query analysis
+   */
+  private generateContextualResponseStrategy(query: string): string {
+    if (!this.userContext) return '';
+
+    const queryType = this.classifyQueryType(query);
+    const urgency = this.assessQueryUrgency(query);
+    const complexity = this.assessQueryComplexity(query);
+    const suggestedApproach = this.suggestResponseApproach(queryType, urgency, complexity);
+
+    return `• Query Type: ${queryType}
+• Urgency Level: ${urgency}
+• Complexity: ${complexity}
+• Suggested Approach: ${suggestedApproach}
+• Recommended Depth: ${this.getRecommendedDepth()}
+• Follow-up Actions: ${this.suggestFollowupActions(query).join(', ')}`;
+  }
+
+  /**
+   * Build enhanced user intelligence profile
+   */
+  private buildEnhancedUserIntelligence(): string {
+    if (!this.userContext) return '';
+
+    return `• Session Activity: ${Math.round(this.userContext.activity.session_duration / 60)} min session, ${this.userContext.activity.total_sessions} total
+• Platform Expertise: ${this.userContext.activity.skill_level} level, most used: ${this.userContext.activity.most_used_features.slice(0, 3).join(', ')}
+• Working Style: ${this.userContext.profile.collaboration_frequency} collaboration, ${this.userContext.profile.time_availability} time investment
+• Current Challenges: ${this.userContext.profile.current_pain_points.slice(0, 2).join(', ')}
+• Success Motivation: Targeting ${this.userContext.success_criteria.time_savings_goal} within ${this.userContext.business_context.success_timeframe}`;
+  }
+
+  /**
+   * Assess user expertise in department context
+   */
+  private assessDepartmentExpertise(department: string): string {
+    if (!this.userContext) return '';
+
+    const isUserDept = this.userContext.profile.department === department;
+    const hasResponsibility = this.userContext.profile.primary_responsibilities.some(r => 
+      this.isDepartmentRelevant(r, department)
+    );
+    const experienceLevel = this.userContext.profile.experience_level;
+    const relevantTools = this.userContext.business_context.key_tools.filter(t => 
+      this.isDepartmentRelevant(t, department)
+    ).length;
+
+    let expertise = '';
+    if (isUserDept) {
+      expertise = `Expert in ${department} (their primary department)`;
+    } else if (hasResponsibility) {
+      expertise = `Cross-functional knowledge of ${department}`;
+    } else {
+      expertise = `Limited ${department} experience`;
+    }
+
+    return `${expertise} | ${experienceLevel} overall experience | Using ${relevantTools} relevant tools`;
+  }
+
+  /**
+   * Generate department-specific recommendations
+   */
+  private generateDepartmentRecommendations(department: string, query: string): string {
+    if (!this.userContext) return '';
+
+    const automationLevel = this.userContext.business_context.automation_maturity;
+    const immediateWins = this.userContext.success_criteria.immediate_wins.filter(w => 
+      this.isDepartmentRelevant(w, department)
+    );
+    const relevantPriorities = this.userContext.business_context.business_priorities.filter(p =>
+      this.isDepartmentRelevant(p, department)
+    );
+
+    return `• Start with ${automationLevel} level automation solutions
+• Quick wins available: ${immediateWins.slice(0, 2).join(', ')}
+• Align with priorities: ${relevantPriorities.slice(0, 2).join(', ')}
+• Recommended next steps: ${this.getNextStepsForDepartment(department).join(', ')}`;
+  }
+
+  /**
+   * Get response length guidance based on user preferences
+   */
+  private getResponseLengthGuidance(): string {
+    if (!this.userContext) return 'provide balanced responses';
+
+    const timeAvailability = this.userContext.profile.time_availability;
+    const commStyle = this.userContext.profile.communication_style;
+
+    if (timeAvailability === 'low' || commStyle === 'direct') {
+      return 'keep responses concise and actionable';
+    } else if (timeAvailability === 'high' || commStyle === 'detailed') {
+      return 'provide comprehensive analysis and multiple options';
+    } else {
+      return 'provide balanced detail with clear next steps';
+    }
+  }
+
+  /**
+   * Check if item is relevant to department
+   */
+  private isDepartmentRelevant(item: string, department: string): boolean {
+    const departmentKeywords = {
+      'Sales': ['sales', 'revenue', 'customer', 'deal', 'pipeline', 'crm', 'lead'],
+      'Marketing': ['marketing', 'campaign', 'brand', 'content', 'social', 'email', 'analytics'],
+      'Finance': ['finance', 'budget', 'accounting', 'cost', 'expense', 'revenue', 'profit'],
+      'Operations': ['operations', 'process', 'workflow', 'efficiency', 'automation', 'logistics'],
+      'HR': ['hr', 'human', 'employee', 'talent', 'recruitment', 'performance', 'training'],
+      'Engineering': ['engineering', 'development', 'technical', 'code', 'infrastructure', 'devops'],
+      'Customer Success': ['customer', 'support', 'success', 'satisfaction', 'retention', 'experience']
+    };
+
+    const keywords = departmentKeywords[department as keyof typeof departmentKeywords] || [];
+    return keywords.some(keyword => item.toLowerCase().includes(keyword));
+  }
+
+  // Helper methods for personalization insights
+  private assessUserExpertise(): string {
+    if (!this.userContext) return 'Unknown';
+    
+    const exp = this.userContext.profile.experience_level;
+    const responsibilities = this.userContext.profile.primary_responsibilities.length;
+    const tools = this.userContext.business_context.key_tools.length;
+    
+    if (exp === 'advanced' && responsibilities > 3 && tools > 5) {
+      return 'Advanced business user with extensive tool experience';
+    } else if (exp === 'intermediate' && responsibilities > 2) {
+      return 'Experienced professional with solid technical foundation';
+    } else {
+      return 'Growing expertise, benefits from guided approach';
+    }
+  }
+
+  private determineCommunicationApproach(): string {
+    if (!this.userContext) return 'Standard';
+    
+    const style = this.userContext.profile.communication_style;
+    const time = this.userContext.profile.time_availability;
+    
+    if (style === 'direct' && time === 'low') {
+      return 'Executive summary style - bullet points and key actions';
+    } else if (style === 'detailed' && time === 'high') {
+      return 'Comprehensive analysis with examples and alternatives';
+    } else if (style === 'visual') {
+      return 'Visual explanations with charts and diagrams when possible';
+    } else {
+      return 'Balanced approach with clear structure and actionable insights';
+    }
+  }
+
+  private identifyProblemSolvingStyle(): string {
+    if (!this.userContext) return 'Standard';
+    
+    const collab = this.userContext.profile.collaboration_frequency;
+    const exp = this.userContext.profile.experience_level;
+    
+    if (collab === 'cross-functional' && exp === 'advanced') {
+      return 'Strategic systems thinker - considers organizational impact';
+    } else if (collab === 'small-team') {
+      return 'Collaborative problem solver - values team input';
+    } else {
+      return 'Independent executor - prefers clear direction';
+    }
+  }
+
+  private identifyBusinessFocusAreas(): string[] {
+    if (!this.userContext) return [];
+    
+    return [
+      ...this.userContext.business_context.business_priorities.slice(0, 2),
+      ...this.userContext.business_context.primary_departments.slice(0, 2)
+    ];
+  }
+
+  private identifyAutomationOpportunities(): string[] {
+    if (!this.userContext) return [];
+    
+    const maturity = this.userContext.business_context.automation_maturity;
+    const painPoints = this.userContext.profile.current_pain_points;
+    
+    const opportunities = [];
+    
+    if (painPoints.includes('manual data entry') || painPoints.includes('repetitive tasks')) {
+      opportunities.push('Workflow automation');
+    }
+    if (painPoints.includes('scattered information') || painPoints.includes('data quality')) {
+      opportunities.push('Data integration');
+    }
+    if (painPoints.includes('reporting') || painPoints.includes('analysis')) {
+      opportunities.push('Automated reporting');
+    }
+    
+    return opportunities.slice(0, 3);
+  }
+
+  private assessSuccessLikelihood(): string {
+    if (!this.userContext) return 'Moderate';
+    
+    const hasGoals = this.userContext.profile.immediate_goals.length > 10;
+    const hasMetrics = this.userContext.success_criteria.success_scenarios.length > 0;
+    const hasTime = this.userContext.profile.time_availability !== 'low';
+    
+    const score = [hasGoals, hasMetrics, hasTime].filter(Boolean).length;
+    
+    if (score >= 3) return 'High - clear goals and commitment';
+    if (score >= 2) return 'Good - solid foundation for success';
+    return 'Moderate - may need additional goal clarification';
+  }
+
+  private classifyQueryType(query: string): string {
+    const lowerQuery = query.toLowerCase();
+    
+    if (lowerQuery.includes('how to') || lowerQuery.includes('help me')) {
+      return 'Tutorial/Guidance Request';
+    } else if (lowerQuery.includes('what') || lowerQuery.includes('explain')) {
+      return 'Information Request';
+    } else if (lowerQuery.includes('problem') || lowerQuery.includes('issue')) {
+      return 'Problem-Solving Request';
+    } else if (lowerQuery.includes('best') || lowerQuery.includes('recommend')) {
+      return 'Recommendation Request';
+    } else {
+      return 'General Inquiry';
+    }
+  }
+
+  private assessQueryUrgency(query: string): string {
+    const urgentTerms = ['urgent', 'asap', 'immediately', 'critical', 'emergency'];
+    const lowerQuery = query.toLowerCase();
+    
+    if (urgentTerms.some(term => lowerQuery.includes(term))) {
+      return 'High';
+    } else if (lowerQuery.includes('soon') || lowerQuery.includes('quickly')) {
+      return 'Medium';
+    } else {
+      return 'Standard';
+    }
+  }
+
+  private assessQueryComplexity(query: string): string {
+    const complexTerms = ['integrate', 'automation', 'workflow', 'strategy', 'optimize'];
+    const lowerQuery = query.toLowerCase();
+    
+    if (complexTerms.some(term => lowerQuery.includes(term))) {
+      return 'High - may require specialist input';
+    } else if (query.length > 100) {
+      return 'Medium - detailed requirements';
+    } else {
+      return 'Standard';
+    }
+  }
+
+  private suggestResponseApproach(queryType: string, urgency: string, complexity: string): string {
+    if (urgency === 'High') {
+      return 'Immediate action plan with follow-up';
+    } else if (complexity.includes('High')) {
+      return 'Comprehensive analysis with specialist recommendations';
+    } else if (queryType === 'Tutorial/Guidance Request') {
+      return 'Step-by-step guidance with examples';
+    } else {
+      return 'Direct answer with context and next steps';
+    }
+  }
+
+  private getRecommendedDepth(): string {
+    if (!this.userContext) return 'Standard';
+    
+    const exp = this.userContext.profile.experience_level;
+    const time = this.userContext.profile.time_availability;
+    
+    if (exp === 'beginner' || time === 'low') {
+      return 'Simplified with clear next steps';
+    } else if (exp === 'advanced' && time === 'high') {
+      return 'In-depth with technical details';
+    } else {
+      return 'Balanced with practical focus';
+    }
+  }
+
+  private suggestFollowupActions(query: string): string[] {
+    const actions = [];
+    
+    if (query.toLowerCase().includes('automat')) {
+      actions.push('Consider n8n workflow setup');
+    }
+    if (query.toLowerCase().includes('data') || query.toLowerCase().includes('analytic')) {
+      actions.push('Review dashboard customization');
+    }
+    if (query.toLowerCase().includes('team') || query.toLowerCase().includes('collaborat')) {
+      actions.push('Explore department specialists');
+    }
+    
+    actions.push('Schedule follow-up review');
+    
+    return actions.slice(0, 3);
+  }
+
+  private getNextStepsForDepartment(department: string): string[] {
+    const steps = [];
+    
+    if (department === 'Sales') {
+      steps.push('CRM data integration', 'Pipeline automation', 'Lead scoring setup');
+    } else if (department === 'Marketing') {
+      steps.push('Campaign tracking', 'Analytics integration', 'Content automation');
+    } else if (department === 'Finance') {
+      steps.push('Expense automation', 'Budget tracking', 'Financial reporting');
+    } else {
+      steps.push('Process mapping', 'Tool integration', 'Performance tracking');
+    }
+    
+    return steps.slice(0, 2);
   }
 } 

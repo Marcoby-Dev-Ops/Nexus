@@ -6,11 +6,16 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, ArrowRight, ArrowLeft, Zap, Settings, Sparkles, Users } from 'lucide-react';
 import { N8nConnectionSetup } from './N8nConnectionSetup';
+import { OrganizationSetupStep } from './OrganizationSetupStep';
+import { UserContextStep } from './UserContextStep';
+import { BusinessContextStep } from './BusinessContextStep';
+import { SuccessCriteriaStep } from './SuccessCriteriaStep';
 import { n8nOnboardingManager } from '../../lib/n8nOnboardingManager';
 import type { OnboardingState, OnboardingStep } from '../../lib/n8nOnboardingManager';
 import type { UserN8nConfig } from '../../lib/userN8nConfig';
 import { LoadingStates } from '../patterns/LoadingStates';
 import { motion } from 'framer-motion';
+import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -85,10 +90,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   if (isLoading || !onboardingState) {
     return (
-      <LoadingStates.SetupLoader 
-        title="Setting up your onboarding..." 
-        subtitle="Preparing your personalized experience"
-      />
+      <div className="h-full flex items-center justify-center">
+        <LoadingStates.SetupLoader 
+          title="Setting up your onboarding..." 
+          subtitle="Preparing your personalized experience"
+        />
+      </div>
     );
   }
 
@@ -96,267 +103,273 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const currentStepIndex = onboardingState.steps.findIndex(s => s.id === currentStepId);
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 ${className}`}>
-      <div className="container mx-auto px-4 py-8">
-        {/* Progress Header */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-2">
-              Welcome to Nexus OS
-            </h1>
-            <p className="text-lg text-muted-foreground dark:text-muted-foreground">
-              Let's set up your AI-powered business operating system
-            </p>
-          </div>
-
-          {/* Step Progress */}
-          <div className="flex items-center justify-between mb-8">
-            {onboardingState.steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors ${
-                    step.completed
-                      ? 'bg-success border-success text-primary-foreground'
-                      : step.id === currentStepId
-                      ? 'border-primary text-primary bg-card dark:bg-background'
-                      : 'border-border text-muted-foreground/60 bg-card dark:bg-background'
-                  }`}
-                >
-                  {step.completed ? (
-                    <CheckCircle className="h-6 w-6" />
-                  ) : (
-                    <span className="text-sm font-medium">{index + 1}</span>
-                  )}
-                </div>
-                {index < onboardingState.steps.length - 1 && (
-                  <div
-                    className={`w-24 h-1 mx-4 transition-colors ${
-                      step.completed ? 'bg-success' : 'bg-muted'
-                    }`}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Step Content */}
-        <div className="max-w-4xl mx-auto">
-          {currentStepId === 'welcome' && (
-            <WelcomeStep onComplete={() => handleStepComplete('welcome')} />
-          )}
-
-          {currentStepId === 'n8n-connection' && (
-            <div className="bg-card dark:bg-background rounded-lg shadow-lg p-8">
+    <div className={`min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4 ${className}`}>
+      {/* Centered Onboarding Container */}
+      <div className="w-full max-w-4xl bg-background rounded-xl shadow-2xl border border-border">
+        {/* Scrollable Content Container */}
+        <div className="max-h-[90vh] overflow-y-auto">
+          <div className="px-6 py-6 lg:px-8 lg:py-8">
+            {/* Progress Header */}
+            <div className="mb-6">
               <div className="text-center mb-6">
-                <Zap className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-foreground dark:text-primary-foreground mb-2">
-                  Connect Your n8n Instance
-                </h2>
-                <p className="text-muted-foreground dark:text-muted-foreground">
-                  Optional: Connect your n8n automation platform for advanced workflows
+                <h1 className="text-xl lg:text-2xl font-bold text-foreground dark:text-primary-foreground mb-1">
+                  Welcome to Nexus OS
+                </h1>
+                <p className="text-sm lg:text-base text-muted-foreground dark:text-muted-foreground">
+                  Let's set up your AI-powered business operating system
                 </p>
               </div>
-              <N8nConnectionSetup
-                onComplete={(config) => handleN8nComplete({ ...config, userId: 'current-user' })}
-                onSkip={handleN8nSkip}
-              />
+
+              {/* Step Progress - Responsive */}
+              <div className="hidden md:flex items-center justify-between mb-6">
+                {onboardingState.steps.map((step, index) => (
+                  <div key={step.id} className="flex items-center">
+                    <div
+                      className={`flex items-center justify-center w-7 h-7 lg:w-8 lg:h-8 rounded-full border-2 transition-colors ${
+                        step.completed
+                          ? 'bg-success border-success text-primary-foreground'
+                          : step.id === currentStepId
+                          ? 'border-primary text-primary bg-card dark:bg-background'
+                          : 'border-border text-muted-foreground/60 bg-card dark:bg-background'
+                      }`}
+                    >
+                      {step.completed ? (
+                        <CheckCircle className="h-3 w-3 lg:h-4 lg:w-4" />
+                      ) : (
+                        <span className="text-xs font-medium">{index + 1}</span>
+                      )}
+                    </div>
+                    {index < onboardingState.steps.length - 1 && (
+                      <div
+                        className={`w-8 lg:w-12 h-1 mx-2 lg:mx-3 transition-colors ${
+                          step.completed ? 'bg-success' : 'bg-muted'
+                        }`}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Mobile Progress Indicator */}
+              <div className="md:hidden mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-muted-foreground">
+                    Step {currentStepIndex + 1} of {onboardingState.steps.length}
+                  </span>
+                  <span className="text-xs font-medium text-primary">
+                    {Math.round(((currentStepIndex + 1) / onboardingState.steps.length) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full bg-muted h-1.5 rounded-full">
+                  <div 
+                    className="bg-success h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${((currentStepIndex + 1) / onboardingState.steps.length) * 100}%` }}
+                  />
+                </div>
+              </div>
             </div>
-          )}
 
-          {currentStepId === 'department-setup' && (
-            <DepartmentSetupStep onComplete={() => handleStepComplete('department-setup')} />
-          )}
+            {/* Step Content */}
+            <div className="mb-6">
+              {currentStepId === 'welcome' && (
+                <WelcomeStep onComplete={() => handleStepComplete('welcome')} />
+              )}
 
-          {currentStepId === 'complete' && (
-            <CompleteStep onFinish={onComplete} />
-          )}
-        </div>
+              {currentStepId === 'organization-setup' && (
+                <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
+                  <OrganizationSetupStep 
+                    onNext={() => handleStepComplete('organization-setup')}
+                    onBack={() => goToStep('welcome')}
+                  />
+                </div>
+              )}
 
-        {/* Navigation */}
-        <div className="max-w-4xl mx-auto mt-8 flex justify-between">
-          <button
-            onClick={() => {
-              const prevIndex = Math.max(0, currentStepIndex - 1);
-              const prevStep = onboardingState.steps[prevIndex];
-              if (prevStep) goToStep(prevStep.id);
-            }}
-            disabled={currentStepIndex === 0}
-            className="flex items-center space-x-2 px-4 py-4 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Previous</span>
-          </button>
+              {currentStepId === 'user-context' && (
+                <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
+                  <UserContextStep 
+                    onNext={() => handleStepComplete('user-context')}
+                    onBack={() => goToStep('organization-setup')}
+                  />
+                </div>
+              )}
 
-          <div className="text-sm text-muted-foreground dark:text-muted-foreground">
-            Step {currentStepIndex + 1} of {onboardingState.totalSteps}
+              {currentStepId === 'business-context' && (
+                <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
+                  <BusinessContextStep 
+                    onNext={() => handleStepComplete('business-context')}
+                    onBack={() => goToStep('user-context')}
+                  />
+                </div>
+              )}
+
+              {currentStepId === 'success-criteria' && (
+                <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
+                  <SuccessCriteriaStep 
+                    onNext={() => handleStepComplete('success-criteria')}
+                    onBack={() => goToStep('business-context')}
+                  />
+                </div>
+              )}
+
+              {currentStepId === 'n8n-connection' && (
+                <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
+                  <div className="text-center mb-6">
+                    <Zap className="h-8 w-8 lg:h-12 lg:w-12 text-primary mx-auto mb-4" />
+                    <h2 className="text-xl lg:text-2xl font-bold text-foreground dark:text-primary-foreground mb-2">
+                      Connect Your n8n Instance
+                    </h2>
+                    <p className="text-sm lg:text-base text-muted-foreground dark:text-muted-foreground">
+                      Optional: Connect your n8n automation platform for advanced workflows
+                    </p>
+                  </div>
+                  <N8nConnectionSetup
+                    onComplete={(config) => handleN8nComplete({ ...config, userId: 'current-user' })}
+                    onSkip={handleN8nSkip}
+                  />
+                </div>
+              )}
+
+              {currentStepId === 'department-setup' && (
+                <DepartmentSetupStep onComplete={() => handleStepComplete('department-setup')} />
+              )}
+
+              {currentStepId === 'complete' && (
+                <CompleteStep onFinish={onComplete} />
+              )}
+            </div>
+
+            {/* Navigation */}
+            <div className="flex justify-between items-center border-t border-border pt-4">
+              <button
+                onClick={() => {
+                  const prevIndex = Math.max(0, currentStepIndex - 1);
+                  const prevStep = onboardingState.steps[prevIndex];
+                  if (prevStep) goToStep(prevStep.id);
+                }}
+                disabled={currentStepIndex === 0}
+                className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                <span>Previous</span>
+              </button>
+
+              <div className="text-xs text-muted-foreground dark:text-muted-foreground">
+                Step {currentStepIndex + 1} of {onboardingState.totalSteps}
+              </div>
+
+              <button
+                onClick={() => {
+                  const nextIndex = Math.min(onboardingState.steps.length - 1, currentStepIndex + 1);
+                  const nextStep = onboardingState.steps[nextIndex];
+                  if (nextStep) goToStep(nextStep.id);
+                }}
+                disabled={currentStepIndex === onboardingState.steps.length - 1}
+                className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <span>Next</span>
+                <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
           </div>
-
-          <button
-            onClick={() => {
-              const nextIndex = Math.min(onboardingState.steps.length - 1, currentStepIndex + 1);
-              const nextStep = onboardingState.steps[nextIndex];
-              if (nextStep) goToStep(nextStep.id);
-            }}
-            disabled={currentStepIndex === onboardingState.steps.length - 1}
-            className="flex items-center space-x-2 px-4 py-4 text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <span>Next</span>
-            <ArrowRight className="h-4 w-4" />
-          </button>
         </div>
       </div>
     </div>
   );
 };
 
-// Welcome Step Component - Enhanced with immediate value demonstration
+// Welcome Step Component - Simplified
 const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const [currentDemo, setCurrentDemo] = useState(0);
-  const [showingMagic, setShowingMagic] = useState(false);
+  const { user } = useEnhancedUser();
 
-  // Demo scenarios that show immediate value
-  const magicMoments = [
-    {
-      title: "📊 Instant Business Insights",
-      description: "AI analyzes your data patterns in real-time",
-      visual: "Revenue trending up 23% this month",
-      impact: "Save 4 hours weekly on reporting"
-    },
-    {
-      title: "🤖 Smart Automation",
-      description: "Workflows that learn and adapt to your business",
-      visual: "Auto-generated 47 leads from website",
-      impact: "Boost lead conversion by 35%"
-    },
-    {
-      title: "⚡ Team Intelligence",
-      description: "Every department gets an AI assistant",
-      visual: "Sales AI closed 3 deals while you were away",
-      impact: "Increase team productivity by 60%"
+  // Get user's first name or fallback to a generic greeting
+  const getPersonalizedGreeting = () => {
+    const firstName = user?.profile?.first_name;
+    if (firstName) {
+      return `Hi ${firstName}! Let's Build Your AI-Powered Business`;
     }
-  ];
+    return "Let's Build Your AI-Powered Business";
+  };
 
-  useEffect(() => {
-    if (showingMagic) {
-      const interval = setInterval(() => {
-        setCurrentDemo((prev) => (prev + 1) % magicMoments.length);
-      }, 2500);
-      return () => clearInterval(interval);
+  const getPersonalizedSubtitle = () => {
+    const firstName = user?.profile?.first_name;
+    if (firstName) {
+      return `${firstName}, you've just unlocked the most powerful business operating system. We'll customize it specifically for your needs and goals.`;
     }
-  }, [showingMagic]);
+    return "You've just unlocked the most powerful business operating system. We'll customize it specifically for your needs and goals.";
+  };
 
   return (
-    <div className="bg-card dark:bg-background rounded-lg shadow-lg p-8 text-center">
+    <div className="text-center">
       <div className="relative">
-        {/* Magic Demo Animation */}
-        {showingMagic && (
-          <motion.div
-            key={currentDemo}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6 p-6 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-700/50"
-          >
-            <div className="text-2xl mb-2">{magicMoments[currentDemo].title}</div>
-            <div className="text-lg text-muted-foreground mb-3">
-              {magicMoments[currentDemo].description}
-            </div>
-            <div className="text-xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-              {magicMoments[currentDemo].visual}
-            </div>
-            <div className="text-sm text-green-600 dark:text-green-400 font-medium">
-              ✨ {magicMoments[currentDemo].impact}
-            </div>
-          </motion.div>
-        )}
-
-        <Sparkles className="h-16 w-16 text-primary mx-auto mb-6" />
-        <h2 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
-          Welcome to Nexus OS
+        <Sparkles className="h-10 w-10 lg:h-12 lg:w-12 text-primary mx-auto mb-3" />
+        <h2 className="text-xl lg:text-2xl font-bold text-foreground dark:text-primary-foreground mb-2">
+          {getPersonalizedGreeting()}
         </h2>
-        <p className="text-lg text-muted-foreground dark:text-muted-foreground mb-8 max-w-2xl mx-auto">
-          The AI Business Operating System that delivers <strong>immediate results</strong> for companies like yours.
+        <p className="text-sm lg:text-base text-muted-foreground dark:text-muted-foreground mb-4 max-w-xl mx-auto">
+          {getPersonalizedSubtitle()}
         </p>
 
-        {/* Instant Value Promise */}
-        <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700/50">
-          <div className="text-green-800 dark:text-green-200 font-bold text-lg">
-            🎯 What You'll Achieve in the Next 5 Minutes:
+        {/* Setup Promise - Focused on onboarding */}
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700/50">
+          <div className="text-blue-800 dark:text-blue-200 font-semibold text-sm lg:text-base mb-2">
+            🚀 Quick Setup Process (5 minutes)
           </div>
-          <div className="text-green-700 dark:text-green-300 text-sm mt-2 space-y-1">
-            <div>✅ Connect your business data instantly</div>
-            <div>✅ See real-time insights from day one</div>
-            <div>✅ Setup AI assistants for every department</div>
-            <div>✅ Automate your first business process</div>
+          <div className="text-blue-700 dark:text-blue-300 text-xs space-y-1">
+            <div>✅ Tell us about your role and goals</div>
+            <div>✅ Configure your business context</div>
+            <div>✅ Define success metrics</div>
+            <div>✅ Connect integrations (optional)</div>
           </div>
         </div>
 
-        {/* Demo buttons */}
-        <div className="flex justify-center space-x-4 mb-8">
-          <button
-            onClick={() => setShowingMagic(!showingMagic)}
-            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-          >
-            {showingMagic ? 'Hide Preview' : '✨ See The Magic'}
-          </button>
+        {/* Single action button - focused on getting started */}
+        <div className="mb-6">
           <button
             onClick={onComplete}
-            className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors flex items-center"
+            className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium text-base transition-colors flex items-center justify-center mx-auto"
           >
             Start Setup <ArrowRight className="ml-2 h-4 w-4" />
           </button>
         </div>
       </div>
 
-      {/* Feature highlights with business impact */}
-      <div className="grid md:grid-cols-3 gap-6 mb-8">
-        <div className="p-4">
-          <div className="h-12 w-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-            <Zap className="h-6 w-6 text-primary" />
+      {/* Simplified feature highlights - Focus on what's coming */}
+      <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-4">
+        <div className="p-2">
+          <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <Zap className="h-4 w-4 text-primary" />
           </div>
-          <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">AI That Actually Works</h3>
-          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-            No training needed. Immediate insights from day one.
+          <h3 className="font-semibold text-xs lg:text-sm text-foreground dark:text-primary-foreground mb-1">AI Assistant</h3>
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground">
+            Personalized for your role
           </p>
-          <div className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
-            ROI in first week
-          </div>
         </div>
         
-        <div className="p-4">
-          <div className="h-12 w-12 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-            <Settings className="h-6 w-6 text-success" />
+        <div className="p-2">
+          <div className="h-8 w-8 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <Settings className="h-4 w-4 text-success" />
           </div>
-          <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">Zero-Config Automation</h3>
-          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-            Smart workflows that set themselves up automatically
+          <h3 className="font-semibold text-xs lg:text-sm text-foreground dark:text-primary-foreground mb-1">Smart Setup</h3>
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground">
+            Auto-configured workflows
           </p>
-          <div className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
-            Save 20+ hours/week
-          </div>
         </div>
         
-        <div className="p-4">
-          <div className="h-12 w-12 bg-warning/10 rounded-lg flex items-center justify-center mx-auto mb-3">
-            <Users className="h-6 w-6 text-warning" />
+        <div className="p-2">
+          <div className="h-8 w-8 bg-warning/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+            <Users className="h-4 w-4 text-warning" />
           </div>
-          <h3 className="font-semibold text-foreground dark:text-primary-foreground mb-2">Enterprise Ready</h3>
-          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
-            Scales from startup to enterprise seamlessly
+          <h3 className="font-semibold text-xs lg:text-sm text-foreground dark:text-primary-foreground mb-1">Team Ready</h3>
+          <p className="text-xs text-muted-foreground dark:text-muted-foreground">
+            Invite team later
           </p>
-          <div className="text-xs text-green-600 dark:text-green-400 font-medium mt-1">
-            Built for growth
-          </div>
         </div>
       </div>
 
-      {/* Trust indicators */}
-      <div className="border-t pt-6">
-        <div className="text-xs text-muted-foreground mb-2">Trusted by teams at:</div>
-        <div className="flex justify-center items-center space-x-6 text-sm text-muted-foreground">
-          <span className="font-medium">Tech Startups</span>
-          <span className="font-medium">Fortune 500s</span>
-          <span className="font-medium">Remote Teams</span>
+      {/* Simple progress indicator */}
+      <div className="border-t pt-3">
+        <div className="text-xs text-muted-foreground">
+          We'll have you up and running in just a few minutes
         </div>
       </div>
     </div>
@@ -365,18 +378,18 @@ const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
 
 // Department Setup Step Component
 const DepartmentSetupStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => (
-  <div className="bg-card dark:bg-background rounded-lg shadow-lg p-8">
-    <div className="text-center mb-6">
-      <Settings className="h-12 w-12 text-secondary mx-auto mb-4" />
-      <h2 className="text-2xl font-bold text-foreground dark:text-primary-foreground mb-2">
+  <div className="text-center">
+    <div className="mb-6">
+      <Settings className="h-8 w-8 lg:h-12 lg:w-12 text-secondary mx-auto mb-4" />
+      <h2 className="text-xl lg:text-2xl font-bold text-foreground dark:text-primary-foreground mb-2">
         Configure Your Departments
       </h2>
-      <p className="text-muted-foreground dark:text-muted-foreground">
+      <p className="text-sm lg:text-base text-muted-foreground dark:text-muted-foreground">
         Set up the departments that matter to your business
       </p>
     </div>
     
-    <div className="grid md:grid-cols-2 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
       {['Sales', 'Finance', 'Operations', 'Marketing'].map((dept) => (
         <div key={dept} className="flex items-center p-4 border border-border dark:border-border rounded-lg">
           <CheckCircle className="h-5 w-5 text-success mr-3" />
@@ -415,26 +428,26 @@ const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-card dark:bg-background rounded-lg shadow-lg p-8 text-center"
+      className="text-center"
     >
       <motion.div
         animate={{ rotate: [0, 10, -10, 0] }}
         transition={{ duration: 2, repeat: Infinity }}
-        className="text-6xl mb-6"
+        className="text-4xl lg:text-6xl mb-6"
       >
         🎉
       </motion.div>
 
-      <h2 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
+      <h2 className="text-2xl lg:text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
         You're All Set! 🚀
       </h2>
 
-      <div className="mb-8 p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl">
-        <div className="text-lg font-semibold text-foreground mb-4">
+      <div className="mb-8 p-4 lg:p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl">
+        <div className="text-base lg:text-lg font-semibold text-foreground mb-4">
           Your Nexus OS is configured and ready to deliver results:
         </div>
         
-        <div className="grid md:grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="text-left">
             <div className="font-medium text-green-600 dark:text-green-400 mb-2">✅ Immediate Benefits:</div>
             <ul className="space-y-1 text-muted-foreground">
@@ -459,7 +472,7 @@ const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
       <div className="mb-6">
         <button
           onClick={onFinish}
-          className="px-8 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          className="px-6 lg:px-8 py-3 lg:py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-base lg:text-lg shadow-lg hover:shadow-xl transition-all duration-200"
         >
           Launch Nexus OS ✨
         </button>

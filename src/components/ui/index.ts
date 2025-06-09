@@ -15,6 +15,7 @@ export { Skeleton } from './Skeleton';
 export { Avatar } from './Avatar';
 export { AuthForm } from './AuthForm';
 export { Checkbox } from './Checkbox';
+export { RadioGroup, RadioGroupItem } from './RadioGroup';
 
 // Missing exports for 1.0
 export { default as Breadcrumbs } from './Breadcrumbs';
@@ -42,6 +43,7 @@ export type { AvatarProps } from './Avatar';
 export type { BreadcrumbItem, BreadcrumbsProps } from './Breadcrumbs';
 export type { DropdownItem, DropdownProps } from './Dropdown';
 export type { FormProps, FormFieldProps } from './Form';
+export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup';
 // Modal and Table types are exported with their components
 export type { TooltipProps } from './Tooltip';
 

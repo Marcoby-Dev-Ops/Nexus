@@ -32,6 +32,34 @@ class N8nOnboardingManager {
       required: true
     },
     {
+      id: 'organization-setup',
+      title: 'Your Organization',
+      description: 'Tell us about your company and team size',
+      completed: false,
+      required: true
+    },
+    {
+      id: 'user-context',
+      title: 'Tell Us About You',
+      description: 'Help us personalize your experience',
+      completed: false,
+      required: true
+    },
+    {
+      id: 'business-context',
+      title: 'Business Details',
+      description: 'Configure tools, processes, and priorities',
+      completed: false,
+      required: true
+    },
+    {
+      id: 'success-criteria',
+      title: 'Define Success',
+      description: 'What would make Nexus successful for you?',
+      completed: false,
+      required: true
+    },
+    {
       id: 'n8n-connection',
       title: 'Connect n8n',
       description: 'Connect your n8n instance for powerful workflow automation',

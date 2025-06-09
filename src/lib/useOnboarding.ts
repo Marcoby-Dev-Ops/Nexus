@@ -128,8 +128,13 @@ export function useN8nConfigStatus() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const userConfig = await userN8nConfigService.getCurrentUserConfig();
-        setConfig(userConfig);
+        // Only load config if n8n integration is enabled
+        if (userN8nConfigService.isEnabled()) {
+          const userConfig = await userN8nConfigService.getCurrentUserConfig();
+          setConfig(userConfig);
+        } else {
+          setConfig(null);
+        }
       } catch (error) {
         console.error('Failed to load n8n config:', error);
       } finally {
@@ -144,8 +149,13 @@ export function useN8nConfigStatus() {
     setIsLoading(true);
     try {
       userN8nConfigService.clearCache();
-      const userConfig = await userN8nConfigService.getCurrentUserConfig();
-      setConfig(userConfig);
+      // Only load config if n8n integration is enabled
+      if (userN8nConfigService.isEnabled()) {
+        const userConfig = await userN8nConfigService.getCurrentUserConfig();
+        setConfig(userConfig);
+      } else {
+        setConfig(null);
+      }
     } catch (error) {
       console.error('Failed to refresh n8n config:', error);
     } finally {
@@ -153,11 +163,24 @@ export function useN8nConfigStatus() {
     }
   }, []);
 
+  const enableN8nIntegration = useCallback(async () => {
+    userN8nConfigService.enableN8nIntegration();
+    await refreshConfig();
+  }, [refreshConfig]);
+
+  const disableN8nIntegration = useCallback(() => {
+    userN8nConfigService.disableN8nIntegration();
+    setConfig(null);
+  }, []);
+
   return {
     config,
     isConfigured: config !== null,
+    isN8nEnabled: userN8nConfigService.isEnabled(),
     isLoading,
-    refreshConfig
+    refreshConfig,
+    enableN8nIntegration,
+    disableN8nIntegration
   };
 }
 

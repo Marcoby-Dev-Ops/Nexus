@@ -1,3 +1,4 @@
+// @ts-ignore
 require('@testing-library/jest-dom');
 
 // Polyfill for TextEncoder/TextDecoder (needed for React Router)

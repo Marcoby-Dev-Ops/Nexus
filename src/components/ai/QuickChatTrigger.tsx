@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { MessageSquare, X, Zap } from 'lucide-react';
 import { QuickChat } from './QuickChat';
 import { useNavigate } from 'react-router-dom';
+import { useOnboardingContext } from '../../contexts/OnboardingContext';
 
 /**
  * Floating Quick Chat Trigger Button
@@ -24,6 +25,12 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const navigate = useNavigate();
+  const { isOnboardingActive } = useOnboardingContext();
+
+  // Hide during onboarding
+  if (isOnboardingActive) {
+    return null;
+  }
 
   const positionClasses = {
     'bottom-right': 'bottom-6 right-6',
