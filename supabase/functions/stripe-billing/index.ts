@@ -149,6 +149,50 @@ const createInvoice = async (customerId: string, daysUntilDue?: number) => {
   });
 };
 
+const verifyWebhookSignature = async (body: string, signature: string, webhookSecret: string) => {
+  if (!webhookSecret) {
+    throw new Error('Webhook secret not configured');
+  }
+
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(webhookSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['verify']
+  );
+
+  const sigElements = signature.split(',');
+  const timestamp = sigElements.find(el => el.startsWith('t='))?.substring(2);
+  const expectedSig = sigElements.find(el => el.startsWith('v1='))?.substring(3);
+
+  if (!timestamp || !expectedSig) {
+    throw new Error('Invalid signature format');
+  }
+
+  const payload = `${timestamp}.${body}`;
+  const payloadBuffer = encoder.encode(payload);
+  const expectedSigBuffer = new Uint8Array(Buffer.from(expectedSig, 'hex'));
+
+  const isValid = await crypto.subtle.verify('HMAC', key, expectedSigBuffer, payloadBuffer);
+  
+  if (!isValid) {
+    throw new Error('Invalid webhook signature');
+  }
+
+  // Check timestamp to prevent replay attacks (5 minutes tolerance)
+  const timestampMs = parseInt(timestamp) * 1000;
+  const now = Date.now();
+  const tolerance = 5 * 60 * 1000; // 5 minutes
+  
+  if (Math.abs(now - timestampMs) > tolerance) {
+    throw new Error('Webhook timestamp too old');
+  }
+
+  return JSON.parse(body);
+};
+
 const handleWebhook = async (request: Request) => {
   const signature = request.headers.get('stripe-signature');
   const body = await request.text();
@@ -162,10 +206,41 @@ const handleWebhook = async (request: Request) => {
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  // Parse webhook event (simplified - in production you'd verify signature)
-  const event = JSON.parse(body);
+  // Get webhook secret and verify signature
+  const config = getStripeConfig();
+  const event = await verifyWebhookSignature(body, signature, config.webhookSecret);
+
+  console.log(`Processing webhook event: ${event.type} - ${event.id}`);
 
   switch (event.type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object;
+      
+      // Handle successful checkout - useful for waitlist conversions
+      console.log(`Checkout completed for customer ${session.customer}`);
+      
+      // If this is a subscription, the subscription events will handle license updates
+      if (session.mode === 'payment') {
+        // Handle one-time payments if needed
+        const { error } = await supabase
+          .from('payments')
+          .insert({
+            stripe_payment_intent_id: session.payment_intent,
+            stripe_customer_id: session.customer,
+            amount: session.amount_total,
+            currency: session.currency,
+            status: 'succeeded',
+            metadata: session.metadata,
+            created_at: new Date().toISOString(),
+          });
+
+        if (error) {
+          console.error('Error recording payment:', error);
+        }
+      }
+      break;
+    }
+
     case 'customer.subscription.created':
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted': {
@@ -196,24 +271,78 @@ const handleWebhook = async (request: Request) => {
       if (error) {
         console.error('Error updating user license:', error);
       }
+
+      // Log subscription changes
+      console.log(`Subscription ${event.type}: ${subscription.id} for customer ${subscription.customer} - Status: ${subscription.status}`);
       break;
     }
     
     case 'invoice.payment_succeeded': {
       const invoice = event.data.object;
       
-      // Log successful payment
-      console.log(`Payment succeeded for customer ${invoice.customer}`);
+      // Update payment status and send success notifications
+      console.log(`Payment succeeded for customer ${invoice.customer}, amount: ${invoice.amount_paid / 100} ${invoice.currency}`);
+      
+      // Record successful payment
+      const { error } = await supabase
+        .from('billing_events')
+        .insert({
+          stripe_customer_id: invoice.customer,
+          stripe_invoice_id: invoice.id,
+          event_type: 'payment_succeeded',
+          amount: invoice.amount_paid,
+          currency: invoice.currency,
+          created_at: new Date().toISOString(),
+        });
+
+      if (error) {
+        console.error('Error recording billing event:', error);
+      }
       break;
     }
     
     case 'invoice.payment_failed': {
       const invoice = event.data.object;
       
-      // Handle failed payment
-      console.log(`Payment failed for customer ${invoice.customer}`);
+      // Handle failed payment - send notifications, update status
+      console.log(`Payment failed for customer ${invoice.customer}, invoice: ${invoice.id}`);
+      
+      // Record failed payment
+      const { error } = await supabase
+        .from('billing_events')
+        .insert({
+          stripe_customer_id: invoice.customer,
+          stripe_invoice_id: invoice.id,
+          event_type: 'payment_failed',
+          amount: invoice.amount_due,
+          currency: invoice.currency,
+          created_at: new Date().toISOString(),
+        });
+
+      if (error) {
+        console.error('Error recording billing event:', error);
+      }
       break;
     }
+
+    case 'customer.created': {
+      const customer = event.data.object;
+      
+      // Sync customer data
+      console.log(`New customer created: ${customer.id} - ${customer.email}`);
+      break;
+    }
+
+    case 'payment_intent.succeeded': {
+      const paymentIntent = event.data.object;
+      
+      // Handle successful one-time payments
+      console.log(`Payment intent succeeded: ${paymentIntent.id} for customer ${paymentIntent.customer}`);
+      break;
+    }
+
+    default:
+      console.log(`Unhandled event type: ${event.type}`);
   }
 
   return new Response(JSON.stringify({ received: true }), {
