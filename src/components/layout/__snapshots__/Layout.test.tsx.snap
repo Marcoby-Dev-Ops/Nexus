@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Layout matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    class="min-h-screen bg-background "
+  >
+    <main
+      class="container mx-auto px-4 py-8"
+    >
+      <div>
+        Snapshot Child
+      </div>
+    </main>
+  </div>
+</DocumentFragment>
+`;

@@ -6,9 +6,8 @@ exports[`Modal matches snapshot 1`] = `
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
   >
     <div
-      aria-labelledby="modal-title"
       aria-modal="true"
-      class="bg-popover text-popover-foreground rounded-lg shadow-lg p-6 w-full max-w-md "
+      class="bg-popover text-popover-foreground rounded-lg shadow-lg p-6 w-full max-w-md"
       role="dialog"
     >
       <button

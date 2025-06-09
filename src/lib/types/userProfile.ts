@@ -1,22 +1,13 @@
 export interface Company {
   id: string;
   name: string;
-  domain?: string;
-  industry?: string;
-  size?: 'startup' | 'small' | 'medium' | 'large' | 'enterprise';
-  logo_url?: string;
-  address?: {
-    street?: string;
-    city?: string;
-    state?: string;
-    postal_code?: string;
-    country?: string;
-  };
-  website?: string;
-  description?: string;
-  settings: Record<string, any>;
-  created_at: string;
-  updated_at: string;
+  domain?: string | null;
+  industry?: string | null;
+  size?: string | null;
+  logo_url?: string | null;
+  settings?: any | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface UserProfile {

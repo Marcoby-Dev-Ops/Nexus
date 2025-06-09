@@ -102,7 +102,7 @@ class IntelligentSystemEvolution {
    */
   private async collectUsagePatterns(): Promise<UsagePattern[]> {
     const { data: patterns, error } = await supabase
-      .from('usage_analytics')
+      .from('chat_usage_tracking')
       .select('*')
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
@@ -427,19 +427,12 @@ export const OptimizedWorkflow: React.FC<OptimizedWorkflowProps> = ({ onComplete
     );
 
     for (const suggestion of complexSuggestions) {
-      await supabase.from('evolution_suggestions').insert({
+      // Evolution suggestions disabled for 1.0 - coming in v1.1
+      console.log('Evolution suggestion generated:', {
         id: suggestion.id,
-        type: suggestion.type,
         priority: suggestion.priority,
         title: suggestion.title,
-        description: suggestion.description,
-        estimated_impact: suggestion.estimatedImpact,
-        required_resources: suggestion.requiredResources,
-        generated_code: suggestion.generatedCode,
-        implementation_plan: suggestion.implementationPlan,
-        business_justification: suggestion.businessJustification,
-        status: 'pending_review',
-        created_at: suggestion.createdAt.toISOString()
+        estimatedImpact: suggestion.estimatedImpact
       });
     }
   }

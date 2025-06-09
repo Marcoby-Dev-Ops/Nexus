@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Dashboard from './Dashboard';
+import Dashboard from '@/pages/Dashboard';
 
 // Mock child components
 jest.mock('./ActivityFeed', () => ({
@@ -33,9 +33,9 @@ jest.mock('./SimpleBarChart', () => ({
   default: () => <div data-testid="bar-chart">Bar Chart</div>,
 }));
 
-jest.mock('@/components/ai/ExecutiveAssistant', () => ({
+jest.mock('@/components/ai/enhanced/ModernExecutiveAssistant', () => ({
   __esModule: true,
-  ExecutiveAssistant: () => <div data-testid="executive-assistant">Executive Assistant</div>,
+  ModernExecutiveAssistant: () => <div data-testid="modern-executive-assistant">Modern Executive Assistant</div>,
 }));
 
 describe('Dashboard', () => {
@@ -67,15 +67,15 @@ describe('Dashboard', () => {
     render(<Dashboard />);
 
     // Assistant panel should be hidden by default
-    expect(screen.queryByTestId('executive-assistant')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('modern-executive-assistant')).not.toBeInTheDocument();
 
     // Click assistant button to show panel
     fireEvent.click(screen.getByRole('button', { name: /ask ai/i }));
-    expect(screen.getByTestId('executive-assistant')).toBeInTheDocument();
+    expect(screen.getByTestId('modern-executive-assistant')).toBeInTheDocument();
 
     // Click close button to hide panel
     fireEvent.click(screen.getByRole('button', { name: /close/i }));
-    expect(screen.queryByTestId('executive-assistant')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('modern-executive-assistant')).not.toBeInTheDocument();
   });
 
   it('navigates to sales dashboard when clicked', () => {

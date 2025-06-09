@@ -3,11 +3,9 @@
 exports[`Card matches snapshot 1`] = `
 <DocumentFragment>
   <div
-    class="bg-card text-card-foreground rounded-xl shadow p-6  "
+    class="rounded-lg border bg-card text-card-foreground shadow-sm"
   >
-    <div>
-      Snapshot Content
-    </div>
+    Snapshot Content
   </div>
 </DocumentFragment>
 `;

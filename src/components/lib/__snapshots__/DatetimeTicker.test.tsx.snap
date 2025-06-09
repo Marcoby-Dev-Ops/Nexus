@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DatetimeTicker matches snapshot 1`] = `
+<DocumentFragment>
+  <div
+    aria-live="polite"
+    class="flex flex-col items-end mr-2 select-none"
+  >
+    <span
+      class="text-xs text-muted-foreground font-medium"
+    >
+      Sunday, June 8, 2025
+    </span>
+    <span
+      class="text-lg font-mono tabular-nums text-primary"
+    >
+      09:09:25 PM
+    </span>
+  </div>
+</DocumentFragment>
+`;

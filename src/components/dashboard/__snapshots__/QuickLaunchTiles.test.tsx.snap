@@ -7,45 +7,57 @@ exports[`QuickLaunchTiles matches snapshot 1`] = `
   >
     <button
       aria-label="New Deal"
-      class="font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring px-4 flex flex-col items-center justify-center gap-2 h-20 w-full rounded-xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200"
+      class="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
     >
-      <span
-        class="text-lg"
+      <div
+        class="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
       >
-        plus
-      </span>
+        <span
+          class="text-lg"
+        >
+          plus
+        </span>
+      </div>
       <span
-        class="text-xs font-medium text-center"
+        class="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200"
       >
         New Deal
       </span>
     </button>
     <button
       aria-label="Reports"
-      class="font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring px-4 flex flex-col items-center justify-center gap-2 h-20 w-full rounded-xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200"
+      class="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
     >
-      <span
-        class="text-lg"
+      <div
+        class="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
       >
-        chart
-      </span>
+        <span
+          class="text-lg"
+        >
+          chart
+        </span>
+      </div>
       <span
-        class="text-xs font-medium text-center"
+        class="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200"
       >
         Reports
       </span>
     </button>
     <button
       aria-label="Contacts"
-      class="font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-ring px-4 flex flex-col items-center justify-center gap-2 h-20 w-full rounded-xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200"
+      class="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
     >
-      <span
-        class="text-lg"
+      <div
+        class="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
       >
-        users
-      </span>
+        <span
+          class="text-lg"
+        >
+          users
+        </span>
+      </div>
       <span
-        class="text-xs font-medium text-center"
+        class="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200"
       >
         Contacts
       </span>

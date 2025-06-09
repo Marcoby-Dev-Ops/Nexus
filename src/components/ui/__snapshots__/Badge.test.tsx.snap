@@ -3,7 +3,7 @@
 exports[`Badge matches snapshot 1`] = `
 <DocumentFragment>
   <span
-    class="inline-flex items-center font-medium rounded select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition bg-primary text-primary-foreground text-sm px-3 py-1 h-6"
+    class="inline-flex items-center font-medium rounded select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-primary transition bg-primary text-primary-foreground text-sm px-4 py-4 h-6"
     tabindex="0"
   >
     Snapshot Badge

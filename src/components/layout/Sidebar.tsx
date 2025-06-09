@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Badge } from '@/components/ui/Badge';
 import { useLocation, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Banknote, Settings, Store, Bot, BarChart2, Users, DollarSign, Truck, X, Building2, Plug, Brain } from 'lucide-react';
+import { LayoutDashboard, Banknote, Settings, Store, Bot, BarChart2, Users, DollarSign, Truck, X, Building2, Plug, Brain, Sparkles } from 'lucide-react';
 import { useSupabase } from '@/lib/SupabaseProvider';
 import { useNavigate } from 'react-router-dom';
 import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
@@ -36,26 +36,29 @@ interface NavItem {
   badge?: string;
 }
 
-const coreModules: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+const overview: NavItem[] = [
+  { label: 'Command Center', href: '/nexus', icon: <Brain className="w-5 h-5" />, badge: 'TRINITY' },
+  { label: 'Business Overview', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+];
+
+const departments: NavItem[] = [
   { label: 'Sales', href: '/sales', icon: <DollarSign className="w-5 h-5" /> },
   { label: 'Finance', href: '/finance', icon: <Banknote className="w-5 h-5" /> },
   { label: 'Operations', href: '/operations', icon: <Truck className="w-5 h-5" /> },
   { label: 'Data Warehouse', href: '/data-warehouse', icon: <BarChart2 className="w-5 h-5" /> },
 ];
 
+const aiPowered: NavItem[] = [
+  { label: 'AI Chat', href: '/chat', icon: <Bot className="w-5 h-5" /> },
+  { label: 'AI Transformation', href: '/ai-transformation', icon: <Sparkles className="w-5 h-5" /> },
+  { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
+  { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> },
+];
+
 const marketplace: NavItem[] = [
   { label: 'Pulse', href: '/marketplace', icon: <Store className="w-5 h-5" />, badge: '3 new' },
   { label: 'Add-ons', href: '/add-ons', icon: <Settings className="w-5 h-5" />, badge: 'New' },
   { label: 'Integrations', href: '/integrations', icon: <Plug className="w-5 h-5" /> },
-];
-
-const aiAssistants: NavItem[] = [
-  { label: 'Nexus Thoughts', href: '/nexus', icon: <Brain className="w-5 h-5" />, badge: 'NEW' },
-  { label: 'Chat', href: '/chat', icon: <Bot className="w-5 h-5" /> },
-  { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> },
-  { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
-  { label: 'AI Transformation', href: '/ai-transformation', icon: <Bot className="w-5 h-5" />, badge: 'New' },
 ];
 
 const admin: NavItem[] = [
@@ -80,11 +83,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     const userRole = enhancedUser?.profile?.role || 'user';
     const department = enhancedUser?.profile?.department?.toLowerCase();
     
-    // Filter core modules based on role and department
-    let personalizedCoreModules = [...coreModules];
-    
     // Add department-specific highlights
-    personalizedCoreModules = personalizedCoreModules.map(module => {
+    let personalizedDepartments = departments.map(module => {
       if (department === 'sales' && module.href === '/sales') {
         return { ...module, badge: 'Your Dept' };
       }
@@ -104,9 +104,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     }
 
     return {
-      coreModules: personalizedCoreModules,
+      overview,
+      departments: personalizedDepartments,
+      aiPowered,
       marketplace,
-      aiAssistants,
       admin: personalizedAdmin
     };
   };
@@ -160,7 +161,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   return (
     <aside
       className={`
-        fixed top-0 left-0 h-screen w-80 z-50 bg-background border-r border-border shadow-lg flex flex-col
+        fixed top-0 left-0 h-screen w-80 z-[70] bg-background border-r border-border shadow-lg flex flex-col
         transition-transform duration-300 ease-in-out overflow-y-auto
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
       `}
@@ -214,9 +215,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
 
       {/* Navigation Sections */}
       <div className="flex-1 py-6 overflow-y-auto">
-        {renderNavSection('Core Modules', personalizedNav.coreModules)}
+        {renderNavSection('Overview', personalizedNav.overview)}
+        {renderNavSection('Departments', personalizedNav.departments)}
+        {renderNavSection('AI-Powered', personalizedNav.aiPowered)}
         {renderNavSection('Marketplace', personalizedNav.marketplace)}
-        {renderNavSection('AI Assistants', personalizedNav.aiAssistants)}
         {personalizedNav.admin.length > 0 && renderNavSection('Administration', personalizedNav.admin)}
       </div>
 
@@ -273,7 +275,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                   .map((integration) => (
                     <Badge 
                       key={integration.id} 
-                      className="text-xs bg-success/10 text-success border-green-200"
+                      className="text-xs bg-success/10 text-success border-success/20"
                     >
                       {integration.integration?.name || integration.name}
                     </Badge>

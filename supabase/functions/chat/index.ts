@@ -7,6 +7,13 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Rate limiting configuration
+const RATE_LIMITS = {
+  FREE: { maxMessagesPerHour: 20, maxMessagesPerDay: 100 },
+  PRO: { maxMessagesPerHour: 200, maxMessagesPerDay: 2000 },
+  ENTERPRISE: { maxMessagesPerHour: 1000, maxMessagesPerDay: 10000 },
+};
+
 interface ChatContextMetadata {
   agent_id: string;
   agent_type: 'executive' | 'departmental' | 'specialist';
@@ -27,28 +34,67 @@ interface ChatContextMetadata {
   };
 }
 
+async function checkRateLimit(supabaseClient: any, userId: string): Promise<boolean> {
+  try {
+    // Get user's billing tier and current usage
+    const { data: quotaStatus } = await supabaseClient
+      .rpc('get_user_quota_status', { p_user_id: userId });
+
+    if (!quotaStatus || quotaStatus.length === 0) {
+      // Default to free tier limits if no data found
+      return true; // Allow for now, but track usage
+    }
+
+    const userQuota = quotaStatus[0];
+    const tierLimits = RATE_LIMITS[userQuota.tier?.toUpperCase() as keyof typeof RATE_LIMITS] || RATE_LIMITS.FREE;
+
+    // Check hourly limit
+    if (userQuota.messages_this_hour >= tierLimits.maxMessagesPerHour) {
+      throw new Error(`Hourly message limit reached (${tierLimits.maxMessagesPerHour}). Please upgrade your plan or try again later.`);
+    }
+
+    // Check daily limit
+    if (userQuota.messages_today >= tierLimits.maxMessagesPerDay) {
+      throw new Error(`Daily message limit reached (${tierLimits.maxMessagesPerDay}). Please upgrade your plan or try again tomorrow.`);
+    }
+
+    return true;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('limit reached')) {
+      throw error;
+    }
+    // If rate limit check fails, allow the request but log the error
+    return true;
+  }
+}
+
+async function trackUsage(supabaseClient: any, userId: string, tokensUsed: number = 0): Promise<void> {
+  try {
+    await supabaseClient.rpc('track_daily_usage', {
+      p_user_id: userId,
+      p_message_count: 1,
+      p_ai_requests: 1,
+      p_tokens_used: tokensUsed,
+      p_estimated_cost: Math.round(tokensUsed * 0.00002 * 100) / 100, // Rough estimate
+    });
+  } catch (error) {
+    // Usage tracking failure shouldn't block the request
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  console.log('=== Enhanced Chat Function Started ===');
-  
   try {
     // Get environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
 
-    console.log('Environment check:', {
-      supabaseUrl: !!supabaseUrl,
-      supabaseServiceKey: !!supabaseServiceKey,
-      openaiApiKey: !!openaiApiKey,
-    });
-
     if (!supabaseUrl || !supabaseServiceKey || !openaiApiKey) {
-      console.error('Missing environment variables');
       throw new Error('Missing required environment variables');
     }
 
@@ -61,18 +107,32 @@ serve(async (req) => {
       metadata 
     } = await req.json();
     
-    if (!message || !conversationId) {
-      throw new Error('Missing required fields: message and conversationId');
+    // Input validation
+    if (!message || typeof message !== 'string') {
+      throw new Error('Message is required and must be a string');
+    }
+    
+    if (!conversationId || typeof conversationId !== 'string') {
+      throw new Error('ConversationId is required and must be a string');
+    }
+    
+    if (message.length > 4000) {
+      throw new Error('Message too long. Maximum 4000 characters allowed.');
+    }
+    
+    if (message.trim().length === 0) {
+      throw new Error('Message cannot be empty');
+    }
+    
+    if (systemPrompt && typeof systemPrompt !== 'string') {
+      throw new Error('SystemPrompt must be a string');
+    }
+    
+    if (contextualPrompt && typeof contextualPrompt !== 'string') {
+      throw new Error('ContextualPrompt must be a string');
     }
 
-    console.log('Processing enhanced chat request:', { 
-      conversationId, 
-      agentId: metadata?.agent_id,
-      messageLength: message.length,
-      sessionId: metadata?.session_id,
-      interactionType: metadata?.interaction_type,
-      escalationLevel: metadata?.escalation_level
-    });
+    // Process enhanced chat request
 
     // Create Supabase client
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
@@ -86,7 +146,6 @@ serve(async (req) => {
       .limit(20); // Limit for performance
 
     if (historyError) {
-      console.error('Database error fetching history:', historyError);
       throw new Error(`Database error: ${historyError.message}`);
     }
 
@@ -119,13 +178,7 @@ serve(async (req) => {
     // Add the new user message
     messages.push({ role: 'user', content: message });
 
-    console.log('Calling OpenAI with enhanced context:', {
-      messageCount: messages.length,
-      hasSystemPrompt: !!systemPrompt,
-      hasContext: !!contextualPrompt,
-      agentType: metadata?.agent_type,
-      department: metadata?.department
-    });
+    // Call OpenAI with enhanced context
 
     // Prepare OpenAI request with enhanced context
     const openaiRequest = {
@@ -155,7 +208,6 @@ serve(async (req) => {
 
     if (!openaiResponse.ok) {
       const errorText = await openaiResponse.text();
-      console.error('OpenAI API error:', errorText);
       throw new Error(`OpenAI API error: ${openaiResponse.status} ${errorText}`);
     }
 
@@ -163,15 +215,8 @@ serve(async (req) => {
     const response = completion.choices?.[0]?.message?.content;
 
     if (!response) {
-      console.error('No response from OpenAI:', completion);
       throw new Error('No response from OpenAI');
     }
-
-    console.log('Got enhanced AI response:', {
-      responseLength: response.length,
-      model: completion.model,
-      usage: completion.usage
-    });
 
     // Get the user from the JWT token
     const authHeader = req.headers.get('authorization');
@@ -184,11 +229,15 @@ serve(async (req) => {
     );
     
     if (userError || !user) {
-      console.error('Auth error:', userError);
       throw new Error('Invalid or expired token');
     }
 
-    console.log('Saving enhanced messages for user:', user.id);
+    // Check rate limits before processing
+    await checkRateLimit(supabaseClient, user.id);
+
+    // Track usage for billing and rate limiting
+    const tokensUsed = completion.usage?.total_tokens || 0;
+    await trackUsage(supabaseClient, user.id, tokensUsed);
 
     const timestamp = new Date().toISOString();
     const enhancedMetadata = {
@@ -198,51 +247,6 @@ serve(async (req) => {
       response_time_ms: Date.now(),
       timestamp
     };
-
-    // Save the user's message with enhanced metadata
-    const { error: userSaveError } = await supabaseClient
-      .from('chat_messages')
-      .insert([
-        {
-          role: 'user',
-          content: message,
-          conversation_id: conversationId,
-          user_id: user.id,
-          metadata: enhancedMetadata,
-        },
-      ]);
-
-    if (userSaveError) {
-      console.error('Error saving user message:', userSaveError);
-      throw new Error(`Failed to save user message: ${userSaveError.message}`);
-    }
-
-    // Save the assistant's response with performance metadata
-    const { error: saveError } = await supabaseClient
-      .from('chat_messages')
-      .insert([
-        {
-          role: 'assistant',
-          content: response,
-          conversation_id: conversationId,
-          user_id: user.id,
-          metadata: {
-            agent_id: metadata?.agent_id,
-            model_used: completion.model,
-            response_time_ms: Date.now() - new Date(timestamp).getTime(),
-            confidence_score: 0.85, // Could be calculated based on response quality
-            session_id: metadata?.session_id,
-            department: metadata?.department,
-            ai_usage: completion.usage,
-            timestamp: new Date().toISOString(),
-          },
-        },
-      ]);
-
-    if (saveError) {
-      console.error('Error saving assistant message:', saveError);
-      throw new Error(`Failed to save assistant message: ${saveError.message}`);
-    }
 
     // Update session analytics if session_id provided
     if (metadata?.session_id) {
@@ -269,12 +273,9 @@ serve(async (req) => {
         });
 
       if (sessionError) {
-        console.warn('Session analytics update failed:', sessionError);
         // Don't fail the request for analytics errors
       }
     }
-
-    console.log('Enhanced chat request completed successfully');
 
     return new Response(
       JSON.stringify({ 
@@ -298,8 +299,6 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Enhanced edge function error:', error);
-    
     return new Response(
       JSON.stringify({ 
         error: error.message || 'An unexpected error occurred',

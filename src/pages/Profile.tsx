@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Separator } from '@/components/ui/Separator';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Progress } from '@/components/ui/Progress';
+import { Spinner } from '@/components/ui/Spinner';
 import { 
   User, 
   Mail, 

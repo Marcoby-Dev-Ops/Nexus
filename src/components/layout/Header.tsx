@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import DatetimeTicker from '../lib/DatetimeTicker';
 // Removed imports for deleted components
 import { useTheme } from '@/components/ui/theme-provider';
@@ -38,6 +39,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
   const [showNotifications, setShowNotifications] = React.useState<boolean>(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
   const notificationsRef = React.useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const { user: basicUser, logout } = useUser();
@@ -181,7 +183,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
 
               {/* Notifications Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-background border border-border rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 top-full mt-2 w-80 bg-background border border-border rounded-lg shadow-lg z-[65]">
                   <div className="p-4 border-b border-border">
                     <div className="flex items-center justify-between">
                       <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
@@ -270,7 +272,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
 
               {/* User Dropdown Menu */}
               {showUserMenu && (
-                <div className="absolute right-0 top-full mt-2 w-96 bg-background border border-border rounded-lg shadow-lg z-50">
+                <div className="absolute right-0 top-full mt-2 w-96 bg-background border border-border rounded-lg shadow-lg z-[65]">
                   <div className="p-4 border-b border-border">
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center text-accent-foreground font-semibold text-xl">
@@ -380,8 +382,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
-                        // Navigate to profile
-                        window.location.href = '/profile';
+                        navigate('/profile');
                       }}
                       className="w-full flex items-center px-4 py-4 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
                     >
@@ -391,8 +392,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
-                        // Navigate to settings
-                        window.location.href = '/settings';
+                        navigate('/settings');
                       }}
                       className="w-full flex items-center px-4 py-4 text-sm text-foreground bg-transparent hover:bg-muted/50 rounded-md transition-colors"
                     >

@@ -36,7 +36,7 @@ exports[`KpiCard matches snapshot 1`] = `
       </svg>
     </div>
     <p
-      class="text-xs font-medium text-green-600"
+      class="text-xs font-medium text-success"
     >
       +10%
     </p>
