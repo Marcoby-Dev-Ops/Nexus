@@ -250,10 +250,10 @@ const handleWebhook = async (request: Request) => {
       let tier = 'free';
       const priceId = subscription.items?.data[0]?.price?.id;
       
-      if (priceId === 'price_1RXtraRsVFqVQ7Biya1sIQZI') {
-        tier = 'pro';
-      } else if (priceId === 'price_1RXtraRsVFqVQ7BikUOc02TQ') {
-        tier = 'enterprise';
+      if (priceId === 'price_1RY7pjRsVFqVQ7BidC3fexF1') {
+        tier = 'pro';  // $29/month
+      } else if (priceId === 'price_1RY7qFRsVFqVQ7Bicy9ySWyJ') {
+        tier = 'enterprise';  // $99/month
       }
 
       // Update user license
