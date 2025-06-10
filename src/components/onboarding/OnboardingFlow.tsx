@@ -29,6 +29,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const [onboardingState, setOnboardingState] = useState<OnboardingState | null>(null);
   const [currentStepId, setCurrentStepId] = useState<string>('welcome');
   const [isLoading, setIsLoading] = useState(true);
+  const [onboardingData, setOnboardingData] = useState<Record<string, any>>({});
 
   // Load onboarding state
   useEffect(() => {
@@ -56,7 +57,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     return unsubscribe;
   }, []);
 
-  const handleStepComplete = async (stepId: string) => {
+  const handleStepComplete = async (stepId: string, data?: Record<string, any>) => {
+    if (data) {
+      setOnboardingData(prev => ({ ...prev, ...data }));
+    }
+
     await n8nOnboardingManager.completeStep(stepId);
     
     // Move to next step
@@ -178,7 +183,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               {currentStepId === 'organization-setup' && (
                 <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
                   <OrganizationSetupStep 
-                    onNext={() => handleStepComplete('organization-setup')}
+                    onNext={(data) => handleStepComplete('organization-setup', { enriched: data.enriched_data })}
                     onBack={() => goToStep('welcome')}
                   />
                 </div>
@@ -198,6 +203,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   <BusinessContextStep 
                     onNext={() => handleStepComplete('business-context')}
                     onBack={() => goToStep('user-context')}
+                    enrichedData={onboardingData.enriched}
                   />
                 </div>
               )}

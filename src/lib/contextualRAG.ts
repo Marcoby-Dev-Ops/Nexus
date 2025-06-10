@@ -322,12 +322,16 @@ INSTRUCTIONS:
         .order('created_at', { ascending: false })
         .limit(50);
 
-      // Fetch company context
-      const { data: company } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('id', profile?.company_id || '')
-        .single();
+      // Fetch company context (with defensive check for valid UUID)
+      let company = null;
+      if (profile?.company_id && this.isValidUUID(profile.company_id)) {
+        const { data: companyData } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', profile.company_id)
+          .single();
+        company = companyData;
+      }
 
       return {
         profile: {
@@ -517,6 +521,10 @@ INSTRUCTIONS:
   /**
    * Utility methods for data processing
    */
+  private isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+  }
   private buildUserIntelligence(): string {
     if (!this.userContext) return '';
 

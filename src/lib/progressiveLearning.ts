@@ -275,28 +275,34 @@ export class ProgressiveLearning {
   }
 
   /**
-   * Store learning insights
+   * Store learning insights in the database
    */
   private async storeInsights(insights: LearningInsight[]): Promise<void> {
-    for (const insight of insights) {
-      try {
-        // Store in ai_interactions table as learning insights
-        await supabase
-          .from('ai_interactions')
-          .insert({
-            user_id: insight.user_id,
-            interaction_type: 'learning_insight',
-            prompt_text: `Insight: ${insight.insight_type}`,
-            ai_response: JSON.stringify(insight.insight_data),
-            context_data: {
-              insight_type: insight.insight_type,
-              confidence_score: insight.confidence_score,
-              source: insight.source,
-              created_at: insight.created_at
-            }
-          });
-      } catch (error) {
-        console.error('Error storing insight:', error);
+    if (!this.userId) {
+      console.warn('[ProgressiveLearning] Missing userId. Skipping insight storage.');
+      return;
+    }
+    
+    // Map LearningInsights to ai_interactions table structure
+    const records = insights.map(insight => ({
+      user_id: insight.user_id,
+      interaction_type: 'insight', // Use valid constraint value
+      ai_response: JSON.stringify(insight.insight_data),
+      context_data: {
+        insight_type: insight.insight_type,
+        confidence_score: insight.confidence_score,
+        source: insight.source,
+        ...(this.companyId && { company_id: this.companyId })
+      }
+    }));
+
+    if (records.length > 0) {
+      const { error } = await supabase
+        .from('ai_interactions')
+        .insert(records);
+
+      if (error) {
+        console.error('Error storing learning insights:', error);
       }
     }
   }
@@ -310,7 +316,7 @@ export class ProgressiveLearning {
         .from('ai_interactions')
         .select('*')
         .eq('user_id', this.userId)
-        .eq('interaction_type', 'learning_insight')
+        .eq('interaction_type', 'insight')
         .order('created_at', { ascending: false })
         .limit(100);
 

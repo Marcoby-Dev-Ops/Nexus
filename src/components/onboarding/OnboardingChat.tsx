@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
-import { useOnboarding } from '@/lib/useOnboarding';
+import { useOnboardingChatStore } from '@/lib/stores/onboardingChatStore';
+import { useAuth } from '@/lib/auth';
 
 interface OnboardingMessage {
   id: string;
@@ -47,10 +48,11 @@ interface OnboardingStep {
 }
 
 export const OnboardingChat: React.FC = () => {
-  const { user } = useEnhancedUser();
-  const { completeOnboarding } = useOnboarding();
-  const [messages, setMessages] = useState<OnboardingMessage[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  console.log('[OnboardingChat] Component rendered.');
+  const { user, completeOnboarding } = useEnhancedUser();
+  const { messages, isTyping, initialize, addMessage, setIsTyping } = useOnboardingChatStore();
+  const { user: authUser } = useAuth();
+  
   const [currentStep, setCurrentStep] = useState(0);
   const [collectedData, setCollectedData] = useState<Record<string, any>>({});
   const [assistantPersonality, setAssistantPersonality] = useState<'professional' | 'friendly' | 'adaptive'>('adaptive');
@@ -58,6 +60,13 @@ export const OnboardingChat: React.FC = () => {
   const [textInputPrompt, setTextInputPrompt] = useState('');
   const [textInputValue, setTextInputValue] = useState('');
   const [pendingStep, setPendingStep] = useState<number | null>(null);
+  const [initialMessageSent, setInitialMessageSent] = useState(false);
+  
+  // AI Conversation State
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
+  const [aiEnabled, setAiEnabled] = useState(true);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const onboardingSteps: OnboardingStep[] = [
@@ -119,43 +128,13 @@ export const OnboardingChat: React.FC = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initialize with executive assistant introduction
+  // Initialize chat with executive assistant introduction
   useEffect(() => {
-    const firstName = user?.profile?.first_name;
-    const timeOfDay = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening';
-    
-    const personalizedGreeting = firstName 
-      ? `Good ${timeOfDay}, ${firstName}! 👋`
-      : `Good ${timeOfDay}! 👋`;
-
-    const introMessage: OnboardingMessage = {
-      id: '1',
-      role: 'assistant',
-      content: `${personalizedGreeting}
-
-        I'm Nex, your Executive Assistant here at Nexus. Think of me as your AI business partner who's going to help you streamline operations, make smarter decisions, and achieve your goals faster.
-
-I'm not just another chatbot - I'm specifically designed to understand your business, learn your preferences, and become your trusted right-hand assistant. I'll be here 24/7 to help with everything from strategic planning to daily tasks.
-
-Before we dive into the powerful features of Nexus, I'd love to get to know you better. This way, I can customize everything specifically for your needs and working style.
-
-Ready to start our partnership?`,
-      timestamp: new Date(),
-      type: 'introduction',
-      metadata: {
-        step: 'introduction',
-        emotion: 'friendly',
-        suggestions: [
-          '🚀 Yes, let\'s get started!',
-          '🤔 Tell me more about what you can do',
-          '💼 How will you help my business?',
-          '⚡ What makes you different?'
-        ]
-      }
-    };
-
-    setMessages([introMessage]);
-  }, [user]);
+    console.log('[OnboardingChat] useEffect for initialization triggered.');
+    if (user) {
+      initialize(user);
+    }
+  }, [user, initialize]);
 
   const completeStep = (stepId: string, data?: Record<string, any>) => {
     setSteps(prev => prev.map(step => 
@@ -171,15 +150,6 @@ Ready to start our partnership?`,
     setIsTyping(true);
     await new Promise(resolve => setTimeout(resolve, duration));
     setIsTyping(false);
-  };
-
-  const addMessage = (message: Omit<OnboardingMessage, 'id' | 'timestamp'>) => {
-    const newMessage: OnboardingMessage = {
-      ...message,
-      id: Date.now().toString(),
-      timestamp: new Date()
-    };
-    setMessages(prev => [...prev, newMessage]);
   };
 
   // Industry-specific insights and challenges

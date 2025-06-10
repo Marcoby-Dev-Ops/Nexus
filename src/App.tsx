@@ -19,6 +19,7 @@ import WaitlistLanding from './pages/WaitlistLanding';
 import WaitlistDashboard from './pages/WaitlistDashboard';
 import ChatPage from './pages/ChatPage';
 import { BillingPage } from './pages/billing/BillingPage';
+import { CentralizedAppsHub } from './components/dashboard/CentralizedAppsHub';
 
 
 const SalesHome = lazy(() => import('@/pages/departments/sales/SalesHome'));
@@ -115,6 +116,7 @@ const AppContent = () => {
           <Route path="/ai-dashboard" element={<AIDashboard />} />
           <Route path="/ai-transformation" element={<AITransformation />} />
           <Route path="/billing" element={<ProtectedRoute><BillingPage /></ProtectedRoute>} />
+          <Route path="/centralized-apps" element={<ProtectedRoute><CentralizedAppsHub /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/chat" replace />} />
         </Route>
       </Routes>

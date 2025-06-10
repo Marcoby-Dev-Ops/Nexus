@@ -35,4 +35,22 @@ Thumbs.db
 nexus-db-data/
 
 # Misc
-*.local .env
+*.local
+.env
+
+# Security - Additional patterns
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+config/secrets/
+.secrets
+mcp.json
+.cursor/mcp.json
+
+# Backup files that might contain sensitive data
+*.bak
+*.backup
+*.old
+*~

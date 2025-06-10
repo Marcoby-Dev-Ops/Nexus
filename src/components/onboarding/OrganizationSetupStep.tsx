@@ -13,6 +13,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { supabase } from '@/lib/supabase';
 
 interface OrganizationData {
   organization_name: string;
@@ -21,6 +22,10 @@ interface OrganizationData {
   expected_users: string;
   industry: string;
   needs_team_licenses: boolean;
+  enriched_data?: {
+    description?: string;
+    industry?: string;
+  }
 }
 
 interface OrganizationSetupStepProps {
@@ -30,6 +35,7 @@ interface OrganizationSetupStepProps {
 
 export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ onNext, onBack }) => {
   const { user, updateCompany } = useEnhancedUser();
+  const [isEnriching, setIsEnriching] = useState(false);
   const [orgData, setOrgData] = useState<OrganizationData>({
     organization_name: '',
     organization_type: 'startup',
@@ -132,25 +138,44 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
   };
 
   const handleSubmit = async () => {
-    // Update company information
+    setIsEnriching(true);
+    let enrichedData = {};
+
     try {
+      // Call the enrichment function
+      const { data, error } = await supabase.functions.invoke('company-enrichment', {
+        body: { companyName: orgData.organization_name },
+      });
+
+      if (error) throw error;
+      enrichedData = data;
+
+      // Pre-fill industry if we got one and user hasn't set one
+      if (data.industry && !orgData.industry) {
+        setOrgData(prev => ({...prev, industry: data.industry}));
+      }
+
+      // Update company information in Supabase
       if (user?.profile?.company_id) {
         await updateCompany({
           name: orgData.organization_name,
-          industry: orgData.industry,
+          industry: data.industry || orgData.industry, // Prioritize enriched industry
           size: getSelectedOrgType()?.teamSize || '',
           settings: {
             organization_type: orgData.organization_type,
             expected_users: orgData.expected_users,
-            needs_team_licenses: orgData.needs_team_licenses
+            needs_team_licenses: orgData.needs_team_licenses,
+            enriched_description: data.description,
           }
         });
       }
     } catch (error) {
-      console.error('Error updating organization info:', error);
+      console.error('Error during company enrichment or update:', error);
+      // Continue even if enrichment fails
+    } finally {
+      setIsEnriching(false);
+      onNext({ ...orgData, enriched_data: enrichedData });
     }
-    
-    onNext(orgData);
   };
 
   const upsellInfo = getUpsellMessage();
@@ -306,19 +331,17 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
         )}
       </div>
 
-      <div className="flex justify-between">
+      <div className="flex justify-between pt-6">
         {onBack && (
-          <Button variant="outline" onClick={onBack}>
+          <Button variant="outline" onClick={onBack} disabled={isEnriching}>
             Back
           </Button>
         )}
-        <Button 
-          onClick={handleSubmit}
-          disabled={!orgData.organization_name || !orgData.industry}
-          className="ml-auto"
-        >
-          Continue
-        </Button>
+        <div className="flex gap-3 ml-auto">
+          <Button onClick={handleSubmit} disabled={!orgData.organization_name || isEnriching}>
+            {isEnriching ? 'Analyzing...' : 'Next'}
+          </Button>
+        </div>
       </div>
     </div>
   );

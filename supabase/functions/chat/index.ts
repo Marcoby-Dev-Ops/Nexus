@@ -137,6 +137,34 @@ serve(async (req) => {
     // Create Supabase client
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
+    // === RAG: Retrieve related knowledge documents ===
+    // 1. Generate embedding for the incoming message via OpenAI
+    const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ model: 'text-embedding-ada-002', input: message }),
+    });
+    if (!embedRes.ok) throw new Error(`Embedding API error: ${embedRes.status}`);
+    const embedJson = await embedRes.json();
+    const embedding = embedJson.data?.[0]?.embedding;
+    if (!embedding) throw new Error('Failed to generate embedding');
+
+    // 2. Query Supabase to find the top 5 similar documents (requires a 'match_documents' RPC in Postgres)
+    const { data: docs, error: docsError } = await supabaseClient.rpc('match_documents', {
+      query_embedding: embedding,
+      match_count: 5,
+    });
+    if (docsError) throw docsError;
+    const ragContext = (docs || []).map((d: any) => d.content).join('\n\n');
+
+    // 3. Augment the system prompt with retrieved context
+    const augmentedSystemPrompt = systemPrompt
+      ? `${systemPrompt}\n\nContext from knowledge base:\n${ragContext}`
+      : `Context from knowledge base:\n${ragContext}`;
+
     // Get conversation history with context
     const { data: history, error: historyError } = await supabaseClient
       .from('chat_messages')
@@ -153,8 +181,8 @@ serve(async (req) => {
     const messages = [];
 
     // Add system prompt if provided
-    if (systemPrompt) {
-      messages.push({ role: 'system', content: systemPrompt });
+    if (augmentedSystemPrompt) {
+      messages.push({ role: 'system', content: augmentedSystemPrompt });
     }
 
     // Add conversation history

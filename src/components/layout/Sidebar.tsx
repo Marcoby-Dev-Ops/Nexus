@@ -82,9 +82,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const getPersonalizedNavigation = () => {
     const userRole = enhancedUser?.profile?.role || 'user';
     const department = enhancedUser?.profile?.department?.toLowerCase();
+    const primaryDepartments = enhancedUser?.company?.settings?.primary_departments;
     
     // Add department-specific highlights
-    let personalizedDepartments = departments.map(module => {
+    let personalizedDepartments = departments;
+
+    if (primaryDepartments && primaryDepartments.length > 0) {
+      personalizedDepartments = departments.filter(d => primaryDepartments.includes(d.label));
+    }
+    
+    personalizedDepartments = personalizedDepartments.map(module => {
       if (department === 'sales' && module.href === '/sales') {
         return { ...module, badge: 'Your Dept' };
       }

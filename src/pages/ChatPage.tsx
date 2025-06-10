@@ -17,7 +17,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useOnboarding } from '@/lib/useOnboarding';
 import { ModernExecutiveAssistant } from '@/components/ai/enhanced/ModernExecutiveAssistant';
-import { OnboardingChat } from '@/components/onboarding/OnboardingChat'
+import { OnboardingChatAI } from '@/components/onboarding/OnboardingChatAI'
 
 /**
  * Full-featured Chat Page (ChatGPT/Claude style)
@@ -408,7 +408,7 @@ export const ChatPage: React.FC = () => {
 
         {/* Onboarding Chat - Full Width */}
         <div className="flex-1 min-h-0">
-          <OnboardingChat />
+          <OnboardingChatAI />
         </div>
       </div>
     );

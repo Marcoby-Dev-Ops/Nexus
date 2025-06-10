@@ -9,7 +9,7 @@ import { supabase, chatHistory } from './supabase';
 import { unifiedAuthService } from './unifiedAuthService';
 import type { Agent } from './agentRegistry';
 import { ContextualRAG } from './contextualRAG';
-import { ExpertPromptEngine } from './expertPromptEngine';
+import { ExpertPromptEngine, getExpertSystemPrompt } from './expertPromptEngine';
 import { progressiveLearningService } from './progressiveLearning';
 
 /**
@@ -367,8 +367,8 @@ Use this contextual business data to provide specific, data-driven insights and 
    * Build comprehensive system prompt using expert personality engine
    */
   private buildSystemPrompt(agent: Agent, userContext: any, sessionAnalytics: any): string {
-    // Import expert prompt engine for specialized personalities
-    const { getExpertSystemPrompt } = require('./expertPromptEngine');
+    // Use expert prompt engine for specialized personalities
+    // Import is handled at the top of the file
     
     // Generate expert-level system prompt with personality
     const expertPrompt = getExpertSystemPrompt(agent, {

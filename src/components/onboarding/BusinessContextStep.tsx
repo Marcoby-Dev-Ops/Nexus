@@ -14,7 +14,8 @@ import {
   Workflow,
   Target,
   DollarSign,
-  BarChart3
+  BarChart3,
+  Sparkles
 } from 'lucide-react';
 import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
 
@@ -33,9 +34,13 @@ interface BusinessContextData {
 interface BusinessContextStepProps {
   onNext: (data: BusinessContextData) => void;
   onBack: () => void;
+  enrichedData?: {
+    description?: string;
+    industry?: string;
+  };
 }
 
-export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext, onBack }) => {
+export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext, onBack, enrichedData }) => {
   const { user, updateCompany } = useEnhancedUser();
   const [businessData, setBusinessData] = useState<BusinessContextData>({
     business_model: '',
@@ -48,6 +53,17 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
     success_timeframe: '3-months',
     budget_expectation: 'moderate'
   });
+
+  // Pre-fill industry from enriched data
+  React.useEffect(() => {
+    if (enrichedData?.industry && !businessData.industry) {
+      // Find the closest match in our predefined list
+      const matchedIndustry = priorities.find(p => enrichedData.industry?.includes(p));
+      if (matchedIndustry) {
+        setBusinessData(prev => ({ ...prev, industry: matchedIndustry }));
+      }
+    }
+  }, [enrichedData]);
 
   const businessModels = [
     'B2B SaaS', 'B2C E-commerce', 'Marketplace', 'Service-based',
@@ -126,6 +142,34 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
           Tell us about your tools, processes, and business priorities
         </p>
       </div>
+
+      {enrichedData && (Object.keys(enrichedData).length > 0) && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              Here's what we found...
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {enrichedData.description && (
+              <div>
+                <Label>Company Description</Label>
+                <p className="text-sm text-muted-foreground italic">"{enrichedData.description}"</p>
+              </div>
+            )}
+            {enrichedData.industry && (
+              <div>
+                <Label>Suggested Industry</Label>
+                <p className="text-sm text-muted-foreground">{enrichedData.industry}</p>
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground pt-2">
+              Is this information correct? You can adjust the fields below.
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6">
         {/* Business Model & Revenue */}
