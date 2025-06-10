@@ -86,14 +86,14 @@ const AppContent = () => {
   return (
     <Suspense fallback={<div className="p-8">Loading…</div>}>
       <Routes>
-        <Route path="/" element={<Navigate to="/chat" replace />} />
+        <Route path="/" element={<WaitlistLanding />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         
         {/* Standalone Waitlist Pages (No AppShell) */}
-        <Route path="/waitlist" element={<WaitlistLanding />} />
-        <Route path="/join" element={<WaitlistLanding />} />
+        <Route path="/waitlist" element={<Navigate to="/" replace />} />
+        <Route path="/join" element={<Navigate to="/" replace />} />
         
         {/* Chat Page - Outside AppShell for full-screen onboarding */}
         <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
