@@ -29,58 +29,6 @@ const Marketplace = lazy(() => import('@/marketplace/Marketplace'));
 const DataWarehouseHome = lazy(() => import('@/datawarehouse/DataWarehouseHome'));
 const AdminHome = lazy(() => import('@/components/dashboard/AdminHome'));
 
-// Debug onboarding trigger (development only)
-const DebugOnboardingTrigger = () => {
-  const isDevelopment = import.meta.env.DEV;
-  
-  // Check URL parameter for onboarding trigger
-  React.useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('trigger-onboarding') === 'true') {
-      // Clear onboarding state
-      localStorage.removeItem('nexus_onboarding_complete');
-      localStorage.removeItem('nexus_onboarding_state');
-      localStorage.removeItem('n8n_onboarding_complete');
-      
-      // Remove the parameter and reload
-      urlParams.delete('trigger-onboarding');
-      const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
-      window.history.replaceState({}, '', newUrl);
-      window.location.reload();
-    }
-  }, []);
-  
-  if (!isDevelopment) return null;
-  
-  const triggerOnboarding = () => {
-    // Clear onboarding state
-    localStorage.removeItem('nexus_onboarding_complete');
-    localStorage.removeItem('nexus_onboarding_state');
-    localStorage.removeItem('n8n_onboarding_complete');
-    
-    // Reload to trigger onboarding
-    window.location.reload();
-  };
-
-  return (
-    <div style={{ 
-      position: 'fixed', 
-      top: '10px', 
-      right: '10px', 
-      zIndex: 9999,
-      backgroundColor: '#ff6b6b',
-      color: 'white',
-      padding: '8px 12px',
-      borderRadius: '4px',
-      fontSize: '12px',
-      cursor: 'pointer',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-    }} onClick={triggerOnboarding}>
-      🚀 Trigger Onboarding
-    </div>
-  );
-};
-
 // Main App Content Component
 const AppContent = () => {
   return (
@@ -134,9 +82,6 @@ function AppWithOnboarding() {
     <Router>
       {/* Main App Content - Chat page now handles onboarding internally */}
       <AppContent />
-      
-      {/* Debug Trigger (Development Only) */}
-      <DebugOnboardingTrigger />
     </Router>
   );
 }
