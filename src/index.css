@@ -1,129 +1,89 @@
-@import './assets/chart-tokens.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Force cache refresh */
-
 @layer base {
   :root {
-    font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
-    color-scheme: light dark;
-    color: rgba(34, 41, 47, 0.87);
-    background-color: #f3f4f6;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    /* Tailwind theme variables */
-    --background: 210 20% 98%;
-    --foreground: 222.2 47.4% 11.2%;
+    /* Base colors */
+    --background: 150 40% 97%;  /* #f5f9f5 */
+    --foreground: 160 25% 10%;  /* #1a1a1a */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47.4% 11.2%;
+    --card-foreground: 160 25% 10%;  /* #1a1a1a */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47.4% 11.2%;
-    --primary: 153 73% 40%;
+    --popover-foreground: 160 25% 10%;  /* #1a1a1a */
+    
+    /* Brand-aligned colors */
+    --primary: 145 100% 20%;    /* #006837 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 168 72% 54%;
-    --secondary-foreground: 153 73% 20%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 42 96% 62%;
-    --accent-foreground: 153 73% 40%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 71% 45%;
+    --secondary: 148 100% 33%;  /* #00a651 */
+    --secondary-foreground: 0 0% 100%;
+    --accent: 211 100% 50%;     /* #007aff */
+    --accent-foreground: 0 0% 100%;
+    
+    /* Semantic colors */
+    --success: 142 72% 29%;     /* #10b981 - Green */
     --success-foreground: 0 0% 100%;
-    --warning: 43 96% 56%;
-    --warning-foreground: 0 0% 0%;
-    --border: 210 16% 86%;
-    --input: 210 16% 86%;
-    --ring: 153 73% 40%;
-    --chart-1: 153 73% 40%;
-    --chart-2: 168 72% 54%;
-    --chart-3: 42 96% 62%;
-    --chart-4: 197 37% 44%;
-    --chart-5: 340 75% 55%;
+    --info: 217 92% 51%;        /* #3b82f6 - Blue */
+    --info-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;      /* #f59e0b - Amber */
+    --warning-foreground: 0 0% 100%;
+    --danger: 0 84% 60%;        /* #ef4444 - Red */
+    --danger-foreground: 0 0% 100%;
+    
+    /* Supporting UI colors */
+    --muted: 160 30% 92%;      /* #e4f0ec */
+    --muted-foreground: 160 5% 40%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 145 20% 85%;
+    --input: 145 20% 85%;
+    --ring: 145 100% 20%;       /* #006837 */
     --radius: 0.5rem;
   }
+
   .dark {
-    --background: 222.2 47.4% 11.2%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 47.4% 13%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 47.4% 13%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 153 73% 55%;
+    /* Base colors - dark mode */
+    --background: 160 25% 10%;  /* #1a1a1a */
+    --foreground: 0 0% 98%;
+    --card: 160 20% 15%;        /* #232323 */
+    --card-foreground: 0 0% 98%;
+    --popover: 160 20% 15%;     /* #232323 */
+    --popover-foreground: 0 0% 98%;
+    
+    /* Brand-aligned colors - dark mode */
+    --primary: 148 100% 33%;    /* #00a651 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 168 72% 40%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 42 96% 50%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 50%;
+    --secondary: 145 100% 20%;  /* #006837 */
+    --secondary-foreground: 0 0% 100%;
+    --accent: 211 100% 50%;     /* #007aff */
+    --accent-foreground: 0 0% 100%;
+    
+    /* Semantic colors - dark mode */
+    --success: 142 70% 45%;     /* #22c55e - Brighter green for dark mode */
+    --success-foreground: 0 0% 100%;
+    --info: 217 90% 60%;        /* #60a5fa - Brighter blue for dark mode */
+    --info-foreground: 0 0% 100%;
+    --warning: 38 95% 60%;      /* #fbbf24 - Brighter amber for dark mode */
+    --warning-foreground: 0 0% 100%;
+    --danger: 0 90% 65%;        /* #f87171 - Brighter red for dark mode */
+    --danger-foreground: 0 0% 100%;
+    
+    /* Supporting UI colors - dark mode */
+    --muted: 160 20% 15%;
+    --muted-foreground: 215 20% 65%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
-    --success: 142 71% 45%;
-    --success-foreground: 210 40% 98%;
-    --warning: 43 96% 56%;
-    --warning-foreground: 222.2 47.4% 11.2%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 153 73% 40%;
-    --chart-1: 153 73% 40%;
-    --chart-2: 168 72% 54%;
-    --chart-3: 42 96% 62%;
-    --chart-4: 197 37% 54%;
-    --chart-5: 340 75% 65%;
+    --border: 160 15% 20%;
+    --input: 160 15% 20%;
+    --ring: 148 100% 33%;
   }
-  html, body, #root {
-    height: 100%;
-    min-height: 100%;
-    width: 100%;
-  }
-  body {
-    margin: 0;
-    min-width: 320px;
-    min-height: 100vh;
-    background-color: transparent;
-    color: hsl(var(--foreground));
-  }
-  a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
-  }
-  a:hover {
-    color: #535bf2;
-  }
-  h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
-  }
-  button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    font-family: inherit;
-    cursor: pointer;
-    transition: border-color 0.25s;
-  }
-  button:focus,
-  button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
-  }
+
   * {
     border-color: hsl(var(--border));
   }
-}
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
-  a:hover {
-    color: #747bff;
-  }
-}
+} 

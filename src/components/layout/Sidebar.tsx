@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Badge } from '@/components/ui/Badge';
 import { useLocation, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Banknote, Settings, Store, Bot, BarChart2, Users, DollarSign, Truck, X, Building2, Plug, Brain, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Banknote, Settings, Store, Bot, BarChart2, Users, DollarSign, Truck, X, Building2, Plug, Brain, Sparkles, FileText, Database, LineChart, PieChart } from 'lucide-react';
 import { useSupabase } from '@/lib/SupabaseProvider';
 import { useNavigate } from 'react-router-dom';
 import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
@@ -37,32 +37,50 @@ interface NavItem {
 }
 
 const overview: NavItem[] = [
-  { label: 'Command Center', href: '/nexus', icon: <Brain className="w-5 h-5" />, badge: 'TRINITY' },
+  // { label: 'Command Center', href: '/nexus', icon: <Brain className="w-5 h-5" />, badge: 'TRINITY' }, // Hidden until ready
   { label: 'Business Overview', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { label: 'Workspace', href: '/workspace', icon: <Database className="w-5 h-5" /> },
 ];
 
 const departments: NavItem[] = [
-  { label: 'Sales', href: '/sales', icon: <DollarSign className="w-5 h-5" /> },
-  { label: 'Finance', href: '/finance', icon: <Banknote className="w-5 h-5" /> },
-  { label: 'Operations', href: '/operations', icon: <Truck className="w-5 h-5" /> },
-  { label: 'Data Warehouse', href: '/data-warehouse', icon: <BarChart2 className="w-5 h-5" /> },
+  { 
+    label: 'Sales', 
+    href: '/departments/sales/performance', 
+    icon: <DollarSign className="w-5 h-5" /> 
+  },
+  { 
+    label: 'Finance', 
+    href: '/departments/finance/operations', 
+    icon: <Banknote className="w-5 h-5" /> 
+  },
+  { 
+    label: 'Operations', 
+    href: '/departments/operations/analytics', 
+    icon: <Truck className="w-5 h-5" /> 
+  },
+  { 
+    label: 'Data Warehouse', 
+    href: '/data-warehouse', 
+    icon: <BarChart2 className="w-5 h-5" /> 
+  },
 ];
 
 const aiPowered: NavItem[] = [
+  { label: 'AI Hub', href: '/ai-hub', icon: <Brain className="w-5 h-5" /> },
   { label: 'AI Chat', href: '/chat', icon: <Bot className="w-5 h-5" /> },
-  { label: 'AI Transformation', href: '/ai-transformation', icon: <Sparkles className="w-5 h-5" /> },
-  { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
-  { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> },
+  // { label: 'AI Transformation', href: '/ai-transformation', icon: <Sparkles className="w-5 h-5" /> }, // Hidden until ready
+  { label: 'Analytics', href: '/analytics', icon: <LineChart className="w-5 h-5" /> },
+  // { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> }, // Hidden until ready
 ];
 
 const marketplace: NavItem[] = [
   { label: 'Pulse', href: '/marketplace', icon: <Store className="w-5 h-5" />, badge: '3 new' },
-  { label: 'Add-ons', href: '/add-ons', icon: <Settings className="w-5 h-5" />, badge: 'New' },
+  // { label: 'Add-ons', href: '/add-ons', icon: <Settings className="w-5 h-5" />, badge: 'New' }, // Hidden until ready
   { label: 'Integrations', href: '/integrations', icon: <Plug className="w-5 h-5" /> },
 ];
 
 const admin: NavItem[] = [
-  { label: 'Admin', href: '/admin', icon: <Users className="w-5 h-5" /> },
+  // { label: 'Admin', href: '/admin', icon: <Users className="w-5 h-5" /> }, // Hidden until ready
   { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 
@@ -92,13 +110,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
     }
     
     personalizedDepartments = personalizedDepartments.map(module => {
-      if (department === 'sales' && module.href === '/sales') {
+      if (department === 'sales' && module.href.includes('/sales')) {
         return { ...module, badge: 'Your Dept' };
       }
-      if (department === 'finance' && module.href === '/finance') {
+      if (department === 'finance' && module.href.includes('/finance')) {
         return { ...module, badge: 'Your Dept' };
       }
-      if (department === 'operations' && module.href === '/operations') {
+      if (department === 'operations' && module.href.includes('/operations')) {
         return { ...module, badge: 'Your Dept' };
       }
       return module;

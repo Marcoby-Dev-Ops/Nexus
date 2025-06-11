@@ -92,22 +92,22 @@ export const SecurityStatus: React.FC = () => {
   const getStatusIcon = (): React.ReactNode => {
     switch (status.level) {
       case 'secure':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-success" />;
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-warning" />;
       case 'critical':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
     }
   };
 
   const getStatusColor = (): string => {
     switch (status.level) {
       case 'secure':
-        return 'bg-green-100 text-green-800 hover:bg-green-200';
+        return 'bg-success/10 text-success hover:bg-green-200';
       case 'warning':
-        return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200';
+        return 'bg-warning/10 text-yellow-800 hover:bg-yellow-200';
       case 'critical':
-        return 'bg-red-100 text-red-800 hover:bg-red-200';
+        return 'bg-destructive/10 text-destructive hover:bg-red-200';
     }
   };
 
@@ -159,7 +159,7 @@ export const SecurityStatus: React.FC = () => {
             </Badge>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="flex justify-between text-sm">
               <span>Security Score</span>
               <span className="font-medium">{status.score}%</span>
@@ -171,7 +171,7 @@ export const SecurityStatus: React.FC = () => {
             </div>
 
             {status.failedLogins > 0 && (
-              <div className="flex justify-between text-sm text-red-600">
+              <div className="flex justify-between text-sm text-destructive">
                 <span>Failed Logins</span>
                 <span className="font-medium">{status.failedLogins}</span>
               </div>
@@ -188,33 +188,33 @@ export const SecurityStatus: React.FC = () => {
               <h5 className="text-xs font-medium text-muted-foreground">Active Security Features</h5>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-success" />
                   <span>Encryption</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-success" />
                   <span>RLS</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-success" />
                   <span>Audit Log</span>
                 </div>
                 <div className="flex items-center gap-1">
-                  <CheckCircle className="h-3 w-3 text-green-500" />
+                  <CheckCircle className="h-3 w-3 text-success" />
                   <span>Monitoring</span>
                 </div>
               </div>
             </div>
 
             {status.level === 'critical' && (
-              <div className="p-2 bg-red-50 rounded text-xs text-red-800">
+              <div className="p-2 bg-destructive/5 rounded text-xs text-destructive">
                 <p className="font-medium">Action Required</p>
                 <p>Multiple security events detected. Please review your security dashboard.</p>
               </div>
             )}
 
             {status.level === 'warning' && (
-              <div className="p-2 bg-yellow-50 rounded text-xs text-yellow-800">
+              <div className="p-2 bg-warning/5 rounded text-xs text-yellow-800">
                 <p className="font-medium">Attention</p>
                 <p>Some security events require your attention.</p>
               </div>

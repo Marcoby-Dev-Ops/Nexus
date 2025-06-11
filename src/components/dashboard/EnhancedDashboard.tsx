@@ -108,10 +108,10 @@ const EnhancedDashboard: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
-      case 'alert': return 'bg-orange-500/10 text-orange-600 border-orange-500/20';
-      case 'completed': return 'bg-green-500/10 text-green-600 border-green-500/20';
-      default: return 'bg-gray-500/10 text-gray-600 border-gray-500/20';
+      case 'active': return 'bg-primary/10 text-primary border-primary/20';
+      case 'alert': return 'bg-warning/10 text-warning border-orange-500/20';
+      case 'completed': return 'bg-success/10 text-success border-success/20';
+      default: return 'bg-gray-500/10 text-muted-foreground border-gray-500/20';
     }
   };
 
@@ -127,7 +127,7 @@ const EnhancedDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-slate-900 dark:via-slate-800/50 dark:to-slate-900">
       {/* Modern Header with Trinity Navigation */}
-      <div className="relative overflow-hidden bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50">
+      <div className="relative overflow-hidden bg-card/70 dark:bg-background/70 backdrop-blur-xl border-b border-border/50 dark:border-slate-700/50">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 via-purple-600/5 to-indigo-600/5" />
         <div className="relative px-6 py-8">
           <div className="flex items-center justify-between mb-6">
@@ -135,12 +135,12 @@ const EnhancedDashboard: React.FC = () => {
               <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
                 Nexus Organizational Command Center
               </h1>
-              <p className="text-slate-600 dark:text-slate-400 mt-1">
+              <p className="text-muted-foreground dark:text-muted-foreground mt-1">
                 Single source of truth for organizational intelligence • Powered by Trinity
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="px-4 py-2 bg-green-50 text-green-700 border-green-200">
+              <Badge variant="outline" className="px-4 py-2 bg-success/5 text-success border-green-200">
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 All Systems Active
               </Badge>
@@ -160,7 +160,7 @@ const EnhancedDashboard: React.FC = () => {
                 className={`flex items-center px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
                   activeSection === key
                     ? `bg-${color}-500/10 text-${color}-700 dark:text-${color}-300 border-${color}-200 shadow-lg shadow-${color}-500/10`
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:bg-muted dark:hover:bg-background'
                 }`}
               >
                 <Icon className="w-5 h-5 mr-2" />
@@ -178,8 +178,8 @@ const EnhancedDashboard: React.FC = () => {
           <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-blue-50 to-cyan-50/50 dark:from-blue-950/20 dark:to-cyan-950/10">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 rounded-xl bg-blue-500/10 text-blue-600">
+                <div className="flex items-center space-x-4">
+                  <div className="p-4 rounded-xl bg-primary/10 text-primary">
                     <Brain className="w-6 h-6" />
                   </div>
                   <div>
@@ -187,20 +187,20 @@ const EnhancedDashboard: React.FC = () => {
                     <CardDescription>Creative Intelligence</CardDescription>
                   </div>
                 </div>
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                <Badge className="bg-primary/10 text-primary border-border">
                   {trinityMetrics.think.innovationScore}% Active
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 rounded-lg bg-white/60 dark:bg-slate-800/40">
-                  <div className="text-2xl font-bold text-blue-600">{trinityMetrics.think.ideasCaptured}</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Ideas Captured</div>
+                <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
+                  <div className="text-2xl font-bold text-primary">{trinityMetrics.think.ideasCaptured}</div>
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">Ideas Captured</div>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-white/60 dark:bg-slate-800/40">
-                  <div className="text-2xl font-bold text-blue-600">{trinityMetrics.think.collaborationSessions}</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Active Sessions</div>
+                <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
+                  <div className="text-2xl font-bold text-primary">{trinityMetrics.think.collaborationSessions}</div>
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">Active Sessions</div>
                 </div>
               </div>
             </CardContent>
@@ -210,8 +210,8 @@ const EnhancedDashboard: React.FC = () => {
           <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-purple-50 to-pink-50/50 dark:from-purple-950/20 dark:to-pink-950/10">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 rounded-xl bg-purple-500/10 text-purple-600">
+                <div className="flex items-center space-x-4">
+                  <div className="p-4 rounded-xl bg-purple-500/10 text-secondary">
                     <Eye className="w-6 h-6" />
                   </div>
                   <div>
@@ -219,20 +219,20 @@ const EnhancedDashboard: React.FC = () => {
                     <CardDescription>Business Intelligence</CardDescription>
                   </div>
                 </div>
-                <Badge className="bg-purple-100 text-purple-800 border-purple-200">
+                <Badge className="bg-secondary/10 text-purple-800 border-purple-200">
                   {trinityMetrics.see.predictiveAccuracy}% Accuracy
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 rounded-lg bg-white/60 dark:bg-slate-800/40">
-                  <div className="text-2xl font-bold text-purple-600">{trinityMetrics.see.dataSourcesConnected}</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Data Sources</div>
+                <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
+                  <div className="text-2xl font-bold text-secondary">{trinityMetrics.see.dataSourcesConnected}</div>
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">Data Sources</div>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-white/60 dark:bg-slate-800/40">
-                  <div className="text-2xl font-bold text-purple-600">{trinityMetrics.see.realTimeInsights}</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Live Insights</div>
+                <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
+                  <div className="text-2xl font-bold text-secondary">{trinityMetrics.see.realTimeInsights}</div>
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">Live Insights</div>
                 </div>
               </div>
             </CardContent>
@@ -242,8 +242,8 @@ const EnhancedDashboard: React.FC = () => {
           <Card className="group hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-indigo-50 to-blue-50/50 dark:from-indigo-950/20 dark:to-blue-950/10">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-3 rounded-xl bg-indigo-500/10 text-indigo-600">
+                <div className="flex items-center space-x-4">
+                  <div className="p-4 rounded-xl bg-primary/10 text-primary">
                     <Zap className="w-6 h-6" />
                   </div>
                   <div>
@@ -258,13 +258,13 @@ const EnhancedDashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 rounded-lg bg-white/60 dark:bg-slate-800/40">
-                  <div className="text-2xl font-bold text-indigo-600">{trinityMetrics.act.automationsRunning}</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Active Automations</div>
+                <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
+                  <div className="text-2xl font-bold text-primary">{trinityMetrics.act.automationsRunning}</div>
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">Active Automations</div>
                 </div>
-                <div className="text-center p-4 rounded-lg bg-white/60 dark:bg-slate-800/40">
-                  <div className="text-2xl font-bold text-indigo-600">{Math.floor(trinityMetrics.act.timeSaved / 60)}h</div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">Time Saved</div>
+                <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
+                  <div className="text-2xl font-bold text-primary">{Math.floor(trinityMetrics.act.timeSaved / 60)}h</div>
+                  <div className="text-sm text-muted-foreground dark:text-muted-foreground">Time Saved</div>
                 </div>
               </div>
             </CardContent>
@@ -283,12 +283,12 @@ const EnhancedDashboard: React.FC = () => {
         {/* Trinity Flow Visualization and Activity Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Trinity Flow Chart */}
-          <Card className="border-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm">
+          <Card className="border-0 bg-card/70 dark:bg-background/70 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center">
-                    <BarChart3 className="w-5 h-5 mr-2 text-blue-600" />
+                    <BarChart3 className="w-5 h-5 mr-2 text-primary" />
                     Trinity Performance Flow
                   </CardTitle>
                   <CardDescription>Real-time intelligence cycle metrics</CardDescription>
@@ -304,33 +304,33 @@ const EnhancedDashboard: React.FC = () => {
           </Card>
 
           {/* Enhanced Activity Feed */}
-          <Card className="border-0 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm">
+          <Card className="border-0 bg-card/70 dark:bg-background/70 backdrop-blur-sm">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center">
-                    <Activity className="w-5 h-5 mr-2 text-green-600" />
+                    <Activity className="w-5 h-5 mr-2 text-success" />
                     Trinity Activity Stream
                   </CardTitle>
                   <CardDescription>Live organizational intelligence flow</CardDescription>
                 </div>
                 <Badge variant="outline" className="animate-pulse">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2" />
+                  <div className="w-2 h-2 bg-success rounded-full mr-2" />
                   Live
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-4 p-4 rounded-xl bg-slate-50/60 dark:bg-slate-800/40 hover:bg-slate-100/60 dark:hover:bg-slate-700/40 transition-colors">
+                <div key={index} className="flex items-start space-x-4 p-4 rounded-xl bg-slate-50/60 dark:bg-background/40 hover:bg-muted/60 dark:hover:bg-slate-700/40 transition-colors">
                   <div className={`p-2 rounded-lg ${getStatusColor(activity.status)}`}>
                     {getTypeIcon(activity.type)}
                   </div>
                   <div className="flex-1">
                     <div className="font-medium text-slate-900 dark:text-slate-100">{activity.title}</div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">{activity.department}</div>
+                    <div className="text-sm text-muted-foreground dark:text-muted-foreground">{activity.department}</div>
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{activity.time}</div>
+                  <div className="text-xs text-muted-foreground dark:text-muted-foreground">{activity.time}</div>
                 </div>
               ))}
             </CardContent>
@@ -343,7 +343,7 @@ const EnhancedDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center text-xl">
-                  <Sparkles className="w-6 h-6 mr-3 text-yellow-500" />
+                  <Sparkles className="w-6 h-6 mr-3 text-warning" />
                   AI-Powered Trinity Insights
                 </CardTitle>
                 <CardDescription>Intelligent recommendations from your organizational data</CardDescription>
@@ -356,8 +356,8 @@ const EnhancedDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-xl bg-white/60 dark:bg-slate-800/40 space-y-3">
-                <div className="flex items-center text-blue-600">
+              <div className="p-6 rounded-xl bg-card/60 dark:bg-background/40 space-y-4">
+                <div className="flex items-center text-primary">
                   <Brain className="w-5 h-5 mr-2" />
                   <span className="font-medium">Think Insight</span>
                 </div>
@@ -365,8 +365,8 @@ const EnhancedDashboard: React.FC = () => {
                   Cross-department collaboration has increased 34% this week. Consider expanding innovation sessions.
                 </p>
               </div>
-              <div className="p-6 rounded-xl bg-white/60 dark:bg-slate-800/40 space-y-3">
-                <div className="flex items-center text-purple-600">
+              <div className="p-6 rounded-xl bg-card/60 dark:bg-background/40 space-y-4">
+                <div className="flex items-center text-secondary">
                   <Eye className="w-5 h-5 mr-2" />
                   <span className="font-medium">See Insight</span>
                 </div>
@@ -374,8 +374,8 @@ const EnhancedDashboard: React.FC = () => {
                   Revenue pattern shows 15% uptick correlation with new automation deployment.
                 </p>
               </div>
-              <div className="p-6 rounded-xl bg-white/60 dark:bg-slate-800/40 space-y-3">
-                <div className="flex items-center text-indigo-600">
+              <div className="p-6 rounded-xl bg-card/60 dark:bg-background/40 space-y-4">
+                <div className="flex items-center text-primary">
                   <Zap className="w-5 h-5 mr-2" />
                   <span className="font-medium">Act Insight</span>
                 </div>

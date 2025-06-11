@@ -129,7 +129,7 @@ export const ToolEnabledDemo: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-4 mb-4">
           <div className="p-2 bg-primary/20 rounded-lg">
             <Zap className="w-6 h-6 text-primary" />
           </div>
@@ -168,7 +168,7 @@ export const ToolEnabledDemo: React.FC = () => {
       {/* Quick Actions */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-3">Try These Demo Queries</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {demoQueries.map((query, index) => (
             <button
               key={index}
@@ -176,7 +176,7 @@ export const ToolEnabledDemo: React.FC = () => {
               disabled={isLoading}
               className="p-4 text-left border border-border rounded-lg hover:bg-primary/5 hover:border-primary/30 transition-all disabled:opacity-50"
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
                 <div className="p-1 bg-primary/10 rounded">
                   {query.icon}
                 </div>
@@ -199,7 +199,7 @@ export const ToolEnabledDemo: React.FC = () => {
               key={message.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`flex gap-3 ${
+              className={`flex gap-4 ${
                 message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
               }`}
             >
@@ -208,7 +208,7 @@ export const ToolEnabledDemo: React.FC = () => {
                   ? 'bg-primary text-primary-foreground' 
                   : message.role === 'system'
                   ? 'bg-muted text-muted-foreground'
-                  : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white'
+                  : 'bg-gradient-to-br from-purple-500 to-blue-500 text-primary-foreground'
               }`}>
                 {message.role === 'user' ? (
                   <User className="w-4 h-4" />
@@ -220,7 +220,7 @@ export const ToolEnabledDemo: React.FC = () => {
               <div className={`flex-1 max-w-[80%] ${
                 message.role === 'user' ? 'text-right' : 'text-left'
               }`}>
-                <div className={`rounded-xl p-3 ${
+                <div className={`rounded-xl p-4 ${
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground ml-auto'
                     : message.role === 'system'
@@ -262,12 +262,12 @@ export const ToolEnabledDemo: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex gap-3"
+              className="flex gap-4"
             >
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-primary-foreground flex items-center justify-center">
                 <Bot className="w-4 h-4" />
               </div>
-              <div className="bg-card border border-border rounded-xl p-3">
+              <div className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
@@ -281,7 +281,7 @@ export const ToolEnabledDemo: React.FC = () => {
 
         {/* Input */}
         <div className="border-t border-border p-4">
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <input
               type="text"
               value={input}
@@ -289,7 +289,7 @@ export const ToolEnabledDemo: React.FC = () => {
               onKeyDown={handleKeyDown}
               placeholder="Ask Nex to access business data or perform actions..."
               disabled={isLoading}
-              className="flex-1 px-3 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="flex-1 px-4 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
             <button
               onClick={() => handleSendMessage()}

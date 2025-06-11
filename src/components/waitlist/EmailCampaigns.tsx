@@ -254,11 +254,11 @@ const EmailCampaigns: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'paused': return 'bg-yellow-100 text-yellow-800';
-      case 'completed': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-success/10 text-success';
+      case 'draft': return 'bg-muted text-foreground';
+      case 'paused': return 'bg-warning/10 text-yellow-800';
+      case 'completed': return 'bg-primary/10 text-primary';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -322,35 +322,35 @@ const EmailCampaigns: React.FC = () => {
             value: metrics.totalSent.toLocaleString(),
             change: `+${metrics.growthRate}%`,
             icon: <Send className="w-5 h-5" />,
-            color: 'text-blue-600'
+            color: 'text-primary'
           },
           {
             title: 'Open Rate',
             value: `${metrics.openRate}%`,
             change: '+2.3%',
             icon: <Eye className="w-5 h-5" />,
-            color: 'text-green-600'
+            color: 'text-success'
           },
           {
             title: 'Click Rate',
             value: `${metrics.clickRate}%`,
             change: '+1.8%',
             icon: <Target className="w-5 h-5" />,
-            color: 'text-purple-600'
+            color: 'text-secondary'
           },
           {
             title: 'Conversion Rate',
             value: `${metrics.conversionRate}%`,
             change: '+0.9%',
             icon: <TrendingUp className="w-5 h-5" />,
-            color: 'text-orange-600'
+            color: 'text-warning'
           },
           {
             title: 'Unsubscribe Rate',
             value: `${metrics.unsubscribeRate}%`,
             change: '-0.2%',
             icon: <AlertTriangle className="w-5 h-5" />,
-            color: 'text-red-600'
+            color: 'text-destructive'
           },
           {
             title: 'List Growth',
@@ -372,7 +372,7 @@ const EmailCampaigns: React.FC = () => {
                   <div>
                     <p className="text-muted-foreground text-sm">{metric.title}</p>
                     <p className="text-xl font-bold">{metric.value}</p>
-                    <p className="text-sm text-green-600">{metric.change}</p>
+                    <p className="text-sm text-success">{metric.change}</p>
                   </div>
                   <div className={`${metric.color}`}>
                     {metric.icon}
@@ -609,7 +609,7 @@ const EmailCampaigns: React.FC = () => {
                             <h3 className="font-semibold">{template.name}</h3>
                           </div>
                           <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
-                          <div className="p-3 bg-muted/50 rounded border-l-4 border-purple-500">
+                          <div className="p-4 bg-muted/50 rounded border-l-4 border-secondary">
                             <p className="text-sm italic">{template.preview}</p>
                           </div>
                         </div>
@@ -617,15 +617,15 @@ const EmailCampaigns: React.FC = () => {
                       
                       <div className="grid grid-cols-3 gap-4 mb-4">
                         <div className="text-center">
-                          <div className="text-lg font-bold text-green-600">{template.performance.opens}%</div>
+                          <div className="text-lg font-bold text-success">{template.performance.opens}%</div>
                           <div className="text-xs text-muted-foreground">Opens</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-bold text-blue-600">{template.performance.clicks}%</div>
+                          <div className="text-lg font-bold text-primary">{template.performance.clicks}%</div>
                           <div className="text-xs text-muted-foreground">Clicks</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-lg font-bold text-purple-600">{template.performance.conversions}%</div>
+                          <div className="text-lg font-bold text-secondary">{template.performance.conversions}%</div>
                           <div className="text-xs text-muted-foreground">Converts</div>
                         </div>
                       </div>

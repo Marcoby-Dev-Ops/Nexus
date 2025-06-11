@@ -81,14 +81,14 @@ const HypeBuilder: React.FC = () => {
     {
       platform: 'Twitter',
       icon: Twitter,
-      color: 'bg-blue-400 hover:bg-blue-500',
+      color: 'bg-blue-400 hover:bg-primary',
       shares: 1247,
       growth: 12.4
     },
     {
       platform: 'LinkedIn',
       icon: Linkedin,
-      color: 'bg-blue-600 hover:bg-blue-700',
+      color: 'bg-primary hover:bg-primary/90',
       shares: 892,
       growth: 18.7
     },
@@ -277,7 +277,7 @@ const HypeBuilder: React.FC = () => {
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
             className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50"
           >
-            <Alert className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black border-none shadow-2xl">
+            <Alert className="bg-gradient-to-r from-yellow-400 to-orange-500 text-foreground border-none shadow-2xl">
               <Trophy className="h-5 w-5" />
               <AlertDescription className="font-bold text-lg">
                 🎉 Milestone Unlocked! Amazing community growth!
@@ -303,7 +303,7 @@ const HypeBuilder: React.FC = () => {
               >
                 {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </Button>
-              <Badge className="bg-green-500 text-white animate-pulse">
+              <Badge className="bg-success text-primary-foreground animate-pulse">
                 🔴 LIVE
               </Badge>
             </div>
@@ -317,12 +317,12 @@ const HypeBuilder: React.FC = () => {
               initial={{ scale: 1 }}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 0.3 }}
-              className="text-center p-6 bg-white/10 rounded-lg backdrop-blur"
+              className="text-center p-6 bg-card/10 rounded-lg backdrop-blur"
             >
-              <div className="text-4xl font-bold text-white mb-2">
+              <div className="text-4xl font-bold text-primary-foreground mb-2">
                 {totalSignups.toLocaleString()}
               </div>
-              <div className="text-white/80 mb-2">Waitlist Members</div>
+              <div className="text-primary-foreground/80 mb-2">Waitlist Members</div>
               <div className="flex items-center justify-center text-green-400">
                 <ArrowUp className="w-4 h-4 mr-1" />
                 <span className="text-sm">Live Growth</span>
@@ -335,12 +335,12 @@ const HypeBuilder: React.FC = () => {
               initial={{ scale: 1 }}
               animate={{ scale: [1, 1.05, 1] }}
               transition={{ duration: 0.3 }}
-              className="text-center p-6 bg-white/10 rounded-lg backdrop-blur"
+              className="text-center p-6 bg-card/10 rounded-lg backdrop-blur"
             >
-              <div className="text-4xl font-bold text-white mb-2">
+              <div className="text-4xl font-bold text-primary-foreground mb-2">
                 {totalShares.toLocaleString()}
               </div>
-              <div className="text-white/80 mb-2">Social Shares</div>
+              <div className="text-primary-foreground/80 mb-2">Social Shares</div>
               <div className="flex items-center justify-center text-blue-400">
                 <Share2 className="w-4 h-4 mr-1" />
                 <span className="text-sm">Viral Growth</span>
@@ -348,11 +348,11 @@ const HypeBuilder: React.FC = () => {
             </motion.div>
 
             {/* Hype Score */}
-            <div className="text-center p-6 bg-white/10 rounded-lg backdrop-blur">
-              <div className="text-4xl font-bold text-white mb-2">
+            <div className="text-center p-6 bg-card/10 rounded-lg backdrop-blur">
+              <div className="text-4xl font-bold text-primary-foreground mb-2">
                 {Math.floor((totalSignups + totalShares) / 100)}%
               </div>
-              <div className="text-white/80 mb-2">Hype Score</div>
+              <div className="text-primary-foreground/80 mb-2">Hype Score</div>
               <div className="flex items-center justify-center text-purple-400">
                                   <Bolt className="w-4 h-4 mr-1" />
                 <span className="text-sm">Momentum</span>
@@ -389,7 +389,7 @@ const HypeBuilder: React.FC = () => {
                 <span className="text-muted-foreground">
                   {nextMilestone.target - totalSignups} members to go
                 </span>
-                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-primary-foreground">
                   🎁 {nextMilestone.reward}
                 </Badge>
               </div>
@@ -420,21 +420,21 @@ const HypeBuilder: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
                     selectedShareContent === index 
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
+                      ? 'border-secondary bg-secondary/5 dark:bg-purple-900/20' 
                       : 'border-border hover:border-purple-300'
                   }`}
                   onClick={() => setSelectedShareContent(index)}
                 >
                   <div className="flex items-center mb-2">
-                    {content.type === 'image' && <Star className="w-4 h-4 mr-2 text-yellow-500" />}
-                    {content.type === 'gif' && <Zap className="w-4 h-4 mr-2 text-blue-500" />}
-                    {content.type === 'video' && <Rocket className="w-4 h-4 mr-2 text-red-500" />}
+                    {content.type === 'image' && <Star className="w-4 h-4 mr-2 text-warning" />}
+                    {content.type === 'gif' && <Zap className="w-4 h-4 mr-2 text-primary" />}
+                    {content.type === 'video' && <Rocket className="w-4 h-4 mr-2 text-destructive" />}
                     <span className="font-medium">{content.title}</span>
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">{content.description}</p>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-green-600">{content.shares} shares</span>
-                    <span className="text-blue-600">{content.engagement}% engagement</span>
+                    <span className="text-success">{content.shares} shares</span>
+                    <span className="text-primary">{content.engagement}% engagement</span>
                   </div>
                 </motion.div>
               ))}
@@ -449,7 +449,7 @@ const HypeBuilder: React.FC = () => {
                 <motion.div key={widget.platform} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                   <Button
                     onClick={() => handleShare(widget.platform.toLowerCase())}
-                    className={`w-full ${widget.color} text-white`}
+                    className={`w-full ${widget.color} text-primary-foreground`}
                   >
                     <Icon className="w-4 h-4 mr-2" />
                     {widget.platform}
@@ -457,7 +457,7 @@ const HypeBuilder: React.FC = () => {
                   <div className="text-center mt-2">
                     <div className="text-sm font-semibold">{widget.shares}</div>
                     <div className="text-xs text-muted-foreground flex items-center justify-center">
-                      <ArrowUp className="w-3 h-3 mr-1 text-green-500" />
+                      <ArrowUp className="w-3 h-3 mr-1 text-success" />
                       +{widget.growth}%
                     </div>
                   </div>
@@ -472,7 +472,7 @@ const HypeBuilder: React.FC = () => {
                 className="w-full"
               >
                 {copiedToClipboard ? (
-                  <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 mr-2 text-success" />
                 ) : (
                   <Copy className="w-4 h-4 mr-2" />
                 )}
@@ -505,16 +505,16 @@ const HypeBuilder: React.FC = () => {
                 transition={{ delay: index * 0.1 }}
                 className={`flex items-center justify-between p-4 rounded-lg border ${
                   milestone.unlocked 
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                    ? 'bg-success/5 dark:bg-success/20 border-green-200 dark:border-green-800' 
                     : totalSignups >= milestone.current * 0.8
-                    ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                    ? 'bg-warning/5 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
                     : 'bg-muted/50'
                 }`}
               >
                 <div className="flex items-center space-x-4">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
                     milestone.unlocked 
-                      ? 'bg-green-500 text-white' 
+                      ? 'bg-success text-primary-foreground' 
                       : 'bg-muted text-muted-foreground'
                   }`}>
                     {milestone.unlocked ? (
@@ -527,7 +527,7 @@ const HypeBuilder: React.FC = () => {
                   <div>
                     <h3 className="font-semibold">{milestone.title}</h3>
                     <p className="text-sm text-muted-foreground">{milestone.description}</p>
-                    <p className="text-xs text-purple-600 font-medium">{milestone.reward}</p>
+                    <p className="text-xs text-secondary font-medium">{milestone.reward}</p>
                   </div>
                 </div>
                 
@@ -554,7 +554,7 @@ const HypeBuilder: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[
               { action: 'Sarah from TechCorp just joined the founder tier!', time: '2 min ago', icon: Crown },
               { action: 'Mike shared Nexus on LinkedIn', time: '5 min ago', icon: Share2 },
@@ -567,9 +567,9 @@ const HypeBuilder: React.FC = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg"
+                className="flex items-center space-x-4 p-4 bg-muted/50 rounded-lg"
               >
-                <activity.icon className="w-5 h-5 text-purple-500" />
+                <activity.icon className="w-5 h-5 text-secondary" />
                 <div className="flex-1">
                   <span className="text-sm">{activity.action}</span>
                 </div>

@@ -10,6 +10,12 @@ import type {
   UserContextType 
 } from '@/lib/types/userProfile';
 
+// Helper function to validate UUID format
+const isValidUUID = (uuid: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+};
+
 const EnhancedUserContext = createContext<UserContextType | undefined>(undefined);
 
 /**
@@ -40,7 +46,7 @@ export const EnhancedUserProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       // Fetch company data separately if user has a company_id
       let companyData = null;
-      if (profileData?.company_id) {
+      if (profileData?.company_id && isValidUUID(profileData.company_id)) {
         const { data: company, error: companyError } = await supabase
           .from('companies')
           .select('*')

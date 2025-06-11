@@ -61,7 +61,7 @@ const QuickActions: React.FC<{ onAction: (prompt: string) => void }> = ({ onActi
   ];
 
   return (
-    <div className="p-3 border-b border-border">
+    <div className="p-4 border-b border-border">
       <h4 className="text-xs font-medium text-muted-foreground mb-2">Quick Actions</h4>
       <div className="grid grid-cols-2 gap-1">
         {actions.map((action) => (
@@ -198,7 +198,7 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
   return (
     <div className="fixed right-4 bottom-4 w-80 h-96 bg-background border border-border rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-border bg-muted/30">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
         <div className="flex items-center gap-2">
           <div className="w-5 h-5 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
             <Zap className="w-3 h-3 text-primary-foreground" />
@@ -230,7 +230,7 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="flex-1 overflow-y-auto p-4">
         {messages.length === 0 ? (
           <div className="text-center py-6">
             <Sparkles className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
@@ -273,7 +273,7 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
       </div>
 
       {/* Input */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border p-4">
         <div className="flex items-end gap-2 bg-muted/50 rounded-lg p-2">
           <textarea
             ref={inputRef}
@@ -325,7 +325,7 @@ export const QuickChat: React.FC<QuickChatProps> = (props) => {
         </p>
         <button 
           onClick={props.onClose}
-          className="mt-2 px-3 py-1 text-xs bg-muted rounded-md hover:bg-muted/80"
+          className="mt-2 px-4 py-1 text-xs bg-muted rounded-md hover:bg-muted/80"
         >
           Close
         </button>

@@ -97,7 +97,7 @@ export function useEnhancedChat(options: UseEnhancedChatOptions): ChatState & Ch
 
     try {
       // Handle file attachments if provided
-      let attachmentData: AttachmentData[] = [];
+      const attachmentData: AttachmentData[] = [];
       if (attachments && attachments.length > 0) {
         // TODO: Implement file upload logic
         console.log('File attachments:', attachments);

@@ -497,7 +497,7 @@ export const NexusAIController: React.FC = () => {
           
           <Badge 
             variant={orchestratorStatus === 'running' ? 'default' : 'secondary'}
-            className="text-lg px-4 py-2"
+            className="text-lg px-4 py-4"
           >
             {orchestratorStatus === 'running' ? 'ACTIVE' : 'STOPPED'}
           </Badge>

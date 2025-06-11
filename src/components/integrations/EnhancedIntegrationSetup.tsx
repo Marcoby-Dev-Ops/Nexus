@@ -280,16 +280,16 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
   const renderProgressBar = () => (
     <div className="mb-6">
       <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <span className="text-sm font-medium text-foreground/90 dark:text-muted-foreground/60">
           Step {currentStep + 1} of {steps.length}
         </span>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <span className="text-sm text-muted-foreground dark:text-muted-foreground">
           {currentStepData.estimatedTime}
         </span>
       </div>
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+      <div className="w-full bg-gray-200 dark:bg-background rounded-full h-2">
         <div 
-          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+          className="bg-primary h-2 rounded-full transition-all duration-300"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -297,14 +297,14 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
         {steps.map((step, index) => (
           <div 
             key={step.id}
-            className={`flex items-center ${index <= currentStep ? 'text-blue-600' : 'text-gray-400'}`}
+            className={`flex items-center ${index <= currentStep ? 'text-primary' : 'text-muted-foreground'}`}
           >
             {step.completed ? (
               <CheckCircle2 className="w-4 h-4" />
             ) : index === currentStep ? (
               <div className="w-4 h-4 border-2 border-blue-600 rounded-full" />
             ) : (
-              <div className="w-4 h-4 border-2 border-gray-300 rounded-full" />
+              <div className="w-4 h-4 border-2 border-border rounded-full" />
             )}
           </div>
         ))}
@@ -318,45 +318,45 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-20 h-20 bg-primary/10 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
                 {integration.icon}
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-2xl font-semibold text-foreground dark:text-primary-foreground mb-2">
                 Connect {integration.name}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6 max-w-md mx-auto">
                 This secure integration will sync your {integration.name} data with Nexus for powerful insights and automation.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-center">
-                <Clock className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-                <div className="text-sm font-medium text-gray-900 dark:text-white">Setup Time</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{integration.estimatedSetupTime}</div>
+              <div className="p-4 bg-background dark:bg-background/50 rounded-lg text-center">
+                <Clock className="w-6 h-6 text-primary mx-auto mb-2" />
+                <div className="text-sm font-medium text-foreground dark:text-primary-foreground">Setup Time</div>
+                <div className="text-sm text-muted-foreground dark:text-muted-foreground">{integration.estimatedSetupTime}</div>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-center">
-                <Shield className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                <div className="text-sm font-medium text-gray-900 dark:text-white">Security</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Bank-level encryption</div>
+              <div className="p-4 bg-background dark:bg-background/50 rounded-lg text-center">
+                <Shield className="w-6 h-6 text-success mx-auto mb-2" />
+                <div className="text-sm font-medium text-foreground dark:text-primary-foreground">Security</div>
+                <div className="text-sm text-muted-foreground dark:text-muted-foreground">Bank-level encryption</div>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg text-center">
-                <Database className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-                <div className="text-sm font-medium text-gray-900 dark:text-white">Data Types</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">{integration.features.length} available</div>
+              <div className="p-4 bg-background dark:bg-background/50 rounded-lg text-center">
+                <Database className="w-6 h-6 text-secondary mx-auto mb-2" />
+                <div className="text-sm font-medium text-foreground dark:text-primary-foreground">Data Types</div>
+                <div className="text-sm text-muted-foreground dark:text-muted-foreground">{integration.features.length} available</div>
               </div>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-3 flex items-center">
-                <Zap className="w-4 h-4 mr-2 text-blue-600" />
+            <div className="bg-primary/5 dark:bg-blue-900/20 p-4 rounded-lg">
+              <h4 className="font-medium text-foreground dark:text-primary-foreground mb-3 flex items-center">
+                <Zap className="w-4 h-4 mr-2 text-primary" />
                 What you'll get:
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {integration.features.map((feature, index) => (
                   <div key={index} className="flex items-center space-x-2">
-                    <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{feature}</span>
+                    <Check className="w-4 h-4 text-success flex-shrink-0" />
+                    <span className="text-sm text-muted-foreground dark:text-muted-foreground">{feature}</span>
                   </div>
                 ))}
               </div>
@@ -390,15 +390,15 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-4">
                 Before we start, make sure you have:
               </h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {integration.prerequisites?.map((prereq, index) => (
-                  <label key={index} className="flex items-start space-x-3 cursor-pointer">
+                  <label key={index} className="flex items-start space-x-4 cursor-pointer">
                     <input 
                       type="checkbox" 
-                      className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                      className="mt-1 w-4 h-4 text-primary rounded focus:ring-blue-500"
                       onChange={(e) => {
                         const checked = e.target.checked;
                         setSetupData(prev => ({
@@ -410,15 +410,15 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                         }));
                       }}
                     />
-                    <span className="text-gray-700 dark:text-gray-300">{prereq}</span>
+                    <span className="text-foreground/90 dark:text-muted-foreground/60">{prereq}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
-              <div className="flex items-start space-x-3">
-                <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
+            <div className="bg-warning/5 dark:bg-yellow-900/20 p-4 rounded-lg">
+              <div className="flex items-start space-x-4">
+                <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
                 <div>
                   <h4 className="font-medium text-yellow-800 dark:text-yellow-200">
                     Need Help Getting Access?
@@ -438,24 +438,24 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
             {integration.authType === 'oauth' ? (
               <div className="text-center space-y-6">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
                     Authorize Access
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-muted-foreground dark:text-muted-foreground">
                     Click the button below to securely connect your {integration.name} account.
                   </p>
                 </div>
                 
-                <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg">
-                  <Shield className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-                  <h4 className="font-medium text-gray-900 dark:text-white mb-2">
+                <div className="bg-primary/5 dark:bg-blue-900/20 p-6 rounded-lg">
+                  <Shield className="w-12 h-12 text-primary mx-auto mb-4" />
+                  <h4 className="font-medium text-foreground dark:text-primary-foreground mb-2">
                     Secure OAuth Connection
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-4">
                     You'll be redirected to {integration.name} to authorize access. 
                     We only request the minimum permissions needed.
                   </p>
-                  <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                  <Button className="w-full bg-primary hover:bg-primary/90">
                     <Globe className="w-4 h-4 mr-2" />
                     Connect to {integration.name}
                   </Button>
@@ -464,10 +464,10 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
             ) : (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
                     Enter Your Credentials
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-muted-foreground dark:text-muted-foreground">
                     Your credentials are encrypted and stored securely.
                   </p>
                 </div>
@@ -475,7 +475,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                 <div className="space-y-4">
                   {integration.authType === 'api_key' && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-sm font-medium text-foreground/90 dark:text-muted-foreground/60 mb-2">
                         API Key *
                       </label>
                       <div className="relative">
@@ -483,18 +483,18 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                           type={showApiKey ? 'text' : 'password'}
                           value={setupData.apiKey || ''}
                           onChange={(e) => setSetupData(prev => ({ ...prev, apiKey: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="Enter your API key"
                         />
                         <button
                           type="button"
                           onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                          className="absolute right-3 top-2.5 text-muted-foreground hover:text-muted-foreground"
                         >
                           {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-muted-foreground mt-1">
                         Find your API key in {integration.name} Settings → API → Generate Key
                       </p>
                     </div>
@@ -503,26 +503,26 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                   {integration.authType === 'credentials' && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-foreground/90 dark:text-muted-foreground/60 mb-2">
                           Username *
                         </label>
                         <input
                           type="text"
                           value={setupData.username || ''}
                           onChange={(e) => setSetupData(prev => ({ ...prev, username: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="Enter your username"
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-sm font-medium text-foreground/90 dark:text-muted-foreground/60 mb-2">
                           Password *
                         </label>
                         <input
                           type="password"
                           value={setupData.password || ''}
                           onChange={(e) => setSetupData(prev => ({ ...prev, password: e.target.value }))}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="Enter your password"
                         />
                       </div>
@@ -531,12 +531,12 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                 </div>
 
                 {validationErrors.length > 0 && (
-                  <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                  <div className="bg-destructive/5 dark:bg-destructive/20 p-4 rounded-lg">
                     <div className="flex items-start space-x-2">
-                      <XCircle className="w-4 h-4 text-red-500 mt-0.5" />
+                      <XCircle className="w-4 h-4 text-destructive mt-0.5" />
                       <div>
                         {validationErrors.map((error, index) => (
-                          <p key={index} className="text-sm text-red-700 dark:text-red-300">{error}</p>
+                          <p key={index} className="text-sm text-destructive dark:text-red-300">{error}</p>
                         ))}
                       </div>
                     </div>
@@ -551,22 +551,22 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
                 Test Connection
               </h3>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-muted-foreground dark:text-muted-foreground">
                 Let's verify everything is working correctly
               </p>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg">
+            <div className="bg-background dark:bg-background/50 p-6 rounded-lg">
               {connectionStatus === 'idle' && (
                 <div className="text-center">
-                  <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground dark:text-muted-foreground mb-4">
                     Ready to test your connection
                   </p>
-                  <Button onClick={handleTestConnection} className="bg-blue-600 hover:bg-blue-700">
+                  <Button onClick={handleTestConnection} className="bg-primary hover:bg-primary/90">
                     <Zap className="w-4 h-4 mr-2" />
                     Test Connection
                   </Button>
@@ -575,8 +575,8 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
 
               {connectionStatus === 'testing' && (
                 <div className="text-center">
-                  <RefreshCw className="w-12 h-12 text-blue-600 mx-auto mb-4 animate-spin" />
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <RefreshCw className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                  <p className="text-muted-foreground dark:text-muted-foreground">
                     Testing connection...
                   </p>
                 </div>
@@ -584,11 +584,11 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
 
               {connectionStatus === 'success' && (
                 <div className="text-center">
-                  <CheckCircle2 className="w-12 h-12 text-green-600 mx-auto mb-4" />
-                  <h4 className="font-medium text-green-700 dark:text-green-300 mb-2">
+                  <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-4" />
+                  <h4 className="font-medium text-success dark:text-green-300 mb-2">
                     Connection Successful!
                   </h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                     Successfully connected to {integration.name} and fetched sample data.
                   </p>
                 </div>
@@ -596,14 +596,14 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
 
               {connectionStatus === 'error' && (
                 <div className="text-center">
-                  <XCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
-                  <h4 className="font-medium text-red-700 dark:text-red-300 mb-2">
+                  <XCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
+                  <h4 className="font-medium text-destructive dark:text-red-300 mb-2">
                     Connection Failed
                   </h4>
-                  <p className="text-sm text-red-600 dark:text-red-400 mb-4">
+                  <p className="text-sm text-destructive dark:text-destructive mb-4">
                     {errorMessage}
                   </p>
-                  <div className="flex justify-center space-x-3">
+                  <div className="flex justify-center space-x-4">
                     <Button variant="outline" onClick={handleTestConnection}>
                       <RefreshCw className="w-4 h-4 mr-2" />
                       Retry
@@ -619,7 +619,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
 
             {/* Common Issues Help */}
             {integration.commonIssues && connectionStatus === 'error' && (
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+              <div className="bg-warning/5 dark:bg-yellow-900/20 p-4 rounded-lg">
                 <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-3">
                   Common Issues & Solutions:
                 </h4>
@@ -629,7 +629,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                       <summary className="cursor-pointer text-sm font-medium text-yellow-700 dark:text-yellow-300">
                         {item.issue}
                       </summary>
-                      <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1 ml-4">
+                      <p className="text-sm text-warning dark:text-yellow-400 mt-1 ml-4">
                         {item.solution}
                       </p>
                     </details>
@@ -644,22 +644,22 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
         return (
           <div className="space-y-6 text-center">
             <div>
-              <div className="mx-auto w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-12 h-12 text-green-600" />
+              <div className="mx-auto w-20 h-20 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-12 h-12 text-success" />
               </div>
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-2xl font-semibold text-foreground dark:text-primary-foreground mb-2">
                 Integration Complete!
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
                 {integration.name} is now connected and syncing data with Nexus.
               </p>
             </div>
 
-            <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-              <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
+            <div className="bg-success/5 dark:bg-success/20 p-4 rounded-lg">
+              <h4 className="font-medium text-success dark:text-green-200 mb-2">
                 Next Steps:
               </h4>
-              <ul className="text-sm text-green-700 dark:text-green-300 space-y-1 text-left">
+              <ul className="text-sm text-success dark:text-green-300 space-y-1 text-left">
                 <li>• Data will start syncing within the next few minutes</li>
                 <li>• Check the dashboard for your first insights</li>
                 <li>• Configure automation rules if needed</li>
@@ -672,7 +672,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                 <Book className="w-4 h-4 mr-2" />
                 View Documentation
               </Button>
-              <Button onClick={handleComplete} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={handleComplete} className="bg-primary hover:bg-primary/90">
                 Go to Dashboard
               </Button>
             </div>
@@ -685,13 +685,13 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
   };
 
   const renderHelpPanel = () => (
-    <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg">
+    <div className="bg-background dark:bg-background/50 p-4 rounded-lg">
       <div className="flex items-center mb-3">
-        <HelpCircle className="w-4 h-4 text-blue-600 mr-2" />
-        <span className="text-sm font-medium text-gray-900 dark:text-white">Need Help?</span>
+        <HelpCircle className="w-4 h-4 text-primary mr-2" />
+        <span className="text-sm font-medium text-foreground dark:text-primary-foreground">Need Help?</span>
       </div>
       {currentStepData.helpText && (
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-3">
           {currentStepData.helpText}
         </p>
       )}
@@ -712,22 +712,22 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
 
   return (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-card dark:bg-background rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+            <div className="flex items-center space-x-4">
+              <div className="w-10 h-10 bg-primary/10 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
                 {integration.icon}
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-semibold text-foreground dark:text-primary-foreground">
                   {integration.name} Setup
                 </h2>
                 <Badge className={`text-xs ${
-                  integration.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-                  integration.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
+                  integration.difficulty === 'easy' ? 'bg-success/10 text-success' :
+                  integration.difficulty === 'medium' ? 'bg-warning/10 text-yellow-800' :
+                  'bg-destructive/10 text-destructive'
                 }`}>
                   {integration.difficulty} setup
                 </Badge>
@@ -743,10 +743,10 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
 
           {/* Current Step */}
           <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <h3 className="text-lg font-medium text-foreground dark:text-primary-foreground mb-2">
               {currentStepData.title}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-muted-foreground dark:text-muted-foreground text-sm">
               {currentStepData.description}
             </p>
           </div>
@@ -774,7 +774,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
               Previous
             </Button>
 
-            <div className="flex space-x-3">
+            <div className="flex space-x-4">
               {currentStepData.optional && (
                 <Button variant="outline" onClick={handleNext}>
                   Skip
@@ -798,13 +798,13 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                 <Button 
                   onClick={handleNext}
                   disabled={connectionStatus !== 'success'}
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   Continue
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button onClick={handleNext} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={handleNext} className="bg-primary hover:bg-primary/90">
                   Next
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

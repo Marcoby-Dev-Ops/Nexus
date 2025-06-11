@@ -63,9 +63,9 @@ const OperationsHome: React.FC = () => {
             <button
               key={index}
               onClick={action.onClick}
-              className="flex flex-col items-center p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-all duration-200 group"
+              className="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
             >
-              <div className="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 mb-3">
+              <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
                 {action.icon}
               </div>
               <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">
@@ -90,7 +90,7 @@ const OperationsHome: React.FC = () => {
           variant="elevated"
           className="hover:shadow-xl transition-all duration-300"
           action={
-            <button className="flex items-center space-x-2 px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
+            <button className="flex items-center space-x-2 px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
               <span className="text-sm">Manage Workflows</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
@@ -107,7 +107,7 @@ const OperationsHome: React.FC = () => {
           variant="elevated"
           className="hover:shadow-xl transition-all duration-300"
           action={
-            <button className="flex items-center space-x-2 px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
+            <button className="flex items-center space-x-2 px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 font-medium border border-border">
               <span className="text-sm">View Details</span>
               <ArrowUpRight className="w-4 h-4" />
             </button>
@@ -125,7 +125,7 @@ const OperationsHome: React.FC = () => {
         title="Recent Activities" 
         variant="elevated"
         action={
-          <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+          <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
             View All Activities
           </button>
         }
@@ -154,7 +154,7 @@ const OperationsHome: React.FC = () => {
             return (
               <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
                 <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <div className="p-4 rounded-lg bg-primary/10 text-primary">
                     {getIcon(activity.type)}
                   </div>
                   <div>
@@ -163,7 +163,7 @@ const OperationsHome: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <span className={`px-4 py-1 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
+                  <span className={`px-4 py-4 rounded-full text-xs font-medium ${getStatusColor(activity.status)}`}>
                     {activity.status}
                   </span>
                 </div>

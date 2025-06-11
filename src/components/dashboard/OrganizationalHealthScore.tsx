@@ -60,7 +60,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
       case 'up':
         return <TrendingUp className="h-3 w-3 text-emerald-500" />;
       case 'down':
-        return <TrendingDown className="h-3 w-3 text-red-500" />;
+        return <TrendingDown className="h-3 w-3 text-destructive" />;
       default:
         return <Minus className="h-3 w-3 text-amber-500" />;
     }
@@ -71,19 +71,19 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
       case 'excellent':
         return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800';
       case 'good':
-        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
+        return 'bg-primary/10 text-primary border-border dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
       case 'warning':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800';
       default:
-        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
+        return 'bg-destructive/10 text-destructive border-red-200 dark:bg-destructive/20 dark:text-red-300 dark:border-red-800';
     }
   };
 
   const getScoreColor = () => {
-    if (overallScore >= 90) return 'text-emerald-600 dark:text-emerald-400';
-    if (overallScore >= 75) return 'text-blue-600 dark:text-blue-400';
-    if (overallScore >= 60) return 'text-amber-600 dark:text-amber-400';
-    return 'text-red-600 dark:text-red-400';
+    if (overallScore >= 90) return 'text-success dark:text-emerald-400';
+    if (overallScore >= 75) return 'text-primary dark:text-primary';
+    if (overallScore >= 60) return 'text-warning dark:text-amber-400';
+    return 'text-destructive dark:text-destructive';
   };
 
   return (
@@ -95,10 +95,10 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-2xl font-bold text-foreground dark:text-primary-foreground">
               Organizational Health Score
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
               Real-time business intelligence across all departments
             </p>
           </div>
@@ -106,7 +106,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
             <div className={`text-4xl font-bold ${getScoreColor()}`}>
               {overallScore}%
             </div>
-            <Badge variant="outline" className="mt-1 bg-white/80 dark:bg-gray-800/80">
+            <Badge variant="outline" className="mt-1 bg-card/80 dark:bg-background/80">
               Excellent Health
             </Badge>
           </div>
@@ -117,21 +117,21 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
           {healthMetrics.map((metric, index) => (
             <div
               key={index}
-              className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-lg p-4 border border-gray-200/50 dark:border-gray-700/50"
+              className="bg-card/80 dark:bg-background/80 backdrop-blur-sm rounded-lg p-4 border border-border/50 dark:border-border/50"
             >
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                <span className="text-sm font-medium text-muted-foreground dark:text-muted-foreground">
                   {metric.label}
                 </span>
                 {getTrendIcon(metric.trend)}
               </div>
               
               <div className="space-y-1">
-                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                <div className="text-lg font-bold text-foreground dark:text-primary-foreground">
                   {metric.value}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-muted-foreground dark:text-muted-foreground">
                     {metric.trendValue}
                   </span>
                   <Badge 
@@ -148,10 +148,10 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
 
         {/* Quick Actions */}
         <div className="mt-6 flex flex-wrap gap-2">
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+          <Badge variant="secondary" className="bg-primary/10 text-primary dark:bg-blue-900/20 dark:text-blue-300">
             🔵 THINK: Cross-pattern analysis active
           </Badge>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+          <Badge variant="secondary" className="bg-secondary/10 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
             🟣 SEE: Real-time monitoring engaged
           </Badge>
           <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">

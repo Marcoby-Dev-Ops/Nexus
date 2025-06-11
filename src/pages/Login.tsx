@@ -189,7 +189,7 @@ export const Login = () => {
               <div className="bg-background dark:bg-card rounded-2xl shadow-2xl border border-border max-w-2xl w-full max-h-[80vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-border">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-4">
                     <Sparkles className="w-6 h-6 text-primary" />
                     <h2 className="text-xl font-bold text-foreground">See Nexus in Action</h2>
                   </div>
@@ -265,7 +265,7 @@ export const Login = () => {
                             emailInput?.focus();
                           }, 100);
                         }}
-                        className="px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors"
+                        className="px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
                       >
                         Start Free Trial
                       </button>

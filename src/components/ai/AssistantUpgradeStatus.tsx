@@ -11,17 +11,17 @@ import { Badge } from '@/components/ui/Badge';
  */
 export const AssistantUpgradeStatus: React.FC = () => {
   return (
-    <Card className="w-full max-w-2xl mx-auto border-green-200 bg-green-50 dark:bg-green-950 dark:border-green-800">
+    <Card className="w-full max-w-2xl mx-auto border-green-200 bg-success/5 dark:bg-green-950 dark:border-green-800">
       <CardHeader>
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900 flex items-center justify-center">
-            <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
+          <div className="w-12 h-12 rounded-lg bg-success/10 dark:bg-green-900 flex items-center justify-center">
+            <CheckCircle className="w-6 h-6 text-success dark:text-success" />
           </div>
           <div>
-            <CardTitle className="text-green-800 dark:text-green-200">
+            <CardTitle className="text-success dark:text-green-200">
               Assistant Successfully Upgraded! 🎉
             </CardTitle>
-            <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+            <p className="text-sm text-success dark:text-success mt-1">
               Your AI assistant is now powered by our enhanced modern system
             </p>
           </div>
@@ -30,45 +30,45 @@ export const AssistantUpgradeStatus: React.FC = () => {
       <CardContent className="space-y-6">
         {/* What's New */}
         <div>
-          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-3">
+          <h3 className="text-lg font-semibold text-success dark:text-green-200 mb-3">
             ✨ What's New
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-green-900/50">
-              <Sparkles className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-4 p-4 rounded-lg bg-card dark:bg-green-900/50">
+              <Sparkles className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-medium text-green-800 dark:text-green-200">Enhanced Responses</h4>
-                <p className="text-sm text-green-600 dark:text-green-400">
+                <h4 className="font-medium text-success dark:text-green-200">Enhanced Responses</h4>
+                <p className="text-sm text-success dark:text-success">
                   Streaming responses with typewriter effect and better context understanding
                 </p>
               </div>
             </div>
             
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-green-900/50">
-              <MessageSquare className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-4 p-4 rounded-lg bg-card dark:bg-green-900/50">
+              <MessageSquare className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-medium text-green-800 dark:text-green-200">Modern UI</h4>
-                <p className="text-sm text-green-600 dark:text-green-400">
+                <h4 className="font-medium text-success dark:text-green-200">Modern UI</h4>
+                <p className="text-sm text-success dark:text-success">
                   ChatGPT-inspired interface with message status indicators and reactions
                 </p>
               </div>
             </div>
             
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-green-900/50">
-              <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-4 p-4 rounded-lg bg-card dark:bg-green-900/50">
+              <Zap className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-medium text-green-800 dark:text-green-200">Quick Chat</h4>
-                <p className="text-sm text-green-600 dark:text-green-400">
+                <h4 className="font-medium text-success dark:text-green-200">Quick Chat</h4>
+                <p className="text-sm text-success dark:text-success">
                   Floating quick chat for instant help without leaving your workflow
                 </p>
               </div>
             </div>
             
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-green-900/50">
-              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-4 p-4 rounded-lg bg-card dark:bg-green-900/50">
+              <CheckCircle className="w-5 h-5 text-success mt-0.5 flex-shrink-0" />
               <div>
-                <h4 className="font-medium text-green-800 dark:text-green-200">Reliability</h4>
-                <p className="text-sm text-green-600 dark:text-green-400">
+                <h4 className="font-medium text-success dark:text-green-200">Reliability</h4>
+                <p className="text-sm text-success dark:text-success">
                   Better error handling, retry logic, and conversation persistence
                 </p>
               </div>
@@ -78,7 +78,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
 
         {/* Features List */}
         <div>
-          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-3">
+          <h3 className="text-lg font-semibold text-success dark:text-green-200 mb-3">
             🚀 Enhanced Features
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -94,7 +94,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
               'Accessibility Compliant',
               'Error Recovery'
             ].map((feature) => (
-              <Badge key={feature} className="bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+              <Badge key={feature} className="bg-success/10 text-success dark:bg-green-800 dark:text-green-100">
                 {feature}
               </Badge>
             ))}
@@ -102,48 +102,48 @@ export const AssistantUpgradeStatus: React.FC = () => {
         </div>
 
         {/* Where to Find */}
-        <div className="bg-white dark:bg-green-900/50 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-3">
+        <div className="bg-card dark:bg-green-900/50 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-success dark:text-green-200 mb-3">
             📍 How to Access Your Enhanced Assistant
           </h3>
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-semibold text-green-800 dark:text-green-100">1</span>
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-success/10 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-semibold text-success dark:text-green-100">1</span>
               </div>
               <div>
-                <p className="font-medium text-green-800 dark:text-green-200">Quick Chat (Floating Button)</p>
-                <p className="text-sm text-green-600 dark:text-green-400">Look for the floating chat button in the bottom-right corner</p>
+                <p className="font-medium text-success dark:text-green-200">Quick Chat (Floating Button)</p>
+                <p className="text-sm text-success dark:text-success">Look for the floating chat button in the bottom-right corner</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-semibold text-green-800 dark:text-green-100">2</span>
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-success/10 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-semibold text-success dark:text-green-100">2</span>
               </div>
               <div>
-                <p className="font-medium text-green-800 dark:text-green-200">Header Assistant (Sparkles Icon)</p>
-                <p className="text-sm text-green-600 dark:text-green-400">Click the sparkles icon in the top header for the full assistant panel</p>
+                <p className="font-medium text-success dark:text-green-200">Header Assistant (Sparkles Icon)</p>
+                <p className="text-sm text-success dark:text-success">Click the sparkles icon in the top header for the full assistant panel</p>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
-                <span className="text-xs font-semibold text-green-800 dark:text-green-100">3</span>
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-success/10 dark:bg-green-800 flex items-center justify-center flex-shrink-0">
+                <span className="text-xs font-semibold text-success dark:text-green-100">3</span>
               </div>
               <div>
-                <p className="font-medium text-green-800 dark:text-green-200">Full Chat Page</p>
-                <p className="text-sm text-green-600 dark:text-green-400">Navigate to "AI Chat" in the sidebar or visit /chat for the complete experience</p>
+                <p className="font-medium text-success dark:text-green-200">Full Chat Page</p>
+                <p className="text-sm text-success dark:text-success">Navigate to "AI Chat" in the sidebar or visit /chat for the complete experience</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-4 pt-2">
           <Button 
             onClick={() => window.location.href = '/chat'}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-green-600 hover:bg-green-700 text-primary-foreground"
           >
             Try Full Chat Experience
           </Button>
@@ -156,7 +156,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
                 quickChatTrigger.click();
               }
             }}
-            className="border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+            className="border-green-600 text-success hover:bg-success/5 dark:hover:bg-green-900/20"
           >
             Open Quick Chat
           </Button>

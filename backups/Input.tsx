@@ -18,7 +18,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
  */
 export const Input: React.FC<InputProps> = React.memo(({ error, icon, className = '', ...props }) => (
   <div className="flex flex-col gap-1">
-    <div className={`relative flex items-center ${error ? 'border-destructive' : 'border-input'} border rounded-md px-4 py-2 bg-background ${className}`}>
+    <div className={`relative flex items-center ${error ? 'border-destructive' : 'border-input'} border rounded-md px-4 py-4 bg-background ${className}`}>
       {icon && <span className="mr-2 text-muted-foreground">{icon}</span>}
       <input
         className="flex-1 bg-transparent outline-none"

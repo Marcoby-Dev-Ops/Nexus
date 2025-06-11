@@ -18,7 +18,7 @@ import {
   departmentalAgents,
   type Agent 
 } from '@/lib/agentRegistry';
-import { ExecutiveAssistant } from './ExecutiveAssistant';
+import { ModernExecutiveAssistant } from './enhanced/ModernExecutiveAssistant';
 import { DepartmentalAgent } from './DepartmentalAgent';
 import { ChatContextBuilder } from '@/lib/chatContext';
 import { useAuth } from '@/lib/auth';
@@ -68,7 +68,7 @@ const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ onDepartmentSel
       <div className="flex items-center gap-4 p-4 border-b border-border">
         <button
           onClick={onBackToExecutive}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
+          className="p-4 rounded-lg hover:bg-muted transition-colors"
           aria-label="Back to Executive Assistant"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -115,13 +115,13 @@ const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ onDepartmentSel
                       {agent.specialties.slice(0, 3).map((specialty, index) => (
                         <span
                           key={index}
-                          className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full"
+                          className="px-4 py-4 bg-muted text-muted-foreground text-xs rounded-full"
                         >
                           {specialty}
                         </span>
                       ))}
                       {agent.specialties.length > 3 && (
-                        <span className="px-2 py-1 bg-muted text-muted-foreground text-xs rounded-full">
+                        <span className="px-4 py-4 bg-muted text-muted-foreground text-xs rounded-full">
                           +{agent.specialties.length - 3} more
                         </span>
                       )}
@@ -205,7 +205,7 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
               {/* Department Access Button */}
               <button
                 onClick={handleShowDepartments}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-4 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors"
               >
                 <Users className="w-4 h-4" />
                 <span>Departments</span>
@@ -215,7 +215,7 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
 
                                {/* Executive Assistant Chat */}
           <div className="flex-1">
-            <ExecutiveAssistant onClose={onClose || (() => {})} sessionId={sessionId} />
+            <ModernExecutiveAssistant onClose={onClose || (() => {})} sessionId={sessionId} />
           </div>
         </>
       )}

@@ -163,7 +163,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
                 <Button
                   key={metric}
                   variant={criteriaData.primary_success_metric === metric ? "default" : "outline"}
-                  className="justify-start h-auto p-3"
+                  className="justify-start h-auto p-4"
                   onClick={() => setCriteriaData(prev => ({ ...prev, primary_success_metric: metric }))}
                 >
                   {metric}

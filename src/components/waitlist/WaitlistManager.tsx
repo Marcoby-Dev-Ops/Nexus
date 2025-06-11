@@ -222,7 +222,7 @@ const WaitlistManager: React.FC = () => {
             <Download className="w-4 h-4 mr-2" />
             Export Data
           </Button>
-          <Button onClick={sendBulkEmail} className="bg-purple-600 hover:bg-purple-700">
+          <Button onClick={sendBulkEmail} className="bg-secondary hover:bg-purple-700">
             <Mail className="w-4 h-4 mr-2" />
             Send Update
           </Button>
@@ -237,28 +237,28 @@ const WaitlistManager: React.FC = () => {
             value: metrics.totalSignups.toLocaleString(),
             change: `+${metrics.dailyGrowthRate}%`,
             icon: <Users className="w-6 h-6" />,
-            color: 'text-blue-600'
+            color: 'text-primary'
           },
           {
             title: 'Revenue Potential',
             value: `$${(metrics.totalRevenuePotential / 1000).toFixed(0)}K`,
             change: `+${metrics.conversionRate}%`,
             icon: <DollarSign className="w-6 h-6" />,
-            color: 'text-green-600'
+            color: 'text-success'
           },
           {
             title: 'Referral Rate',
             value: `${metrics.referralRate}%`,
             change: `+${metrics.avgReferralsPerUser}`,
             icon: <Gift className="w-6 h-6" />,
-            color: 'text-purple-600'
+            color: 'text-secondary'
           },
           {
             title: 'Engagement',
             value: `${metrics.emailOpenRate}%`,
             change: `+${metrics.socialShares}`,
             icon: <TrendingUp className="w-6 h-6" />,
-            color: 'text-orange-600'
+            color: 'text-warning'
           }
         ].map((metric, index) => (
           <motion.div
@@ -273,7 +273,7 @@ const WaitlistManager: React.FC = () => {
                   <div>
                     <p className="text-muted-foreground text-sm">{metric.title}</p>
                     <p className="text-2xl font-bold">{metric.value}</p>
-                    <p className="text-sm text-green-600 flex items-center">
+                    <p className="text-sm text-success flex items-center">
                       <ArrowUp className="w-3 h-3 mr-1" />
                       {metric.change}
                     </p>
@@ -309,7 +309,7 @@ const WaitlistManager: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-green-600">{campaign.roi}% ROI</div>
+                  <div className="text-lg font-bold text-success">{campaign.roi}% ROI</div>
                   <div className="text-sm text-muted-foreground">Return on Investment</div>
                 </div>
               </div>
@@ -343,7 +343,7 @@ const WaitlistManager: React.FC = () => {
               <select
                 value={selectedTier}
                 onChange={(e) => setSelectedTier(e.target.value)}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-4 py-2 border border-border rounded-md bg-background"
               >
                 <option value="all">All Tiers</option>
                 <option value="founder">Founder</option>
@@ -359,7 +359,7 @@ const WaitlistManager: React.FC = () => {
                   setSortBy(field as any);
                   setSortOrder(order as any);
                 }}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-4 py-2 border border-border rounded-md bg-background"
               >
                 <option value="position-asc">Position (Low to High)</option>
                 <option value="position-desc">Position (High to Low)</option>
@@ -414,7 +414,7 @@ const WaitlistManager: React.FC = () => {
                   
                   <div className="text-center min-w-[60px]">
                     <div className="text-lg font-bold">#{entry.position}</div>
-                    <Badge className={`text-xs ${getTierColor(entry.tier)} text-white`}>
+                    <Badge className={`text-xs ${getTierColor(entry.tier)} text-primary-foreground`}>
                       {entry.tier}
                     </Badge>
                   </div>

@@ -10,12 +10,13 @@ import { OrganizationSetupStep } from './OrganizationSetupStep';
 import { UserContextStep } from './UserContextStep';
 import { BusinessContextStep } from './BusinessContextStep';
 import { SuccessCriteriaStep } from './SuccessCriteriaStep';
+import { BusinessSnapshotStep } from './BusinessSnapshotStep';
 import { n8nOnboardingManager } from '../../lib/n8nOnboardingManager';
 import type { OnboardingState, OnboardingStep } from '../../lib/n8nOnboardingManager';
 import type { UserN8nConfig } from '../../lib/userN8nConfig';
 import { LoadingStates } from '../patterns/LoadingStates';
 import { motion } from 'framer-motion';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useEnhancedUser } from '../../lib/contexts/EnhancedUserContext';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -57,7 +58,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     return unsubscribe;
   }, []);
 
-  const handleStepComplete = async (stepId: string, data?: Record<string, any>) => {
+  const handleStepComplete = async (stepId: string, data?: Record<string, unknown>): Promise<void> => {
     if (data) {
       setOnboardingData(prev => ({ ...prev, ...data }));
     }
@@ -201,9 +202,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               {currentStepId === 'business-context' && (
                 <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
                   <BusinessContextStep 
-                    onNext={() => handleStepComplete('business-context')}
+                    onNext={(data) => handleStepComplete('business-context', data)}
                     onBack={() => goToStep('user-context')}
                     enrichedData={onboardingData.enriched}
+                  />
+                </div>
+              )}
+
+              {currentStepId === 'business-snapshot' && (
+                <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
+                  <BusinessSnapshotStep
+                    onNext={(data) => handleStepComplete('business-snapshot', { baseline: data })}
+                    onBack={() => goToStep('business-context')}
                   />
                 </div>
               )}
@@ -253,7 +263,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   if (prevStep) goToStep(prevStep.id);
                 }}
                 disabled={currentStepIndex === 0}
-                className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <ArrowLeft className="h-3 w-3" />
                 <span>Previous</span>
@@ -270,7 +280,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   if (nextStep) goToStep(nextStep.id);
                 }}
                 disabled={currentStepIndex === onboardingState.steps.length - 1}
-                className="flex items-center space-x-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center space-x-2 px-4 py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <span>Next</span>
                 <ArrowRight className="h-3 w-3" />
@@ -285,11 +295,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
 // Welcome Step Component - Simplified
 const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const { user } = useEnhancedUser();
+  const { profile } = useEnhancedUser();
 
   // Get user's first name or fallback to a generic greeting
   const getPersonalizedGreeting = () => {
-    const firstName = user?.profile?.first_name;
+    const firstName = profile?.first_name;
     if (firstName) {
       return `Hi ${firstName}! Let's Build Your AI-Powered Business`;
     }
@@ -297,7 +307,7 @@ const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   };
 
   const getPersonalizedSubtitle = () => {
-    const firstName = user?.profile?.first_name;
+    const firstName = profile?.first_name;
     if (firstName) {
       return `${firstName}, you've just unlocked the most powerful business operating system. We'll customize it specifically for your needs and goals.`;
     }
@@ -316,11 +326,11 @@ const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         </p>
 
         {/* Setup Promise - Focused on onboarding */}
-        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700/50">
-          <div className="text-blue-800 dark:text-blue-200 font-semibold text-sm lg:text-base mb-2">
+        <div className="mb-6 p-4 bg-primary/5 dark:bg-blue-900/20 rounded-lg border border-border dark:border-blue-700/50">
+          <div className="text-primary dark:text-blue-200 font-semibold text-sm lg:text-base mb-2">
             🚀 Quick Setup Process (5 minutes)
           </div>
-          <div className="text-blue-700 dark:text-blue-300 text-xs space-y-1">
+          <div className="text-primary dark:text-blue-300 text-xs space-y-1">
             <div>✅ Tell us about your role and goals</div>
             <div>✅ Configure your business context</div>
             <div>✅ Define success metrics</div>
@@ -332,7 +342,7 @@ const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         <div className="mb-6">
           <button
             onClick={onComplete}
-            className="px-6 py-3 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium text-base transition-colors flex items-center justify-center mx-auto"
+            className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium text-base transition-colors flex items-center justify-center mx-auto"
           >
             Start Setup <ArrowRight className="ml-2 h-4 w-4" />
           </button>
@@ -417,19 +427,6 @@ const DepartmentSetupStep: React.FC<{ onComplete: () => void }> = ({ onComplete 
 
 // Complete Step Component - Enhanced with success metrics
 const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
-  const [celebrationPhase, setCelebrationPhase] = useState(0);
-
-  useEffect(() => {
-    const phases = [0, 1, 2];
-    let currentPhase = 0;
-    const interval = setInterval(() => {
-      currentPhase = (currentPhase + 1) % phases.length;
-      setCelebrationPhase(currentPhase);
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, []);
-
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -441,35 +438,35 @@ const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
         transition={{ duration: 2, repeat: Infinity }}
         className="text-4xl lg:text-6xl mb-6"
       >
-        🎉
+        🚀
       </motion.div>
 
       <h2 className="text-2xl lg:text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
-        You're All Set! 🚀
+        You're Ready to Transform Your Business!
       </h2>
 
       <div className="mb-8 p-4 lg:p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl">
         <div className="text-base lg:text-lg font-semibold text-foreground mb-4">
-          Your Nexus OS is configured and ready to deliver results:
+          Your AI Assistant is already working:
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="text-left">
-            <div className="font-medium text-green-600 dark:text-green-400 mb-2">✅ Immediate Benefits:</div>
+            <div className="font-medium text-success dark:text-success mb-2">✅ Immediate Actions:</div>
             <ul className="space-y-1 text-muted-foreground">
-              <li>• Real-time business analytics</li>
-              <li>• AI assistants for every team</li>
-              <li>• Automated workflow triggers</li>
-              <li>• Smart integrations active</li>
+              <li>• Analyzing your business patterns</li>
+              <li>• Setting up automated workflows</li>
+              <li>• Preparing your first insights</li>
+              <li>• Optimizing your processes</li>
             </ul>
           </div>
           <div className="text-left">
-            <div className="font-medium text-blue-600 dark:text-blue-400 mb-2">🎯 Next 24 Hours:</div>
+            <div className="font-medium text-primary dark:text-primary mb-2">Next Steps:</div>
             <ul className="space-y-1 text-muted-foreground">
-              <li>• AI learns your business patterns</li>
-              <li>• First automated actions execute</li>
-              <li>• Performance insights generate</li>
-              <li>• ROI tracking begins</li>
+              <li>• View your personalized dashboard</li>
+              <li>• Connect your business tools</li>
+              <li>• Review initial insights</li>
+              <li>• Start your first automation</li>
             </ul>
           </div>
         </div>
@@ -478,14 +475,14 @@ const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
       <div className="mb-6">
         <button
           onClick={onFinish}
-          className="px-6 lg:px-8 py-3 lg:py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg font-bold text-base lg:text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          className="px-6 lg:px-8 py-3 lg:py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-primary-foreground rounded-lg font-bold text-base lg:text-lg shadow-lg hover:shadow-xl transition-all duration-200"
         >
-          Launch Nexus OS ✨
+          Launch Your Dashboard →
         </button>
       </div>
 
       <div className="text-sm text-muted-foreground">
-        💡 <strong>Pro Tip:</strong> Check your dashboard in 10 minutes to see your first AI-generated insights
+        💡 <strong>Pro Tip:</strong> Your first insights will be ready in 5 minutes
       </div>
     </motion.div>
   );

@@ -264,8 +264,8 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                  <MessageSquare className="w-8 h-8 text-blue-600" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-8 h-8 text-primary" />
                 </div>
               </div>
               <div>
@@ -337,8 +337,8 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-success" />
                 </div>
               </div>
               <div>
@@ -349,12 +349,12 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {requiredPermissions.map((permission) => {
                 const Icon = permission.icon;
                 return (
-                  <div key={permission.scope} className="flex items-start space-x-3 p-3 border rounded-lg">
-                    <Icon className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div key={permission.scope} className="flex items-start space-x-4 p-4 border rounded-lg">
+                    <Icon className="w-5 h-5 text-primary mt-0.5" />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
                         <span className="font-medium">{permission.scope}</span>
@@ -388,8 +388,8 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
               </div>
               <div>
@@ -411,12 +411,12 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="text-center p-4 border rounded-lg">
-                  <Users className="w-6 h-6 mx-auto text-blue-600 mb-2" />
+                  <Users className="w-6 h-6 mx-auto text-primary mb-2" />
                   <div className="text-2xl font-bold">{teamsData?.totalTeams || 0}</div>
                   <div className="text-sm text-muted-foreground">Teams</div>
                 </div>
                 <div className="text-center p-4 border rounded-lg">
-                  <MessageSquare className="w-6 h-6 mx-auto text-blue-600 mb-2" />
+                  <MessageSquare className="w-6 h-6 mx-auto text-primary mb-2" />
                   <div className="text-2xl font-bold">{teamsData?.totalChannels || 0}</div>
                   <div className="text-sm text-muted-foreground">Channels</div>
                 </div>
@@ -443,8 +443,8 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <BarChart3 className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center">
+                  <BarChart3 className="w-8 h-8 text-success" />
                 </div>
               </div>
               <div>
@@ -460,8 +460,8 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
                 const Icon = insight.icon;
                 return (
                   <div key={insight.title} className="p-4 border rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <Icon className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div className="flex items-start space-x-4">
+                      <Icon className="w-5 h-5 text-primary mt-0.5" />
                       <div className="flex-1">
                         <h4 className="font-medium">{insight.title}</h4>
                         <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
@@ -519,18 +519,18 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
         <div className="flex items-center space-x-2 mb-6">
           {setupSteps.map((step, index) => (
             <React.Fragment key={step.id}>
-              <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
+              <div className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm ${
                 step.completed 
-                  ? 'bg-green-100 text-green-800'
+                  ? 'bg-success/10 text-success'
                   : step.current
-                  ? 'bg-blue-100 text-blue-800'
+                  ? 'bg-primary/10 text-primary'
                   : 'bg-muted text-muted-foreground'
               }`}>
                 {step.completed ? (
                   <CheckCircle2 className="w-4 h-4" />
                 ) : (
                   <div className={`w-4 h-4 rounded-full border-2 ${
-                    step.current ? 'border-blue-600 bg-blue-600' : 'border-muted-foreground'
+                    step.current ? 'border-blue-600 bg-primary' : 'border-muted-foreground'
                   }`} />
                 )}
                 <span className="hidden sm:inline">{step.title}</span>

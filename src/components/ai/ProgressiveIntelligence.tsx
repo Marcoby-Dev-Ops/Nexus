@@ -156,10 +156,10 @@ export function ProgressiveIntelligence({
 
   const getInsightIcon = (type: BusinessInsight['type']) => {
     switch (type) {
-      case 'opportunity': return <TrendingUp className="h-4 w-4 text-green-500" />;
-      case 'risk': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'achievement': return <CheckCircle className="h-4 w-4 text-blue-500" />;
-      default: return <Lightbulb className="h-4 w-4 text-purple-500" />;
+      case 'opportunity': return <TrendingUp className="h-4 w-4 text-success" />;
+      case 'risk': return <AlertTriangle className="h-4 w-4 text-warning" />;
+      case 'achievement': return <CheckCircle className="h-4 w-4 text-primary" />;
+      default: return <Lightbulb className="h-4 w-4 text-secondary" />;
     }
   };
 
@@ -174,10 +174,10 @@ export function ProgressiveIntelligence({
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'easy': return 'bg-success/10 text-success';
+      case 'medium': return 'bg-warning/10 text-yellow-800';
+      case 'hard': return 'bg-destructive/10 text-destructive';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -192,8 +192,8 @@ export function ProgressiveIntelligence({
   if (compact) {
     return (
       <div className="fixed bottom-4 right-4 z-50">
-        <div className="bg-white rounded-full p-3 shadow-lg border cursor-pointer hover:shadow-xl transition-shadow">
-          <Brain className="h-6 w-6 text-purple-600" />
+        <div className="bg-card rounded-full p-4 shadow-lg border cursor-pointer hover:shadow-xl transition-shadow">
+          <Brain className="h-6 w-6 text-secondary" />
           <Badge className="absolute -top-2 -right-2 px-1 min-w-[20px] h-5 text-xs">
             {mockInsights.length}
           </Badge>
@@ -205,13 +205,13 @@ export function ProgressiveIntelligence({
   return (
     <div className={`space-y-4 ${position === 'sidebar' ? 'w-80' : 'w-full'}`}>
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 bg-purple-100 rounded-lg">
-          <Brain className="h-5 w-5 text-purple-600" />
+      <div className="flex items-center gap-4">
+        <div className="p-2 bg-secondary/10 rounded-lg">
+          <Brain className="h-5 w-5 text-secondary" />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900">Nexus Intelligence</h3>
-          <p className="text-sm text-gray-500">Learning from your business patterns</p>
+          <h3 className="font-semibold text-foreground">Nexus Intelligence</h3>
+          <p className="text-sm text-muted-foreground">Learning from your business patterns</p>
         </div>
       </div>
 
@@ -227,29 +227,29 @@ export function ProgressiveIntelligence({
               </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {mockInsights.slice(0, maxInsights).map((insight) => (
               <div
                 key={insight.id}
-                className="border rounded-lg p-3 space-y-2"
+                className="border rounded-lg p-4 space-y-2"
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   {getInsightIcon(insight.type)}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-medium text-gray-900 truncate">
+                      <h4 className="text-sm font-medium text-foreground truncate">
                         {insight.title}
                       </h4>
                       <Badge variant={getPriorityColor(insight.priority)} className="text-xs">
                         {insight.priority}
                       </Badge>
                     </div>
-                    <p className="text-xs text-gray-600 mb-2">
+                    <p className="text-xs text-muted-foreground mb-2">
                       {insight.description}
                     </p>
                     
                     {/* Metrics */}
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <TrendingUp className="h-3 w-3" />
                         Impact: {insight.metrics.impact}/10
@@ -276,14 +276,14 @@ export function ProgressiveIntelligence({
                 {/* Expanded Content */}
                 {expandedInsight === insight.id && (
                   <div className="pt-2 border-t space-y-2">
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-muted-foreground">
                       <strong>Data Sources:</strong> {insight.dataSource.join(', ')}
                     </div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-muted-foreground">
                       <strong>Confidence:</strong> {(insight.metrics.confidence * 100).toFixed(0)}%
                     </div>
                     {insight.automationPotential && (
-                      <div className="text-xs text-purple-600">
+                      <div className="text-xs text-secondary">
                         <Zap className="h-3 w-3 inline mr-1" />
                         Automation opportunity available
                       </div>
@@ -305,25 +305,25 @@ export function ProgressiveIntelligence({
               Suggested Actions
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {mockActions.slice(0, maxActions).map((progressiveAction) => {
               const action = progressiveAction.action;
               return (
-                <div key={action.id} className="border rounded-lg p-3 space-y-3">
+                <div key={action.id} className="border rounded-lg p-4 space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="text-sm font-medium text-gray-900 mb-1">
+                      <h4 className="text-sm font-medium text-foreground mb-1">
                         {action.title}
                       </h4>
-                      <p className="text-xs text-gray-600 mb-2">
+                      <p className="text-xs text-muted-foreground mb-2">
                         {action.description}
                       </p>
                       
-                      <div className="flex items-center gap-3 text-xs">
+                      <div className="flex items-center gap-4 text-xs">
                         <span className={`px-2 py-1 rounded-full ${getDifficultyColor(action.difficulty)}`}>
                           {action.difficulty}
                         </span>
-                        <div className="flex items-center gap-1 text-gray-500">
+                        <div className="flex items-center gap-1 text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           {action.estimatedTime}m
                         </div>
@@ -332,7 +332,7 @@ export function ProgressiveIntelligence({
                   </div>
 
                   <div className="space-y-2">
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs text-muted-foreground">
                       <strong>Expected Outcome:</strong> {action.expectedOutcome}
                     </div>
                     
@@ -371,34 +371,34 @@ export function ProgressiveIntelligence({
               Automation Opportunities
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             {mockAutomations.map((automation) => (
-              <div key={automation.id} className="border rounded-lg p-3 space-y-2">
+              <div key={automation.id} className="border rounded-lg p-4 space-y-2">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <h4 className="text-sm font-medium text-gray-900 mb-1">
+                    <h4 className="text-sm font-medium text-foreground mb-1">
                       {automation.title}
                     </h4>
-                    <p className="text-xs text-gray-600 mb-2">
+                    <p className="text-xs text-muted-foreground mb-2">
                       {automation.description}
                     </p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-gray-500">Setup Time:</span>
+                    <span className="text-muted-foreground">Setup Time:</span>
                     <div className="font-medium">{automation.estimatedSetupTime}m</div>
                   </div>
                   <div>
-                    <span className="text-gray-500">Weekly Savings:</span>
-                    <div className="font-medium text-green-600">
+                    <span className="text-muted-foreground">Weekly Savings:</span>
+                    <div className="font-medium text-success">
                       {Math.floor(automation.estimatedTimeSavings / 60)}h {automation.estimatedTimeSavings % 60}m
                     </div>
                   </div>
                 </div>
 
-                <div className="text-xs text-gray-600">
+                <div className="text-xs text-muted-foreground">
                   <strong>Required:</strong> {automation.requiredIntegrations.join(', ')}
                 </div>
 

@@ -69,13 +69,13 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
   const getThemeClasses = () => {
     switch (theme) {
       case 'light':
-        return 'bg-white text-gray-900 border-gray-200';
+        return 'bg-card text-foreground border-border';
       case 'dark':
-        return 'bg-gray-900 text-white border-gray-700';
+        return 'bg-background text-primary-foreground border-border';
       case 'gradient':
-        return 'bg-gradient-to-br from-purple-900/20 to-blue-900/20 text-white border-purple-200/20';
+        return 'bg-gradient-to-br from-purple-900/20 to-blue-900/20 text-primary-foreground border-purple-200/20';
       default:
-        return 'bg-white text-gray-900 border-gray-200';
+        return 'bg-card text-foreground border-border';
     }
   };
 
@@ -84,13 +84,13 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
       <div className={`inline-flex items-center space-x-2 ${className}`}>
         <Button
           onClick={() => window.open('/waitlist', '_blank')}
-          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white text-sm"
+          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-primary-foreground text-sm"
           size="sm"
         >
           <Sparkles className="w-4 h-4 mr-2" />
           Join Nexus Waitlist
         </Button>
-        <Badge className="bg-green-100 text-green-800 text-xs">
+        <Badge className="bg-success/10 text-success text-xs">
           {totalSignups.toLocaleString()} members
         </Badge>
       </div>
@@ -101,9 +101,9 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
     return (
       <Card className={`${getThemeClasses()} ${className} max-w-sm`}>
         <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-4">
             <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-              <Zap className="w-5 h-5 text-white" />
+              <Zap className="w-5 h-5 text-primary-foreground" />
             </div>
             
             <div className="flex-1">
@@ -113,7 +113,7 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
               </p>
               
               {showStats && (
-                <div className="flex items-center space-x-3 text-xs opacity-70 mb-3">
+                <div className="flex items-center space-x-4 text-xs opacity-70 mb-3">
                   <span className="flex items-center">
                     <Users className="w-3 h-3 mr-1" />
                     {totalSignups.toLocaleString()}
@@ -129,7 +129,7 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
                 <Button
                   onClick={() => window.open('/waitlist', '_blank')}
                   size="sm"
-                  className="flex-1 text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  className="flex-1 text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-primary-foreground"
                 >
                   Join Now
                 </Button>
@@ -182,10 +182,10 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
           )}
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Button
             onClick={() => window.open('/waitlist', '_blank')}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-primary-foreground"
           >
             <Crown className="w-4 h-4 mr-2" />
             Secure Your Spot Now
@@ -224,7 +224,7 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
               className="flex items-center justify-center"
             >
               {copiedToClipboard ? (
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <CheckCircle2 className="w-4 h-4 text-success" />
               ) : (
                 <Copy className="w-4 h-4" />
               )}

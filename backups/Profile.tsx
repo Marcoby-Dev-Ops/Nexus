@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { Separator } from '@/components/ui/Separator';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Progress } from '@/components/ui/Progress';
+import { Spinner } from '@/components/ui/Spinner';
 import { 
   User, 
   Mail, 
@@ -123,7 +124,7 @@ export const Profile: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        <Spinner />
         <span className="ml-3 text-lg text-muted-foreground">Loading profile...</span>
       </div>
     );
@@ -156,7 +157,7 @@ export const Profile: React.FC = () => {
               >
                 {isSaving ? (
                   <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    <Spinner />
                     Saving...
                   </>
                 ) : (
@@ -200,7 +201,7 @@ export const Profile: React.FC = () => {
                     </AvatarFallback>
                   </Avatar>
                   {isEditing && (
-                    <button className="absolute bottom-0 right-0 p-2 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors">
+                    <button className="absolute bottom-0 right-0 p-4 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors">
                       <Camera className="h-4 w-4" />
                     </button>
                   )}

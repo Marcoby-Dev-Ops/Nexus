@@ -6,7 +6,7 @@
 -- =====================================================
 
 -- Users/Profiles table
-ALTER TABLE IF EXISTS profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS users ENABLE ROW LEVEL SECURITY;
 
 -- Business data tables
@@ -67,32 +67,32 @@ END $$;
 -- =====================================================
 
 -- Profiles/Users: Users can only access their own data
-CREATE POLICY "Users can view own profile" ON profiles
+CREATE POLICY "Users can view own profile" ON user_profiles
     FOR SELECT USING (auth.uid() = id);
 
-CREATE POLICY "Users can update own profile" ON profiles
+CREATE POLICY "Users can update own profile" ON user_profiles
     FOR UPDATE USING (auth.uid() = id);
 
-CREATE POLICY "Users can insert own profile" ON profiles
+CREATE POLICY "Users can insert own profile" ON user_profiles
     FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Companies: Users can only access companies they belong to
 CREATE POLICY "Users can view own company data" ON companies
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = companies.id
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = companies.id
         )
     );
 
 CREATE POLICY "Company admins can manage company data" ON companies
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = companies.id
-            AND profiles.role IN ('admin', 'owner')
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = companies.id
+            AND user_profiles.role IN ('admin', 'owner')
         )
     );
 
@@ -100,19 +100,19 @@ CREATE POLICY "Company admins can manage company data" ON companies
 CREATE POLICY "Users can view company contacts" ON contacts
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = contacts.company_id
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = contacts.company_id
         )
     );
 
 CREATE POLICY "Users can manage company contacts" ON contacts
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = contacts.company_id
-            AND profiles.role IN ('admin', 'owner', 'sales', 'manager')
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = contacts.company_id
+            AND user_profiles.role IN ('admin', 'owner', 'sales', 'manager')
         )
     );
 
@@ -120,19 +120,19 @@ CREATE POLICY "Users can manage company contacts" ON contacts
 CREATE POLICY "Users can view company deals" ON deals
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = deals.company_id
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = deals.company_id
         )
     );
 
 CREATE POLICY "Sales users can manage deals" ON deals
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = deals.company_id
-            AND profiles.role IN ('admin', 'owner', 'sales', 'manager')
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = deals.company_id
+            AND user_profiles.role IN ('admin', 'owner', 'sales', 'manager')
         )
     );
 
@@ -169,19 +169,19 @@ CREATE POLICY "Users can create chat messages in own sessions" ON chat_messages
 CREATE POLICY "Users can view company integrations" ON integrations
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = integrations.company_id
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = integrations.company_id
         )
     );
 
 CREATE POLICY "Admins can manage integrations" ON integrations
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = integrations.company_id
-            AND profiles.role IN ('admin', 'owner')
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = integrations.company_id
+            AND user_profiles.role IN ('admin', 'owner')
         )
     );
 
@@ -199,19 +199,19 @@ CREATE POLICY "System can manage quotas" ON usage_quotas
 CREATE POLICY "Users can view company billing" ON billing_subscriptions
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = billing_subscriptions.company_id
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = billing_subscriptions.company_id
         )
     );
 
 CREATE POLICY "Admins can manage billing" ON billing_subscriptions
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.company_id = billing_subscriptions.company_id
-            AND profiles.role IN ('admin', 'owner')
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.company_id = billing_subscriptions.company_id
+            AND user_profiles.role IN ('admin', 'owner')
         )
     );
 
@@ -224,7 +224,7 @@ CREATE OR REPLACE FUNCTION auth.is_company_admin(company_uuid UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
     RETURN EXISTS (
-        SELECT 1 FROM profiles 
+        SELECT 1 FROM user_profiles 
         WHERE id = auth.uid() 
         AND company_id = company_uuid
         AND role IN ('admin', 'owner')
@@ -237,7 +237,7 @@ CREATE OR REPLACE FUNCTION auth.get_user_company_id()
 RETURNS UUID AS $$
 BEGIN
     RETURN (
-        SELECT company_id FROM profiles 
+        SELECT company_id FROM user_profiles 
         WHERE id = auth.uid()
     );
 END;
@@ -266,9 +266,9 @@ ALTER TABLE security_audit_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Admins can view security audit logs" ON security_audit_logs
     FOR SELECT USING (
         EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE profiles.id = auth.uid() 
-            AND profiles.role IN ('admin', 'owner')
+            SELECT 1 FROM user_profiles 
+            WHERE user_profiles.id = auth.uid() 
+            AND user_profiles.role IN ('admin', 'owner')
         )
     );
 
@@ -291,7 +291,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authentic
 -- 7. COMMENTS FOR DOCUMENTATION
 -- =====================================================
 
-COMMENT ON POLICY "Users can view own profile" ON profiles IS 
+COMMENT ON POLICY "Users can view own profile" ON user_profiles IS 
 'Users can only view their own profile data';
 
 COMMENT ON POLICY "Users can view company contacts" ON contacts IS 

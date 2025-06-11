@@ -40,7 +40,7 @@ interface ThoughtDashboardProps {
 }
 
 const CATEGORY_CONFIG = {
-  idea: { icon: Lightbulb, label: 'Ideas', color: 'bg-warning/10 text-yellow-800' },
+      idea: { icon: Lightbulb, label: 'Ideas', color: 'bg-warning/10 text-warning-foreground' },
   task: { icon: CheckSquare, label: 'Tasks', color: 'bg-primary/10 text-primary' },
   reminder: { icon: Bell, label: 'Reminders', color: 'bg-secondary/10 text-purple-800' },
   update: { icon: TrendingUp, label: 'Updates', color: 'bg-success/10 text-success' }
@@ -48,12 +48,12 @@ const CATEGORY_CONFIG = {
 
 const STATUS_CONFIG = {
   future_goals: { label: 'Future Goals', color: 'bg-muted text-foreground' },
-  concept: { label: 'Concept', color: 'bg-warning/10 text-yellow-800' },
+      concept: { label: 'Concept', color: 'bg-warning/10 text-warning-foreground' },
   in_progress: { label: 'In Progress', color: 'bg-primary/10 text-primary' },
   completed: { label: 'Completed', color: 'bg-success/10 text-success' },
   pending: { label: 'Pending', color: 'bg-orange-100 text-orange-800' },
   reviewed: { label: 'Reviewed', color: 'bg-indigo-100 text-indigo-800' },
-  implemented: { label: 'Implemented', color: 'bg-emerald-100 text-emerald-800' },
+      implemented: { label: 'Implemented', color: 'bg-success/10 text-success-foreground' },
   not_started: { label: 'Not Started', color: 'bg-muted text-foreground' },
   upcoming: { label: 'Upcoming', color: 'bg-cyan-100 text-cyan-800' },
   due: { label: 'Due', color: 'bg-destructive/10 text-destructive' },
@@ -143,7 +143,7 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
             return (
               <div
                 key={stage.id}
-                className={`flex items-center gap-1 px-2 py-1 rounded ${
+                className={`flex items-center gap-1 px-4 py-4 rounded ${
                   isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                 } ${isCurrent ? 'ring-2 ring-blue-500' : ''}`}
               >

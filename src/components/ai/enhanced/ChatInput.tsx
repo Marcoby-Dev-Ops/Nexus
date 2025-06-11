@@ -46,7 +46,7 @@ const FilePreview: React.FC<{
   }, [file, isImage]);
 
   return (
-    <div className="relative inline-block bg-muted rounded-lg p-3 mr-2 mb-2">
+    <div className="relative inline-block bg-muted rounded-lg p-4 mr-2 mb-2">
       <div className="flex items-center gap-2">
         {isImage && preview ? (
           <img src={preview} alt={file.name} className="w-8 h-8 object-cover rounded" />
@@ -158,9 +158,9 @@ const VoiceRecorder: React.FC<{
   }
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 rounded-lg">
+    <div className="flex items-center gap-2 px-4 py-2 bg-destructive/10 rounded-lg">
       <div className="flex items-center gap-2">
-        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+        <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
         <span className="text-sm font-medium">
           {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')}
         </span>
@@ -330,7 +330,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
       {/* Main input area */}
       <div 
-        className={`flex items-end gap-2 bg-muted rounded-xl p-3 border-2 transition-colors ${
+        className={`flex items-end gap-2 bg-muted rounded-xl p-4 border-2 transition-colors ${
           isDragOver ? 'border-primary bg-primary/5' : 'border-transparent focus-within:border-primary'
         }`}
         onDragOver={handleDragOver}

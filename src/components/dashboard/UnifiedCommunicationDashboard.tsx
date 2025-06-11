@@ -194,9 +194,9 @@ const UnifiedCommunicationDashboard: React.FC = () => {
   };
 
   const getHealthScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-success';
+    if (score >= 60) return 'text-warning';
+    return 'text-destructive';
   };
 
   const getHealthScoreMessage = (score: number) => {
@@ -294,15 +294,15 @@ const UnifiedCommunicationDashboard: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <MessageSquare className="w-5 h-5 text-purple-600" />
+                <MessageSquare className="w-5 h-5 text-secondary" />
                 <span>Slack</span>
               </div>
               {platformStatus?.slack.connected ? (
-                <Badge variant="default" className="bg-green-100 text-green-800">
+                <Badge variant="default" className="bg-success/10 text-success">
                   Connected
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                <Badge variant="secondary" className="bg-muted text-foreground">
                   Not Connected
                 </Badge>
               )}
@@ -349,15 +349,15 @@ const UnifiedCommunicationDashboard: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Video className="w-5 h-5 text-blue-600" />
+                <Video className="w-5 h-5 text-primary" />
                 <span>Microsoft Teams</span>
               </div>
               {platformStatus?.teams.connected ? (
-                <Badge variant="default" className="bg-green-100 text-green-800">
+                <Badge variant="default" className="bg-success/10 text-success">
                   Connected
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                <Badge variant="secondary" className="bg-muted text-foreground">
                   Not Connected
                 </Badge>
               )}
@@ -433,7 +433,7 @@ const UnifiedCommunicationDashboard: React.FC = () => {
                       </div>
                       <h3 className="font-semibold mb-1">{insight.title}</h3>
                       <p className="text-muted-foreground text-sm mb-2">{insight.description}</p>
-                      <p className="text-sm text-blue-600">{insight.impact}</p>
+                      <p className="text-sm text-primary">{insight.impact}</p>
                     </div>
                     {insight.metrics && (
                       <div className="text-right">
@@ -442,7 +442,7 @@ const UnifiedCommunicationDashboard: React.FC = () => {
                         </div>
                         {insight.metrics.change && (
                           <div className={`text-sm flex items-center ${
-                            insight.metrics.change > 0 ? 'text-green-600' : 'text-red-600'
+                            insight.metrics.change > 0 ? 'text-success' : 'text-destructive'
                           }`}>
                             {insight.metrics.change > 0 ? (
                               <TrendingUp className="w-3 h-3 mr-1" />
@@ -534,12 +534,12 @@ const UnifiedCommunicationDashboard: React.FC = () => {
               <Card key={insight.id}>
                 <CardContent className="p-6">
                   <div className="flex items-start space-x-4">
-                    <Lightbulb className="w-6 h-6 text-yellow-500 mt-1" />
+                    <Lightbulb className="w-6 h-6 text-warning mt-1" />
                     <div className="flex-1">
                       <h3 className="font-semibold mb-1">{insight.title}</h3>
                       <p className="text-muted-foreground text-sm mb-3">{insight.description}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-green-600">{insight.impact}</span>
+                        <span className="text-sm text-success">{insight.impact}</span>
                         {insight.actionable && (
                           <Button size="sm" variant="outline">
                             Take Action <ArrowRight className="w-3 h-3 ml-1" />

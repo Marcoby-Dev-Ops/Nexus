@@ -17,6 +17,7 @@ build/
           
 # Testing
 coverage/
+backups/
 
 # OS
 .DS_Store

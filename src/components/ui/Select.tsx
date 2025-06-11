@@ -29,6 +29,16 @@ export interface SelectItemProps {
   className?: string;
 }
 
+export interface SelectGroupProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface SelectLabelProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
 const SelectContext = React.createContext<{
   value?: string;
   onValueChange?: (value: string) => void;
@@ -161,6 +171,34 @@ export const SelectItem: React.FC<SelectItemProps> = ({ value, children, classNa
           <Check className="h-4 w-4" />
         </span>
       )}
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Select group for organizing options
+ */
+export const SelectGroup: React.FC<SelectGroupProps> = ({ 
+  children, 
+  className 
+}) => {
+  return (
+    <div className={cn('space-y-2', className)}>
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Select label for group headings
+ */
+export const SelectLabel: React.FC<SelectLabelProps> = ({ 
+  children, 
+  className 
+}) => {
+  return (
+    <div className={cn('px-2 py-1.5 text-sm font-semibold', className)}>
       {children}
     </div>
   );

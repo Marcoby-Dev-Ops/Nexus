@@ -1,125 +1,79 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Spinner } from '@/components/ui/Spinner';
-import { Alert } from '@/components/ui/Alert';
 
-export const AuthCallback = () => {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+/**
+ * AuthCallback - Handles auth redirects from Supabase for:
+ * - Email confirmation
+ * - OAuth providers
+ * - Password reset
+ */
+export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(true);
-
+  const navigate = useNavigate();
+  const location = useLocation();
+  
   useEffect(() => {
+    // Parse hash params from URL for password resets or OAuth logins
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const queryParams = new URLSearchParams(location.search);
+    
+    // Get the next path from query params, if provided
+    const next = queryParams.get('next') || '/dashboard';
+    
+    // Handle Supabase auth callback
     const handleAuthCallback = async () => {
       try {
-        console.log('🔍 OAuth callback - Starting debug...');
-        console.log('📍 Current URL:', window.location.href);
-        console.log('📋 URL parameters:', Object.fromEntries(searchParams.entries()));
-
-        // Check for OAuth errors first
-        const oauthError = searchParams.get('error');
-        const errorDescription = searchParams.get('error_description');
-        
-        if (oauthError) {
-          console.error('❌ OAuth error detected:', oauthError, errorDescription);
-          setError(`OAuth Error: ${oauthError} - ${errorDescription || 'No description provided'}`);
-          setIsProcessing(false);
+        // If this is a password reset, we need to set a new password
+        if (next === '/reset-password') {
+          // We'll navigate to a password reset form
+          navigate('/reset-password', { replace: true });
           return;
         }
-
-        // Check for authorization code
-        const code = searchParams.get('code');
-        console.log('🔐 Authorization code:', code ? `Present (${code.substring(0, 10)}...)` : 'Missing');
         
-        if (!code) {
-          console.error('❌ No authorization code found in URL parameters');
-          
-          // Wait a moment to see if session appears (sometimes OAuth completes without code)
-          console.log('⏳ Waiting for potential session update...');
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session) {
-            console.log('✅ Session found without code, OAuth successful');
-            setIsProcessing(false);
-            // Let SupabaseProvider handle the redirect
-            return;
-          }
-          
-          setError('No authorization code received from Microsoft. The OAuth flow may have failed.');
-          setIsProcessing(false);
-          return;
-        }
-
-        console.log('✅ Authorization code found, attempting exchange...');
-
-        // Use Supabase's built-in method to exchange code for session
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        // Get session to ensure auth worked
+        const { data, error } = await supabase.auth.getSession();
         
-        if (exchangeError) {
-          console.error('❌ Code exchange failed:', exchangeError);
-          setError(`Code Exchange Failed: ${exchangeError.message}`);
-          setIsProcessing(false);
-          return;
+        if (error) {
+          throw error;
         }
-
-        console.log('✅ Code exchange successful');
         
         if (data.session) {
-          console.log('✅ Session established for user:', data.session.user?.email);
-          setIsProcessing(false);
-          // Let SupabaseProvider handle the redirect via onAuthStateChange
-          // Don't redirect here to avoid race conditions
+          // Auth successful, redirect to dashboard or specified next page
+          navigate(next, { replace: true });
         } else {
-          console.error('❌ No session in exchange response');
-          setError('Authentication succeeded but no session was created');
-          setIsProcessing(false);
+          // No session found, redirect to login
+          navigate('/login', { replace: true });
         }
-
-      } catch (error) {
-        console.error('❌ Unexpected error in auth callback:', error);
-        setError(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        setIsProcessing(false);
+      } catch (err) {
+        console.error('Auth callback error:', err);
+        setError(err instanceof Error ? err.message : 'Authentication error');
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 3000);
       }
     };
-
+    
     handleAuthCallback();
-  }, [searchParams, navigate]);
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full">
-          <Alert variant="error" className="mb-4">
-            {error}
-          </Alert>
-          <div className="text-center space-y-2">
-            <button
-              onClick={() => navigate('/login')}
-              className="text-sm text-primary hover:text-primary underline"
-            >
-              Return to login
-            </button>
-            <div className="text-xs text-muted-foreground">
-              <p>Debug info:</p>
-              <p>URL: {window.location.href}</p>
-              <p>Params: {Array.from(searchParams.keys()).join(', ') || 'None'}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  }, [navigate, location]);
+  
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <Spinner size={32} />
-        <p className="mt-4 text-muted-foreground">
-          {isProcessing ? 'Processing authentication...' : 'Authentication successful! Redirecting...'}
-        </p>
-      </div>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+      {error ? (
+        <div className="max-w-md p-6 bg-destructive/10 rounded-lg border border-destructive/20 text-center">
+          <h2 className="text-lg font-semibold text-destructive mb-2">Authentication Error</h2>
+          <p className="text-destructive/80 mb-4">{error}</p>
+          <p className="text-sm text-muted-foreground">Redirecting to login...</p>
+        </div>
+      ) : (
+        <div className="text-center">
+          <Spinner size={40} className="mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">Finalizing Authentication</h2>
+          <p className="text-muted-foreground">Please wait while we log you in...</p>
+        </div>
+      )}
     </div>
   );
-}; 
+} 

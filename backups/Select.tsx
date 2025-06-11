@@ -90,7 +90,7 @@ export const SelectTrigger: React.FC<SelectTriggerProps> = ({ className, childre
       onClick={() => !disabled && setIsOpen(!isOpen)}
       disabled={disabled}
       className={cn(
-        'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-2 text-sm',
+        'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-4 text-sm',
         'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-50',
         className
@@ -126,7 +126,7 @@ export const SelectContent: React.FC<SelectContentProps> = ({ className, childre
   return (
     <div
       className={cn(
-        'absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-1 text-popover-foreground shadow-md',
+        'absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-4 text-popover-foreground shadow-md',
         'animate-in fade-in-0 zoom-in-95',
         className
       )}
@@ -150,7 +150,7 @@ export const SelectItem: React.FC<SelectItemProps> = ({ value, children, classNa
         setIsOpen(false);
       }}
       className={cn(
-        'relative flex w-full cursor-default select-none items-center rounded-sm py-2 pl-8 pr-2 text-sm',
+        'relative flex w-full cursor-default select-none items-center rounded-sm py-4 pl-8 pr-2 text-sm',
         'outline-none focus:bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground',
         'cursor-pointer',
         className

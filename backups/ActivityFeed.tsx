@@ -60,7 +60,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, context 
       {/* Filter UI */}
       <div className="flex gap-2 mb-3">
         <select
-          className="border rounded px-2 py-1 text-sm"
+          className="border rounded px-4 py-4 text-sm"
           value={selectedType}
           onChange={e => setSelectedType(e.target.value)}
         >
@@ -70,7 +70,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, context 
           ))}
         </select>
         <select
-          className="border rounded px-2 py-1 text-sm"
+          className="border rounded px-4 py-4 text-sm"
           value={selectedUser}
           onChange={e => setSelectedUser(e.target.value)}
         >
@@ -87,7 +87,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities, context 
         {filtered.map((a: Activity, i: number) => {
           const Icon = iconMap[a.type] || FileText;
           return (
-            <li key={i} className="flex items-center gap-4 py-3 transition-colors hover:bg-muted/40 rounded-lg px-2">
+            <li key={i} className="flex items-center gap-4 py-4 transition-colors hover:bg-muted/40 rounded-lg px-4">
               <Icon className="w-5 h-5 text-primary/70 shrink-0" />
               <div className="flex-1">
                 <span className="font-medium">{a.user}</span> {a.description}

@@ -4,33 +4,24 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Users, 
-  Database, 
-  Lock,
-  Key,
-  Eye,
-  Download,
-  Activity,
-  TrendingUp,
-  FileText,
-  Settings
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+} from 'recharts';
+import { chartColors } from '../../lib/chartColors';
+import { format } from 'date-fns';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
+import { Button } from '../../components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
+import { Progress } from '../../components/ui/progress';
+import { ScrollArea } from '../../components/ui/scroll-area';
+import { 
+  Activity, AlertTriangle, CheckCircle, FileText, Key, 
+  Lock, RefreshCw, Shield, User, XCircle, Eye 
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { format } from 'date-fns';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { TrendingUp, Download, Settings } from 'lucide-react';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -182,36 +173,36 @@ export const SecurityDashboard: React.FC = () => {
 
   const getEventIcon = (eventType: string): React.ReactNode => {
     const iconMap: Record<string, React.ReactNode> = {
-      login: <CheckCircle className="h-4 w-4 text-green-500" />,
-      logout: <XCircle className="h-4 w-4 text-gray-500" />,
-      failed_login: <XCircle className="h-4 w-4 text-red-500" />,
+      login: <CheckCircle className="h-4 w-4 text-success" />,
+      logout: <XCircle className="h-4 w-4 text-muted-foreground" />,
+      failed_login: <XCircle className="h-4 w-4 text-destructive" />,
       suspicious_activity: <AlertTriangle className="h-4 w-4 text-orange-500" />,
-      data_access: <Eye className="h-4 w-4 text-blue-500" />,
-      integration_added: <Settings className="h-4 w-4 text-green-500" />,
-      integration_removed: <Settings className="h-4 w-4 text-red-500" />,
-      data_modification: <FileText className="h-4 w-4 text-purple-500" />,
-      permission_change: <Key className="h-4 w-4 text-yellow-500" />,
+      data_access: <Eye className="h-4 w-4 text-primary" />,
+      integration_added: <Settings className="h-4 w-4 text-success" />,
+      integration_removed: <Settings className="h-4 w-4 text-destructive" />,
+      data_modification: <FileText className="h-4 w-4 text-secondary" />,
+      permission_change: <Key className="h-4 w-4 text-warning" />,
       data_export: <Download className="h-4 w-4 text-indigo-500" />,
     };
 
-    return iconMap[eventType] || <Activity className="h-4 w-4 text-gray-500" />;
+    return iconMap[eventType] || <Activity className="h-4 w-4 text-muted-foreground" />;
   };
 
   const getEventTypeColor = (eventType: string): string => {
     const colorMap: Record<string, string> = {
-      login: 'bg-green-100 text-green-800',
-      logout: 'bg-gray-100 text-gray-800',
-      failed_login: 'bg-red-100 text-red-800',
+      login: 'bg-success/10 text-success',
+      logout: 'bg-muted text-foreground',
+      failed_login: 'bg-destructive/10 text-destructive',
       suspicious_activity: 'bg-orange-100 text-orange-800',
-      data_access: 'bg-blue-100 text-blue-800',
-      integration_added: 'bg-green-100 text-green-800',
-      integration_removed: 'bg-red-100 text-red-800',
-      data_modification: 'bg-purple-100 text-purple-800',
-      permission_change: 'bg-yellow-100 text-yellow-800',
+      data_access: 'bg-primary/10 text-primary',
+      integration_added: 'bg-success/10 text-success',
+      integration_removed: 'bg-destructive/10 text-destructive',
+      data_modification: 'bg-secondary/10 text-purple-800',
+      permission_change: 'bg-warning/10 text-yellow-800',
       data_export: 'bg-indigo-100 text-indigo-800',
     };
 
-    return colorMap[eventType] || 'bg-gray-100 text-gray-800';
+    return colorMap[eventType] || 'bg-muted text-foreground';
   };
 
   const exportSecurityReport = async (): Promise<void> => {
@@ -251,7 +242,7 @@ export const SecurityDashboard: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Shield className="h-8 w-8 text-blue-600" />
+            <Shield className="h-8 w-8 text-primary" />
             Security Dashboard
           </h2>
           <p className="text-muted-foreground">
@@ -275,7 +266,7 @@ export const SecurityDashboard: React.FC = () => {
 
       {/* Security Alerts */}
       {alerts.length > 0 && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {alerts.map((alert) => (
             <Alert key={alert.id} variant={alert.type === 'critical' ? 'destructive' : 'default'}>
               <AlertTriangle className="h-4 w-4" />
@@ -307,10 +298,10 @@ export const SecurityDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Failed Logins</CardTitle>
-            <XCircle className="h-4 w-4 text-red-500" />
+            <XCircle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{metrics.failedLogins}</div>
+            <div className="text-2xl font-bold text-destructive">{metrics.failedLogins}</div>
             <p className="text-xs text-muted-foreground">Security concern</p>
           </CardContent>
         </Card>
@@ -321,7 +312,7 @@ export const SecurityDashboard: React.FC = () => {
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{metrics.suspiciousActivity}</div>
+            <div className="text-2xl font-bold text-warning">{metrics.suspiciousActivity}</div>
             <p className="text-xs text-muted-foreground">Requires attention</p>
           </CardContent>
         </Card>
@@ -329,7 +320,7 @@ export const SecurityDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Data Access</CardTitle>
-            <Eye className="h-4 w-4 text-blue-500" />
+            <Eye className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{metrics.dataAccess}</div>
@@ -356,9 +347,9 @@ export const SecurityDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-96">
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {securityEvents.map((event) => (
-                    <div key={event.id} className="flex items-center space-x-4 p-3 border rounded-lg">
+                    <div key={event.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                       <div className="flex items-center space-x-2">
                         {getEventIcon(event.event_type)}
                         <Badge className={getEventTypeColor(event.event_type)}>
@@ -402,7 +393,7 @@ export const SecurityDashboard: React.FC = () => {
                     <XAxis dataKey="time" />
                     <YAxis />
                     <Tooltip />
-                    <Area type="monotone" dataKey="events" stroke="#8884d8" fill="#8884d8" />
+                    <Area type="monotone" dataKey="events" stroke={chartColors.primary} fill={chartColors.primaryLight} />
                   </AreaChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -424,19 +415,19 @@ export const SecurityDashboard: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Authentication</span>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-success" />
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Data Encryption</span>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-success" />
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Access Control</span>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-success" />
                   </div>
                   <div className="flex justify-between text-sm">
                     <span>Audit Logging</span>
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-success" />
                   </div>
                 </div>
               </CardContent>

@@ -27,6 +27,7 @@ import { executiveAgent } from '@/lib/agentRegistry';
 import { chatHistory } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth';
 import type { ChatContextMetadata } from '@/lib/chatContext';
+import { upsertOnboardingProfile } from '@/lib/services/profileService';
 
 // Define a structured user profile for onboarding
 interface UserOnboardingProfile {
@@ -155,52 +156,36 @@ export const OnboardingChatAI: React.FC = () => {
 
   const onboardingSteps: OnboardingStep[] = [
     { 
-      id: 'introduction', 
-      title: 'Meet Your Assistant', 
-      icon: <Heart className="w-4 h-4" />, 
+      id: 'quick-start', 
+      title: 'Quick Start', 
+      icon: <Zap className="w-4 h-4" />, 
       completed: false,
-      description: 'Getting to know each other',
+      description: 'Let\'s get you set up in 2 minutes',
       requiredProfileFields: []
     },
     { 
-      id: 'company', 
-      title: 'Your Company', 
+      id: 'business-context', 
+      title: 'Business Context', 
       icon: <Building2 className="w-4 h-4" />, 
       completed: false,
-      description: 'Tell us about your business',
-      requiredProfileFields: ['company']
+      description: 'Company, role, and goals',
+      requiredProfileFields: ['company', 'user']
     },
     { 
-      id: 'role', 
-      title: 'Your Role', 
-      icon: <Briefcase className="w-4 h-4" />, 
-      completed: false,
-      description: 'Your position & responsibilities',
-      requiredProfileFields: ['user']
-    },
-    { 
-      id: 'goals', 
-      title: 'Your Goals', 
+      id: 'success-metrics', 
+      title: 'Success Metrics', 
       icon: <Target className="w-4 h-4" />, 
       completed: false,
-      description: 'Your biggest challenges',
+      description: 'Define your success criteria',
       requiredProfileFields: ['goals']
     },
     { 
-      id: 'working-style', 
-      title: 'Working Together', 
-      icon: <Users className="w-4 h-4" />, 
-      completed: false,
-      description: 'Communication preferences',
-      requiredProfileFields: ['preferences']
-    },
-    { 
-      id: 'partnership', 
-      title: 'Ready to Start', 
+      id: 'launch', 
+      title: 'Launch', 
       icon: <TrendingUp className="w-4 h-4" />, 
       completed: false,
-      description: 'Launch your workspace',
-      requiredProfileFields: ['company', 'user', 'goals', 'preferences']
+      description: 'Start achieving your goals',
+      requiredProfileFields: ['company', 'user', 'goals']
     }
   ];
 
@@ -327,9 +312,8 @@ export const OnboardingChatAI: React.FC = () => {
     initializeAIConversation();
   }, [authUser?.id]); // Only depend on authUser.id to prevent re-initialization
 
-  // Separate function for initial greeting to avoid race conditions
+  // Update the initial greeting to be more action-oriented and clarify the goal
   const sendInitialGreeting = async (convId: string, sessId: string) => {
-    // Check if greeting has already been sent to prevent duplicates
     if (messages.length > 0) {
       console.log('Initial greeting already sent, skipping...');
       return;
@@ -338,19 +322,27 @@ export const OnboardingChatAI: React.FC = () => {
     try {
       setIsTyping(true);
 
-      // Send a simple, direct greeting without going through AI service to avoid duplication
-      const greetingContent = `Hello there! I'm thrilled to be your Executive Assistant at Nexus. I look forward to collaborating with you and helping your business achieve its goals.
+      const greetingContent = `Hi! I'm your AI Executive Assistant. The goal of our conversation is for me to learn about you and your business so I can provide personalized support.
 
-To get started, could you share the name of your company and a bit about what you do? Understanding your business will help me tailor my support to meet your specific needs. I'm all ears!`;
+To start, I need just 3 key pieces of information:
+1. Your company name and role
+2. Your main business
+3. How you measure success
 
-      // Add greeting directly to UI (no AI service call to avoid duplication)
+What's your company name and what role do you play?`;
+
       addMessage({
         role: 'assistant',
         content: greetingContent,
         type: 'introduction',
         metadata: {
           step: steps[0]?.id,
-          emotion: 'friendly'
+          emotion: 'friendly',
+          suggestions: [
+            '🚀 Start Setup',
+            '⏱️ Quick Setup (2 min)',
+            '🎯 Skip to Goals'
+          ]
         }
       });
 
@@ -358,7 +350,7 @@ To get started, could you share the name of your company and a bit about what yo
       console.error('Error sending initial greeting:', error);
       addMessage({
         role: 'assistant',
-        content: "Hello! I'm Nex, your Executive Assistant. I'm excited to meet you and learn about your business!",
+        content: "Hi! I'm your AI Executive Assistant. The goal of our conversation is for me to learn about you and your business so I can provide personalized support. What's your company name and role?",
         type: 'introduction'
       });
     } finally {
@@ -622,9 +614,15 @@ Only include fields that you were able to extract from the user's message.`;
         }
       });
       
-      // Complete onboarding after a delay
-      setTimeout(() => {
-        completeOnboarding();
+      // Persist onboarding profile, then complete
+      setTimeout(async () => {
+        try {
+          await upsertOnboardingProfile(userProfile, authUser.id);
+        } catch (error) {
+          console.error('Failed to persist onboarding profile:', error);
+        } finally {
+          completeOnboarding();
+        }
       }, 3000);
     }
   };
@@ -664,7 +662,7 @@ Only include fields that you were able to extract from the user's message.`;
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Progress Steps */}
-      <div className="border-b border-border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-3 flex-shrink-0">
+      <div className="border-b border-border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-foreground">Meeting Your Executive Assistant</h3>
@@ -676,7 +674,7 @@ Only include fields that you were able to extract from the user's message.`;
           <div className="flex items-center gap-2 overflow-x-auto">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center gap-2 flex-shrink-0">
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all ${
                   step.completed 
                     ? 'bg-success/20 text-success border border-success/30'
                     : index === currentStep
@@ -704,14 +702,14 @@ Only include fields that you were able to extract from the user's message.`;
                 key={message.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className={`flex gap-3 ${
+                className={`flex gap-4 ${
                   message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                 }`}
               >
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.role === 'user' 
                     ? 'bg-primary text-primary-foreground' 
-                    : 'bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-lg'
+                    : 'bg-gradient-to-br from-purple-500 to-blue-500 text-primary-foreground shadow-lg'
                 }`}>
                   {message.role === 'user' ? (
                     <User className="w-5 h-5" />
@@ -755,9 +753,9 @@ Only include fields that you were able to extract from the user's message.`;
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex gap-3"
+              className="flex gap-4"
             >
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-white flex items-center justify-center shadow-lg">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 text-primary-foreground flex items-center justify-center shadow-lg">
                 <Bot className="w-5 h-5" />
               </div>
               <div className="bg-card border border-border rounded-xl p-4 shadow-sm">
@@ -780,7 +778,7 @@ Only include fields that you were able to extract from the user's message.`;
       {/* Input Area */}
       <div className="border-t border-border bg-muted/30 p-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto">
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             <div className="flex-1 relative">
               <textarea
                 value={userInput}

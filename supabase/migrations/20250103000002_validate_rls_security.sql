@@ -83,7 +83,7 @@ WITH table_policies AS (
 ),
 important_tables AS (
     SELECT unnest(ARRAY[
-        'profiles', 'companies', 'contacts', 'deals', 
+        'user_profiles', 'companies', 'contacts', 'deals', 
         'chat_sessions', 'chat_messages', 'integrations',
         'usage_quotas', 'billing_subscriptions'
     ]) as tablename

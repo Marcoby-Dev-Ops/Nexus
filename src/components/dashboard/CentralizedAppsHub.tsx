@@ -89,30 +89,30 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
 
   const getStatusIcon = (status: string): React.JSX.Element => {
     switch (status) {
-      case 'connected': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'disconnected': return <AlertCircle className="w-4 h-4 text-red-500" />;
-      case 'configuring': return <RefreshCw className="w-4 h-4 text-yellow-500 animate-spin" />;
-      default: return <AlertCircle className="w-4 h-4 text-gray-400" />;
+      case 'connected': return <CheckCircle className="w-4 h-4 text-success" />;
+      case 'disconnected': return <AlertCircle className="w-4 h-4 text-destructive" />;
+      case 'configuring': return <RefreshCw className="w-4 h-4 text-warning animate-spin" />;
+      default: return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
   const getCategoryIcon = (category: AppCategory): React.JSX.Element => {
     const iconClass = "w-5 h-5";
     switch (category) {
-      case 'crm-sales': return <Users className={`${iconClass} text-blue-600`} />;
-      case 'finance-accounting': return <DollarSign className={`${iconClass} text-green-600`} />;
+      case 'crm-sales': return <Users className={`${iconClass} text-primary`} />;
+      case 'finance-accounting': return <DollarSign className={`${iconClass} text-success`} />;
       case 'marketing-advertising': return <Target className={`${iconClass} text-pink-600`} />;
-      case 'operations-productivity': return <Settings className={`${iconClass} text-purple-600`} />;
-      case 'analytics-bi': return <BarChart3 className={`${iconClass} text-orange-600`} />;
-      case 'communication': return <MessageSquare className={`${iconClass} text-indigo-600`} />;
-      default: return <Layers className={`${iconClass} text-gray-600`} />;
+      case 'operations-productivity': return <Settings className={`${iconClass} text-secondary`} />;
+      case 'analytics-bi': return <BarChart3 className={`${iconClass} text-warning`} />;
+      case 'communication': return <MessageSquare className={`${iconClass} text-primary`} />;
+      default: return <Layers className={`${iconClass} text-muted-foreground`} />;
     }
   };
 
   const getAutomationColor = (level: number): string => {
-    if (level >= 80) return 'text-green-600 bg-green-50';
-    if (level >= 60) return 'text-yellow-600 bg-yellow-50';
-    return 'text-red-600 bg-red-50';
+    if (level >= 80) return 'text-success bg-success/5';
+    if (level >= 60) return 'text-warning bg-warning/5';
+    return 'text-destructive bg-destructive/5';
   };
 
   if (loading) {
@@ -129,15 +129,15 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+          <h1 className="text-3xl font-bold text-foreground dark:text-primary-foreground flex items-center">
             <Brain className="w-8 h-8 mr-3 text-primary" />
             Centralized Business OS
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-muted-foreground dark:text-muted-foreground mt-1">
             Unified control center for all your business applications and workflows
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           <Badge variant="outline" className="px-4 py-2">
             <Zap className="w-4 h-4 mr-2" />
             {centralizedStatus?.connectedApps} Apps Connected
@@ -158,7 +158,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                 <p className="text-sm text-muted-foreground">Connected Apps</p>
                 <p className="text-2xl font-bold">{centralizedStatus?.connectedApps}</p>
               </div>
-              <Building2 className="w-8 h-8 text-blue-600" />
+              <Building2 className="w-8 h-8 text-primary" />
             </div>
           </CardContent>
         </Card>
@@ -170,7 +170,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                 <p className="text-sm text-muted-foreground">Business Functions</p>
                 <p className="text-2xl font-bold">{functions.length}</p>
               </div>
-              <Workflow className="w-8 h-8 text-purple-600" />
+              <Workflow className="w-8 h-8 text-secondary" />
             </div>
           </CardContent>
         </Card>
@@ -182,7 +182,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                 <p className="text-sm text-muted-foreground">Data Points</p>
                 <p className="text-2xl font-bold">{centralizedStatus?.totalDataPoints?.toLocaleString()}</p>
               </div>
-              <Database className="w-8 h-8 text-green-600" />
+              <Database className="w-8 h-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -194,7 +194,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                 <p className="text-sm text-muted-foreground">System Health</p>
                 <p className="text-2xl font-bold">{Math.round((centralizedStatus?.healthyApps / centralizedStatus?.connectedApps) * 100)}%</p>
               </div>
-              <TrendingUp className="w-8 h-8 text-emerald-600" />
+              <TrendingUp className="w-8 h-8 text-success" />
             </div>
           </CardContent>
         </Card>
@@ -218,7 +218,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                   value={activeCommand}
                   onChange={(e) => setActiveCommand(e.target.value)}
                   placeholder="e.g., Generate monthly sales report, Update customer contact info, Send marketing campaign..."
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex-1 px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 <Button onClick={executeUnifiedCommand} disabled={!activeCommand.trim() || selectedApps.length === 0}>
                   <Zap className="w-4 h-4 mr-2" />
@@ -240,10 +240,10 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                         setSelectedApps([...selectedApps, app.id]);
                       }
                     }}
-                    className={`px-3 py-1 rounded-full text-sm border transition-all ${
+                    className={`px-4 py-1 rounded-full text-sm border transition-all ${
                       selectedApps.includes(app.id)
-                        ? 'bg-primary text-white border-primary'
-                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:border-primary'
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-background text-foreground/90 border-border hover:border-primary'
                     }`}
                   >
                     {getCategoryIcon(app.category)}
@@ -267,7 +267,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {functions.map(func => (
-              <div key={func.id} className="border border-gray-200 rounded-lg p-4">
+              <div key={func.id} className="border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
                     {getCategoryIcon(func.category)}
@@ -278,16 +278,16 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                   </Badge>
                 </div>
                 
-                <p className="text-sm text-gray-600 mb-3">{func.description}</p>
+                <p className="text-sm text-muted-foreground mb-3">{func.description}</p>
                 
                 <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {func.requiredApps.length} apps • {func.supportingAgents.length} agents
                   </div>
                   <Button 
                     size="sm" 
                     onClick={() => executeBusinessFunction(func.id)}
-                    className="bg-primary/10 text-primary hover:bg-primary hover:text-white"
+                    className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
                   >
                     <Play className="w-3 h-3 mr-1" />
                     Execute
@@ -310,13 +310,13 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {apps.map(app => (
-              <div key={app.id} className="border border-gray-200 rounded-lg p-4">
+              <div key={app.id} className="border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center">
                     {getCategoryIcon(app.category)}
                     <div className="ml-3">
                       <h3 className="font-semibold">{app.name}</h3>
-                      <p className="text-xs text-gray-500 capitalize">{app.category.replace('-', ' & ')}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{app.category.replace('-', ' & ')}</p>
                     </div>
                   </div>
                   {getStatusIcon(app.status)}
@@ -335,12 +335,12 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                   )}
                   <div className="flex justify-between text-sm">
                     <span>Success Rate:</span>
-                    <span className="font-medium text-green-600">{app.metrics.successRate}%</span>
+                    <span className="font-medium text-success">{app.metrics.successRate}%</span>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-muted-foreground">
                     {app.capabilities.length} capabilities
                   </div>
                   <Button size="sm" variant="outline">
@@ -368,8 +368,8 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
               {insights.kpis.map((kpi: any, index: number) => (
                 <div key={index} className="text-center">
                   <p className="text-2xl font-bold">{kpi.value}</p>
-                  <p className="text-sm text-gray-600">{kpi.name}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-sm text-muted-foreground">{kpi.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     Sources: {kpi.source.join(', ')}
                   </p>
                 </div>
@@ -394,7 +394,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                 <ul className="space-y-2">
                   {insights.crossAppOpportunities.map((opp: string, index: number) => (
                     <li key={index} className="flex items-start">
-                      <Zap className="w-4 h-4 mt-0.5 mr-2 text-yellow-500" />
+                      <Zap className="w-4 h-4 mt-0.5 mr-2 text-warning" />
                       <span className="text-sm">{opp}</span>
                     </li>
                   ))}

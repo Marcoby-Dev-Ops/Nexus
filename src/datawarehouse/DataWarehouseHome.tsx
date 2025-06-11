@@ -61,7 +61,7 @@ const DataWarehouseHome: React.FC = () => {
       <ContentCard title="Quick Actions" variant="elevated" className="mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <button className="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group">
-            <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
+            <div className="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
               <Search className="w-5 h-5" />
             </div>
             <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">
@@ -70,7 +70,7 @@ const DataWarehouseHome: React.FC = () => {
           </button>
           
           <button className="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group">
-            <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
+            <div className="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
               <Upload className="w-5 h-5" />
             </div>
             <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">
@@ -79,7 +79,7 @@ const DataWarehouseHome: React.FC = () => {
           </button>
           
           <button className="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group">
-            <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
+            <div className="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
               <Download className="w-5 h-5" />
             </div>
             <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">
@@ -88,7 +88,7 @@ const DataWarehouseHome: React.FC = () => {
           </button>
           
           <button className="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group">
-            <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
+            <div className="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
               <BarChart2 className="w-5 h-5" />
             </div>
             <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">

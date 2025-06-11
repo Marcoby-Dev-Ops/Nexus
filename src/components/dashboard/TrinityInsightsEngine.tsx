@@ -132,22 +132,22 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
   const getImpactColor = (impact: string) => {
     switch (impact) {
       case 'high':
-        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300';
+        return 'bg-destructive/10 text-destructive border-red-200 dark:bg-destructive/20 dark:text-red-300';
       case 'medium':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300';
       default:
-        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300';
+        return 'bg-success/10 text-success border-green-200 dark:bg-success/20 dark:text-green-300';
     }
   };
 
   const getUrgencyIcon = (urgency: string) => {
     switch (urgency) {
       case 'urgent':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+        return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case 'normal':
         return <Target className="h-4 w-4 text-amber-500" />;
       default:
-        return <Lightbulb className="h-4 w-4 text-green-500" />;
+        return <Lightbulb className="h-4 w-4 text-success" />;
     }
   };
 
@@ -156,10 +156,10 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
   return (
     <div className={className}>
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-xl font-bold text-foreground dark:text-primary-foreground mb-2">
           Trinity Intelligence Engine
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
           AI-powered insights for organizational optimization and decision support
         </p>
       </div>
@@ -178,7 +178,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
               onClick={() => setActiveTab(type)}
               className={`flex items-center gap-2 ${
                 isActive 
-                  ? `bg-${config.color}-600 hover:bg-${config.color}-700 text-white` 
+                  ? `bg-${config.color}-600 hover:bg-${config.color}-700 text-primary-foreground` 
                   : `hover:bg-${config.color}-50 dark:hover:bg-${config.color}-950/20`
               }`}
             >
@@ -196,12 +196,12 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
           <Card key={index} className="relative overflow-hidden hover:shadow-md transition-all">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   <div className="mt-1">
                     {getUrgencyIcon(insight.urgency)}
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                    <h4 className="text-lg font-semibold text-foreground dark:text-primary-foreground mb-1">
                       {insight.title}
                     </h4>
                     <div className="flex items-center gap-2 mb-2">
@@ -218,13 +218,13 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
             </CardHeader>
             
             <CardContent className="pt-0">
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-muted-foreground dark:text-muted-foreground mb-4">
                 {insight.description}
               </p>
 
               {/* Departments Affected */}
               <div className="mb-4">
-                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
+                <div className="text-xs font-medium text-muted-foreground dark:text-muted-foreground mb-2">
                   Departments Affected:
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -238,14 +238,14 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
 
               {/* Recommendation */}
               {insight.recommendation && (
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4">
+                <div className="bg-background dark:bg-background/50 rounded-lg p-4 mb-4">
                   <div className="flex items-start gap-2">
-                    <ArrowRight className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                    <ArrowRight className="h-4 w-4 text-primary dark:text-primary mt-0.5 flex-shrink-0" />
                     <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                      <div className="text-sm font-medium text-foreground dark:text-primary-foreground mb-1">
                         Recommended Action:
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-sm text-muted-foreground dark:text-muted-foreground">
                         {insight.recommendation}
                       </div>
                     </div>
@@ -256,10 +256,10 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
               {/* Estimated Value */}
               {insight.estimatedValue && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <span className="text-sm font-medium text-muted-foreground dark:text-muted-foreground">
                     Estimated Value:
                   </span>
-                  <Badge className="bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-300">
+                  <Badge className="bg-success/10 text-success border-green-200 dark:bg-success/20 dark:text-green-300">
                     {insight.estimatedValue}
                   </Badge>
                 </div>
@@ -273,26 +273,26 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
       <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="text-2xl font-bold text-primary dark:text-primary">
               {insights.filter(i => i.type === 'think').length}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
+            <div className="text-xs text-muted-foreground dark:text-muted-foreground">
               Pattern Insights
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            <div className="text-2xl font-bold text-secondary dark:text-purple-400">
               {insights.filter(i => i.type === 'see').length}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
+            <div className="text-xs text-muted-foreground dark:text-muted-foreground">
               Live Alerts
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            <div className="text-2xl font-bold text-warning dark:text-orange-400">
               {insights.filter(i => i.type === 'act').length}
             </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400">
+            <div className="text-xs text-muted-foreground dark:text-muted-foreground">
               Auto Actions
             </div>
           </div>

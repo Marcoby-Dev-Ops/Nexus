@@ -104,13 +104,13 @@ export const ChatSystemTest: React.FC = () => {
   const getStatusIcon = (status: TestResult['status']) => {
     switch (status) {
       case 'success':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
+        return <CheckCircle className="h-4 w-4 text-success" />;
       case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />;
+        return <XCircle className="h-4 w-4 text-destructive" />;
       case 'warning':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+        return <AlertCircle className="h-4 w-4 text-warning" />;
       default:
-        return <Loader2 className="h-4 w-4 text-gray-400 animate-spin" />;
+        return <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />;
     }
   };
 
@@ -138,7 +138,7 @@ export const ChatSystemTest: React.FC = () => {
             {results.map((result, index) => (
               <div
                 key={index}
-                className="flex items-start gap-3 p-3 rounded-lg border bg-card"
+                className="flex items-start gap-4 p-4 rounded-lg border bg-card"
               >
                 {getStatusIcon(result.status)}
                 <div className="flex-1 min-w-0">

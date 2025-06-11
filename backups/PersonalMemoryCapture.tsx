@@ -42,7 +42,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   const { user } = useAuth();
 
   const categories = [
-    { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-amber-100 text-amber-800' },
+    { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-warning/10 text-warning-foreground' },
     { value: 'learning', label: 'Learning', icon: BookOpen, color: 'bg-primary/10 text-primary' },
     { value: 'reflection', label: 'Reflection', icon: Brain, color: 'bg-secondary/10 text-purple-800' },
     { value: 'goal', label: 'Goal', icon: Target, color: 'bg-success/10 text-success' }
@@ -57,13 +57,14 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         user_id: user.id,
         content: content.trim(),
         category,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
-        business_context: currentContext,
+        status: 'active',
+        main_sub_categories: tags.split(',').map(t => t.trim()).filter(Boolean),
+        ai_insights: { business_context: currentContext },
         created_at: new Date().toISOString()
       };
 
       const { error } = await supabase
-        .from('personal_thoughts')
+        .from('thoughts')
         .insert([thoughtData]);
 
       if (error) throw error;
@@ -87,7 +88,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 text-sm bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 rounded-lg border border-purple-200 text-purple-700 transition-all"
+        className="flex items-center gap-2 px-4 py-4 text-sm bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 rounded-lg border border-purple-200 text-purple-700 transition-all"
       >
         <Brain className="w-4 h-4" />
         <span>Capture Thought</span>
@@ -101,7 +102,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         <Brain className="w-5 h-5 text-secondary" />
         <h3 className="text-sm font-semibold text-purple-800">Capture Personal Thought</h3>
         {currentContext?.department && (
-          <span className="text-xs bg-secondary/10 text-purple-700 px-2 py-1 rounded-full">
+          <span className="text-xs bg-secondary/10 text-purple-700 px-4 py-4 rounded-full">
             {currentContext.department}
           </span>
         )}
@@ -148,21 +149,21 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
 
       {/* Context Display */}
       {currentContext && (
-        <div className="mb-3 p-2 bg-card rounded border">
+        <div className="mb-3 p-4 bg-card rounded border">
           <p className="text-xs text-muted-foreground mb-1">Business Context:</p>
           <div className="flex flex-wrap gap-1">
             {currentContext.department && (
-              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+              <span className="text-xs bg-primary/10 text-primary px-4 py-4 rounded">
                 {currentContext.department}
               </span>
             )}
             {currentContext.page && (
-              <span className="text-xs bg-success/10 text-success px-2 py-1 rounded">
+              <span className="text-xs bg-success/10 text-success px-4 py-4 rounded">
                 {currentContext.page}
               </span>
             )}
             {currentContext.conversationTopic && (
-              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded">
+                                    <span className="text-xs bg-warning/10 text-warning-foreground px-4 py-4 rounded">
                 Topic: {currentContext.conversationTopic}
               </span>
             )}
@@ -174,14 +175,14 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={() => setIsOpen(false)}
-          className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground"
+          className="px-4 py-4 text-sm text-muted-foreground hover:text-foreground"
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
           disabled={!content.trim() || loading}
-          className="px-4 py-2 bg-secondary text-primary-foreground text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-4 bg-secondary text-primary-foreground text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Saving...' : 'Save Thought'}
         </button>

@@ -15,12 +15,14 @@ import { Menu, Sun, Moon, Bell, Sparkles, Building2, User, Settings } from 'luci
 /**
  * @interface HeaderProps
  * @description Props for the Header component.
+ * @property {string} pageTitle - The title of the page.
  * @property {() => void} toggleSidebar - Function to toggle the sidebar visibility.
  * @property {Array<{label: string, href?: string}>} [breadcrumbs] - Breadcrumb navigation items.
  * @property {() => void} [onToggleTheme] - Optional function to toggle theme.
  * @property {boolean} [isDark] - Optional dark mode state.
  */
 interface HeaderProps {
+  pageTitle: string;
   toggleSidebar: () => void;
   breadcrumbs?: Array<{ label: string; href?: string }>;
   onToggleTheme?: () => void;
@@ -33,7 +35,7 @@ interface HeaderProps {
  * @param {HeaderProps} props - The props for the component.
  * @returns {JSX.Element} The rendered Header component.
  */
-const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleTheme, isDark: isDarkProp }) => {
+const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, breadcrumbs, onToggleTheme, isDark: isDarkProp }) => {
   const [isAssistantOpen, setIsAssistantOpen] = React.useState<boolean>(false);
   const [showUserMenu, setShowUserMenu] = React.useState<boolean>(false);
   const [showNotifications, setShowNotifications] = React.useState<boolean>(false);
@@ -426,6 +428,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, breadcrumbs, onToggleThe
 };
 
 Header.propTypes = {
+  pageTitle: PropTypes.string.isRequired,
   toggleSidebar: PropTypes.func.isRequired,
   breadcrumbs: PropTypes.arrayOf(
     PropTypes.shape({

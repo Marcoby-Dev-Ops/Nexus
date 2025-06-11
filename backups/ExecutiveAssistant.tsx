@@ -1,13 +1,14 @@
 import React, { useState, useRef, useEffect, type JSX } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, ChevronDown, Send, Mic, MicOff, Paperclip, Zap } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { chatHistory, supabase, type ChatMessage as SupabaseChatMessage } from '@/lib/supabase';
 import { useRealtimeChat } from '@/lib/useRealtimeChat';
 import { useAuth } from '@/lib/auth';
 import { enhancedChatService, ChatContextBuilder } from '@/lib/chatContext';
 import { executiveAgent } from '@/lib/agentRegistry';
+import { useOnboardingContext } from '../../contexts/OnboardingContext';
 
 /**
  * ExecutiveAssistant
@@ -46,8 +47,10 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
   const [retryCount, setRetryCount] = useState(0);
   const [selectedAgent, setSelectedAgent] = useState('nexus');
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const { user } = useAuth();
   const MAX_RETRIES = 3;
+  const { isOnboardingActive } = useOnboardingContext();
 
   // Ref for the transcript container
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -69,29 +72,41 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
       .join(' ');
   }, [location.pathname]);
 
-  // Initialize conversation
+  // Initialize conversation - use existing or create new
   useEffect(() => {
     const initConversation = async () => {
       if (!user) return;
 
       try {
-        const conversation = await chatHistory.createConversation(
-          'New Conversation',
-          selectedAgent,
-          { 
-            page: location.pathname,
-            user_id: user.id 
-          }
-        );
-        setCurrentConversationId(conversation.id);
+        // First, try to get the most recent conversation
+        const recentConversations = await chatHistory.getRecentConversations(1);
         
-        // Add system message
-        const systemMessage = {
-          role: 'system' as const,
-          content: SYSTEM_PROMPT,
-          metadata: { agent_id: selectedAgent }
-        };
-        await chatHistory.addMessage(conversation.id, systemMessage);
+        if (recentConversations && recentConversations.length > 0) {
+          // Use the most recent conversation
+          const existingConversation = recentConversations[0];
+          setCurrentConversationId(existingConversation.id);
+          console.log('Using existing conversation:', existingConversation.id);
+        } else {
+          // Create a new conversation only if none exists
+          const conversation = await chatHistory.createConversation(
+            'New Conversation',
+            selectedAgent,
+            { 
+              page: location.pathname,
+              user_id: user.id 
+            }
+          );
+          setCurrentConversationId(conversation.id);
+          
+          // Add system message
+          const systemMessage = {
+            role: 'system' as const,
+            content: SYSTEM_PROMPT,
+            metadata: { agent_id: selectedAgent }
+          };
+          await chatHistory.addMessage(conversation.id, systemMessage);
+          console.log('Created new conversation:', conversation.id);
+        }
       } catch (err) {
         console.error('Failed to initialize conversation:', err);
         setError('Failed to initialize chat. Please try again.');
@@ -99,7 +114,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
     };
 
     initConversation();
-  }, [selectedAgent, user, location.pathname]);
+  }, [selectedAgent, user]);
 
   const handleSend = async (message?: string) => {
     const textToSend = message || input.trim();
@@ -158,20 +173,69 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
     }
   };
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change or conversation loads
   useEffect(() => {
-    if (transcriptRef.current) {
-      transcriptRef.current.scrollTop = transcriptRef.current.scrollHeight;
+    if (transcriptRef.current && messages.length > 0) {
+      // Force scroll to bottom with slight delay
+      const scrollToBottom = () => {
+        if (transcriptRef.current) {
+          transcriptRef.current.scrollTo({
+            top: transcriptRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      };
+      
+      // Immediate scroll
+      scrollToBottom();
+      
+      // Also scroll after a short delay to ensure DOM is fully updated
+      setTimeout(scrollToBottom, 50);
+      setTimeout(scrollToBottom, 200);
     }
-  }, [messages]);
+  }, [messages, currentConversationId]);
+
+  // Monitor scroll position to show/hide scroll button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (transcriptRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = transcriptRef.current;
+        const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+        setShowScrollButton(!isNearBottom && messages.length > 3);
+      }
+    };
+
+    const scrollContainer = transcriptRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      return () => scrollContainer.removeEventListener('scroll', handleScroll);
+    }
+  }, [messages.length]);
+
+  const scrollToBottom = () => {
+    if (transcriptRef.current) {
+      transcriptRef.current.scrollTo({
+        top: transcriptRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Simple scroll event handler without preventDefault (which causes passive event errors)
+  const handleScrollEvent = (e: React.UIEvent) => {
+    // Just stop propagation, no preventDefault needed
+    e.stopPropagation();
+  };
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background relative overflow-hidden">
       {/* Clean Messages Container - Copilot Style */}
       <div
         className="flex-1 overflow-y-auto px-6 py-4"
         ref={transcriptRef}
         tabIndex={0}
+        onScroll={handleScrollEvent}
+        style={{ overscrollBehavior: 'contain' }}
       >
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
@@ -209,11 +273,11 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto space-y-6">
+          <div className="max-w-3xl mx-auto space-y-6 pb-4">
                          {messages.map((msg, idx) => {
                if (msg.role === 'system') {
                  return (
-                   <div key={idx} className="text-center text-xs text-muted-foreground py-2">
+                   <div key={idx} className="text-center text-xs text-muted-foreground py-4">
                      System initialized
                    </div>
                  );
@@ -242,7 +306,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
                          isUser 
                            ? 'bg-primary text-primary-foreground' 
                            : 'bg-muted text-foreground'
-                       } rounded-2xl px-4 py-2 break-words`}>
+                       } rounded-2xl px-4 py-4 break-words`}>
                          <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                        </div>
                      </div>
@@ -258,7 +322,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
                   </svg>
                 </div>
                                  <div className="flex-1">
-                   <div className="inline-block bg-muted rounded-2xl px-4 py-3">
+                   <div className="inline-block bg-muted rounded-2xl px-4 py-4">
                      <div className="flex items-center gap-1">
                        <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                        <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
@@ -292,6 +356,19 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
         )}
       </div>
 
+      {/* Scroll to Bottom Button - Hidden during onboarding */}
+      {showScrollButton && !isOnboardingActive && (
+        <div className="absolute bottom-20 right-6 z-10">
+          <button
+            onClick={scrollToBottom}
+            className="p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+            aria-label="Scroll to bottom"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Clean Input Area - Copilot Style */}
       <div className="border-t border-border p-4 bg-background">
         <div className="max-w-3xl mx-auto">
@@ -323,7 +400,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
             <button
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className={`p-2 rounded-lg transition-all ${
+              className={`p-4 rounded-lg transition-all ${
                 loading || !input.trim()
                   ? 'bg-muted text-muted-foreground cursor-not-allowed'
                   : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'

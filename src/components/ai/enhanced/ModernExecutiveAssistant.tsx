@@ -82,14 +82,14 @@ const WelcomeScreen: React.FC<{
       </div>
 
       {/* Quick action buttons (Claude-inspired) */}
-      <div className="grid grid-cols-2 gap-3 w-full max-w-md">
+      <div className="grid grid-cols-2 gap-4 w-full max-w-md">
         {quickActions.map((action) => (
           <button
             key={action.label}
             onClick={() => onQuickAction(action.prompt)}
             className="p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all text-left group"
           >
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-4 mb-2">
               <div className="text-primary group-hover:scale-110 transition-transform">
                 {action.icon}
               </div>
@@ -280,7 +280,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
     <div className="flex flex-col h-full bg-background">
       {/* Header (inspired by modern chat interfaces) */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
             <Sparkles className="w-4 h-4 text-primary-foreground" />
           </div>
@@ -295,7 +295,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
         {/* Model indicator (Claude-inspired) */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">GPT-4</span>
-          <div className="w-2 h-2 bg-green-500 rounded-full" />
+          <div className="w-2 h-2 bg-success rounded-full" />
         </div>
       </div>
 
@@ -357,7 +357,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
 
               {/* Loading indicator */}
               {isLoading && !streamingMessage && (
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-4">
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
                     <Sparkles className="w-4 h-4 text-primary-foreground" />
                   </div>

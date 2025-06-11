@@ -71,19 +71,19 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
 
   const getTierIcon = (tier: string) => {
     switch (tier) {
-      case 'free': return <Zap className="h-5 w-5 text-blue-500" />;
-      case 'pro': return <Shield className="h-5 w-5 text-purple-500" />;
-      case 'enterprise': return <Crown className="h-5 w-5 text-yellow-500" />;
+      case 'free': return <Zap className="h-5 w-5 text-primary" />;
+      case 'pro': return <Shield className="h-5 w-5 text-secondary" />;
+      case 'enterprise': return <Crown className="h-5 w-5 text-warning" />;
       default: return <Zap className="h-5 w-5" />;
     }
   };
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'free': return 'bg-blue-100 text-blue-800';
-      case 'pro': return 'bg-purple-100 text-purple-800';
-      case 'enterprise': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'free': return 'bg-primary/10 text-primary';
+      case 'pro': return 'bg-secondary/10 text-purple-800';
+      case 'enterprise': return 'bg-warning/10 text-yellow-800';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -97,7 +97,8 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
   if (loading) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div className="animate-pulse">
+        <LoadingStates.Skeleton />
+        <div>
           <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="h-48 bg-gray-200 rounded-lg"></div>
@@ -113,7 +114,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
       <div className={`${className}`}>
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center space-x-2 text-red-600">
+            <div className="flex items-center space-x-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
               <span>{error}</span>
             </div>
@@ -136,7 +137,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               {getTierIcon(billingStatus.currentPlan)}
               <div>
                 <CardTitle className="text-xl">
@@ -190,7 +191,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
           </div>
 
           {billingStatus.billingPeriodEnd && (
-            <div className="mt-4 p-3 bg-muted rounded-lg">
+            <div className="mt-4 p-4 bg-muted rounded-lg">
               <div className="flex items-center space-x-2 text-sm">
                 <Calendar className="h-4 w-4" />
                 <span>
@@ -217,13 +218,13 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-muted rounded-lg">
+              <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-lg font-semibold">
                   {usageData?.messages_sent || 0}
                 </div>
                 <div className="text-sm text-muted-foreground">Messages Today</div>
               </div>
-              <div className="text-center p-3 bg-muted rounded-lg">
+              <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-lg font-semibold">
                   {usageData?.ai_requests_made || 0}
                 </div>
@@ -233,13 +234,13 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
 
             {quotaStatus.max_file_uploads_per_day > 0 && (
               <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="text-center p-4 bg-muted rounded-lg">
                   <div className="text-lg font-semibold">
                     {usageData?.files_uploaded || 0}
                   </div>
                   <div className="text-sm text-muted-foreground">Files Uploaded</div>
                 </div>
-                <div className="text-center p-3 bg-muted rounded-lg">
+                <div className="text-center p-4 bg-muted rounded-lg">
                   <div className="text-lg font-semibold">
                     {formatCurrency(usageData?.estimated_cost_usd || 0)}
                   </div>
@@ -264,7 +265,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
           <CardContent className="space-y-4">
             {billingStatus.currentPlan === 'free' && (
               <>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <Button 
                     onClick={() => handleUpgrade('pro')} 
                     className="w-full"
@@ -295,9 +296,9 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
 
             {billingStatus.currentPlan === 'pro' && (
               <>
-                <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                <div className="p-4 bg-secondary/5 rounded-lg border border-purple-200">
                   <div className="text-sm font-medium text-purple-800">Pro Plan Active</div>
-                  <div className="text-sm text-purple-600">
+                  <div className="text-sm text-secondary">
                     Next billing: {billingStatus.billingPeriodEnd?.toLocaleDateString()}
                   </div>
                 </div>
@@ -314,9 +315,9 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
             )}
 
             {billingStatus.currentPlan === 'enterprise' && (
-              <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className="p-4 bg-warning/5 rounded-lg border border-yellow-200">
                 <div className="text-sm font-medium text-yellow-800">Enterprise Plan Active</div>
-                <div className="text-sm text-yellow-600">
+                <div className="text-sm text-warning">
                   You have access to all premium features
                 </div>
               </div>

@@ -879,6 +879,13 @@ export type Database = {
           metrics: Json
         }[]
       }
+      get_business_health_score: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          score: number
+          breakdown: Json
+        }[]
+      }
       get_platform_comparison: {
         Args: { p_user_id: string; p_days_back?: number }
         Returns: {

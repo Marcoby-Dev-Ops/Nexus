@@ -82,7 +82,7 @@ export const AuthDebugPanel: React.FC = () => {
         <h3 className="text-lg font-semibold mb-4">🔧 Authentication Debug Panel</h3>
         
         {/* Current Auth State */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
             <strong>Status:</strong> {auth.isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}
           </div>
@@ -102,7 +102,7 @@ export const AuthDebugPanel: React.FC = () => {
       </div>
 
       {/* Action Buttons */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <h4 className="font-medium">Quick Actions:</h4>
         
         <div className="space-y-2">
@@ -113,7 +113,7 @@ export const AuthDebugPanel: React.FC = () => {
               placeholder="Test email"
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
-              className="px-3 py-1 border rounded text-sm"
+              className="px-4 py-1 border rounded text-sm"
               disabled={loading}
             />
             <input
@@ -121,7 +121,7 @@ export const AuthDebugPanel: React.FC = () => {
               placeholder="Test password"
               value={testPassword}
               onChange={(e) => setTestPassword(e.target.value)}
-              className="px-3 py-1 border rounded text-sm"
+              className="px-4 py-1 border rounded text-sm"
               disabled={loading}
             />
           </div>
@@ -172,7 +172,7 @@ export const AuthDebugPanel: React.FC = () => {
       {debugReport && (
         <div>
           <h4 className="font-medium mb-2">Debug Report:</h4>
-          <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded text-xs overflow-auto max-h-96">
+          <pre className="bg-muted dark:bg-background p-4 rounded text-xs overflow-auto max-h-96">
             {debugReport}
           </pre>
         </div>

@@ -143,11 +143,11 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
       case 'excellent':
         return 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800';
       case 'good':
-        return 'bg-blue-50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800';
+        return 'bg-primary/5 border-border dark:bg-blue-950/20 dark:border-blue-800';
       case 'warning':
         return 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800';
       default:
-        return 'bg-red-50 border-red-200 dark:bg-red-950/20 dark:border-red-800';
+        return 'bg-destructive/5 border-red-200 dark:bg-red-950/20 dark:border-red-800';
     }
   };
 
@@ -156,11 +156,11 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
       case 'excellent':
         return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300';
       case 'good':
-        return 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300';
+        return 'bg-primary/10 text-primary border-border dark:bg-blue-900/20 dark:text-blue-300';
       case 'warning':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300';
       default:
-        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-300';
+        return 'bg-destructive/10 text-destructive border-red-200 dark:bg-destructive/20 dark:text-red-300';
     }
   };
 
@@ -169,7 +169,7 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
       case 'up':
         return <ArrowUp className="h-3 w-3 text-emerald-500" />;
       case 'down':
-        return <ArrowDown className="h-3 w-3 text-red-500" />;
+        return <ArrowDown className="h-3 w-3 text-destructive" />;
       default:
         return <Minus className="h-3 w-3 text-amber-500" />;
     }
@@ -178,10 +178,10 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
   return (
     <div className={className}>
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-xl font-bold text-foreground dark:text-primary-foreground mb-2">
           Cross-Functional Intelligence Grid
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground">
           Real-time performance metrics across all business departments
         </p>
       </div>
@@ -195,10 +195,10 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between text-sm font-semibold">
                 <div className="flex items-center gap-2">
-                  <div className="text-gray-600 dark:text-gray-400">
+                  <div className="text-muted-foreground dark:text-muted-foreground">
                     {dept.icon}
                   </div>
-                  <span className="text-gray-900 dark:text-white">
+                  <span className="text-foreground dark:text-primary-foreground">
                     {dept.department}
                   </span>
                 </div>
@@ -214,32 +214,32 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
               </CardTitle>
             </CardHeader>
             
-            <CardContent className="pt-0 space-y-3">
+            <CardContent className="pt-0 space-y-4">
               {/* Primary Metric */}
               <div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                <div className="text-xs text-muted-foreground dark:text-muted-foreground mb-1">
                   {dept.primaryMetric}
                 </div>
-                <div className="text-lg font-bold text-gray-900 dark:text-white">
+                <div className="text-lg font-bold text-foreground dark:text-primary-foreground">
                   {dept.primaryValue}
                 </div>
               </div>
 
               {/* Secondary Metrics */}
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200/50 dark:border-gray-700/50">
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50 dark:border-border/50">
                 <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <div className="text-xs text-muted-foreground dark:text-muted-foreground mb-1">
                     {dept.secondaryMetric}
                   </div>
-                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <div className="text-sm font-semibold text-foreground/90 dark:text-muted-foreground/60">
                     {dept.secondaryValue}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  <div className="text-xs text-muted-foreground dark:text-muted-foreground mb-1">
                     {dept.tertiaryMetric}
                   </div>
-                  <div className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  <div className="text-sm font-semibold text-foreground/90 dark:text-muted-foreground/60">
                     {dept.tertiaryValue}
                   </div>
                 </div>

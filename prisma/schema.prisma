@@ -1,0 +1,194 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id            String   @id @default(uuid())
+  name          String
+  domain        String   @unique
+  industry      String
+  size          String
+  description   String?
+  logo          String?
+  website       String?
+  social_profiles String[]
+  founded       String?
+  headquarters  String?
+  specialties   String[]
+  employee_count Int?
+  followers_count Int?
+  microsoft_365 Json?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  users         UserProfile[]
+  deals         Deal[]
+  contacts      Contact[]
+  integrations  Integration[]
+  modelUsages   ModelUsage[]
+}
+
+model UserProfile {
+  id          String   @id @default(uuid())
+  user_id     String   @unique
+  company_id  String
+  role        String?
+  industry    String?
+  company_size String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  company     Company  @relation(fields: [company_id], references: [id])
+  user        User     @relation(fields: [user_id], references: [id])
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  profile       UserProfile?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  integrations  Integration[]
+  contacts      Contact[]
+  deals         Deal[]
+  varLeads      VARLead[]
+  modelUsages   ModelUsage[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Integration {
+  id            String   @id @default(uuid())
+  user_id       String
+  company_id    String
+  type          String
+  status        String
+  config        Json
+  last_synced   DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+}
+
+model Contact {
+  id            String   @id @default(uuid())
+  user_id       String
+  company_id    String
+  name          String
+  email         String?
+  phone         String?
+  title         String?
+  department    String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+}
+
+model Deal {
+  id            String   @id @default(uuid())
+  user_id       String
+  company_id    String
+  name          String
+  value         Float
+  stage         String
+  probability   Float
+  expected_close_date DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+}
+
+model VARLead {
+  id            String   @id @default(uuid())
+  user_id       String
+  company_name  String
+  contact_name  String
+  email         String
+  phone         String?
+  status        String
+  notes         String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model ModelUsage {
+  id            String   @id @default(uuid())
+  user_id       String
+  company_id    String
+  model_name    String
+  tokens_used   Int
+  cost          Float
+  success       Boolean
+  latency       Int
+  created_at    DateTime @default(now())
+
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+}
+
+model ModelPerformance {
+  model         String
+  month         String
+  successRate   Float
+  averageLatency Float
+  averageCost   Float
+  lastUsed      DateTime
+  errorCount    Int
+
+  @@id([model, month])
+  @@index([model])
+  @@index([month])
+} 

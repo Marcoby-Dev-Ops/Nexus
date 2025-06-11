@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Sparkles, X } from 'lucide-react';
 import { OrganizationalChatPanel } from '../ai/OrganizationalChatPanel';
@@ -21,16 +21,51 @@ export interface MultiAgentPanelProps {
  * @returns {JSX.Element}
  */
 const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = true, onClose }) => {
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const handleModalScroll = (e: React.UIEvent) => {
+    // Prevent scroll events from bubbling to the background page
+    e.stopPropagation();
+  };
+
+  const handleModalKeyDown = (e: React.KeyboardEvent) => {
+    // Prevent keyboard scroll events from bubbling
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'PageUp' || e.key === 'PageDown') {
+      e.stopPropagation();
+    }
+    // Close on Escape key
+    if (e.key === 'Escape' && onClose) {
+      onClose();
+    }
+  };
+
+  // Prevent clicks on the modal content from closing the modal
+  const handleModalClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
 
   return (
     <aside
-      className={`fixed right-0 top-0 h-full w-full max-w-lg bg-background shadow-2xl z-50 flex flex-col transition-transform duration-300 ${
+      className={`fixed right-0 top-0 h-full w-full max-w-lg bg-background shadow-2xl z-[70] flex flex-col transition-transform duration-300 ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}
       role="dialog"
       aria-modal="true"
       aria-label="AI Assistant Panel"
+      onScroll={handleModalScroll}
+      onKeyDown={handleModalKeyDown}
+      onClick={handleModalClick}
+      style={{ overscrollBehavior: 'contain' }}
     >
       {/* Clean Header - Copilot Style */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-background">
@@ -46,7 +81,7 @@ const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = tru
         {onClose && (
           <button
             onClick={onClose}
-            className="p-2 rounded-lg bg-transparent hover:bg-muted transition-colors group"
+            className="p-4 rounded-lg bg-transparent hover:bg-muted transition-colors group"
             aria-label="Close chat"
           >
             <X className="w-5 h-5 text-muted-foreground group-hover:text-foreground" />
@@ -55,7 +90,7 @@ const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = tru
       </div>
       
       {/* Organizational Chat Content */}
-      <div className="flex-1 bg-background">
+      <div className="flex-1 bg-background overflow-hidden">
         <OrganizationalChatPanel onClose={onClose} />
       </div>
     </aside>

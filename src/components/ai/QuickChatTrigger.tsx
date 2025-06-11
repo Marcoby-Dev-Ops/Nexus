@@ -4,6 +4,7 @@ import { MessageSquare, X, Zap } from 'lucide-react';
 import { QuickChat } from './QuickChat';
 import { useNavigate } from 'react-router-dom';
 import { useOnboardingContext } from '../../contexts/OnboardingContext';
+import { useOnboarding } from '@/lib/useOnboarding';
 
 /**
  * Floating Quick Chat Trigger Button
@@ -26,9 +27,10 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
   const [hasUnread, setHasUnread] = useState(false);
   const navigate = useNavigate();
   const { isOnboardingActive } = useOnboardingContext();
+  const { needsOnboarding } = useOnboarding();
 
-  // Hide during onboarding
-  if (isOnboardingActive) {
+  // Hide during onboarding (manual or automatic)
+  if (isOnboardingActive || needsOnboarding) {
     return null;
   }
 
@@ -91,7 +93,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
 
           {/* Notification Badge */}
           {showBadge && hasUnread && !isOpen && (
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-primary-foreground text-xs rounded-full flex items-center justify-center font-medium">
               !
             </div>
           )}
@@ -105,7 +107,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
         {/* Tooltip */}
         {!isOpen && (
           <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="bg-gray-900 text-white text-sm px-3 py-1 rounded-lg whitespace-nowrap">
+            <div className="bg-background text-primary-foreground text-sm px-4 py-1 rounded-lg whitespace-nowrap">
               Quick AI Help
               <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
             </div>

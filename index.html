@@ -6,8 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="NEXUS is a modern, modular business operating system for small and medium-sized businesses. Centralize your operations, analytics, and AI-powered tools in one intuitive platform." />
     <title>NEXUS - Business Operating System</title>
+    <!-- Prevent theme flashing -->
+    <script>
+      (function() {
+        try {
+          const storedTheme = localStorage.getItem('nexus-theme');
+          if (storedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else if (storedTheme === 'light') {
+            document.documentElement.classList.add('light');
+          } else {
+            // Check system preference
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.classList.add(prefersDark ? 'dark' : 'light');
+          }
+        } catch (e) {
+          // Fallback to light theme
+          document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
   </head>
-  <body class="h-full">
+  <body class="h-full bg-background text-foreground">
     <div id="root" class="h-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

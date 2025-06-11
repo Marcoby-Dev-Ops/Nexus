@@ -169,7 +169,7 @@ const IntegrationsShowcase: React.FC = () => {
       {/* Hero Section */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold">
-          Slack + Teams = <span className="text-blue-600">Exponential Intelligence</span>
+          Slack + Teams = <span className="text-primary">Exponential Intelligence</span>
         </h1>
         <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
           Don't just connect your communication platforms—unlock cross-platform insights that 
@@ -195,7 +195,7 @@ const IntegrationsShowcase: React.FC = () => {
             <Card key={benefit.title} className="h-full">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2 text-lg">
-                  <Icon className="w-6 h-6 text-blue-600" />
+                  <Icon className="w-6 h-6 text-primary" />
                   <span>{benefit.title}</span>
                 </CardTitle>
               </CardHeader>
@@ -204,7 +204,7 @@ const IntegrationsShowcase: React.FC = () => {
                 <ul className="space-y-1">
                   {benefit.features.map((feature) => (
                     <li key={feature} className="text-sm flex items-center space-x-2">
-                      <CheckCircle2 className="w-3 h-3 text-green-600" />
+                      <CheckCircle2 className="w-3 h-3 text-success" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -271,7 +271,7 @@ const IntegrationsShowcase: React.FC = () => {
                   <ul className="space-y-2">
                     {currentScenario.benefits.map((benefit) => (
                       <li key={benefit} className="flex items-center space-x-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <CheckCircle2 className="w-4 h-4 text-success" />
                         <span className="text-sm">{benefit}</span>
                       </li>
                     ))}
@@ -282,13 +282,13 @@ const IntegrationsShowcase: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="font-semibold">Performance Metrics</h3>
                 {currentScenario.metrics.map((metric) => (
-                  <div key={metric.label} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={metric.label} className="flex items-center justify-between p-4 border rounded-lg">
                     <div>
                       <div className="font-medium">{metric.label}</div>
-                      <div className="text-2xl font-bold text-blue-600">{metric.value}</div>
+                      <div className="text-2xl font-bold text-primary">{metric.value}</div>
                     </div>
                     <div className={`flex items-center space-x-1 ${
-                      metric.change > 0 ? 'text-green-600' : 'text-red-600'
+                      metric.change > 0 ? 'text-success' : 'text-destructive'
                     }`}>
                       <TrendingUp className="w-4 h-4" />
                       <span className="font-medium">+{metric.change}%</span>
@@ -302,7 +302,7 @@ const IntegrationsShowcase: React.FC = () => {
       </div>
 
       {/* CTA Section */}
-      <Card className="bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+      <Card className="bg-gradient-to-r from-purple-600 to-blue-600 text-primary-foreground">
         <CardContent className="p-8 text-center">
           <h2 className="text-2xl font-bold mb-4">Ready to Transform Your Team Communication?</h2>
           <p className="text-purple-100 mb-6 max-w-2xl mx-auto">
@@ -314,7 +314,7 @@ const IntegrationsShowcase: React.FC = () => {
               <MessageSquare className="w-4 h-4 mr-2" />
               Connect Slack
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-purple-600">
+            <Button size="lg" variant="outline" className="border-white text-primary-foreground hover:bg-card hover:text-secondary">
               <Video className="w-4 h-4 mr-2" />
               Connect Teams
             </Button>
@@ -352,7 +352,7 @@ const IntegrationsShowcase: React.FC = () => {
               </Button>
             </nav>
           </div>
-          <Badge variant="outline" className="bg-green-50 text-green-700">
+          <Badge variant="outline" className="bg-success/5 text-success">
             <Lightbulb className="w-3 h-3 mr-1" />
             Interactive Demo
           </Badge>

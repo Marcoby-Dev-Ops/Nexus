@@ -323,8 +323,8 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
-                  <MessageSquare className="w-8 h-8 text-purple-600" />
+                <div className="w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center">
+                  <MessageSquare className="w-8 h-8 text-secondary" />
                 </div>
               </div>
               <div>
@@ -407,8 +407,8 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="w-8 h-8 text-success" />
                 </div>
               </div>
               <div>
@@ -434,10 +434,10 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
                           (permission.scope.includes('groups') && includePrivateChannels);
                         
                         return (
-                          <div key={permission.scope} className={`flex items-start space-x-3 p-3 border rounded-lg ${
+                          <div key={permission.scope} className={`flex items-start space-x-4 p-4 border rounded-lg ${
                             isEnabled ? 'bg-background' : 'bg-muted/50 opacity-60'
                           }`}>
-                            <Icon className="w-5 h-5 text-purple-600 mt-0.5" />
+                            <Icon className="w-5 h-5 text-secondary mt-0.5" />
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
                                 <span className="font-medium">{permission.scope}</span>
@@ -478,8 +478,8 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Hash className="w-8 h-8 text-blue-600" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Hash className="w-8 h-8 text-primary" />
                 </div>
               </div>
               <div>
@@ -492,18 +492,18 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
 
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="text-center p-4 border rounded-lg">
-                <Hash className="w-6 h-6 mx-auto text-blue-600 mb-2" />
+                <Hash className="w-6 h-6 mx-auto text-primary mb-2" />
                 <div className="text-2xl font-bold">{slackData?.publicChannels || 0}</div>
                 <div className="text-sm text-muted-foreground">Public Channels</div>
               </div>
               <div className="text-center p-4 border rounded-lg">
-                <Users className="w-6 h-6 mx-auto text-blue-600 mb-2" />
+                <Users className="w-6 h-6 mx-auto text-primary mb-2" />
                 <div className="text-2xl font-bold">{slackData?.privateChannels || 0}</div>
                 <div className="text-sm text-muted-foreground">Private Channels</div>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label>Channel Selection</Label>
                 <Button variant="outline" size="sm">
@@ -524,7 +524,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
                     { name: 'hr-private', type: 'private', members: 2 }
                   ] : [])
                 ].map((channel) => (
-                  <div key={channel.name} className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <div key={channel.name} className="flex items-center space-x-4 p-4 border rounded-lg">
                     <Checkbox 
                       id={`channel-${channel.name}`}
                       defaultChecked={channel.name === 'general'}
@@ -573,8 +573,8 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                  <BarChart3 className="w-8 h-8 text-green-600" />
+                <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center">
+                  <BarChart3 className="w-8 h-8 text-success" />
                 </div>
               </div>
               <div>
@@ -590,8 +590,8 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
                 const Icon = insight.icon;
                 return (
                   <div key={insight.title} className="p-4 border rounded-lg">
-                    <div className="flex items-start space-x-3">
-                      <Icon className="w-5 h-5 text-purple-600 mt-0.5" />
+                    <div className="flex items-start space-x-4">
+                      <Icon className="w-5 h-5 text-secondary mt-0.5" />
                       <div className="flex-1">
                         <h4 className="font-medium">{insight.title}</h4>
                         <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
@@ -649,18 +649,18 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
         <div className="flex items-center space-x-2 mb-6">
           {setupSteps.map((step, index) => (
             <React.Fragment key={step.id}>
-              <div className={`flex items-center space-x-2 px-3 py-2 rounded-full text-sm ${
+              <div className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm ${
                 step.completed 
-                  ? 'bg-green-100 text-green-800'
+                  ? 'bg-success/10 text-success'
                   : step.current
-                  ? 'bg-purple-100 text-purple-800'
+                  ? 'bg-secondary/10 text-purple-800'
                   : 'bg-muted text-muted-foreground'
               }`}>
                 {step.completed ? (
                   <CheckCircle2 className="w-4 h-4" />
                 ) : (
                   <div className={`w-4 h-4 rounded-full border-2 ${
-                    step.current ? 'border-purple-600 bg-purple-600' : 'border-muted-foreground'
+                    step.current ? 'border-purple-600 bg-secondary' : 'border-muted-foreground'
                   }`} />
                 )}
                 <span className="hidden sm:inline">{step.title}</span>

@@ -33,9 +33,9 @@ type WithSelectors<S> = S extends { getState: () => infer T }
 const createSelectors = <S extends UseBoundStore<StoreApi<object>>>(
   _store: S,
 ) => {
-  let store = _store as WithSelectors<typeof _store>;
+  const store = _store as WithSelectors<typeof _store>;
   store.use = {};
-  for (let k of Object.keys(store.getState())) {
+  for (const k of Object.keys(store.getState())) {
     (store.use as any)[k] = () => store((s) => s[k as keyof typeof s]);
   }
 
@@ -60,7 +60,7 @@ const useOnboardingChatStoreBase = create<OnboardingChatState>((set, get) => ({
     const firstName = profile?.first_name || 'there';
     const timeOfDay = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening';
     
-    let personalizedGreeting = `Good ${timeOfDay}, ${firstName}! 👋`;
+    const personalizedGreeting = `Good ${timeOfDay}, ${firstName}! 👋`;
     let introContent = `I'm Nex, your new AI business partner. My purpose is to help you streamline operations, make smarter decisions, and achieve your goals faster.
 
 I'm designed to understand your business, learn your preferences, and become your trusted right-hand assistant.

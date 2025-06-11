@@ -1,4 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { chartColors } from '../../lib/chartColors';
 
 export function SimpleBarChart({ data }: { data: { name: string; value: number }[] }) {
   return (
@@ -14,7 +15,7 @@ export function SimpleBarChart({ data }: { data: { name: string; value: number }
         />
         <YAxis tick={{ fontSize: 11 }} />
         <Tooltip />
-        <Bar dataKey="value" fill="#6366f1" />
+        <Bar dataKey="value" fill={chartColors.primary} />
       </BarChart>
     </ResponsiveContainer>
   );

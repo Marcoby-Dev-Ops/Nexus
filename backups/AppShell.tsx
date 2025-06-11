@@ -1,57 +1,61 @@
-import { useState, useEffect } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import React from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { QuickChatTrigger } from '@/components/ai/QuickChatTrigger';
+import { useOnboarding } from '@/lib/useOnboarding';
+import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
 
-export default function AppShell() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const AppShell = () => {
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const navigate = useNavigate();
+  const { user, loading } = useEnhancedUser();
 
   // Generate breadcrumbs based on current route
   const generateBreadcrumbs = () => {
-    const pathSegments = location.pathname.split('/').filter(Boolean);
-    const breadcrumbs = [{ label: 'Home', href: '/dashboard' }];
+    const pathnames = location.pathname.split('/').filter((x) => x);
+    if (pathnames.length === 0) {
+      return [{ label: 'Dashboard' }];
+    }
 
-    let currentPath = '';
-    pathSegments.forEach((segment) => {
-      currentPath += `/${segment}`;
-      // Convert segment to title case and remove hyphens
-      const label = segment
-        .split('-')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
-      breadcrumbs.push({ label, href: currentPath });
+    const crumbs = pathnames.map((name, index) => {
+      const href = '/' + pathnames.slice(0, index + 1).join('/');
+      const label = name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, ' ');
+      return { label, href };
     });
 
-    return breadcrumbs;
+    return [{ label: 'Home', href: '/dashboard' }, ...crumbs];
   };
 
-  // Get subtitle based on current route
-  const getSubtitle = () => {
-    const path = location.pathname;
-    if (path === '/dashboard') return 'Welcome to NEXUS - Your business operating system';
-    if (path === '/sales') return 'Sales Dashboard - Track and manage your sales pipeline';
-    if (path === '/finance') return 'Finance Hub - Manage your financial operations';
-    if (path === '/operations') return 'Operations Center - Streamline your business processes';
-    if (path === '/marketplace') return 'Pulse Marketplace - Discover and install business apps';
-    if (path === '/data-warehouse') return 'Data Warehouse - Access and analyze your business data';
-    if (path === '/admin') return 'Admin Panel - Manage your NEXUS settings';
+  const getPageTitle = () => {
+    const pathnames = location.pathname.split('/').filter((x) => x);
+    if (pathnames.length > 0) {
+      return pathnames[pathnames.length - 1].charAt(0).toUpperCase() + pathnames[pathnames.length - 1].slice(1);
+    }
     return 'Welcome to NEXUS';
   };
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
-      <Sidebar isOpen={sidebarOpen} toggleSidebar={() => setSidebarOpen((v) => !v)} />
-      <Header
-        toggleSidebar={() => setSidebarOpen((v) => !v)}
-        breadcrumbs={generateBreadcrumbs()}
-      />
-      <main className="pt-16 transition-all duration-300 ease-in-out">
-        <div className="p-6 sm:p-8">
-          <Outlet />
-        </div>
-      </main>
+    <div className="flex h-screen bg-muted/40">
+      <Sidebar isOpen={isSidebarOpen} toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} />
+      <div className="flex-1 flex flex-col">
+        <Header 
+          pageTitle={getPageTitle()}
+          breadcrumbs={generateBreadcrumbs()}
+          toggleSidebar={() => setSidebarOpen(!isSidebarOpen)} 
+        />
+        <main className="flex-1 overflow-y-auto pt-16">
+          <div className="p-4 sm:p-6 lg:p-8">
+            <Outlet />
+          </div>
+        </main>
+      </div>
+
+      {/* <DebugOnboardingTrigger /> */}
+      <QuickChatTrigger />
     </div>
   );
-} 
+};
+
+export default AppShell; 

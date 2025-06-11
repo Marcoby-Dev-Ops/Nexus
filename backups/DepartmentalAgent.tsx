@@ -411,7 +411,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                   {specialists.map((specialist) => (
                     <span
                       key={specialist.id}
-                      className="px-2 py-1 bg-background text-muted-foreground text-xs rounded-full"
+                      className="px-4 py-4 bg-background text-muted-foreground text-xs rounded-full"
                     >
                       {specialist.avatar} {specialist.name}
                     </span>
@@ -430,7 +430,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
               
               if (isAgentSwitch) {
                 return (
-                  <div key={idx} className="text-center text-xs text-muted-foreground py-2 bg-muted/20 rounded-lg">
+                  <div key={idx} className="text-center text-xs text-muted-foreground py-4 bg-muted/20 rounded-lg">
                     {msg.content}
                   </div>
                 );
@@ -457,7 +457,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                         isUser 
                           ? 'bg-primary text-primary-foreground' 
                           : 'bg-muted text-foreground'
-                      } rounded-2xl px-4 py-2 break-words`}>
+                      } rounded-2xl px-4 py-4 break-words`}>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                       </div>
                     </div>
@@ -472,7 +472,7 @@ ${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can con
                   <span className="text-sm text-primary-foreground">{activeAgent.avatar}</span>
                 </div>
                 <div className="flex-1">
-                  <div className="inline-block bg-muted rounded-2xl px-4 py-3">
+                  <div className="inline-block bg-muted rounded-2xl px-4 py-4">
                     <div className="flex items-center gap-1">
                       <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                       <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

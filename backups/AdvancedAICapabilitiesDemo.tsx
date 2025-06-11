@@ -30,6 +30,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/Badge';
 import { Progress } from '../ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
+import { Spinner } from '../ui/Spinner';
 import { intelligentSystemEvolution } from '../../lib/intelligentSystemEvolution';
 import { businessProcessMining } from '../../lib/businessProcessMining';
 import { multiModalIntelligence } from '../../lib/multiModalIntelligence';
@@ -612,7 +613,7 @@ export const AdvancedAICapabilitiesDemo: React.FC = () => {
               </CardHeader>
               <CardContent>
                 {uploadedFile && (
-                  <div className="mb-4 p-2 bg-background rounded text-sm">
+                  <div className="mb-4 p-4 bg-background rounded text-sm">
                     Processing: {uploadedFile.name}
                   </div>
                 )}
@@ -672,7 +673,7 @@ const DemoResultDisplay: React.FC<{ result: DemoResult }> = ({ result }) => {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'running': return <RefreshCw className="h-4 w-4 animate-spin" />;
+      case 'running': return <Spinner />;
       case 'success': return <span className="text-success">✓</span>;
       case 'error': return <span className="text-destructive">✗</span>;
       default: return null;
@@ -702,7 +703,7 @@ const DemoResultDisplay: React.FC<{ result: DemoResult }> = ({ result }) => {
           </h4>
           <div className="space-y-1">
             {result.insights.map((insight, idx) => (
-              <div key={idx} className="text-sm bg-primary/5 p-2 rounded">
+              <div key={idx} className="text-sm bg-primary/5 p-4 rounded">
                 {insight}
               </div>
             ))}
@@ -718,7 +719,7 @@ const DemoResultDisplay: React.FC<{ result: DemoResult }> = ({ result }) => {
           </h4>
           <div className="space-y-1">
             {result.improvements.map((improvement, idx) => (
-              <div key={idx} className="text-sm bg-success/5 p-2 rounded">
+              <div key={idx} className="text-sm bg-success/5 p-4 rounded">
                 {improvement}
               </div>
             ))}
@@ -827,7 +828,7 @@ const DevelopmentRoadmap: React.FC = () => (
             <Progress value={phase.progress} className="mb-4" />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               {phase.items.map((item, itemIdx) => (
-                <div key={itemIdx} className="text-sm bg-background p-2 rounded">
+                <div key={itemIdx} className="text-sm bg-background p-4 rounded">
                   {item}
                 </div>
               ))}

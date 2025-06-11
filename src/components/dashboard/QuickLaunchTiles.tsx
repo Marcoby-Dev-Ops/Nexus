@@ -27,7 +27,7 @@ const QuickLaunchTiles: React.FC<{ actions: QuickLaunchAction[] }> = ({ actions 
           aria-label={action.label}
           disabled={action.loading}
         >
-          <div className="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
+          <div className="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3">
             {action.icon && <span className="text-lg">{action.icon}</span>}
           </div>
           <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">

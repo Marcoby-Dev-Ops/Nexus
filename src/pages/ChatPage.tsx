@@ -161,7 +161,7 @@ const ConversationSidebar: React.FC<{
             {filteredConversations.map((conversation) => (
               <div
                 key={conversation.id}
-                className={`group p-3 rounded-lg cursor-pointer transition-colors ${
+                className={`group p-4 rounded-lg cursor-pointer transition-colors ${
                   conversation.id === activeConversationId
                     ? 'bg-primary/10 border border-primary/20'
                     : 'hover:bg-muted/50'
@@ -248,7 +248,7 @@ export const ChatPage: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { needsOnboarding, isLoading: onboardingLoading } = useOnboarding();
+  const { needsOnboarding, isLoading: onboardingLoading, resetOnboarding } = useOnboarding();
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -386,8 +386,8 @@ export const ChatPage: React.FC = () => {
     return (
       <div className="h-screen bg-background flex flex-col">
         {/* Top Bar */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-border bg-background/95 backdrop-blur-sm flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="flex items-center justify-between p-4 sm:p-4 border-b border-border bg-background/95 backdrop-blur-sm flex-shrink-0">
+          <div className="flex items-center gap-4 min-w-0 flex-1">
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-primary-foreground" />
             </div>
@@ -432,13 +432,23 @@ export const ChatPage: React.FC = () => {
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
         <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <button
               onClick={handleBackToDashboard}
               className="p-2 rounded-lg hover:bg-muted transition-colors"
               title="Back to dashboard"
             >
               <ArrowLeft className="w-4 h-4" />
+            </button>
+            {/* Manual Restart Onboarding */}
+            <button
+              onClick={() => {
+                resetOnboarding();
+                navigate('/chat');
+              }}
+              className="text-sm text-primary hover:text-primary/80 transition-colors ml-2"
+            >
+              Restart Onboarding
             </button>
             <div>
               <h1 className="font-semibold text-foreground">Nexus AI Chat</h1>

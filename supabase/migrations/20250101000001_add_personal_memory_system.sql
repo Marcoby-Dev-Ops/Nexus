@@ -2,7 +2,7 @@
 -- This enables users to capture personal thoughts, goals, and insights within business context
 
 -- Add personal fields to existing profiles table
-ALTER TABLE profiles 
+ALTER TABLE user_profiles 
 ADD COLUMN IF NOT EXISTS personal_manifest JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS learning_goals TEXT[] DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS personal_interests TEXT[] DEFAULT '{}',
@@ -212,7 +212,7 @@ CREATE TRIGGER update_personal_thoughts_updated_at
 
 -- Insert sample personal manifest data for existing users (optional)
 -- This can be customized based on your user onboarding flow
-UPDATE profiles 
+UPDATE user_profiles 
 SET personal_manifest = jsonb_build_object(
   'initialized', true,
   'onboarding_completed', false,

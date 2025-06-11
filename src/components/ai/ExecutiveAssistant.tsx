@@ -361,7 +361,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
         <div className="absolute bottom-20 right-6 z-10">
           <button
             onClick={scrollToBottom}
-            className="p-3 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+            className="p-4 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
             aria-label="Scroll to bottom"
           >
             <ChevronDown className="w-4 h-4" />

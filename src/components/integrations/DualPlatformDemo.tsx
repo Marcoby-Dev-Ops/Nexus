@@ -191,17 +191,17 @@ const DualPlatformDemo: React.FC = () => {
   }, []);
 
   const getHealthColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-100';
-    if (score >= 60) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+    if (score >= 80) return 'text-success bg-success/10';
+    if (score >= 60) return 'text-warning bg-warning/10';
+    return 'text-destructive bg-destructive/10';
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-destructive/10 text-destructive';
+      case 'medium': return 'bg-warning/10 text-yellow-800';
+      case 'low': return 'bg-success/10 text-success';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -239,7 +239,7 @@ const DualPlatformDemo: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="bg-green-50 text-green-700">
+          <Badge variant="outline" className="bg-success/5 text-success">
             <Activity className="w-3 h-3 mr-1" />
             Live Demo
           </Badge>
@@ -258,13 +258,13 @@ const DualPlatformDemo: React.FC = () => {
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   {platform.platform === 'slack' ? (
-                    <MessageSquare className="w-5 h-5 text-purple-600" />
+                    <MessageSquare className="w-5 h-5 text-secondary" />
                   ) : (
-                    <Video className="w-5 h-5 text-blue-600" />
+                    <Video className="w-5 h-5 text-primary" />
                   )}
                   <span className="capitalize">{platform.platform}</span>
                 </div>
-                <Badge className="bg-green-100 text-green-800">Connected</Badge>
+                <Badge className="bg-success/10 text-success">Connected</Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -279,7 +279,7 @@ const DualPlatformDemo: React.FC = () => {
                 </div>
               </div>
               
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Response Time</span>
                   <span className="font-medium">{platform.data.averageResponseTime}min</span>
@@ -304,7 +304,7 @@ const DualPlatformDemo: React.FC = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <Lightbulb className="w-5 h-5 text-yellow-500" />
+            <Lightbulb className="w-5 h-5 text-warning" />
             <span>Live Cross-Platform Insights</span>
             <Badge variant="outline" className="ml-2">
               {currentInsight + 1} of {crossPlatformInsights.length}
@@ -321,11 +321,11 @@ const DualPlatformDemo: React.FC = () => {
                 <div 
                   key={insight.id} 
                   className={`p-4 border rounded-lg transition-all duration-500 ${
-                    isActive ? 'border-blue-500 bg-blue-50' : 'border-transparent opacity-30'
+                    isActive ? 'border-primary bg-primary/5' : 'border-transparent opacity-30'
                   }`}
                 >
                   <div className="flex items-start space-x-4">
-                    <Icon className="w-6 h-6 text-blue-600 mt-1" />
+                    <Icon className="w-6 h-6 text-primary mt-1" />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <h3 className="font-semibold">{insight.title}</h3>
@@ -344,11 +344,11 @@ const DualPlatformDemo: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">Expected Impact:</span>
-                          <p className="font-medium text-green-600">{insight.impact}</p>
+                          <p className="font-medium text-success">{insight.impact}</p>
                         </div>
                         <div>
                           <span className="text-muted-foreground">Time Savings:</span>
-                          <p className="font-medium text-blue-600">
+                          <p className="font-medium text-primary">
                             {insight.savings.time} {insight.savings.unit}/{insight.savings.period}
                           </p>
                         </div>
@@ -408,7 +408,7 @@ const DualPlatformDemo: React.FC = () => {
                         style={{ width: `${pattern.slack}%` }}
                       />
                       <div 
-                        className="bg-blue-500 rounded-r"
+                        className="bg-primary rounded-r"
                         style={{ width: `${pattern.teams}%` }}
                       />
                     </div>
@@ -420,7 +420,7 @@ const DualPlatformDemo: React.FC = () => {
                     <span>Slack Usage</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                    <div className="w-3 h-3 bg-primary rounded"></div>
                     <span>Teams Usage</span>
                   </div>
                 </div>
@@ -439,7 +439,7 @@ const DualPlatformDemo: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Slack Average</span>
                     <div className="flex items-center space-x-2">
@@ -455,7 +455,7 @@ const DualPlatformDemo: React.FC = () => {
                     </div>
                   </div>
                   <div className="pt-2 border-t">
-                    <div className="flex items-center space-x-2 text-green-600">
+                    <div className="flex items-center space-x-2 text-success">
                       <TrendingUp className="w-4 h-4" />
                       <span className="text-sm font-medium">57% faster on Slack</span>
                     </div>
@@ -472,7 +472,7 @@ const DualPlatformDemo: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Slack Engagement</span>
                     <div className="flex items-center space-x-2">
@@ -488,7 +488,7 @@ const DualPlatformDemo: React.FC = () => {
                     </div>
                   </div>
                   <div className="pt-2 border-t">
-                    <div className="flex items-center space-x-2 text-blue-600">
+                    <div className="flex items-center space-x-2 text-primary">
                       <Target className="w-4 h-4" />
                       <span className="text-sm font-medium">Combined: 82%</span>
                     </div>
@@ -505,21 +505,21 @@ const DualPlatformDemo: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Quick Decisions</span>
-                    <span className="text-sm font-medium text-purple-600">Slack +70%</span>
+                    <span className="text-sm font-medium text-secondary">Slack +70%</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">Formal Planning</span>
-                    <span className="text-sm font-medium text-blue-600">Teams +40%</span>
+                    <span className="text-sm font-medium text-primary">Teams +40%</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm">File Collaboration</span>
-                    <span className="text-sm font-medium text-blue-600">Teams +60%</span>
+                    <span className="text-sm font-medium text-primary">Teams +60%</span>
                   </div>
                   <div className="pt-2 border-t">
-                    <div className="flex items-center space-x-2 text-green-600">
+                    <div className="flex items-center space-x-2 text-success">
                       <CheckCircle2 className="w-4 h-4" />
                       <span className="text-sm font-medium">Optimized Usage</span>
                     </div>
@@ -565,11 +565,11 @@ const DualPlatformDemo: React.FC = () => {
               Connect both Slack and Teams to unlock these powerful insights for your organization
             </p>
             <div className="flex justify-center space-x-4">
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-secondary hover:bg-purple-700">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Connect Slack
               </Button>
-              <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+              <Button variant="outline" className="border-blue-600 text-primary hover:bg-primary/5">
                 <Video className="w-4 h-4 mr-2" />
                 Connect Teams
               </Button>

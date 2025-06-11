@@ -1,6 +1,17 @@
 # 📚 Nexus Documentation Hub
 
-Welcome to the comprehensive documentation for **Nexus** - the revolutionary organizational operating system that transforms individual thoughts into automated business success through the Trinity architecture: **THINK → SEE → ACT**.
+Welcome to the Nexus documentation and help site. Here you'll find everything you need to understand, use, and trust Nexus, including:
+
+- **Privacy Policy**: How we collect, use, and protect your data.
+- **Data Usage Policy**: Details on what data is collected, how it's processed, and your rights.
+- **User Guide**: Step-by-step instructions and best practices for using Nexus.
+- **Compliance & Security**: Information on our compliance with industry standards and security practices.
+
+## Quick Links
+- [Privacy Policy](./compliance/PRIVACY_POLICY.template.md)
+- [Data Usage Policy](./compliance/DATA_USAGE_POLICY.template.md)
+- [User Guide](./help/USER_GUIDE.template.md)
+- [Security & Compliance Overview](./compliance/SECURITY_COMPLIANCE.template.md)
 
 ## 🧭 Navigation Guide
 

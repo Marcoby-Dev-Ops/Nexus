@@ -56,7 +56,7 @@ const MessageStatus: React.FC<{ status: ChatMessage['status'] }> = ({ status }) 
  * Typing animation component
  */
 const TypingAnimation: React.FC = () => (
-  <div className="flex items-center gap-1 p-3">
+  <div className="flex items-center gap-1 p-4">
     <div className="flex gap-1">
       {[0, 1, 2].map((i) => (
         <div
@@ -140,7 +140,7 @@ const MessageActions: React.FC<{
               onCopy?.(message.content);
               setShowActions(false);
             }}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted"
+            className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-muted"
           >
             <Copy className="w-3 h-3" />
             Copy
@@ -155,7 +155,7 @@ const MessageActions: React.FC<{
                 }
                 setShowActions(false);
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted"
+              className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-muted"
             >
               <Edit className="w-3 h-3" />
               Edit
@@ -168,7 +168,7 @@ const MessageActions: React.FC<{
                 onRetry(message.id);
                 setShowActions(false);
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted text-primary"
+              className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-muted text-primary"
             >
               <RefreshCw className="w-3 h-3" />
               Retry
@@ -183,7 +183,7 @@ const MessageActions: React.FC<{
                 }
                 setShowActions(false);
               }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm hover:bg-muted text-destructive"
+              className="flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-muted text-destructive"
             >
               <Trash2 className="w-3 h-3" />
               Delete
@@ -248,7 +248,7 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({
   const isThinking = message.type === 'thinking';
   
   return (
-    <div className={`flex items-start gap-3 group ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
+    <div className={`flex items-start gap-4 group ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'}`}>
       {/* Avatar */}
       {showAvatar && (
         <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${

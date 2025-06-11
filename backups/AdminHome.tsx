@@ -121,7 +121,7 @@ const AdminHome: React.FC = () => {
           title="Recent Users" 
           variant="elevated"
           action={
-            <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+            <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
               Manage Users
             </button>
           }
@@ -130,7 +130,7 @@ const AdminHome: React.FC = () => {
             {recentUsers.map((user, index) => (
               <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
                 <div className="flex items-center space-x-4">
-                  <div className="p-2 rounded-lg bg-primary/10">
+                  <div className="p-4 rounded-lg bg-primary/10">
                     <Users className="w-5 h-5 text-primary" />
                   </div>
                   <div>
@@ -139,7 +139,7 @@ const AdminHome: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                  <div className={`inline-flex px-4 py-4 rounded-full text-xs font-medium ${
                     user.status === 'online' ? 'bg-success/10 text-success' : 'bg-muted text-foreground'
                   }`}>
                     {user.status}
@@ -155,7 +155,7 @@ const AdminHome: React.FC = () => {
           title="System Alerts" 
           variant="elevated"
           action={
-            <button className="px-4 py-2 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+            <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
               View All Alerts
             </button>
           }
@@ -182,7 +182,7 @@ const AdminHome: React.FC = () => {
 
               return (
                 <div key={index} className="flex items-start space-x-4 p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
-                  <div className={`p-2 rounded-lg ${getColor(alert.type)}`}>
+                  <div className={`p-4 rounded-lg ${getColor(alert.type)}`}>
                     {getIcon(alert.type)}
                   </div>
                   <div className="flex-1">

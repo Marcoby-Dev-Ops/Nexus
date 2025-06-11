@@ -53,6 +53,13 @@ class N8nOnboardingManager {
       required: true
     },
     {
+      id: 'business-snapshot',
+      title: 'Business Snapshot',
+      description: 'Baseline metrics for your health score',
+      completed: false,
+      required: true
+    },
+    {
       id: 'success-criteria',
       title: 'Define Success',
       description: 'What would make Nexus successful for you?',

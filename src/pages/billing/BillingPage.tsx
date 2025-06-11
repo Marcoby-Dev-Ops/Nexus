@@ -16,7 +16,7 @@ export const BillingPage: React.FC = () => {
   return (
     <div className="container mx-auto py-6 px-4 max-w-6xl">
       <div className="mb-8">
-        <div className="flex items-center space-x-3 mb-2">
+        <div className="flex items-center space-x-4 mb-2">
           <CreditCard className="h-8 w-8 text-primary" />
           <h1 className="text-3xl font-bold tracking-tight">Billing & Usage</h1>
         </div>

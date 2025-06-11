@@ -133,6 +133,37 @@ export class SecurityManager {
   }
 
   /**
+   * Decrypt sensitive data using Web Crypto API
+   */
+  async decryptData(encryptedData: string): Promise<string> {
+    try {
+      const combined = new Uint8Array(
+        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+      );
+      
+      const iv = combined.slice(0, 12);
+      const data = combined.slice(12);
+
+      const key = await window.crypto.subtle.generateKey(
+        { name: 'AES-GCM', length: 256 },
+        true,
+        ['encrypt', 'decrypt']
+      );
+
+      const decrypted = await window.crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        data
+      );
+
+      return new TextDecoder().decode(decrypted);
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      throw new Error('Data decryption failed');
+    }
+  }
+
+  /**
    * Validate password strength according to policy
    */
   validatePassword(password: string): { isValid: boolean; errors: string[] } {

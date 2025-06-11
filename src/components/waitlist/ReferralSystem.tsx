@@ -87,8 +87,8 @@ const ReferralSystem: React.FC = () => {
       name: 'Rookie Referrer',
       icon: Users,
       minReferrals: 0,
-      color: 'text-gray-600',
-      bgColor: 'bg-gray-100',
+      color: 'text-muted-foreground',
+      bgColor: 'bg-muted',
       rewards: ['5% early bird discount', 'Community access'],
       description: 'Welcome to the referral program!'
     },
@@ -97,8 +97,8 @@ const ReferralSystem: React.FC = () => {
       name: 'Growth Champion',
       icon: Star,
       minReferrals: 3,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10',
       rewards: ['15% first year discount', 'Priority support', 'Beta access'],
       description: 'Great start! You\'re building momentum.'
     },
@@ -107,8 +107,8 @@ const ReferralSystem: React.FC = () => {
       name: 'VIP Advocate',
       icon: Crown,
       minReferrals: 10,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-secondary',
+      bgColor: 'bg-secondary/10',
       rewards: ['25% lifetime discount', 'White-label demo', 'Custom onboarding', 'Quarterly check-ins'],
       description: 'Exceptional growth! You\'re a true advocate.'
     },
@@ -117,8 +117,8 @@ const ReferralSystem: React.FC = () => {
       name: 'Legendary Influencer',
       icon: Trophy,
       minReferrals: 25,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100',
+      color: 'text-warning',
+      bgColor: 'bg-warning/10',
       rewards: ['50% lifetime discount', 'Revenue sharing', 'Co-marketing opportunities', 'Product input'],
       description: 'Incredible impact! You\'re shaping our community.'
     },
@@ -127,7 +127,7 @@ const ReferralSystem: React.FC = () => {
       name: 'Founding Partner',
       icon: Bolt,
       minReferrals: 50,
-      color: 'text-orange-600',
+      color: 'text-warning',
       bgColor: 'bg-orange-100',
       rewards: ['Free lifetime access', 'Equity consideration', 'Advisory board invite', 'Brand partnership'],
       description: 'Phenomenal! You\'re a true founding partner.'
@@ -221,7 +221,7 @@ const ReferralSystem: React.FC = () => {
       <Card className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border-purple-200/20">
         <CardHeader>
           <CardTitle className="flex items-center text-2xl">
-            <Gift className="w-6 h-6 mr-2 text-purple-500" />
+            <Gift className="w-6 h-6 mr-2 text-secondary" />
             🎁 Referral Rewards
           </CardTitle>
           <p className="text-muted-foreground">
@@ -235,7 +235,7 @@ const ReferralSystem: React.FC = () => {
               <currentTier.icon className={`w-8 h-8 mx-auto mb-3 ${currentTier.color}`} />
               <h3 className="font-bold text-lg mb-2">{currentTier.name}</h3>
               <p className="text-sm text-muted-foreground mb-4">{currentTier.description}</p>
-              <Badge className={`${currentTier.color.replace('text-', 'bg-')} text-white`}>
+              <Badge className={`${currentTier.color.replace('text-', 'bg-')} text-primary-foreground`}>
                 Current Tier
               </Badge>
             </div>
@@ -243,15 +243,15 @@ const ReferralSystem: React.FC = () => {
             {/* Stats */}
             <div className="space-y-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-purple-600">{stats.confirmedReferrals}</div>
+                <div className="text-3xl font-bold text-secondary">{stats.confirmedReferrals}</div>
                 <div className="text-sm text-muted-foreground">Confirmed Referrals</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{stats.positionsClimbed}</div>
+                <div className="text-3xl font-bold text-success">{stats.positionsClimbed}</div>
                 <div className="text-sm text-muted-foreground">Positions Climbed</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">${stats.estimatedValue}</div>
+                <div className="text-3xl font-bold text-primary">${stats.estimatedValue}</div>
                 <div className="text-sm text-muted-foreground">Estimated Value</div>
               </div>
             </div>
@@ -296,7 +296,7 @@ const ReferralSystem: React.FC = () => {
               />
               <Button onClick={copyReferralLink} variant="outline">
                 {copiedToClipboard ? (
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 text-success" />
                 ) : (
                   <Copy className="w-4 h-4" />
                 )}
@@ -324,7 +324,7 @@ const ReferralSystem: React.FC = () => {
               <Button
                 onClick={() => handleShare('whatsapp')}
                 variant="outline"
-                className="flex items-center justify-center bg-green-50 hover:bg-green-100"
+                className="flex items-center justify-center bg-success/5 hover:bg-success/10"
               >
                 <MessageCircle className="w-4 h-4 mr-2" />
                 WhatsApp
@@ -332,7 +332,7 @@ const ReferralSystem: React.FC = () => {
               <Button
                 onClick={() => handleShare('twitter')}
                 variant="outline"
-                className="flex items-center justify-center bg-blue-50 hover:bg-blue-100"
+                className="flex items-center justify-center bg-primary/5 hover:bg-primary/10"
               >
                 <Share2 className="w-4 h-4 mr-2" />
                 Twitter
@@ -340,7 +340,7 @@ const ReferralSystem: React.FC = () => {
               <Button
                 onClick={() => handleShare('linkedin')}
                 variant="outline"
-                className="flex items-center justify-center bg-blue-50 hover:bg-blue-100"
+                className="flex items-center justify-center bg-primary/5 hover:bg-primary/10"
               >
                 <ExternalLink className="w-4 h-4 mr-2" />
                 LinkedIn
@@ -381,9 +381,9 @@ const ReferralSystem: React.FC = () => {
                   transition={{ delay: index * 0.1 }}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     isCurrentTier 
-                      ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
+                      ? 'border-secondary bg-secondary/5 dark:bg-purple-900/20' 
                       : isUnlocked
-                      ? 'border-green-200 bg-green-50 dark:bg-green-900/20'
+                      ? 'border-green-200 bg-success/5 dark:bg-success/20'
                       : 'border-muted-foreground/20 bg-muted/50'
                   }`}
                 >
@@ -397,10 +397,10 @@ const ReferralSystem: React.FC = () => {
                         <div className="flex items-center space-x-2 mb-2">
                           <h3 className="font-bold text-lg">{tier.name}</h3>
                           {isCurrentTier && (
-                            <Badge className="bg-purple-600 text-white">CURRENT</Badge>
+                            <Badge className="bg-secondary text-primary-foreground">CURRENT</Badge>
                           )}
                           {isUnlocked && !isCurrentTier && (
-                            <Badge className="bg-green-600 text-white">UNLOCKED</Badge>
+                            <Badge className="bg-green-600 text-primary-foreground">UNLOCKED</Badge>
                           )}
                         </div>
                         
@@ -409,7 +409,7 @@ const ReferralSystem: React.FC = () => {
                         <div className="space-y-1">
                           {tier.rewards.map((reward, rewardIndex) => (
                             <div key={rewardIndex} className="flex items-center text-sm">
-                              <CheckCircle2 className="w-4 h-4 mr-2 text-green-500" />
+                              <CheckCircle2 className="w-4 h-4 mr-2 text-success" />
                               <span>{reward}</span>
                             </div>
                           ))}
@@ -444,7 +444,7 @@ const ReferralSystem: React.FC = () => {
               <p className="text-muted-foreground">No referrals yet. Start sharing to build your network!</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {myReferrals.map((referral, index) => (
                 <motion.div
                   key={referral.id}
@@ -454,7 +454,7 @@ const ReferralSystem: React.FC = () => {
                   className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-primary-foreground font-bold">
                       {referral.name.charAt(0)}
                     </div>
                     
@@ -466,9 +466,9 @@ const ReferralSystem: React.FC = () => {
                   
                   <div className="flex items-center space-x-4">
                     <Badge className={
-                      referral.tier === 'founder' ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-black' :
-                      referral.tier === 'vip' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' :
-                      'bg-gradient-to-r from-blue-500 to-cyan-500 text-white'
+                      referral.tier === 'founder' ? 'bg-gradient-to-r from-yellow-400 to-orange-500 text-foreground' :
+                      referral.tier === 'vip' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-primary-foreground' :
+                      'bg-gradient-to-r from-blue-500 to-cyan-500 text-primary-foreground'
                     }>
                       {referral.tier.charAt(0).toUpperCase() + referral.tier.slice(1)}
                     </Badge>
@@ -506,19 +506,19 @@ const ReferralSystem: React.FC = () => {
               <h3 className="font-semibold text-lg">🎯 Best Practices</h3>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start">
-                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-success" />
                   <span>Share with people who would genuinely benefit from Nexus</span>
                 </li>
                 <li className="flex items-start">
-                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-success" />
                   <span>Explain specific features that match their needs</span>
                 </li>
                 <li className="flex items-start">
-                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-success" />
                   <span>Mention the limited-time founder benefits</span>
                 </li>
                 <li className="flex items-start">
-                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-green-500" />
+                  <CheckCircle2 className="w-4 h-4 mr-2 mt-0.5 text-success" />
                   <span>Follow up with personal messages</span>
                 </li>
               </ul>
@@ -526,20 +526,20 @@ const ReferralSystem: React.FC = () => {
             
             <div className="space-y-4">
               <h3 className="font-semibold text-lg">🚀 High-Converting Messages</h3>
-              <div className="space-y-3">
-                <div className="p-3 bg-muted/50 rounded border-l-4 border-blue-500">
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded border-l-4 border-primary">
                   <div className="font-medium text-sm">For Business Owners:</div>
                   <div className="text-sm text-muted-foreground">
                     "This AI platform could save you 20+ hours/week on operations..."
                   </div>
                 </div>
-                <div className="p-3 bg-muted/50 rounded border-l-4 border-green-500">
+                <div className="p-4 bg-muted/50 rounded border-l-4 border-success">
                   <div className="font-medium text-sm">For Agencies:</div>
                   <div className="text-sm text-muted-foreground">
                     "White-label opportunity with revenue sharing potential..."
                   </div>
                 </div>
-                <div className="p-3 bg-muted/50 rounded border-l-4 border-purple-500">
+                <div className="p-4 bg-muted/50 rounded border-l-4 border-secondary">
                   <div className="font-medium text-sm">For Tech Leaders:</div>
                   <div className="text-sm text-muted-foreground">
                     "Early access to the future of business automation..."
