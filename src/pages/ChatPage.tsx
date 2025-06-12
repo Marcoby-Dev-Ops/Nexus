@@ -14,10 +14,9 @@ import {
   Clock,
   ArrowLeft
 } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
-import { useOnboarding } from '@/lib/useOnboarding';
+import { useAuth } from '@/contexts/AuthContext';
 import { ModernExecutiveAssistant } from '@/components/ai/enhanced/ModernExecutiveAssistant';
-import { OnboardingChatAI } from '@/components/onboarding/OnboardingChatAI'
+import { formatDistanceToNow } from 'date-fns';
 
 /**
  * Full-featured Chat Page (ChatGPT/Claude style)
@@ -198,7 +197,7 @@ const ConversationSidebar: React.FC<{
                     
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <Clock className="w-3 h-3" />
-                      <span>{conversation.timestamp.toLocaleDateString()}</span>
+                      <span>{formatDistanceToNow(conversation.timestamp, { addSuffix: true })}</span>
                       <span>•</span>
                       <span>{conversation.messageCount} messages</span>
                     </div>
@@ -245,10 +244,9 @@ const ConversationSidebar: React.FC<{
  * Main Chat Page Component
  */
 export const ChatPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { needsOnboarding, isLoading: onboardingLoading, resetOnboarding } = useOnboarding();
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -265,19 +263,38 @@ export const ChatPage: React.FC = () => {
         const recentConversations = await chatHistory.getRecentConversations(50);
         
         if (recentConversations) {
-          const formattedConversations: Conversation[] = recentConversations.map(conv => ({
-            id: conv.id,
-            title: conv.title || 'Untitled Conversation',
-            lastMessage: 'Click to view messages...',
-            timestamp: new Date(conv.updated_at || conv.created_at || new Date()),
-            messageCount: 0 // You could add a count query here if needed
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+          const validConvs = recentConversations.filter(c => uuidRegex.test(c.id));
+          
+          const withStats: Conversation[] = await Promise.all(validConvs.map(async (conv) => {
+            try {
+              const msgs = await chatHistory.getConversationHistory(conv.id);
+              return {
+                id: conv.id,
+                title: conv.title || 'Untitled Conversation',
+                lastMessage: msgs[msgs.length - 1]?.content || '',
+                timestamp: new Date(conv.updated_at || conv.created_at || new Date()),
+                messageCount: msgs.length,
+              } as Conversation;
+            } catch (_) {
+              return {
+                id: conv.id,
+                title: conv.title || 'Untitled Conversation',
+                lastMessage: '',
+                timestamp: new Date(conv.updated_at || conv.created_at || new Date()),
+                messageCount: 0,
+              } as Conversation;
+            }
           }));
           
-          setConversations(formattedConversations);
+          // Exclude conversations that have no messages
+          const nonEmpty = withStats.filter((c) => c.messageCount > 0);
+          
+          setConversations(nonEmpty);
           
           // Set first conversation as active if none selected
-          if (!activeConversationId && formattedConversations.length > 0) {
-            setActiveConversationId(formattedConversations[0].id);
+          if (!activeConversationId && withStats.length > 0) {
+            setActiveConversationId(withStats[0].id);
           }
         }
       } catch (error) {
@@ -371,7 +388,7 @@ export const ChatPage: React.FC = () => {
   };
 
   // If user needs onboarding, show conversational onboarding in chat interface
-  if (onboardingLoading) {
+  if (loading) {
     return (
       <div className="h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -382,37 +399,7 @@ export const ChatPage: React.FC = () => {
     );
   }
 
-  if (needsOnboarding) {
-    return (
-      <div className="h-screen bg-background flex flex-col">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between p-4 sm:p-4 border-b border-border bg-background/95 backdrop-blur-sm flex-shrink-0">
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-primary-foreground" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="font-semibold text-foreground text-sm sm:text-base truncate">Welcome to Nexus AI</h1>
-              <p className="text-xs text-muted-foreground hidden sm:block">
-                Let's get you set up with your AI-powered business assistant
-              </p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="text-xs text-muted-foreground whitespace-nowrap">
-              <span className="hidden sm:inline">Setup in </span>progress...
-            </div>
-          </div>
-        </div>
-
-        {/* Onboarding Chat - Full Width */}
-        <div className="flex-1 min-h-0">
-          <OnboardingChatAI />
-        </div>
-      </div>
-    );
-  }
+  // Onboarding is skipped on the dedicated chat page
 
   return (
     <div className="h-screen bg-background flex">
@@ -440,18 +427,8 @@ export const ChatPage: React.FC = () => {
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
-            {/* Manual Restart Onboarding */}
-            <button
-              onClick={() => {
-                resetOnboarding();
-                navigate('/chat');
-              }}
-              className="text-sm text-primary hover:text-primary/80 transition-colors ml-2"
-            >
-              Restart Onboarding
-            </button>
             <div>
-              <h1 className="font-semibold text-foreground">Nexus AI Chat</h1>
+              <h1 className="font-semibold text-foreground">Nex Chat</h1>
               <p className="text-xs text-muted-foreground">
                 {conversations.find(c => c.id === activeConversationId)?.title || 'Select a conversation'}
               </p>
@@ -490,7 +467,7 @@ export const ChatPage: React.FC = () => {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <Sparkles className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
-                <h2 className="text-xl font-semibold text-foreground mb-2">Welcome back to Nexus AI</h2>
+                <h2 className="text-xl font-semibold text-foreground mb-2">Welcome back to Nex</h2>
                 <p className="text-muted-foreground mb-6">
                   Select a conversation or start a new one to begin chatting
                 </p>

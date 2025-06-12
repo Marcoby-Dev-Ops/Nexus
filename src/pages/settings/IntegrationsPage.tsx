@@ -8,7 +8,7 @@ import { Label } from '../../components/ui/Label';
 import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Tabs';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Mock integrations data
 const availableIntegrations = [
@@ -115,7 +115,7 @@ const connectedIntegrations = [
  * - Browse available integrations by category
  */
 const IntegrationsPage: React.FC = () => {
-  const { user } = useEnhancedUser();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   

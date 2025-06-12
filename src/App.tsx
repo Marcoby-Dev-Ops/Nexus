@@ -6,11 +6,6 @@ import AppShell from './components/layout/AppShell';
 
 // Providers
 import { NotificationProvider } from './contexts/NotificationContext';
-import { UserProvider } from './contexts/UserContext';
-import { EnhancedUserProvider } from './contexts/EnhancedUserContext';
-import { OnboardingProvider } from './contexts/OnboardingContext';
-import { AuthProvider } from './lib/auth';
-import { SupabaseProvider } from './lib/SupabaseProvider';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -29,6 +24,9 @@ import FinancialOperationsPage from './pages/departments/finance/FinancialOperat
 import SalesPerformancePage from './pages/departments/sales/SalesPerformancePage';
 import AnalyticsDashboardPage from './pages/departments/operations/AnalyticsDashboardPage';
 
+// Analytics Pages
+import BusinessHealthDetail from './pages/analytics/BusinessHealthDetail';
+
 // Data Warehouse
 import DataWarehouseHome from './datawarehouse/DataWarehouseHome';
 
@@ -45,59 +43,53 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
  */
 function App() {
   return (
-    <SupabaseProvider>
-      <AuthProvider>
-        <UserProvider>
-          <EnhancedUserProvider>
-            <NotificationProvider>
-              <OnboardingProvider>
-                <BrowserRouter>
-                  <Routes>
-                    {/* Auth Routes */}
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/auth/callback" element={<AuthCallback />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    
-                    {/* Protected App Routes */}
-                    <Route path="/" element={
-                      <ProtectedRoute>
-                        <AppShell />
-                      </ProtectedRoute>
-                    }>
-                      {/* Core Routes */}
-                      <Route index element={<Navigate to="/dashboard" replace />} />
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/workspace" element={<WorkspacePage />} />
-                      
-                      {/* Department Routes */}
-                      <Route path="/departments/finance/operations" element={<FinancialOperationsPage />} />
-                      <Route path="/departments/sales/performance" element={<SalesPerformancePage />} />
-                      <Route path="/departments/operations/analytics" element={<AnalyticsDashboardPage />} />
-                      <Route path="/data-warehouse" element={<DataWarehouseHome />} />
-                      
-                      {/* AI Routes */}
-                      <Route path="/ai-hub" element={<AIHubPage />} />
-                      <Route path="/chat" element={<ChatPage />} />
-                      <Route path="/analytics" element={<AnalyticsDashboardPage />} />
-                      
-                      {/* Marketplace Routes */}
-                      <Route path="/marketplace" element={<Marketplace />} />
-                      <Route path="/integrations" element={<IntegrationsPage />} />
-                      
-                      {/* Admin Routes */}
-                      <Route path="/settings" element={<SettingsPage />} />
-                      
-                      {/* 404 Route */}
-                      <Route path="*" element={<NotFoundPage />} />
-                    </Route>
-                  </Routes>
-                </BrowserRouter>
-              </OnboardingProvider>
-            </NotificationProvider>
-          </EnhancedUserProvider>
-        </UserProvider>
-      </AuthProvider>
-    </SupabaseProvider>
+    <NotificationProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Auth Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          
+          {/* Protected App Routes */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <AppShell />
+            </ProtectedRoute>
+          }>
+            {/* Core Routes */}
+            <Route index element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/workspace" element={<WorkspacePage />} />
+            
+            {/* Department Routes */}
+            <Route path="/departments/finance/operations" element={<FinancialOperationsPage />} />
+            <Route path="/departments/sales/performance" element={<SalesPerformancePage />} />
+            <Route path="/departments/operations/analytics" element={<AnalyticsDashboardPage />} />
+            <Route path="/data-warehouse" element={<DataWarehouseHome />} />
+            
+            {/* AI Routes */}
+            <Route path="/ai-hub" element={<AIHubPage />} />
+            <Route path="/chat" element={<ChatPage />} />
+            <Route path="/analytics" element={<AnalyticsDashboardPage />} />
+            
+            {/* Analytics Routes */}
+            <Route path="/analytics/business-health" element={<BusinessHealthDetail />} />
+            <Route path="/analytics/business-health/:categoryId" element={<BusinessHealthDetail />} />
+            
+            {/* Marketplace Routes */}
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/integrations" element={<IntegrationsPage />} />
+            
+            {/* Admin Routes */}
+            <Route path="/settings" element={<SettingsPage />} />
+            
+            {/* 404 Route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </NotificationProvider>
   );
 }
 

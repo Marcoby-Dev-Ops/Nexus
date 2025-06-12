@@ -8,7 +8,7 @@ import { Label } from '../../components/ui/Label';
 import { Switch } from '../../components/ui/Switch';
 import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Mock security activity data
 const securityActivity = [
@@ -30,7 +30,7 @@ const securityActivity = [
  * - Set privacy preferences
  */
 const SecuritySettings: React.FC = () => {
-  const { user } = useEnhancedUser();
+  const { user } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

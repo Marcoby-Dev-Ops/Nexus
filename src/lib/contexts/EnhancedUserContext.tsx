@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { User } from '@supabase/supabase-js';
-import type { Company, UserProfile } from '@prisma/client';
+import type { Database } from '@/lib/database.types';
+type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
+type Company = Database['public']['Tables']['companies']['Row'];
 
 interface EnhancedUserContextType {
   user: User | null;
@@ -64,11 +66,11 @@ export const EnhancedUserProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (profileError) throw profileError;
-      setProfile(profile as UserProfile);
+      setProfile(profile as unknown as UserProfile);
 
       // Fetch company data if we have a company_id
       if (profile.company_id) {
@@ -79,7 +81,7 @@ export const EnhancedUserProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .single();
 
         if (companyError) throw companyError;
-        setCompany(company as Company);
+        setCompany(company as unknown as Company);
       }
     } catch (error) {
       setError(error as Error);
@@ -96,14 +98,14 @@ export const EnhancedUserProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .from('companies')
         .upsert({
           id: company.id,
+          name: updates.name || company.name,
           ...updates,
-          updated_at: new Date().toISOString(),
         })
         .select()
         .single();
 
       if (error) throw error;
-      setCompany(data as Company);
+      setCompany(data as unknown as Company);
     } catch (error) {
       setError(error as Error);
       throw error;
@@ -125,7 +127,7 @@ export const EnhancedUserProvider: React.FC<{ children: React.ReactNode }> = ({ 
         .single();
 
       if (error) throw error;
-      setProfile(data as UserProfile);
+      setProfile(data as unknown as UserProfile);
     } catch (error) {
       setError(error as Error);
       throw error;

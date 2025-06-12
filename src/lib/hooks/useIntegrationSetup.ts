@@ -213,7 +213,7 @@ export const useIntegrationSetup = (
     // Basic validation based on step type
     switch (step.type) {
       case 'prerequisites':
-        // eslint-disable-next-line no-case-declarations
+         
         const missingPrereqs = integration.prerequisites?.filter(
           prereq => !stepData[prereq]
         ) || [];
@@ -224,7 +224,7 @@ export const useIntegrationSetup = (
         
       case 'auth':
         if (integration.authType === 'api_key') {
-          // eslint-disable-next-line no-case-declarations
+           
           const apiKey = stepData.apiKey || '';
           const errors: string[] = [];
           
@@ -236,7 +236,7 @@ export const useIntegrationSetup = (
         return { isValid: !!stepData.authorized, errors: [] };
         
       case 'permissions':
-        // eslint-disable-next-line no-case-declarations
+         
         const selectedPermissions = Object.values(setupData.permissions).filter(Boolean);
         return {
           isValid: selectedPermissions.length > 0,

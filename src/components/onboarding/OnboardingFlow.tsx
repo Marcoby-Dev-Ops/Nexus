@@ -16,7 +16,7 @@ import type { OnboardingState, OnboardingStep } from '../../lib/n8nOnboardingMan
 import type { UserN8nConfig } from '../../lib/userN8nConfig';
 import { LoadingStates } from '../patterns/LoadingStates';
 import { motion } from 'framer-motion';
-import { useEnhancedUser } from '../../lib/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -295,11 +295,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
 // Welcome Step Component - Simplified
 const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const { profile } = useEnhancedUser();
+  const { user } = useAuth();
 
   // Get user's first name or fallback to a generic greeting
   const getPersonalizedGreeting = () => {
-    const firstName = profile?.first_name;
+    const firstName = user?.profile?.first_name;
     if (firstName) {
       return `Hi ${firstName}! Let's Build Your AI-Powered Business`;
     }
@@ -307,7 +307,7 @@ const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   };
 
   const getPersonalizedSubtitle = () => {
-    const firstName = profile?.first_name;
+    const firstName = user?.profile?.first_name;
     if (firstName) {
       return `${firstName}, you've just unlocked the most powerful business operating system. We'll customize it specifically for your needs and goals.`;
     }

@@ -5,10 +5,9 @@ import { MessageSquare, ChevronDown, Send, Mic, MicOff, Paperclip, Zap } from 'l
 import { Spinner } from '../ui/Spinner';
 import { chatHistory, supabase, type ChatMessage as SupabaseChatMessage } from '@/lib/supabase';
 import { useRealtimeChat } from '@/lib/useRealtimeChat';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { enhancedChatService, ChatContextBuilder } from '@/lib/chatContext';
 import { executiveAgent } from '@/lib/agentRegistry';
-import { useOnboardingContext } from '../../contexts/OnboardingContext';
 
 /**
  * ExecutiveAssistant
@@ -50,7 +49,6 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
   const [showScrollButton, setShowScrollButton] = useState(false);
   const { user } = useAuth();
   const MAX_RETRIES = 3;
-  const { isOnboardingActive } = useOnboardingContext();
 
   // Ref for the transcript container
   const transcriptRef = useRef<HTMLDivElement>(null);
@@ -357,7 +355,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
       </div>
 
       {/* Scroll to Bottom Button - Hidden during onboarding */}
-      {showScrollButton && !isOnboardingActive && (
+      {showScrollButton && (
         <div className="absolute bottom-20 right-6 z-10">
           <button
             onClick={scrollToBottom}

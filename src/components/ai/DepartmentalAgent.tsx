@@ -11,7 +11,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, ArrowLeft, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { chatHistory } from '@/lib/supabase';
 import { useRealtimeChat } from '@/lib/useRealtimeChat';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { getChildAgents, type Agent } from '@/lib/agentRegistry';
 
 /**

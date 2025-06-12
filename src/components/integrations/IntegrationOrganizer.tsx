@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useIntegrations } from '@/lib/hooks/useIntegrations';
+import { supabase } from '@/lib/supabase';
+import type { Database } from '@/lib/database.types';
 import {
   Search,
   Filter,
@@ -29,59 +31,142 @@ import {
   Tag,
   FolderTree
 } from 'lucide-react';
+import { toast } from 'sonner';
 
-interface IntegrationData {
+// Integration from useIntegrations hook
+interface Integration {
   id: string;
   type: string;
-  name: string;
-  description: string;
-  category: string;
-  tags: string[];
-  lastSynced: string;
-  status: 'active' | 'inactive' | 'error';
-  insights: {
-    type: 'note' | 'action' | 'insight';
-    content: string;
-    importance: 'high' | 'medium' | 'low';
-    createdAt: string;
-  }[];
-  connections: {
-    id: string;
-    name: string;
-    type: string;
-    strength: number;
-  }[];
+  credentials: Record<string, any>;
+  settings: Record<string, any>;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  // Additional display properties
+  name?: string;
+  category?: string;
+  description?: string;
+  status?: 'active' | 'inactive' | 'error' | 'setup';
+  last_sync?: string | null;
 }
+
+// Define the IntegrationInsight type
+interface IntegrationInsight {
+  id: string;
+  content: string;
+  type: string;
+  importance: 'low' | 'medium' | 'high';
+  created_at: string;
+}
+
+// Define the IntegrationConnection type
+interface IntegrationConnection {
+  id: string;
+  source_id: string;
+  target_id: string;
+  type: string;
+  strength?: number;
+  metadata?: Record<string, any>;
+}
+
+// Define the IntegrationData type
+interface IntegrationData {
+  id: string;
+  name: string;
+  type: string;
+  connections: IntegrationConnection[];
+  insights: IntegrationInsight[];
+  metadata?: Record<string, any>;
+}
+
+type DatabaseIntegration = Database['public']['Tables']['integrations']['Row'];
 
 export const IntegrationOrganizer: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const [integrations, setIntegrations] = useState<IntegrationData[]>([]);
-  const [selectedIntegration, setSelectedIntegration] = useState<IntegrationData | null>(null);
+  const { showToast } = useToast();
+  const { 
+    integrations, 
+    isLoading, 
+    error, 
+    addIntegration, 
+    removeIntegration, 
+    updateIntegration, 
+    refreshIntegrations 
+  } = useIntegrations();
+  const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'list' | 'mindmap' | 'timeline'>('list');
 
   useEffect(() => {
-    fetchIntegrations();
-  }, []);
+    refreshIntegrations();
+  }, [refreshIntegrations]);
 
-  const fetchIntegrations = async () => {
+  const handleConnect = async (integrationId: string) => {
+    if (!user?.id) {
+      toast.error('You must be logged in to connect integrations');
+      return;
+    }
+
     try {
-      const response = await fetch('/api/integrations');
-      if (!response.ok) throw new Error('Failed to fetch integrations');
-      const data = await response.json();
-      setIntegrations(data);
+      const { data: integration, error } = await supabase
+        .from('integrations')
+        .select('*')
+        .eq('id', integrationId)
+        .single();
+
+      if (error) throw error;
+
+      const newIntegration = {
+        integration_id: integration.id,
+        type: integration.auth_type || 'oauth',
+        name: integration.name,
+        category: integration.category,
+        description: integration.description || '',
+        status: 'setup',
+        credentials: {},
+        settings: (integration.default_config as Record<string, any>) || {},
+        userId: user.id
+      };
+
+      await addIntegration(newIntegration);
+      toast.success('Integration connected successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load integrations',
-        variant: 'destructive'
-      });
+      console.error('Error connecting integration:', error);
+      toast.error('Failed to connect integration');
     }
   };
 
-  const addInsight = async (integrationId: string, insight: IntegrationData['insights'][0]) => {
+  const handleDisconnect = async (integrationId: string) => {
+    try {
+      await removeIntegration(integrationId);
+      toast.success('Integration disconnected successfully');
+    } catch (error) {
+      console.error('Error disconnecting integration:', error);
+      toast.error('Failed to disconnect integration');
+    }
+  };
+
+  const handleUpdateSettings = async (integrationId: string, settings: Record<string, any>) => {
+    try {
+      const integration = integrations.find(i => i.id === integrationId);
+      if (!integration) throw new Error('Integration not found');
+
+      const updatedIntegration = {
+        ...integration,
+        settings: { ...integration.settings, ...settings }
+      };
+
+      await updateIntegration(integrationId, updatedIntegration);
+      toast.success('Settings updated successfully');
+    } catch (error) {
+      console.error('Error updating settings:', error);
+      toast.error('Failed to update settings');
+    }
+  };
+
+  // This function would normally update the integrations in state
+  const addInsight = async (integrationId: string, insight: IntegrationInsight) => {
     try {
       const response = await fetch(`/api/integrations/${integrationId}/insights`, {
         method: 'POST',
@@ -91,22 +176,20 @@ export const IntegrationOrganizer: React.FC = () => {
 
       if (!response.ok) throw new Error('Failed to add insight');
 
-      setIntegrations(integrations.map(integration => 
-        integration.id === integrationId
-          ? { ...integration, insights: [...integration.insights, insight] }
-          : integration
-      ));
+      // In a real implementation, you would update the local state
+      // with the new insight after it's successfully added
+      refreshIntegrations();
 
-      toast({
+      showToast({
         title: 'Success',
         description: 'Insight added successfully',
-        variant: 'success'
+        type: 'success'
       });
     } catch (error) {
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to add insight',
-        variant: 'destructive'
+        type: 'error'
       });
     }
   };
@@ -118,10 +201,15 @@ export const IntegrationOrganizer: React.FC = () => {
       strength: calculateConnectionStrength(conn, integration)
     }));
 
-    return connections.sort((a, b) => b.strength - a.strength);
+    return connections.sort((a: IntegrationConnection, b: IntegrationConnection) => 
+      (b.strength || 0) - (a.strength || 0)
+    );
   };
 
-  const calculateConnectionStrength = (connection: IntegrationData['connections'][0], integration: IntegrationData) => {
+  const calculateConnectionStrength = (
+    connection: IntegrationConnection, 
+    integration: IntegrationData
+  ): number => {
     // Implement connection strength calculation logic
     // This could be based on:
     // - Frequency of interaction
@@ -131,7 +219,7 @@ export const IntegrationOrganizer: React.FC = () => {
     return Math.random(); // Placeholder
   };
 
-  const generateInsights = async (integration: IntegrationData) => {
+  const generateInsights = async (integration: IntegrationData): Promise<IntegrationInsight[]> => {
     // AI-powered insight generation
     const insights = await fetch('/api/ai/generate-insights', {
       method: 'POST',
@@ -140,6 +228,17 @@ export const IntegrationOrganizer: React.FC = () => {
     }).then(res => res.json());
 
     return insights;
+  };
+
+  // Helper function to get the display name or type for an integration
+  const getIntegrationDisplayName = (integration: Integration): string => {
+    return integration.name || integration.type || 'Unknown Integration';
+  };
+
+  // Helper function to format the date for display
+  const formatDate = (date: Date | string | undefined): string => {
+    if (!date) return 'Never';
+    return new Date(date).toLocaleString();
   };
 
   return (
@@ -170,7 +269,6 @@ export const IntegrationOrganizer: React.FC = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1"
-          icon={<Search className="w-4 h-4" />}
         />
         <select
           value={categoryFilter}
@@ -194,104 +292,80 @@ export const IntegrationOrganizer: React.FC = () => {
               <CardTitle>Your Integrations</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {integrations.map(integration => (
-                  <div
-                    key={integration.id}
-                    className="p-4 border rounded-lg hover:bg-accent cursor-pointer"
-                    onClick={() => setSelectedIntegration(integration)}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-medium">{integration.name}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {integration.description}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-muted-foreground">
-                          {integration.insights.length} insights
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {integration.connections.length} connections
-                        </span>
+              {isLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : error ? (
+                <div className="text-center text-red-500 p-4">
+                  {error.message}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {integrations.map(integration => (
+                    <div
+                      key={integration.id}
+                      className="p-4 border rounded-lg hover:bg-accent cursor-pointer"
+                      onClick={() => setSelectedIntegration(integration)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium">{getIntegrationDisplayName(integration)}</h3>
+                          <p className="text-sm text-muted-foreground">
+                            Last updated: {formatDate(integration.updatedAt)}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDisconnect(integration.id);
+                            }}
+                          >
+                            Disconnect
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {integration.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Insights Panel */}
+        {/* Settings Panel */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>AI Insights</CardTitle>
+              <CardTitle>Integration Settings</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {selectedIntegration?.insights.map((insight, index) => (
-                  <div
-                    key={index}
-                    className="p-3 border rounded-lg"
-                  >
-                    <div className="flex items-start space-x-2">
-                      {insight.type === 'note' && <FileText className="w-4 h-4 mt-1" />}
-                      {insight.type === 'action' && <AlertCircle className="w-4 h-4 mt-1" />}
-                      {insight.type === 'insight' && <Lightbulb className="w-4 h-4 mt-1" />}
-                      <div>
-                        <p className="text-sm">{insight.content}</p>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(insight.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
+              {selectedIntegration && (
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-medium">Status</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedIntegration.status || 'Unknown'}
+                    </p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Connections</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {selectedIntegration?.connections.map(connection => (
-                  <div
-                    key={connection.id}
-                    className="p-3 border rounded-lg"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <h4 className="font-medium">{connection.name}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {connection.type}
-                        </p>
-                      </div>
-                      <div className="w-24 h-2 bg-gray-200 rounded-full">
-                        <div
-                          className="h-2 bg-primary rounded-full"
-                          style={{ width: `${connection.strength * 100}%` }}
-                        />
-                      </div>
-                    </div>
+                  <div>
+                    <h3 className="font-medium">Last Synced</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedIntegration.last_sync ? new Date(selectedIntegration.last_sync).toLocaleString() : 'Never'}
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => handleUpdateSettings(selectedIntegration.id, {})}
+                  >
+                    Update Settings
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -302,7 +376,7 @@ export const IntegrationOrganizer: React.FC = () => {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-4xl">
             <CardHeader className="flex justify-between items-center">
-              <CardTitle>{selectedIntegration.name}</CardTitle>
+              <CardTitle>{getIntegrationDisplayName(selectedIntegration)}</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
@@ -315,87 +389,20 @@ export const IntegrationOrganizer: React.FC = () => {
               <Tabs defaultValue="overview">
                 <TabsList>
                   <TabsTrigger value="overview">Overview</TabsTrigger>
-                  <TabsTrigger value="insights">Insights</TabsTrigger>
-                  <TabsTrigger value="connections">Connections</TabsTrigger>
                   <TabsTrigger value="settings">Settings</TabsTrigger>
                 </TabsList>
                 <TabsContent value="overview" className="space-y-4">
                   <div>
                     <h3 className="font-medium">Description</h3>
                     <p className="text-muted-foreground">
-                      {selectedIntegration.description}
+                      {selectedIntegration.description || 'No description available'}
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium">Category</h3>
                     <p className="text-muted-foreground">
-                      {selectedIntegration.category}
+                      {selectedIntegration.category || 'Uncategorized'}
                     </p>
-                  </div>
-                  <div>
-                    <h3 className="font-medium">Tags</h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {selectedIntegration.tags.map(tag => (
-                        <span
-                          key={tag}
-                          className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </TabsContent>
-                <TabsContent value="insights">
-                  <div className="space-y-4">
-                    {selectedIntegration.insights.map((insight, index) => (
-                      <div
-                        key={index}
-                        className="p-4 border rounded-lg"
-                      >
-                        <div className="flex items-start space-x-2">
-                          {insight.type === 'note' && <FileText className="w-4 h-4 mt-1" />}
-                          {insight.type === 'action' && <AlertCircle className="w-4 h-4 mt-1" />}
-                          {insight.type === 'insight' && <Lightbulb className="w-4 h-4 mt-1" />}
-                          <div>
-                            <p>{insight.content}</p>
-                            <div className="flex items-center space-x-2 mt-2">
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(insight.createdAt).toLocaleDateString()}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Importance: {insight.importance}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </TabsContent>
-                <TabsContent value="connections">
-                  <div className="space-y-4">
-                    {selectedIntegration.connections.map(connection => (
-                      <div
-                        key={connection.id}
-                        className="p-4 border rounded-lg"
-                      >
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h4 className="font-medium">{connection.name}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {connection.type}
-                            </p>
-                          </div>
-                          <div className="w-32 h-2 bg-gray-200 rounded-full">
-                            <div
-                              className="h-2 bg-primary rounded-full"
-                              style={{ width: `${connection.strength * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
                   </div>
                 </TabsContent>
                 <TabsContent value="settings">
@@ -403,15 +410,22 @@ export const IntegrationOrganizer: React.FC = () => {
                     <div>
                       <h3 className="font-medium">Sync Settings</h3>
                       <p className="text-sm text-muted-foreground">
-                        Last synced: {new Date(selectedIntegration.lastSynced).toLocaleString()}
+                        Last synced: {selectedIntegration.last_sync ? new Date(selectedIntegration.last_sync).toLocaleString() : 'Never'}
                       </p>
                     </div>
                     <div>
                       <h3 className="font-medium">Status</h3>
                       <p className="text-sm text-muted-foreground">
-                        {selectedIntegration.status}
+                        {selectedIntegration.status || 'Unknown'}
                       </p>
                     </div>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => handleUpdateSettings(selectedIntegration.id, {})}
+                    >
+                      Update Settings
+                    </Button>
                   </div>
                 </TabsContent>
               </Tabs>

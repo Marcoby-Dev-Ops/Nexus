@@ -3,8 +3,7 @@ import PropTypes from 'prop-types';
 import { MessageSquare, X, Zap } from 'lucide-react';
 import { QuickChat } from './QuickChat';
 import { useNavigate } from 'react-router-dom';
-import { useOnboardingContext } from '../../contexts/OnboardingContext';
-import { useOnboarding } from '@/lib/useOnboarding';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * Floating Quick Chat Trigger Button
@@ -26,11 +25,11 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const navigate = useNavigate();
-  const { isOnboardingActive } = useOnboardingContext();
-  const { needsOnboarding } = useOnboarding();
+  const { user } = useAuth();
+  const onboardingCompleted = user?.onboardingCompleted ?? false;
 
-  // Hide during onboarding (manual or automatic)
-  if (isOnboardingActive || needsOnboarding) {
+  // Hide during onboarding
+  if (!onboardingCompleted) {
     return null;
   }
 

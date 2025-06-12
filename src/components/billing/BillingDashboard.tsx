@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { billingService } from '../../lib/services/billingService';
 import { quotaService } from '../../lib/services/quotaService';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '../../contexts/AuthContext';
 import type { BillingStatus, UsageBilling } from '../../lib/types/billing';
 import type { ChatQuotas, UsageTracking } from '../../lib/types/licensing';
 
@@ -24,7 +24,7 @@ interface BillingDashboardProps {
 }
 
 export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className }) => {
-  const { user } = useEnhancedUser();
+  const { user } = useAuth();
   const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
   const [quotaStatus, setQuotaStatus] = useState<ChatQuotas | null>(null);
   const [usageData, setUsageData] = useState<UsageTracking | null>(null);

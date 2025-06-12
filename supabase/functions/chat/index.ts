@@ -98,59 +98,60 @@ serve(async (req) => {
       throw new Error('Missing required environment variables');
     }
 
-    // Get the request body with enhanced context
-    const { 
-      message, 
-      conversationId, 
-      systemPrompt, 
-      contextualPrompt, 
-      metadata 
-    } = await req.json();
-    
-    // Input validation
-    if (!message || typeof message !== 'string') {
-      throw new Error('Message is required and must be a string');
-    }
-    
-    if (!conversationId || typeof conversationId !== 'string') {
-      throw new Error('ConversationId is required and must be a string');
-    }
-    
-    if (message.length > 4000) {
-      throw new Error('Message too long. Maximum 4000 characters allowed.');
-    }
-    
-    if (message.trim().length === 0) {
-      throw new Error('Message cannot be empty');
-    }
-    
-    if (systemPrompt && typeof systemPrompt !== 'string') {
-      throw new Error('SystemPrompt must be a string');
-    }
-    
-    if (contextualPrompt && typeof contextualPrompt !== 'string') {
-      throw new Error('ContextualPrompt must be a string');
-    }
-
-    // Process enhanced chat request
-
     // Create Supabase client
     const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Session tracking: upsert chat_sessions record if session_id present
+    if (metadata?.session_id && metadata.user_id) {
+      await supabaseClient.from('chat_sessions').upsert(
+        { session_id: metadata.session_id, user_id: metadata.user_id },
+        { onConflict: 'session_id' }
+      );
+    }
+
     // === RAG: Retrieve related knowledge documents ===
     // 1. Generate embedding for the incoming message via OpenAI
-    const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ model: 'text-embedding-ada-002', input: message }),
-    });
-    if (!embedRes.ok) throw new Error(`Embedding API error: ${embedRes.status}`);
-    const embedJson = await embedRes.json();
-    const embedding = embedJson.data?.[0]?.embedding;
-    if (!embedding) throw new Error('Failed to generate embedding');
+    // ----- Embedding Cache ---------------------------------------------------
+    // Compute SHA-256 checksum of the input text (lower-cased, trimmed)
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message.trim().toLowerCase());
+    const digest = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(digest));
+    const checksum = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+
+    // Try to reuse cached embedding first
+    let embedding: number[] | null = null;
+    const { data: cachedRow, error: cacheErr } = await supabaseClient
+      .from('ai_embedding_cache')
+      .select('embedding')
+      .eq('checksum', checksum)
+      .single();
+
+    if (!cacheErr && cachedRow?.embedding) {
+      embedding = cachedRow.embedding as unknown as number[];
+    }
+
+    // Cache miss → call OpenAI and store result
+    if (!embedding) {
+      const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ model: 'text-embedding-3-small', input: message }),
+      });
+      if (!embedRes.ok) throw new Error(`Embedding API error: ${embedRes.status}`);
+      const embedJson = await embedRes.json();
+      embedding = embedJson.data?.[0]?.embedding;
+      if (!embedding) throw new Error('Failed to generate embedding');
+
+      // Persist to cache (ignore errors)
+      await supabaseClient
+        .from('ai_embedding_cache')
+        .insert({ checksum, content: message, embedding })
+        .select('id');
+    }
 
     // 2. Query Supabase to find the top 5 similar documents (requires a 'match_documents' RPC in Postgres)
     const { data: docs, error: docsError } = await supabaseClient.rpc('match_documents', {
@@ -208,9 +209,10 @@ serve(async (req) => {
 
     // Call OpenAI with enhanced context
 
-    // Prepare OpenAI request with enhanced context
+    // Default to cost-efficient model; upgrade to `o3` only for final responses
+    const isFinalResponse = metadata?.conversation_stage === 'resolution';
     const openaiRequest = {
-      model: 'gpt-4',
+      model: isFinalResponse ? 'o3' : 'o3-mini-high',
       messages,
       temperature: 0.7,
       max_tokens: 1000,

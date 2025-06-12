@@ -4,7 +4,7 @@ declare global {
   // `var` is intentionally used here to attach the Prisma client instance to
   // the Node.js global object. This pattern prevents exhausting database
   // connections during hot-module reloads in development.
-  // eslint-disable-next-line no-var
+   
   var prisma: PrismaClient | undefined; // eslint-disable-line no-var
 }
 

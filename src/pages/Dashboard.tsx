@@ -14,7 +14,7 @@ import {
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import BusinessHealthScore from '../components/dashboard/BusinessHealthScore';
+import { BusinessHealthScore } from '../components/dashboard/BusinessHealthScore';
 
 /**
  * Dashboard - Overview page with key metrics and navigation

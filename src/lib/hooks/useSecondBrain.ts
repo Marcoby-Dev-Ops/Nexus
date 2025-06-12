@@ -44,37 +44,27 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
   const loadUserProfile = async () => {
     try {
-      // TODO: Replace with actual API call
-      const profile: UserProfile = {
-        id: 'user-1',
-        businessType: 'SaaS',
-        industry: 'Technology',
-        teamSize: 15,
-        role: 'CEO',
-        workingHours: {
-          timezone: 'America/New_York',
-          startTime: '09:00',
-          endTime: '18:00',
-          workDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
-        },
-        preferences: {
-          communicationStyle: 'detailed',
-          updateFrequency: 'daily',
-          focusAreas: ['revenue', 'team-performance', 'customer-satisfaction'],
-          dashboardLayout: {}
-        },
-        learningMetadata: {
-          onboardingCompleted: true,
-          lastActive: new Date().toISOString(),
-          sessionCount: 45,
-          averageSessionDuration: 25,
-          mostUsedFeatures: ['dashboard', 'analytics', 'integrations'],
-          skillLevel: 'intermediate'
-        }
-      };
-      setUserProfile(profile);
+      // Fetch the current authenticated user
+      const { data: { user }, error: userError } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
+      if (userError) throw userError;
+      if (!user) throw new Error('User not authenticated');
+
+      // Fetch the user profile from Supabase
+      const { data, error } = await import('@/lib/supabase').then(m => m.supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      );
+      if (error) throw error;
+      if (data) {
+        setUserProfile(data as UserProfile);
+      } else {
+        setUserProfile(null);
+      }
     } catch (error) {
       console.error('Failed to load user profile:', error);
+      setUserProfile(null);
     }
   };
 

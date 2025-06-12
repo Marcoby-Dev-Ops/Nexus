@@ -1,28 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Send, 
-  Copy, 
-  ThumbsUp, 
-  ThumbsDown, 
-  RefreshCw, 
-  Sparkles,
-  Code,
-  FileText,
-  Lightbulb,
-  Settings,
-  ChevronDown,
-  Mic,
-  Paperclip,
-  Plus,
-  MessageSquare
-} from 'lucide-react';
-import { useAuth } from '@/lib/auth';
-import { executiveAgent } from '@/lib/agentRegistry';
-import { useEnhancedChat } from '@/lib/hooks/useEnhancedChat';
-import { MessageBubble } from './MessageBubble';
-import { ChatInput } from './ChatInput';
+import { useAuth } from '@/contexts/AuthContext';
+import { Sparkles, FileText, Code, Lightbulb, MessageSquare, Send } from 'lucide-react';
+import { useAIChatStore, useActiveConversation, type AIConversation } from '@/lib/stores/useAIChatStore';
+import { VirtualizedMessageList } from './VirtualizedMessageList';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
 
 /**
  * Modern Executive Assistant inspired by ChatGPT and Claude interfaces
@@ -74,10 +58,10 @@ const WelcomeScreen: React.FC<{
           <Sparkles className="w-8 h-8 text-primary-foreground" />
         </div>
         <h1 className="text-2xl font-semibold text-foreground mb-2">
-          {userName ? `Back at it, ${userName}` : 'Welcome to Nexus AI'}
+          {userName ? `Back at it, ${userName}` : 'Welcome to Nex'}
         </h1>
         <p className="text-muted-foreground">
-          Your intelligent productivity companion
+          Your intelligent business companion
         </p>
       </div>
 
@@ -108,57 +92,36 @@ const WelcomeScreen: React.FC<{
   );
 };
 
-/**
- * Message actions toolbar (ChatGPT-inspired)
- */
-const MessageActions: React.FC<{
-  messageId: string;
-  content: string;
-  onCopy: (content: string) => void;
-  onRegenerate: (messageId: string) => void;
-  onReact: (messageId: string, type: 'like' | 'dislike') => void;
-}> = ({ messageId, content, onCopy, onRegenerate, onReact }) => {
-  const [showActions, setShowActions] = useState(false);
-
-  return (
-    <div 
-      className="opacity-0 group-hover:opacity-100 transition-opacity"
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      <div className="flex items-center gap-1 mt-2">
-        <button
-          onClick={() => onCopy(content)}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          title="Copy message"
+type MessageType = import('@/lib/stores/useAIChatStore').AIMessage;
+const MessageBubble: React.FC<{ msg: MessageType }> = React.memo(
+  ({ msg }) => {
+    const isUser = msg.role === 'user';
+    return (
+      <div className={`mb-4 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+        <div
+          className={`max-w-[80%] px-4 py-2 rounded-lg whitespace-pre-wrap break-words ${isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}
         >
-          <Copy className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => onReact(messageId, 'like')}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          title="Good response"
-        >
-          <ThumbsUp className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => onReact(messageId, 'dislike')}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          title="Poor response"
-        >
-          <ThumbsDown className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => onRegenerate(messageId)}
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-          title="Regenerate response"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+          {isUser ? (
+            msg.content
+          ) : (
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+              className="prose prose-sm dark:prose-invert max-w-none"
+              components={{
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                a: ({node, ...props}: any) => <a {...props} target="_blank" rel="noreferrer" />,
+              }}
+            >
+              {msg.content}
+            </ReactMarkdown>
+          )}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
+MessageBubble.displayName = 'MessageBubble';
 
 /**
  * Main Modern Executive Assistant Component
@@ -168,245 +131,140 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
   sessionId = '' 
 }) => {
   const { user } = useAuth();
-  const location = useLocation();
+  const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string>('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
+  const { sendMessage, loading, error, newConversation, setActiveConversation, loadOlderMessages, loadConversation } = useAIChatStore();
+  const conversation = useActiveConversation();
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const autoScrollRef = useRef(true);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
-  // Enhanced chat hook
-  const {
-    messages,
-    isLoading,
-    error,
-    streamingMessage,
-    sendMessage,
-    retryMessage,
-    editMessage,
-    deleteMessage,
-    reactToMessage,
-    markAsRead
-  } = useEnhancedChat({
-    conversationId,
-    enableStreaming: false, // Temporarily disabled until Edge Function supports streaming
-    enableReactions: true,
-    enableTypingIndicators: true
-  });
+  const conv = conversation as AIConversation | undefined;
+  const messagesLength = conv?.messages ? conv.messages.length : 0;
+  const isConversationEmpty = !conversation || messagesLength === 0;
 
-  // Auto-scroll to bottom
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+  // If a sessionId prop is passed, initialise that conversation
+  useEffect(() => {
+    if (sessionId && sessionId !== conversationId) {
+      setConversationId(sessionId);
+      setActiveConversation(sessionId);
+      loadConversation(sessionId).catch(() => {/* ignore */});
+    }
+  }, [sessionId, conversationId, setActiveConversation, loadConversation]);
+
+  // Auto-create a new conversation when none provided
+  useEffect(() => {
+    (async () => {
+      if (!sessionId && !conversationId && user?.id) {
+        const id = await newConversation('Executive Assistant');
+        setConversationId(id);
+        setActiveConversation(id);
+      }
+    })();
+  }, [sessionId, user?.id, conversationId, newConversation, setActiveConversation]);
+
+  const handleSend = useCallback(async () => {
+    if (!input.trim() || !conversationId || !user?.id) return;
+    await sendMessage(conversationId, input, user.id);
+    setInput('');
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
+  }, [input, conversationId, user?.id, sendMessage]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, streamingMessage, scrollToBottom]);
+    if (autoScrollRef.current && conversation && conversation.messages.length) {
+      chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [conversation?.messages?.length]);
 
-  // Initialize conversation using your existing chat system
+  // Global keyboard shortcuts
   useEffect(() => {
-    const initConversation = async () => {
-      if (!user || conversationId) return;
+    const handler = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const kKey = isMac ? e.metaKey && e.key.toLowerCase() === 'k' : e.ctrlKey && e.key.toLowerCase() === 'k';
+      if (kKey) {
+        e.preventDefault();
+        textareaRef.current?.focus();
+      }
 
-      try {
-        // Import your existing chat history service
-        const { chatHistory } = await import('@/lib/supabase');
-        const { executiveAgent } = await import('@/lib/agentRegistry');
-        
-        // Try to get recent conversations first
-        const recentConversations = await chatHistory.getRecentConversations(1);
-        
-        if (recentConversations && recentConversations.length > 0 && !sessionId) {
-          // Use the most recent conversation if no specific session is provided
-          setConversationId(recentConversations[0].id);
-        } else {
-          // Create a new conversation
-          const conversation = await chatHistory.createConversation(
-            'New Conversation',
-            executiveAgent.id,
-            { 
-              page: location.pathname,
-              user_id: user.id,
-              session_id: sessionId 
-            }
-          );
-          setConversationId(conversation.id);
-          
-          // Add system message
-          const systemMessage = {
-            role: 'system' as const,
-            content: `You are Nexus, an intelligent AI assistant for a Microsoft 365-like productivity platform. You help users navigate their workspace, manage tasks, analyze data, and boost productivity. Be helpful, concise, and professional.`,
-            metadata: { agent_id: executiveAgent.id }
-          };
-          await chatHistory.addMessage(conversation.id, systemMessage);
-        }
-      } catch (err) {
-        console.error('Failed to initialize conversation:', err);
+      const sendCombo = (isMac ? e.metaKey : e.ctrlKey) && e.shiftKey && e.key === 'Enter';
+      if (sendCombo) {
+        e.preventDefault();
+        handleSend();
       }
     };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleSend]);
 
-    initConversation();
-  }, [user, conversationId, sessionId, location.pathname]);
-
-  // Handle quick actions from welcome screen
-  const handleQuickAction = (prompt: string) => {
-    sendMessage(prompt);
-  };
-
-  // Handle message copy
-  const handleCopy = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content);
-      // Could add a toast notification here
-    } catch (err) {
-      console.error('Failed to copy:', err);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
-  // Handle message regeneration
-  const handleRegenerate = (messageId: string) => {
-    retryMessage(messageId);
+  const handleQuickAction = (prompt: string) => {
+    setInput(prompt);
   };
 
-  // Handle reactions
-  const handleReact = (messageId: string, type: 'like' | 'dislike') => {
-    const emoji = type === 'like' ? '👍' : '👎';
-    reactToMessage(messageId, emoji);
-  };
-
-  // Filter out system messages for display
-  const displayMessages = messages.filter(msg => msg.role !== 'system');
-  const hasMessages = displayMessages.length > 0 || streamingMessage;
+  if (!conversation) {
+    return <WelcomeScreen userName={user?.name} onQuickAction={handleQuickAction} />;
+  }
 
   return (
-    <div className="flex flex-col h-full bg-background">
-      {/* Header (inspired by modern chat interfaces) */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-            <Sparkles className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-foreground">Nexus AI</h2>
-            <p className="text-xs text-muted-foreground">
-              {isLoading ? 'Thinking...' : 'Ready to help'}
-            </p>
-          </div>
-        </div>
-        
-        {/* Model indicator (Claude-inspired) */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">GPT-4</span>
-          <div className="w-2 h-2 bg-success rounded-full" />
-        </div>
-      </div>
-
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto">
-        {!hasMessages ? (
-          <WelcomeScreen 
-            userName={user?.user_metadata?.full_name || user?.email?.split('@')[0]}
-            onQuickAction={handleQuickAction}
-          />
+    <div className="flex flex-col h-full">
+      {/* Chat messages */}
+      <div
+        ref={chatContainerRef}
+        className="flex-1 min-h-0 overflow-hidden p-6"
+      >
+        {isConversationEmpty ? (
+          <WelcomeScreen userName={user?.name} onQuickAction={handleQuickAction} />
         ) : (
-          <div className="max-w-4xl mx-auto px-4 py-6">
-            {/* Message history */}
-            <div className="space-y-6">
-              {displayMessages.map((message) => (
-                <div key={message.id} className="group">
-                  <MessageBubble
-                    message={message}
-                    isCurrentUser={message.role === 'user'}
-                    showAvatar={true}
-                    showTimestamp={true}
-                    onEdit={editMessage}
-                    onDelete={deleteMessage}
-                    onRetry={retryMessage}
-                    onReact={reactToMessage}
-                    onCopy={handleCopy}
-                  />
-                  
-                  {/* Message actions (only for assistant messages) */}
-                  {message.role === 'assistant' && (
-                    <MessageActions
-                      messageId={message.id}
-                      content={message.content}
-                      onCopy={handleCopy}
-                      onRegenerate={handleRegenerate}
-                      onReact={handleReact}
-                    />
-                  )}
-                </div>
-              ))}
-
-              {/* Streaming message */}
-              {streamingMessage && (
-                <div className="group">
-                  <MessageBubble
-                    message={{
-                      ...streamingMessage,
-                      timestamp: new Date(),
-                      status: 'delivered',
-                      type: 'streaming',
-                      metadata: { isComplete: streamingMessage.isComplete }
-                    }}
-                    isCurrentUser={false}
-                    showAvatar={true}
-                    showTimestamp={false}
-                  />
-                </div>
-              )}
-
-              {/* Loading indicator */}
-              {isLoading && !streamingMessage && (
-                <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                    <Sparkles className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                  <div className="bg-muted rounded-2xl px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      {[0, 1, 2].map((i) => (
-                        <div
-                          key={i}
-                          className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
-                          style={{ animationDelay: `${i * 150}ms` }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Error display */}
-            {error && (
-              <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                <p className="text-sm text-destructive">{error}</p>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
+          <VirtualizedMessageList
+            messages={conversation!.messages}
+            renderRow={(msg) => <MessageBubble key={msg.id} msg={msg} />}
+            followOutput={autoScrollRef.current}
+            onLoadMore={async () => {
+              if (loadingOlder) return;
+              setLoadingOlder(true);
+              await loadOlderMessages(conversation!.id);
+              setLoadingOlder(false);
+            }}
+            loadingMore={loadingOlder}
+          />
         )}
       </div>
-
-      {/* Input area (modern, ChatGPT/Claude inspired) */}
-      <div className="border-t border-border bg-background/95 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto">
-          <ChatInput
-            onSendMessage={sendMessage}
-            placeholder={hasMessages ? "Message Nexus AI..." : "How can I help you today?"}
-            disabled={isLoading}
-            maxLength={4000}
-            enableVoiceInput={true}
-            enableFileUpload={true}
-            className="border-none bg-transparent"
-          />
-        </div>
-
-        {/* Footer disclaimer (ChatGPT-inspired) */}
-        <div className="text-center py-2 text-xs text-muted-foreground">
-          Nexus AI can make mistakes. Check important info.
-        </div>
+      {/* Input */}
+      <div className="p-4 border-t border-border flex items-center gap-2 bg-background">
+        <textarea
+          ref={textareaRef}
+          value={input}
+          onInput={(e) => {
+            const el = e.currentTarget;
+            el.style.height = 'auto';
+            el.style.height = `${el.scrollHeight}px`;
+          }}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type your message..."
+          className="flex-1 resize-none rounded-lg border border-border p-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+          rows={1}
+          disabled={loading}
+        />
+        <button
+          onClick={handleSend}
+          disabled={loading || !input.trim()}
+          className="ml-2 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          <Send className="w-5 h-5" />
+        </button>
       </div>
+      {/* Error Toast (optional, can be handled globally) */}
+      {error && <div className="p-2 text-destructive text-xs">{error}</div>}
     </div>
   );
 };

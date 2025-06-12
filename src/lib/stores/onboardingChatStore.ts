@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import type { StoreApi, UseBoundStore } from 'zustand';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
 import type { EnhancedUser } from '@/lib/types/userProfile';
 
 interface OnboardingMessage {

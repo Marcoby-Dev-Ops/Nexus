@@ -20,17 +20,13 @@ import {
   Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
-import { useOnboarding } from '@/lib/useOnboarding';
-import { enhancedChatService } from '@/lib/chatContext';
-import { executiveAgent } from '@/lib/agentRegistry';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOnboardingChatStore } from '@/lib/stores/onboardingChatStore';
 import { chatHistory } from '@/lib/supabase';
-import { useAuth } from '@/lib/auth';
-import type { ChatContextMetadata } from '@/lib/chatContext';
 import { upsertOnboardingProfile } from '@/lib/services/profileService';
 
 // Define a structured user profile for onboarding
-interface UserOnboardingProfile {
+export interface UserOnboardingProfile {
   company: {
     name?: string;
     industry?: string;
@@ -89,40 +85,11 @@ interface OnboardingStep {
   requiredProfileFields: (keyof UserOnboardingProfile['completedSections'])[];
 }
 
-// Add this interface after the existing interfaces
-interface AIResponseWithTools {
-  userMessage: {
-    content: string;
-    conversation_id: string;
-    created_at: string | null;
-    id: string;
-    metadata: any;
-    role: string;
-    user_id: string;
-  };
-  assistantMessage: {
-    content: string;
-    conversation_id: string;
-    id: string;
-    metadata: any;
-    role: string;
-    user_id: string;
-  };
-  context: ChatContextMetadata;
-  toolCalls?: Array<{
-    name: string;
-    arguments: Record<string, any>;
-  }>;
-}
-
 export const OnboardingChatAI: React.FC = () => {
-  const { user } = useEnhancedUser();
-  const { user: authUser } = useAuth();
-  const { completeOnboarding } = useOnboarding();
+  const { user, completeOnboarding } = useAuth();
+  const { messages, isTyping, initialize, addMessage, setIsTyping } = useOnboardingChatStore();
   
   // UI State
-  const [messages, setMessages] = useState<OnboardingMessage[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [userInput, setUserInput] = useState('');
   
@@ -152,6 +119,35 @@ export const OnboardingChatAI: React.FC = () => {
   const generateUniqueMessageId = (): string => {
     messageIdCounterRef.current += 1;
     return `${Date.now()}-${messageIdCounterRef.current}`;
+  };
+
+  // --------------------------------------------------
+  // Helper utilities (must be declared before sendAIMessage)
+  // --------------------------------------------------
+
+  /**
+   * Return an array of profile section keys that still need data.
+   */
+  const getNextEmptyFields = (): (keyof UserOnboardingProfile['completedSections'])[] => {
+    return (Object.keys(userProfile.completedSections) as Array<keyof UserOnboardingProfile['completedSections']>)
+      .filter((key) => !userProfile.completedSections[key]);
+  };
+
+  /**
+   * Merge incoming updates from the AI into the existing local profile and re-validate completion status.
+   */
+  const updateUserProfile = (updates: Partial<UserOnboardingProfile>) => {
+    setUserProfile((prev) => {
+      const merged: UserOnboardingProfile = {
+        ...prev,
+        company: { ...prev.company, ...updates.company },
+        user: { ...prev.user, ...updates.user },
+        goals: { ...prev.goals, ...updates.goals },
+        preferences: { ...prev.preferences, ...updates.preferences },
+        completedSections: { ...prev.completedSections },
+      };
+      return checkSectionCompletion(merged);
+    });
   };
 
   const onboardingSteps: OnboardingStep[] = [
@@ -270,11 +266,11 @@ export const OnboardingChatAI: React.FC = () => {
   // Initialize AI conversation
   useEffect(() => {
     const initializeAIConversation = async () => {
-      if (!authUser || isInitialized) return;
+      if (!user || isInitialized) return;
 
       try {
         // Generate session ID
-        const newSessionId = `onboarding-${authUser.id}-${Date.now()}`;
+        const newSessionId = `onboarding-${user.id}-${Date.now()}`;
 
         // Create conversation for onboarding
         const conversation = await chatHistory.createConversation(
@@ -282,7 +278,7 @@ export const OnboardingChatAI: React.FC = () => {
           'executive',
           { 
             page: '/onboarding',
-            user_id: authUser.id,
+            user_id: user.id,
             session_type: 'onboarding',
             onboarding_step: 0
           }
@@ -310,7 +306,7 @@ export const OnboardingChatAI: React.FC = () => {
     };
 
     initializeAIConversation();
-  }, [authUser?.id]); // Only depend on authUser.id to prevent re-initialization
+  }, [user?.id]); // Only depend on user.id to prevent re-initialization
 
   // Update the initial greeting to be more action-oriented and clarify the goal
   const sendInitialGreeting = async (convId: string, sessId: string) => {
@@ -358,80 +354,10 @@ What's your company name and what role do you play?`;
     }
   };
 
-  const addMessage = (message: Omit<OnboardingMessage, 'id' | 'timestamp'>) => {
-    const newMessage: OnboardingMessage = {
-      ...message,
-      id: generateUniqueMessageId(),
-      timestamp: new Date()
-    };
-    
-    // If the message contains profile updates, apply them
-    if (message.metadata?.profileUpdates) {
-      updateUserProfile(message.metadata.profileUpdates);
-    }
-    
-    setMessages(prev => [...prev, newMessage]);
-  };
-
-  // Update the user profile with new information
-  const updateUserProfile = (updates: Partial<UserOnboardingProfile>) => {
-    setUserProfile(prevProfile => {
-      const updatedProfile = {
-        company: { ...prevProfile.company, ...updates.company },
-        user: { ...prevProfile.user, ...updates.user },
-        goals: { ...prevProfile.goals, ...updates.goals },
-        preferences: { ...prevProfile.preferences, ...updates.preferences },
-        completedSections: { ...prevProfile.completedSections }
-      };
-      
-      // Check which sections are now complete
-      return checkSectionCompletion(updatedProfile);
-    });
-  };
-
-  // Get the next empty fields that need to be filled in the profile
-  const getNextEmptyFields = (): string[] => {
-    const emptyFields: string[] = [];
-    
-    // Company fields
-    if (!userProfile.company.name) emptyFields.push('company.name');
-    if (!userProfile.company.industry) emptyFields.push('company.industry');
-    if (!userProfile.company.description) emptyFields.push('company.description');
-    
-    // Only ask for these if we have the basics
-    if (userProfile.company.name && !userProfile.company.size) {
-      emptyFields.push('company.size');
-    }
-    
-    // User fields - only ask if company is mostly complete
-    if (userProfile.completedSections.company) {
-      if (!userProfile.user.role) emptyFields.push('user.role');
-      if (!userProfile.user.responsibilities) emptyFields.push('user.responsibilities');
-      if (!userProfile.user.experience) emptyFields.push('user.experience');
-    }
-    
-    // Goals - only ask if user info is mostly complete
-    if (userProfile.completedSections.company && userProfile.user.role) {
-      if (!userProfile.goals.businessChallenges) emptyFields.push('goals.businessChallenges');
-      if (!userProfile.goals.shortTerm) emptyFields.push('goals.shortTerm');
-    }
-    
-    // Preferences - ask last
-    if (userProfile.completedSections.company && 
-        userProfile.completedSections.user && 
-        userProfile.goals.businessChallenges) {
-      if (!userProfile.preferences.communicationStyle) {
-        emptyFields.push('preferences.communicationStyle');
-      }
-    }
-    
-    return emptyFields;
-  };
-
   const sendAIMessage = async (userMessage: string) => {
     // Ensure we have required data
-    if (!conversationId || !sessionId || !authUser) {
-      console.error('Missing required data for AI message', { conversationId, sessionId, authUser: !!authUser });
+    if (!conversationId || !sessionId || !user) {
+      console.error('Missing required data for AI message', { conversationId, sessionId, user: !!user });
       addMessage({
         role: 'assistant',
         content: "I'm still setting up our conversation. Please wait a moment and try again.",
@@ -452,7 +378,6 @@ What's your company name and what role do you play?`;
 
       // Create enhanced context for onboarding
       const currentOnboardingStep = steps[currentStep];
-      const nextEmptyFields = getNextEmptyFields();
       
       // Format the profile for the AI to understand what we already know
       const profileJson = JSON.stringify(userProfile, null, 2);
@@ -472,7 +397,7 @@ CURRENT TASK: ${currentOnboardingStep?.description}.
 
 IMPORTANT - INFORMATION EXTRACTION:
 - As the user provides information, extract it to fill their profile.
-- Look for any information that fills the following fields we still need: ${nextEmptyFields.join(', ')}
+- Look for any information that fills the following fields we still need: ${getNextEmptyFields().join(', ')}
 - After extracting information, you should update their profile with what you've learned.
 - Never ask for information they've already provided.
 - If they provide information for future steps, collect it, update their profile, and continue naturally.
@@ -490,19 +415,32 @@ To help me track what you've learned, please include a structured JSON block at 
 \`\`\`
 Only include fields that you were able to extract from the user's message.`;
 
-      // Use enhanced chat service with executive agent
-      const result = await enhancedChatService.sendMessageWithContext(
-        conversationId,
-        `${userMessage}\n\n${onboardingContext}`,
-        executiveAgent,
-        sessionId
-      );
+      // Call the new Edge Function directly instead of the removed chat context
+      const response = await fetch('/functions/v1/ai_chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `${userMessage}\n\n${onboardingContext}`,
+          conversationId,
+          metadata: {
+            userId: user.id,
+            sessionId,
+            step: currentOnboardingStep?.id,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('AI service error');
+      }
+
+      const data = await response.json();
+      const content: string = data.content || '';
 
       // Extract profile updates from AI response
       const profileUpdates: Partial<UserOnboardingProfile> = {};
       
       // Try to extract JSON from the AI's response
-      const content = result.assistantMessage.content;
       const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
       
       if (jsonMatch && jsonMatch[1]) {
@@ -563,8 +501,7 @@ Only include fields that you were able to extract from the user's message.`;
         type: 'message',
         metadata: {
           step: currentOnboardingStep?.id,
-          emotion: 'friendly',
-          profileUpdates: Object.keys(profileUpdates).length > 0 ? profileUpdates : undefined
+          emotion: 'friendly'
         }
       });
       
@@ -616,12 +553,14 @@ Only include fields that you were able to extract from the user's message.`;
       
       // Persist onboarding profile, then complete
       setTimeout(async () => {
-        try {
-          await upsertOnboardingProfile(userProfile, authUser.id);
-        } catch (error) {
-          console.error('Failed to persist onboarding profile:', error);
-        } finally {
-          completeOnboarding();
+        if (user) {
+          try {
+            await upsertOnboardingProfile(userProfile, user.id);
+          } catch (error) {
+            console.error('Failed to persist onboarding profile:', error);
+          } finally {
+            completeOnboarding();
+          }
         }
       }, 3000);
     }
@@ -648,7 +587,7 @@ Only include fields that you were able to extract from the user's message.`;
     }
   };
 
-  if (!authUser) {
+  if (!user) {
     return (
       <div className="h-full flex items-center justify-center bg-background">
         <div className="text-center">

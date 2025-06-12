@@ -17,7 +17,7 @@ import {
   BarChart3,
   Sparkles
 } from 'lucide-react';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface BusinessContextData {
   business_model: string;
@@ -41,7 +41,8 @@ interface BusinessContextStepProps {
 }
 
 export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext, onBack, enrichedData }) => {
-  const { user, updateCompany } = useEnhancedUser();
+  const { user, updateCompany } = useAuth();
+  const company = user?.company;
   const [businessData, setBusinessData] = useState<BusinessContextData>({
     business_model: '',
     revenue_stage: '',
@@ -111,7 +112,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
   const handleSubmit = async () => {
     // Update company information with business context
     try {
-      if (user?.profile?.company_id) {
+      if (user?.company_id) {
         await updateCompany({
           settings: {
             business_model: businessData.business_model,

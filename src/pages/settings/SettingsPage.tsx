@@ -2,7 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Settings } from 'lucide-react';
 import { SettingsLayout } from '../../components/settings/SettingsLayout';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * SettingsPage - Main settings page wrapper
@@ -11,7 +11,7 @@ import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
  * via React Router's Outlet.
  */
 const SettingsPage: React.FC = () => {
-  const { user } = useEnhancedUser();
+  const { user } = useAuth();
   const isAdmin = user?.role === 'admin' || user?.role === 'owner';
   
   return (

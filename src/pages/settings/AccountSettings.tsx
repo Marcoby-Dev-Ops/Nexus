@@ -6,7 +6,7 @@ import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { Label } from '../../components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Separator } from '../../components/ui/Separator';
 
 /**
@@ -15,7 +15,7 @@ import { Separator } from '../../components/ui/Separator';
  * Allows users to view and update their account information
  */
 const AccountSettings: React.FC = () => {
-  const { user } = useEnhancedUser();
+  const { user } = useAuth();
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -79,6 +79,7 @@ module.exports = {
   globals: {
     'ts-jest': {
       useESM: true,
+      diagnostics: false,
       tsconfig: {
         jsx: 'react-jsx',
         esModuleInterop: true,

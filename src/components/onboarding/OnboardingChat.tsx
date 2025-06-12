@@ -21,9 +21,8 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingChatStore } from '@/lib/stores/onboardingChatStore';
-import { useAuth } from '@/lib/auth';
 
 interface OnboardingMessage {
   id: string;
@@ -49,9 +48,8 @@ interface OnboardingStep {
 
 export const OnboardingChat: React.FC = () => {
   console.log('[OnboardingChat] Component rendered.');
-  const { user, completeOnboarding } = useEnhancedUser();
+  const { user, completeOnboarding } = useAuth();
   const { messages, isTyping, initialize, addMessage, setIsTyping } = useOnboardingChatStore();
-  const { user: authUser } = useAuth();
   
   const [currentStep, setCurrentStep] = useState(0);
   const [collectedData, setCollectedData] = useState<Record<string, any>>({});

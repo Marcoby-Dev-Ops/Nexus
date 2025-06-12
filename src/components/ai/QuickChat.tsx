@@ -9,9 +9,9 @@ import {
   MessageSquare,
   Zap
 } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { enhancedChatService } from '@/lib/chatContext';
+import { useAIChatStore, useActiveConversation } from '@/lib/stores/useAIChatStore';
 import { executiveAgent } from '@/lib/agentRegistry';
 
 /**
@@ -28,7 +28,7 @@ interface QuickChatProps {
  * Compact message bubble for sidebar
  */
 const CompactMessage: React.FC<{
-  message: { role: 'user' | 'assistant'; content: string; timestamp: Date };
+  message: { role: 'user' | 'assistant'; content: string };
   isUser: boolean;
 }> = ({ message, isUser }) => (
   <div className={`flex gap-2 mb-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -83,24 +83,30 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
   onClose, 
   onExpandToFullChat 
 }) => {
-  const [messages, setMessages] = useState<Array<{
-    role: 'user' | 'assistant';
-    content: string;
-    timestamp: Date;
-  }>>([]);
   const [input, setInput] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { sendMessage, loading, error, newConversation, setActiveConversation } = useAIChatStore();
+  const [conversationId, setConversationId] = useState<string>('');
+  const conversation = useActiveConversation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom
+  useEffect(() => {
+    (async () => {
+      if (!conversationId && user?.id) {
+        // Use a stable quick chat conversation per user session
+        const id = await newConversation('Quick Chat');
+        setConversationId(id);
+        setActiveConversation(id);
+      }
+    })();
+  }, [user?.id, conversationId, newConversation, setActiveConversation]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [conversation?.messages.length]);
 
-  // Auto-resize input
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
@@ -109,66 +115,9 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
   }, [input]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = {
-      role: 'user' as const,
-      content: input.trim(),
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    if (!input.trim() || !conversationId || !user?.id) return;
+    await sendMessage(conversationId, input, user.id);
     setInput('');
-    setIsLoading(true);
-
-    try {
-      // Check if user is authenticated
-      if (!user?.id) {
-        throw new Error('User not authenticated');
-      }
-
-      // Create a temporary conversation ID for quick chat
-      const quickConversationId = `quick-${user.id}-${Date.now()}`;
-      
-      // Send message using enhanced chat service
-      const result = await enhancedChatService.sendMessageWithContext(
-        quickConversationId,
-        userMessage.content,
-        executiveAgent,
-        `quick-session-${Date.now()}`
-      );
-
-      if (result?.assistantMessage?.content) {
-        const aiMessage = {
-          role: 'assistant' as const,
-          content: result.assistantMessage.content,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      } else {
-        // Fallback response
-        const aiMessage = {
-          role: 'assistant' as const,
-          content: `I can help you with that! For more detailed assistance, consider using the full chat experience.`,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, aiMessage]);
-      }
-    } catch (error) {
-      console.error('Quick chat error:', error);
-      
-      // Fallback on error
-      const errorMessage = {
-        role: 'assistant' as const,
-        content: error instanceof Error && error.message.includes('not authenticated')
-          ? `Please sign in to use the chat feature.`
-          : `I'm having trouble connecting right now. Try the full chat for better assistance.`,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -183,10 +132,9 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
   };
 
   const handleExpandToFullChat = () => {
-    // Navigate to full chat page and transfer context
     navigate('/chat', { 
       state: { 
-        quickChatHistory: messages,
+        quickChatHistory: conversation?.messages || [],
         initialPrompt: input 
       } 
     });
@@ -198,115 +146,49 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
   return (
     <div className="fixed right-4 bottom-4 w-80 h-96 bg-background border border-border rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
+      <div className="flex items-center justify-between p-4 border-b border-border bg-background">
         <div className="flex items-center gap-2">
-          <div className="w-5 h-5 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
-            <Zap className="w-3 h-3 text-primary-foreground" />
-          </div>
-          <span className="text-sm font-medium">Quick Chat</span>
+          <Sparkles className="w-5 h-5 text-primary" />
+          <span className="font-semibold text-foreground">Quick Chat</span>
         </div>
-        
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleExpandToFullChat}
-            className="p-1 rounded-md hover:bg-muted transition-colors"
-            title="Open full chat"
-          >
+        <div className="flex items-center gap-2">
+          <button onClick={onExpandToFullChat} title="Expand to full chat" className="p-2 rounded hover:bg-muted transition-colors">
             <Maximize2 className="w-4 h-4" />
           </button>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-md hover:bg-muted transition-colors"
-            title="Close chat"
-          >
+          <button onClick={onClose} title="Close" className="p-2 rounded hover:bg-muted transition-colors">
             <X className="w-4 h-4" />
           </button>
         </div>
       </div>
-
-      {/* Quick Actions (when no messages) */}
-      {messages.length === 0 && (
-        <QuickActions onAction={handleQuickAction} />
-      )}
-
+      <QuickActions onAction={handleQuickAction} />
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 ? (
-          <div className="text-center py-6">
-            <Sparkles className="w-8 h-8 mx-auto text-muted-foreground mb-2" />
-            <p className="text-xs text-muted-foreground">
-              Ask me anything or use quick actions above
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {messages.map((message, index) => (
-              <CompactMessage
-                key={index}
-                message={message}
-                isUser={message.role === 'user'}
-              />
-            ))}
-            
-            {isLoading && (
-              <div className="flex gap-2 mb-3">
-                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">
-                  AI
-                </div>
-                <div className="bg-muted rounded-lg p-2 mr-2">
-                  <div className="flex items-center gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="w-1 h-1 bg-muted-foreground/50 rounded-full animate-bounce"
-                        style={{ animationDelay: `${i * 150}ms` }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
-        )}
+        {conversation?.messages.map((msg, idx) => (
+          <CompactMessage key={msg.id} message={msg} isUser={msg.role === 'user'} />
+        ))}
+        <div ref={messagesEndRef} />
       </div>
-
       {/* Input */}
-      <div className="border-t border-border p-4">
-        <div className="flex items-end gap-2 bg-muted/50 rounded-lg p-2">
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Ask a quick question..."
-            className="flex-1 bg-transparent resize-none border-none outline-none text-sm min-h-[20px] max-h-[60px]"
-            rows={1}
-          />
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isLoading}
-            className={`p-1 rounded-md transition-colors ${
-              input.trim() && !isLoading
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'bg-muted text-muted-foreground'
-            }`}
-          >
-            <Send className="w-3 h-3" />
-          </button>
-        </div>
-        
-        {/* Expand hint */}
-        <div className="text-center mt-2">
-          <button
-            onClick={handleExpandToFullChat}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Need more help? Open full chat →
-          </button>
-        </div>
+      <div className="p-2 border-t border-border flex items-center gap-2 bg-background">
+        <textarea
+          ref={inputRef}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Type your message..."
+          className="flex-1 resize-none rounded-lg border border-border p-2 text-xs bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+          rows={1}
+          disabled={loading}
+        />
+        <button
+          onClick={handleSend}
+          disabled={loading || !input.trim()}
+          className="ml-2 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          <Send className="w-4 h-4" />
+        </button>
       </div>
+      {error && <div className="p-2 text-destructive text-xs">{error}</div>}
     </div>
   );
 };

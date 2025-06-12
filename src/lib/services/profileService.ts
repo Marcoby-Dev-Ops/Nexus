@@ -29,7 +29,7 @@ export async function upsertOnboardingProfile(
   const { data: userProfile, error: upError } = await supabase
     .from('user_profiles')
     .upsert({
-      user_id: userId,
+      id: userId,
       company_id: company.id,
       role: profile.user.role,
       updated_at: new Date().toISOString()

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Brain, Lightbulb, Target, BookOpen, Tag } from 'lucide-react';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -74,7 +74,13 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       setTags('');
       setIsOpen(false);
       
-      onThoughtSaved?.(thoughtData as PersonalThought);
+      const savedThought: PersonalThought = {
+        content: thoughtData.content,
+        category: thoughtData.category,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        businessContext: currentContext,
+      };
+      onThoughtSaved?.(savedThought);
       
       console.log('Personal thought saved with business context:', currentContext);
     } catch (error) {

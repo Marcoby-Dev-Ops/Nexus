@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
-import { useEnhancedUser } from '../../lib/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '../ui/Progress';
 import Tooltip from '../ui/Tooltip';
 import { Info } from 'lucide-react';
@@ -25,7 +25,8 @@ interface BusinessSnapshotStepProps {
 }
 
 export const BusinessSnapshotStep: React.FC<BusinessSnapshotStepProps> = ({ onNext, onBack }) => {
-  const { company, updateCompany } = useEnhancedUser();
+  const { user, updateCompany } = useAuth();
+  const company = user?.company;
 
   const [snapshot, setSnapshot] = useState<SnapshotData>({
     mrr: null,

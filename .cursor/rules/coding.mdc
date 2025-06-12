@@ -3,82 +3,96 @@ description:
 globs: 
 alwaysApply: true
 ---
-# .cursor-config
-# Nexus – React + TypeScript (Strict) Guidelines
-# -------------------------------------------------------------
-metadata:
-  owner: marcoby
-  project: nexus
-  version: 1.1.1
-  description: >
-    Shared coding standards for all Nexus repos. Optimized for strict
-    TypeScript, shadcn/ui + Tailwind, Next.js App Router, and MCP tools.
+# Cursor House Rules – Marcoby Nexus
 
-enforcement:
-  preCommit:
-    # Block commit if either check fails
-    - cmd: npm run type-check           # tsc --noEmit
-    - cmd: npm run test:ci              # jest + RTL
-  prePush:
-    - cmd: npm run lint
-    - cmd: npm run format:check
+> Keep this file short, specific, and **binding**; every AI response should obey it.
 
-typescript:
-  compilerOptions:
-    strict: true
-    exactOptionalPropertyTypes: true
-    noUncheckedIndexedAccess: true
-    noPropertyAccessFromIndexSignature: true
-    paths:
-      "@domains/*": ["src/domains/*"]
-      "@shared/*":  ["src/shared/*"]
-  lintRules:
-    "@typescript-eslint/no-non-null-assertion": "error"
-    "@typescript-eslint/consistent-type-imports": ["error", { "prefer": "type-imports" }]
-    "@typescript-eslint/explicit-function-return-type": "warn"
+---
+## 1  North-Star Alignment
+- Every PR (code or doc) **must tag one or more Pillars** in its title or description:
+  `Pillar: 1,3` etc.
+- Work that doesn’t map to a Pillar pauses for review.
 
-react:
-  patterns:
-    fileExtensions: [".tsx"]
-    componentConvention: functional
-  performance:
-    preferMemo: true
-    lazyLoadRoutes: true
+## 2  Output Formatting
+| Task | Must look like |
+|------|----------------|
+| *New file* | `### /path/to/FileName.ext`\n```lang\n<contents>\n``` |
+| *Patch* | Git-style diff blocks – or whole-file replacement if ≤200 LOC. |
+| *Multiple files* | Output in logical build order (DB → server → client → tests). |
+| **Never** wrap narrative explanations inside code fences. |
 
-styling:
-  framework: tailwind
-  themeTokens: true
-  supportsDarkMode: true
+---
 
-ui:
-  library: shadcn/ui
-  accessibility: a11y-enforced
-  docsLink: https://ui.shadcn.com/docs/usage
+## 3  Coding Standards
+- **TypeScript strict** (`"strict": true`).  
+- `zustand` stores live in **`src/lib/stores`**.  
+- Use **Immer** (`import { produce } from 'immer'`) for in-store mutations.  
+- Use **SecureLogger** (`src/lib/security/logger.ts`) → `logger.error({ err }, "...")`.  
+- Linters: ESLint 9 (flat) + Prettier; tests: Jest + Cypress (no Vitest).
 
-testing:
-  framework: jest
-  utils: [ "@testing-library/react", "msw" ]
-  minCoverage: 0.80
-  snapshotTesting: true
-  setupFiles:
-    - tests/setupTests.ts
+---
 
-docs:
-  requireReadmeEveryDir: true
-  readmeTemplate: docs/README.template.md
-  jsdoc: true
+## 4  Supabase & RAG
+- DB + vector store are **Supabase Cloud**; never spin local PG.  
+- Enable `pgvector` with `create extension if not exists vector;`.  
+- Embeddings: `text-embedding-3-small`, `dimensions=1536`, `chunk=500/50`.  
+- All new tables prefixed **`ai_`**; follow existing RLS style.
 
-ci:
-  dockerBuild: true
-  analytics: plausible
-  i18n: true
-  ads: optional
+---
 
-misc:
-  nodeVersion: ">=20.0.0"
-  preferConst: true
-  fileNaming: camelCase
-  componentNaming: PascalCase
-  mcpTools: auto-discover
-# -------------------------------------------------------------
-# End of .cursor-config
+## 5  Docker & Deploy
+- Generate Dockerfiles via `dockerfile-generate` MCP tool (multi-stage, Node 20-alpine).  
+- Coolify handles TLS/Traefik – expose only app ports.  
+- Containers to maintain: `server`, `worker`, `redis`, (optional) `web`, `cron`.  
+- No Postgres/pgvector container—point to Supabase.
+
+---
+
+## 6  MCP Tool-Calling Rules
+1. Preferred tool list  
+   - `supabase-query`, `pgvector-search`, `openai-chat`,  
+     `dockerfile-generate`, `docker-build-push`, `coolify-redeploy-service`,  
+     `stripe-price-lookup`, `jest-run-tests`, `cypress-run-spec`.  
+2. JSON must be **schema-perfect**—no extra keys, no stray prose.  
+3. For discovery or short calls → use `o3-mini-high`; for final execute → `o3`.
+
+---
+
+## 7  Action Cards
+- Types: `button`, `form`, `approval`, `info`.  
+- Required fields: `id`, `domain`, `kind`, `title`, `meta.{issuedAt,agentConfidence}`.  
+- Never insert UI HTML; just the Card JSON unless specifically asked for markup.
+
+---
+
+## 8  UX & Copy
+- Product tone: friendly, office-smart, “we automate the 20 % that eats 80 % of your day.”  
+- Badges: label AI suggestions (`badge="AI"`) vs. auto actions (`badge="Auto"`).  
+- Chat responses ≤ 2 s perceived latency; stream tokens.
+- Chat round-trip target ≤ 2 000 ms (Pillar 5).
+
+---
+
+## 9  Testing Gate
+- Min coverage rises to **85 %** (was 80 %).
+- `npm run coverage:gate` fails CI if below threshold. 
+- E2E smoke spec required for new UI routes (`cypress/e2e/<route>.cy.ts`).
+
+---
+
+## 10  Forbidden
+- No `eval`, no `dangerouslySetInnerHTML`.  
+- No plain-text secrets—use `process.env.AI_*`.  
+- Don’t create or alter non-`ai_` tables.
+- No features that only visualise data without an attached “action”
+  path (fails Pillar 1 & 2).
+
+---
+
+## 11  CI Guardrails
+- `pillar-check` — verifies PR has `Pillar:` tag(s).
+- `rls-test` — runs tenant-isolation query; fails on cross-org rows.
+- `cost-lint` — scans for direct `o3` / `o3-high` calls lacking
+  `@llm-upgrade-justified` comment.
+
+**If a request conflicts with these rules, return a polite refusal or ask for clarification.**

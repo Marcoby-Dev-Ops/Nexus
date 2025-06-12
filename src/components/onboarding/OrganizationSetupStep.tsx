@@ -14,9 +14,8 @@ import {
   Globe,
   Loader2
 } from 'lucide-react';
-import { useEnhancedUser } from '@/lib/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { useUser } from '@/lib/hooks/useUser';
 import { useToast } from '@/components/ui/Toast';
 import { microsoftTeamsService } from '@/lib/services/microsoftTeamsService';
 import { linkedinService } from '@/lib/services/linkedinService';
@@ -60,7 +59,8 @@ interface OrganizationSetupStepProps {
 }
 
 export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ onNext, onBack }) => {
-  const { user, company, updateCompany } = useEnhancedUser();
+  const { user, updateCompany, updateProfile, completeOnboarding } = useAuth();
+  const company = user?.company;
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -90,7 +90,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
         body: JSON.stringify({
           domain: data.domain,
           companyName: data.name,
-          microsoftToken: await microsoftTeamsService.getStoredTokens(),
+          microsoftToken: await (microsoftTeamsService as any).getStoredTokens(),
         }),
       });
 
@@ -183,12 +183,13 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
       }
 
       // Update user profile with company info
+      if (!user) throw new Error('No authenticated user');
       const { error: profileError } = await supabase
         .from('user_profiles')
         .upsert({
-          id: user?.id,
+          id: user.id,
           company_id: company?.id,
-          role: user?.role,
+          role: user.role,
           department: data.industry,
           job_title: data.size,
           updated_at: new Date().toISOString(),

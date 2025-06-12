@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useSupabase } from '@/lib/SupabaseProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -85,7 +85,7 @@ const getIcon = (slug: string) => ICONS[slug] || ICONS.default;
  * Integrations page for connecting business tools and services
  */
 const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
-  const { user } = useSupabase();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [integrations, setIntegrations] = useState<Integration[]>([]);

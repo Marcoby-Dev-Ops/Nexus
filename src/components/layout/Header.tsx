@@ -6,8 +6,7 @@ import DatetimeTicker from '../lib/DatetimeTicker';
 import { useTheme } from '@/components/ui/theme-provider';
 import MultiAgentPanel from '../dashboard/MultiAgentPanel';
 import { useNotifications, formatTimeAgo } from '@/contexts/NotificationContext';
-import { useUser } from '@/contexts/UserContext';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Menu, Sun, Moon, Bell, Sparkles, Building2, User, Settings } from 'lucide-react';
 
 
@@ -44,8 +43,14 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, breadcrumbs, 
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const { notifications, unreadCount, markAsRead } = useNotifications();
-  const { user: basicUser, logout } = useUser();
-  const { user: enhancedUser, loading: userLoading } = useEnhancedUser();
+  const { user: basicUser, signOut: logout } = useAuth();
+
+  // Derive display name and initials from auth user
+  const displayName = basicUser?.name || basicUser?.email?.split('@')[0] || 'User';
+  const initials = basicUser?.name
+    ? basicUser.name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2)
+    : basicUser?.email?.charAt(0).toUpperCase() || 'U';
+  const userRole = basicUser?.role || 'User';
 
   // Close user menu when clicking outside
   React.useEffect(() => {
@@ -268,7 +273,7 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, breadcrumbs, 
                 onClick={() => setShowUserMenu(!showUserMenu)}
               >
                 <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-accent-foreground font-semibold text-sm">
-                  {enhancedUser?.initials || basicUser?.email?.charAt(0).toUpperCase() || 'U'}
+                  {initials}
                 </div>
               </button>
 
@@ -278,105 +283,16 @@ const Header: React.FC<HeaderProps> = ({ pageTitle, toggleSidebar, breadcrumbs, 
                   <div className="p-4 border-b border-border">
                     <div className="flex items-center space-x-4">
                       <div className="w-16 h-16 bg-accent rounded-lg flex items-center justify-center text-accent-foreground font-semibold text-xl">
-                        {enhancedUser?.initials || basicUser?.email?.charAt(0).toUpperCase() || 'U'}
+                        {initials}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-lg font-semibold text-foreground truncate">
-                          {enhancedUser?.full_name || enhancedUser?.profile?.display_name || basicUser?.email?.split('@')[0] || 'User'}
+                          {displayName}
                         </p>
                         <p className="text-sm text-muted-foreground truncate">
-                          {enhancedUser?.email || basicUser?.email}
+                          {basicUser?.email || ''}
                         </p>
-                        {enhancedUser?.profile?.job_title && (
-                          <p className="text-sm text-muted-foreground truncate font-medium">
-                            {enhancedUser.profile.job_title}
-                            {enhancedUser?.profile?.department && (
-                              <span className="text-xs"> • {enhancedUser.profile.department}</span>
-                            )}
-                          </p>
-                        )}
                       </div>
-                    </div>
-                    
-                    {/* Additional Profile Info */}
-                    <div className="mt-4 space-y-4">
-                      {/* Company Info */}
-                      {enhancedUser?.company && (
-                        <div className="flex items-center space-x-4 p-4 bg-muted/30 rounded-md">
-                          <Building2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {enhancedUser.company.name}
-                            </p>
-                            {enhancedUser.company.industry && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {enhancedUser.company.industry} • {enhancedUser.company.size}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Contact Info */}
-                      {(enhancedUser?.profile?.phone || enhancedUser?.profile?.location) && (
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          {enhancedUser?.profile?.phone && (
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                              </svg>
-                              <span>{enhancedUser.profile.phone}</span>
-                            </div>
-                          )}
-                          {enhancedUser?.profile?.location && (
-                            <div className="flex items-center space-x-1">
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                              </svg>
-                              <span>{enhancedUser.profile.location}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Role Badge */}
-                      {enhancedUser?.profile?.role && (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span className="text-sm font-medium text-foreground capitalize">
-                              {enhancedUser.profile.role}
-                            </span>
-                          </div>
-                          {enhancedUser.profile.work_location && (
-                            <div className="px-4 py-4 bg-primary/10 text-primary text-xs rounded-full">
-                              {enhancedUser.profile.work_location === 'remote' ? '🏠 Remote' :
-                               enhancedUser.profile.work_location === 'hybrid' ? '🏢 Hybrid' : '🏢 Office'}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Profile Completion */}
-                      {enhancedUser?.profile && (
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Profile Completion</span>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-16 h-1 bg-muted rounded-full">
-                              <div 
-                                className="h-1 bg-primary rounded-full transition-all duration-500"
-                                style={{ 
-                                  width: `${calculateProfileCompletion(enhancedUser.profile)}%` 
-                                }}
-                              />
-                            </div>
-                            <span className="text-muted-foreground font-medium">
-                              {calculateProfileCompletion(enhancedUser.profile)}%
-                            </span>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </div>
 

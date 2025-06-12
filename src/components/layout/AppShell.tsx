@@ -4,13 +4,12 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { QuickChatTrigger } from '@/components/ai/QuickChatTrigger';
-import { useOnboarding } from '@/lib/useOnboarding';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AppShell = () => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const { user, loading } = useEnhancedUser();
+  const { user, loading } = useAuth();
 
   // Generate breadcrumbs based on current route
   const generateBreadcrumbs = () => {

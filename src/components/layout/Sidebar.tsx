@@ -3,9 +3,8 @@ import PropTypes from 'prop-types';
 import { Badge } from '@/components/ui/Badge';
 import { useLocation, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Banknote, Settings, Store, Bot, BarChart2, Users, DollarSign, Truck, X, Building2, Plug, Brain, Sparkles, FileText, Database, LineChart, PieChart } from 'lucide-react';
-import { useSupabase } from '@/lib/SupabaseProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
 // import { Badge } from 'shadcn/ui'; // Uncomment if Badge is available
 
 /**
@@ -92,15 +91,23 @@ const admin: NavItem[] = [
  */
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
   const location = useLocation();
-  const { user: authUser, signOut } = useSupabase();
-  const { user: enhancedUser, loading: userLoading } = useEnhancedUser();
+  const { user: authUser, integrations, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Derive display name and initials from auth user
+  const displayName = authUser?.name || authUser?.email?.split('@')[0] || 'User';
+  const initials = authUser?.name
+    ? authUser.name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2)
+    : authUser?.email?.charAt(0).toUpperCase() || 'U';
+
+  // Extract primary departments from company settings JSON
+  const settings = authUser?.company?.settings as { primary_departments?: string[] } | undefined;
+  const primaryDepartments = settings?.primary_departments;
 
   // Generate personalized navigation based on user role and access
   const getPersonalizedNavigation = () => {
-    const userRole = enhancedUser?.profile?.role || 'user';
-    const department = enhancedUser?.profile?.department?.toLowerCase();
-    const primaryDepartments = enhancedUser?.company?.settings?.primary_departments;
+    const userRole = authUser?.role || 'user';
+    const department = authUser?.department?.toLowerCase();
     
     // Add department-specific highlights
     let personalizedDepartments = departments;
@@ -199,17 +206,17 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
         <div className="flex items-center space-x-4">
           <div className="p-4.5 bg-transparent rounded-xl">
             <img
-              src={enhancedUser?.company?.logo_url || "/Nexus/nexus-square-40x40-transparent.svg"}
-              alt={enhancedUser?.company?.name ? `${enhancedUser.company.name} Logo` : "NEXUS Logo"}
+              src={authUser?.company?.logo_url || "/Nexus/nexus-square-40x40-transparent.svg"}
+              alt={authUser?.company?.name ? `${authUser.company.name} Logo` : "NEXUS Logo"}
               className="w-7 h-7"
             />
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground">
-              {enhancedUser?.company?.name || "NEXUS"}
+              {authUser?.company?.name || "NEXUS"}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {enhancedUser?.company ? 'Business Management' : 'Business Operating System'}
+              {authUser?.company ? 'Business Management' : 'Business Operating System'}
             </p>
           </div>
         </div>
@@ -248,53 +255,53 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
       </div>
 
       {/* User Profile Section */}
-      {(enhancedUser || authUser) && (
+      {authUser && (
         <div className="p-6 border-t border-border bg-muted/30">
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center text-accent-foreground font-semibold">
-              {enhancedUser?.initials || authUser?.email?.charAt(0).toUpperCase() || 'U'}
+              {initials}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">
-                {enhancedUser?.full_name || enhancedUser?.profile?.display_name || authUser?.email?.split('@')[0] || 'User'}
+                {displayName}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {enhancedUser?.email || authUser?.email}
+                {authUser.email}
               </p>
               <p className="text-xs text-muted-foreground">
-                {enhancedUser?.profile?.role || authUser?.app_metadata?.role || 'User'}
+                {authUser.role || 'User'}
               </p>
             </div>
           </div>
 
           {/* Company Info */}
-          {enhancedUser?.company && (
+          {authUser.company && (
             <div className="mb-4 p-4 bg-muted rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Building2 className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-foreground">
-                  {enhancedUser.company.name}
+                  {authUser.company.name}
                 </span>
               </div>
-              {enhancedUser.profile?.department && (
+              {authUser.department && (
                 <p className="text-xs text-muted-foreground">
-                  {enhancedUser.profile.department}
+                  {authUser.department}
                 </p>
               )}
             </div>
           )}
 
           {/* Active Integrations */}
-          {enhancedUser?.integrations && enhancedUser.integrations.length > 0 && (
+          {integrations && integrations.length > 0 && (
             <div className="mb-4">
               <div className="flex items-center space-x-2 mb-2">
                 <Plug className="w-4 h-4 text-muted-foreground" />
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Integrations ({enhancedUser.integrations.filter(i => i.status === 'active').length})
+                  Integrations ({integrations.filter(i => i.status === 'active').length})
                 </span>
               </div>
               <div className="flex flex-wrap gap-1">
-                {enhancedUser.integrations
+                {integrations
                   .filter(i => i.status === 'active')
                   .slice(0, 4)
                   .map((integration) => (
@@ -302,12 +309,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggleSidebar }) => {
                       key={integration.id} 
                       className="text-xs bg-success/10 text-success border-success/20"
                     >
-                      {integration.integration?.name || integration.name}
+                      {integration.name}
                     </Badge>
                   ))}
-                {enhancedUser.integrations.filter(i => i.status === 'active').length > 4 && (
+                {integrations.filter(i => i.status === 'active').length > 4 && (
                   <Badge className="text-xs bg-muted text-muted-foreground">
-                    +{enhancedUser.integrations.filter(i => i.status === 'active').length - 4}
+                    +{integrations.filter(i => i.status === 'active').length - 4}
                   </Badge>
                 )}
               </div>

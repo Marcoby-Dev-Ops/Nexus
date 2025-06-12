@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/Toast';
 
 interface Integration {
@@ -27,7 +27,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { showToast } = useToast();
 
   const refreshIntegrations = useCallback(async () => {
     if (!user) return;
@@ -45,15 +45,15 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       setIntegrations(data);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('An error occurred'));
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to load integrations',
-        variant: 'destructive'
+        type: 'error'
       });
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user, showToast]);
 
   const addIntegration = useCallback(async (integration: Omit<Integration, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
@@ -77,23 +77,23 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       const newIntegration = await response.json();
       setIntegrations(prev => [...prev, newIntegration]);
 
-      toast({
+      showToast({
         title: 'Success',
         description: 'Integration added successfully',
-        variant: 'success'
+        type: 'success'
       });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('An error occurred'));
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to add integration',
-        variant: 'destructive'
+        type: 'error'
       });
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user, showToast]);
 
   const removeIntegration = useCallback(async (integrationId: string) => {
     if (!user) return;
@@ -112,23 +112,23 @@ export const useIntegrations = (): UseIntegrationsReturn => {
 
       setIntegrations(prev => prev.filter(integration => integration.id !== integrationId));
 
-      toast({
+      showToast({
         title: 'Success',
         description: 'Integration removed successfully',
-        variant: 'success'
+        type: 'success'
       });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('An error occurred'));
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to remove integration',
-        variant: 'destructive'
+        type: 'error'
       });
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user, showToast]);
 
   const updateIntegration = useCallback(async (integrationId: string, updates: Partial<Integration>) => {
     if (!user) return;
@@ -154,23 +154,23 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         integration.id === integrationId ? updatedIntegration : integration
       ));
 
-      toast({
+      showToast({
         title: 'Success',
         description: 'Integration updated successfully',
-        variant: 'success'
+        type: 'success'
       });
     } catch (err) {
       setError(err instanceof Error ? err : new Error('An error occurred'));
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to update integration',
-        variant: 'destructive'
+        type: 'error'
       });
       throw err;
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user, showToast]);
 
   return {
     integrations,

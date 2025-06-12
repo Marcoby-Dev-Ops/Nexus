@@ -160,7 +160,7 @@ const WorkspacePage: React.FC = () => {
 
       <div className="flex flex-col md:flex-row gap-6">
         {/* Main content area */}
-        <div className="flex-1 space-y-4">
+        <div className="flex-1">
           {/* Search and filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -174,23 +174,26 @@ const WorkspacePage: React.FC = () => {
               />
             </div>
             <Tabs defaultValue="all" className="w-full sm:w-auto" onValueChange={setSelectedTab}>
-              <TabsList className="grid grid-cols-4 w-full sm:w-[400px]">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="my-files">My Files</TabsTrigger>
-                <TabsTrigger value="shared">Shared</TabsTrigger>
-                <TabsTrigger value="starred">Starred</TabsTrigger>
+              <TabsList className="!p-0 !h-auto grid grid-cols-4 w-full sm:w-[400px] border rounded-md">
+                <TabsTrigger value="all" className="rounded-none">All</TabsTrigger>
+                <TabsTrigger value="my-files" className="rounded-none">My Files</TabsTrigger>
+                <TabsTrigger value="shared" className="rounded-none">Shared</TabsTrigger>
+                <TabsTrigger value="starred" className="rounded-none">Starred</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
           {/* Files and folders list */}
           <div className="border rounded-md overflow-hidden">
+            {/* Table header */}
             <div className="bg-muted px-4 py-3 border-b grid grid-cols-12 text-sm font-medium">
               <div className="col-span-6">Name</div>
               <div className="col-span-2">Owner</div>
               <div className="col-span-3">Last Modified</div>
               <div className="col-span-1"></div>
             </div>
+
+            {/* Files and folders list */}
             <div className="divide-y">
               {filteredItems.length > 0 ? (
                 filteredItems.map((item) => (

@@ -21,7 +21,7 @@ import {
 import { motion } from 'framer-motion';
 import { toolEnabledAgent } from '@/lib/aiAgentWithTools';
 import { executiveAgent } from '@/lib/agentRegistry';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DemoMessage {
   id: string;

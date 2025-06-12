@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 import { modelManager } from '@/lib/ai/modelManager';
 import {
   BarChart,
@@ -36,7 +36,6 @@ interface ModelReport {
     successRate: number;
     averageLatency: number;
     averageCost: number;
-    lastUsed: Date;
     errorCount: number;
   }>;
   suggestions: string[];
@@ -44,7 +43,7 @@ interface ModelReport {
 
 export const ModelManagementDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { showToast } = useToast();
   const [report, setReport] = useState<ModelReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'day' | 'week' | 'month'>('month');
@@ -59,10 +58,10 @@ export const ModelManagementDashboard: React.FC = () => {
       const data = await modelManager.generateReport();
       setReport(data);
     } catch (error) {
-      toast({
+      showToast({
         title: 'Error',
         description: 'Failed to load model management data',
-        variant: 'destructive'
+        type: 'error'
       });
     } finally {
       setIsLoading(false);

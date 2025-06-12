@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -44,7 +44,7 @@ import {
 import type { UserProfile } from '@/lib/types/userProfile';
 
 export const Profile: React.FC = () => {
-  const { user, updateProfile, loading } = useEnhancedUser();
+  const { user, updateProfile, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);

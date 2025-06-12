@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useSupabase } from '@/lib/SupabaseProvider';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { CheckCircle, XCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -18,7 +18,7 @@ interface TestResult {
 export const ChatSystemTest: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<TestResult[]>([]);
-  const { user } = useSupabase();
+  const { user } = useAuth();
 
   const runTests = async () => {
     setIsRunning(true);

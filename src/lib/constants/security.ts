@@ -47,7 +47,7 @@ export const VALIDATION_PATTERNS = {
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   // eslint-disable-next-line no-useless-escape
   PHONE: /^\+?[\d\s\-\(\)]+$/,
-  // eslint-disable-next-line no-useless-escape
+   
   URL: /^https?:\/\/.+/,
   // Prevent XSS in user inputs
   // eslint-disable-next-line no-useless-escape

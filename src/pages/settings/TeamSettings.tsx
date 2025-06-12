@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Mock team member data
 const teamMembers = [
@@ -38,7 +38,7 @@ const teamRoles = [
  * - Remove team members
  */
 const TeamSettings: React.FC = () => {
-  const { user } = useEnhancedUser();
+  const { user } = useAuth();
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
   
@@ -147,7 +147,7 @@ const TeamSettings: React.FC = () => {
                     </p>
                   </div>
                   
-                  {canManageTeam && member.id !== user?.id && (
+                  {canManageTeam && member.id.toString() !== user?.id && (
                     <div className="flex items-center space-x-1">
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                         <Shield className="h-4 w-4" />

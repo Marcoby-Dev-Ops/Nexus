@@ -1,17 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
+import type { Database } from '@/lib/database.types';
 
-interface UserProfile {
-  id: string;
-  user_id: string;
-  company_id: string;
-  role?: string;
-  industry?: string;
-  company_size?: string;
-  created_at: string;
-  updated_at: string;
-}
+type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
 
 interface UserInfo {
   user: User | null;
@@ -30,10 +22,14 @@ export const useUser = () => {
 
   useEffect(() => {
     // Get initial user
-    const user = supabase.auth.getUser();
-    if (user) {
-      fetchUserProfile(user.id);
-    }
+    const initializeUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await fetchUserProfile(user.id);
+      }
+    };
+
+    initializeUser();
 
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -54,7 +50,7 @@ export const useUser = () => {
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (error) throw error;
@@ -80,7 +76,7 @@ export const useUser = () => {
       const { data, error } = await supabase
         .from('user_profiles')
         .upsert({
-          user_id: userInfo.user.id,
+          id: userInfo.user.id,
           ...updates,
           updated_at: new Date().toISOString(),
         })

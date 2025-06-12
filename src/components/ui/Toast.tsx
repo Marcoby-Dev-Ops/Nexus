@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Transition } from '@headlessui/react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { AnimatePresence, motion } from 'framer-motion';
+import { X } from 'lucide-react';
 
 interface Toast {
   id: string;
@@ -44,18 +44,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div className="fixed bottom-0 right-0 p-4 space-y-4 z-50">
-        {toasts.map((toast) => (
-          <Transition
-            key={toast.id}
-            show={true}
-            enter="transform ease-out duration-300 transition"
-            enterFrom="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
-            enterTo="translate-y-0 opacity-100 sm:translate-x-0"
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div
+        <AnimatePresence>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
               className={`max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden ${
                 toast.type === 'error' ? 'ring-red-500' :
                 toast.type === 'success' ? 'ring-green-500' :
@@ -76,14 +72,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                       onClick={() => removeToast(toast.id)}
                     >
                       <span className="sr-only">Close</span>
-                      <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+                      <X className="h-5 w-5" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          </Transition>
-        ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );

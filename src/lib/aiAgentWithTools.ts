@@ -476,7 +476,7 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
 
       // Call OpenAI with function calling enabled
       const openaiRequest = {
-        model: 'gpt-4',
+        model: 'o3-mini-high',
         messages: [
           { role: 'system', content: toolAwareSystemPrompt },
           { role: 'user', content: message }
@@ -515,7 +515,7 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
             
             // Send follow-up message with tool results
             const followUpRequest = {
-              model: 'gpt-4',
+              model: 'o3',
               messages: [
                 { role: 'system', content: toolAwareSystemPrompt },
                 { role: 'user', content: message },

@@ -13,7 +13,7 @@ import {
   Clock,
   Target
 } from 'lucide-react';
-import { useEnhancedUser } from '../../contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserContextData {
   role: string;
@@ -32,7 +32,7 @@ interface UserContextStepProps {
 }
 
 export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip, onBack }) => {
-  const { user, updateProfile } = useEnhancedUser();
+  const { user, updateProfile } = useAuth();
   const [contextData, setContextData] = useState<UserContextData>({
     role: '',
     experience_level: 'intermediate',
@@ -59,11 +59,11 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
       localStorage.setItem('nexus_user_context', JSON.stringify(contextData));
       
       await updateProfile({
-        role: 'user' as const,
+        role: 'user',
         preferences: {
-          theme: user?.profile?.preferences?.theme || 'system' as const,
-          notifications: user?.profile?.preferences?.notifications || true,
-          language: user?.profile?.preferences?.language || 'en',
+          theme: 'system',
+          notifications: true,
+          language: 'en',
           user_context: contextData
         }
       });
