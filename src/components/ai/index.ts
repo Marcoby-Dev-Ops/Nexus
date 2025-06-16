@@ -20,4 +20,5 @@ export { OrganizationalChatPanel } from './OrganizationalChatPanel';
 export { DepartmentalAgent } from './DepartmentalAgent';
 
 // Modern Components (recommended)
-export { ModernExecutiveAssistant as ExecutiveAssistantV2 } from './enhanced/ModernExecutiveAssistant'; 
+export { ModernExecutiveAssistant as ExecutiveAssistantV2 } from './enhanced/ModernExecutiveAssistant';
+export { ActionCard } from './ActionCard'; 

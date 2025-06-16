@@ -1,9 +1,12 @@
-import React from 'react';
-import { DollarSign, TrendingUp, CreditCard, Receipt, ArrowUpRight, Plus, FileText, Calculator, Banknote } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { DollarSign, CreditCard, Receipt, ArrowUpRight, FileText, Calculator } from 'lucide-react';
 import { PageTemplates } from '@/components/patterns/PageTemplates';
 import { ContentCard } from '@/components/patterns/ContentCard';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { SimpleBarChart } from '@/components/dashboard/SimpleBarChart';
+import { useDepartmentKPIs } from '@/lib/hooks/useDepartmentKPIs';
+import { usePayPalTransactions } from '@/lib/hooks/usePayPalTransactions';
+import type { PayPalTransaction } from '@/lib/hooks/usePayPalTransactions';
 
 /**
  * @name FinanceHome
@@ -11,36 +14,13 @@ import { SimpleBarChart } from '@/components/dashboard/SimpleBarChart';
  * @returns {JSX.Element} The rendered FinanceHome component.
  */
 
-// Sample data for the finance dashboard
-const financeKpiData = [
-  { title: 'Total Revenue', value: '$124,580', delta: '+12.5%', trend: 'up' },
-  { title: 'Outstanding Invoices', value: '$45,200', delta: '-8.3%', trend: 'down' },
-  { title: 'Monthly Expenses', value: '$32,100', delta: '+5.2%', trend: 'up' },
-  { title: 'Profit Margin', value: '32.8%', delta: '+2.1%', trend: 'up' },
-];
-
+// Placeholder expense data until wired to live source
 const expenseData = [
   { name: 'Salaries', value: 45000 },
   { name: 'Marketing', value: 12000 },
   { name: 'Operations', value: 8500 },
   { name: 'Software', value: 5200 },
   { name: 'Office', value: 3200 },
-];
-
-const revenueData = [
-  { name: 'Jan', value: 65000 },
-  { name: 'Feb', value: 59000 },
-  { name: 'Mar', value: 80000 },
-  { name: 'Apr', value: 81000 },
-  { name: 'May', value: 56000 },
-  { name: 'Jun', value: 124580 },
-];
-
-const recentTransactions = [
-  { description: 'Client Payment - Acme Corp', amount: '+$45,000', type: 'income', date: '2024-01-15' },
-  { description: 'Software Subscription', amount: '-$299', type: 'expense', date: '2024-01-14' },
-  { description: 'Marketing Campaign', amount: '-$2,500', type: 'expense', date: '2024-01-13' },
-  { description: 'Consulting Fee', amount: '+$8,500', type: 'income', date: '2024-01-12' },
 ];
 
 const quickActions = [
@@ -50,7 +30,37 @@ const quickActions = [
   { label: 'Calculate Tax', icon: <Calculator className="w-5 h-5" />, onClick: () => console.log('Calculate Tax') },
 ];
 
+// Helper for currency formatting
+const currencyFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
 const FinanceHome: React.FC = () => {
+  const { loading, metrics } = useDepartmentKPIs('finance');
+  const { loading: txLoading, transactions } = usePayPalTransactions(10);
+
+  type KpiItem = { title: string; value: string; delta?: string; trend?: string };
+
+  const financeKpiData: KpiItem[] = useMemo(() => {
+    const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+    const totalRevenueValue = metrics?.totalRevenue ?? 0;
+
+    return [
+      {
+        title: 'Total Revenue',
+        value: loading ? '—' : currencyFormatter.format(totalRevenueValue),
+        delta: undefined,
+        trend: 'up',
+      },
+      { title: 'Outstanding Invoices', value: '$45,200', delta: '-8.3%', trend: 'down' }, // placeholder
+      { title: 'Monthly Expenses', value: '$32,100', delta: '+5.2%', trend: 'up' }, // placeholder
+      { title: 'Profit Margin', value: '32.8%', delta: '+2.1%', trend: 'up' }, // placeholder
+    ];
+  }, [loading, metrics]);
+
+  const revenueData = metrics?.monthlyRevenue?.length ? metrics.monthlyRevenue : [
+    { name: 'Jan', value: 0 },
+  ];
+
   return (
     <PageTemplates.Department
       title="Finance Hub"
@@ -78,7 +88,7 @@ const FinanceHome: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {financeKpiData.map((kpi, index) => (
+        {financeKpiData.map((kpi: KpiItem, index: number) => (
           <KpiCard key={index} {...kpi} />
         ))}
       </div>
@@ -131,26 +141,28 @@ const FinanceHome: React.FC = () => {
         }
       >
         <div className="space-y-4">
-          {recentTransactions.map((transaction, index) => (
-            <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
-              <div className="flex items-center space-x-4">
-                <div className={`p-4 rounded-lg ${transaction.type === 'income' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                  {transaction.type === 'income' ? (
+          {txLoading ? (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          ) : transactions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No PayPal transactions found.</p>
+          ) : (
+            transactions.map((transaction: PayPalTransaction, index: number) => (
+              <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
+                <div className="flex items-center space-x-4">
+                  <div className={`p-4 rounded-lg bg-success/10 text-success`}>
                     <DollarSign className="w-5 h-5" />
-                  ) : (
-                    <CreditCard className="w-5 h-5" />
-                  )}
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-foreground">{transaction.txn_id}</h4>
+                    <p className="text-sm text-muted-foreground">{new Date(transaction.captured_at).toLocaleDateString()}</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-foreground">{transaction.description}</h4>
-                  <p className="text-sm text-muted-foreground">{transaction.date}</p>
+                <div className={`font-semibold text-success`}>
+                  {currencyFmt.format(transaction.amount)}
                 </div>
               </div>
-              <div className={`font-semibold ${transaction.type === 'income' ? 'text-success' : 'text-destructive'}`}>
-                {transaction.amount}
-              </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </ContentCard>
     </PageTemplates.Department>

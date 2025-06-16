@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   User, 
-  Users, 
   Shield, 
   Wrench, 
   ChevronRight,
@@ -12,6 +11,8 @@ import {
 
 import { Button } from '../ui/Button';
 import { Separator } from '../ui/Separator';
+import Breadcrumbs from '../ui/Breadcrumbs';
+import type { BreadcrumbItem } from '../ui/Breadcrumbs';
 
 interface SettingsLayoutProps {
   children: ReactNode;
@@ -30,17 +31,11 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   const location = useLocation();
   
   // Settings navigation items
-  const settingsNavItems = [
+  const settingsNavItems: { title: string; icon: React.ReactNode; path: string; admin?: boolean }[] = [
     {
-      title: 'Account',
+      title: 'Profile',
       icon: <User className="h-4 w-4" />,
-      path: '/settings/account',
-    },
-    {
-      title: 'Team',
-      icon: <Users className="h-4 w-4" />,
-      path: '/settings/team',
-      admin: true, // Only shown to admins
+      path: '/settings/profile',
     },
     {
       title: 'Security',
@@ -58,6 +53,17 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   const filteredNavItems = settingsNavItems.filter(item => 
     !item.admin || (item.admin && isAdmin)
   );
+  
+  // Breadcrumb items
+  const breadcrumbItems: BreadcrumbItem[] = [
+    { label: 'Settings', href: '/settings' },
+  ];
+  
+  // If on nested route, append its label
+  const currentNav = filteredNavItems.find(item => item.path === location.pathname);
+  if (currentNav && currentNav.path !== '/settings') {
+    breadcrumbItems.push({ label: currentNav.title, current: true });
+  }
   
   // Check if a nav item is active
   const isActive = (path: string) => location.pathname === path;
@@ -93,6 +99,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       </aside>
       <div className="flex-1 lg:max-w-3xl">
         <div className="space-y-6">
+          <Breadcrumbs items={breadcrumbItems} />
           <div>
             <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
             <p className="text-muted-foreground">{description}</p>

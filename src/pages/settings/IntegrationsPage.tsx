@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wrench, Plus, Search, Check, X, ExternalLink, RefreshCw, Settings } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
@@ -9,6 +9,8 @@ import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Tabs';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { ManageIntegrationModal } from '@/components/settings/ManageIntegrationModal';
 
 // Mock integrations data
 const availableIntegrations = [
@@ -45,6 +47,14 @@ const availableIntegrations = [
     popular: false
   },
   { 
+    id: 'paypal', 
+    name: 'PayPal', 
+    description: 'Sync transactions and revenue data from PayPal.',
+    category: 'payment',
+    icon: '💰',
+    popular: true
+  },
+  { 
     id: 'salesforce', 
     name: 'Salesforce', 
     description: 'Integrate with Salesforce CRM for customer data synchronization.',
@@ -78,32 +88,11 @@ const availableIntegrations = [
   },
 ];
 
-const connectedIntegrations = [
-  { 
-    id: 'slack', 
-    name: 'Slack', 
-    description: 'Connected to Workspace: Acme Team',
-    status: 'active',
-    lastSync: '10 minutes ago',
-    icon: '🔵'
-  },
-  { 
-    id: 'github', 
-    name: 'GitHub', 
-    description: 'Connected to 3 repositories',
-    status: 'active',
-    lastSync: '1 hour ago',
-    icon: '🐙'
-  },
-  { 
-    id: 'zapier', 
-    name: 'Zapier', 
-    description: 'Connected with 2 active Zaps',
-    status: 'active',
-    lastSync: '30 minutes ago',
-    icon: '⚡'
-  }
-];
+type ConnectedIntegration = {
+  provider: string;
+  status: 'active' | 'error';
+  lastSync: string | null;
+};
 
 /**
  * IntegrationsPage - Manage third-party integrations
@@ -118,6 +107,51 @@ const IntegrationsPage: React.FC = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
+  const [connectedIntegrations, setConnectedIntegrations] = useState<ConnectedIntegration[]>([]);
+  const [manageProvider, setManageProvider] = useState<string | null>(null);
+  
+  // Fetch connected integrations for this organisation
+  useEffect(() => {
+    async function loadIntegrations() {
+      if (!user?.company_id) return;
+      const { data, error } = await (supabase as any)
+        .from('ai_integrations')
+        .select('provider, updated_at')
+        .eq('org_id', user.company_id);
+      if (!error && data) {
+        setConnectedIntegrations(
+          data.map((row: any) => ({
+            provider: row.provider,
+            status: 'active',
+            lastSync: row.updated_at,
+          }))
+        );
+
+        // Realtime subscription to updates
+        const channel = supabase.channel('ai_integrations')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'ai_integrations', filter: `org_id=eq.${user.company_id}` },
+            (payload) => {
+              const row: any = payload.new ?? payload.old;
+              setConnectedIntegrations((prev) => {
+                const others = prev.filter((i) => i.provider !== row.provider);
+                return [
+                  ...others,
+                  { provider: row.provider, status: 'active', lastSync: row.updated_at },
+                ];
+              });
+            },
+          )
+          .subscribe();
+
+        return () => {
+          supabase.removeChannel(channel);
+        };
+      }
+    }
+    loadIntegrations();
+  }, [user]);
   
   // Filter available integrations based on search and category
   const filteredIntegrations = availableIntegrations.filter(integration => {
@@ -129,7 +163,30 @@ const IntegrationsPage: React.FC = () => {
   
   // Check if an integration is already connected
   const isConnected = (id: string) => {
-    return connectedIntegrations.some(integration => integration.id === id);
+    return connectedIntegrations.some((integration) => integration.provider === id);
+  };
+  
+  const handleConnectPayPal = () => {
+    if (!user?.company_id) {
+      alert('Missing organisation context');
+      return;
+    }
+
+    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!clientId || !supabaseUrl) {
+      alert('PayPal or Supabase env vars not set');
+      return;
+    }
+
+    const redirectUri = `${supabaseUrl}/functions/v1/paypal_oauth_callback`;
+    const scopes = encodeURIComponent('openid profile https://uri.paypal.com/services/paypalattributes');
+    const state = encodeURIComponent(user.company_id);
+    const base = import.meta.env.VITE_PAYPAL_ENV === 'live' ? 'https://www.paypal.com' : 'https://www.sandbox.paypal.com';
+
+    const url = `${base}/signin/authorize?response_type=code&client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}`;
+
+    window.open(url, '_blank', 'width=600,height=800');
   };
   
   return (
@@ -154,14 +211,13 @@ const IntegrationsPage: React.FC = () => {
           {connectedIntegrations.length > 0 ? (
             <div className="space-y-4">
               {connectedIntegrations.map((integration) => (
-                <div key={integration.id} className="flex items-center justify-between p-4 border border-border rounded-md">
+                <div key={integration.provider} className="flex items-center justify-between p-4 border border-border rounded-md">
                   <div className="flex items-center space-x-3">
                     <div className="h-10 w-10 rounded-md bg-card border border-border flex items-center justify-center text-xl">
-                      {integration.icon}
+                      {integration.provider.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="font-medium">{integration.name}</p>
-                      <p className="text-sm text-muted-foreground">{integration.description}</p>
+                      <p className="font-medium">{integration.provider}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -172,7 +228,7 @@ const IntegrationsPage: React.FC = () => {
                         </Badge>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Last sync: {integration.lastSync}
+                        Last sync: {integration.lastSync ? new Date(integration.lastSync).toLocaleString() : '—'}
                       </p>
                     </div>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -229,6 +285,7 @@ const IntegrationsPage: React.FC = () => {
                 <TabsTrigger value="storage">Storage</TabsTrigger>
                 <TabsTrigger value="crm">CRM</TabsTrigger>
                 <TabsTrigger value="automation">Automation</TabsTrigger>
+                <TabsTrigger value="payment">Payment</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -276,6 +333,16 @@ const IntegrationsPage: React.FC = () => {
                       <Button 
                         variant={connected ? "outline" : "default"}
                         size="sm"
+                        onClick={() => {
+                          if (connected) {
+                            setManageProvider(integration.id);
+                          } else if (integration.id === 'paypal') {
+                            handleConnectPayPal();
+                          } else {
+                            // Placeholder for other integrations
+                            alert('Connect flow not implemented yet');
+                          }
+                        }}
                       >
                         {connected ? 'Manage' : 'Connect'}
                       </Button>
@@ -303,6 +370,16 @@ const IntegrationsPage: React.FC = () => {
           </Button>
         </CardFooter>
       </Card>
+
+      {/* Manage Modal */}
+      {user?.company_id && (
+        <ManageIntegrationModal
+          provider={manageProvider}
+          open={!!manageProvider}
+          onClose={() => setManageProvider(null)}
+          orgId={user.company_id}
+        />
+      )}
     </div>
   );
 };

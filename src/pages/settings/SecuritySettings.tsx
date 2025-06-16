@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Shield, Key, Smartphone, Eye, EyeOff, AlertTriangle, LogOut, RefreshCw, Lock } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Shield, Key, Smartphone, Eye, EyeOff, AlertTriangle, LogOut, RefreshCw, Lock, Fingerprint } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -9,6 +9,11 @@ import { Switch } from '../../components/ui/Switch';
 import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
+import { useNotifications } from '../../contexts/NotificationContext';
+import { Alert } from '../../components/ui/Alert';
+import { toast } from 'sonner';
+import { startRegistration } from '@simplewebauthn/browser';
 
 // Mock security activity data
 const securityActivity = [
@@ -31,20 +36,41 @@ const securityActivity = [
  */
 const SecuritySettings: React.FC = () => {
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
+  const [passkeys, setPasskeys] = useState<any[]>([]);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
   // Handle password change
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('Changing password...');
-    // Implementation would change password
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+
+      setMessage({ type: 'success', text: 'Password updated successfully. You will need to use the new password next time you sign in.' });
+      addNotification({ message: 'Password updated successfully', type: 'success' });
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      const errorText = err instanceof Error ? err.message : 'Failed to update password';
+      setMessage({ type: 'error', text: errorText });
+      addNotification({ message: errorText, type: 'error' });
+    } finally {
+      setLoading(false);
+    }
   };
   
   // Toggle two-factor authentication
@@ -53,7 +79,73 @@ const SecuritySettings: React.FC = () => {
     // In a real implementation, this would trigger 2FA setup flow
     console.log(`Two-factor authentication ${!twoFactorEnabled ? 'enabled' : 'disabled'}`);
   };
-  
+
+  // ---------------------------------------------------------------------
+  // Passkeys – fetch existing credentials
+  // ---------------------------------------------------------------------
+  const fetchPasskeys = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('ai_passkeys')
+      .select('credential_id, friendly_name, created_at, device_type');
+    if (error) {
+      console.error('[SecuritySettings] Failed to load passkeys', error);
+      return;
+    }
+    setPasskeys(data ?? []);
+  };
+
+  useEffect(() => {
+    fetchPasskeys();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const handleAddPasskey = async () => {
+    try {
+      if (!user) {
+        toast.error('You must be signed in to register a passkey');
+        return;
+      }
+
+      setIsRegisteringPasskey(true);
+
+      // Debug: ensure we have a Supabase session so the auth header is sent
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No Supabase session found – please re-login.');
+      }
+
+      // 1) Get registration challenge from server
+      const { data: options, error: challengeErr } = await supabase.functions.invoke(
+        'passkey-register-challenge',
+        {
+          body: { userId: user.id },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        },
+      );
+      if (challengeErr) throw challengeErr;
+
+      // 2) Start browser-native WebAuthn flow
+      const attestationResponse = await startRegistration({ optionsJSON: options as any });
+
+      // 3) Verify and persist on the backend
+      const { error: verifyErr } = await supabase.functions.invoke('passkey-register-verify', {
+        body: { userId: user.id, attestationResponse },
+      });
+      if (verifyErr) throw verifyErr;
+
+      toast.success('Passkey added');
+      fetchPasskeys();
+    } catch (err: any) {
+      console.error('[SecuritySettings] Passkey registration failed', err);
+      toast.error(err?.message ?? 'Failed to register passkey');
+    } finally {
+      setIsRegisteringPasskey(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -132,7 +224,15 @@ const SecuritySettings: React.FC = () => {
               )}
             </div>
             
-            <Button type="submit" disabled={!currentPassword || !newPassword || newPassword !== confirmPassword}>
+            {message && (
+              <Alert variant={message.type === 'success' ? 'success' : 'error'}>{message.text}</Alert>
+            )}
+
+            <Button 
+              type="submit" 
+              isLoading={loading}
+              disabled={loading || !currentPassword || !newPassword || newPassword !== confirmPassword}
+            >
               Update Password
             </Button>
           </form>
@@ -229,6 +329,48 @@ const SecuritySettings: React.FC = () => {
             Sign Out All Devices
           </Button>
         </CardFooter>
+      </Card>
+
+      {/* Passkeys */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Fingerprint className="h-5 w-5 mr-2" />
+            Passkeys (WebAuthn)
+          </CardTitle>
+          <CardDescription>
+            Sign in with Touch&nbsp;ID / Windows&nbsp;Hello for a password-less experience
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {passkeys.length ? (
+            <div className="space-y-2">
+              {passkeys.map((pk) => (
+                <div
+                  key={pk.credential_id}
+                  className="flex items-center justify-between p-3 border border-border rounded-md"
+                >
+                  <div>
+                    <p className="font-medium truncate max-w-[200px]" title={pk.credential_id}>
+                      {pk.friendly_name || 'Unnamed Passkey'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {pk.device_type === 'single_device' ? 'Single-device' : 'Multi-device'} ·{' '}
+                      {new Date(pk.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Badge variant="secondary">Active</Badge>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No passkeys added yet.</p>
+          )}
+
+          <Button onClick={handleAddPasskey} isLoading={isRegisteringPasskey} disabled={isRegisteringPasskey}>
+            Add Passkey
+          </Button>
+        </CardContent>
       </Card>
     </div>
   );

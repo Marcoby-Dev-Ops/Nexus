@@ -8,9 +8,9 @@ import '@testing-library/jest-dom';
 import DataWarehouseHome from './DataWarehouseHome';
 
 describe('DataWarehouseHome', () => {
-  it('renders data warehouse title', () => {
+  it('renders analytics title', () => {
     render(<DataWarehouseHome />);
-    expect(screen.getByText(/data warehouse/i)).toBeInTheDocument();
+    expect(screen.getByText(/analytics/i)).toBeInTheDocument();
   });
 
   it('matches snapshot', () => {

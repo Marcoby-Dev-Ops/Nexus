@@ -9,10 +9,10 @@
  * - Workflow automation powers
  */
 
-import { enhancedChatService } from './chatContext';
 import { n8nService } from './n8nService';
 import { supabase } from './supabase';
 import type { Agent } from './agentRegistry';
+import { listPayPalTxns } from '@/lib/ai/tools/paypal';
 
 // Tool definitions for OpenAI function calling
 export interface AITool {
@@ -32,6 +32,7 @@ export interface ToolContext {
   conversationId: string;
   agent: Agent;
   currentStep?: string;
+  orgId?: string;
 }
 
 // Business Intelligence Tools
@@ -142,6 +143,26 @@ export const businessIntelligenceTools: AITool[] = [
       return result.success 
         ? { insights: result.data, summary: `Analyzed ${args.metrics.join(', ')} metrics` }
         : { error: "Analysis failed", fallback: "I'll provide general business insights instead." };
+    }
+  },
+
+  {
+    name: "listPayPalTxns",
+    description: "Returns recent PayPal transactions for this organisation (Finance)",
+    parameters: {
+      type: "object",
+      properties: {
+        limit: {
+          type: "number",
+          description: "Maximum number of transactions to return",
+          default: 50
+        }
+      },
+      required: []
+    },
+    handler: async (args, context) => {
+      const rows = await listPayPalTxns({ orgId: context.orgId as string, limit: args.limit || 50 });
+      return { rows, summary: `Fetched ${rows.length} PayPal transactions` };
     }
   }
 ];
@@ -352,7 +373,7 @@ export const contentTools: AITool[] = [
     },
     handler: async (args, context) => {
       // Search company knowledge base through Supabase or n8n workflow
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('company_documents')
         .select('*')
         .textSearch('content', args.query)
@@ -441,7 +462,12 @@ export class ToolEnabledAgent {
         sessionId,
         conversationId,
         agent,
-        ...context
+        ...context,
+        orgId: (await supabase
+          .from('user_profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .maybeSingle()).data?.company_id ?? undefined,
       };
 
       // Enhanced system prompt with tool awareness

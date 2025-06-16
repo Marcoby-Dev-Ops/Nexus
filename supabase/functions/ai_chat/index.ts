@@ -24,6 +24,12 @@ async function getProfile(supabaseClient: any, userId: string) {
   return profile;
 }
 
+// === STREAMING CONFIG =========================================
+const isStreamingRequest = (req: Request): boolean => {
+  const url = new URL(req.url);
+  return url.searchParams.get('stream') === '1' || req.headers.get('accept')?.includes('text/event-stream');
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -48,6 +54,20 @@ serve(async (req) => {
     const { message, conversationId: rawConversationId, metadata } = await req.json();
 
     if (!message || typeof message !== 'string') throw new Error('Invalid message');
+
+    let userId = metadata?.userId as string | undefined;
+
+    if (!userId) {
+      const authHeader = req.headers.get('authorization');
+      if (authHeader?.startsWith('Bearer ')) {
+        const jwt = authHeader.replace('Bearer ', '');
+        const { data: { user }, error } = await createClient(supabaseUrl, supabaseServiceKey).auth.getUser(jwt);
+        if (!error && user?.id) userId = user.id;
+      }
+    }
+
+    // ensure metadata object
+    const cleanMetadata = { ...(metadata || {}), userId };
 
     // Determine if this response should use the higher-tier model
     const isFinal = metadata?.conversation_stage === 'resolution';
@@ -76,12 +96,12 @@ serve(async (req) => {
           .from('ai_conversations')
           .insert(
             {
-              user_id: metadata?.userId || null,
+              user_id: userId || null,
               title: message.slice(0, 64) || 'Untitled',
               ai_messages: {
                 data: [
                   {
-                    user_id: metadata?.userId || null,
+                    user_id: userId || null,
                     role: 'user',
                     content: message,
                   },
@@ -100,7 +120,7 @@ serve(async (req) => {
           const { data: convData, error: convErr } = await supabaseClient
             .from('ai_conversations')
             .insert({
-              user_id: metadata?.userId || null,
+              user_id: userId || null,
               title: message.slice(0, 64) || 'Untitled',
             })
             .select('id')
@@ -111,7 +131,7 @@ serve(async (req) => {
 
         const { error: msgErr } = await supabaseClient.from('ai_messages').insert({
           conversation_id: conversationId,
-          user_id: metadata?.userId || null,
+          user_id: userId || null,
           role: 'user',
           content: message,
         });
@@ -121,7 +141,7 @@ serve(async (req) => {
       // ---- Persist USER message --------------------------------------------
       const { error } = await supabaseClient.from('ai_messages').insert({
         conversation_id: conversationId,
-        user_id: metadata?.userId || null,
+        user_id: userId || null,
         role: 'user',
         content: message,
       });
@@ -130,32 +150,110 @@ serve(async (req) => {
 
     // ---- (Optional) Audit Log ------------------------------------------------
     await supabaseClient.from('ai_audit_logs').insert({
-      user_id: metadata?.userId || null,
+      user_id: userId || null,
       action: 'insert',
       table_name: 'ai_messages',
       record_id: conversationId,
       details: { role: 'user' },
     });
 
-    // ---- Fetch user profile for personalisation ----------------------------
-    let userProfile = { name: 'there', company: undefined };
-    if (metadata?.userId) {
-      try {
-        userProfile = await getProfile(supabaseClient, metadata.userId);
-      } catch (_err) {
-        // keep default profile on failure
+    // ---- Fetch user profile & recent history in parallel -------------------
+    const [profileRes, historyRes, convRowRes] = await Promise.all([
+      (async () => {
+        if (!userId) return { name: 'there', company: undefined };
+        try {
+          return await getProfile(supabaseClient, userId);
+        } catch (_e) {
+          return { name: 'there', company: undefined };
+        }
+      })(),
+      (async () => {
+        const { data, error } = await supabaseClient
+          .from('ai_messages')
+          .select('role, content')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true })
+          .limit(10); // trim for performance
+        if (error) throw error;
+        return data;
+      })(),
+      (async () => {
+        const { data, error } = await supabaseClient
+          .from('ai_conversations')
+          .select('summary_chunks')
+          .eq('id', conversationId)
+          .single();
+        if (error) return { summary_chunks: [] } as any;
+        return data;
+      })(),
+    ]);
+
+    const userProfile = profileRes;
+    const history = historyRes;
+    const summaryChunks: string[] = (convRowRes?.summary_chunks as unknown as string[]) || [];
+
+    // === RAG CONTEXT USING VECTOR SEARCH ==================================
+    let ragContext = '';
+    try {
+      // Generate SHA-256 checksum of the message for cache lookup
+      const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(message));
+      const checksum = Array.from(new Uint8Array(hashBuffer))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      // Attempt to retrieve cached embedding first (cost control – Pillar 9)
+      let embedding: number[] | null = null;
+      const { data: cachedRow } = await supabaseClient
+        .from('ai_embedding_cache')
+        .select('embedding')
+        .eq('checksum', checksum)
+        .single();
+
+      if (cachedRow?.embedding) {
+        embedding = cachedRow.embedding as unknown as number[];
       }
+
+      // Cache miss → call OpenAI embeddings endpoint (text-embedding-3-small)
+      if (!embedding && openaiApiKey) {
+        const embedRes = await fetch('https://api.openai.com/v1/embeddings', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${openaiApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'text-embedding-3-small',
+            input: message,
+          }),
+        });
+        if (embedRes.ok) {
+          const embedJson = await embedRes.json();
+          embedding = embedJson.data?.[0]?.embedding;
+
+          // Persist to cache asynchronously – ignore errors
+          if (embedding) {
+            await supabaseClient
+              .from('ai_embedding_cache')
+              .insert({ checksum, content: message, embedding })
+              .select('id');
+          }
+        }
+      }
+
+      // When we have an embedding vector, perform similarity search
+      if (embedding) {
+        const { data: docs } = await supabaseClient.rpc('match_documents', {
+          query_embedding: embedding,
+          match_threshold: 0.5,
+          match_count: 5,
+        });
+        if (docs && docs.length) {
+          ragContext = (docs as any[]).map((d) => d.content).join('\n\n');
+        }
+      }
+    } catch (_ragErr) {
+      // Fail silently – RAG is best-effort and should never block the chat
     }
-
-    // ---- Fetch recent conversation context ----------------------------------
-    const { data: history, error: historyErr } = await supabaseClient
-      .from('ai_messages')
-      .select('role, content')
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true })
-      .limit(20);
-
-    if (historyErr) throw historyErr;
 
     const chatMessages = [
       {
@@ -164,12 +262,17 @@ serve(async (req) => {
           `You are Nex, an enterprise-grade AI business assistant embedded inside the Nexus platform.
 Respond with a professional, concise tone focused on helping business users achieve productivity, strategy, and operational goals.
 Address the user as "${userProfile.name}" once at the beginning of the conversation.
-Reference the user's ongoing conversation and, where relevant, their company${userProfile.company ? ` (${userProfile.company})` : ''}.`,
+Reference the user's ongoing conversation and, where relevant, their company${userProfile.company ? ` (${userProfile.company})` : ''}.
+
+${ragContext ? `Institutional knowledge that may help answer:\n${ragContext}` : ''}`,
       },
+      ...summaryChunks.map((c) => ({ role: 'system', content: `[SUMMARY]\n${c}` })),
       ...(history ?? []).map((m) => ({ role: m.role, content: m.content })),
     ];
 
-    // ---- Call OpenAI Chat Completion ----------------------------------------
+    const streaming = isStreamingRequest(req);
+
+    // ---- Call OpenAI Chat Completion (stream or full)------------
     const openaiRes = await fetch(llmUrl, {
       method: 'POST',
       headers: {
@@ -180,6 +283,7 @@ Reference the user's ongoing conversation and, where relevant, their company${us
         model: llmModel,
         messages: chatMessages,
         temperature: 0.7,
+        stream: streaming,
       }),
     });
 
@@ -188,28 +292,100 @@ Reference the user's ongoing conversation and, where relevant, their company${us
       throw new Error(`OpenAI error: ${errText}`);
     }
 
+    if (streaming && openaiRes.body) {
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullContent = '';
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          for await (const chunk of openaiRes.body!) {
+            buffer += decoder.decode(chunk, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed) continue;
+              if (trimmed.startsWith('data:')) {
+                const data = trimmed.replace(/^data:\s*/, '');
+                if (data === '[DONE]') {
+                  controller.close();
+                  // Persist full assistant message asynchronously (fire and forget)
+                  (async () => {
+                    try {
+                      await supabaseClient.from('ai_messages').insert({
+                        conversation_id: conversationId,
+                        user_id: userId || null,
+                        role: 'assistant',
+                        content: fullContent,
+                      });
+                    } catch (_err) {/* ignore */}
+                  })();
+                  return;
+                }
+                try {
+                  const json = JSON.parse(data);
+                  const delta = json.choices?.[0]?.delta?.content;
+                  if (delta) {
+                    fullContent += delta;
+                    controller.enqueue(encoder.encode(delta));
+                  }
+                } catch (_err) {
+                  // ignore parse errors
+                }
+              }
+            }
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store',
+          'Transfer-Encoding': 'chunked',
+          'x-conversation-id': conversationId,
+        },
+        status: 200,
+      });
+    }
+
+    // ---- Non-stream response (existing behaviour) ---------------
     const openaiData = await openaiRes.json();
     const aiContent = openaiData.choices?.[0]?.message?.content?.trim() || 'I\'m sorry, I could not generate a response.';
     const confidence = openaiData.choices?.[0]?.finish_reason === 'stop' ? 0.95 : 0.7;
 
-    // ---- Persist ASSISTANT message ------------------------------------------
+    // Persist assistant message
     await supabaseClient.from('ai_messages').insert({
       conversation_id: conversationId,
-      user_id: metadata?.userId || null,
+      user_id: userId || null,
       role: 'assistant',
       content: aiContent,
     });
 
-    // ---- Optional: create action card stub ----------------------------------
+    // Optional: action card stub
     await supabaseClient.from('ai_action_cards').insert({
       conversation_id: conversationId,
       title: 'Assistant reply',
       description: aiContent.slice(0, 140),
     });
 
+    // Fire-and-forget summariser (runs if thresholds met)
+    (async () => {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/ai_conversation_summariser`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ conversationId }),
+        });
+      } catch (_e) { /* ignore */ }
+    })();
+
     return new Response(
       JSON.stringify({ conversationId, message: aiContent, confidence, success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-conversation-id': conversationId }, status: 200 },
     );
   } catch (error) {
     console.error('ai_chat error', error);

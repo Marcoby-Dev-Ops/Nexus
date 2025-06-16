@@ -1,3 +1,4 @@
+// @ts-nocheck
 // @ts-ignore
 require('@testing-library/jest-dom');
 
@@ -43,6 +44,22 @@ global.scrollTo = jest.fn();
 
 // Mock URL for React Router
 global.URL = global.URL || require('url').URL;
+
+// Load environment variables from .env for tests
+require('dotenv').config({ path: '.env' });
+
+// Map VITE_ Supabase vars to generic names used in tests
+if (!process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL) {
+  process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+}
+if (!process.env.SUPABASE_ANON_KEY && process.env.VITE_SUPABASE_ANON_KEY) {
+  process.env.SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+}
+
+// Polyfill global fetch for Node < 18
+if (typeof fetch === 'undefined') {
+  require('cross-fetch/polyfill');
+}
 
 // Silence console errors/warnings in tests unless explicitly needed
 const originalError = console.error;

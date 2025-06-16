@@ -1,5 +1,5 @@
-import React from 'react';
-import { User, Mail, Phone, Calendar, MapPin, Globe, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, MapPin, Globe, Save } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
@@ -7,6 +7,9 @@ import { Button } from '../../components/ui/Button';
 import { Label } from '../../components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNotifications } from '../../contexts/NotificationContext';
+import { supabase } from '../../lib/supabase';
+import type { Database } from '../../lib/database.types';
 import { Separator } from '../../components/ui/Separator';
 
 /**
@@ -14,13 +17,97 @@ import { Separator } from '../../components/ui/Separator';
  * 
  * Allows users to view and update their account information
  */
+type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+
 const AccountSettings: React.FC = () => {
-  const { user } = useAuth();
-  
-  const handleSubmit = (e: React.FormEvent) => {
+  const { user, updateProfile } = useAuth();
+  const { addNotification } = useNotifications();
+
+  const [loading, setLoading] = useState(false);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    birthday: '',
+    address: '',
+    city: '',
+    postalCode: '',
+    country: '',
+    timezone: 'UTC',
+    language: 'en',
+  });
+
+  // Populate defaults from user context
+  useEffect(() => {
+    if (!user) return;
+    setFormData(prev => ({
+      ...prev,
+      firstName: user.profile?.first_name || '',
+      lastName: user.profile?.last_name || '',
+      phone: user.profile?.phone || '',
+      birthday: (user.profile as any)?.birth_date ?? '',
+      address: ((user.profile as any)?.address as string) ?? '',
+      city: (user.profile as any)?.city || '',
+      postalCode: (user.profile as any)?.postal_code ?? '',
+      country: (user.profile as any)?.country || '',
+      timezone: user.profile?.timezone || 'UTC',
+      language: (user.profile?.preferences as any)?.language || 'en',
+    }));
+  }, [user]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Implementation would update user profile
-    console.log('Updating user profile...');
+    if (!user) return;
+    setLoading(true);
+
+    try {
+      // 1. Update auth user metadata & phone
+      const { error: authError } = await supabase.auth.updateUser({
+        data: {
+          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
+          language: formData.language,
+          timezone: formData.timezone,
+        },
+        phone: formData.phone || undefined,
+      });
+
+      if (authError) throw authError;
+
+      // 2. Update profile table
+      const profileUpdates: Record<string, any> = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        birth_date: formData.birthday,
+        address: formData.address,
+        city: formData.city,
+        postal_code: formData.postalCode,
+        country: formData.country,
+        timezone: formData.timezone,
+        preferences: { language: formData.language },
+      };
+
+      await updateProfile(profileUpdates as any);
+
+      addNotification({
+        message: 'Profile updated successfully',
+        type: 'success',
+      });
+    } catch (err) {
+      addNotification({
+        message: err instanceof Error ? err.message : 'Failed to update profile',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
   
   return (
@@ -48,16 +135,20 @@ const AccountSettings: React.FC = () => {
                 <Label htmlFor="firstName">First Name</Label>
                 <Input 
                   id="firstName" 
+                  name="firstName"
                   placeholder="First Name" 
-                  defaultValue={user?.profile?.first_name || ''}
+                  value={formData.firstName}
+                  onChange={handleChange}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input 
                   id="lastName" 
+                  name="lastName"
                   placeholder="Last Name" 
-                  defaultValue={user?.profile?.last_name || ''}
+                  value={formData.lastName}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -78,8 +169,10 @@ const AccountSettings: React.FC = () => {
               <Label htmlFor="phone">Phone Number</Label>
               <Input 
                 id="phone" 
+                name="phone"
                 placeholder="Phone Number" 
-                defaultValue={user?.profile?.phone || ''}
+                value={formData.phone}
+                onChange={handleChange}
               />
             </div>
             
@@ -87,8 +180,10 @@ const AccountSettings: React.FC = () => {
               <Label htmlFor="birthday">Date of Birth</Label>
               <Input 
                 id="birthday" 
+                name="birthday"
                 type="date" 
-                defaultValue={user?.profile?.birth_date || ''}
+                value={formData.birthday}
+                onChange={handleChange}
               />
             </div>
           </CardContent>
@@ -108,8 +203,10 @@ const AccountSettings: React.FC = () => {
               <Label htmlFor="address">Address</Label>
               <Input 
                 id="address" 
+                name="address"
                 placeholder="Address" 
-                defaultValue={user?.profile?.address || ''}
+                value={formData.address}
+                onChange={handleChange}
               />
             </div>
             
@@ -118,16 +215,20 @@ const AccountSettings: React.FC = () => {
                 <Label htmlFor="city">City</Label>
                 <Input 
                   id="city" 
+                  name="city"
                   placeholder="City" 
-                  defaultValue={user?.profile?.city || ''}
+                  value={formData.city}
+                  onChange={handleChange}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="postalCode">Postal Code</Label>
                 <Input 
                   id="postalCode" 
+                  name="postalCode"
                   placeholder="Postal Code" 
-                  defaultValue={user?.profile?.postal_code || ''}
+                  value={formData.postalCode}
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -135,8 +236,8 @@ const AccountSettings: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
-                <Select defaultValue={user?.profile?.country || ''}>
-                  <SelectTrigger id="country">
+                <Select value={formData.country} onValueChange={(value) => setFormData(prev => ({ ...prev, country: value }))}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Select Country" />
                   </SelectTrigger>
                   <SelectContent>
@@ -151,8 +252,8 @@ const AccountSettings: React.FC = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timezone">Timezone</Label>
-                <Select defaultValue={user?.profile?.timezone || 'UTC'}>
-                  <SelectTrigger id="timezone">
+                <Select value={formData.timezone} onValueChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Select Timezone" />
                   </SelectTrigger>
                   <SelectContent>
@@ -183,8 +284,8 @@ const AccountSettings: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="language">Language</Label>
-              <Select defaultValue={user?.profile?.preferences?.language || 'en'}>
-                <SelectTrigger id="language">
+              <Select value={formData.language} onValueChange={(value) => setFormData(prev => ({ ...prev, language: value }))}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select Language" />
                 </SelectTrigger>
                 <SelectContent>
@@ -198,7 +299,7 @@ const AccountSettings: React.FC = () => {
             </div>
           </CardContent>
           <CardFooter className="border-t border-border pt-4 flex justify-end">
-            <Button>
+            <Button isLoading={loading} disabled={loading}>
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>

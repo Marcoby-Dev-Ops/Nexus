@@ -8,8 +8,8 @@ module.exports = {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testMatch: [
-    '<rootDir>/src/**/*.test.ts',
-    '<rootDir>/src/**/*.test.tsx',
+    '<rootDir>/src/**/*.test.{ts,tsx}',
+    '<rootDir>/__tests__/**/*.test.ts',
   ],
   // Focus on stable, working tests for production readiness
   testPathIgnorePatterns: [
@@ -72,7 +72,7 @@ module.exports = {
   
   // Transform ignore patterns for node_modules
   transformIgnorePatterns: [
-    'node_modules/(?!(react-router|@testing-library)/)',
+    'node_modules/(?!(react-router|@testing-library|@supabase)/)',
   ],
   
   // Global setup for tests

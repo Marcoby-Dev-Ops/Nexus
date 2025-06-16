@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Card } from '@/components/ui/Card';
+import { startAuthentication } from '@simplewebauthn/browser';
 
 type AuthMode = 'login' | 'signup' | 'reset';
 
@@ -20,6 +21,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +69,50 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
     }
   };
 
+  // -------------------------------------------------------------
+  // Passkey Sign-in
+  // -------------------------------------------------------------
+  const handlePasskeySignIn = async () => {
+    try {
+      if (!email) {
+        setError('Enter email first so we can locate your account');
+        return;
+      }
+      setError(null);
+      setPasskeyLoading(true);
 
+      // Step 1: Get challenge options (returns options + userId)
+      const { data: options, error: optErr } = await supabase.functions.invoke(
+        'passkey-auth-challenge',
+        { body: { email } },
+      );
+      if (optErr) throw optErr;
+
+      const { userId, ...publicKeyOptions } = options as any;
+
+      // Step 2: Browser prompt
+      const assertionResponse = await startAuthentication({ optionsJSON: publicKeyOptions as any });
+
+      // Step 3: Verify on server
+      const { data: verifyRes, error: verErr } = await supabase.functions.invoke(
+        'passkey-auth-verify',
+        { body: { userId, assertionResponse } },
+      );
+      if (verErr) throw verErr;
+
+      if (verifyRes?.verified) {
+        // TODO: establish Supabase session (to be implemented)
+        onSuccess?.();
+      } else {
+        throw new Error('Passkey verification failed');
+      }
+    } catch (err: any) {
+      console.error('[AuthForm] Passkey sign-in failed', err);
+      setError(err?.message ?? 'Passkey sign-in failed');
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto p-8 bg-card shadow-xl border-0">
@@ -178,6 +223,17 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
           {mode === 'login' && 'Sign in with email'}
           {mode === 'signup' && 'Create account with email'}
           {mode === 'reset' && 'Send reset link'}
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12 text-base font-medium"
+          isLoading={passkeyLoading}
+          disabled={passkeyLoading}
+          onClick={handlePasskeySignIn}
+        >
+          Sign in with Passkey
         </Button>
 
         <div className="text-center space-y-4">

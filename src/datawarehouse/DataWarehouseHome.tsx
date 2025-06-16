@@ -1,6 +1,5 @@
 import React from 'react';
-import { Database, Search, Download, Upload, BarChart2, Users, FileText, Filter } from 'lucide-react';
-import { PageTemplates } from '@/components/patterns/PageTemplates';
+import { Database, Search, Download, Upload, BarChart2 } from 'lucide-react';
 import { ContentCard } from '@/components/patterns/ContentCard';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { SimpleBarChart } from '@/components/dashboard/SimpleBarChart';
@@ -53,10 +52,11 @@ const recentQueries = [
 
 const DataWarehouseHome: React.FC = () => {
   return (
-    <PageTemplates.Department
-      title="Data Warehouse"
-      subtitle="Access and analyze your business data with powerful querying and visualization tools"
-    >
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Analytics</h1>
+        <p className="text-muted-foreground">Access and analyze your business data with powerful querying and visualization tools</p>
+      </div>
       {/* Quick Actions */}
       <ContentCard title="Quick Actions" variant="elevated" className="mb-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -197,7 +197,7 @@ const DataWarehouseHome: React.FC = () => {
           </div>
         </ContentCard>
       </div>
-    </PageTemplates.Department>
+    </div>
   );
 };
 

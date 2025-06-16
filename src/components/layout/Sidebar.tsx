@@ -2,9 +2,10 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Badge } from '@/components/ui/Badge';
 import { useLocation, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Banknote, Settings, Store, Bot, BarChart2, Users, DollarSign, Truck, X, Building2, Plug, Brain, Sparkles, FileText, Database, LineChart, PieChart } from 'lucide-react';
+import { LayoutDashboard, Settings, Store, Bot, BarChart2, Users, X, Building2, Plug, Brain, Sparkles, FileText, Database, PieChart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { DEPARTMENTS } from '@/constants/departments';
 // import { Badge } from 'shadcn/ui'; // Uncomment if Badge is available
 
 /**
@@ -39,44 +40,46 @@ const overview: NavItem[] = [
   // { label: 'Command Center', href: '/nexus', icon: <Brain className="w-5 h-5" />, badge: 'TRINITY' }, // Hidden until ready
   { label: 'Business Overview', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
   { label: 'Workspace', href: '/workspace', icon: <Database className="w-5 h-5" /> },
+  { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
 ];
 
-const departments: NavItem[] = [
-  { 
-    label: 'Sales', 
-    href: '/departments/sales/performance', 
-    icon: <DollarSign className="w-5 h-5" /> 
-  },
-  { 
-    label: 'Finance', 
-    href: '/departments/finance/operations', 
-    icon: <Banknote className="w-5 h-5" /> 
-  },
-  { 
-    label: 'Operations', 
-    href: '/departments/operations/analytics', 
-    icon: <Truck className="w-5 h-5" /> 
-  },
-  { 
-    label: 'Data Warehouse', 
-    href: '/data-warehouse', 
-    icon: <BarChart2 className="w-5 h-5" /> 
-  },
-];
+// Build Department nav list from central definition; filter out routes that don't exist yet
+const routeOverrides: Record<string, string> = {
+  sales: '/sales',
+  finance: '/finance',
+  marketing: '/marketing',
+  support: '/support',
+  operations: '/operations',
+  maturity: '/maturity',
+};
+
+const departments: NavItem[] = DEPARTMENTS.map((d) => ({
+  label: d.label,
+  href: routeOverrides[d.id] || d.analyticsRoute,
+  icon: d.icon,
+}));
 
 const aiPowered: NavItem[] = [
   { label: 'AI Hub', href: '/ai-hub', icon: <Brain className="w-5 h-5" /> },
-  { label: 'AI Chat', href: '/chat', icon: <Bot className="w-5 h-5" /> },
+  { label: 'AI Chat', href: '/chat-v2', icon: <Bot className="w-5 h-5" /> },
   // { label: 'AI Transformation', href: '/ai-transformation', icon: <Sparkles className="w-5 h-5" /> }, // Hidden until ready
-  { label: 'Analytics', href: '/analytics', icon: <LineChart className="w-5 h-5" /> },
+  // Analytics now lives under Data Warehouse section – removed separate nav item (Pillar 5)
   // { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> }, // Hidden until ready
 ];
 
-const marketplace: NavItem[] = [
-  { label: 'Pulse', href: '/marketplace', icon: <Store className="w-5 h-5" />, badge: '3 new' },
-  // { label: 'Add-ons', href: '/add-ons', icon: <Settings className="w-5 h-5" />, badge: 'New' }, // Hidden until ready
-  { label: 'Integrations', href: '/integrations', icon: <Plug className="w-5 h-5" /> },
-];
+// -----------------------------------------------------------------------------
+// Feature Flag: Pulse Marketplace
+// -----------------------------------------------------------------------------
+const MARKETPLACE_TEMPLATE_COUNT = Number(import.meta.env.VITE_MARKETPLACE_TEMPLATE_COUNT ?? 0);
+const ENABLE_MARKETPLACE = MARKETPLACE_TEMPLATE_COUNT >= 3;
+
+const marketplace: NavItem[] = ENABLE_MARKETPLACE
+  ? [
+      { label: 'Pulse', href: '/marketplace', icon: <Store className="w-5 h-5" />, badge: `${MARKETPLACE_TEMPLATE_COUNT} templates` },
+      // { label: 'Add-ons', href: '/add-ons', icon: <Settings className="w-5 h-5" />, badge: 'New' }, // Hidden until ready
+      { label: 'Integrations', href: '/integrations', icon: <Plug className="w-5 h-5" /> },
+    ]
+  : [];
 
 const admin: NavItem[] = [
   // { label: 'Admin', href: '/admin', icon: <Users className="w-5 h-5" /> }, // Hidden until ready

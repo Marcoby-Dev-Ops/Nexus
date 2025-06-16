@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/Spinner';
+import EmailNotVerified from '@/pages/EmailNotVerified';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -17,6 +18,10 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         <Spinner size={32} />
       </div>
     );
+  }
+
+  if (session && !session.user.email_confirmed_at) {
+    return <EmailNotVerified />;
   }
 
   if (!session) {

@@ -29,6 +29,7 @@ import {
   CheckCircle2,
   XCircle
 } from 'lucide-react';
+import { chartColors } from '@/lib/chartColors';
 
 interface ModelReport {
   monthlyCost: number;
@@ -89,7 +90,7 @@ export const ModelManagementDashboard: React.FC = () => {
     }));
   };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  const COLOR_PALETTE = chartColors.categorical;
 
   return (
     <div className="space-y-6 p-6">
@@ -192,8 +193,8 @@ export const ModelManagementDashboard: React.FC = () => {
                   <XAxis dataKey="model" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="successRate" fill="#0088FE" name="Success Rate (%)" />
-                  <Bar dataKey="errorCount" fill="#FF8042" name="Error Count" />
+                  <Bar dataKey="successRate" fill={chartColors.primary} name="Success Rate (%)" />
+                  <Bar dataKey="errorCount" fill={chartColors.warning} name="Error Count" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -220,7 +221,7 @@ export const ModelManagementDashboard: React.FC = () => {
                     nameKey="model"
                   >
                     {getPerformanceData().map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      <Cell key={`cell-${index}`} fill={COLOR_PALETTE[index % COLOR_PALETTE.length]} />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -246,7 +247,7 @@ export const ModelManagementDashboard: React.FC = () => {
                   <Line
                     type="monotone"
                     dataKey="averageLatency"
-                    stroke="#8884d8"
+                    stroke={chartColors.accent}
                     name="Average Latency (ms)"
                   />
                 </LineChart>

@@ -185,7 +185,12 @@ export const BusinessHealthScore: React.FC = () => {
         {/* Progress Bars */}
         <div className="space-y-3 mt-6">
           {(showAllCategories ? healthCategories : topCategories).map((category) => (
-            <div key={category.id} className="space-y-1">
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => navigate(`/${category.id}`)}
+              className="space-y-1 w-full text-left focus:outline-none hover:bg-muted/40 rounded-sm p-1"
+            >
               <div className="flex justify-between text-sm">
                 <span className="font-medium">{category.name}</span>
                 <span className={getScoreColorClass(categoryScores[category.id] || 0)}>
@@ -193,7 +198,7 @@ export const BusinessHealthScore: React.FC = () => {
                 </span>
               </div>
               <Progress value={categoryScores[category.id] || 0} className="h-2" />
-            </div>
+            </button>
           ))}
           
           {!showAllCategories && healthCategories.length > 3 && (

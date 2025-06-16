@@ -30,27 +30,28 @@ const getCssVariableValue = (variableName: string): string => {
 
 // Main chart colors - use these for data visualization
 export const chartColors = {
-  primary: 'var(--primary)',
-  secondary: 'var(--secondary)',
-  accent: 'var(--accent)',
-  success: 'var(--success)',
-  warning: 'var(--warning)',
-  destructive: 'var(--destructive)',
-  muted: 'var(--muted)',
+  // Using hsl() wrapper ensures CSS variables resolve correctly in SVG attributes
+  primary: 'hsl(var(--primary))',
+  secondary: 'hsl(var(--secondary))',
+  accent: 'hsl(var(--accent))',
+  success: 'hsl(var(--success))',
+  warning: 'hsl(var(--warning))',
+  destructive: 'hsl(var(--destructive))',
+  muted: 'hsl(var(--muted))',
   
-  // Opacity variants
-  primaryLight: 'var(--primary/20)',
-  secondaryLight: 'var(--secondary/20)',
-  accentLight: 'var(--accent/20)',
+  // Opacity variants (20% opacity)
+  primaryLight: 'hsl(var(--primary) / 0.2)',
+  secondaryLight: 'hsl(var(--secondary) / 0.2)',
+  accentLight: 'hsl(var(--accent) / 0.2)',
   
-  // Categorical data colors (for pie/bar charts with multiple categories)
+  // Categorical palette for multi-series charts
   categorical: [
-    'var(--primary)',
-    'var(--secondary)',
-    'var(--accent)',
-    'var(--success)',
-    'var(--warning)',
-    'var(--destructive)',
+    'hsl(var(--primary))',
+    'hsl(var(--secondary))',
+    'hsl(var(--accent))',
+    'hsl(var(--success))',
+    'hsl(var(--warning))',
+    'hsl(var(--destructive))',
   ],
 };
 
