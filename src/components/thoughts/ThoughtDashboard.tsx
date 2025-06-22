@@ -12,6 +12,11 @@ import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/Dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
+import { Progress } from '../ui/Progress';
+import { Avatar, AvatarFallback } from '../ui/Avatar';
+import { Skeleton } from '../ui/Skeleton';
+import { Alert } from '../ui/Alert';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
 import { 
   Plus, 
   Search, 
@@ -25,16 +30,19 @@ import {
   Edit,
   Trash2,
   Eye,
-  X
+  X,
+  ArrowRight,
+  BarChart3,
+  Target
 } from 'lucide-react';
 import { thoughtsService } from '../../lib/services/thoughtsService';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { logger } from '../../lib/security/logger';
-import { 
+import type { 
   Thought, 
   ThoughtCategory, 
-  ThoughtPriority,
+  ThoughtMetrics,
   CreateThoughtRequest,
   UpdateThoughtRequest
 } from '../../lib/types/thoughts';
