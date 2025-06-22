@@ -39,6 +39,29 @@
     --input: 145 20% 85%;
     --ring: 145 100% 20%;       /* #006837 */
     --radius: 0.5rem;
+    
+    /* Extended UI state colors */
+    --primary-subtle: 145 100% 96%;    /* Very light primary for backgrounds */
+    --primary-hover: 145 100% 18%;     /* Slightly darker primary for hover */
+    --secondary-subtle: 148 100% 95%;  /* Very light secondary for backgrounds */
+    --muted-subtle: 160 30% 96%;       /* Even lighter muted for subtle backgrounds */
+    --muted-hover: 160 30% 88%;        /* Darker muted for hover states */
+    --unread-bg: 145 100% 98%;         /* Unread item background */
+    --unread-border: 145 100% 20%;     /* Unread item border */
+    --selected-bg: 160 30% 90%;        /* Selected item background */
+    --hover-bg: 160 20% 94%;           /* General hover background */
+
+    /* Z-Index System - Proper layering hierarchy */
+    --z-base: 1;                       /* Base content layer */
+    --z-elevated: 10;                  /* Elevated cards, dropdowns */
+    --z-sticky: 20;                    /* Sticky headers, navigation */
+    --z-overlay: 30;                   /* Tooltips, popovers */
+    --z-dropdown: 40;                  /* Select dropdowns, menus */
+    --z-drawer: 50;                    /* Side drawers, panels */
+    --z-modal: 60;                     /* Standard modals */
+    --z-notification: 70;              /* Notifications, toasts */
+    --z-critical: 80;                  /* Critical overlays */
+    --z-maximum: 9999;                 /* Absolute top layer */
   }
 
   .dark {
@@ -76,6 +99,17 @@
     --border: 160 15% 20%;
     --input: 160 15% 20%;
     --ring: 148 100% 33%;
+    
+    /* Extended UI state colors - dark mode */
+    --primary-subtle: 145 100% 8%;     /* Very dark primary for backgrounds */
+    --primary-hover: 148 100% 35%;     /* Brighter primary for hover */
+    --secondary-subtle: 148 100% 6%;   /* Very dark secondary for backgrounds */
+    --muted-subtle: 160 20% 12%;       /* Even darker muted for subtle backgrounds */
+    --muted-hover: 160 20% 18%;        /* Lighter muted for hover states */
+    --unread-bg: 145 100% 5%;          /* Unread item background */
+    --unread-border: 148 100% 33%;     /* Unread item border */
+    --selected-bg: 160 20% 18%;        /* Selected item background */
+    --hover-bg: 160 15% 17%;           /* General hover background */
   }
 
   * {
@@ -86,4 +120,16 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+
+  /* Z-Index Utility Classes */
+  .z-base { z-index: 1; }
+  .z-elevated { z-index: 10; }
+  .z-sticky { z-index: 20; }
+  .z-overlay { z-index: 30; }
+  .z-dropdown { z-index: 40; }
+  .z-drawer { z-index: 50; }
+  .z-modal { z-index: 60; }
+  .z-notification { z-index: 70; }
+  .z-critical { z-index: 80; }
+  .z-maximum { z-index: 9999; }
 } 

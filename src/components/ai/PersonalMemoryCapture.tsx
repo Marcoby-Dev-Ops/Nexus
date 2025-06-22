@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Brain, Lightbulb, Target, BookOpen, Tag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { thoughtsService } from '@/lib/services/thoughtsService';
 
 /**
  * PersonalMemoryCapture
@@ -34,7 +35,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   currentContext,
   onThoughtSaved
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [content, setContent] = useState('');
   const [category, setCategory] = useState<PersonalThought['category']>('idea');
   const [tags, setTags] = useState<string>('');
@@ -44,7 +45,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   const categories = [
     { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-warning/10 text-warning-foreground' },
     { value: 'learning', label: 'Learning', icon: BookOpen, color: 'bg-primary/10 text-primary' },
-    { value: 'reflection', label: 'Reflection', icon: Brain, color: 'bg-secondary/10 text-purple-800' },
+    { value: 'reflection', label: 'Reflection', icon: Brain, color: 'bg-accent/10 text-accent-foreground' },
     { value: 'goal', label: 'Goal', icon: Target, color: 'bg-success/10 text-success' }
   ];
 
@@ -53,21 +54,26 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
 
     setLoading(true);
     try {
-      const thoughtData = {
-        user_id: user.id,
-        content: content.trim(),
-        category,
-        status: 'active',
-        main_sub_categories: tags.split(',').map(t => t.trim()).filter(Boolean),
-        ai_insights: { business_context: currentContext },
-        created_at: new Date().toISOString()
+      // ---- Map capture category to thoughts table schema ----
+      const categoryMap: Record<string, 'idea' | 'task' | 'update' | 'reminder'> = {
+        idea: 'idea',
+        learning: 'update',
+        reflection: 'update',
+        goal: 'task',
       };
 
-      const { error } = await supabase
-        .from('thoughts')
-        .insert([thoughtData]);
+      const createReq = {
+        content: content.trim(),
+        category: categoryMap[category],
+        status: 'concept' as const,
+        main_sub_categories: tags.split(',').map(t => t.trim()).filter(Boolean),
+        personal_or_professional: 'personal' as const,
+        interaction_method: 'text' as const,
+        // Put department/page context into impact field for now (future structured)
+        impact: currentContext?.department ? `Dept:${currentContext.department}` : undefined,
+      };
 
-      if (error) throw error;
+      const inserted = await thoughtsService.createThought(createReq);
 
       // Reset form
       setContent('');
@@ -75,14 +81,34 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       setIsOpen(false);
       
       const savedThought: PersonalThought = {
-        content: thoughtData.content,
-        category: thoughtData.category,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        content: createReq.content,
+        category,
+        tags: createReq.main_sub_categories ?? [],
         businessContext: currentContext,
       };
       onThoughtSaved?.(savedThought);
       
       console.log('Personal thought saved with business context:', currentContext);
+
+      // Fire-and-forget embedding creation (no await to keep UI snappy)
+      if (inserted?.id) {
+        // Fire embedding
+        supabase.functions.invoke('ai_embed_thought', {
+          body: {
+            thoughtId: inserted.id,
+            content: inserted.content,
+          },
+        }).catch((err) => {
+          console.error('Failed to invoke ai_embed_thought:', err);
+        });
+
+        // Trigger suggestion generation (integration-aware)
+        supabase.functions.invoke('ai_generate_thought_suggestions', {
+          body: { thoughtId: inserted.id },
+        }).catch((err) => {
+          console.error('Failed to invoke ai_generate_thought_suggestions:', err);
+        });
+      }
     } catch (error) {
       console.error('Failed to save personal thought:', error);
     } finally {
@@ -94,7 +120,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-4 text-sm bg-gradient-to-r from-purple-50 to-blue-50 hover:from-purple-100 hover:to-blue-100 rounded-lg border border-purple-200 text-purple-700 transition-all"
+        className="flex items-center gap-2 px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg border text-foreground transition-all"
       >
         <Brain className="w-4 h-4" />
         <span>Capture Thought</span>
@@ -103,12 +129,12 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   }
 
   return (
-    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-200">
+    <div className="bg-muted/50 rounded-xl p-4 border">
       <div className="flex items-center gap-2 mb-3">
-        <Brain className="w-5 h-5 text-secondary" />
-        <h3 className="text-sm font-semibold text-purple-800">Capture Personal Thought</h3>
+        <Brain className="w-5 h-5 text-primary" />
+        <h3 className="text-sm font-semibold text-foreground">Capture Personal Thought</h3>
         {currentContext?.department && (
-          <span className="text-xs bg-secondary/10 text-purple-700 px-4 py-4 rounded-full">
+          <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
             {currentContext.department}
           </span>
         )}
@@ -137,8 +163,9 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={`What's on your mind? This will be remembered and connected to your ${currentContext?.department || 'work'} context...`}
-        className="w-full p-4 border border-border rounded-lg resize-none text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        className="w-full p-2 border bg-background border-border rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
         rows={3}
+        autoFocus
       />
 
       {/* Tags Input */}
@@ -149,7 +176,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="Tags (comma separated)"
-          className="flex-1 p-4 border border-border rounded text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className="flex-1 p-2 border bg-background border-border rounded text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
         />
       </div>
 
@@ -159,17 +186,17 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
           <p className="text-xs text-muted-foreground mb-1">Business Context:</p>
           <div className="flex flex-wrap gap-1">
             {currentContext.department && (
-              <span className="text-xs bg-primary/10 text-primary px-4 py-4 rounded">
+              <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                 {currentContext.department}
               </span>
             )}
             {currentContext.page && (
-              <span className="text-xs bg-success/10 text-success px-4 py-4 rounded">
+              <span className="text-xs bg-success/10 text-success px-2 py-1 rounded">
                 {currentContext.page}
               </span>
             )}
             {currentContext.conversationTopic && (
-                                    <span className="text-xs bg-warning/10 text-warning-foreground px-4 py-4 rounded">
+                                    <span className="text-xs bg-warning/10 text-warning-foreground px-2 py-1 rounded">
                 Topic: {currentContext.conversationTopic}
               </span>
             )}
@@ -188,7 +215,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         <button
           onClick={handleSave}
           disabled={!content.trim() || loading}
-          className="px-4 py-4 bg-secondary text-primary-foreground text-sm rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Saving...' : 'Save Thought'}
         </button>

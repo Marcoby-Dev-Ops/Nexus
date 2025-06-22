@@ -10,6 +10,13 @@ interface InsertPayload {
   requested_by: string;
 }
 
+// Mapping of KPI keys to n8n action workflow slugs
+const KPI_ACTION_MAP: Record<string, string> = {
+  deploy_frequency: 'deploy_frequency_audit',
+  change_failure: 'change_failure_review',
+  mttr: 'mttr_reduction_workflow',
+};
+
 /**
  * useRunPlaybook
  * Queues an operations playbook against the `ops_action_queue` table.
@@ -25,10 +32,12 @@ export function useRunPlaybook() {
         throw new Error('User not authenticated');
       }
 
+      const actionSlug = KPI_ACTION_MAP[kpiKey] ?? 'generic_ops_playbook';
+
       const payload: InsertPayload = {
         org_id: user.user_metadata?.org_id as string,
         kpi_key: kpiKey,
-        action_slug: 'uptime_audit', // TODO: map KPI → action slug dynamically
+        action_slug: actionSlug,
         requested_by: user.id,
       };
 

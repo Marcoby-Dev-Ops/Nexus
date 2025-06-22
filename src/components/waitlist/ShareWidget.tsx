@@ -5,7 +5,6 @@
  */
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import {
   Share2,
   Twitter,
@@ -175,7 +174,7 @@ const ShareWidget: React.FC<ShareWidgetProps> = ({
               </div>
               <div className="w-px h-10 bg-current opacity-20" />
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-400">+{recentSignups}</div>
+                <div className="text-2xl font-bold text-success">+{recentSignups}</div>
                 <div className="text-xs opacity-70">Joined Today</div>
               </div>
             </div>

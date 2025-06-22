@@ -128,8 +128,8 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
             key={index}
             className={`border rounded-lg p-4 ${
               error.severity === 'high' || error.severity === 'critical'
-                ? 'bg-destructive/5 dark:bg-destructive/20 border-red-200 dark:border-red-800'
-                : 'bg-warning/5 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                ? 'bg-destructive/5 dark:bg-destructive/20 border-destructive/20 dark:border-red-800'
+                : 'bg-warning/5 dark:bg-warning/20/20 border-warning/20 dark:border-warning/80'
             }`}
           >
             <div className="flex items-start space-x-4">
@@ -150,7 +150,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
                   <p className={`text-sm mt-1 ${
                     error.severity === 'high' || error.severity === 'critical'
                       ? 'text-destructive dark:text-red-200'
-                      : 'text-yellow-700 dark:text-yellow-200'
+                      : 'text-warning/90 dark:text-warning'
                   }`}>
                     {error.suggestion}
                   </p>
@@ -186,7 +186,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 bg-primary/10 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
+              <div className="mx-auto w-20 h-20 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-6">
                 {integration.icon}
               </div>
               <h2 className="text-2xl font-bold text-foreground dark:text-primary-foreground mb-3">
@@ -230,12 +230,12 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
             </div>
 
             {/* Trust Signals */}
-            <div className="bg-primary/5 dark:bg-blue-900/20 border border-border dark:border-blue-800 rounded-lg p-4">
+            <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
               <div className="flex items-center space-x-4 mb-2">
                 <Shield className="w-5 h-5 text-primary" />
                 <h4 className="font-medium text-blue-900 dark:text-blue-100">Secure & Trusted</h4>
               </div>
-              <p className="text-sm text-primary dark:text-blue-200">
+              <p className="text-sm text-primary dark:text-primary">
                 We use industry-standard encryption and never store your passwords. Your data is processed securely and in compliance with privacy regulations.
               </p>
               <div className="flex items-center space-x-4 mt-3">
@@ -251,7 +251,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-warning/10 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
                 <Book className="w-8 h-8 text-warning" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -327,7 +327,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   const renderOAuthStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+        <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
           <Shield className="w-8 h-8 text-primary" />
         </div>
         <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -338,12 +338,12 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         </p>
       </div>
 
-      <div className="bg-primary/5 dark:bg-blue-900/20 border border-border dark:border-blue-800 rounded-lg p-4">
+      <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
         <div className="flex items-start space-x-4">
           <AlertCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="font-medium text-blue-900 dark:text-blue-100">Secure Connection</h4>
-            <p className="text-sm text-primary dark:text-blue-200 mt-1">
+            <p className="text-sm text-primary dark:text-primary mt-1">
               Nexus uses industry-standard OAuth 2.0 authentication. We never store your {integration.name} password.
             </p>
           </div>
@@ -401,12 +401,12 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
           </div>
         </div>
 
-        <div className="bg-warning/5 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+        <div className="bg-warning/5 dark:bg-warning/20/20 border border-warning/20 dark:border-warning/80 rounded-lg p-4">
           <div className="flex items-start space-x-4">
             <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
             <div>
               <h4 className="font-medium text-yellow-900 dark:text-yellow-100">How to find your API key</h4>
-              <p className="text-sm text-yellow-700 dark:text-yellow-200 mt-1">
+              <p className="text-sm text-warning/90 dark:text-warning mt-1">
                 Go to your {integration.name} account settings → API section → Generate new API key
               </p>
             </div>
@@ -422,7 +422,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   const renderPermissionsStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-secondary/10 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-4">
+        <div className="mx-auto w-16 h-16 bg-secondary/10 dark:bg-secondary/20/20 rounded-full flex items-center justify-center mb-4">
           <Shield className="w-8 h-8 text-secondary" />
         </div>
         <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -459,8 +459,8 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         ))}
       </div>
 
-      <div className="bg-primary/5 dark:bg-blue-900/20 border border-border dark:border-blue-800 rounded-lg p-4">
-        <p className="text-sm text-primary dark:text-blue-200">
+      <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
+        <p className="text-sm text-primary dark:text-primary">
           💡 <strong>Pro tip:</strong> Start with all permissions enabled. You can fine-tune access levels later in the integration settings.
         </p>
       </div>
@@ -524,7 +524,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
 
       {/* Test Results */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-success/20 dark:border-success/80 rounded-lg">
           <div className="flex items-center space-x-4">
             <CheckCircle2 className="w-5 h-5 text-success" />
             <span className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -533,7 +533,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-success/20 dark:border-success/80 rounded-lg">
           <div className="flex items-center space-x-4">
             <CheckCircle2 className="w-5 h-5 text-success" />
             <span className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -542,7 +542,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-success/20 dark:border-success/80 rounded-lg">
           <div className="flex items-center space-x-4">
             <CheckCircle2 className="w-5 h-5 text-success" />
             <span className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -553,8 +553,8 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
       </div>
 
       {connectionStatus === 'success' && (
-        <div className="bg-primary/5 dark:bg-blue-900/20 border border-border dark:border-blue-800 rounded-lg p-4">
-          <p className="text-sm text-primary dark:text-blue-200">
+        <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
+          <p className="text-sm text-primary dark:text-primary">
             🎉 Excellent! Your {integration.name} integration is ready. Data will start appearing in your dashboard within a few minutes.
           </p>
         </div>
@@ -664,7 +664,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   if (!isOpen) return null;
 
   return (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[80]">
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-critical">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
           <CardTitle className="text-xl font-semibold">

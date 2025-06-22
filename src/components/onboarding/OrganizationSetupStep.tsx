@@ -250,12 +250,12 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
       <h2 className="text-2xl font-bold mb-6">Organization Setup</h2>
       
       {/* Privacy Notice */}
-      <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+      <div className="mb-6 p-4 bg-primary/5 rounded-lg">
         <div className="flex">
-          <InformationCircleIcon className="h-5 w-5 text-blue-400 mr-2" />
+          <InformationCircleIcon className="h-5 w-5 text-primary mr-2" />
           <div>
-            <h3 className="text-sm font-medium text-blue-800">Data Privacy Notice</h3>
-            <p className="text-sm text-blue-700 mt-1">
+            <h3 className="text-sm font-medium text-primary/80">Data Privacy Notice</h3>
+            <p className="text-sm text-primary/90 mt-1">
               We collect and process your company information to provide personalized services.
               Your data is encrypted and stored securely. We only use this information to improve
               your experience and provide relevant insights.
@@ -315,7 +315,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
           )}
 
           {enrichmentStatus.error && (
-            <div className="p-4 bg-red-50 rounded-lg">
+            <div className="p-4 bg-destructive/5 rounded-lg">
               <div className="flex">
                 <XCircleIcon className="h-5 w-5 text-red-400 mr-2" />
                 <p className="text-sm text-red-700">{enrichmentStatus.error}</p>
@@ -324,12 +324,12 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
           )}
 
           {enrichmentStatus.success && (
-            <div className="p-4 bg-green-50 rounded-lg">
+            <div className="p-4 bg-success/5 rounded-lg">
               <div className="flex">
-                <CheckCircleIcon className="h-5 w-5 text-green-400 mr-2" />
+                <CheckCircleIcon className="h-5 w-5 text-success mr-2" />
                 <div>
                   <p className="text-sm text-green-700">Successfully enriched company data</p>
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-success mt-1">
                     Enriched fields: {enrichmentStatus.enrichedFields.join(', ')}
                   </p>
                 </div>

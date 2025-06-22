@@ -49,47 +49,54 @@ export const ContentCard: React.FC<ContentCardProps> = ({
 /**
  * Pre-configured card variants for common use cases
  */
-export const CardVariants = {
-  /**
-   * Dashboard-style elevated card
-   */
-  Dashboard: ({ title, action, children, className }: ContentCardProps) => (
-    <ContentCard 
-      title={title}
-      action={action}
-      variant="elevated"
-      className={className}
-    >
-      {children}
-    </ContentCard>
-  ),
 
-  /**
-   * Simple outlined card for secondary content
-   */
-  Outlined: ({ title, action, children, className }: ContentCardProps) => (
-    <ContentCard 
-      title={title}
-      action={action}
-      variant="outlined"
-      className={className}
-    >
-      {children}
-    </ContentCard>
-  ),
+/**
+ * Dashboard-style elevated card
+ */
+export const DashboardCard = ({
+  title,
+  action,
+  children,
+  className,
+}: ContentCardProps) => (
+  <ContentCard
+    title={title}
+    action={action}
+    variant="elevated"
+    className={className}
+  >
+    {children}
+  </ContentCard>
+);
 
-  /**
-   * Stats/KPI card with consistent styling
-   */
-  Stats: ({ title, children, className }: Omit<ContentCardProps, 'action'>) => (
-    <ContentCard 
-      title={title}
-      variant="default"
-      className={`text-center ${className}`}
-    >
-      {children}
-    </ContentCard>
-  )
-};
+/**
+ * Simple outlined card for secondary content
+ */
+export const OutlinedCard = ({
+  title,
+  action,
+  children,
+  className,
+}: ContentCardProps) => (
+  <ContentCard
+    title={title}
+    action={action}
+    variant="outlined"
+    className={className}
+  >
+    {children}
+  </ContentCard>
+);
 
-export default ContentCard; 
+/**
+ * Stats/KPI card with consistent styling
+ */
+export const StatsCard = ({
+  title,
+  children,
+  className,
+}: Omit<ContentCardProps, 'action'>) => (
+  <ContentCard title={title} variant="default" className={`text-center ${className}`}>
+    {children}
+  </ContentCard>
+); 

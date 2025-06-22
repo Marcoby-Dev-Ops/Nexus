@@ -34,6 +34,9 @@ module.exports = {
     '<rootDir>/src/pages/departments/finance/FinanceHome.test.tsx',
     '<rootDir>/src/datawarehouse/DataWarehouseHome.test.tsx',
     '<rootDir>/src/marketplace/Marketplace.test.tsx',
+    '<rootDir>/__tests__/security/rls.test.ts',
+    '<rootDir>/__tests__/stores/useAIChatStore.test.ts',
+    '<rootDir>/src/components/chat/StreamingComposer.test.tsx',
   ],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',

@@ -4,6 +4,20 @@ FROM node:20-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# BEGIN ENV CONFIG
+# These build-args allow you to inject Supabase credentials (and any other
+# public-facing Vite variables) at build-time, e.g.
+# docker build --build-arg VITE_SUPABASE_URL=... \
+#              --build-arg VITE_SUPABASE_ANON_KEY=... \
+#              -t nexus-web .
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Expose them to the build environment so Vite can substitute the values
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
+    VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+# END ENV CONFIG
+
 # Copy package files
 COPY package*.json ./
 
@@ -17,7 +31,14 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine AS production
+FROM nginx:1.27.0-alpine AS production
+
+# Labels for traceability
+LABEL org.opencontainers.image.title="Nexus Web" \
+      org.opencontainers.image.description="Nexus — AI-powered business OS (static SPA)" \
+      org.opencontainers.image.version="${BUILD_VERSION:-latest}" \
+      org.opencontainers.image.revision="${GIT_COMMIT:-local}" \
+      org.opencontainers.image.created="${BUILD_DATE:-unknown}"
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
@@ -55,6 +76,11 @@ EXPOSE 80
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+
+# Switch to non-root user only for the final runtime layer (after config files are in place)
+# This line must appear **after** we finish copying assets and writing configs.
+# shellcheck disable=SC1001
+USER nginx
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"] 

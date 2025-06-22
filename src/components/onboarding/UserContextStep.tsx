@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import { Textarea } from '../ui/Textarea';
 import { RadioGroup, RadioGroupItem } from '../ui/RadioGroup';
 import { Badge } from '../ui/Badge';
 import { 
   User, 
-  Briefcase, 
-  Zap,
-  MessageSquare,
-  Clock,
-  Target
+  Users, 
+  Building2, 
+  TrendingUp, 
+  Target, 
+  Zap
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -224,7 +225,7 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
                 <RadioGroupItem value="collaborative" id="collaborative" />
                 <Label htmlFor="collaborative" className="flex-1 cursor-pointer">
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-success" />
+                    <Target className="h-4 w-4 text-success" />
                     <span className="font-medium">I'm all about teamwork</span>
                   </div>
                   <div className="text-sm text-muted-foreground">Focus on features that help my team collaborate</div>

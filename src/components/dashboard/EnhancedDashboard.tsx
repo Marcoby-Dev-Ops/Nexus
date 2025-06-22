@@ -140,7 +140,7 @@ const EnhancedDashboard: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="px-4 py-2 bg-success/5 text-success border-green-200">
+              <Badge variant="outline" className="px-4 py-2 bg-success/5 text-success border-success/20">
                 <CheckCircle2 className="w-4 h-4 mr-2" />
                 All Systems Active
               </Badge>
@@ -211,7 +211,7 @@ const EnhancedDashboard: React.FC = () => {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="p-4 rounded-xl bg-purple-500/10 text-secondary">
+                  <div className="p-4 rounded-xl bg-secondary/10 text-secondary">
                     <Eye className="w-6 h-6" />
                   </div>
                   <div>

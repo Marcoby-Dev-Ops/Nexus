@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import SlackSetup from '@/components/integrations/SlackSetup';
 import MicrosoftTeamsSetup from '@/components/integrations/MicrosoftTeamsSetup';
+import MicrosoftGraphIntegration from '@/components/integrations/MicrosoftGraphIntegration';
 import { 
   Search, 
   Filter, 
@@ -32,6 +33,10 @@ import {
   RefreshCw,
   ExternalLink
 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import EmailSetupModal from '@/components/integrations/EmailSetupModal';
+import { unifiedInboxService, type EmailAccount } from '@/lib/services/unifiedInboxService';
+import { useNotifications } from '@/contexts/NotificationContext';
 
 interface Integration {
   id: string;
@@ -69,10 +74,10 @@ const ICONS: { [key: string]: React.ReactNode } = {
   'google-ads': <Smartphone className="w-6 h-6 text-primary" />,
   'facebook-ads': <Globe className="w-6 h-6 text-primary" />,
   mailchimp: <Mail className="w-6 h-6 text-warning" />,
-  sendgrid: <Mail className="w-6 h-6 text-blue-400" />,
-  slack: <MessageSquare className="w-6 h-6 text-purple-700" />,
+  sendgrid: <Mail className="w-6 h-6 text-primary" />,
+  slack: <MessageSquare className="w-6 h-6 text-secondary/90" />,
   'microsoft-teams': <Users className="w-6 h-6 text-secondary" />,
-  zapier: <Zap className="w-6 h-6 text-orange-500" />,
+  zapier: <Zap className="w-6 h-6 text-warning" />,
   n8n: <Zap className="w-6 h-6 text-secondary" />,
   'google-workspace': <Users className="w-6 h-6 text-warning" />,
   'office-365': <Users className="w-6 h-6 text-primary" />,
@@ -86,6 +91,7 @@ const getIcon = (slug: string) => ICONS[slug] || ICONS.default;
  */
 const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -95,6 +101,9 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
     isOpen: false,
     integration: null
   });
+  const [emailSetupModal, setEmailSetupModal] = useState(false);
+  const [microsoftGraphModal, setMicrosoftGraphModal] = useState(false);
+  const [microsoftGraphConnected, setMicrosoftGraphConnected] = useState(false);
 
   const fetchIntegrations = async () => {
     if (!user) {
@@ -159,9 +168,248 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
     }
   };
 
+  // Check Microsoft Graph connection status
+  const checkMicrosoftGraphConnection = async () => {
+    if (!user) {
+      setMicrosoftGraphConnected(false);
+      return;
+    }
+
+    try {
+      // Get the Office 365 integration ID
+      const { data: office365Integration } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('slug', 'office-365')
+        .single();
+
+      if (office365Integration) {
+        const { data: userIntegration } = await supabase
+          .from('user_integrations')
+          .select('status, config')
+          .eq('user_id', user.id)
+          .eq('integration_id', office365Integration.id)
+          .eq('name', 'Microsoft 365 Graph')
+          .single();
+
+        const isConnected = userIntegration?.status === 'active' && 
+                           userIntegration?.config?.graph_enabled === true;
+        
+        setMicrosoftGraphConnected(isConnected);
+      } else {
+        setMicrosoftGraphConnected(false);
+      }
+    } catch (error) {
+      console.error('Error checking Microsoft Graph connection:', error);
+      setMicrosoftGraphConnected(false);
+    }
+  };
+
   useEffect(() => {
     fetchIntegrations();
+    checkMicrosoftGraphConnection();
   }, [user]);
+
+  // Listen for Microsoft 365 connection events
+  useEffect(() => {
+    const handleMicrosoft365Connected = () => {
+      console.log('🔄 Microsoft 365 connection event received in marketplace, refreshing status...');
+      checkMicrosoftGraphConnection();
+    };
+
+    window.addEventListener('microsoft365Connected', handleMicrosoft365Connected);
+    
+    return () => {
+      window.removeEventListener('microsoft365Connected', handleMicrosoft365Connected);
+    };
+  }, []);
+
+  // Listen for URL parameter changes to refresh Microsoft Graph status
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const setupParam = urlParams.get('setup');
+    
+    if (setupParam === 'microsoft365') {
+      // Delay to allow the integration to be saved first
+      const timer = setTimeout(() => {
+        checkMicrosoftGraphConnection();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // Auto-setup Office 365 email when user returns from OAuth
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const setupParam = urlParams.get('setup');
+    
+    if (setupParam === 'outlook' && user) {
+      // User was redirected back from Microsoft OAuth for Office 365 setup
+      const autoSetupOffice365 = async () => {
+        try {
+          const account = await unifiedInboxService.autoSetupOffice365Account();
+          if (account) {
+            addNotification({
+              type: 'success',
+              message: 'Office 365 email account connected successfully! Your emails will start syncing shortly.'
+            });
+            // Remove the setup parameter from URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+          } else {
+            addNotification({
+              type: 'info',
+              message: 'Office 365 email setup completed, but no new account was created (may already exist).'
+            });
+          }
+        } catch (error) {
+          console.error('Office 365 auto-setup failed:', error);
+          addNotification({
+            type: 'error',
+            message: 'Failed to set up Office 365 email account. Please try again manually.'
+          });
+        }
+      };
+      
+      autoSetupOffice365();
+    } else if (setupParam === 'microsoft365' && user) {
+      // User was redirected back from Microsoft OAuth for Graph integration
+      const setupMicrosoftGraph = async () => {
+        try {
+          // Get the current user's auth session to check for Microsoft tokens
+          const { data: { user: supabaseUser } } = await supabase.auth.getUser();
+          
+          console.log('🔍 Microsoft 365 OAuth callback - User data:', {
+            provider: supabaseUser?.app_metadata?.provider,
+            providers: supabaseUser?.app_metadata?.providers,
+            identities: supabaseUser?.identities?.map(i => ({ provider: i.provider, identity_data: i.identity_data })),
+            userMetadata: supabaseUser?.user_metadata
+          });
+          
+          // Check if user has Azure/Microsoft authentication
+          const hasAzureAuth = supabaseUser?.app_metadata?.provider === 'azure' ||
+                              supabaseUser?.app_metadata?.providers?.includes('azure') ||
+                              supabaseUser?.identities?.some(identity => identity.provider === 'azure');
+          
+          if (hasAzureAuth) {
+                         // Get the Office 365 integration ID
+             const { data: office365Integration } = await supabase
+               .from('integrations')
+               .select('id')
+               .eq('slug', 'office-365')
+               .single();
+
+             if (!office365Integration) {
+               throw new Error('Office 365 integration not found in database');
+             }
+
+             // Create or update user integration record
+             const { error: integrationError } = await supabase
+               .from('user_integrations')
+               .upsert({
+                 user_id: user.id,
+                 integration_id: office365Integration.id,
+                 name: 'Microsoft 365 Graph',
+                 config: {
+                   provider: 'azure',
+                   scopes: ['User.Read', 'Calendars.Read', 'Mail.Read'],
+                   connected_at: new Date().toISOString(),
+                   graph_enabled: true
+                 },
+                 status: 'active'
+               }, {
+                 onConflict: 'user_id,integration_id,name'
+               });
+
+            if (integrationError) throw integrationError;
+
+            // Also set up email account if not already done
+            try {
+              const account = await unifiedInboxService.autoSetupOffice365Account();
+              if (account) {
+                addNotification({
+                  type: 'success',
+                  message: 'Microsoft 365 integration completed! Email, calendar, and Graph features are now available.'
+                });
+              } else {
+                addNotification({
+                  type: 'success',
+                  message: 'Microsoft 365 Graph integration connected successfully!'
+                });
+              }
+            } catch (emailError) {
+              console.warn('Email setup failed during Graph integration:', emailError);
+              addNotification({
+                type: 'success',
+                message: 'Microsoft 365 Graph integration connected! Email setup can be done separately if needed.'
+              });
+            }
+
+            // Refresh integrations list
+            fetchIntegrations();
+            
+            // Trigger a custom event to notify components to refresh
+            window.dispatchEvent(new CustomEvent('microsoft365Connected'));
+            
+            // Remove the setup parameter from URL after a short delay
+            setTimeout(() => {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }, 1500);
+          } else {
+            console.error('❌ Microsoft 365 authentication failed - no Azure auth found:', {
+              provider: supabaseUser?.app_metadata?.provider,
+              providers: supabaseUser?.app_metadata?.providers,
+              identities: supabaseUser?.identities?.length || 0,
+              hasUser: !!supabaseUser
+            });
+            
+            addNotification({
+              type: 'error',
+              message: 'Microsoft 365 authentication was not completed properly. Please check browser console for details and try again.'
+            });
+          }
+        } catch (error) {
+          console.error('Microsoft 365 Graph setup failed:', error);
+          addNotification({
+            type: 'error',
+            message: 'Failed to complete Microsoft 365 integration. Please try again.'
+          });
+        }
+      };
+      
+      setupMicrosoftGraph();
+    }
+  }, [user, addNotification]);
+
+  // Debug: Check user's current authentication and email accounts
+  useEffect(() => {
+    const debugUserStatus = async () => {
+      if (!user) return;
+      
+      console.log('🔍 DEBUG: User authentication status:', {
+        provider: (user as any).app_metadata?.provider,
+        email: user.email,
+        hasProviderToken: !!(user as any).provider_token,
+        appMetadata: (user as any).app_metadata
+      });
+      
+      try {
+        const emailAccounts = await unifiedInboxService.getEmailAccounts();
+        console.log('📧 DEBUG: Connected email accounts:', emailAccounts);
+        
+        if (emailAccounts.length > 0) {
+          addNotification({
+            type: 'info',
+            message: `Found ${emailAccounts.length} connected email account(s). Check browser console for details.`
+          });
+        }
+      } catch (error) {
+        console.error('❌ DEBUG: Failed to fetch email accounts:', error);
+      }
+    };
+    
+    debugUserStatus();
+  }, [user, addNotification]);
   
   const filteredIntegrations = useMemo(() => {
     return integrations
@@ -182,7 +430,7 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy': return 'bg-success/10 text-success';
-      case 'medium': return 'bg-warning/10 text-yellow-800';
+      case 'medium': return 'bg-warning/10 text-warning/80';
       case 'advanced': return 'bg-destructive/10 text-destructive';
       default: return 'bg-muted text-foreground';
     }
@@ -214,6 +462,14 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
     handleCloseModal();
   };
 
+  const handleEmailSetupComplete = (account: EmailAccount) => {
+    addNotification({
+      type: 'success',
+      message: `Successfully connected ${account.provider} email account!`
+    });
+    setEmailSetupModal(false);
+  };
+
   const renderIntegrationCard = (integration: Integration) => (
     <Card key={integration.id} className="w-full transform hover:-translate-y-1 transition-transform duration-300 ease-in-out shadow-lg hover:shadow-xl border border-border/50 dark:border-border/50">
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -223,7 +479,7 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
         </div>
         <div className="flex items-center space-x-2">
           {integration.isPopular && <Badge variant="secondary">Popular</Badge>}
-          {integration.isConnected && <Badge variant="default" className="bg-green-600 hover:bg-green-700">Connected</Badge>}
+          {integration.isConnected && <Badge variant="default" className="bg-success hover:bg-success/90">Connected</Badge>}
         </div>
       </CardHeader>
       <CardContent>
@@ -309,7 +565,7 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
       
       {/* Search and Filter Controls */}
       <Card>
-        <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
+        <CardContent className="!p-4 flex flex-col md:flex-row items-center gap-4">
           <div className="relative flex-grow w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
@@ -340,6 +596,80 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
         </CardContent>
       </Card>
       
+      {/* Enhanced Microsoft 365 Integration */}
+                      <Card className="w-full bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20 border-primary/20 dark:border-primary/80">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-primary/10 dark:bg-primary/20 rounded-full flex items-center justify-center">
+                <Users className="w-6 h-6 text-primary dark:text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Microsoft 365 Enhanced Integration</CardTitle>
+                <CardDescription className="text-primary dark:text-primary">
+                  Powered by Microsoft Graph Toolkit
+                </CardDescription>
+              </div>
+            </div>
+            <div className="flex items-center space-x-2">
+              {microsoftGraphConnected && (
+                <Badge variant="default" className="bg-success hover:bg-success/90">
+                  <Check className="w-3 h-3 mr-1" />
+                  Connected
+                </Badge>
+              )}
+              <Badge variant="default" className="bg-primary hover:bg-primary/90">
+                Enhanced
+              </Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            Advanced Microsoft 365 integration with calendar, email, people directory, and Teams collaboration features using Microsoft Graph Toolkit.
+          </p>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="flex items-center space-x-2 text-sm">
+              <Calendar className="w-4 h-4 text-primary" />
+              <span>Calendar</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm">
+              <Mail className="w-4 h-4 text-success" />
+              <span>Email</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm">
+              <Users className="w-4 h-4 text-secondary" />
+              <span>People</span>
+            </div>
+            <div className="flex items-center space-x-2 text-sm">
+              <MessageSquare className="w-4 h-4 text-warning" />
+              <span>Teams</span>
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            {microsoftGraphConnected ? (
+              <div className="flex gap-3">
+                <Button onClick={() => window.location.href = '/inbox'} className="bg-success hover:bg-success/90">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Open Unified Inbox
+                </Button>
+                <Button variant="outline" onClick={() => setMicrosoftGraphModal(true)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Manage
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={() => setMicrosoftGraphModal(true)} className="bg-primary hover:bg-primary/90">
+                <Zap className="w-4 h-4 mr-2" />
+                Connect Microsoft 365
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Integrations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredIntegrations.map(renderIntegrationCard)}
@@ -387,6 +717,61 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Email Setup Modal */}
+      <EmailSetupModal
+        isOpen={emailSetupModal}
+        onClose={() => setEmailSetupModal(false)}
+        onComplete={handleEmailSetupComplete}
+      />
+
+      {/* Microsoft Graph Integration Modal */}
+      {microsoftGraphModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-background rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-lg font-semibold">Microsoft 365 Integration</h2>
+              <Button variant="ghost" size="sm" onClick={() => setMicrosoftGraphModal(false)}>
+                ×
+              </Button>
+            </div>
+            <div className="p-6">
+              <MicrosoftGraphIntegration 
+                onComplete={() => {
+                  setMicrosoftGraphModal(false);
+                  fetchIntegrations();
+                  checkMicrosoftGraphConnection();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Debug Status Card - Remove after debugging */}
+      {user && (
+        <Card className="mb-6 border-dashed border-2 border-warning/30 bg-warning/5 dark:bg-warning/20/20">
+          <CardHeader>
+            <CardTitle className="text-warning/80 dark:text-warning">
+              🔍 Debug: Integration Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div>
+              <strong>Auth Provider:</strong> {(user as any).app_metadata?.provider || 'None'}
+            </div>
+            <div>
+              <strong>Email:</strong> {user.email}
+            </div>
+            <div>
+              <strong>Has Provider Token:</strong> {(user as any).provider_token ? 'Yes' : 'No'}
+            </div>
+            <div className="text-xs text-warning/90 dark:text-warning mt-2">
+              Check browser console for email account details. This debug card will be removed.
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

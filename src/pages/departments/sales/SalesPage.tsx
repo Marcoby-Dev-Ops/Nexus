@@ -84,8 +84,8 @@ const SalesActivitiesTab = () => {
           ].map((activity, i) => (
             <div key={i} className="flex items-start space-x-4 p-3 hover:bg-muted rounded-md transition-colors">
               <div className={`h-10 w-10 rounded-full flex items-center justify-center text-white ${
-                activity.type === 'call' ? 'bg-green-500' : 
-                activity.type === 'email' ? 'bg-blue-500' : 'bg-amber-500'
+                activity.type === 'call' ? 'bg-success' : 
+                activity.type === 'email' ? 'bg-primary' : 'bg-amber-500'
               }`}>
                 {activity.type === 'call' ? '📞' : activity.type === 'email' ? '✉️' : '📅'}
               </div>
@@ -148,9 +148,9 @@ const DealsTab = () => {
                 <TableCell>{deal.value}</TableCell>
                 <TableCell>
                   <Badge variant="outline" className={
-                    deal.stage === 'Closed Won' ? 'border-green-500 text-green-500' :
+                    deal.stage === 'Closed Won' ? 'border-green-500 text-success' :
                     deal.stage === 'Negotiation' ? 'border-amber-500 text-amber-500' :
-                    deal.stage === 'Proposal' ? 'border-blue-500 text-blue-500' :
+                    deal.stage === 'Proposal' ? 'border-blue-500 text-primary' :
                     'border-gray-500 text-gray-500'
                   }>
                     {deal.stage}

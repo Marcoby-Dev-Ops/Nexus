@@ -36,6 +36,7 @@ serve(async (req) => {
   }
 
   try {
+    // --- 1. Environment and Supabase Client Setup ---
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -44,9 +45,79 @@ serve(async (req) => {
     if (!supabaseUrl || !supabaseServiceKey || (!openaiApiKey && !openrouterApiKey)) {
       throw new Error('Missing required environment variables');
     }
+    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // --- 2. User Authentication ---
+    let userId: string | undefined;
+    const authHeader = req.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const jwt = authHeader.replace('Bearer ', '');
+      const { data: { user }, error } = await supabaseClient.auth.getUser(jwt);
+      if (!error && user?.id) userId = user.id;
+    }
+
+    if (!userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+    
+    // --- 3. Handle GET request to load a conversation ---
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      // Example URL: /.../ai_chat/123e4567-e89b-12d3-a456-426614174000
+      const conversationId = url.pathname.split('/').pop();
+
+      if (!conversationId || conversationId === 'ai_chat') {
+        return new Response(JSON.stringify({ error: 'Missing or invalid conversationId' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
+      // Verify user has access to this conversation
+      const { data: convData, error: convErr } = await supabaseClient
+        .from('ai_conversations')
+        .select('id, title, created_at, updated_at')
+        .eq('id', conversationId)
+        .eq('user_id', userId)
+        .single();
+
+      if (convErr || !convData) {
+        return new Response(JSON.stringify({ error: 'Conversation not found or access denied' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 404,
+        });
+      }
+
+      const { data: messages, error: messagesError } = await supabaseClient
+        .from('ai_messages')
+        .select('id, role, content, created_at')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true });
+
+      if (messagesError) {
+        throw messagesError;
+      }
+
+      const conversation = {
+        ...convData,
+        messages: messages || [],
+      };
+
+      return new Response(JSON.stringify(conversation), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // --- 4. Handle POST request for streaming chat completion ---
+    if (req.method !== 'POST') {
+      return new Response('Method Not Allowed', { status: 405, headers: corsHeaders });
+    }
 
     const isOpenRouter = Boolean(openrouterApiKey) || (openaiApiKey?.startsWith('sk-or-'));
-
     const llmApiKey = isOpenRouter ? (openrouterApiKey || openaiApiKey) : openaiApiKey!;
     const llmUrl = isOpenRouter ? 'https://openrouter.ai/api/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
     const llmModelDefault = isOpenRouter ? 'o3-mini-high' : 'o3-mini-high';
@@ -55,37 +126,25 @@ serve(async (req) => {
 
     if (!message || typeof message !== 'string') throw new Error('Invalid message');
 
-    let userId = metadata?.userId as string | undefined;
-
-    if (!userId) {
-      const authHeader = req.headers.get('authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        const jwt = authHeader.replace('Bearer ', '');
-        const { data: { user }, error } = await createClient(supabaseUrl, supabaseServiceKey).auth.getUser(jwt);
-        if (!error && user?.id) userId = user.id;
-      }
-    }
-
-    // ensure metadata object
+    // ensure metadata object, injecting the verified userId
     const cleanMetadata = { ...(metadata || {}), userId };
 
     // Determine if this response should use the higher-tier model
     const isFinal = metadata?.conversation_stage === 'resolution';
     const llmModel = isFinal ? 'o3' : llmModelDefault;
 
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-
     let conversationId: string | undefined = rawConversationId;
 
-    // If a conversationId was supplied, make sure it still exists (it might have been cleaned up)
+    // If a conversationId was supplied, make sure it still exists and belongs to the user
     if (conversationId) {
       const { data: convRow, error: convErr } = await supabaseClient
         .from('ai_conversations')
         .select('id')
         .eq('id', conversationId)
+        .eq('user_id', userId) // Security Fix: Prevent users from accessing other users' conversations
         .single();
       if (convErr || !convRow) {
-        conversationId = undefined; // treat as new
+        conversationId = undefined; // treat as new if not found or not owned by user
       }
     }
 
@@ -242,151 +301,123 @@ serve(async (req) => {
 
       // When we have an embedding vector, perform similarity search
       if (embedding) {
+        // --- Knowledge documents ---
         const { data: docs } = await supabaseClient.rpc('match_documents', {
           query_embedding: embedding,
           match_threshold: 0.5,
           match_count: 5,
         });
+
+        let knowledgeChunks = '';
         if (docs && docs.length) {
-          ragContext = (docs as any[]).map((d) => d.content).join('\n\n');
+          knowledgeChunks = (docs as any[]).map((d) => d.content).join('\n\n');
         }
+
+        // --- Personal thoughts (Second Brain) ---
+        let personalChunks = '';
+        if (userId) {
+          const { data: thoughts } = await supabaseClient.rpc('match_personal_thoughts', {
+            query_embedding: embedding,
+            user_uuid: userId,
+            match_threshold: 0.4,
+            match_count: 3,
+          });
+          if (thoughts && thoughts.length) {
+            personalChunks = (thoughts as any[])
+              .map((t) => `• ${t.content}`)
+              .join('\n');
+          }
+        }
+
+        ragContext = [
+          knowledgeChunks ? `Knowledge docs:\n${knowledgeChunks}` : '',
+          personalChunks ? `Personal thoughts:\n${personalChunks}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n');
       }
-    } catch (_ragErr) {
-      // Fail silently – RAG is best-effort and should never block the chat
+    } catch (e: any) {
+      console.error('RAG Error:', e.message);
     }
-
-    const chatMessages = [
-      {
-        role: 'system',
-        content:
-          `You are Nex, an enterprise-grade AI business assistant embedded inside the Nexus platform.
-Respond with a professional, concise tone focused on helping business users achieve productivity, strategy, and operational goals.
-Address the user as "${userProfile.name}" once at the beginning of the conversation.
-Reference the user's ongoing conversation and, where relevant, their company${userProfile.company ? ` (${userProfile.company})` : ''}.
-
-${ragContext ? `Institutional knowledge that may help answer:\n${ragContext}` : ''}`,
-      },
-      ...summaryChunks.map((c) => ({ role: 'system', content: `[SUMMARY]\n${c}` })),
-      ...(history ?? []).map((m) => ({ role: m.role, content: m.content })),
-    ];
-
-    const streaming = isStreamingRequest(req);
-
-    // ---- Call OpenAI Chat Completion (stream or full)------------
-    const openaiRes = await fetch(llmUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${llmApiKey}`,
-      },
-      body: JSON.stringify({
-        model: llmModel,
-        messages: chatMessages,
-        temperature: 0.7,
-        stream: streaming,
-      }),
-    });
-
-    if (!openaiRes.ok) {
-      const errText = await openaiRes.text();
-      throw new Error(`OpenAI error: ${errText}`);
-    }
-
-    if (streaming && openaiRes.body) {
-      const encoder = new TextEncoder();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullContent = '';
-
+    
+    // === SYSTEM MESSAGE & FINAL PAYLOAD =================================
+    const systemMessage = getSystemMessage(userProfile, ragContext, summaryChunks);
+    const headers = { ...corsHeaders, 'Content-Type': 'text/event-stream', 'X-Content-Type-Options': 'nosniff' };
+    
+    // === RESPONSE HANDLING (STREAMING VS. NON-STREAMING) =================
+    if (isStreamingRequest(req)) {
       const stream = new ReadableStream({
         async start(controller) {
-          for await (const chunk of openaiRes.body!) {
-            buffer += decoder.decode(chunk, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() ?? '';
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed) continue;
-              if (trimmed.startsWith('data:')) {
-                const data = trimmed.replace(/^data:\s*/, '');
-                if (data === '[DONE]') {
-                  controller.close();
-                  // Persist full assistant message asynchronously (fire and forget)
-                  (async () => {
-                    try {
-                      await supabaseClient.from('ai_messages').insert({
-                        conversation_id: conversationId,
-                        user_id: userId || null,
-                        role: 'assistant',
-                        content: fullContent,
-                      });
-                    } catch (_err) {/* ignore */}
-                  })();
-                  return;
-                }
-                try {
-                  const json = JSON.parse(data);
-                  const delta = json.choices?.[0]?.delta?.content;
-                  if (delta) {
-                    fullContent += delta;
-                    controller.enqueue(encoder.encode(delta));
-                  }
-                } catch (_err) {
-                  // ignore parse errors
-                }
-              }
+          const onProgress = (chunk: string) => {
+            try {
+              controller.enqueue(createDataChunk(chunk));
+            } catch (e) {
+              // Ignore abort errors
             }
+          };
+
+          try {
+            const aiResponseContent = await getAIResponse(
+              llmUrl,
+              llmApiKey,
+              llmModel,
+              systemMessage,
+              history,
+              onProgress,
+            );
+            
+            // Persist the full AI response message at the end of the stream
+            await supabaseClient.from('ai_messages').insert({
+              conversation_id: conversationId,
+              user_id: userId,
+              role: 'assistant',
+              content: aiResponseContent,
+            });
+
+          } catch (e: any) {
+            console.error('LLM or persistence error:', e);
+            controller.enqueue(createErrorChunk(e.message));
+          } finally {
+            controller.close();
           }
         },
       });
-
-      return new Response(stream, {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'text/plain; charset=utf-8',
-          'Cache-Control': 'no-store',
-          'Transfer-Encoding': 'chunked',
-          'x-conversation-id': conversationId,
-        },
-        status: 200,
-      });
-    }
-
-    // ---- Non-stream response (existing behaviour) ---------------
-    const openaiData = await openaiRes.json();
-    const aiContent = openaiData.choices?.[0]?.message?.content?.trim() || 'I\'m sorry, I could not generate a response.';
-    const confidence = openaiData.choices?.[0]?.finish_reason === 'stop' ? 0.95 : 0.7;
-
-    // Persist assistant message
-    await supabaseClient.from('ai_messages').insert({
-      conversation_id: conversationId,
-      user_id: userId || null,
-      role: 'assistant',
-      content: aiContent,
-    });
-
-    // Optional: action card stub
-    await supabaseClient.from('ai_action_cards').insert({
-      conversation_id: conversationId,
-      title: 'Assistant reply',
-      description: aiContent.slice(0, 140),
-    });
-
-    // Fire-and-forget summariser (runs if thresholds met)
-    (async () => {
+      return new Response(stream, { headers });
+    } else {
+      // Handle non-streaming request
       try {
-        await fetch(`${supabaseUrl}/functions/v1/ai_conversation_summariser`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversationId }),
-        });
-      } catch (_e) { /* ignore */ }
-    })();
+        const aiResponseContent = await getAIResponse(
+          llmUrl,
+          llmApiKey,
+          llmModel,
+          systemMessage,
+          history,
+          () => {}, // no-op for progress
+        );
 
-    return new Response(
-      JSON.stringify({ conversationId, message: aiContent, confidence, success: true }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'x-conversation-id': conversationId }, status: 200 },
-    );
+        // Persist the full AI response message
+        const { data: aiMsg, error: aiMsgErr } = await supabaseClient.from('ai_messages').insert({
+          conversation_id: conversationId,
+          user_id: userId,
+          role: 'assistant',
+          content: aiResponseContent,
+        }).select().single();
+
+        if (aiMsgErr) throw aiMsgErr;
+        
+        return new Response(
+          JSON.stringify({ success: true, message: aiMsg }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+        );
+
+      } catch (e: any) {
+        console.error('LLM or persistence error:', e);
+        return new Response(
+          JSON.stringify({ success: false, error: e.message }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 },
+        );
+      }
+    }
   } catch (error) {
     console.error('ai_chat error', error);
     return new Response(

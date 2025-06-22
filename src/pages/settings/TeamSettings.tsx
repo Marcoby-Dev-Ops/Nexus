@@ -184,7 +184,7 @@ const TeamSettings: React.FC = () => {
                     </Badge>
                   </div>
                   {role.id === user?.role && (
-                    <Badge variant="outline" className="border-green-500 text-green-500">
+                    <Badge variant="outline" className="border-green-500 text-success">
                       Your Role
                     </Badge>
                   )}
@@ -204,7 +204,7 @@ const TeamSettings: React.FC = () => {
                   ].map((perm, i) => (
                     <div key={i} className="flex items-center space-x-1 text-xs">
                       {perm[role.id as keyof typeof perm] ? (
-                        <Check className="h-3 w-3 text-green-500" />
+                        <Check className="h-3 w-3 text-success" />
                       ) : (
                         <X className="h-3 w-3 text-muted-foreground" />
                       )}

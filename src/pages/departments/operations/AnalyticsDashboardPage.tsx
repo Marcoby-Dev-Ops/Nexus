@@ -53,7 +53,7 @@ const AnalyticsDashboardPage: React.FC = () => {
       change: '+12.3%',
       trend: 'up',
       icon: <Users className="h-4 w-4" />,
-      color: 'text-blue-500'
+      color: 'text-primary'
     },
     {
       id: 'sessions',
@@ -62,7 +62,7 @@ const AnalyticsDashboardPage: React.FC = () => {
       change: '+18.2%',
       trend: 'up',
       icon: <Activity className="h-4 w-4" />,
-      color: 'text-green-500'
+      color: 'text-success'
     },
     {
       id: 'conversion',
@@ -71,7 +71,7 @@ const AnalyticsDashboardPage: React.FC = () => {
       change: '+1.2%',
       trend: 'up',
       icon: <TrendingUp className="h-4 w-4" />,
-      color: 'text-purple-500'
+      color: 'text-secondary'
     },
     {
       id: 'retention',
@@ -95,9 +95,9 @@ const AnalyticsDashboardPage: React.FC = () => {
 
   // User acquisition sources
   const acquisitionSources = [
-    { source: 'Organic Search', percentage: 42, color: 'bg-blue-500' },
-    { source: 'Direct', percentage: 24, color: 'bg-green-500' },
-    { source: 'Referral', percentage: 18, color: 'bg-purple-500' },
+    { source: 'Organic Search', percentage: 42, color: 'bg-primary' },
+    { source: 'Direct', percentage: 24, color: 'bg-success' },
+    { source: 'Referral', percentage: 18, color: 'bg-secondary' },
     { source: 'Social Media', percentage: 12, color: 'bg-pink-500' },
     { source: 'Paid Ads', percentage: 4, color: 'bg-amber-500' }
   ];
@@ -208,14 +208,14 @@ const AnalyticsDashboardPage: React.FC = () => {
                   <div className="text-2xl font-bold">{metric.value}</div>
                   <div className="flex items-center pt-1">
                     {metric.trend === 'up' ? (
-                      <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'retention' ? 'text-red-500' : 'text-green-500'}`} />
+                      <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'retention' ? 'text-destructive' : 'text-success'}`} />
                     ) : (
-                      <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'retention' ? 'text-green-500' : 'text-red-500'}`} />
+                      <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'retention' ? 'text-success' : 'text-destructive'}`} />
                     )}
                     <p className={`text-sm ${
                       (metric.trend === 'up' && metric.id !== 'retention') || (metric.trend === 'down' && metric.id === 'retention')
-                        ? 'text-green-500'
-                        : 'text-red-500'
+                        ? 'text-success'
+                        : 'text-destructive'
                     }`}>
                       {metric.change} from previous {activeTimeframe}
                     </p>
@@ -244,7 +244,7 @@ const AnalyticsDashboardPage: React.FC = () => {
                     <div className="flex items-center justify-between mb-1">
                       <div className="text-sm font-medium">{feature.category}</div>
                       <div className="text-sm text-muted-foreground">
-                        {feature.usage}% usage • <span className="text-green-500">+{feature.growth}% growth</span>
+                        {feature.usage}% usage • <span className="text-success">+{feature.growth}% growth</span>
                       </div>
                     </div>
                     <Progress value={feature.usage} className="h-2 bg-muted" />
@@ -318,10 +318,10 @@ const AnalyticsDashboardPage: React.FC = () => {
                       <tr key={index} className="border-b last:border-b-0 hover:bg-muted/50">
                         <td className="py-3 text-left">{region.region}</td>
                         <td className="py-3 text-right">{formatNumber(region.users)}</td>
-                        <td className="py-3 text-right text-green-500">{region.growth}</td>
+                        <td className="py-3 text-right text-success">{region.growth}</td>
                         <td className="py-3 text-right">{region.conversion}</td>
                         <td className="py-3 text-right">
-                          <Badge className="bg-green-500">{region.status}</Badge>
+                          <Badge className="bg-success">{region.status}</Badge>
                         </td>
                       </tr>
                     ))}

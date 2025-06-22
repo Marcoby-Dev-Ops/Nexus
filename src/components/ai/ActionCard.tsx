@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
+import { sendAuditLog } from '@/lib/services/auditLogService';
 
 // -----------------------------------------------------------------------------
 // Types
@@ -85,6 +86,13 @@ export const ActionCard: React.FC<ActionCardProps> = ({
         if (error) throw error;
 
         toast.success('Action executed');
+
+        // Fire first_action audit log once per browser session
+        if (!sessionStorage.getItem('first_action_logged')) {
+          sendAuditLog('first_action', { actionId: action.id, cardId: card.id });
+          sessionStorage.setItem('first_action_logged', '1');
+        }
+
         setModalOpen(false);
         onCompleted?.(action);
       } catch (err: any) {

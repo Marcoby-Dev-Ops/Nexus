@@ -7,7 +7,7 @@ type ButtonSize = 'default' | 'sm' | 'lg' | 'icon';
  * @interface ButtonProps
  * @description Props for the Button component.
  */
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
   isLoading?: boolean;

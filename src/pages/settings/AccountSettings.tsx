@@ -20,7 +20,7 @@ import { Separator } from '../../components/ui/Separator';
 type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
 
 const AccountSettings: React.FC = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, updateCompany } = useAuth();
   const { addNotification } = useNotifications();
 
   const [loading, setLoading] = useState(false);
@@ -31,12 +31,14 @@ const AccountSettings: React.FC = () => {
     lastName: '',
     phone: '',
     birthday: '',
-    address: '',
+    businessAddress1: '',
+    businessAddress2: '',
     city: '',
     postalCode: '',
     country: '',
     timezone: 'UTC',
     language: 'en',
+    orgName: '',
   });
 
   // Populate defaults from user context
@@ -47,13 +49,14 @@ const AccountSettings: React.FC = () => {
       firstName: user.profile?.first_name || '',
       lastName: user.profile?.last_name || '',
       phone: user.profile?.phone || '',
-      birthday: (user.profile as any)?.birth_date ?? '',
-      address: ((user.profile as any)?.address as string) ?? '',
-      city: (user.profile as any)?.city || '',
-      postalCode: (user.profile as any)?.postal_code ?? '',
-      country: (user.profile as any)?.country || '',
+      businessAddress1: (user.profile as any)?.address?.line1 ?? '',
+      businessAddress2: (user.profile as any)?.address?.line2 ?? '',
+      city: (user.profile as any)?.address?.city ?? '',
+      postalCode: (user.profile as any)?.address?.postal_code ?? '',
+      country: (user.profile as any)?.address?.country ?? '',
       timezone: user.profile?.timezone || 'UTC',
       language: (user.profile?.preferences as any)?.language || 'en',
+      orgName: user.company?.name ?? '',
     }));
   }, [user]);
 
@@ -68,33 +71,42 @@ const AccountSettings: React.FC = () => {
     setLoading(true);
 
     try {
-      // 1. Update auth user metadata & phone
+      // 1. Update profile table first (important fields)
+      const profileUpdates: Record<string, any> = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        phone: formData.phone,
+        address: {
+          line1: formData.businessAddress1,
+          line2: formData.businessAddress2,
+          city: formData.city,
+          postal_code: formData.postalCode,
+          country: formData.country,
+        },
+        timezone: formData.timezone,
+        preferences: { language: formData.language },
+      };
+
+      await updateProfile(profileUpdates as any);
+
+      // 2. Attempt to update auth user metadata (non-critical)
       const { error: authError } = await supabase.auth.updateUser({
         data: {
           full_name: `${formData.firstName} ${formData.lastName}`.trim(),
           language: formData.language,
           timezone: formData.timezone,
         },
-        phone: formData.phone || undefined,
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // Log but don't block profile save
+        console.warn('Auth metadata update failed', authError);
+      }
 
-      // 2. Update profile table
-      const profileUpdates: Record<string, any> = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        phone: formData.phone,
-        birth_date: formData.birthday,
-        address: formData.address,
-        city: formData.city,
-        postal_code: formData.postalCode,
-        country: formData.country,
-        timezone: formData.timezone,
-        preferences: { language: formData.language },
-      };
-
-      await updateProfile(profileUpdates as any);
+      // Update organization if name changed and user has company_id
+      if (formData.orgName && formData.orgName !== user.company?.name) {
+        await updateCompany({ name: formData.orgName });
+      }
 
       addNotification({
         message: 'Profile updated successfully',
@@ -175,17 +187,6 @@ const AccountSettings: React.FC = () => {
                 onChange={handleChange}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="birthday">Date of Birth</Label>
-              <Input 
-                id="birthday" 
-                name="birthday"
-                type="date" 
-                value={formData.birthday}
-                onChange={handleChange}
-              />
-            </div>
           </CardContent>
         </Card>
         
@@ -200,12 +201,23 @@ const AccountSettings: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="address">Address</Label>
+              <Label htmlFor="businessAddress1">Business Address Line 1</Label>
               <Input 
-                id="address" 
-                name="address"
-                placeholder="Address" 
-                value={formData.address}
+                id="businessAddress1" 
+                name="businessAddress1"
+                placeholder="Street, Building No." 
+                value={formData.businessAddress1}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="businessAddress2">Business Address Line 2</Label>
+              <Input 
+                id="businessAddress2" 
+                name="businessAddress2"
+                placeholder="Suite, Floor, etc." 
+                value={formData.businessAddress2}
                 onChange={handleChange}
               />
             </div>
@@ -305,6 +317,31 @@ const AccountSettings: React.FC = () => {
             </Button>
           </CardFooter>
         </Card>
+
+        {/* Organization */}
+        {user?.company && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <User className="h-5 w-5 mr-2" />
+                Organization
+              </CardTitle>
+              <CardDescription>Update your company / organization details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="orgName">Organization Name</Label>
+                <Input
+                  id="orgName"
+                  name="orgName"
+                  placeholder="Organization Name"
+                  value={formData.orgName}
+                  onChange={handleChange}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </form>
     </div>
   );

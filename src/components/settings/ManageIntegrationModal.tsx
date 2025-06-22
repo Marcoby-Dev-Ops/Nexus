@@ -3,6 +3,17 @@ import Modal from '@/components/ui/Modal';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/Button';
 
+interface IntegrationDetails {
+  id: string;
+  provider: string;
+  org_id: string;
+  created_at: string;
+  expires_at?: string;
+  status?: string;
+  last_sync?: string;
+  [key: string]: any; // For provider-specific fields
+}
+
 interface ManageIntegrationModalProps {
   provider: string | null;
   open: boolean;
@@ -11,7 +22,7 @@ interface ManageIntegrationModalProps {
 }
 
 export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({ provider, open, onClose, orgId }) => {
-  const [details, setDetails] = useState<any | null>(null);
+  const [details, setDetails] = useState<IntegrationDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

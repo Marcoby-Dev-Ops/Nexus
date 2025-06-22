@@ -15,7 +15,7 @@ Chat v2 (Claude-style UX)
 
 - [x] ~~Streaming composer with markdown preview & code-block copy.~~ (PR 2 – Chat v2)
 - [ ] Context chips with "explain source" drawer.
-- [ ] Slash-command autocomplete for Action Cards (`/create-task`, ...).
+- [x] ~~Slash-command autocomplete for Action Cards (`/create-task`, ...)~~.
 
 ## Pillar 2 – Minimum Lovable Feature Set
 
@@ -27,7 +27,7 @@ Chat v2 (Claude-style UX)
 - [ ] Automation Recipe engine with 5 starter templates.
 - [ ] Workspace storage connectors (OneDrive, Google Drive, Dropbox) with OAuth & sync badge.
 - [x] ~~Settings pages scaffold – `/settings/profile`, `/settings/security`, `/settings/integrations`~~ (PR #??)  
-  - Passkey registration flow still **In Progress** on Security page
+  - ~~Passkey registration flow still **In Progress** on Security page~~
 - [ ] Automation Recipes page (rename AI Hub) with top 5 templates & empty-state prompt.
 - [ ] One-click PDF / Email weekly health report.
 
@@ -87,9 +87,12 @@ Chat v2 (Claude-style UX)
 
 ## Next-Up Roadmap (Top 5 | target lock-in by 2025-06-20)
 
-1. Finish passkey registration + authentication UI on `/settings/security` and hook into new Edge Functions.
-2. Implement slash-command autocomplete for Action Cards in Chat v2 composer.
-3. Ship unified inbox (`/inbox`) with streamed tokens and quick filters.
+1. ✅ **COMPLETED** Passkey registration + authentication UI on `/settings/security` (Edge Functions wired)
+2. ✅ **COMPLETED** Slash-command autocomplete for Action Cards in Chat v2 composer  
+   • ✅ Created dedicated `SlashCommandMenu` component with keyboard navigation
+   • ✅ Integrated with `StreamingComposer` for seamless UX
+   • ✅ Added comprehensive test coverage (Jest + Cypress)
+3. ▢ **[Paused]** Unified inbox (`/inbox`) – email sync currently blocked; revisit after base connectors are stable.
 4. Flesh out `/settings/integrations` with additional OAuth flows (QuickBooks MVP) and sync badges.  
    • PayPal connector ✅ shipped – QuickBooks next
 5. Deliver CRM (HubSpot) update & Stripe invoice send flows via Action Cards.
@@ -113,10 +116,10 @@ Chat v2 (Claude-style UX)
 |--------------|--------|
 | `/` (Chat v2) | **Fully Developed** – streaming composer, markdown preview, token streaming live |
 | `/settings/profile` | **Fully Developed** – profile update form live |
-| `/settings/security` | **In Progress** – passkey registration & sign-in wiring |
+| `/settings/security` | **Fully Developed** – passkey registration & authentication flows complete |
 | `/settings/integrations` | **Fully Developed** – OAuth connectors list, PayPal live |
 | `/settings` index & nav | **In Progress** |
-| `/inbox` (Unified Inbox) | **In Progress** – design + streamed tokens work underway |
+| `/inbox` (Unified Inbox) | **Blocked** – email sync failing; placeholder data only (re-evaluate after July 1) |
 | `/automation-recipes` (AI Hub rename) | **In Progress** – template list & empty-state pending |
 | `/pricing` | **Missing** – needs copy & ROI section |
 | `/healthz` | **Fully Developed** – uptime probes active |
@@ -135,13 +138,13 @@ Chat v2 (Claude-style UX)
 - Health probes (`/healthz`) & uptime monitoring
 - Embedding downgrade & cache (cost discipline)
 - PayPal finance connector & live KPI ingestion
+- **Passkey registration & authentication flows** (security settings) ✅
+- **Slash-command autocomplete for Action Cards** with dedicated menu component ✅
 
 ### In Progress
 
 - Context chips with "explain source" drawer (Chat v2)
-- Slash-command autocomplete for Action Cards
 - Unified inbox UI with streamed tokens
-- Passkey registration & authentication flows (security settings)
 - Automation Recipes page & starter templates
 - Settings route scaffolding (profile, security, integrations)
 - Growth-tier entitlements (roles, premium GPT, webhooks)

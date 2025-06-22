@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import {
   Gift,
   Users,
@@ -16,17 +16,12 @@ import {
   CheckCircle2,
   Share2,
   Target,
-  Zap,
-  ArrowUp,
   ExternalLink,
   Mail,
   MessageCircle,
   Smartphone,
-  Globe,
-  Award,
-  Flame,
   Bolt,
-  Sparkles
+  Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -38,7 +33,7 @@ import { Alert, AlertDescription } from '@/components/ui/Alert';
 interface ReferralTier {
   id: string;
   name: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className: string }>;
   minReferrals: number;
   color: string;
   bgColor: string;
@@ -66,19 +61,18 @@ interface ReferralStats {
 }
 
 const ReferralSystem: React.FC = () => {
-  const [referralCode, setReferralCode] = useState('NEXUS-VIP-847');
+  const [referralCode] = useState('NEXUS-VIP-847');
   const [referralLink, setReferralLink] = useState('');
-  const [copiedToClipboard, setCopiedToClipboard] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
+    const [copiedToClipboard, setCopiedToClipboard] = useState(false);
   const [myReferrals, setMyReferrals] = useState<Referral[]>([]);
-  const [stats, setStats] = useState<ReferralStats>({
+  const [stats] = useState<ReferralStats>({
     totalReferrals: 12,
     confirmedReferrals: 8,
     conversionRate: 66.7,
     currentTier: 'vip',
     nextTierProgress: 60,
     positionsClimbed: 24,
-    estimatedValue: 2400
+    estimatedValue: 2400,
   });
 
   const referralTiers: ReferralTier[] = [
@@ -128,10 +122,15 @@ const ReferralSystem: React.FC = () => {
       icon: Bolt,
       minReferrals: 50,
       color: 'text-warning',
-      bgColor: 'bg-orange-100',
-      rewards: ['Free lifetime access', 'Equity consideration', 'Advisory board invite', 'Brand partnership'],
-      description: 'Phenomenal! You\'re a true founding partner.'
-    }
+      bgColor: 'bg-warning/10',
+      rewards: [
+        'Free lifetime access',
+        'Equity consideration',
+        'Advisory board invite',
+        'Brand partnership',
+      ],
+      description: 'Phenomenal! You\'re a true founding partner.',
+    },
   ];
 
   useEffect(() => {
@@ -147,7 +146,7 @@ const ReferralSystem: React.FC = () => {
         name: 'Sarah Chen',
         status: 'confirmed',
         joinedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        tier: 'founder'
+        tier: 'founder',
       },
       {
         id: '2',
@@ -155,7 +154,7 @@ const ReferralSystem: React.FC = () => {
         name: 'Mike Johnson',
         status: 'confirmed',
         joinedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        tier: 'vip'
+        tier: 'vip',
       },
       {
         id: '3',
@@ -163,8 +162,8 @@ const ReferralSystem: React.FC = () => {
         name: 'Emma Wilson',
         status: 'pending',
         joinedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-        tier: 'early-bird'
-      }
+        tier: 'early-bird',
+      },
     ];
     
     setMyReferrals(mockReferrals);
@@ -251,27 +250,38 @@ const ReferralSystem: React.FC = () => {
                 <div className="text-sm text-muted-foreground">Positions Climbed</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-primary">${stats.estimatedValue}</div>
-                <div className="text-sm text-muted-foreground">Estimated Value</div>
+                <div className="text-3xl font-bold text-success">
+                  ${stats.estimatedValue.toLocaleString()}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Estimated Referral Value
+                </div>
               </div>
             </div>
 
-            {/* Next Tier Progress */}
-            {nextTier && (
-              <div className="space-y-4">
-                <div className="text-center">
-                  <nextTier.icon className={`w-8 h-8 mx-auto mb-2 ${nextTier.color}`} />
-                  <h3 className="font-semibold">{nextTier.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {nextTier.minReferrals - stats.confirmedReferrals} more referrals needed
-                  </p>
+            {/* Next Tier */}
+            {nextTier ? (
+              <div className="p-6 rounded-lg bg-muted text-center">
+                <nextTier.icon className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+                <h3 className="font-bold text-lg mb-2">{nextTier.name}</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Refer {nextTier.minReferrals - stats.confirmedReferrals} more
+                  to unlock
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Progress
+                    value={stats.nextTierProgress}
+                    className="w-full"
+                  />
                 </div>
-                <Progress value={stats.nextTierProgress} className="h-2" />
-                <div className="text-center">
-                  <Badge variant="outline" className={nextTier.color}>
-                    Next: {nextTier.rewards[0]}
-                  </Badge>
-                </div>
+              </div>
+            ) : (
+              <div className="p-6 rounded-lg bg-muted text-center flex flex-col justify-center items-center">
+                <Trophy className="w-12 h-12 text-warning mb-4" />
+                <h3 className="font-bold text-lg">You're a Legend!</h3>
+                <p className="text-sm text-muted-foreground">
+                  You've unlocked all available tiers.
+                </p>
               </div>
             )}
           </div>
@@ -381,9 +391,9 @@ const ReferralSystem: React.FC = () => {
                   transition={{ delay: index * 0.1 }}
                   className={`p-4 rounded-lg border-2 transition-all ${
                     isCurrentTier 
-                      ? 'border-secondary bg-secondary/5 dark:bg-purple-900/20' 
+                      ? 'border-secondary bg-secondary/5 dark:bg-secondary/20/20' 
                       : isUnlocked
-                      ? 'border-green-200 bg-success/5 dark:bg-success/20'
+                      ? 'border-success/20 bg-success/5 dark:bg-success/20'
                       : 'border-muted-foreground/20 bg-muted/50'
                   }`}
                 >
@@ -400,7 +410,7 @@ const ReferralSystem: React.FC = () => {
                             <Badge className="bg-secondary text-primary-foreground">CURRENT</Badge>
                           )}
                           {isUnlocked && !isCurrentTier && (
-                            <Badge className="bg-green-600 text-primary-foreground">UNLOCKED</Badge>
+                            <Badge className="bg-success text-primary-foreground">UNLOCKED</Badge>
                           )}
                         </div>
                         

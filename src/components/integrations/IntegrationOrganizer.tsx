@@ -9,27 +9,10 @@ import { useIntegrations } from '@/lib/hooks/useIntegrations';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/lib/database.types';
 import {
-  Search,
-  Filter,
-  Download,
-  Mail,
-  Phone,
-  Building,
-  Users,
-  TrendingUp,
-  Star,
-  AlertCircle,
-  CheckCircle2,
   Clock,
   XCircle,
   Brain,
-  Lightbulb,
-  Sparkles,
-  BookOpen,
-  FileText,
-  Link,
-  Tag,
-  FolderTree
+  FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -37,8 +20,8 @@ import { toast } from 'sonner';
 interface Integration {
   id: string;
   type: string;
-  credentials: Record<string, any>;
-  settings: Record<string, any>;
+  credentials: Record<string, unknown>;
+  settings: Record<string, unknown>;
   userId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -66,7 +49,7 @@ interface IntegrationConnection {
   target_id: string;
   type: string;
   strength?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 // Define the IntegrationData type
@@ -76,10 +59,10 @@ interface IntegrationData {
   type: string;
   connections: IntegrationConnection[];
   insights: IntegrationInsight[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
-type DatabaseIntegration = Database['public']['Tables']['integrations']['Row'];
+// type DatabaseIntegration = Database['public']['Tables']['integrations']['Row'];
 
 export const IntegrationOrganizer: React.FC = () => {
   const { user } = useAuth();
@@ -102,40 +85,40 @@ export const IntegrationOrganizer: React.FC = () => {
     refreshIntegrations();
   }, [refreshIntegrations]);
 
-  const handleConnect = async (integrationId: string) => {
-    if (!user?.id) {
-      toast.error('You must be logged in to connect integrations');
-      return;
-    }
+  // const handleConnect = async (integrationId: string) => {
+  //   if (!user?.id) {
+  //     toast.error('You must be logged in to connect integrations');
+  //     return;
+  //   }
 
-    try {
-      const { data: integration, error } = await supabase
-        .from('integrations')
-        .select('*')
-        .eq('id', integrationId)
-        .single();
+  //   try {
+  //     const { data: integration, error } = await supabase
+  //       .from('integrations')
+  //       .select('*')
+  //       .eq('id', integrationId)
+  //       .single();
 
-      if (error) throw error;
+  //     if (error) throw error;
 
-      const newIntegration = {
-        integration_id: integration.id,
-        type: integration.auth_type || 'oauth',
-        name: integration.name,
-        category: integration.category,
-        description: integration.description || '',
-        status: 'setup',
-        credentials: {},
-        settings: (integration.default_config as Record<string, any>) || {},
-        userId: user.id
-      };
+  //     const newIntegration = {
+  //       integration_id: integration.id,
+  //       type: integration.auth_type || 'oauth',
+  //       name: integration.name,
+  //       category: integration.category,
+  //       description: integration.description || '',
+  //       status: 'setup',
+  //       credentials: {},
+  //       settings: (integration.default_config as Record<string, unknown>) || {},
+  //       userId: user.id
+  //     };
 
-      await addIntegration(newIntegration);
-      toast.success('Integration connected successfully');
-    } catch (error) {
-      console.error('Error connecting integration:', error);
-      toast.error('Failed to connect integration');
-    }
-  };
+  //     await addIntegration(newIntegration);
+  //     toast.success('Integration connected successfully');
+  //   } catch (error) {
+  //     console.error('Error connecting integration:', error);
+  //     toast.error('Failed to connect integration');
+  //   }
+  // };
 
   const handleDisconnect = async (integrationId: string) => {
     try {
@@ -147,9 +130,9 @@ export const IntegrationOrganizer: React.FC = () => {
     }
   };
 
-  const handleUpdateSettings = async (integrationId: string, settings: Record<string, any>) => {
+  const handleUpdateSettings = async (integrationId: string, settings: Record<string, unknown>) => {
     try {
-      const integration = integrations.find(i => i.id === integrationId);
+      const integration = integrations.find((i: Integration) => i.id === integrationId);
       if (!integration) throw new Error('Integration not found');
 
       const updatedIntegration = {
@@ -166,69 +149,69 @@ export const IntegrationOrganizer: React.FC = () => {
   };
 
   // This function would normally update the integrations in state
-  const addInsight = async (integrationId: string, insight: IntegrationInsight) => {
-    try {
-      const response = await fetch(`/api/integrations/${integrationId}/insights`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(insight)
-      });
+  // const addInsight = async (integrationId: string, insight: IntegrationInsight) => {
+  //   try {
+  //     const response = await fetch(`/api/integrations/${integrationId}/insights`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify(insight)
+  //     });
 
-      if (!response.ok) throw new Error('Failed to add insight');
+  //     if (!response.ok) throw new Error('Failed to add insight');
 
-      // In a real implementation, you would update the local state
-      // with the new insight after it's successfully added
-      refreshIntegrations();
+  //     // In a real implementation, you would update the local state
+  //     // with the new insight after it's successfully added
+  //     refreshIntegrations();
 
-      showToast({
-        title: 'Success',
-        description: 'Insight added successfully',
-        type: 'success'
-      });
-    } catch (error) {
-      showToast({
-        title: 'Error',
-        description: 'Failed to add insight',
-        type: 'error'
-      });
-    }
-  };
+  //     showToast({
+  //       title: 'Success',
+  //       description: 'Insight added successfully',
+  //       type: 'success'
+  //     });
+  //   } catch (error) {
+  //     showToast({
+  //       title: 'Error',
+  //       description: 'Failed to add insight',
+  //       type: 'error'
+  //     });
+  //   }
+  // };
 
-  const organizeConnections = (integration: IntegrationData) => {
-    // AI-powered connection analysis
-    const connections = integration.connections.map(conn => ({
-      ...conn,
-      strength: calculateConnectionStrength(conn, integration)
-    }));
+  // const organizeConnections = (integration: IntegrationData) => {
+  //   // AI-powered connection analysis
+  //   const connections = integration.connections.map(conn => ({
+  //     ...conn,
+  //     strength: calculateConnectionStrength(conn, integration)
+  //   }));
 
-    return connections.sort((a: IntegrationConnection, b: IntegrationConnection) => 
-      (b.strength || 0) - (a.strength || 0)
-    );
-  };
+  //   return connections.sort((a: IntegrationConnection, b: IntegrationConnection) => 
+  //     (b.strength || 0) - (a.strength || 0)
+  //   );
+  // };
 
-  const calculateConnectionStrength = (
-    connection: IntegrationConnection, 
-    integration: IntegrationData
-  ): number => {
-    // Implement connection strength calculation logic
-    // This could be based on:
-    // - Frequency of interaction
-    // - Data overlap
-    // - User-defined importance
-    // - AI-analyzed relevance
-    return Math.random(); // Placeholder
-  };
+  // const calculateConnectionStrength = (
+  //   connection: IntegrationConnection, 
+  //   integration: IntegrationData
+  // ): number => {
+  //   // Implement connection strength calculation logic
+  //   // This could be based on:
+  //   // - Frequency of interaction
+  //   // - Data overlap
+  //   // - User-defined importance
+  //   // - AI-analyzed relevance
+  //   return Math.random(); // Placeholder
+  // };
 
-  const generateInsights = async (integration: IntegrationData): Promise<IntegrationInsight[]> => {
-    // AI-powered insight generation
-    const insights = await fetch('/api/ai/generate-insights', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ integration })
-    }).then(res => res.json());
+  // const generateInsights = async (integration: IntegrationData): Promise<IntegrationInsight[]> => {
+  //   // AI-powered insight generation
+  //   const insights = await fetch('/api/ai/generate-insights', {
+  //     method: 'POST',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ integration })
+  //   }).then(res => res.json());
 
-    return insights;
-  };
+  //   return insights;
+  // };
 
   // Helper function to get the display name or type for an integration
   const getIntegrationDisplayName = (integration: Integration): string => {
@@ -297,7 +280,7 @@ export const IntegrationOrganizer: React.FC = () => {
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                 </div>
               ) : error ? (
-                <div className="text-center text-red-500 p-4">
+                <div className="text-center text-destructive p-4">
                   {error.message}
                 </div>
               ) : (
@@ -373,7 +356,7 @@ export const IntegrationOrganizer: React.FC = () => {
 
       {/* Integration Details Modal */}
       {selectedIntegration && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-modal">
           <Card className="w-full max-w-4xl">
             <CardHeader className="flex justify-between items-center">
               <CardTitle>{getIntegrationDisplayName(selectedIntegration)}</CardTitle>

@@ -248,7 +248,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
         .limit(limit);
 
       if (error) {
-        // eslint-disable-next-line no-console
+         
         console.error('loadOlderMessages error', error);
         return 0;
       }

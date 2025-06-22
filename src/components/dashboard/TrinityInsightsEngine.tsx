@@ -132,11 +132,11 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
   const getImpactColor = (impact: string) => {
     switch (impact) {
       case 'high':
-        return 'bg-destructive/10 text-destructive border-red-200 dark:bg-destructive/20 dark:text-red-300';
+        return 'bg-destructive/10 text-destructive border-destructive/20 dark:bg-destructive/20 dark:text-red-300';
       case 'medium':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300';
       default:
-        return 'bg-success/10 text-success border-green-200 dark:bg-success/20 dark:text-green-300';
+        return 'bg-success/10 text-success border-success/20 dark:bg-success/20 dark:text-success';
     }
   };
 
@@ -259,7 +259,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
                   <span className="text-sm font-medium text-muted-foreground dark:text-muted-foreground">
                     Estimated Value:
                   </span>
-                  <Badge className="bg-success/10 text-success border-green-200 dark:bg-success/20 dark:text-green-300">
+                  <Badge className="bg-success/10 text-success border-success/20 dark:bg-success/20 dark:text-success">
                     {insight.estimatedValue}
                   </Badge>
                 </div>
@@ -281,7 +281,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-secondary dark:text-purple-400">
+            <div className="text-2xl font-bold text-secondary dark:text-secondary">
               {insights.filter(i => i.type === 'see').length}
             </div>
             <div className="text-xs text-muted-foreground dark:text-muted-foreground">
@@ -289,7 +289,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
             </div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-warning dark:text-orange-400">
+            <div className="text-2xl font-bold text-warning dark:text-warning">
               {insights.filter(i => i.type === 'act').length}
             </div>
             <div className="text-xs text-muted-foreground dark:text-muted-foreground">

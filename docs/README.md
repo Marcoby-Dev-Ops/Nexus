@@ -56,6 +56,8 @@ Welcome to the Nexus documentation and help site. Here you'll find everything yo
 *Individual business module documentation*
 
 - **[AI Assistants](/docs/modules/ai-assistants.md)** - Intelligent assistant system
+- **[Thoughts Management](/docs/modules/thoughts-management.md)** - AI-powered idea capture & cultivation platform
+- **[Business Health System](/docs/modules/business-health-system.md)** - AI-powered business intelligence & KPI analytics platform
 - **[Sales Module](/docs/modules/sales-module.md)** - CRM and sales automation
 - **[Finance Module](/docs/modules/finance-module.md)** - Financial management system
 - **[Operations Module](/docs/modules/operations-module.md)** - Project and service delivery

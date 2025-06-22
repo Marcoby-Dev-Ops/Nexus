@@ -1,6 +1,7 @@
-import { OpenRouter } from 'openrouter';
+import OpenAI from 'openai';
 import { prisma } from '@/lib/prisma';
 import { modelService } from '@/lib/services/modelService';
+import { supabase } from '@/lib/supabase';
 
 interface ModelConfig {
   model: string;
@@ -257,13 +258,14 @@ class ModelManager {
     success: boolean
   ): Promise<void> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       await modelService.trackModelUsage({
         model,
         tokensUsed,
         cost,
         latency,
         success,
-        userId: 'system' // TODO: Add actual user ID when available
+        userId: user?.id ?? 'system'
       });
     } catch (error) {
       console.error('Error tracking model usage:', error);

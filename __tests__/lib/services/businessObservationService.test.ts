@@ -1,0 +1,282 @@
+import { businessObservationService } from '../../../src/lib/services/businessObservationService';
+import { DomainAnalysisService } from '../../../src/lib/services/domainAnalysisService';
+
+// Mock dependencies
+jest.mock('../../../src/lib/supabase', () => ({
+  supabase: {
+    from: jest.fn(() => ({
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({
+          single: jest.fn(),
+          eq: jest.fn(() => ({
+            eq: jest.fn()
+          }))
+        }))
+      }))
+    }))
+  }
+}));
+
+jest.mock('../../../src/lib/security/logger', () => ({
+  logger: {
+    error: jest.fn()
+  }
+}));
+
+jest.mock('../../../src/lib/services/domainAnalysisService');
+
+describe('BusinessObservationService', () => {
+  const mockUserId = 'user-123';
+  const mockCompanyId = 'company-456';
+  
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('generateBusinessObservations', () => {
+    it('should generate professional email opportunity observation for users with generic email', async () => {
+      // Mock domain analysis to return generic email usage
+      const mockDomainAnalysis = {
+        totalEmails: 5,
+        customDomainCount: 0,
+        genericProviderCount: 3,
+        overallProfessionalScore: 30,
+        emailsByDomain: {
+          'gmail.com': ['user@gmail.com', 'contact@gmail.com'],
+          'yahoo.com': ['info@yahoo.com']
+        }
+      };
+
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+
+      const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
+
+      expect(observations).toHaveLength(4); // email, integration, performance, security
+      
+      const emailObservation = observations.find(obs => obs.category === 'Business Credibility');
+      expect(emailObservation).toBeDefined();
+      expect(emailObservation?.type).toBe('opportunity');
+      expect(emailObservation?.title).toBe('Professional Email Domain Opportunity');
+      expect(emailObservation?.priority).toBe('medium'); // Low email count = medium priority
+      expect(emailObservation?.insights).toContain('42% of customers are more likely to trust businesses with professional email addresses');
+      expect(emailObservation?.actionItems).toContain('Set up Microsoft 365 Business with custom domain');
+      expect(emailObservation?.automationPotential?.canAutomate).toBe(true);
+    });
+
+    it('should generate high priority observation for businesses with many generic emails', async () => {
+      const mockDomainAnalysis = {
+        totalEmails: 75,
+        customDomainCount: 0,
+        genericProviderCount: 75,
+        overallProfessionalScore: 20,
+        emailsByDomain: {
+          'gmail.com': Array(50).fill('user@gmail.com'),
+          'yahoo.com': Array(25).fill('user@yahoo.com')
+        }
+      };
+
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+
+      const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
+
+      const emailObservation = observations.find(obs => obs.category === 'Business Credibility');
+      expect(emailObservation?.priority).toBe('high'); // Many emails = high priority
+      expect(emailObservation?.estimatedImpact.businessValue).toBeGreaterThan(5000); // Higher value for larger businesses
+    });
+
+    it('should generate email security observation for users with professional email', async () => {
+      const mockDomainAnalysis = {
+        totalEmails: 10,
+        customDomainCount: 8,
+        genericProviderCount: 2,
+        overallProfessionalScore: 85,
+        emailsByDomain: {
+          'company.com': Array(8).fill('user@company.com'),
+          'gmail.com': Array(2).fill('personal@gmail.com')
+        }
+      };
+
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+
+      const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
+
+      const securityObservation = observations.find(obs => obs.category === 'Email Security');
+      expect(securityObservation).toBeDefined();
+      expect(securityObservation?.type).toBe('recommendation');
+      expect(securityObservation?.title).toBe('Email Security Enhancement Opportunity');
+      expect(securityObservation?.insights).toContain('DMARC, SPF, and DKIM records prevent email spoofing');
+      expect(securityObservation?.actionItems).toContain('Configure DMARC, SPF, and DKIM DNS records');
+    });
+
+    it('should not generate professional email opportunity for businesses already using professional email', async () => {
+      const mockDomainAnalysis = {
+        totalEmails: 15,
+        customDomainCount: 15,
+        genericProviderCount: 0,
+        overallProfessionalScore: 95,
+        emailsByDomain: {
+          'company.com': Array(15).fill('user@company.com')
+        }
+      };
+
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+
+      const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
+
+      const emailOpportunity = observations.find(obs => 
+        obs.category === 'Business Credibility' && obs.type === 'opportunity'
+      );
+      expect(emailOpportunity).toBeUndefined();
+
+      // Should still have email security recommendation
+      const emailSecurity = observations.find(obs => obs.category === 'Email Security');
+      expect(emailSecurity).toBeDefined();
+    });
+
+    it('should generate integration opportunity observation for businesses with few integrations', async () => {
+      // Mock supabase to return few integrations
+      const supabaseMock = jest.requireMock('../../../src/lib/supabase');
+      supabaseMock.supabase.from.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({
+              data: [{ id: 1, name: 'Basic Integration' }] // Only 1 integration
+            })
+          })
+        })
+      });
+
+      const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
+
+      const integrationObservation = observations.find(obs => obs.category === 'Business Automation');
+      expect(integrationObservation).toBeDefined();
+      expect(integrationObservation?.type).toBe('opportunity');
+      expect(integrationObservation?.title).toBe('Integration Opportunities Detected');
+      expect(integrationObservation?.insights).toContain('Businesses with 5+ integrations report 40% time savings');
+      expect(integrationObservation?.actionItems).toContain('Connect your CRM for automated lead tracking');
+    });
+
+    it('should sort observations by priority and confidence', async () => {
+      const mockDomainAnalysis = {
+        totalEmails: 50,
+        customDomainCount: 0,
+        genericProviderCount: 50,
+        overallProfessionalScore: 25,
+        emailsByDomain: {
+          'gmail.com': Array(50).fill('user@gmail.com')
+        }
+      };
+
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+
+      const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
+
+      // Should be sorted by priority (critical > high > medium > low) then confidence
+      for (let i = 0; i < observations.length - 1; i++) {
+        const current = observations[i];
+        const next = observations[i + 1];
+        
+        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        const currentPriorityValue = priorityOrder[current.priority];
+        const nextPriorityValue = priorityOrder[next.priority];
+        
+        if (currentPriorityValue === nextPriorityValue) {
+          expect(current.confidence).toBeGreaterThanOrEqual(next.confidence);
+        } else {
+          expect(currentPriorityValue).toBeGreaterThanOrEqual(nextPriorityValue);
+        }
+      }
+    });
+
+    it('should handle errors gracefully', async () => {
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockRejectedValue(new Error('Analysis failed'));
+
+      const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
+
+      expect(observations).toEqual([]); // Should return empty array on error
+    });
+  });
+
+  describe('getBusinessInsights', () => {
+    it('should convert observations to BusinessInsight format', async () => {
+      const mockDomainAnalysis = {
+        totalEmails: 10,
+        customDomainCount: 0,
+        genericProviderCount: 10,
+        overallProfessionalScore: 30,
+        emailsByDomain: {
+          'gmail.com': Array(10).fill('user@gmail.com')
+        }
+      };
+
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+
+      const insights = await businessObservationService.getBusinessInsights(mockUserId, mockCompanyId);
+
+      expect(insights).toHaveLength(4);
+      
+      const emailInsight = insights.find(insight => insight.category === 'Business Credibility');
+      expect(emailInsight).toBeDefined();
+      expect(emailInsight?.type).toBe('opportunity');
+      expect(emailInsight?.metrics.impact).toBeGreaterThan(0);
+      expect(emailInsight?.metrics.confidence).toBe(0.92);
+      expect(emailInsight?.suggestedActions).toHaveLength(5);
+      expect(emailInsight?.automationPotential).toBeDefined();
+      expect(emailInsight?.status).toBe('active');
+    });
+
+    it('should filter insights by page relevance when pageId provided', async () => {
+      const mockDomainAnalysis = {
+        totalEmails: 5,
+        customDomainCount: 0,
+        genericProviderCount: 5,
+        overallProfessionalScore: 30,
+        emailsByDomain: {
+          'gmail.com': Array(5).fill('user@gmail.com')
+        }
+      };
+
+      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
+      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+
+      const dashboardInsights = await businessObservationService.getBusinessInsights(mockUserId, mockCompanyId, 'dashboard');
+      const settingsInsights = await businessObservationService.getBusinessInsights(mockUserId, mockCompanyId, 'settings');
+
+      expect(dashboardInsights.length).toBeGreaterThan(0);
+      expect(settingsInsights.length).toBeGreaterThan(0);
+      
+      // All insights should be relevant to the specified page
+      dashboardInsights.forEach(insight => {
+        expect(insight.context.pageRelevance).toContain('dashboard');
+      });
+      
+      settingsInsights.forEach(insight => {
+        expect(insight.context.pageRelevance).toContain('settings');
+      });
+    });
+  });
+
+  describe('calculateEmailUpgradeValue', () => {
+    it('should calculate higher value for larger businesses', async () => {
+      const service = businessObservationService as any;
+
+      const smallBusiness = { totalEmails: 10 };
+      const mediumBusiness = { totalEmails: 60 };
+      const largeBusiness = { totalEmails: 120 };
+
+      const smallValue = service.calculateEmailUpgradeValue(smallBusiness);
+      const mediumValue = service.calculateEmailUpgradeValue(mediumBusiness);
+      const largeValue = service.calculateEmailUpgradeValue(largeBusiness);
+
+      expect(mediumValue).toBeGreaterThan(smallValue);
+      expect(largeValue).toBeGreaterThan(mediumValue);
+    });
+  });
+});

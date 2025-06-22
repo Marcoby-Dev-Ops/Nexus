@@ -137,7 +137,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
     const colors = {
       sales: 'text-success dark:text-success',
       finance: 'text-primary dark:text-primary',
-      operations: 'text-secondary dark:text-purple-400',
+      operations: 'text-secondary dark:text-secondary',
       marketing: 'text-pink-600 dark:text-pink-400',
       general: 'text-muted-foreground dark:text-muted-foreground'
     };
@@ -201,7 +201,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="px-4 py-4 bg-destructive/5 dark:bg-destructive/20 border-b border-red-200 dark:border-red-800">
+        <div className="px-4 py-4 bg-destructive/5 dark:bg-destructive/20 border-b border-destructive/20 dark:border-red-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-destructive dark:text-destructive">
               <AlertCircle className="h-4 w-4" />

@@ -128,11 +128,13 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
           </div>
 
           {integration.documentation && (
-            <Button variant="outline" className="w-full" asChild>
-              <a href={integration.documentation} target="_blank" rel="noopener noreferrer">
-                <Book className="w-4 h-4 mr-2" />
-                View Documentation
-              </a>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => window.open(integration.documentation, '_blank', 'noopener,noreferrer')}
+            >
+              <Book className="w-4 h-4 mr-2" />
+              View Documentation
             </Button>
           )}
         </div>
@@ -237,11 +239,13 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
               Continue to Dashboard
             </Button>
             {integration.supportUrl && (
-              <Button variant="outline" className="w-full" asChild>
-                <a href={integration.supportUrl} target="_blank" rel="noopener noreferrer">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Get Help
-                </a>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => window.open(integration.supportUrl, '_blank', 'noopener,noreferrer')}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Get Help
               </Button>
             )}
           </div>
@@ -264,7 +268,7 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isOpen) return <></>;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4">
@@ -276,7 +280,7 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
               <Badge variant="outline">{integration.category}</Badge>
               <Badge className={
                 integration.difficulty === 'easy' ? 'bg-success/10 text-success' :
-                integration.difficulty === 'medium' ? 'bg-warning/10 text-yellow-800' :
+                integration.difficulty === 'medium' ? 'bg-warning/10 text-warning/80' :
                 'bg-destructive/10 text-destructive'
               }>
                 {integration.difficulty}

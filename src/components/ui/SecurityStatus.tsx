@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Badge } from './Badge';
 import { Button } from './Button';
 import Modal from './Modal';
-import { Shield, CheckCircle, AlertTriangle, XCircle, Eye } from 'lucide-react';
+import { Shield, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
@@ -103,11 +103,11 @@ export const SecurityStatus: React.FC = () => {
   const getStatusColor = (): string => {
     switch (status.level) {
       case 'secure':
-        return 'bg-success/10 text-success hover:bg-green-200';
+        return 'bg-success/10 text-success hover:bg-success/20';
       case 'warning':
-        return 'bg-warning/10 text-yellow-800 hover:bg-yellow-200';
+        return 'bg-warning/10 text-warning hover:bg-warning/20';
       case 'critical':
-        return 'bg-destructive/10 text-destructive hover:bg-red-200';
+        return 'bg-destructive/10 text-destructive hover:bg-destructive/20';
     }
   };
 
@@ -214,7 +214,7 @@ export const SecurityStatus: React.FC = () => {
             )}
 
             {status.level === 'warning' && (
-              <div className="p-2 bg-warning/5 rounded text-xs text-yellow-800">
+              <div className="p-2 bg-warning/5 rounded text-xs text-warning">
                 <p className="font-medium">Attention</p>
                 <p>Some security events require your attention.</p>
               </div>

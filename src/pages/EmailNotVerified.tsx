@@ -25,7 +25,7 @@ const EmailNotVerified: React.FC = () => {
       <Button onClick={resend} disabled={sent}>
         {sent ? 'Verification email sent' : 'Resend email'}
       </Button>
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 };

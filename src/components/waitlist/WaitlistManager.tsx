@@ -12,23 +12,11 @@ import {
   Mail,
   Share2,
   Gift,
-  Target,
   BarChart3,
   Download,
-  Filter,
   Search,
-  Crown,
-  Star,
-  Clock,
   ArrowUp,
-  ArrowDown,
-  ExternalLink,
-  Copy,
-  CheckCircle2,
   AlertTriangle,
-  Zap,
-  Calendar,
-  MessageSquare,
   DollarSign,
   Globe
 } from 'lucide-react';
@@ -76,7 +64,7 @@ interface CampaignData {
 
 const WaitlistManager: React.FC = () => {
   const [waitlistEntries, setWaitlistEntries] = useState<WaitlistEntry[]>([]);
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
+  const [metrics] = useState<DashboardMetrics>({
     totalSignups: 2847,
     dailyGrowthRate: 8.5,
     conversionRate: 12.3,
@@ -107,9 +95,9 @@ const WaitlistManager: React.FC = () => {
       joinedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
       referrals: Math.floor(Math.random() * 15),
       referredBy: Math.random() > 0.7 ? `ref-${Math.floor(Math.random() * 100)}` : undefined,
-      source: ['direct', 'social', 'referral', 'paid'][Math.floor(Math.random() * 4)] as any,
+      source: ['direct', 'social', 'referral', 'paid'][Math.floor(Math.random() * 4)] as WaitlistEntry['source'],
       country: ['US', 'CA', 'UK', 'DE', 'FR', 'AU'][Math.floor(Math.random() * 6)],
-      status: ['active', 'converted', 'churned'][Math.floor(Math.random() * 3)] as any,
+      status: ['active', 'converted', 'churned'][Math.floor(Math.random() * 3)] as WaitlistEntry['status'],
       engagementScore: Math.floor(Math.random() * 100)
     }));
     
@@ -222,7 +210,7 @@ const WaitlistManager: React.FC = () => {
             <Download className="w-4 h-4 mr-2" />
             Export Data
           </Button>
-          <Button onClick={sendBulkEmail} className="bg-secondary hover:bg-purple-700">
+          <Button onClick={sendBulkEmail} className="bg-secondary hover:bg-secondary/90">
             <Mail className="w-4 h-4 mr-2" />
             Send Update
           </Button>

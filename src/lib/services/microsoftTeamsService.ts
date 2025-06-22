@@ -186,6 +186,13 @@ class MicrosoftTeamsService {
    * Initiate OAuth 2.0 authorization flow
    */
   initiateAuth(): string {
+    // Guard-rail: surface mis-configuration immediately in dev
+    if (!this.config.clientId || !this.config.tenantId) {
+      throw new Error(
+        'Microsoft Teams OAuth not configured – please set VITE_MS_TEAMS_CLIENT_ID and VITE_MS_TEAMS_TENANT_ID in your environment.'
+      );
+    }
+
     const params = new URLSearchParams({
       client_id: this.config.clientId,
       response_type: 'code',
@@ -682,6 +689,29 @@ class MicrosoftTeamsService {
   async disconnect(): Promise<void> {
     localStorage.removeItem('teams_tokens');
     sessionStorage.removeItem('teams_oauth_state');
+  }
+
+  async getUpcomingEvents(start: Date = new Date(), daysAhead: number = 14): Promise<any[]> {
+    const end = new Date(start.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+    const params = new URLSearchParams({
+      startDateTime: start.toISOString(),
+      endDateTime: end.toISOString(),
+      $select: 'subject,start,end,location,organizer,isOnlineMeeting,onlineMeetingUrl',
+      $orderby: 'start/DateTime asc',
+      $top: '50',
+    } as any);
+    try {
+      const res = await this.makeAuthenticatedRequest(`/me/calendarView?${params.toString()}`);
+      return res.value || [];
+    } catch (err) {
+      console.error('Failed to fetch calendar events:', err);
+      return [];
+    }
+  }
+
+  /** Check whether Teams OAuth tokens are present */
+  public isConnected(): boolean {
+    return !!this.getStoredTokens();
   }
 }
 

@@ -58,15 +58,15 @@ class ErrorBoundary extends Component<Props, State> {
               if (value) {
                 JSON.parse(value); // Test if it's valid JSON
               }
-            } catch (e) {
+            } catch {
               console.warn(`Removing corrupted localStorage key: ${key}`);
               localStorage.removeItem(key);
             }
           }
         });
       });
-    } catch (e) {
-      console.warn('Error cleaning localStorage:', e);
+    } catch (error) {
+      console.warn('Error cleaning localStorage:', error);
     }
     
     // Reset state and reload

@@ -71,11 +71,11 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
       case 'excellent':
         return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800';
       case 'good':
-        return 'bg-primary/10 text-primary border-border dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
+        return 'bg-primary/10 text-primary border-border dark:bg-primary/20/20 dark:text-primary dark:border-primary/80';
       case 'warning':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800';
       default:
-        return 'bg-destructive/10 text-destructive border-red-200 dark:bg-destructive/20 dark:text-red-300 dark:border-red-800';
+        return 'bg-destructive/10 text-destructive border-destructive/20 dark:bg-destructive/20 dark:text-red-300 dark:border-red-800';
     }
   };
 
@@ -148,13 +148,13 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
 
         {/* Quick Actions */}
         <div className="mt-6 flex flex-wrap gap-2">
-          <Badge variant="secondary" className="bg-primary/10 text-primary dark:bg-blue-900/20 dark:text-blue-300">
+          <Badge variant="secondary" className="bg-primary/10 text-primary dark:bg-primary/20/20 dark:text-primary">
             🔵 THINK: Cross-pattern analysis active
           </Badge>
-          <Badge variant="secondary" className="bg-secondary/10 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300">
+          <Badge variant="secondary" className="bg-secondary/10 text-purple-800 dark:bg-secondary/20/20 dark:text-purple-300">
             🟣 SEE: Real-time monitoring engaged
           </Badge>
-          <Badge variant="secondary" className="bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+          <Badge variant="secondary" className="bg-warning/10 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
             🟠 ACT: 3 optimization opportunities detected
           </Badge>
         </div>

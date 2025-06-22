@@ -102,7 +102,7 @@ const AIHubPage: React.FC = () => {
       description: 'Generate leads, draft proposals, and analyze sales data', 
       icon: <Bot className="h-5 w-5" />,
       status: 'available',
-      color: 'bg-green-500'
+      color: 'bg-success'
     },
     { 
       id: 'operations-assistant', 
@@ -110,7 +110,7 @@ const AIHubPage: React.FC = () => {
       description: 'Optimize workflows, predict bottlenecks, and suggest improvements', 
       icon: <Cpu className="h-5 w-5" />,
       status: 'available',
-      color: 'bg-blue-500'
+      color: 'bg-primary'
     },
     { 
       id: 'finance-assistant', 
@@ -118,7 +118,7 @@ const AIHubPage: React.FC = () => {
       description: 'Forecast financials, identify cost-saving opportunities, and analyze trends', 
       icon: <Brain className="h-5 w-5" />,
       status: 'beta',
-      color: 'bg-purple-500'
+      color: 'bg-secondary'
     },
     { 
       id: 'analytics-assistant', 
@@ -352,8 +352,8 @@ const AIHubPage: React.FC = () => {
               {aiInsights.map((insight, i) => (
                 <Card key={i} className="overflow-hidden">
                   <div className={`h-1 ${
-                    insight.category === 'sales' ? 'bg-blue-500' :
-                    insight.category === 'finance' ? 'bg-green-500' :
+                    insight.category === 'sales' ? 'bg-primary' :
+                    insight.category === 'finance' ? 'bg-success' :
                     'bg-amber-500'
                   }`}></div>
                   <CardContent className="p-4">
@@ -363,7 +363,7 @@ const AIHubPage: React.FC = () => {
                       </Badge>
                       <Badge 
                         variant="outline" 
-                        className={insight.confidence > 80 ? 'border-green-500 text-green-500' : 'border-amber-500 text-amber-500'}
+                        className={insight.confidence > 80 ? 'border-green-500 text-success' : 'border-amber-500 text-amber-500'}
                       >
                         {insight.confidence}% confidence
                       </Badge>
@@ -507,11 +507,11 @@ const AIHubPage: React.FC = () => {
                       {assistant.name}
                     </CardTitle>
                     {assistant.status === 'beta' ? (
-                      <Badge className="bg-purple-500">Beta</Badge>
+                      <Badge className="bg-secondary">Beta</Badge>
                     ) : assistant.status === 'coming-soon' ? (
                       <Badge variant="outline">Coming Soon</Badge>
                     ) : (
-                      <Badge className="bg-green-500">Available</Badge>
+                      <Badge className="bg-success">Available</Badge>
                     )}
                   </div>
                   <CardDescription>{assistant.description}</CardDescription>

@@ -34,7 +34,7 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, className, title
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
       <div 
         className={cn(
           'bg-popover text-popover-foreground rounded-lg shadow-lg p-6 w-full max-w-md',

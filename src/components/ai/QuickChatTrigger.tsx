@@ -117,7 +117,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
       {/* Backdrop for mobile */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 z-30 md:hidden"
+          className="fixed inset-0 bg-black/20 z-overlay md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}

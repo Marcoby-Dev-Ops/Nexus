@@ -18,6 +18,7 @@ import { quotaService } from '../../lib/services/quotaService';
 import { useAuth } from '../../contexts/AuthContext';
 import type { BillingStatus, UsageBilling } from '../../lib/types/billing';
 import type { ChatQuotas, UsageTracking } from '../../lib/types/licensing';
+import { LoadingSkeleton } from '@/components/patterns/LoadingStates';
 
 interface BillingDashboardProps {
   className?: string;
@@ -80,10 +81,14 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
 
   const getTierColor = (tier: string) => {
     switch (tier) {
-      case 'free': return 'bg-primary/10 text-primary';
-      case 'pro': return 'bg-secondary/10 text-purple-800';
-      case 'enterprise': return 'bg-warning/10 text-yellow-800';
-      default: return 'bg-muted text-foreground';
+      case 'free':
+        return 'bg-primary/10 text-primary';
+      case 'pro':
+        return 'bg-secondary/10 text-secondary';
+      case 'enterprise':
+        return 'bg-warning/10 text-warning';
+      default:
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -97,7 +102,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
   if (loading) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <LoadingStates.Skeleton />
+        <LoadingSkeleton />
         <div>
           <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -220,7 +225,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-4 bg-muted rounded-lg">
                 <div className="text-lg font-semibold">
-                  {usageData?.messages_sent || 0}
+                  {usageData?.message_count || 0}
                 </div>
                 <div className="text-sm text-muted-foreground">Messages Today</div>
               </div>
@@ -315,8 +320,8 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
             )}
 
             {billingStatus.currentPlan === 'enterprise' && (
-              <div className="p-4 bg-warning/5 rounded-lg border border-yellow-200">
-                <div className="text-sm font-medium text-yellow-800">Enterprise Plan Active</div>
+              <div className="p-4 bg-warning/5 rounded-lg border border-warning/20">
+                <div className="text-sm font-medium text-warning/80">Enterprise Plan Active</div>
                 <div className="text-sm text-warning">
                   You have access to all premium features
                 </div>

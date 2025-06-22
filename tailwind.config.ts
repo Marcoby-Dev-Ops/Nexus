@@ -43,6 +43,22 @@ const config = {
           DEFAULT: 'hsl(var(--accent))',
           foreground: 'hsl(var(--accent-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        info: {
+          DEFAULT: 'hsl(var(--info))',
+          foreground: 'hsl(var(--info-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        danger: {
+          DEFAULT: 'hsl(var(--danger))',
+          foreground: 'hsl(var(--danger-foreground))',
+        },
         popover: {
           DEFAULT: 'hsl(var(--popover))',
           foreground: 'hsl(var(--popover-foreground))',
@@ -51,6 +67,28 @@ const config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Extended UI state colors
+        'primary-subtle': 'hsl(var(--primary-subtle))',
+        'primary-hover': 'hsl(var(--primary-hover))',
+        'secondary-subtle': 'hsl(var(--secondary-subtle))',
+        'muted-subtle': 'hsl(var(--muted-subtle))',
+        'muted-hover': 'hsl(var(--muted-hover))',
+        'unread-bg': 'hsl(var(--unread-bg))',
+        'unread-border': 'hsl(var(--unread-border))',
+        'selected-bg': 'hsl(var(--selected-bg))',
+        'hover-bg': 'hsl(var(--hover-bg))',
+      },
+      zIndex: {
+        'base': '1',
+        'elevated': '10', 
+        'sticky': '20',
+        'overlay': '30',
+        'dropdown': '40',
+        'drawer': '50',
+        'modal': '60',
+        'notification': '70',
+        'critical': '80',
+        'maximum': '9999',
       },
       borderRadius: {
         lg: 'var(--radius)',

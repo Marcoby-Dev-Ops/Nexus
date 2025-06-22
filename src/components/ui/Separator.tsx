@@ -1,6 +1,6 @@
 import * as React from "react"
 
-interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface SeparatorProps extends React.HTMLAttributes<HTMLDivElement> {
   orientation?: "horizontal" | "vertical"
 }
 

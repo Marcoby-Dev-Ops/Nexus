@@ -134,16 +134,36 @@ class SecureStorage {
    */
   public async setItem(key: string, value: any): Promise<void> {
     try {
+      // Validate input value
+      if (value === undefined) {
+        console.warn(`Attempting to store undefined value for key: ${key}`);
+        return;
+      }
+
+      // Ensure we don't store functions or other non-serializable values
+      let serializableValue;
+      try {
+        serializableValue = JSON.parse(JSON.stringify(value));
+      } catch (error) {
+        console.error(`Value for ${key} is not serializable:`, error);
+        throw new Error(`Cannot store non-serializable value for key: ${key}`);
+      }
+
       const serializedValue = JSON.stringify({
-        data: value,
+        data: serializableValue,
         timestamp: Date.now(),
         version: '1.0',
       });
 
-             const shouldEncrypt = STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any);
-       const finalValue = shouldEncrypt 
-         ? await this.encrypt(serializedValue)
-         : serializedValue;
+      const shouldEncrypt = STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any);
+      const finalValue = shouldEncrypt 
+        ? await this.encrypt(serializedValue)
+        : serializedValue;
+
+      // Validate final value before storing
+      if (typeof finalValue !== 'string') {
+        throw new Error(`Final value for ${key} is not a string: ${typeof finalValue}`);
+      }
 
       localStorage.setItem(
         shouldEncrypt ? `secure_${key}` : key,
@@ -158,13 +178,27 @@ class SecureStorage {
   /**
    * Securely retrieve data
    */
-     public async getItem<T>(key: string, defaultValue?: T): Promise<T | null> {
-     try {
-       const shouldEncrypt = STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any);
-       const storageKey = shouldEncrypt ? `secure_${key}` : key;
+  public async getItem<T>(key: string, defaultValue?: T): Promise<T | null> {
+    try {
+      const shouldEncrypt = STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any);
+      const storageKey = shouldEncrypt ? `secure_${key}` : key;
       const storedValue = localStorage.getItem(storageKey);
 
       if (!storedValue) {
+        return defaultValue ?? null;
+      }
+
+      // Handle cases where the stored value is not a string or is corrupted
+      if (typeof storedValue !== 'string') {
+        console.warn(`Invalid stored value type for ${key}:`, typeof storedValue);
+        this.removeItem(key);
+        return defaultValue ?? null;
+      }
+
+      // Check for obvious corruption (e.g., "[object Object]")
+      if (storedValue === '[object Object]' || storedValue.startsWith('[object ')) {
+        console.warn(`Corrupted stored value detected for ${key}:`, storedValue);
+        this.removeItem(key);
         return defaultValue ?? null;
       }
 
@@ -172,7 +206,28 @@ class SecureStorage {
         ? await this.decrypt(storedValue)
         : storedValue;
 
-      const parsed = JSON.parse(rawValue);
+      // Validate that rawValue is a string before parsing
+      if (typeof rawValue !== 'string') {
+        console.warn(`Decrypted value is not a string for ${key}:`, typeof rawValue);
+        this.removeItem(key);
+        return defaultValue ?? null;
+      }
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawValue);
+      } catch (parseError) {
+        console.warn(`JSON parse error for ${key}:`, parseError, 'Raw value:', rawValue);
+        this.removeItem(key);
+        return defaultValue ?? null;
+      }
+
+      // Validate parsed structure
+      if (!parsed || typeof parsed !== 'object') {
+        console.warn(`Invalid parsed structure for ${key}:`, parsed);
+        this.removeItem(key);
+        return defaultValue ?? null;
+      }
 
       // Check if data is expired
       if (parsed.timestamp && Date.now() - parsed.timestamp > STORAGE_CONFIG.MAX_AGE) {
@@ -219,6 +274,38 @@ class SecureStorage {
            window.crypto.subtle &&
            typeof localStorage !== 'undefined';
   }
+
+  /**
+   * Clean up corrupted localStorage entries
+   */
+  public cleanupCorruptedEntries(): void {
+    const keysToRemove: string[] = [];
+    
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      
+      try {
+        const value = localStorage.getItem(key);
+        if (value === '[object Object]' || (value && value.startsWith('[object '))) {
+          console.warn(`Found corrupted entry: ${key} = ${value}`);
+          keysToRemove.push(key);
+        }
+      } catch (error) {
+        console.warn(`Error checking key ${key}:`, error);
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => {
+      console.log(`Removing corrupted entry: ${key}`);
+      localStorage.removeItem(key);
+    });
+    
+    if (keysToRemove.length > 0) {
+      console.log(`Cleaned up ${keysToRemove.length} corrupted localStorage entries`);
+    }
+  }
 }
 
 // Export singleton instance
@@ -228,4 +315,5 @@ export const secureStorage = SecureStorage.getInstance();
 export const setSecureItem = (key: string, value: any) => secureStorage.setItem(key, value);
 export const getSecureItem = <T>(key: string, defaultValue?: T) => secureStorage.getItem<T>(key, defaultValue);
 export const removeSecureItem = (key: string) => secureStorage.removeItem(key);
-export const clearAllSecureData = () => secureStorage.clearSecureStorage(); 
+export const clearAllSecureData = () => secureStorage.clearSecureStorage();
+export const cleanupCorruptedStorage = () => secureStorage.cleanupCorruptedEntries(); 

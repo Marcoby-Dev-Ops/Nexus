@@ -258,7 +258,7 @@ export const AITransformation: React.FC = () => {
           
           <div className="flex justify-center items-center space-x-6 mt-8">
             <Badge variant="secondary" className="text-lg px-6 py-4">
-              <AlertTriangle className="h-5 w-5 mr-2 text-orange-500" />
+              <AlertTriangle className="h-5 w-5 mr-2 text-warning" />
               86% Untapped Potential
             </Badge>
             <Badge variant="default" className="text-lg px-6 py-4">
@@ -467,7 +467,7 @@ export const AITransformation: React.FC = () => {
                     Business Transformation
                   </h3>
                   <div className="space-y-4">
-                    <div className="p-4 bg-success/5 border border-green-200 rounded-lg">
+                    <div className="p-4 bg-success/5 border border-success/20 rounded-lg">
                       <h4 className="font-semibold text-success mb-2">Potential Value</h4>
                       <p className="text-2xl font-bold text-success">
                         ${calculatePotentialValue(selectedCapability).toLocaleString()}

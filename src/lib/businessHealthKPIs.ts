@@ -393,6 +393,16 @@ export const businessHealthKPIs: KPI[] = [
     dataType: 'boolean',
     actionTask: 'Complete the compliance checklist'
   },
+  {
+    id: 'professional_email_domain',
+    name: 'Professional Email Domain',
+    description: 'Using custom business domain for email communications',
+    category: 'maturity',
+    question: 'Do you use a custom business domain for your email (e.g., you@yourcompany.com)?',
+    weight: 7,
+    dataType: 'boolean',
+    actionTask: 'Set up professional email with Microsoft 365 Business'
+  },
   
   // Marketing KPIs
   {

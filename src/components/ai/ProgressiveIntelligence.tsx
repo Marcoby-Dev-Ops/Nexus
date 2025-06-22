@@ -22,6 +22,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { useToast } from '@/components/ui/Toast';
 // import { useSecondBrain } from '@/lib/hooks/useSecondBrain';
 import type { 
   BusinessInsight, 
@@ -48,7 +49,8 @@ export function ProgressiveIntelligence({
 }: ProgressiveIntelligenceProps) {
   const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
   const [executingAction, setExecutingAction] = useState<string | null>(null);
-  
+    const { showToast } = useToast();
+
   // Mock data for demonstration - replace with actual hook when ready
   const mockInsights: BusinessInsight[] = [
     {
@@ -175,7 +177,7 @@ export function ProgressiveIntelligence({
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case 'easy': return 'bg-success/10 text-success';
-      case 'medium': return 'bg-warning/10 text-yellow-800';
+      case 'medium': return 'bg-warning/10 text-warning/80';
       case 'hard': return 'bg-destructive/10 text-destructive';
       default: return 'bg-muted text-foreground';
     }
@@ -183,10 +185,126 @@ export function ProgressiveIntelligence({
 
   const handleExecuteAction = async (actionId: string) => {
     setExecutingAction(actionId);
-    // Simulate action execution
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setExecutingAction(null);
-    // TODO: Implement actual action execution
+    
+    try {
+      // Find the action to execute
+      const progressiveAction = mockActions.find(pa => pa.action.id === actionId);
+      if (!progressiveAction) {
+        throw new Error('Action not found');
+      }
+
+      const action = progressiveAction.action;
+
+      // Execute based on action type
+      switch (action.type) {
+        case 'automation':
+          await executeAutomationAction(action);
+          break;
+        case 'guided_workflow':
+          await executeGuidedWorkflow(action);
+          break;
+        case 'external_link':
+          executeNavigation(action);
+          break;
+        case 'quick_action':
+          await executeGenericAction(action);
+          break;
+        default:
+          // Generic action execution
+          await executeGenericAction(action);
+      }
+
+      // Mark action as completed
+      showToast({
+        title: 'Action Completed',
+        description: `Action "${action.title}" completed successfully`,
+        type: 'success'
+      });
+      
+    } catch (error: any) {
+      console.error('Action execution failed:', error);
+      showToast({
+        title: 'Action Failed',
+        description: `Failed to execute action: ${error.message}`,
+        type: 'error'
+      });
+    } finally {
+      setExecutingAction(null);
+    }
+  };
+
+  const executeAutomationAction = async (action: any) => {
+    // For automation actions, call the appropriate API or service
+    const response = await fetch('/api/ai/execute-automation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actionId: action.id,
+        actionType: 'automation',
+        parameters: action.parameters || {}
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Automation execution failed');
+    }
+
+    return response.json();
+  };
+
+  const executeGuidedWorkflow = async (action: any) => {
+    // For guided workflows, navigate to the workflow page or open modal
+    if (action.steps && action.steps.length > 0) {
+      // Open workflow modal or navigate to dedicated workflow page
+      window.location.href = `/workflows/${action.id}`;
+    } else {
+      throw new Error('No workflow steps defined');
+    }
+  };
+
+  const executeApiCall = async (action: any) => {
+    // Execute API calls based on action configuration
+    const { endpoint, method = 'POST', headers = {}, body } = action.apiConfig || {};
+    
+    if (!endpoint) {
+      throw new Error('No API endpoint configured');
+    }
+
+    const response = await fetch(endpoint, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed: ${response.status}`);
+    }
+
+    return response.json();
+  };
+
+  const executeNavigation = (action: any) => {
+    // For navigation actions, redirect to the specified URL
+    const { url, target = '_self' } = action.navigationConfig || {};
+    
+    if (!url) {
+      throw new Error('No navigation URL configured');
+    }
+
+    if (target === '_blank') {
+      window.open(url, '_blank');
+    } else {
+      window.location.href = url;
+    }
+  };
+
+  const executeGenericAction = async (action: any) => {
+    // For generic actions, simulate execution with realistic delay
+    const delay = Math.min(action.estimatedTime * 100, 3000); // Max 3 seconds
+    await new Promise(resolve => setTimeout(resolve, delay));
   };
 
   if (compact) {

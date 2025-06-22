@@ -91,10 +91,12 @@ export function useDepartmentKPIs(departmentId: DepartmentId): DepartmentKpiStat
       }
     }
 
+    const interval = setInterval(fetchSnapshots, 600000); // 10 min
     fetchSnapshots();
 
     return () => {
       cancelled = true;
+      clearInterval(interval);
     };
   }, [departmentId]);
 

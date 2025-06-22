@@ -1,8 +1,8 @@
-import { Integration, IntegrationInsight } from '@prisma/client';
-import { OpenRouter } from 'openrouter';
+import type { Integration, IntegrationInsight } from '@prisma/client';
+import OpenAI from 'openai';
 
-const openRouter = new OpenRouter({
-  apiKey: process.env.OPENROUTER_API_KEY
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 interface InsightGenerationContext {
@@ -13,21 +13,21 @@ interface InsightGenerationContext {
 
 // Model configurations for different tasks
 const MODEL_CONFIGS = {
-  // Free/cheaper models for simple tasks
+  // Simpler models for basic tasks
   simple: {
-    model: 'mistralai/mistral-7b-instruct',
+    model: 'gpt-3.5-turbo',
     maxTokens: 500,
     temperature: 0.7
   },
   // Mid-tier models for pattern recognition
   pattern: {
-    model: 'anthropic/claude-2',
+    model: 'gpt-4o-mini',
     maxTokens: 1000,
     temperature: 0.5
   },
   // Premium models for complex decision making
   complex: {
-    model: 'openai/gpt-4',
+    model: 'gpt-4o',
     maxTokens: 2000,
     temperature: 0.3
   }
@@ -60,9 +60,9 @@ export async function generateInsights(
   }
 }
 
-async function generateBasicInsights(context: InsightGenerationContext): Promise<IntegrationInsight[]> {
+async function generateBasicInsights(context: InsightGenerationContext): Promise<any[]> {
   const prompt = generateBasicPrompt(context);
-  const response = await openRouter.chat.completions.create({
+  const response = await openai.chat.completions.create({
     model: MODEL_CONFIGS.simple.model,
     messages: [
       {

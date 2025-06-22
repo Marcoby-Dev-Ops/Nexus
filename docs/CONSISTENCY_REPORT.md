@@ -1,303 +1,22 @@
 # UX/UI Consistency Report 📊
 
-> **Generated on:** 2025-06-13T22:37:59.453Z
+> **Generated on:** 2025-06-22T03:32:02.629Z
 
 ## Summary
 
-- **Files Analyzed:** 258
-- **Total Issues:** 176
+- **Files Analyzed:** 293
+- **Total Issues:** 141
 - **Consistency Score:** 7/10
 
 ## Score Breakdown
 
-- **Color Usage:** 1/10 (65 issues)
-- **Spacing:** 1/10 (65 issues)
-- **Loading States:** 1/10 (19 issues)
-- **Error Handling:** 1/10 (23 issues)
+- **Spacing:** 1/10 (73 issues)
+- **Error Handling:** 5/10 (10 issues)
+- **Color Usage:** 1/10 (32 issues)
+- **Loading States:** 1/10 (22 issues)
 - **Data Display:** 8/10 (4 issues)
 
 ## Issues by Category
-
-### Color Usage
-
-#### `src/pages/WorkspacePage.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 208
-
-#### `src/pages/Integrations.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 226
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 72, 185, 290
-
-#### `src/pages/AIHubPage.tsx`
-
-🟡 **MEDIUM:** Found 5 hardcoded background color(s). Use design tokens instead.
-   - Lines: 105, 113, 355, 514
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 366
-
-#### `src/pages/settings/TeamSettings.tsx`
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 187, 207
-
-#### `src/pages/settings/SecuritySettings.tsx`
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 201, 204, 207
-
-#### `src/pages/settings/IntegrationsPage.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 317
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 226
-
-#### `src/pages/departments/sales/SalesPerformancePage.tsx`
-
-🟡 **MEDIUM:** Found 9 hardcoded background color(s). Use design tokens instead.
-   - Lines: 90, 92, 94, 367, 407, 408
-
-🟢 **LOW:** Found 10 hardcoded text color(s). Use design tokens instead.
-   - Lines: 57, 66, 291, 293, 297, 510, 515
-
-#### `src/pages/departments/sales/SalesPage.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 87
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 151, 153
-
-#### `src/pages/departments/operations/OperationsPage.tsx`
-
-🟡 **MEDIUM:** Found 8 hardcoded background color(s). Use design tokens instead.
-   - Lines: 124, 130, 274, 276, 362, 453, 484, 515
-
-🟢 **LOW:** Found 6 hardcoded text color(s). Use design tokens instead.
-   - Lines: 130, 142, 274, 276, 371, 515
-
-#### `src/pages/departments/operations/AnalyticsDashboardPage.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 98, 324
-
-🟢 **LOW:** Found 10 hardcoded text color(s). Use design tokens instead.
-   - Lines: 56, 65, 211, 213, 217, 247, 321
-
-#### `src/pages/departments/finance/FinancialOperationsPage.tsx`
-
-🟡 **MEDIUM:** Found 7 hardcoded background color(s). Use design tokens instead.
-   - Lines: 84, 112, 248, 346, 384
-
-🟢 **LOW:** Found 10 hardcoded text color(s). Use design tokens instead.
-   - Lines: 248, 257, 261, 266, 384, 444
-
-#### `src/pages/departments/finance/FinancePage.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 109, 171
-
-#### `src/pages/analytics/BusinessHealthDetail.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 220
-
-🟢 **LOW:** Found 12 hardcoded text color(s). Use design tokens instead.
-   - Lines: 213, 301, 365, 397, 401, 405, 475, 493, 497, 501, 516, 524
-
-#### `src/components/workspace/MyWorkspace.tsx`
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 104, 106
-
-#### `src/components/waitlist/WaitlistManager.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 131
-
-#### `src/components/waitlist/ShareWidget.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 178
-
-#### `src/components/waitlist/ReferralSystem.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 403
-
-#### `src/components/waitlist/EmailCampaigns.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 259
-
-#### `src/components/ui/Toast.tsx`
-
-🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
-   - Lines: 65, 71
-
-#### `src/components/ui/SecurityStatus.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 106, 108, 110
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 108, 217
-
-#### `src/components/onboarding/OrganizationSetupStep.tsx`
-
-🟡 **MEDIUM:** Found 5 hardcoded background color(s). Use design tokens instead.
-   - Lines: 253, 312, 318, 327, 392
-
-🟢 **LOW:** Found 27 hardcoded text color(s). Use design tokens instead.
-   - Lines: 255, 257, 270, 283, 305, 313, 320, 329, 331, 341, 366, 397, 403, 409, 415, 421, 427, 439
-
-#### `src/components/onboarding/OnboardingFlow.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 329
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 330, 333
-
-#### `src/components/integrations/TrustBasedIntegrationSetup.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 299, 305
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 279
-
-#### `src/components/integrations/StandardIntegrationSetup.tsx`
-
-🟡 **MEDIUM:** Found 9 hardcoded background color(s). Use design tokens instead.
-   - Lines: 109, 132, 189, 233, 330, 341, 404, 462, 556
-
-🟢 **LOW:** Found 25 hardcoded text color(s). Use design tokens instead.
-   - Lines: 144, 145, 152, 236, 238, 345, 346, 408, 409, 463, 530, 539, 548, 557
-
-#### `src/components/integrations/IntegrationSetupModal.tsx`
-
-🟡 **MEDIUM:** Found 10 hardcoded background color(s). Use design tokens instead.
-   - Lines: 159, 201, 212, 283, 333, 385, 430, 436, 472
-
-🟢 **LOW:** Found 16 hardcoded text color(s). Use design tokens instead.
-   - Lines: 216, 217, 287, 288, 334, 360, 369, 378, 386, 410
-
-#### `src/components/integrations/IntegrationOrganizer.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 300
-
-#### `src/components/integrations/EnhancedIntegrationSetup.tsx`
-
-🟡 **MEDIUM:** Found 9 hardcoded background color(s). Use design tokens instead.
-   - Lines: 290, 321, 350, 419, 449, 622, 720, 788
-
-🟢 **LOW:** Found 15 hardcoded text color(s). Use design tokens instead.
-   - Lines: 423, 426, 539, 588, 600, 623, 629, 632, 659, 662, 729
-
-#### `src/components/integrations/DualPlatformDemo.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 202
-
-#### `src/components/hype/HypeBuilder.tsx`
-
-🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
-   - Lines: 84, 98, 510
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 326, 344
-
-#### `src/components/features/FeatureExplorer.tsx`
-
-🟡 **MEDIUM:** Found 5 hardcoded background color(s). Use design tokens instead.
-   - Lines: 57, 77, 84, 117, 136
-
-#### `src/components/dashboard/VARLeadDashboard.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 349
-
-#### `src/components/dashboard/TrinityInsightsEngine.tsx`
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 135, 139, 262
-
-#### `src/components/dashboard/SecurityDashboard.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 201
-
-#### `src/components/dashboard/OrganizationalHealthScore.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 74, 151
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 74, 78, 151
-
-#### `src/components/dashboard/ModelManagementDashboard.tsx`
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 271, 273, 275
-
-#### `src/components/dashboard/EnhancedDashboard.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 114
-
-#### `src/components/dashboard/CrossDepartmentMatrix.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 146, 150, 159
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 159, 163
-
-#### `src/components/dashboard/BusinessHealthScore.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 119
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 112
-
-#### `src/components/chat/StreamingComposer.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 108
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 109, 155
-
-#### `src/components/billing/BillingDashboard.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 102, 104
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 85, 319
-
-#### `src/components/ai/ProgressiveIntelligence.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 178
-
-#### `src/components/ai/AssistantUpgradeStatus.tsx`
-
-🟡 **MEDIUM:** Found 14 hardcoded background color(s). Use design tokens instead.
-   - Lines: 14, 17, 37, 47, 57, 67, 97, 105, 111, 121, 131, 146, 159
-
-🟢 **LOW:** Found 15 hardcoded text color(s). Use design tokens instead.
-   - Lines: 21, 33, 40, 50, 60, 70, 81, 97, 106, 112, 115, 122, 125, 132, 135
 
 ### Spacing
 
@@ -305,6 +24,11 @@
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 381
+
+#### `src/pages/UnifiedInboxPage.tsx`
+
+🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 325
 
 #### `src/pages/Profile.tsx`
 
@@ -319,17 +43,12 @@
 #### `src/pages/Integrations.tsx`
 
 🟢 **LOW:** Found 2 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 302, 314
+   - Lines: 384, 396
 
 #### `src/pages/Dashboard.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 146
-
-#### `src/pages/ChatPage.tsx`
-
-🟢 **LOW:** Found 6 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 119, 139, 159, 208, 214, 226
 
 #### `src/pages/AITransformation.tsx`
 
@@ -349,12 +68,12 @@
 #### `src/pages/settings/SecuritySettings.tsx`
 
 🟢 **LOW:** Found 5 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 183, 200, 266, 288, 351
+   - Lines: 222, 239, 305, 327, 400
 
-#### `src/pages/settings/IntegrationsPage.tsx`
+#### `src/pages/settings/AIModelSettings.tsx`
 
-🟢 **LOW:** Found 2 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 264, 266
+🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 212
 
 #### `src/pages/departments/sales/SalesPerformancePage.tsx`
 
@@ -396,10 +115,25 @@
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 67
 
+#### `src/domains/operations/components/SuggestionsCard.tsx`
+
+🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 22
+
+#### `src/domains/operations/components/KpiBar.tsx`
+
+🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 4
+
 #### `src/components/workspace/MyWorkspace.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 62
+
+#### `src/components/workspace/CalendarOverview.tsx`
+
+🟢 **LOW:** Found 2 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 115, 122
 
 #### `src/components/waitlist/WaitlistManager.tsx`
 
@@ -409,12 +143,12 @@
 #### `src/components/waitlist/ReferralSystem.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 409
+   - Lines: 420
 
 #### `src/components/waitlist/EmailCampaigns.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 388
+   - Lines: 405
 
 #### `src/components/ui/Tooltip.tsx`
 
@@ -430,6 +164,11 @@
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 9
+
+#### `src/components/ui/InsightHeader.tsx`
+
+🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 12
 
 #### `src/components/ui/DropdownMenu.tsx`
 
@@ -448,8 +187,8 @@
 
 #### `src/components/thoughts/ThoughtDashboard.tsx`
 
-🟢 **LOW:** Found 3 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 137, 146, 259
+🟢 **LOW:** Found 7 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 142, 151, 262, 291, 299, 307, 315
 
 #### `src/components/templates/DepartmentTemplate.tsx`
 
@@ -469,7 +208,7 @@
 #### `src/components/patterns/LoadingStates.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 42
+   - Lines: 50
 
 #### `src/components/onboarding/OnboardingFlow.tsx`
 
@@ -509,17 +248,27 @@
 #### `src/components/integrations/SlackSetup.tsx`
 
 🟢 **LOW:** Found 2 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 395, 598
+   - Lines: 393, 596
 
 #### `src/components/integrations/MicrosoftTeamsSetup.tsx`
 
 🟢 **LOW:** Found 3 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 325, 427, 468
+   - Lines: 323, 425, 466
+
+#### `src/components/integrations/MicrosoftGraphIntegration.tsx`
+
+🟢 **LOW:** Found 3 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 196, 240, 277
 
 #### `src/components/integrations/EnhancedIntegrationSetup.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 662
+
+#### `src/components/integrations/EmailSetupModal.tsx`
+
+🟢 **LOW:** Found 5 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 421, 465, 556, 674, 719
 
 #### `src/components/integrations/ApiDocIntegrationSetup.tsx`
 
@@ -549,7 +298,7 @@
 #### `src/components/dashboard/ModelManagementDashboard.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 268
+   - Lines: 269
 
 #### `src/components/dashboard/KpiCard.tsx`
 
@@ -563,8 +312,13 @@
 
 #### `src/components/dashboard/BusinessHealthScore.tsx`
 
-🟢 **LOW:** Found 2 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 186, 188
+🟢 **LOW:** Found 3 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 196, 202
+
+#### `src/components/chat/StreamingComposer.tsx`
+
+🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 223
 
 #### `src/components/auth/AuthDebugPanel.tsx`
 
@@ -589,12 +343,12 @@
 #### `src/components/ai/ProgressiveIntelligence.tsx`
 
 🟢 **LOW:** Found 3 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 253, 257, 326
+   - Lines: 371, 375, 444
 
 #### `src/components/ai/PersonalMemoryCapture.tsx`
 
 🟢 **LOW:** Found 2 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 123, 160
+   - Lines: 149, 187
 
 #### `src/components/ai/OrganizationalChatPanel.tsx`
 
@@ -609,7 +363,7 @@
 #### `src/components/ai/DepartmentalAgent.tsx`
 
 🟢 **LOW:** Found 3 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 315, 338, 476
+   - Lines: 335, 358, 496
 
 #### `src/components/ai/AdvancedAICapabilitiesDemo.tsx`
 
@@ -619,24 +373,220 @@
 #### `src/components/ai/ActionCard.tsx`
 
 🟢 **LOW:** Found 2 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 111, 128
+   - Lines: 119, 136
+
+#### `src/components/ai/AISuggestionCard.tsx`
+
+🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
+   - Lines: 106
 
 #### `src/lib/hooks/useSecondBrain.ts`
 
 🟢 **LOW:** Found 4 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 144, 229, 281, 326
+   - Lines: 291, 376, 428, 473
+
+### Error Handling
+
+#### `src/pages/UnifiedInboxPage.tsx`
+
+🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
+   - Lines: 289
+
+#### `src/pages/Integrations.tsx`
+
+🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
+   - Lines: 372
+
+#### `src/components/onboarding/OrganizationSetupStep.tsx`
+
+🟢 **LOW:** Found 2 inline error color(s). Consider using design tokens.
+   - Lines: 320
+
+#### `src/components/integrations/StandardIntegrationSetup.tsx`
+
+🟢 **LOW:** Found 3 inline error color(s). Consider using design tokens.
+   - Lines: 144, 152
+
+#### `src/components/integrations/EnhancedIntegrationSetup.tsx`
+
+🟢 **LOW:** Found 2 inline error color(s). Consider using design tokens.
+   - Lines: 539, 600
+
+#### `src/components/dashboard/TrinityInsightsEngine.tsx`
+
+🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
+   - Lines: 135
+
+#### `src/components/dashboard/OrganizationalHealthScore.tsx`
+
+🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
+   - Lines: 78
+
+#### `src/components/dashboard/CrossDepartmentMatrix.tsx`
+
+🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
+   - Lines: 150
+
+🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
+   - Lines: 163
+
+#### `src/components/chat/StreamingComposer.tsx`
+
+🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
+   - Lines: 360
+
+### Color Usage
+
+#### `src/pages/UnifiedInboxPage.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 241
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 289
+
+#### `src/pages/Integrations.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 372
+
+#### `src/pages/departments/sales/SalesPerformancePage.tsx`
+
+🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
+   - Lines: 90, 92
+
+#### `src/pages/departments/sales/SalesPage.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 154
+
+#### `src/pages/analytics/BusinessHealthDetail.tsx`
+
+🟢 **LOW:** Found 5 hardcoded text color(s). Use design tokens instead.
+   - Lines: 301, 365, 475, 516, 524
+
+#### `src/components/waitlist/WaitlistManager.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 131
+
+#### `src/components/ui/Toast.tsx`
+
+🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
+   - Lines: 65, 71
+
+#### `src/components/thoughts/ThoughtDashboard.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 58
+
+#### `src/components/onboarding/OrganizationSetupStep.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 312, 392
+
+🟢 **LOW:** Found 22 hardcoded text color(s). Use design tokens instead.
+   - Lines: 270, 283, 305, 313, 320, 331, 341, 366, 397, 403, 409, 415, 421, 427, 439
+
+#### `src/components/integrations/TrustBasedIntegrationSetup.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 299, 305
+
+#### `src/components/integrations/StandardIntegrationSetup.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 109
+
+🟢 **LOW:** Found 17 hardcoded text color(s). Use design tokens instead.
+   - Lines: 144, 145, 152, 236, 345, 408, 530, 539, 548
+
+#### `src/components/integrations/IntegrationSetupModal.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 430, 436
+
+🟢 **LOW:** Found 10 hardcoded text color(s). Use design tokens instead.
+   - Lines: 216, 287, 360, 369, 378
+
+#### `src/components/integrations/EnhancedIntegrationSetup.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 290
+
+🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
+   - Lines: 539, 600, 632
+
+#### `src/components/integrations/EmailSetupModal.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 102
+
+#### `src/components/hype/HypeBuilder.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 84
+
+#### `src/components/features/FeatureExplorer.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 136
+
+#### `src/components/dashboard/VARLeadDashboard.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 349
+
+#### `src/components/dashboard/TrinityInsightsEngine.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 135
+
+#### `src/components/dashboard/OrganizationalHealthScore.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 78
+
+#### `src/components/dashboard/EnhancedDashboard.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 114
+
+#### `src/components/dashboard/CrossDepartmentMatrix.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 146, 150
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 163
+
+#### `src/components/chat/StreamingComposer.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 198
+
+🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
+   - Lines: 198, 360
+
+#### `src/components/billing/BillingDashboard.tsx`
+
+🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
+   - Lines: 107, 109
+
+#### `src/components/ai/AssistantUpgradeStatus.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 14
+
+🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
+   - Lines: 97, 112, 122, 132
 
 ### Loading States
 
 #### `src/pages/Integrations.tsx`
 
 🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 277
-
-#### `src/pages/ChatPage.tsx`
-
-🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 395
+   - Lines: 359
 
 #### `src/pages/analytics/BusinessHealthDetail.tsx`
 
@@ -671,22 +621,32 @@
 #### `src/components/integrations/SlackSetup.tsx`
 
 🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 378
+   - Lines: 376
 
 #### `src/components/integrations/MicrosoftTeamsSetup.tsx`
 
 🟡 **MEDIUM:** Found 3 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 308, 392, 431
+   - Lines: 306, 390, 429
+
+#### `src/components/integrations/MicrosoftGraphIntegration.tsx`
+
+🟡 **MEDIUM:** Found 2 custom spinner(s). Consider using <Spinner> component.
+   - Lines: 140, 219
 
 #### `src/components/integrations/IntegrationOrganizer.tsx`
 
 🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 297
+   - Lines: 280
 
 #### `src/components/integrations/EnhancedIntegrationSetup.tsx`
 
 🟡 **MEDIUM:** Found 2 custom spinner(s). Consider using <Spinner> component.
    - Lines: 578, 791
+
+#### `src/components/integrations/EmailSetupModal.tsx`
+
+🟡 **MEDIUM:** Found 3 custom spinner(s). Consider using <Spinner> component.
+   - Lines: 495, 628, 734
 
 #### `src/components/dashboard/UnifiedCommunicationDashboard.tsx`
 
@@ -706,12 +666,17 @@
 #### `src/components/dashboard/BusinessHealthScore.tsx`
 
 🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 130
+   - Lines: 140
+
+#### `src/components/chat/StreamingComposer.tsx`
+
+🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
+   - Lines: 318
 
 #### `src/components/ai/ProgressiveIntelligence.tsx`
 
 🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 347
+   - Lines: 465
 
 #### `src/components/ai/NexusAIController.tsx`
 
@@ -723,110 +688,10 @@
 🟡 **MEDIUM:** Found 2 custom spinner(s). Consider using <Spinner> component.
    - Lines: 113, 131
 
-### Error Handling
+#### `src/components/ai/AISuggestionCard.tsx`
 
-#### `src/pages/Integrations.tsx`
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 290
-
-#### `src/pages/departments/sales/SalesPerformancePage.tsx`
-
-🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 408
-
-🟢 **LOW:** Found 4 inline error color(s). Consider using design tokens.
-   - Lines: 291, 293, 298, 515
-
-#### `src/pages/departments/operations/AnalyticsDashboardPage.tsx`
-
-🟢 **LOW:** Found 3 inline error color(s). Consider using design tokens.
-   - Lines: 211, 213, 218
-
-#### `src/pages/departments/finance/FinancialOperationsPage.tsx`
-
-🟡 **MEDIUM:** Found 2 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 248, 346
-
-🟢 **LOW:** Found 4 inline error color(s). Consider using design tokens.
-   - Lines: 248, 257, 261, 267
-
-#### `src/pages/analytics/BusinessHealthDetail.tsx`
-
-🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 220
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 213
-
-#### `src/components/ui/SecurityStatus.tsx`
-
-🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 110
-
-#### `src/components/onboarding/OrganizationSetupStep.tsx`
-
-🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 318
-
-🟢 **LOW:** Found 2 inline error color(s). Consider using design tokens.
-   - Lines: 320
-
-#### `src/components/integrations/StandardIntegrationSetup.tsx`
-
-🟢 **LOW:** Found 3 inline error color(s). Consider using design tokens.
-   - Lines: 144, 152
-
-#### `src/components/integrations/IntegrationOrganizer.tsx`
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 300
-
-#### `src/components/integrations/EnhancedIntegrationSetup.tsx`
-
-🟢 **LOW:** Found 2 inline error color(s). Consider using design tokens.
-   - Lines: 539, 600
-
-#### `src/components/features/FeatureExplorer.tsx`
-
-🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 117
-
-#### `src/components/dashboard/TrinityInsightsEngine.tsx`
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 135
-
-#### `src/components/dashboard/OrganizationalHealthScore.tsx`
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 78
-
-#### `src/components/dashboard/ModelManagementDashboard.tsx`
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 273
-
-#### `src/components/dashboard/CrossDepartmentMatrix.tsx`
-
-🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 150
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 163
-
-#### `src/components/dashboard/BusinessHealthScore.tsx`
-
-🟡 **MEDIUM:** Found 1 custom error style(s). Consider using <Alert variant="error">.
-   - Lines: 119
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 112
-
-#### `src/components/chat/StreamingComposer.tsx`
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 155
+🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
+   - Lines: 67
 
 ### Data Display
 

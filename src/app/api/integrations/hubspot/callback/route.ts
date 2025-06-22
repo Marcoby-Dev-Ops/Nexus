@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/security';
-import { HUBSPOT_CONFIG } from '@/lib/integrations/hubspot/config';
+import { getHubspotConfig } from '@/lib/integrations/hubspot/config';
 
 export async function GET(request: Request) {
   try {
@@ -18,6 +18,8 @@ export async function GET(request: Request) {
     if (!code) {
       return new NextResponse('Authorization code is required', { status: 400 });
     }
+
+    const HUBSPOT_CONFIG = await getHubspotConfig();
 
     // Exchange the authorization code for access and refresh tokens
     const tokenResponse = await fetch(HUBSPOT_CONFIG.tokenUrl, {
@@ -53,31 +55,31 @@ export async function GET(request: Request) {
 
     const portalInfo = await portalResponse.json();
 
-    // Encrypt and store the tokens
-    const encryptedTokens = await encrypt(JSON.stringify({
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token,
-      expires_in: tokens.expires_in,
-      token_type: tokens.token_type,
-      scope: tokens.scope,
-      user_id: tokens.user_id,
-      hub_id: portalInfo.hub_id,
-      app_id: portalInfo.app_id,
-      expires_at: Date.now() + (tokens.expires_in * 1000)
-    }));
-
+    // Encrypt and store the tokens and settings
+    const configPayload = {
+      tokens: {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: Date.now() + (tokens.expires_in * 1000)
+      },
+      settings: {
+        hubId: portalInfo.hub_id,
+        portalName: portalInfo.hub_domain,
+        scopes: tokens.scope.split(' '),
+        connectedAt: new Date().toISOString()
+      }
+    };
+    
+    const encryptedConfig = await encrypt(JSON.stringify(configPayload));
+    
     // Store the integration
-    const integration = await prisma.integration.create({
+    await prisma.integration.create({
       data: {
         type: 'hubspot',
-        credentials: encryptedTokens,
-        settings: {
-          hubId: portalInfo.hub_id,
-          portalName: portalInfo.hub_domain,
-          scopes: tokens.scope.split(' '),
-          connectedAt: new Date().toISOString()
-        },
-        userId: session.user.id
+        status: 'active',
+        config: encryptedConfig,
+        user: { connect: { id: session.user.id } },
+        company: { connect: { id: session.user.companyId } },
       }
     });
 
@@ -93,6 +95,7 @@ export async function GET(request: Request) {
 }
 
 async function setupHubSpotWebhooks(accessToken: string, hubId: string) {
+  const HUBSPOT_CONFIG = await getHubspotConfig();
   const webhookEvents = [
     'contact.creation',
     'contact.propertyChange',

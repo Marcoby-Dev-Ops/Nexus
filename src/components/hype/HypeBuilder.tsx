@@ -95,7 +95,7 @@ const HypeBuilder: React.FC = () => {
     {
       platform: 'Facebook',
       icon: Facebook,
-      color: 'bg-blue-800 hover:bg-blue-900',
+      color: 'bg-primary/80 hover:bg-primary/20',
       shares: 634,
       growth: 9.2
     }
@@ -292,7 +292,7 @@ const HypeBuilder: React.FC = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center text-2xl">
-              <Flame className="w-6 h-6 mr-2 text-orange-500" />
+              <Flame className="w-6 h-6 mr-2 text-warning" />
               🔥 Hype Meter
             </CardTitle>
             <div className="flex items-center gap-2">
@@ -323,7 +323,7 @@ const HypeBuilder: React.FC = () => {
                 {totalSignups.toLocaleString()}
               </div>
               <div className="text-primary-foreground/80 mb-2">Waitlist Members</div>
-              <div className="flex items-center justify-center text-green-400">
+              <div className="flex items-center justify-center text-success">
                 <ArrowUp className="w-4 h-4 mr-1" />
                 <span className="text-sm">Live Growth</span>
               </div>
@@ -341,7 +341,7 @@ const HypeBuilder: React.FC = () => {
                 {totalShares.toLocaleString()}
               </div>
               <div className="text-primary-foreground/80 mb-2">Social Shares</div>
-              <div className="flex items-center justify-center text-blue-400">
+              <div className="flex items-center justify-center text-primary">
                 <Share2 className="w-4 h-4 mr-1" />
                 <span className="text-sm">Viral Growth</span>
               </div>
@@ -353,7 +353,7 @@ const HypeBuilder: React.FC = () => {
                 {Math.floor((totalSignups + totalShares) / 100)}%
               </div>
               <div className="text-primary-foreground/80 mb-2">Hype Score</div>
-              <div className="flex items-center justify-center text-purple-400">
+              <div className="flex items-center justify-center text-secondary">
                                   <Bolt className="w-4 h-4 mr-1" />
                 <span className="text-sm">Momentum</span>
               </div>
@@ -420,7 +420,7 @@ const HypeBuilder: React.FC = () => {
                   whileHover={{ scale: 1.02 }}
                   className={`p-4 border rounded-lg cursor-pointer transition-all ${
                     selectedShareContent === index 
-                      ? 'border-secondary bg-secondary/5 dark:bg-purple-900/20' 
+                      ? 'border-secondary bg-secondary/5 dark:bg-secondary/20/20' 
                       : 'border-border hover:border-purple-300'
                   }`}
                   onClick={() => setSelectedShareContent(index)}
@@ -505,9 +505,9 @@ const HypeBuilder: React.FC = () => {
                 transition={{ delay: index * 0.1 }}
                 className={`flex items-center justify-between p-4 rounded-lg border ${
                   milestone.unlocked 
-                    ? 'bg-success/5 dark:bg-success/20 border-green-200 dark:border-green-800' 
+                    ? 'bg-success/5 dark:bg-success/20 border-success/20 dark:border-success/80' 
                     : totalSignups >= milestone.current * 0.8
-                    ? 'bg-warning/5 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
+                    ? 'bg-warning/5 dark:bg-warning/20/20 border-warning/20 dark:border-warning/80'
                     : 'bg-muted/50'
                 }`}
               >

@@ -143,11 +143,11 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
       case 'excellent':
         return 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800';
       case 'good':
-        return 'bg-primary/5 border-border dark:bg-blue-950/20 dark:border-blue-800';
+        return 'bg-primary/5 border-border dark:bg-blue-950/20 dark:border-primary/80';
       case 'warning':
         return 'bg-amber-50 border-amber-200 dark:bg-amber-950/20 dark:border-amber-800';
       default:
-        return 'bg-destructive/5 border-red-200 dark:bg-red-950/20 dark:border-red-800';
+        return 'bg-destructive/5 border-destructive/20 dark:bg-red-950/20 dark:border-red-800';
     }
   };
 
@@ -156,11 +156,11 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
       case 'excellent':
         return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300';
       case 'good':
-        return 'bg-primary/10 text-primary border-border dark:bg-blue-900/20 dark:text-blue-300';
+        return 'bg-primary/10 text-primary border-border dark:bg-primary/20/20 dark:text-primary';
       case 'warning':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300';
       default:
-        return 'bg-destructive/10 text-destructive border-red-200 dark:bg-destructive/20 dark:text-red-300';
+        return 'bg-destructive/10 text-destructive border-destructive/20 dark:bg-destructive/20 dark:text-red-300';
     }
   };
 

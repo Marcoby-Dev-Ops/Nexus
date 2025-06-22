@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import { getRouteLabel } from '@/routes';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { QuickChatTrigger } from '@/components/ai/QuickChatTrigger';
@@ -13,17 +14,12 @@ const AppShell = () => {
 
   // Generate breadcrumbs based on current route
   const generateBreadcrumbs = () => {
-    const pathnames = location.pathname.split('/').filter((x) => x);
-    if (pathnames.length === 0) {
-      return [{ label: 'Dashboard' }];
-    }
+    const segments = location.pathname.split('/').filter(Boolean);
 
-    const crumbs = pathnames.map((name, index) => {
-      const href = '/' + pathnames.slice(0, index + 1).join('/');
-      const label = name
-        .split('-')
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+    // Build cumulative path for each segment to look up label
+    const crumbs = segments.map((_, idx) => {
+      const href = '/' + segments.slice(0, idx + 1).join('/');
+      const label = getRouteLabel(href) ?? segments[idx];
       return { label, href };
     });
 
@@ -31,11 +27,8 @@ const AppShell = () => {
   };
 
   const getPageTitle = () => {
-    const pathnames = location.pathname.split('/').filter((x) => x);
-    if (pathnames.length > 0) {
-      return pathnames[pathnames.length - 1].charAt(0).toUpperCase() + pathnames[pathnames.length - 1].slice(1);
-    }
-    return 'Welcome to NEXUS';
+    const label = getRouteLabel(location.pathname);
+    return label ?? 'Welcome to NEXUS';
   };
 
   return (

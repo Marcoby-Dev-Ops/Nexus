@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Badge } from '@/components/ui/Badge';
 import { useLocation, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Settings, Store, Bot, BarChart2, Users, X, Building2, Plug, Brain, Sparkles, FileText, Database, PieChart } from 'lucide-react';
+import { LayoutDashboard, Settings, Store, Bot, BarChart2, Users, X, Building2, Plug, Brain, Sparkles, FileText, Database, PieChart, Inbox } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { DEPARTMENTS } from '@/constants/departments';
@@ -39,6 +39,7 @@ interface NavItem {
 const overview: NavItem[] = [
   // { label: 'Command Center', href: '/nexus', icon: <Brain className="w-5 h-5" />, badge: 'TRINITY' }, // Hidden until ready
   { label: 'Business Overview', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { label: 'Unified Inbox', href: '/inbox', icon: <Inbox className="w-5 h-5" />, badge: 'NEW' },
   { label: 'Workspace', href: '/workspace', icon: <Database className="w-5 h-5" /> },
   { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
 ];
@@ -61,7 +62,7 @@ const departments: NavItem[] = DEPARTMENTS.map((d) => ({
 
 const aiPowered: NavItem[] = [
   { label: 'AI Hub', href: '/ai-hub', icon: <Brain className="w-5 h-5" /> },
-  { label: 'AI Chat', href: '/chat-v2', icon: <Bot className="w-5 h-5" /> },
+  { label: 'AI Chat', href: '/chat', icon: <Bot className="w-5 h-5" /> },
   // { label: 'AI Transformation', href: '/ai-transformation', icon: <Sparkles className="w-5 h-5" /> }, // Hidden until ready
   // Analytics now lives under Data Warehouse section – removed separate nav item (Pillar 5)
   // { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> }, // Hidden until ready

@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@/lib/hubspot-config": "./_shared/hubspot-config.ts"
+  }
+} 

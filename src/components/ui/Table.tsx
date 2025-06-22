@@ -8,7 +8,7 @@ export interface Column {
 
 export interface TableProps {
   columns: Column[];
-  data: any[];
+  data: Record<string, React.ReactNode>[];
   className?: string;
 }
 

@@ -11,7 +11,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:ci": "jest --coverage --watchAll=false --passWithNoTests",
+    "test:ci": "npm run scan:models && jest --coverage --watchAll=false --passWithNoTests",
     "test:debug": "jest --detectOpenHandles --verbose",
     "test:update": "jest --updateSnapshot",
     "rls-test": "jest __tests__/security/rls.test.ts",
@@ -22,10 +22,14 @@
     "fix:consistency": "node scripts/fix-consistency.cjs",
     "test:consistency": "npm run analyze:consistency && node -e \"const fs=require('fs');const report=fs.readFileSync('docs/CONSISTENCY_REPORT.md','utf8');const score=parseFloat(report.match(/Consistency Score:\\*\\* (\\d+\\.?\\d*)/)?.[1]||0);if(score<7.0){console.error('❌ Consistency score',score,'below threshold 7.0');process.exit(1)}else{console.log('✅ Consistency score',score,'meets requirements')}\"",
     "demo:ai": "tsx scripts/ai-transformation-demo.ts",
-    "demo:ai:enhanced": "tsx scripts/ai-transformation-demo.ts --enhanced"
+    "demo:ai:enhanced": "tsx scripts/ai-transformation-demo.ts --enhanced",
+    "scan:models": "node scripts/scan-models.cjs",
+    "fix:colors": "node scripts/fix-hardcoded-colors.cjs",
+    "fix:colors:dry": "node scripts/fix-hardcoded-colors.cjs --dry-run"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@hubspot/api-client": "^13.0.0",
     "@jridgewell/gen-mapping": "^0.3.8",
     "@prisma/client": "^6.9.0",
     "@radix-ui/react-dialog": "^1.1.14",
@@ -46,6 +50,8 @@
     "framer-motion": "^12.16.0",
     "immer": "^10.1.1",
     "lucide-react": "^0.511.0",
+    "pino": "^9.7.0",
+    "pino-pretty": "^13.0.0",
     "prop-types": "^15.8.1",
     "react": "^19.1.0",
     "react-confetti": "^6.4.0",

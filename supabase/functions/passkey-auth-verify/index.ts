@@ -75,7 +75,41 @@ serve(async (req) => {
     // Clean up challenge
     await supabaseAdmin.from('ai_passkey_challenges').delete().eq('user_id', userId);
 
-    return new Response(JSON.stringify({ verified: true }), {
+    // Get user data for session establishment
+    const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (userError || !userData.user) {
+      throw new Error('User not found');
+    }
+
+    // Generate a one-time sign-in token for the user
+    const { data: tokenData, error: tokenError } = await supabaseAdmin.auth.admin.generateLink({
+      type: 'magiclink',
+      email: userData.user.email!,
+    });
+
+    if (tokenError || !tokenData) {
+      console.error('Failed to generate magic link:', tokenError);
+      // Fallback: just return verification success
+      return new Response(JSON.stringify({ 
+        verified: true,
+        user: { id: userId, email: userData.user.email }
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    // Extract the access token from the magic link URL
+    const url = new URL(tokenData.properties.action_link);
+    const accessToken = url.searchParams.get('access_token');
+    const refreshToken = url.searchParams.get('refresh_token');
+
+    return new Response(JSON.stringify({ 
+      verified: true,
+      user: { id: userId, email: userData.user.email },
+      access_token: accessToken,
+      refresh_token: refreshToken
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

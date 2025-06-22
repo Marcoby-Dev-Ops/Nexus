@@ -536,11 +536,37 @@ INSTRUCTIONS:
 
   private async getBusinessIntelligence(): Promise<string> {
     const metrics = this.userContext?.business_context.key_metrics || {};
-    return `- Company: ${this.userContext?.business_context.company_name} (${this.userContext?.business_context.growth_stage})
-- Industry: ${this.userContext?.business_context.industry}
-- Revenue: $${(metrics.annual_revenue || 0).toLocaleString()} annually
-- Growth Rate: ${metrics.growth_rate || 0}%
-- Team Size: ${metrics.employees || 0} employees`;
+    const insights = [
+      `- Company: ${this.userContext?.business_context.company_name} (${this.userContext?.business_context.growth_stage})`,
+      `- Industry: ${this.userContext?.business_context.industry}`,
+      `- Revenue: $${(metrics.annual_revenue || 0).toLocaleString()} annually`,
+      `- Growth Rate: ${metrics.growth_rate || 0}%`,
+      `- Team Size: ${metrics.employees || 0} employees`
+    ];
+
+    // Add EA business observations
+    try {
+      const { businessObservationService } = await import('../services/businessObservationService');
+      const observations = await businessObservationService.generateBusinessObservations(
+        this.userContext?.profile.id || '',
+        this.userContext?.business_context.company_id || ''
+      );
+
+      if (observations.length > 0) {
+        insights.push('\n🔍 BUSINESS OBSERVATIONS:');
+        observations.slice(0, 3).forEach(obs => {
+          const priority = obs.priority === 'critical' ? '🚨' : obs.priority === 'high' ? '⚠️' : obs.priority === 'medium' ? '💡' : 'ℹ️';
+          insights.push(`${priority} ${obs.title}: ${obs.description}`);
+          if (obs.actionItems.length > 0) {
+            insights.push(`   → Recommended: ${obs.actionItems[0]}`);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching business observations:', error);
+    }
+
+    return insights.join('\n');
   }
 
   private analyzeQuery(query: string): string {

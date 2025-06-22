@@ -142,6 +142,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .from('user_profiles')
       .update(updates)
       .eq('id', profile.id)
+      .select()
       .maybeSingle();
     if (updateError) throw updateError;
     setProfile(updatedProfile as UserProfileRow | null);
@@ -216,6 +217,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

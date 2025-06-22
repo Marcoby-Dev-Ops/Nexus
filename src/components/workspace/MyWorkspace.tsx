@@ -101,9 +101,9 @@ export const MyWorkspace: React.FC = () => {
                 onClick={() => navigate(item.path)}
               >
                 <div className="flex items-center">
-                  {item.type === 'document' && <FileText className="h-5 w-5 mr-3 text-blue-500" />}
-                  {item.type === 'dashboard' && <BarChart2 className="h-5 w-5 mr-3 text-purple-500" />}
-                  {item.type === 'meeting' && <Calendar className="h-5 w-5 mr-3 text-green-500" />}
+                  {item.type === 'document' && <FileText className="h-5 w-5 mr-3 text-primary" />}
+                  {item.type === 'dashboard' && <BarChart2 className="h-5 w-5 mr-3 text-secondary" />}
+                  {item.type === 'meeting' && <Calendar className="h-5 w-5 mr-3 text-success" />}
                   <div>
                     <p className="font-medium">{item.name}</p>
                     <p className="text-xs text-muted-foreground">

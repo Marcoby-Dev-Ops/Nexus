@@ -106,7 +106,7 @@ const InvoicesTab = () => {
                 <TableCell>{invoice.amount}</TableCell>
                 <TableCell>
                   <Badge className={
-                    invoice.status === 'paid' ? 'bg-green-500' :
+                    invoice.status === 'paid' ? 'bg-success' :
                     invoice.status === 'pending' ? 'bg-amber-500' :
                     'bg-destructive'
                   }>
@@ -168,7 +168,7 @@ const ExpensesTab = () => {
                 <TableCell>{expense.date}</TableCell>
                 <TableCell>
                   <Badge className={
-                    expense.status === 'approved' ? 'bg-green-500' :
+                    expense.status === 'approved' ? 'bg-success' :
                     expense.status === 'pending' ? 'bg-amber-500' :
                     'bg-destructive'
                   }>

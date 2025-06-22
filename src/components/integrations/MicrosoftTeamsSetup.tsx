@@ -4,14 +4,14 @@
  * Complements Slack integration for complete communication intelligence
  */
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
 import { Progress } from '@/components/ui/Progress';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { 
   MessageSquare, 
   Users, 
@@ -21,19 +21,17 @@ import {
   Zap, 
   CheckCircle2, 
   AlertTriangle,
-  ExternalLink,
   Loader2,
   TrendingUp,
   BarChart3,
-  Clock,
   Target
 } from 'lucide-react';
 import { microsoftTeamsService } from '@/lib/services/microsoftTeamsService';
 
 interface TeamsSetupProps {
-  onComplete?: (data: any) => void;
+  onComplete?: (data: unknown) => void;
   onCancel?: () => void;
-  existingConfig?: any;
+  existingConfig?: Record<string, unknown>;
 }
 
 interface SetupStep {
@@ -64,8 +62,8 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [teamsData, setTeamsData] = useState<TeamsMetrics | null>(null);
-  const [tenantId, setTenantId] = useState(existingConfig?.tenantId || '');
-  const [clientId, setClientId] = useState(existingConfig?.clientId || '');
+  const [tenantId, setTenantId] = useState((existingConfig?.tenantId as string) || '');
+  const [clientId] = useState((existingConfig?.clientId as string) || '');
   const [setupProgress, setSetupProgress] = useState(0);
 
   const teamsService = microsoftTeamsService;
@@ -171,7 +169,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
     // Calculate setup progress based on completed steps
     const completedSteps = setupSteps.filter(step => step.completed).length;
     setSetupProgress((completedSteps / setupSteps.length) * 100);
-  }, [connectionStatus]);
+  }, [connectionStatus, setupSteps]);
 
   const handleConnect = async () => {
     try {

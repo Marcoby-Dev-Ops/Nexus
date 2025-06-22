@@ -1,7 +1,11 @@
-import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/security';
-import { HUBSPOT_CONFIG } from './config';
+import { Client } from '@hubspot/api-client';
+import { PrismaClient } from '@prisma/client';
+import { getHubspotApiKey } from './config';
+import { SecureLogger } from '@/lib/security/logger';
 
+const logger = new SecureLogger('HubSpotService');
+
+// Interfaces for HubSpot data structures
 interface HubSpotContact {
   id: string;
   properties: {
@@ -10,7 +14,8 @@ interface HubSpotContact {
     lastname: string;
     company: string;
     phone: string;
-    [key: string]: string;
+    // Allow other string properties
+    [key: string]: string | undefined;
   };
 }
 
@@ -38,11 +43,20 @@ interface HubSpotCompany {
 
 export class HubSpotService {
   private accessToken: string;
-  private hubId: string;
+  private userId: string;
+  private companyId: string;
 
-  constructor(accessToken: string, hubId: string) {
+  constructor(accessToken: string, userId: string, companyId: string) {
     this.accessToken = accessToken;
-    this.hubId = hubId;
+    this.userId = userId;
+    this.companyId = companyId;
+  }
+
+  // Public sync methods
+  async syncAll() {
+    await this.syncCompanies();
+    await this.syncContacts();
+    await this.syncDeals();
   }
 
   async syncContacts() {
@@ -66,198 +80,233 @@ export class HubSpotService {
     }
   }
 
+  // Private methods to fetch data from HubSpot
   private async getContacts(): Promise<HubSpotContact[]> {
-    const response = await fetch(`${HUBSPOT_CONFIG.apiBaseUrl}/crm/v3/objects/contacts`, {
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`
-      }
+    const config = await getHubspotConfig();
+    const response = await fetch(`${config.apiBaseUrl}/crm/v3/objects/contacts`, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch HubSpot contacts');
-    }
-
+    if (!response.ok) throw new Error('Failed to fetch HubSpot contacts');
     const data = await response.json();
     return data.results;
   }
 
   private async getDeals(): Promise<HubSpotDeal[]> {
-    const response = await fetch(`${HUBSPOT_CONFIG.apiBaseUrl}/crm/v3/objects/deals`, {
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`
-      }
+    const config = await getHubspotConfig();
+    const response = await fetch(`${config.apiBaseUrl}/crm/v3/objects/deals`, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch HubSpot deals');
-    }
-
+    if (!response.ok) throw new Error('Failed to fetch HubSpot deals');
     const data = await response.json();
     return data.results;
   }
 
   private async getCompanies(): Promise<HubSpotCompany[]> {
-    const response = await fetch(`${HUBSPOT_CONFIG.apiBaseUrl}/crm/v3/objects/companies`, {
-      headers: {
-        Authorization: `Bearer ${this.accessToken}`
-      }
+    const config = await getHubspotConfig();
+    const response = await fetch(`${config.apiBaseUrl}/crm/v3/objects/companies`, {
+      headers: { Authorization: `Bearer ${this.accessToken}` },
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to fetch HubSpot companies');
-    }
-
+    if (!response.ok) throw new Error('Failed to fetch HubSpot companies');
     const data = await response.json();
     return data.results;
   }
 
-  private async processContact(contact: HubSpotContact) {
-    // Check if this is a potential VAR lead
-    const isPotentialVAR = await this.analyzeContactForVAR(contact);
+  // Private methods to process and store data
+  private async processCompany(company: HubSpotCompany) {
+    const companyData = {
+      hubspotId: company.id,
+      name: company.properties.name || 'Unknown Company',
+      domain: company.properties.domain || `hubspot-id-${company.id}`,
+      industry: company.properties.industry || 'Unknown',
+      size: company.properties.numberofemployees || '1',
+      description: company.properties.description,
+      website: company.properties.website,
+    };
+    await prisma.company.upsert({
+      where: { hubspotId: company.id },
+      update: companyData,
+      create: companyData,
+    });
+  }
 
-    // Store or update the contact in our database
+  private async processContact(contact: HubSpotContact) {
+    const contactData = {
+      hubspotId: contact.id,
+      name: `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim(),
+      email: contact.properties.email,
+      phone: contact.properties.phone,
+    };
+
     await prisma.contact.upsert({
-      where: {
-        hubspotId: contact.id
-      },
+      where: { hubspotId: contact.id },
       create: {
-        hubspotId: contact.id,
-        email: contact.properties.email,
-        firstName: contact.properties.firstname,
-        lastName: contact.properties.lastname,
-        company: contact.properties.company,
-        phone: contact.properties.phone,
-        properties: contact.properties,
-        isPotentialVAR,
-        lastSyncedAt: new Date()
+        ...contactData,
+        user: { connect: { id: this.userId } },
+        company: { connect: { id: this.companyId } },
       },
       update: {
-        email: contact.properties.email,
-        firstName: contact.properties.firstname,
-        lastName: contact.properties.lastname,
-        company: contact.properties.company,
-        phone: contact.properties.phone,
-        properties: contact.properties,
-        isPotentialVAR,
-        lastSyncedAt: new Date()
-      }
+        ...contactData,
+        company: { connect: { id: this.companyId } },
+      },
     });
 
-    if (isPotentialVAR) {
+    if (await this.analyzeContactForVAR(contact)) {
       await this.createVARLead(contact);
     }
   }
 
   private async processDeal(deal: HubSpotDeal) {
-    await prisma.deal.upsert({
-      where: {
-        hubspotId: deal.id
-      },
-      create: {
-        hubspotId: deal.id,
-        name: deal.properties.dealname,
-        pipeline: deal.properties.pipeline,
-        stage: deal.properties.dealstage,
-        amount: parseFloat(deal.properties.amount) || 0,
-        closeDate: new Date(deal.properties.closedate),
-        properties: deal.properties,
-        lastSyncedAt: new Date()
-      },
-      update: {
-        name: deal.properties.dealname,
-        pipeline: deal.properties.pipeline,
-        stage: deal.properties.dealstage,
-        amount: parseFloat(deal.properties.amount) || 0,
-        closeDate: new Date(deal.properties.closedate),
-        properties: deal.properties,
-        lastSyncedAt: new Date()
-      }
-    });
-  }
+    const dealData = {
+      hubspotId: deal.id,
+      name: deal.properties.dealname,
+      value: parseFloat(deal.properties.amount) || 0,
+      stage: deal.properties.dealstage,
+      expected_close_date: new Date(deal.properties.closedate),
+    };
 
-  private async processCompany(company: HubSpotCompany) {
-    await prisma.company.upsert({
-      where: {
-        hubspotId: company.id
-      },
+    await prisma.deal.upsert({
+      where: { hubspotId: deal.id },
       create: {
-        hubspotId: company.id,
-        name: company.properties.name,
-        domain: company.properties.domain,
-        industry: company.properties.industry,
-        properties: company.properties,
-        lastSyncedAt: new Date()
+        ...dealData,
+        user: { connect: { id: this.userId } },
+        company: { connect: { id: this.companyId } },
       },
-      update: {
-        name: company.properties.name,
-        domain: company.properties.domain,
-        industry: company.properties.industry,
-        properties: company.properties,
-        lastSyncedAt: new Date()
-      }
+      update: dealData,
     });
   }
 
   private async analyzeContactForVAR(contact: HubSpotContact): Promise<boolean> {
-    // Implement VAR lead scoring logic
     const score = await this.calculateVARScore(contact);
-    return score >= 0.7; // Threshold for potential VAR
+    return score >= 0.7;
   }
 
   private async calculateVARScore(contact: HubSpotContact): Promise<number> {
+    // Simplified scoring logic for demonstration
     let score = 0;
-    const weights = {
-      companySize: 0.3,
-      industry: 0.2,
-      role: 0.2,
-      location: 0.1,
-      technologyStack: 0.2
-    };
-
-    // Analyze company size
-    const companySize = contact.properties.company_size;
-    if (companySize === '51-200' || companySize === '201-500') {
-      score += weights.companySize;
-    }
-
-    // Analyze industry
-    const industry = contact.properties.industry?.toLowerCase();
-    if (industry && ['technology', 'software', 'it', 'consulting'].includes(industry)) {
-      score += weights.industry;
-    }
-
-    // Analyze role
-    const role = contact.properties.jobtitle?.toLowerCase();
-    if (role && ['ceo', 'cto', 'cio', 'director', 'manager', 'owner'].some(title => role.includes(title))) {
-      score += weights.role;
-    }
-
-    // Analyze location
-    const location = contact.properties.country?.toLowerCase();
-    if (location && ['us', 'united states', 'canada', 'uk', 'united kingdom'].includes(location)) {
-      score += weights.location;
-    }
-
-    // Analyze technology stack
-    const techStack = contact.properties.technology_stack?.toLowerCase();
-    if (techStack && ['microsoft', 'aws', 'azure', 'google cloud', 'salesforce'].some(tech => techStack.includes(tech))) {
-      score += weights.technologyStack;
-    }
-
+    if (contact.properties.industry?.toLowerCase().includes('technology')) score += 0.4;
+    if (contact.properties.jobtitle?.toLowerCase().includes('director')) score += 0.3;
+    if (contact.properties.company_size && parseInt(contact.properties.company_size) > 50) score += 0.3;
     return score;
   }
 
   private async createVARLead(contact: HubSpotContact) {
-    await prisma.varLead.create({
+    await prisma.vARLead.create({
       data: {
-        contactId: contact.id,
+        company_name: contact.properties.company,
+        contact_name: `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim(),
         email: contact.properties.email,
-        company: contact.properties.company,
-        status: 'new',
-        score: await this.calculateVARScore(contact),
-        source: 'hubspot',
-        createdAt: new Date()
-      }
+        phone: contact.properties.phone,
+        status: 'New',
+        user: { connect: { id: this.userId } },
+      },
     });
   }
+}
+
+async function getClient() {
+  const apiKey = getHubspotApiKey();
+  if (!apiKey) {
+    logger.error({}, 'HubSpot API key not available. Check environment variables.');
+    return null;
+  }
+  return new Client({ apiKey });
+}
+
+export async function syncHubspotData(userId: string) {
+  const prisma = new PrismaClient();
+  const hubspotClient = await getClient();
+
+  if (!hubspotClient) {
+    return; // Already logged in getClient
+  }
+
+  try {
+    // Sync Companies
+    const companies = await hubspotClient.crm.companies.getAll();
+    for (const company of companies) {
+      const companyData = {
+        name: company.properties.name || 'Unknown Company',
+        domain: company.properties.domain || `hubspot-id-${company.id}`,
+        industry: company.properties.industry || 'Unknown',
+        size: company.properties.numberofemployees || '1',
+        description: company.properties.description,
+        website: company.properties.website,
+        hubspotId: company.id,
+      };
+
+      await prisma.company.upsert({
+        where: { hubspotId: company.id },
+        update: companyData,
+        create: companyData,
+      });
+    }
+
+    // Sync Contacts
+    const contacts = await hubspotClient.crm.contacts.getAll();
+    for (const contact of contacts) {
+      if (!contact.properties.associatedcompanyid) continue;
+      const company = await prisma.company.findUnique({
+        where: { hubspotId: contact.properties.associatedcompanyid },
+      });
+
+      if (company) {
+        const firstName = contact.properties.firstname || '';
+        const lastName = contact.properties.lastname || '';
+        const contactData = {
+          name: `${firstName} ${lastName}`.trim() || contact.properties.email || 'Unnamed Contact',
+          email: contact.properties.email,
+          firstName: firstName,
+          lastName: lastName,
+          phone: contact.properties.phone,
+          companyId: company.id,
+          userId: userId,
+          hubspotId: contact.id,
+        };
+        await prisma.contact.upsert({
+          where: { hubspotId: contact.id },
+          update: contactData,
+          create: contactData,
+        });
+      }
+    }
+
+    // Sync Deals
+    const deals = await hubspotClient.crm.deals.getAll();
+    for (const deal of deals) {
+      if (!deal.properties.associatedcompanyid) continue;
+      const company = await prisma.company.findUnique({
+        where: { hubspotId: deal.properties.associatedcompanyid },
+      });
+
+      if (company) {
+        const dealData = {
+          name: deal.properties.dealname || 'Unnamed Deal',
+          value: parseFloat(deal.properties.amount || '0'),
+          stage: deal.properties.dealstage || 'Unknown',
+          expected_close_date: deal.properties.closedate
+            ? new Date(deal.properties.closedate)
+            : null,
+          company_id: company.id,
+          user_id: userId,
+          hubspotId: deal.id,
+        };
+        await prisma.deal.upsert({
+          where: { hubspotId: deal.id },
+          update: dealData,
+          create: dealData,
+        });
+      }
+    }
+
+    logger.info({ userId }, 'HubSpot data sync completed successfully.');
+  } catch (err) {
+    logger.error({ err }, 'Failed to sync HubSpot data.');
+    throw err;
+  } finally {
+    await prisma.$disconnect();
+  }
 } 
+
+function getHubspotConfig() {
+  throw new Error('Function not implemented.');
+}

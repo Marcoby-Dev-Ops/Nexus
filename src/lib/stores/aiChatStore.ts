@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { AgentResponse } from '@/features/ai-assistant/lib/agents/types';
+import { supabase } from '@/lib/supabase';
+import { API_CONFIG } from '@/lib/constants';
 
 export interface AIMessage {
   id: string;
@@ -39,9 +40,15 @@ export const useAIChatStore = create<AIChatStoreState>()(
 
     async sendMessage(conversationId, message, userId) {
       set({ loading: true, error: null });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        set({ error: 'Not authenticated', loading: false });
+        return;
+      }
+
       try {
         // Optimistically add user message
-        const msg: AIMessage = {
+        const userMsg: AIMessage = {
           id: crypto.randomUUID(),
           conversationId,
           userId,
@@ -55,27 +62,31 @@ export const useAIChatStore = create<AIChatStoreState>()(
             ...get().conversations,
             [conversationId]: {
               ...conv,
-              messages: [...(conv?.messages || []), msg],
+              messages: [...(conv?.messages || []), userMsg],
             },
           },
         });
-        // Call Edge Function
-        const res = await fetch('/functions/v1/ai_chat', {
+
+        // Call Edge Function to get AI response
+        const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/ai_chat`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
           body: JSON.stringify({ message, conversationId, metadata: { userId } }),
         });
-        const data: AgentResponse & { success?: boolean } = await res.json();
-        if (!res.ok || !data.success) throw new Error((data as any).error || 'AI error');
-        // Add AI response
-        const aiMsg: AIMessage = {
-          id: crypto.randomUUID(),
-          conversationId,
-          userId: 'assistant',
-          role: 'assistant',
-          content: data.content,
-          createdAt: new Date().toISOString(),
-        };
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'AI error');
+        }
+
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'AI error');
+
+        // Add AI response from backend
+        const aiMsg: AIMessage = data.message;
         set({
           conversations: {
             ...get().conversations,
@@ -85,8 +96,9 @@ export const useAIChatStore = create<AIChatStoreState>()(
             },
           },
         });
-      } catch (e: any) {
-        set({ error: e.message || 'Failed to send message' });
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Failed to send message';
+        set({ error: errorMessage });
       } finally {
         set({ loading: false });
       }
@@ -94,23 +106,43 @@ export const useAIChatStore = create<AIChatStoreState>()(
 
     async loadConversation(conversationId) {
       set({ loading: true, error: null });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        set({ error: 'Not authenticated', loading: false });
+        return;
+      }
+      
       try {
-        // TODO: fetch from Supabase if needed
-        // For now, just ensure conversation exists
-        if (!get().conversations[conversationId]) {
-          set({
-            conversations: {
-              ...get().conversations,
-              [conversationId]: {
-                id: conversationId,
-                title: 'Untitled',
-                messages: [],
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              },
-            },
-          });
+        // Check if conversation already exists in memory
+        if (get().conversations[conversationId]) {
+          set({ loading: false });
+          return;
         }
+
+        // Load conversation from Supabase
+        const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/ai_chat/${conversationId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+        
+        if (res.ok) {
+          const conversation: AIConversation = await res.json();
+          set((state) => ({
+            conversations: {
+              ...state.conversations,
+              [conversationId]: conversation,
+            },
+          }));
+        } else {
+          const err = await res.json();
+          throw new Error(err.error || `Conversation ${conversationId} not found`);
+        }
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Failed to load conversation';
+        set({ error: errorMessage });
       } finally {
         set({ loading: false });
       }

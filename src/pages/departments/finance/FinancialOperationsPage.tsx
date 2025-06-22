@@ -81,14 +81,14 @@ const FinancialOperationsPage: React.FC = () => {
       name: 'Salaries & Benefits',
       amount: 21580.45,
       percentage: 50.1,
-      color: 'bg-blue-500'
+      color: 'bg-primary'
     },
     { 
       id: 'software',
       name: 'Software & Services',
       amount: 8320.12,
       percentage: 19.3,
-      color: 'bg-purple-500'
+      color: 'bg-secondary'
     },
     { 
       id: 'marketing',
@@ -102,14 +102,14 @@ const FinancialOperationsPage: React.FC = () => {
       name: 'Office & Facilities',
       amount: 4252.18,
       percentage: 9.8,
-      color: 'bg-orange-500'
+      color: 'bg-warning'
     },
     { 
       id: 'travel',
       name: 'Travel & Entertainment',
       amount: 2847.43,
       percentage: 6.6,
-      color: 'bg-green-500'
+      color: 'bg-success'
     }
   ];
 
@@ -245,7 +245,7 @@ const FinancialOperationsPage: React.FC = () => {
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <div className="font-medium">{stat.title}</div>
                 <div className={`p-2 rounded-full ${
-                  stat.trend === 'up' ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                  stat.trend === 'up' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                 }`}>
                   {stat.icon}
                 </div>
@@ -254,17 +254,17 @@ const FinancialOperationsPage: React.FC = () => {
               <div className="flex items-center pt-1">
                 {stat.trend === 'up' ? (
                   <ArrowUpRight className={`h-4 w-4 mr-1 ${
-                    stat.id === 'expenses' ? 'text-red-500' : 'text-green-500'
+                    stat.id === 'expenses' ? 'text-destructive' : 'text-success'
                   }`} />
                 ) : (
                   <ArrowDownRight className={`h-4 w-4 mr-1 ${
-                    stat.id === 'expenses' ? 'text-green-500' : 'text-red-500'
+                    stat.id === 'expenses' ? 'text-success' : 'text-destructive'
                   }`} />
                 )}
                 <p className={`text-sm ${
                   (stat.trend === 'up' && stat.id !== 'expenses') || (stat.trend === 'down' && stat.id === 'expenses')
-                    ? 'text-green-500'
-                    : 'text-red-500'
+                    ? 'text-success'
+                    : 'text-destructive'
                 }`}>
                   {stat.change} from previous {activeTimeframe}
                 </p>
@@ -343,7 +343,7 @@ const FinancialOperationsPage: React.FC = () => {
                   </div>
                   <Progress 
                     value={percentage} 
-                    className={`h-2 ${isOverBudget ? 'bg-red-500' : 'bg-green-500'}`} 
+                    className={`h-2 ${isOverBudget ? 'bg-destructive' : 'bg-success'}`} 
                   />
                 </div>
               );
@@ -381,7 +381,7 @@ const FinancialOperationsPage: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     {report.status === 'finalized' ? (
-                      <Badge variant="outline" className="bg-green-500/10 text-green-500 border-green-500">
+                      <Badge variant="outline" className="bg-success/10 text-success border-green-500">
                         <CheckCircle2 className="h-3 w-3 mr-1" />
                         Final
                       </Badge>
@@ -441,7 +441,7 @@ const FinancialOperationsPage: React.FC = () => {
                     <div className="font-medium">${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                     <div className="text-xs">
                       {transaction.status === 'completed' ? (
-                        <span className="text-green-500 flex items-center">
+                        <span className="text-success flex items-center">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Completed
                         </span>

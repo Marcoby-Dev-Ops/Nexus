@@ -12,10 +12,11 @@ datasource db {
 
 model Company {
   id            String   @id @default(uuid())
+  hubspotId     String?  @unique
   name          String
   domain        String   @unique
   industry      String
-  size          String
+  size          String?
   description   String?
   logo          String?
   website       String?
@@ -119,6 +120,7 @@ model Integration {
 
 model Contact {
   id            String   @id @default(uuid())
+  hubspotId     String?  @unique
   user_id       String
   company_id    String
   name          String
@@ -135,12 +137,13 @@ model Contact {
 
 model Deal {
   id            String   @id @default(uuid())
+  hubspotId     String?  @unique
   user_id       String
   company_id    String
   name          String
   value         Float
   stage         String
-  probability   Float
+  probability   Float?
   expected_close_date DateTime?
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt

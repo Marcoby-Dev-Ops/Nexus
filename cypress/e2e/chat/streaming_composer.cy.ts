@@ -18,5 +18,11 @@ describe('StreamingComposer', () => {
     cy.contains('Copy Code (coming soon)').should('exist');
   });
 
-  // TODO: Add streaming token E2E test
+  it('sends POST request with stream=1 flag', () => {
+    cy.intercept('POST', /ai_chat\?stream=1/).as('chatStream');
+
+    cy.get('textarea').type('Hello{enter}');
+
+    cy.wait('@chatStream').its('request.url').should('include', 'stream=1');
+  });
 }); 

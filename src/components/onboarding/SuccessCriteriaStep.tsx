@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Label } from '../ui/Label';
-import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { RadioGroup, RadioGroupItem } from '../ui/RadioGroup';
 import { Checkbox } from '../ui/Checkbox';
@@ -13,7 +12,6 @@ import {
   Clock, 
   CheckCircle2,
   AlertCircle,
-  BarChart3,
   DollarSign,
   Users2,
   Zap

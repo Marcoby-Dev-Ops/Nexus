@@ -45,9 +45,13 @@ const SelectContext = React.createContext<{
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   disabled?: boolean;
+  options: Record<string, string>;
+  registerOption: (value: string, label: string) => void;
 }>({
   isOpen: false,
   setIsOpen: () => {},
+  options: {},
+  registerOption: () => {},
 });
 
 /**
@@ -60,9 +64,14 @@ export const Select: React.FC<SelectProps> = ({
   children 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [options, setOptions] = useState<Record<string, string>>({});
+
+  const registerOption = React.useCallback((val: string, label: string) => {
+    setOptions(prev => (prev[val] ? prev : { ...prev, [val]: label }));
+  }, []);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen, disabled }}>
+    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen, disabled, options, registerOption }}>
       <div className="relative">
         {children}
       </div>
@@ -116,11 +125,11 @@ export const SelectTrigger: React.FC<SelectTriggerProps> = ({ className, childre
  * Select value display
  */
 export const SelectValue: React.FC<SelectValueProps> = ({ placeholder }) => {
-  const { value } = React.useContext(SelectContext);
-  
+  const { value, options } = React.useContext(SelectContext);
+  const display = value ? (options[value] ?? value) : undefined;
   return (
-    <span className={cn(!value && 'text-muted-foreground')}>
-      {value || placeholder}
+    <span className={cn(!display && 'text-muted-foreground')}>
+      {display || placeholder}
     </span>
   );
 };
@@ -136,7 +145,7 @@ export const SelectContent: React.FC<SelectContentProps> = ({ className, childre
   return (
     <div
       className={cn(
-        'absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-4 text-popover-foreground shadow-md',
+        'absolute top-full z-dropdown mt-1 w-full rounded-md border bg-popover p-4 text-popover-foreground shadow-md',
         'animate-in fade-in-0 zoom-in-95',
         className
       )}
@@ -150,12 +159,19 @@ export const SelectContent: React.FC<SelectContentProps> = ({ className, childre
  * Select item option
  */
 export const SelectItem: React.FC<SelectItemProps> = ({ value, children, className }) => {
-  const { value: selectedValue, onValueChange, setIsOpen } = React.useContext(SelectContext);
+  const { value: selectedValue, onValueChange, setIsOpen, registerOption } = React.useContext(SelectContext);
   const isSelected = selectedValue === value;
+
+  React.useEffect(() => {
+    if (typeof children === 'string') {
+      registerOption(value, children);
+    }
+  }, [children, registerOption, value]);
 
   return (
     <div
-      onClick={() => {
+      onMouseDown={(e) => {
+        e.preventDefault(); // Prevent focus loss
         onValueChange?.(value);
         setIsOpen(false);
       }}

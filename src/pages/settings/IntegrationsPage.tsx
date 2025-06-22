@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Wrench, Plus, Search, Check, X, ExternalLink, RefreshCw, Settings } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Label } from '../../components/ui/Label';
 import { Separator } from '../../components/ui/Separator';
@@ -11,6 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/Ta
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { ManageIntegrationModal } from '@/components/settings/ManageIntegrationModal';
+import { ContentCard } from '@/components/patterns/ContentCard';
+import { useUser } from '@/lib/hooks/useUser';
+import { useIntegrations } from '@/lib/hooks/useIntegrations';
+import { SettingsLayout } from '@/components/settings/SettingsLayout';
+import { useLocation } from 'react-router-dom';
 
 // Mock integrations data
 const availableIntegrations = [
@@ -103,12 +108,20 @@ type ConnectedIntegration = {
  * - Configure integration settings
  * - Browse available integrations by category
  */
-const IntegrationsPage: React.FC = () => {
+const IntegrationsPage = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [connectedIntegrations, setConnectedIntegrations] = useState<ConnectedIntegration[]>([]);
   const [manageProvider, setManageProvider] = useState<string | null>(null);
+  const [showQuickSetup, setShowQuickSetup] = useState(false);
+  const [companyName, setCompanyName] = useState('');
+  const [settingUpCompany, setSettingUpCompany] = useState(false);
+  const { integrations, isLoading, error } = useIntegrations();
+  
+  // Check if we're in the nested settings route
+  const isNestedInSettings = location.pathname.startsWith('/settings/');
   
   // Fetch connected integrations for this organisation
   useEffect(() => {
@@ -189,198 +202,209 @@ const IntegrationsPage: React.FC = () => {
     window.open(url, '_blank', 'width=600,height=800');
   };
   
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Integrations</h2>
-        <p className="text-muted-foreground">Connect with external services and tools</p>
-      </div>
+  const handleQuickCompanySetup = async () => {
+    if (!companyName.trim()) {
+      alert('Please enter a company name.');
+      return;
+    }
+    
+    setSettingUpCompany(true);
+    
+    try {
+      // Create company
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .insert({
+          name: companyName.trim(),
+          domain: '', // Can be filled later
+          industry: 'Technology', // Default
+          size: '1-10', // Default
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
       
-      <Separator />
+      if (companyError) {
+        console.error('Company creation error:', companyError);
+        throw companyError;
+      }
       
-      {/* Connected Integrations */}
+      // Update user profile with company_id and set as owner
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          company_id: company.id,
+          role: 'owner', // Set the user as the company owner
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user!.id);
+      
+      if (profileError) {
+        console.error('Profile update error:', profileError);
+        throw profileError;
+      }
+      
+      alert('Organization created successfully! You can now connect integrations.');
+      setShowQuickSetup(false);
+      setCompanyName('');
+      
+      // Refresh the auth context to get the updated user
+      window.location.reload();
+      
+    } catch (error) {
+      console.error('Error setting up company:', error);
+      alert(`Failed to set up company: ${(error as any)?.message || 'Unknown error'}`);
+    } finally {
+      setSettingUpCompany(false);
+    }
+  };
+
+  const handleConnectHubSpot = async () => {
+    if (!user?.company_id) {
+      setShowQuickSetup(true);
+      return;
+    }
+    
+    try {
+      // Get the current session to include auth token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        alert('Please log in to connect integrations.');
+        return;
+      }
+      
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hubspot-connect`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          company_id: user.company_id
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authorization_url) {
+          window.location.href = data.authorization_url;
+        }
+      } else {
+        const error = await response.text();
+        console.error('HubSpot connect error:', error);
+        alert('Failed to initiate HubSpot connection. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error connecting to HubSpot:', error);
+      alert('An error occurred. Please try again.');
+    }
+  };
+  
+  const content = (
+    <div className="space-y-8">
+      {/* Quick Company Setup Modal */}
+      {showQuickSetup && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="text-orange-800">Organization Setup Required</CardTitle>
+            <CardDescription className="text-orange-700">
+              You need to set up your organization before connecting integrations.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                id="companyName"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Enter your company name"
+                disabled={settingUpCompany}
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                onClick={handleQuickCompanySetup} 
+                disabled={settingUpCompany || !companyName.trim()}
+              >
+                {settingUpCompany ? 'Setting up...' : 'Create Organization'}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowQuickSetup(false)}
+                disabled={settingUpCompany}
+              >
+                Cancel
+              </Button>
+            </div>
+            <p className="text-sm text-orange-600">
+              You can complete your organization details later in the onboarding flow.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Section for Available Integrations */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Wrench className="h-5 w-5 mr-2" />
-            Connected Integrations
-          </CardTitle>
-          <CardDescription>Manage your connected third-party services</CardDescription>
+          <CardTitle>Available Integrations</CardTitle>
+          <CardDescription>
+            Connect new applications to extend the functionality of Nexus.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {connectedIntegrations.length > 0 ? (
-            <div className="space-y-4">
-              {connectedIntegrations.map((integration) => (
-                <div key={integration.provider} className="flex items-center justify-between p-4 border border-border rounded-md">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-10 w-10 rounded-md bg-card border border-border flex items-center justify-center text-xl">
-                      {integration.provider.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-medium">{integration.provider}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right text-sm mr-2">
-                      <div className="flex items-center">
-                        <Badge variant="outline" className="border-green-500 text-green-500">
-                          {integration.status}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Last sync: {integration.lastSync ? new Date(integration.lastSync).toLocaleString() : '—'}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Settings className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+          <ContentCard title="HubSpot">
+            <p className="text-muted-foreground mb-4">
+              Connect your HubSpot account to sync contacts, companies, and deals.
+            </p>
+            <Button onClick={handleConnectHubSpot} variant="outline">
+              Connect
+            </Button>
+          </ContentCard>
+        </CardContent>
+      </Card>
+
+      {/* Section for Connected Integrations */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Connected Integrations</CardTitle>
+          <CardDescription>
+            Manage your existing application connections.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading && <p>Loading...</p>}
+          {error && <p className="text-destructive">{error.message}</p>}
+          {!isLoading && !error && integrations.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {integrations.map((integration) => (
+                <ContentCard key={integration.id} title={integration.type}>
+                  <p className="text-sm text-muted-foreground">Status: Active</p>
+                </ContentCard>
               ))}
             </div>
           ) : (
-            <div className="text-center py-6">
-              <p className="text-muted-foreground">No integrations connected yet</p>
-              <Button variant="outline" className="mt-2">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Integration
-              </Button>
-            </div>
+            <p className="text-muted-foreground">No integrations connected yet.</p>
           )}
         </CardContent>
       </Card>
-      
-      {/* Browse Integrations */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Browse Integrations</CardTitle>
-          <CardDescription>Discover and connect with third-party services</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Search and Filter */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search integrations..."
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Tabs 
-              defaultValue="all" 
-              className="w-full sm:w-auto"
-              value={activeCategory}
-              onValueChange={setActiveCategory}
-            >
-              <TabsList className="grid grid-cols-4 sm:grid-cols-7">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="communication">Communication</TabsTrigger>
-                <TabsTrigger value="productivity">Productivity</TabsTrigger>
-                <TabsTrigger value="development">Development</TabsTrigger>
-                <TabsTrigger value="storage">Storage</TabsTrigger>
-                <TabsTrigger value="crm">CRM</TabsTrigger>
-                <TabsTrigger value="automation">Automation</TabsTrigger>
-                <TabsTrigger value="payment">Payment</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
-          
-          {/* Integrations Grid */}
-          {filteredIntegrations.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredIntegrations.map((integration) => {
-                const connected = isConnected(integration.id);
-                
-                return (
-                  <Card key={integration.id} className="overflow-hidden">
-                    <CardHeader className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-10 w-10 rounded-md bg-card border border-border flex items-center justify-center text-xl">
-                            {integration.icon}
-                          </div>
-                          <div>
-                            <CardTitle className="text-base">{integration.name}</CardTitle>
-                            {integration.popular && (
-                              <Badge variant="outline" className="text-xs mt-1">
-                                Popular
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        {connected ? (
-                          <Badge className="bg-green-500">
-                            <Check className="h-3 w-3 mr-1" />
-                            Connected
-                          </Badge>
-                        ) : null}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {integration.description}
-                      </p>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex justify-between">
-                      <Badge variant="outline">
-                        {integration.category}
-                      </Badge>
-                      <Button 
-                        variant={connected ? "outline" : "default"}
-                        size="sm"
-                        onClick={() => {
-                          if (connected) {
-                            setManageProvider(integration.id);
-                          } else if (integration.id === 'paypal') {
-                            handleConnectPayPal();
-                          } else {
-                            // Placeholder for other integrations
-                            alert('Connect flow not implemented yet');
-                          }
-                        }}
-                      >
-                        {connected ? 'Manage' : 'Connect'}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No matching integrations found</p>
-              <Button variant="outline" className="mt-2" onClick={() => {
-                setSearchQuery('');
-                setActiveCategory('all');
-              }}>
-                Clear Filters
-              </Button>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="border-t border-border p-4 flex justify-center">
-          <Button variant="outline">
-            <ExternalLink className="h-4 w-4 mr-2" />
-            View Integration Marketplace
-          </Button>
-        </CardFooter>
-      </Card>
-
-      {/* Manage Modal */}
-      {user?.company_id && (
-        <ManageIntegrationModal
-          provider={manageProvider}
-          open={!!manageProvider}
-          onClose={() => setManageProvider(null)}
-          orgId={user.company_id}
-        />
-      )}
     </div>
+  );
+
+  // If we're nested in settings, just return the content (SettingsLayout is provided by parent)
+  if (isNestedInSettings) {
+    return content;
+  }
+
+  // If we're standalone, wrap with SettingsLayout
+  return (
+    <SettingsLayout
+      title="Integrations"
+      description="Connect and manage your third-party application integrations."
+    >
+      {content}
+    </SettingsLayout>
   );
 };
 

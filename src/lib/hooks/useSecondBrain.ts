@@ -70,37 +70,184 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
   const loadIntegrationData = async () => {
     try {
-      // TODO: Replace with actual integration data aggregation
-      const mockData: IntegrationDataPoint[] = [
-        {
-          source: 'google-analytics',
-          type: 'metric',
-          value: { sessions: 1247, pageviews: 4891, bounceRate: 0.34 },
-          timestamp: new Date().toISOString(),
-          metadata: { period: '7d' },
-          relevanceScore: 0.9
-        },
-        {
-          source: 'slack',
-          type: 'activity',
-          value: { messagesCount: 234, activeUsers: 12, channels: 8 },
-          timestamp: new Date().toISOString(),
-          metadata: { period: '24h' },
-          relevanceScore: 0.7
-        }
-      ];
-      setIntegrationData(mockData);
+      const integrationData: IntegrationDataPoint[] = [];
+
+      // Load Google Analytics data
+      const analyticsData = await loadGoogleAnalyticsData();
+      if (analyticsData) {
+        integrationData.push(analyticsData);
+      }
+
+      // Load Slack data
+      const slackData = await loadSlackData();
+      if (slackData) {
+        integrationData.push(slackData);
+      }
+
+      // Load HubSpot data
+      const hubspotData = await loadHubSpotData();
+      if (hubspotData) {
+        integrationData.push(hubspotData);
+      }
+
+      // Load Stripe data
+      const stripeData = await loadStripeData();
+      if (stripeData) {
+        integrationData.push(stripeData);
+      }
+
+      setIntegrationData(integrationData);
     } catch (error) {
       console.error('Failed to load integration data:', error);
+      // Fallback to empty array
+      setIntegrationData([]);
+    }
+  };
+
+  const loadGoogleAnalyticsData = async (): Promise<IntegrationDataPoint | null> => {
+    try {
+      const response = await fetch('/api/integrations/google-analytics/metrics', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return {
+        source: 'google-analytics',
+        type: 'metric',
+        value: {
+          sessions: data.sessions || 0,
+          pageviews: data.pageviews || 0,
+          bounceRate: data.bounceRate || 0,
+          avgSessionDuration: data.avgSessionDuration || 0
+        },
+        timestamp: new Date().toISOString(),
+        metadata: { period: '7d', reportType: 'overview' },
+        relevanceScore: 0.9
+      };
+    } catch (error) {
+      console.warn('Failed to load Google Analytics data:', error);
+      return null;
+    }
+  };
+
+  const loadSlackData = async (): Promise<IntegrationDataPoint | null> => {
+    try {
+      const response = await fetch('/api/integrations/slack/activity', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return {
+        source: 'slack',
+        type: 'activity',
+        value: {
+          messagesCount: data.messagesCount || 0,
+          activeUsers: data.activeUsers || 0,
+          channels: data.channels || 0,
+          responseTime: data.avgResponseTime || 0
+        },
+        timestamp: new Date().toISOString(),
+        metadata: { period: '24h', workspaceId: data.workspaceId },
+        relevanceScore: 0.7
+      };
+    } catch (error) {
+      console.warn('Failed to load Slack data:', error);
+      return null;
+    }
+  };
+
+  const loadHubSpotData = async (): Promise<IntegrationDataPoint | null> => {
+    try {
+      const response = await fetch('/api/integrations/hubspot/metrics', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return {
+        source: 'hubspot',
+        type: 'crm',
+        value: {
+          newContacts: data.newContacts || 0,
+          deals: data.deals || 0,
+          dealValue: data.totalDealValue || 0,
+          conversionRate: data.conversionRate || 0
+        },
+        timestamp: new Date().toISOString(),
+        metadata: { period: '7d', portalId: data.portalId },
+        relevanceScore: 0.8
+      };
+    } catch (error) {
+      console.warn('Failed to load HubSpot data:', error);
+      return null;
+    }
+  };
+
+  const loadStripeData = async (): Promise<IntegrationDataPoint | null> => {
+    try {
+      const response = await fetch('/api/integrations/stripe/metrics', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (!response.ok) return null;
+
+      const data = await response.json();
+      return {
+        source: 'stripe',
+        type: 'financial',
+        value: {
+          revenue: data.revenue || 0,
+          transactions: data.transactions || 0,
+          customers: data.customers || 0,
+          mrr: data.mrr || 0
+        },
+        timestamp: new Date().toISOString(),
+        metadata: { period: '30d', currency: data.currency || 'usd' },
+        relevanceScore: 0.95
+      };
+    } catch (error) {
+      console.warn('Failed to load Stripe data:', error);
+      return null;
     }
   };
 
   const loadRecentEvents = async () => {
     try {
-      // TODO: Load from event tracking system
-      setRecentEvents([]);
+      // Load events from Supabase analytics tables
+      const response = await fetch('/api/analytics/events', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        setRecentEvents([]);
+        return;
+      }
+
+      const data = await response.json();
+      const events = data.events || [];
+      
+      setRecentEvents(events.map((event: any) => ({
+        id: event.id,
+        type: event.event_type || 'user_action',
+        description: event.description || event.event_name,
+        timestamp: event.created_at || event.timestamp,
+        metadata: event.metadata || {},
+        impact: event.impact || 'low',
+        source: event.source || 'system'
+      })));
     } catch (error) {
       console.error('Failed to load recent events:', error);
+      setRecentEvents([]);
     }
   };
 
@@ -397,7 +544,7 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
     setAutomationOpportunities(opportunities);
   }, [userProfile, integrationData]);
 
-  const recordEvent = useCallback((event: Omit<LearningEvent, 'id' | 'userId'>) => {
+  const recordEvent = useCallback(async (event: Omit<LearningEvent, 'id' | 'userId'>) => {
     if (!userProfile) return;
 
     const fullEvent: LearningEvent = {
@@ -408,7 +555,17 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
     setRecentEvents(prev => [fullEvent, ...prev.slice(0, 99)]); // Keep last 100 events
     
-    // TODO: Send to analytics service
+    // Send to analytics service
+    try {
+      await fetch('/api/analytics/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fullEvent)
+      });
+    } catch (error) {
+      console.warn('Failed to send event to analytics service:', error);
+    }
+    
     console.log('Learning event recorded:', fullEvent);
   }, [userProfile]);
 
@@ -446,8 +603,27 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
       }
     });
 
-    // TODO: Implement action execution logic
-    console.log('Executing action:', actionId);
+    // Execute action via API
+    try {
+      const response = await fetch('/api/ai/execute-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          actionId,
+          actionType: action.action.type,
+          actionData: action.action
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Action execution failed');
+      }
+
+      const result = await response.json();
+      console.log('Action executed successfully:', result);
+    } catch (error) {
+      console.error('Failed to execute action:', error);
+    }
   }, [actions, pageId, recordEvent]);
 
   const createAutomation = useCallback(async (opportunityId: string) => {
@@ -465,11 +641,35 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
       }
     });
 
-    // TODO: Implement automation creation
-    console.log('Creating automation:', opportunityId);
+    // Create automation via API
+    try {
+      const response = await fetch('/api/automations/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          opportunityId,
+          automationType: opportunity.type,
+          workflow: opportunity.workflow,
+          metadata: {
+            estimatedSetupTime: opportunity.estimatedSetupTime,
+            estimatedTimeSavings: opportunity.estimatedTimeSavings,
+            requiredIntegrations: opportunity.requiredIntegrations
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Automation creation failed');
+      }
+
+      const result = await response.json();
+      console.log('Automation created successfully:', result);
+    } catch (error) {
+      console.error('Failed to create automation:', error);
+    }
   }, [automationOpportunities, pageId, recordEvent]);
 
-  const updatePreferences = useCallback((preferences: Partial<UserProfile['preferences']>) => {
+  const updatePreferences = useCallback(async (preferences: Partial<UserProfile['preferences']>) => {
     if (!userProfile) return;
 
     setUserProfile(prev => prev ? {
@@ -477,7 +677,17 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
       preferences: { ...prev.preferences, ...preferences }
     } : null);
 
-    // TODO: Persist to backend
+    // Persist preferences to backend
+    try {
+      await fetch('/api/user/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences })
+      });
+    } catch (error) {
+      console.warn('Failed to persist preferences to backend:', error);
+    }
+
     recordEvent({
       type: 'action_taken',
       data: { action: 'preferences_updated', preferences },

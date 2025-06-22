@@ -18,7 +18,7 @@ function formatDelta(delta?: number) {
 }
 
 export const KpiCard: React.FC<Props> = ({ kpi, isFocus, advice }) => {
-  const deltaColor = kpi.delta && kpi.delta >= 0 ? 'text-green-600' : 'text-destructive';
+  const deltaColor = kpi.delta && kpi.delta >= 0 ? 'text-success' : 'text-destructive';
 
   const { mutate: runPlaybook, isPending } = useRunPlaybook();
 

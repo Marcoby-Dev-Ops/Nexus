@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, Key, Smartphone, Eye, EyeOff, AlertTriangle, LogOut, RefreshCw, Lock, Fingerprint } from 'lucide-react';
+import { Shield, Key, Smartphone, Eye, EyeOff, AlertTriangle, LogOut, RefreshCw, Lock, Fingerprint, Trash2 } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -13,7 +13,8 @@ import { supabase } from '../../lib/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Alert } from '../../components/ui/Alert';
 import { toast } from 'sonner';
-import { startRegistration } from '@simplewebauthn/browser';
+import { registerPasskey, handlePasskeyError, handlePasskeyRegistrationSuccess, isPasskeySupported, fetchUserPasskeys, deletePasskey } from '../../lib/utils/passkey';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/Dialog';
 
 // Mock security activity data
 const securityActivity = [
@@ -46,6 +47,12 @@ const SecuritySettings: React.FC = () => {
   const [isRegisteringPasskey, setIsRegisteringPasskey] = useState(false);
   const [passkeys, setPasskeys] = useState<any[]>([]);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [friendlyName, setFriendlyName] = useState('');
+  const [showAddPasskeyDialog, setShowAddPasskeyDialog] = useState(false);
+  const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
+  
+  // Check WebAuthn support
+  const isWebAuthnSupported = isPasskeySupported();
   
   // Handle password change
   const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -85,14 +92,12 @@ const SecuritySettings: React.FC = () => {
   // ---------------------------------------------------------------------
   const fetchPasskeys = async () => {
     if (!user) return;
-    const { data, error } = await supabase
-      .from('ai_passkeys')
-      .select('credential_id, friendly_name, created_at, device_type');
-    if (error) {
+    try {
+      const data = await fetchUserPasskeys();
+      setPasskeys(data);
+    } catch (error) {
       console.error('[SecuritySettings] Failed to load passkeys', error);
-      return;
     }
-    setPasskeys(data ?? []);
   };
 
   useEffect(() => {
@@ -109,40 +114,38 @@ const SecuritySettings: React.FC = () => {
 
       setIsRegisteringPasskey(true);
 
-      // Debug: ensure we have a Supabase session so the auth header is sent
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('No Supabase session found – please re-login.');
-      }
-
-      // 1) Get registration challenge from server
-      const { data: options, error: challengeErr } = await supabase.functions.invoke(
-        'passkey-register-challenge',
-        {
-          body: { userId: user.id },
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        },
-      );
-      if (challengeErr) throw challengeErr;
-
-      // 2) Start browser-native WebAuthn flow
-      const attestationResponse = await startRegistration({ optionsJSON: options as any });
-
-      // 3) Verify and persist on the backend
-      const { error: verifyErr } = await supabase.functions.invoke('passkey-register-verify', {
-        body: { userId: user.id, attestationResponse },
+      // Use centralized passkey registration
+      await registerPasskey({
+        userId: user.id,
+        friendlyName: friendlyName.trim() || undefined
       });
-      if (verifyErr) throw verifyErr;
 
-      toast.success('Passkey added');
+      // Success feedback and cleanup
+      handlePasskeyRegistrationSuccess();
+      setFriendlyName('');
+      setShowAddPasskeyDialog(false);
       fetchPasskeys();
+      
     } catch (err: any) {
-      console.error('[SecuritySettings] Passkey registration failed', err);
-      toast.error(err?.message ?? 'Failed to register passkey');
+      handlePasskeyError(err, 'registration');
     } finally {
       setIsRegisteringPasskey(false);
+    }
+  };
+
+  const handleDeletePasskey = async (credentialId: string) => {
+    try {
+      setDeletingPasskeyId(credentialId);
+      
+      await deletePasskey(credentialId);
+      
+      toast.success('Passkey deleted successfully');
+      fetchPasskeys();
+    } catch (err: any) {
+      console.error('[SecuritySettings] Failed to delete passkey', err);
+      toast.error(err?.message ?? 'Failed to delete passkey');
+    } finally {
+      setDeletingPasskeyId(null);
     }
   };
 
@@ -198,13 +201,13 @@ const SecuritySettings: React.FC = () => {
                 required
               />
               <div className="text-xs space-y-1">
-                <p className={newPassword.length >= 8 ? 'text-green-500' : 'text-muted-foreground'}>
+                <p className={newPassword.length >= 8 ? 'text-success' : 'text-muted-foreground'}>
                   • At least 8 characters
                 </p>
-                <p className={/[A-Z]/.test(newPassword) ? 'text-green-500' : 'text-muted-foreground'}>
+                <p className={/[A-Z]/.test(newPassword) ? 'text-success' : 'text-muted-foreground'}>
                   • At least 1 uppercase letter
                 </p>
-                <p className={/[0-9]/.test(newPassword) ? 'text-green-500' : 'text-muted-foreground'}>
+                <p className={/[0-9]/.test(newPassword) ? 'text-success' : 'text-muted-foreground'}>
                   • At least 1 number
                 </p>
               </div>
@@ -343,6 +346,16 @@ const SecuritySettings: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {!isWebAuthnSupported && (
+            <Alert variant="warning">
+              <AlertTriangle className="h-4 w-4" />
+              <div>
+                <p className="font-medium">Passkeys not supported</p>
+                <p className="text-sm">Your browser doesn't support passkeys. Please use a modern browser like Chrome, Safari, or Firefox.</p>
+              </div>
+            </Alert>
+          )}
+
           {passkeys.length ? (
             <div className="space-y-2">
               {passkeys.map((pk) => (
@@ -350,7 +363,7 @@ const SecuritySettings: React.FC = () => {
                   key={pk.credential_id}
                   className="flex items-center justify-between p-3 border border-border rounded-md"
                 >
-                  <div>
+                  <div className="flex-1">
                     <p className="font-medium truncate max-w-[200px]" title={pk.credential_id}>
                       {pk.friendly_name || 'Unnamed Passkey'}
                     </p>
@@ -359,7 +372,19 @@ const SecuritySettings: React.FC = () => {
                       {new Date(pk.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant="secondary">Active</Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary" data-testid="passkey-badge-active">Active</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeletePasskey(pk.credential_id)}
+                      disabled={deletingPasskeyId === pk.credential_id}
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      data-testid={`delete-passkey-${pk.credential_id}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -367,9 +392,55 @@ const SecuritySettings: React.FC = () => {
             <p className="text-sm text-muted-foreground">No passkeys added yet.</p>
           )}
 
-          <Button onClick={handleAddPasskey} isLoading={isRegisteringPasskey} disabled={isRegisteringPasskey}>
-            Add Passkey
-          </Button>
+          <Dialog open={showAddPasskeyDialog} onOpenChange={setShowAddPasskeyDialog}>
+            <DialogTrigger asChild>
+              <Button disabled={!isWebAuthnSupported} data-testid="add-passkey-button">
+                Add Passkey
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Passkey</DialogTitle>
+                <DialogDescription>
+                  Give your passkey a name to help you identify it later.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="friendlyName">Passkey Name</Label>
+                                     <Input
+                     id="friendlyName"
+                     placeholder="e.g., MacBook Touch ID, iPhone Face ID"
+                     value={friendlyName}
+                     onChange={(e) => setFriendlyName(e.target.value)}
+                     data-testid="passkey-name-input"
+                   />
+                  <p className="text-xs text-muted-foreground">
+                    Optional: helps you identify this passkey in your settings
+                  </p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddPasskeyDialog(false);
+                    setFriendlyName('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                                 <Button
+                   onClick={handleAddPasskey}
+                   isLoading={isRegisteringPasskey}
+                   disabled={isRegisteringPasskey}
+                   data-testid="create-passkey-button"
+                 >
+                   Create Passkey
+                 </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
     </div>

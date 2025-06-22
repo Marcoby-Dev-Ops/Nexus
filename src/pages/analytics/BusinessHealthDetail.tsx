@@ -210,14 +210,14 @@ const BusinessHealthDetail: React.FC = () => {
   const getScoreColorClass = (score: number): string => {
     if (score >= 80) return "text-emerald-500";
     if (score >= 60) return "text-amber-500";
-    return "text-red-500";
+    return "text-destructive";
   };
 
   // Helper to get background color class based on score
   const getScoreBgClass = (score: number): string => {
     if (score >= 80) return "bg-emerald-50";
     if (score >= 60) return "bg-amber-50";
-    return "bg-red-50";
+    return "bg-destructive/5";
   };
   
   // Format KPI value with appropriate unit
@@ -394,15 +394,15 @@ const BusinessHealthDetail: React.FC = () => {
           <CardContent>
             <ul className="space-y-3">
               <li className="flex items-start">
-                <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                <Info className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                 <span>Set up automated tracking for key {selectedCategory.name.toLowerCase()} metrics</span>
               </li>
               <li className="flex items-start">
-                <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                <Info className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                 <span>Review your {selectedCategory.name.toLowerCase()} processes quarterly</span>
               </li>
               <li className="flex items-start">
-                <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                <Info className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                 <span>Implement industry best practices for {selectedCategory.name.toLowerCase()}</span>
               </li>
             </ul>
@@ -490,15 +490,15 @@ const BusinessHealthDetail: React.FC = () => {
               <CardContent>
                 <ul className="space-y-3">
                   <li className="flex items-start">
-                    <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <Info className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                     <span>Set up automated tracking for key metrics</span>
                   </li>
                   <li className="flex items-start">
-                    <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <Info className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                     <span>Review your processes quarterly</span>
                   </li>
                   <li className="flex items-start">
-                    <Info className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
+                    <Info className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                     <span>Implement industry best practices</span>
                   </li>
                 </ul>

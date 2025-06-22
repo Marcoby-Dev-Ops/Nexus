@@ -5,6 +5,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Skeleton } from '@/components/ui/Skeleton';
 import { AlertTriangle } from 'lucide-react';
 import { useDepartmentKPIs } from '@/lib/hooks/useDepartmentKPIs';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { AISuggestionCard } from '@/components/ai/AISuggestionCard';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 /**
  * DepartmentHomePage
@@ -37,46 +40,70 @@ const DepartmentHomePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        {meta.icon}
-        <h1 className="text-2xl font-bold">{meta.label} Overview</h1>
-      </div>
-      <p className="text-muted-foreground max-w-2xl">{meta.description}</p>
+      <PageHeader
+        title={`${meta.label} Overview`}
+        description={meta.description}
+        icon={React.cloneElement(meta.icon, { className: 'w-6 h-6 text-primary' })}
+      />
 
       {/* KPI Cards */}
-      {loading && <Skeleton className="h-40 w-full" />}
+      {loading && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Skeleton className="h-40 w-full" />
+          <Skeleton className="h-40 w-full" />
+        </div>
+      )}
 
       {error && (
         <div className="text-destructive">Failed to load metrics: {error}</div>
       )}
 
-      {!loading && !error && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Revenue</CardTitle>
-            <CardDescription>Last 12 months (PayPal)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">$
-              {metrics?.totalRevenue?.toLocaleString() ?? '0.00'}
-            </div>
-          </CardContent>
-        </Card>
+      {!loading && !error && metrics && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="lg:col-span-4">
+            <CardHeader>
+              <CardTitle>Monthly Revenue</CardTitle>
+              <CardDescription>Last 12 months (PayPal)</CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={metrics.monthlyRevenue}>
+                  <XAxis
+                    dataKey="name"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `$${value / 1000}k`}
+                  />
+                  <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} />
+                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle>Total Revenue</CardTitle>
+              <CardDescription>Last 12 months (PayPal)</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-4xl font-bold">
+                ${metrics?.totalRevenue?.toLocaleString() ?? '0.00'}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
 
-      {/* TODO: Suggestions & ActionList – placeholder */}
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Suggestions</CardTitle>
-          <CardDescription>
-            Automated insights and next-best actions will appear here.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Skeleton className="h-20 w-full" />
-        </CardContent>
-      </Card>
+      {/* AI Suggestions */}
+      <AISuggestionCard departmentId={departmentId as any} />
     </div>
   );
 };

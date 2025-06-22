@@ -8,14 +8,19 @@ import AppShell from './components/layout/AppShell';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { SupabaseProvider } from './lib/SupabaseProvider';
 
+// Storage cleanup
+import { cleanupCorruptedStorage } from './lib/security/secureStorage';
+
 // Pages
 import Dashboard from './pages/Dashboard';
 import NotFoundPage from './pages/NotFoundPage';
 import AIHubPage from './pages/AIHubPage';
 import WorkspacePage from './pages/WorkspacePage';
-import ChatV2Page from './pages/ChatV2Page';
+import ChatPage from './pages/ChatPage';
+import UnifiedInboxPage from './pages/UnifiedInboxPage';
 import SettingsPage from './pages/settings/SettingsPage';
-import IntegrationsPage from './pages/settings/IntegrationsPage';
+import SettingsIntegrationsPage from './pages/settings/IntegrationsPage';
+import Integrations from './pages/Integrations';
 import ProfileSettings from './pages/settings/ProfileSettings';
 import SecuritySettings from './pages/settings/SecuritySettings';
 import { Login } from './pages/Login';
@@ -37,7 +42,7 @@ import { OperationsDashboard } from './domains/operations';
 import BusinessHealthDetail from './pages/analytics/BusinessHealthDetail';
 
 // Data Warehouse
-import DataWarehouseHome from './datawarehouse/DataWarehouseHome';
+import DataWarehouseHome from './pages/analytics/DataWarehouseHome';
 
 // Marketplace
 import Marketplace from './marketplace/Marketplace';
@@ -60,6 +65,15 @@ const LegacyDeptRedirect: React.FC = () => {
  * Routes for the application including all sidebar navigation items
  */
 function App() {
+  // Clean up any corrupted localStorage entries on app start
+  React.useEffect(() => {
+    try {
+      cleanupCorruptedStorage();
+    } catch (error) {
+      console.warn('Failed to cleanup corrupted storage:', error);
+    }
+  }, []);
+
   return (
     <SupabaseProvider>
       <NotificationProvider>
@@ -81,6 +95,7 @@ function App() {
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/workspace" element={<WorkspacePage />} />
+              <Route path="/inbox" element={<UnifiedInboxPage />} />
               
               {/* Department Routes */}
               <Route path="/operations" element={<OperationsDashboard />} />
@@ -106,7 +121,7 @@ function App() {
               
               {/* AI Routes */}
               <Route path="/ai-hub" element={<AIHubPage />} />
-              <Route path="/chat-v2" element={<ChatV2Page />} />
+              <Route path="/chat" element={<ChatPage />} />
               
               {/* Analytics Routes */}
               <Route path="/analytics/business-health" element={<BusinessHealthDetail />} />
@@ -114,14 +129,14 @@ function App() {
               
               {/* Marketplace Routes */}
               <Route path="/marketplace" element={<Marketplace />} />
-              <Route path="/integrations" element={<IntegrationsPage />} />
+              <Route path="/integrations" element={<Integrations />} />
               
               {/* Settings Routes */}
               <Route path="/settings" element={<SettingsPage />}>
                 <Route index element={<Navigate to="profile" replace />} />
                 <Route path="profile" element={<ProfileSettings />} />
                 <Route path="security" element={<SecuritySettings />} />
-                <Route path="integrations" element={<IntegrationsPage />} />
+                <Route path="integrations" element={<SettingsIntegrationsPage />} />
               </Route>
               
               {/* 404 Route */}

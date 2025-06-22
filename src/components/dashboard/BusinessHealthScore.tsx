@@ -10,6 +10,10 @@ import {
   calculateOverallHealthScore
 } from '@/lib/businessHealthKPIs';
 import type { CategoryDefinition } from '@/lib/businessHealthKPIs';
+import { businessHealthService, type BusinessHealthData } from '@/lib/services/businessHealthService';
+import { useAuth } from '@/contexts/AuthContext';
+import { ProfessionalEmailUpsell } from '@/components/ai/ProfessionalEmailUpsell';
+import { useProfessionalEmailAnalysis } from '@/lib/hooks/useProfessionalEmailAnalysis';
 
 // Mock data for demonstration
 const MOCK_KPI_VALUES: Record<string, number | string | boolean> = {
@@ -59,36 +63,47 @@ const MOCK_KPI_VALUES: Record<string, number | string | boolean> = {
 export const BusinessHealthScore: React.FC = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [score, setScore] = useState(0);
-  const [categoryScores, setCategoryScores] = useState<Record<string, number>>({});
-  const [lastUpdated, setLastUpdated] = useState<string>('');
+  const [healthData, setHealthData] = useState<BusinessHealthData | null>(null);
   const [showAllCategories, setShowAllCategories] = useState(false);
   const [topCategories, setTopCategories] = useState<CategoryDefinition[]>([]);
+  
+  // Professional email analysis
+  const emailAnalysis = useProfessionalEmailAnalysis(true);
 
   useEffect(() => {
     const fetchBusinessHealthScore = async () => {
       try {
         setLoading(true);
         
-        // In a real implementation, we would fetch from the API
-        // For now, simulate with a delay and our mock data
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Calculate scores from our KPI values
-        const { overallScore, categoryScores } = calculateOverallHealthScore(MOCK_KPI_VALUES);
-        
-        setScore(overallScore);
-        setCategoryScores(categoryScores);
-        setLastUpdated(new Date().toISOString());
+        if (!user?.company_id) {
+          // Fallback to mock data if no organization
+          const { overallScore, categoryScores } = calculateOverallHealthScore(MOCK_KPI_VALUES);
+          
+          setHealthData({
+            kpiValues: MOCK_KPI_VALUES,
+            categoryScores,
+            overallScore,
+            lastUpdated: new Date().toISOString(),
+            completionPercentage: 85,
+            missingKPIs: []
+          });
+        } else {
+          // Fetch real data from service
+          const data = await businessHealthService.fetchBusinessHealthData(user.company_id);
+          setHealthData(data);
+        }
         
         // Get top 3 categories by score (for display)
-        const sortedCategories = [...healthCategories].sort((a, b) => 
-          (categoryScores[b.id] || 0) - (categoryScores[a.id] || 0)
-        );
-        
-        setTopCategories(sortedCategories.slice(0, 3));
+        if (healthData) {
+          const sortedCategories = [...healthCategories].sort((a, b) => 
+            (healthData.categoryScores[b.id] || 0) - (healthData.categoryScores[a.id] || 0)
+          );
+          
+          setTopCategories(sortedCategories.slice(0, 3));
+        }
       } catch (err) {
         console.error('Error fetching business health score:', err);
         setError(err instanceof Error ? err : new Error('Unknown error occurred'));
@@ -103,20 +118,20 @@ export const BusinessHealthScore: React.FC = () => {
     };
 
     fetchBusinessHealthScore();
-  }, [showToast]);
+  }, [showToast, user?.company_id]);
 
   // Helper to get color class based on score
   const getScoreColorClass = (score: number): string => {
     if (score >= 80) return "text-emerald-500";
     if (score >= 60) return "text-amber-500";
-    return "text-red-500";
+    return "text-destructive";
   };
 
   // Helper to get background color class based on score
   const getScoreBgClass = (score: number): string => {
     if (score >= 80) return "bg-emerald-50";
     if (score >= 60) return "bg-amber-50";
-    return "bg-red-50";
+    return "bg-destructive/5";
   };
 
   if (loading) {
@@ -159,9 +174,9 @@ export const BusinessHealthScore: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Business Health</span>
-          <div className={`px-3 py-1 rounded ${getScoreBgClass(score)}`}>
-            <span className={`text-sm font-bold ${getScoreColorClass(score)}`}>
-              {score}/100
+          <div className={`px-3 py-1 rounded ${getScoreBgClass(healthData?.overallScore || 0)}`}>
+            <span className={`text-sm font-bold ${getScoreColorClass(healthData?.overallScore || 0)}`}>
+              {healthData?.overallScore || 0}/100
             </span>
           </div>
         </CardTitle>
@@ -173,12 +188,12 @@ export const BusinessHealthScore: React.FC = () => {
       <CardContent className="space-y-4">
         {/* Main Score */}
         <div className="flex items-center space-x-6">
-          <div className={`text-5xl font-bold ${getScoreColorClass(score)}`}>
-            {score}
+          <div className={`text-5xl font-bold ${getScoreColorClass(healthData?.overallScore || 0)}`}>
+            {healthData?.overallScore || 0}
           </div>
           <div className="text-sm">
             <div className="text-muted-foreground">Last updated</div>
-            <div>{new Date(lastUpdated).toLocaleDateString()}</div>
+            <div>{healthData?.lastUpdated ? new Date(healthData.lastUpdated).toLocaleDateString() : 'N/A'}</div>
           </div>
         </div>
 
@@ -193,11 +208,11 @@ export const BusinessHealthScore: React.FC = () => {
             >
               <div className="flex justify-between text-sm">
                 <span className="font-medium">{category.name}</span>
-                <span className={getScoreColorClass(categoryScores[category.id] || 0)}>
-                  {categoryScores[category.id] || 0}%
+                <span className={getScoreColorClass(healthData?.categoryScores[category.id] || 0)}>
+                  {healthData?.categoryScores[category.id] || 0}%
                 </span>
               </div>
-              <Progress value={categoryScores[category.id] || 0} className="h-2" />
+              <Progress value={healthData?.categoryScores[category.id] || 0} className="h-2" />
             </button>
           ))}
           
@@ -224,6 +239,13 @@ export const BusinessHealthScore: React.FC = () => {
           )}
         </div>
 
+        {/* Professional Email Upsell */}
+        {emailAnalysis.shouldShowUpsell && (
+          <div className="mt-6">
+            <ProfessionalEmailUpsell compact={true} />
+          </div>
+        )}
+
         {/* Recent Improvements */}
         <div className="mt-6">
           <h3 className="text-sm font-medium mb-2">Recent Improvements</h3>
@@ -236,6 +258,12 @@ export const BusinessHealthScore: React.FC = () => {
               <CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />
               <span>Finance health improved to 78%</span>
             </div>
+            {emailAnalysis.hasProfessionalEmail && (
+              <div className="flex items-center text-sm">
+                <CheckCircle className="h-4 w-4 text-emerald-500 mr-2" />
+                <span>Professional email domain detected (+7 points)</span>
+              </div>
+            )}
           </div>
         </div>
       </CardContent>

@@ -199,7 +199,7 @@ const DualPlatformDemo: React.FC = () => {
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'bg-destructive/10 text-destructive';
-      case 'medium': return 'bg-warning/10 text-yellow-800';
+      case 'medium': return 'bg-warning/10 text-warning/80';
       case 'low': return 'bg-success/10 text-success';
       default: return 'bg-muted text-foreground';
     }
@@ -404,7 +404,7 @@ const DualPlatformDemo: React.FC = () => {
                     </div>
                     <div className="flex space-x-1 h-2">
                       <div 
-                        className="bg-purple-500 rounded-l"
+                        className="bg-secondary rounded-l"
                         style={{ width: `${pattern.slack}%` }}
                       />
                       <div 
@@ -416,7 +416,7 @@ const DualPlatformDemo: React.FC = () => {
                 ))}
                 <div className="flex items-center justify-center space-x-4 mt-4 text-sm">
                   <div className="flex items-center space-x-2">
-                    <div className="w-3 h-3 bg-purple-500 rounded"></div>
+                    <div className="w-3 h-3 bg-secondary rounded"></div>
                     <span>Slack Usage</span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -565,7 +565,7 @@ const DualPlatformDemo: React.FC = () => {
               Connect both Slack and Teams to unlock these powerful insights for your organization
             </p>
             <div className="flex justify-center space-x-4">
-              <Button className="bg-secondary hover:bg-purple-700">
+              <Button className="bg-secondary hover:bg-secondary/90">
                 <MessageSquare className="w-4 h-4 mr-2" />
                 Connect Slack
               </Button>

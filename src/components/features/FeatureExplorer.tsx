@@ -54,14 +54,14 @@ export const FeatureExplorer: React.FC = () => {
           description: 'Overview of key metrics and performance indicators', 
           icon: <BarChart2 className="h-5 w-5" />, 
           path: '/dashboard',
-          color: 'bg-blue-500'
+          color: 'bg-primary'
         },
         { 
           name: 'AI Hub', 
           description: 'AI-powered insights and automation tools', 
           icon: <Zap className="h-5 w-5" />, 
           path: '/ai-dashboard',
-          color: 'bg-purple-500',
+          color: 'bg-secondary',
           new: true
         },
       ]
@@ -74,21 +74,21 @@ export const FeatureExplorer: React.FC = () => {
           description: 'Manage leads, deals and sales processes', 
           icon: <CreditCard className="h-5 w-5" />, 
           path: '/sales',
-          color: 'bg-green-500'
+          color: 'bg-success'
         },
         { 
           name: 'Finance', 
           description: 'Financial reports, invoices and budgets', 
           icon: <CreditCard className="h-5 w-5" />, 
           path: '/finance',
-          color: 'bg-yellow-500'
+          color: 'bg-warning'
         },
         { 
           name: 'Operations', 
           description: 'Workflow management and operational metrics', 
           icon: <BarChart2 className="h-5 w-5" />, 
           path: '/operations',
-          color: 'bg-orange-500'
+          color: 'bg-warning'
         },
       ]
     },
@@ -114,7 +114,7 @@ export const FeatureExplorer: React.FC = () => {
           description: 'Create and manage documents and files', 
           icon: <FileText className="h-5 w-5" />, 
           path: '/documents',
-          color: 'bg-red-500'
+          color: 'bg-destructive'
         },
         { 
           name: 'Team', 
@@ -182,7 +182,7 @@ export const FeatureExplorer: React.FC = () => {
                       <CardTitle className="text-lg">{feature.name}</CardTitle>
                     </div>
                     {feature.new && (
-                      <Badge className="bg-purple-500">New</Badge>
+                      <Badge className="bg-secondary">New</Badge>
                     )}
                   </div>
                   <CardDescription>{feature.description}</CardDescription>

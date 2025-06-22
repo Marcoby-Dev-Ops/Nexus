@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Card } from '@/components/ui/Card';
-import { startAuthentication } from '@simplewebauthn/browser';
+import { handleCompletePasskeySignIn, handlePasskeyError, isPasskeySupported } from '@/lib/utils/passkey';
 
 type AuthMode = 'login' | 'signup' | 'reset';
 
@@ -78,36 +78,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
         setError('Enter email first so we can locate your account');
         return;
       }
+      
+      if (!isPasskeySupported()) {
+        setError('Your browser does not support passkeys');
+        return;
+      }
+      
       setError(null);
       setPasskeyLoading(true);
 
-      // Step 1: Get challenge options (returns options + userId)
-      const { data: options, error: optErr } = await supabase.functions.invoke(
-        'passkey-auth-challenge',
-        { body: { email } },
-      );
-      if (optErr) throw optErr;
-
-      const { userId, ...publicKeyOptions } = options as any;
-
-      // Step 2: Browser prompt
-      const assertionResponse = await startAuthentication({ optionsJSON: publicKeyOptions as any });
-
-      // Step 3: Verify on server
-      const { data: verifyRes, error: verErr } = await supabase.functions.invoke(
-        'passkey-auth-verify',
-        { body: { userId, assertionResponse } },
-      );
-      if (verErr) throw verErr;
-
-      if (verifyRes?.verified) {
-        // TODO: establish Supabase session (to be implemented)
-        onSuccess?.();
-      } else {
-        throw new Error('Passkey verification failed');
-      }
+      // Use centralized passkey sign-in flow
+      await handleCompletePasskeySignIn(email, undefined, onSuccess);
+      
     } catch (err: any) {
-      console.error('[AuthForm] Passkey sign-in failed', err);
+      handlePasskeyError(err, 'authentication');
       setError(err?.message ?? 'Passkey sign-in failed');
     } finally {
       setPasskeyLoading(false);
@@ -133,20 +117,36 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
       {mode !== 'reset' && (
         <div className="mb-6">
           <Button
-            disabled={true}
-            className="w-full h-12 text-base font-semibold bg-muted cursor-not-allowed border-0 rounded-xl shadow-lg mb-4"
+            type="button"
+            onClick={async () => {
+              try {
+                setLoading(true);
+                const { error: oauthErr } = await supabase.auth.signInWithOAuth({
+                  provider: 'azure',
+                  options: {
+                    scopes: 'openid profile email offline_access',
+                    redirectTo: `${window.location.origin}/auth/callback`,
+                  },
+                });
+                if (oauthErr) throw oauthErr;
+              } catch (err) {
+                console.error('[AuthForm] Microsoft sign-in failed', err);
+                setError(err instanceof Error ? err.message : 'Microsoft sign-in failed');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            className="w-full h-12 text-base font-semibold bg-[#2F2F2F] hover:bg-[#444] text-white border-0 rounded-xl shadow-lg mb-4 flex items-center justify-center space-x-4"
           >
-            <div className="flex items-center justify-center space-x-4">
-              <div className="flex items-center justify-center w-5 h-5 bg-card rounded-sm">
-                <svg width="16" height="16" viewBox="0 0 21 21" className="text-muted-foreground">
-                  <rect x="1" y="1" width="9" height="9" fill="currentColor" opacity="0.8"/>
-                  <rect x="12" y="1" width="9" height="9" fill="currentColor" opacity="0.9"/>
-                  <rect x="1" y="12" width="9" height="9" fill="currentColor" opacity="0.7"/>
-                  <rect x="12" y="12" width="9" height="9" fill="currentColor"/>
-                </svg>
-              </div>
-              <span>Microsoft 365 - Coming Soon</span>
+            <div className="flex items-center justify-center w-5 h-5 bg-white rounded-sm">
+              <svg width="16" height="16" viewBox="0 0 21 21" className="text-[#2F2F2F]">
+                <rect x="1" y="1" width="9" height="9" fill="currentColor" opacity="0.9"/>
+                <rect x="12" y="1" width="9" height="9" fill="currentColor" opacity="0.9"/>
+                <rect x="1" y="12" width="9" height="9" fill="currentColor" opacity="0.9"/>
+                <rect x="12" y="12" width="9" height="9" fill="currentColor" opacity="0.9"/>
+              </svg>
             </div>
+            <span>Sign in with Microsoft 365</span>
           </Button>
           
           <div className="relative">
@@ -174,6 +174,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
               required
               disabled={loading}
               className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+              data-testid="email-input"
             />
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,6 +233,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
           isLoading={passkeyLoading}
           disabled={passkeyLoading}
           onClick={handlePasskeySignIn}
+          data-testid="passkey-signin-button"
         >
           Sign in with Passkey
         </Button>

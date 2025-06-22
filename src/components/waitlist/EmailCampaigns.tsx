@@ -20,27 +20,18 @@ import {
   Copy,
   Eye,
   TrendingUp,
-  Calendar,
   Settings,
-  Filter,
   Download,
-  CheckCircle2,
   AlertTriangle,
-  Star,
   Gift,
-  Crown,
   Rocket,
   Heart,
   MessageSquare,
-  Globe,
-  Award as Trophy
+  Award as Trophy,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { Progress } from '@/components/ui/Progress';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
 
 interface EmailCampaign {
   id: string;
@@ -57,6 +48,8 @@ interface EmailCampaign {
   scheduledFor?: Date;
   createdAt: Date;
   template: string;
+  unsubscribeRate: number;
+  growthRate: number;
 }
 
 interface EmailSequence {
@@ -82,18 +75,22 @@ interface EmailMetrics {
 const EmailCampaigns: React.FC = () => {
   const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
   const [sequences, setSequences] = useState<EmailSequence[]>([]);
-  const [metrics, setMetrics] = useState<EmailMetrics>({
+  const [metrics] = useState<EmailMetrics>({
     totalSent: 8429,
     openRate: 68.4,
     clickRate: 12.7,
     conversionRate: 4.2,
     unsubscribeRate: 0.8,
-    growthRate: 15.3
+    growthRate: 15.3,
   });
   
-  const [selectedTab, setSelectedTab] = useState<'campaigns' | 'sequences' | 'templates'>('campaigns');
-  const [showCampaignModal, setShowCampaignModal] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(null);
+  const [selectedTab, setSelectedTab] = useState<
+    'campaigns' | 'sequences' | 'templates'
+  >('campaigns');
+  // const [showCampaignModal, setShowCampaignModal] = useState(false);
+  // const [selectedCampaign, setSelectedCampaign] = useState<EmailCampaign | null>(
+  //   null
+  // );
 
   useEffect(() => {
     // Mock campaign data
@@ -111,7 +108,9 @@ const EmailCampaigns: React.FC = () => {
         subject: '🚀 Welcome to Nexus - Your Journey Begins!',
         previewText: 'Thanks for joining the waitlist! Here\'s what happens next...',
         createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-        template: 'welcome-series'
+        template: 'welcome-series',
+        unsubscribeRate: 0.8,
+        growthRate: 15.3,
       },
       {
         id: '2',
@@ -127,7 +126,9 @@ const EmailCampaigns: React.FC = () => {
         previewText: 'The founder tier closes at 100 members. Secure your spot now...',
         scheduledFor: new Date(Date.now() + 2 * 60 * 60 * 1000),
         createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-        template: 'urgency-milestone'
+        template: 'urgency-milestone',
+        unsubscribeRate: 0.8,
+        growthRate: 15.3,
       },
       {
         id: '3',
@@ -142,7 +143,9 @@ const EmailCampaigns: React.FC = () => {
         subject: '🔥 Exclusive: See Nexus in Action',
         previewText: 'Get an exclusive behind-the-scenes look at what we\'re building...',
         createdAt: new Date(),
-        template: 'product-update'
+        template: 'product-update',
+        unsubscribeRate: 0.8,
+        growthRate: 15.3,
       },
       {
         id: '4',
@@ -157,7 +160,9 @@ const EmailCampaigns: React.FC = () => {
         subject: '🎁 Earn rewards by sharing Nexus',
         previewText: 'Your referral link is ready! Start earning exclusive benefits...',
         createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        template: 'referral-program'
+        template: 'referral-program',
+        unsubscribeRate: 0.8,
+        growthRate: 15.3,
       }
     ];
 
@@ -256,28 +261,40 @@ const EmailCampaigns: React.FC = () => {
     switch (status) {
       case 'active': return 'bg-success/10 text-success';
       case 'draft': return 'bg-muted text-foreground';
-      case 'paused': return 'bg-warning/10 text-yellow-800';
+      case 'paused': return 'bg-warning/10 text-warning/80';
       case 'completed': return 'bg-primary/10 text-primary';
       default: return 'bg-muted text-foreground';
     }
   };
 
   const calculateRate = (numerator: number, denominator: number) => {
-    return denominator > 0 ? ((numerator / denominator) * 100).toFixed(1) : '0.0';
+    if (denominator === 0) return 0;
+    return parseFloat(((numerator / denominator) * 100).toFixed(1));
   };
 
-  const handleCampaignAction = (campaignId: string, action: 'edit' | 'duplicate' | 'pause' | 'resume' | 'delete') => {
+  const handleCampaignAction = (
+    campaignId: string,
+    action: 'edit' | 'duplicate' | 'pause' | 'resume' | 'delete'
+  ) => {
+    console.log(`Action: ${action} on campaign ${campaignId}`);
     const campaign = campaigns.find(c => c.id === campaignId);
     if (!campaign) return;
 
     switch (action) {
       case 'edit':
-        setSelectedCampaign(campaign);
-        setShowCampaignModal(true);
+        // setSelectedCampaign(campaign);
+        // setShowCampaignModal(true);
         break;
       case 'duplicate':
-        const duplicated = { ...campaign, id: Date.now().toString(), name: `${campaign.name} (Copy)`, status: 'draft' as const };
-        setCampaigns(prev => [...prev, duplicated]);
+        const newCampaign: EmailCampaign = {
+          ...campaign,
+          id: Date.now().toString(),
+          name: `${campaign.name} (Copy)`,
+          status: 'draft' as const,
+          unsubscribeRate: 0.8,
+          growthRate: 15.3,
+        };
+        setCampaigns(prev => [...prev, newCampaign]);
         break;
       case 'pause':
         setCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: 'paused' } : c));
@@ -307,7 +324,7 @@ const EmailCampaigns: React.FC = () => {
             <Download className="w-4 h-4 mr-2" />
             Export Report
           </Button>
-          <Button onClick={() => setShowCampaignModal(true)}>
+          <Button onClick={() => { /* setShowCampaignModal(true) */ }}>
             <Mail className="w-4 h-4 mr-2" />
             New Campaign
           </Button>
@@ -471,7 +488,7 @@ const EmailCampaigns: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCampaignAction(campaign.id, 'edit')}
+                          onClick={(e) => { e.stopPropagation(); handleCampaignAction(campaign.id, 'edit'); }}
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -479,7 +496,7 @@ const EmailCampaigns: React.FC = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleCampaignAction(campaign.id, campaign.status === 'active' ? 'pause' : 'resume')}
+                          onClick={(e) => { e.stopPropagation(); handleCampaignAction(campaign.id, campaign.status === 'active' ? 'pause' : 'resume'); }}
                         >
                           {campaign.status === 'active' ? (
                             <Pause className="w-4 h-4" />

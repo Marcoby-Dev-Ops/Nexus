@@ -305,16 +305,14 @@ class UserN8nConfigService {
     }
   }
 
-  // TODO: Database methods (implement when Supabase is configured)
+  // Database methods for Supabase persistence
   
   private async saveToDatabase(config: UserN8nConfig): Promise<void> {
-    // Implementation for saving to Supabase database
-    // This will be used when the n8n_configurations table is created
-    /*
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('n8n_configurations')
       .upsert([
         {
+          id: config.id,
           user_id: config.userId,
           instance_name: config.instanceName,
           base_url: config.baseUrl,
@@ -326,12 +324,11 @@ class UserN8nConfigService {
     if (error) {
       throw error;
     }
-    */
   }
 
   private async getFromDatabase(userId: string): Promise<UserN8nConfig | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('n8n_configurations')
         .select('*')
         .eq('user_id', userId)

@@ -318,7 +318,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 bg-primary/10 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-20 h-20 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
                 {integration.icon}
               </div>
               <h3 className="text-2xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -347,7 +347,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
               </div>
             </div>
 
-            <div className="bg-primary/5 dark:bg-blue-900/20 p-4 rounded-lg">
+            <div className="bg-primary/5 dark:bg-primary/20/20 p-4 rounded-lg">
               <h4 className="font-medium text-foreground dark:text-primary-foreground mb-3 flex items-center">
                 <Zap className="w-4 h-4 mr-2 text-primary" />
                 What you'll get:
@@ -416,14 +416,14 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
               </div>
             </div>
 
-            <div className="bg-warning/5 dark:bg-yellow-900/20 p-4 rounded-lg">
+            <div className="bg-warning/5 dark:bg-warning/20/20 p-4 rounded-lg">
               <div className="flex items-start space-x-4">
                 <AlertTriangle className="w-5 h-5 text-warning mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-yellow-800 dark:text-yellow-200">
+                  <h4 className="font-medium text-warning/80 dark:text-warning">
                     Need Help Getting Access?
                   </h4>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                  <p className="text-sm text-warning/90 dark:text-warning mt-1">
                     Contact your {integration.name} administrator if you don't have the required permissions.
                   </p>
                 </div>
@@ -446,7 +446,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                   </p>
                 </div>
                 
-                <div className="bg-primary/5 dark:bg-blue-900/20 p-6 rounded-lg">
+                <div className="bg-primary/5 dark:bg-primary/20/20 p-6 rounded-lg">
                   <Shield className="w-12 h-12 text-primary mx-auto mb-4" />
                   <h4 className="font-medium text-foreground dark:text-primary-foreground mb-2">
                     Secure OAuth Connection
@@ -585,7 +585,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
               {connectionStatus === 'success' && (
                 <div className="text-center">
                   <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-4" />
-                  <h4 className="font-medium text-success dark:text-green-300 mb-2">
+                  <h4 className="font-medium text-success dark:text-success mb-2">
                     Connection Successful!
                   </h4>
                   <p className="text-sm text-muted-foreground dark:text-muted-foreground">
@@ -619,14 +619,14 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
 
             {/* Common Issues Help */}
             {integration.commonIssues && connectionStatus === 'error' && (
-              <div className="bg-warning/5 dark:bg-yellow-900/20 p-4 rounded-lg">
-                <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-3">
+              <div className="bg-warning/5 dark:bg-warning/20/20 p-4 rounded-lg">
+                <h4 className="font-medium text-warning/80 dark:text-warning mb-3">
                   Common Issues & Solutions:
                 </h4>
                 <div className="space-y-2">
                   {integration.commonIssues.map((item, index) => (
                     <details key={index} className="group">
-                      <summary className="cursor-pointer text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                      <summary className="cursor-pointer text-sm font-medium text-warning/90 dark:text-warning">
                         {item.issue}
                       </summary>
                       <p className="text-sm text-warning dark:text-yellow-400 mt-1 ml-4">
@@ -656,10 +656,10 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
             </div>
 
             <div className="bg-success/5 dark:bg-success/20 p-4 rounded-lg">
-              <h4 className="font-medium text-success dark:text-green-200 mb-2">
+              <h4 className="font-medium text-success dark:text-success mb-2">
                 Next Steps:
               </h4>
-              <ul className="text-sm text-success dark:text-green-300 space-y-1 text-left">
+              <ul className="text-sm text-success dark:text-success space-y-1 text-left">
                 <li>• Data will start syncing within the next few minutes</li>
                 <li>• Check the dashboard for your first insights</li>
                 <li>• Configure automation rules if needed</li>
@@ -717,7 +717,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-primary/10 dark:bg-blue-900/20 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20/20 rounded-lg flex items-center justify-center">
                 {integration.icon}
               </div>
               <div>
@@ -726,7 +726,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                 </h2>
                 <Badge className={`text-xs ${
                   integration.difficulty === 'easy' ? 'bg-success/10 text-success' :
-                  integration.difficulty === 'medium' ? 'bg-warning/10 text-yellow-800' :
+                  integration.difficulty === 'medium' ? 'bg-warning/10 text-warning/80' :
                   'bg-destructive/10 text-destructive'
                 }`}>
                   {integration.difficulty} setup
@@ -785,7 +785,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                 <Button 
                   onClick={handleComplete}
                   disabled={isConnecting}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-success hover:bg-success/90"
                 >
                   {isConnecting ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />

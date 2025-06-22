@@ -121,13 +121,13 @@ const ProcessesTab = () => {
             ].map((process, i) => (
               <div key={i} className="border border-border rounded-md overflow-hidden">
                 <div className={`p-4 flex items-center justify-between ${
-                  process.status === 'Optimal' ? 'bg-green-500/10 border-b border-green-500/20' :
+                  process.status === 'Optimal' ? 'bg-success/10 border-b border-green-500/20' :
                   process.status === 'Warning' ? 'bg-amber-500/10 border-b border-amber-500/20' :
                   'bg-destructive/10 border-b border-destructive/20'
                 }`}>
                   <div className="flex items-center space-x-3">
                     <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                      process.status === 'Optimal' ? 'bg-green-500/20 text-green-500' :
+                      process.status === 'Optimal' ? 'bg-success/20 text-success' :
                       process.status === 'Warning' ? 'bg-amber-500/20 text-amber-500' :
                       'bg-destructive/20 text-destructive'
                     }`}>
@@ -139,7 +139,7 @@ const ProcessesTab = () => {
                       <h3 className="font-medium">{process.name}</h3>
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className={
-                          process.status === 'Optimal' ? 'border-green-500 text-green-500' :
+                          process.status === 'Optimal' ? 'border-green-500 text-success' :
                           process.status === 'Warning' ? 'border-amber-500 text-amber-500' :
                           'border-destructive text-destructive'
                         }>
@@ -271,9 +271,9 @@ const InventoryTab = () => {
               <div key={i} className="flex items-center justify-between p-3 hover:bg-muted rounded-md transition-colors">
                 <div className="flex items-center space-x-3">
                   <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                    movement.type === 'received' ? 'bg-green-500/20 text-green-500' :
+                    movement.type === 'received' ? 'bg-success/20 text-success' :
                     movement.type === 'depleted' ? 'bg-amber-500/20 text-amber-500' :
-                    'bg-blue-500/20 text-blue-500'
+                    'bg-primary/20 text-primary'
                   }`}>
                     {movement.type === 'received' ? '📦' : movement.type === 'depleted' ? '🚚' : '🔄'}
                   </div>
@@ -359,7 +359,7 @@ const ProjectsTab = () => {
             ].map((project, i) => (
               <div key={i} className="border border-border rounded-md overflow-hidden">
                 <div className={`p-4 ${
-                  project.status === 'On Track' ? 'bg-green-500/10 border-b border-green-500/20' :
+                  project.status === 'On Track' ? 'bg-success/10 border-b border-green-500/20' :
                   project.status === 'At Risk' ? 'bg-amber-500/10 border-b border-amber-500/20' :
                   'bg-destructive/10 border-b border-destructive/20'
                 }`}>
@@ -368,7 +368,7 @@ const ProjectsTab = () => {
                       <h3 className="font-medium">{project.name}</h3>
                       <div className="flex items-center space-x-2">
                         <Badge variant="outline" className={
-                          project.status === 'On Track' ? 'border-green-500 text-green-500' :
+                          project.status === 'On Track' ? 'border-green-500 text-success' :
                           project.status === 'At Risk' ? 'border-amber-500 text-amber-500' :
                           'border-destructive text-destructive'
                         }>
@@ -450,7 +450,7 @@ const AnalyticsTab = () => {
                       <div className="flex items-center space-x-2">
                         <p className="text-2xl font-bold">{metric.value}</p>
                         {metric.change && (
-                          <Badge className="bg-green-500">{metric.change}</Badge>
+                          <Badge className="bg-success">{metric.change}</Badge>
                         )}
                         {metric.status && (
                           <span className="text-xs text-muted-foreground">{metric.status}</span>
@@ -481,7 +481,7 @@ const AnalyticsTab = () => {
                       <div className="flex items-center space-x-1">
                         <p className="text-lg font-bold">{metric.value}</p>
                         <div className={`h-2 w-2 rounded-full ${
-                          metric.status === 'good' ? 'bg-green-500' : 'bg-amber-500'
+                          metric.status === 'good' ? 'bg-success' : 'bg-amber-500'
                         }`}></div>
                       </div>
                     </div>
@@ -512,7 +512,7 @@ const AnalyticsTab = () => {
                       <p className="text-xs text-muted-foreground">vs {item.target} target</p>
                     </div>
                     <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                      item.status === 'good' ? 'bg-green-500/20 text-green-500' : 'bg-amber-500/20 text-amber-500'
+                      item.status === 'good' ? 'bg-success/20 text-success' : 'bg-amber-500/20 text-amber-500'
                     }`}>
                       {item.status === 'good' ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
                     </div>

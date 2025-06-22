@@ -5,12 +5,12 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Label } from '@/components/ui/Label';
 import { Badge } from '@/components/ui/Badge';
-import { Progress } from '@/components/ui/Progress';
+// import { Progress } from '@/components/ui/Progress';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { 
@@ -21,21 +21,19 @@ import {
   Shield, 
   CheckCircle2, 
   AlertTriangle,
-  ExternalLink,
   Loader2,
   TrendingUp,
   BarChart3,
   Clock,
-  Target,
   Smile,
   FileText,
   MessageCircle
 } from 'lucide-react';
 
 interface SlackSetupProps {
-  onComplete?: (data: any) => void;
+  onComplete?: (data: unknown) => void;
   onCancel?: () => void;
-  existingConfig?: any;
+  existingConfig?: Record<string, unknown>;
 }
 
 interface SetupStep {
@@ -74,7 +72,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [slackData, setSlackData] = useState<SlackMetrics | null>(null);
-  const [workspaceUrl, setWorkspaceUrl] = useState(existingConfig?.workspaceUrl || '');
+  const [workspaceUrl, setWorkspaceUrl] = useState((existingConfig?.workspaceUrl as string) || '');
   const [includePrivateChannels, setIncludePrivateChannels] = useState(false);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [setupProgress, setSetupProgress] = useState(0);

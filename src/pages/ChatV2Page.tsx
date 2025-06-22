@@ -64,7 +64,7 @@ const ChatV2Page: React.FC = () => {
       {/* Chat Area */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden">
         <div className="w-full max-w-2xl h-full flex flex-col">
-          <StreamingComposer conversationId={activeId} onConversationId={handleConversationCreated} />
+          <StreamingComposer conversationId={activeId} onConversationId={handleConversationCreated} agentId="executive" />
         </div>
       </main>
     </div>

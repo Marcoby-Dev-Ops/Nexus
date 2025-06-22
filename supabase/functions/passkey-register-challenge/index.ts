@@ -79,6 +79,19 @@ serve(async (req) => {
         name: options.user?.name ?? userId,
         displayName: options.user?.displayName ?? friendlyName ?? userId,
       },
+      pubKeyCredParams: options.pubKeyCredParams || [
+        { alg: -7, type: 'public-key' },
+        { alg: -257, type: 'public-key' }
+      ],
+      timeout: options.timeout || 60000,
+      attestation: options.attestation || 'none',
+      authenticatorSelection: options.authenticatorSelection || {
+        userVerification: 'preferred'
+      },
+      rp: options.rp || {
+        name: 'Nexus',
+        id: 'nexus.ai'
+      }
     };
 
     return new Response(JSON.stringify(safeOptions), {

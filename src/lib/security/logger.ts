@@ -4,6 +4,7 @@
  */
 
 import { SECURITY_CHECKS } from '@/lib/constants/security';
+import pino from 'pino';
 
 // Sensitive patterns to filter from logs
 const SENSITIVE_PATTERNS = [
@@ -18,17 +19,40 @@ const SENSITIVE_PATTERNS = [
   /\bkey["\s]*[:=]["\s]*[^"\s,}]+/gi, // Key fields
 ];
 
-class SecureLogger {
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Basic configuration for the logger
+const loggerConfig = {
+  level: isProduction ? 'info' : 'debug',
+  formatters: {
+    level: (label: string) => {
+      return { level: label.toUpperCase() };
+    },
+  },
+  // Redact sensitive information
+  redact: ['err.stack', 'req.headers.authorization', 'req.headers.cookie'],
+};
+
+// The main logger instance
+const pinoLogger = pino(loggerConfig);
+
+/**
+ * A secure logger class that wraps pino.
+ * It provides methods for different log levels and ensures consistent logging structure.
+ */
+export class SecureLogger {
+  private component: string;
   private static instance: SecureLogger;
   private isProduction: boolean;
 
-  private constructor() {
+  constructor(component: string) {
+    this.component = component;
     this.isProduction = process.env.NODE_ENV === 'production';
   }
 
   public static getInstance(): SecureLogger {
     if (!SecureLogger.instance) {
-      SecureLogger.instance = new SecureLogger();
+      SecureLogger.instance = new SecureLogger('main');
     }
     return SecureLogger.instance;
   }
@@ -134,10 +158,68 @@ class SecureLogger {
     // Always log security events, even in production
     console.warn('🔒 SECURITY:', logEntry);
 
-    // In production, you might want to send this to a security monitoring service
+    // In production, send to structured log pipeline
     if (this.isProduction) {
-      // TODO: Send to security monitoring service
-      // securityMonitoringService.log(logEntry);
+      this.sendToLogPipeline(logEntry);
+    }
+  }
+
+  /**
+   * Send structured logs to monitoring pipeline
+   * Supports Vector, OpenTelemetry Collector, or direct SIEM integration
+   */
+  private sendToLogPipeline(logEntry: any): void {
+    // Try Vector/OpenTelemetry HTTP endpoint first
+    const vectorEndpoint = process.env.VECTOR_HTTP_ENDPOINT || process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
+    if (vectorEndpoint) {
+      try {
+        void fetch(`${vectorEndpoint}/logs`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'User-Agent': 'nexus-security-logger/1.0'
+          },
+          body: JSON.stringify({
+            ...logEntry,
+            service: 'nexus-web',
+            environment: process.env.NODE_ENV || 'production',
+            version: process.env.npm_package_version || '1.0.0'
+          }),
+        });
+      } catch {
+        /* silent - fallback to webhook */
+      }
+    }
+
+    // Fallback to security webhook
+    const webhook = process.env.SECURITY_WEBHOOK_URL;
+    if (webhook && typeof fetch === 'function') {
+      try {
+        void fetch(webhook, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(logEntry),
+        });
+      } catch {
+        /* silent */
+      }
+    }
+
+    // Fallback to Supabase edge function for security events
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl) {
+      try {
+        void fetch(`${supabaseUrl}/functions/v1/security_log`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ''}`
+          },
+          body: JSON.stringify(logEntry),
+        });
+      } catch {
+        /* silent */
+      }
     }
   }
 }

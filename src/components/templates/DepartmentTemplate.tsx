@@ -1,8 +1,15 @@
-import React, { ReactNode } from 'react';
-import { ChevronRight, Search, Bell, Filter } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
-import { Button } from '../ui/Button';
+import React, { type ReactNode } from 'react';
+import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
+import { Button } from '../ui/Button';
+import { 
+  Users, 
+  TrendingUp, 
+  Clock, 
+  CheckCircle,
+  AlertTriangle,
+  ArrowRight
+} from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 

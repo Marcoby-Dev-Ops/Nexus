@@ -54,7 +54,7 @@ const SalesPerformancePage: React.FC = () => {
       change: '+12.3%',
       trend: 'up',
       icon: <DollarSign className="h-4 w-4" />,
-      color: 'text-green-500'
+      color: 'text-success'
     },
     {
       id: 'deals',
@@ -63,7 +63,7 @@ const SalesPerformancePage: React.FC = () => {
       change: '+4',
       trend: 'up',
       icon: <CheckCircle2 className="h-4 w-4" />,
-      color: 'text-blue-500'
+      color: 'text-primary'
     },
     {
       id: 'conversion',
@@ -72,7 +72,7 @@ const SalesPerformancePage: React.FC = () => {
       change: '+2.1%',
       trend: 'up',
       icon: <Percent className="h-4 w-4" />,
-      color: 'text-purple-500'
+      color: 'text-secondary'
     },
     {
       id: 'leads',
@@ -90,8 +90,8 @@ const SalesPerformancePage: React.FC = () => {
     { id: 'lead', name: 'Lead', count: 76, value: 541200, color: 'bg-blue-200' },
     { id: 'qualified', name: 'Qualified', count: 42, value: 312600, color: 'bg-blue-300' },
     { id: 'proposal', name: 'Proposal', count: 24, value: 189300, color: 'bg-blue-400' },
-    { id: 'negotiation', name: 'Negotiation', count: 15, value: 126800, color: 'bg-blue-500' },
-    { id: 'closed', name: 'Closed Won', count: 9, value: 87400, color: 'bg-green-500' }
+    { id: 'negotiation', name: 'Negotiation', count: 15, value: 126800, color: 'bg-primary' },
+    { id: 'closed', name: 'Closed Won', count: 9, value: 87400, color: 'bg-success' }
   ];
 
   // Sales Team Performance
@@ -288,14 +288,14 @@ const SalesPerformancePage: React.FC = () => {
                   <div className="text-2xl font-bold">{metric.value}</div>
                   <div className="flex items-center pt-1">
                     {metric.trend === 'up' ? (
-                      <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-red-500' : 'text-green-500'}`} />
+                      <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-destructive' : 'text-success'}`} />
                     ) : (
-                      <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-green-500' : 'text-red-500'}`} />
+                      <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-success' : 'text-destructive'}`} />
                     )}
                     <p className={`text-sm ${
                       (metric.trend === 'up' && metric.id !== 'leads') || (metric.trend === 'down' && metric.id === 'leads')
-                        ? 'text-green-500'
-                        : 'text-red-500'
+                        ? 'text-success'
+                        : 'text-destructive'
                     }`}>
                       {metric.change} from previous {activeTimeframe}
                     </p>
@@ -364,7 +364,7 @@ const SalesPerformancePage: React.FC = () => {
                     </div>
                     <Progress 
                       value={member.progress} 
-                      className={`h-2 ${member.progress >= 100 ? 'bg-green-500' : 'bg-blue-500'}`} 
+                      className={`h-2 ${member.progress >= 100 ? 'bg-success' : 'bg-primary'}`} 
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
                       <div>{member.deals} deals closed</div>
@@ -404,8 +404,8 @@ const SalesPerformancePage: React.FC = () => {
                         </div>
                       </div>
                       <Badge className={`${
-                        opp.probability >= 70 ? 'bg-green-500' : 
-                        opp.probability >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                        opp.probability >= 70 ? 'bg-success' : 
+                        opp.probability >= 50 ? 'bg-amber-500' : 'bg-destructive'
                       }`}>
                         {opp.probability}% Probability
                       </Badge>
@@ -507,12 +507,12 @@ const SalesPerformancePage: React.FC = () => {
                           <div className="font-medium">{formatCurrency(deal.value)}</div>
                           <div className="text-xs">
                             {deal.status === 'won' ? (
-                              <span className="text-green-500 flex items-center">
+                              <span className="text-success flex items-center">
                                 <CheckCircle2 className="h-3 w-3 mr-1" />
                                 Won
                               </span>
                             ) : deal.status === 'lost' ? (
-                              <span className="text-red-500 flex items-center">
+                              <span className="text-destructive flex items-center">
                                 <AlertTriangle className="h-3 w-3 mr-1" />
                                 Lost
                               </span>

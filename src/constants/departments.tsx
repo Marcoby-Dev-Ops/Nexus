@@ -20,12 +20,12 @@ export interface DepartmentMeta {
   id: DepartmentId;
   label: string;
   description: string;
-  icon: React.ReactElement;
+  icon: React.ReactElement<React.SVGProps<SVGSVGElement>>;
   analyticsRoute: string;
   healthRoute: string;
 }
 
-const ICON_MAP: Record<DepartmentId, React.ReactElement> = {
+const ICON_MAP: Record<DepartmentId, React.ReactElement<React.SVGProps<SVGSVGElement>>> = {
   sales: <DollarSign className="w-5 h-5" />,
   finance: <BarChart className="w-5 h-5" />,
   support: <LifeBuoy className="w-5 h-5" />,

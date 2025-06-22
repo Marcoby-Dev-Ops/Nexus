@@ -426,7 +426,7 @@ export const AdvancedAICapabilitiesDemo: React.FC = () => {
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'transformative': return 'bg-purple-500';
+      case 'transformative': return 'bg-secondary';
       case 'high': return 'bg-destructive';
       case 'medium': return 'bg-warning';
       case 'low': return 'bg-success';

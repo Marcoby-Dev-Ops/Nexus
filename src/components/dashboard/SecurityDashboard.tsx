@@ -176,7 +176,7 @@ export const SecurityDashboard: React.FC = () => {
       login: <CheckCircle className="h-4 w-4 text-success" />,
       logout: <XCircle className="h-4 w-4 text-muted-foreground" />,
       failed_login: <XCircle className="h-4 w-4 text-destructive" />,
-      suspicious_activity: <AlertTriangle className="h-4 w-4 text-orange-500" />,
+      suspicious_activity: <AlertTriangle className="h-4 w-4 text-warning" />,
       data_access: <Eye className="h-4 w-4 text-primary" />,
       integration_added: <Settings className="h-4 w-4 text-success" />,
       integration_removed: <Settings className="h-4 w-4 text-destructive" />,
@@ -193,12 +193,12 @@ export const SecurityDashboard: React.FC = () => {
       login: 'bg-success/10 text-success',
       logout: 'bg-muted text-foreground',
       failed_login: 'bg-destructive/10 text-destructive',
-      suspicious_activity: 'bg-orange-100 text-orange-800',
+      suspicious_activity: 'bg-warning/10 text-orange-800',
       data_access: 'bg-primary/10 text-primary',
       integration_added: 'bg-success/10 text-success',
       integration_removed: 'bg-destructive/10 text-destructive',
       data_modification: 'bg-secondary/10 text-purple-800',
-      permission_change: 'bg-warning/10 text-yellow-800',
+      permission_change: 'bg-warning/10 text-warning/80',
       data_export: 'bg-indigo-100 text-indigo-800',
     };
 
@@ -309,7 +309,7 @@ export const SecurityDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Suspicious Activity</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <AlertTriangle className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-warning">{metrics.suspiciousActivity}</div>

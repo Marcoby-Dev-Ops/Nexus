@@ -5,9 +5,33 @@ export interface Company {
   industry?: string | null;
   size?: string | null;
   logo_url?: string | null;
-  settings?: any | null;
+  settings?: CompanySettings | null;
   created_at?: string | null;
   updated_at?: string | null;
+}
+
+export interface CompanySettings {
+  theme?: 'light' | 'dark' | 'system';
+  branding?: {
+    primary_color?: string;
+    logo_url?: string;
+    custom_css?: string;
+  };
+  integrations?: {
+    enabled_categories?: string[];
+    auto_sync?: boolean;
+  };
+  notifications?: {
+    email_enabled?: boolean;
+    slack_enabled?: boolean;
+    frequency?: 'real-time' | 'daily' | 'weekly';
+  };
+  security?: {
+    enforce_2fa?: boolean;
+    session_timeout?: number;
+    allowed_domains?: string[];
+  };
+  [key: string]: any; // For extensibility
 }
 
 export interface UserProfile {
@@ -139,7 +163,9 @@ export interface UserContextState {
 export interface UserContextActions {
   updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
   updateCompany: (updates: Partial<Company>) => Promise<void>;
-  addIntegration: (integration: Omit<UserIntegration, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addIntegration: (
+    integration: Omit<UserIntegration, 'id' | 'user_id' | 'created_at' | 'updated_at'>,
+  ) => Promise<void>;
   updateIntegration: (id: string, updates: Partial<UserIntegration>) => Promise<void>;
   removeIntegration: (id: string) => Promise<void>;
   refreshUserData: () => Promise<void>;

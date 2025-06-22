@@ -14,24 +14,23 @@ export function useOperationsMetrics() {
   return useQuery<DepartmentState>({
     queryKey: ['dept-metrics', departmentId],
     queryFn: async () => {
-      // TODO: Replace `department_metrics_view` with the actual view name once in DB.
       const { data, error } = await (supabase as any)
         .from('department_metrics_view')
         .select('*')
         .eq('department', departmentId)
         .maybeSingle();
 
-      // If the view doesn't exist yet or returns no rows, gracefully fall back
       if (error) {
-        console.warn('[useOperationsMetrics] Falling back to default state:', error.message);
+        console.warn('[useOperationsMetrics] error fetching view', error.message);
       }
 
-      if (!data || error) {
-        const { defaultState } = await import('../config');
-        return defaultState;
+      if (data && data.state) {
+        return data.state as DepartmentState;
       }
 
-      return data as DepartmentState;
+      // fallback to default
+      const { defaultState } = await import('../config');
+      return defaultState;
     },
     staleTime: 60_000, // 1 minute
   });

@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getSecret } from '../_shared/getSecret.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,19 +13,19 @@ interface StripeConfig {
   webhookSecret: string;
 }
 
-const getStripeConfig = (): StripeConfig => {
-  const secretKey = Deno.env.get('STRIPE_SECRET_KEY');
-  const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-  
+const getStripeConfig = async (): Promise<StripeConfig> => {
+  const secretKey = await getSecret('STRIPE_SECRET_KEY');
+  const webhookSecret = await getSecret('STRIPE_WEBHOOK_SECRET');
+
   if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY environment variable is required');
+    throw new Error('STRIPE_SECRET_KEY secret not found in Vault');
   }
-  
+
   return { secretKey, webhookSecret: webhookSecret || '' };
 };
 
 const callStripeAPI = async (endpoint: string, options: RequestInit = {}) => {
-  const config = getStripeConfig();
+  const config = await getStripeConfig();
   
   const response = await fetch(`https://api.stripe.com/v1/${endpoint}`, {
     ...options,
@@ -201,16 +202,19 @@ const handleWebhook = async (request: Request) => {
     throw new Error('Missing stripe-signature header');
   }
 
+  // Get webhook secret and verify signature
+  const config = await getStripeConfig();
+  if (!config.webhookSecret) {
+    return new Response('Stripe webhook secret is not configured.', { status: 500 });
+  }
+  const event = await verifyWebhookSignature(body, signature, config.webhookSecret);
+
+  console.log(`Processing webhook event: ${event.type} - ${event.id}`);
+
   // Initialize Supabase client
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-  // Get webhook secret and verify signature
-  const config = getStripeConfig();
-  const event = await verifyWebhookSignature(body, signature, config.webhookSecret);
-
-  console.log(`Processing webhook event: ${event.type} - ${event.id}`);
 
   switch (event.type) {
     case 'checkout.session.completed': {

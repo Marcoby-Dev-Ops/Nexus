@@ -15,7 +15,7 @@ import {
   Clock,
   Database
 } from 'lucide-react';
-import { LoadingStates } from '@/components/patterns/LoadingStates';
+import { ButtonSpinner } from '@/components/patterns/LoadingStates';
 
 interface IntegrationSetupModalProps {
   integration: {
@@ -29,7 +29,7 @@ interface IntegrationSetupModalProps {
   };
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (data: any) => void;
+  onComplete: (data: Record<string, unknown>) => void;
 }
 
 interface SetupStep {
@@ -50,7 +50,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
   onComplete
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [setupData, setSetupData] = useState<any>({});
+  const [setupData, setSetupData] = useState<Record<string, unknown>>({});
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Setup steps based on integration type
@@ -156,7 +156,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
                 {integration.icon}
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -198,7 +198,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -209,12 +209,12 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
               </p>
             </div>
 
-            <div className="bg-primary/5 dark:bg-blue-900/20 border border-border dark:border-blue-800 rounded-lg p-4">
+            <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
               <div className="flex items-start space-x-4">
                 <AlertCircle className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-medium text-blue-900 dark:text-blue-100">Secure Connection</h4>
-                  <p className="text-sm text-primary dark:text-blue-200 mt-1">
+                  <p className="text-sm text-primary dark:text-primary mt-1">
                     Nexus uses industry-standard OAuth 2.0 authentication. We never store your {integration.name} password.
                   </p>
                 </div>
@@ -280,12 +280,12 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 </div>
               )}
 
-              <div className="bg-warning/5 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <div className="bg-warning/5 dark:bg-warning/20/20 border border-warning/20 dark:border-warning/80 rounded-lg p-4">
                 <div className="flex items-start space-x-4">
                   <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-medium text-yellow-900 dark:text-yellow-100">How to find your API key</h4>
-                    <p className="text-sm text-yellow-700 dark:text-yellow-200 mt-1">
+                    <p className="text-sm text-warning/90 dark:text-warning mt-1">
                       Go to your {integration.name} account settings → API section → Generate new API key
                     </p>
                   </div>
@@ -299,7 +299,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-secondary/10 dark:bg-purple-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-secondary/10 dark:bg-secondary/20/20 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-secondary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -330,8 +330,8 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
               ))}
             </div>
 
-            <div className="bg-primary/5 dark:bg-blue-900/20 border border-border dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-primary dark:text-blue-200">
+            <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
+              <p className="text-sm text-primary dark:text-primary">
                 You can change these permissions later in the integration settings.
               </p>
             </div>
@@ -354,7 +354,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
             </div>
 
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-success/20 dark:border-success/80 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <Check className="w-5 h-5 text-success" />
                   <span className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -363,7 +363,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-success/20 dark:border-success/80 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <Check className="w-5 h-5 text-success" />
                   <span className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -372,7 +372,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-green-200 dark:border-green-800 rounded-lg">
+              <div className="flex items-center justify-between p-4 bg-success/5 dark:bg-success/20 border border-success/20 dark:border-success/80 rounded-lg">
                 <div className="flex items-center space-x-4">
                   <Check className="w-5 h-5 text-success" />
                   <span className="text-sm font-medium text-green-900 dark:text-green-100">
@@ -382,8 +382,8 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
               </div>
             </div>
 
-            <div className="bg-primary/5 dark:bg-blue-900/20 border border-border dark:border-blue-800 rounded-lg p-4">
-              <p className="text-sm text-primary dark:text-blue-200">
+            <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
+              <p className="text-sm text-primary dark:text-primary">
                 🎉 Great! Your {integration.name} integration is ready. Data will start appearing in your dashboard within a few minutes.
               </p>
             </div>
@@ -398,7 +398,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
   if (!isOpen) return null;
 
   return (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[80] p-4">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-critical p-4">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -407,7 +407,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
               <Badge variant="outline">{integration.category}</Badge>
               <Badge className={
                 integration.difficulty === 'easy' ? 'bg-success/10 text-success' :
-                integration.difficulty === 'medium' ? 'bg-warning/10 text-yellow-800' :
+                integration.difficulty === 'medium' ? 'bg-warning/10 text-warning/80' :
                 'bg-destructive/10 text-destructive'
               }>
                 {integration.difficulty}
@@ -455,27 +455,24 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
           </div>
 
           {/* Navigation */}
-          <div className="flex justify-between pt-6 border-t">
-            <Button 
-              variant="outline" 
+          <div className="mt-8 flex justify-between items-center">
+            <Button
+              variant="ghost"
               onClick={handlePrevious}
-              disabled={currentStep === 0}
+              disabled={currentStep === 0 || isConnecting}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
             </Button>
 
             {currentStep === steps.length - 1 ? (
-              <Button 
+              <Button
                 onClick={handleComplete}
                 disabled={isConnecting}
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-success hover:bg-success/90"
               >
                 {isConnecting ? (
-                  <>
-                    <LoadingStates.ButtonSpinner />
-                    Connecting...
-                  </>
+                  <ButtonSpinner />
                 ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
@@ -484,7 +481,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 )}
               </Button>
             ) : (
-              <Button onClick={handleNext}>
+              <Button onClick={handleNext} disabled={isConnecting}>
                 Next
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

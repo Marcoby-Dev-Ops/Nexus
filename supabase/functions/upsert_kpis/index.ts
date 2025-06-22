@@ -22,16 +22,17 @@ function getSupabaseAdmin(): SupabaseClient {
 }
 
 serve(async (req) => {
+  const origin = req.headers.get('Origin');
   // CORS pre-flight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders(origin) });
   }
 
   try {
     const authHeader = req.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Missing Bearer token' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         status: 401,
       });
     }
@@ -40,7 +41,7 @@ serve(async (req) => {
     const orgId = claims.org_id as string | undefined;
     if (!orgId) {
       return new Response(JSON.stringify({ error: 'org_id claim missing' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         status: 400,
       });
     }
@@ -48,7 +49,7 @@ serve(async (req) => {
     const { snapshots } = (await req.json()) as RequestBody;
     if (!Array.isArray(snapshots) || snapshots.length === 0) {
       return new Response(JSON.stringify({ error: 'snapshots array required' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         status: 400,
       });
     }
@@ -68,13 +69,13 @@ serve(async (req) => {
     if (error) throw error;
 
     return new Response(JSON.stringify({ success: true, inserted: rows.length }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
       status: 200,
     });
   } catch (err: any) {
     console.error('[upsert_kpis] error', err);
     return new Response(JSON.stringify({ error: err.message ?? 'Unknown error' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
       status: 500,
     });
   }

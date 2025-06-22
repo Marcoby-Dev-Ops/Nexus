@@ -90,4 +90,40 @@ export interface ModuleConfig {
   enabled: boolean;
   dependencies?: string[];
   permissions: UserPermissions;
-} 
+}
+
+/**
+ * Centralized Type Exports for Nexus
+ * Pillar: 2 - Minimum Lovable Feature Set
+ * 
+ * This file centralizes all type exports for better import organization
+ */
+
+// Core database types
+export type { Database } from '../database.types';
+
+// Enhanced database types with improved type safety
+export * from './database-enhanced';
+
+// User and company types  
+export type { 
+  Company, 
+  CompanySettings, 
+  UserProfile, 
+  EnhancedUser, 
+  UserContextState, 
+  UserContextActions, 
+  UserContextType 
+} from './userProfile';
+
+// Domain-specific types (avoiding conflicts)
+export type { 
+  ThoughtCategory, 
+  ThoughtStatus, 
+  ThoughtRelationship
+} from './thoughts';
+export * from './billing';
+export * from './integrations';
+
+// Legacy compatibility  
+export * from './database-fixes'; 

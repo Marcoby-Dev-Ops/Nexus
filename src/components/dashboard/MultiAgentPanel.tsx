@@ -56,7 +56,7 @@ const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = tru
 
   return (
     <aside
-      className={`fixed right-0 top-0 h-full w-full max-w-lg bg-background shadow-2xl z-[70] flex flex-col transition-transform duration-300 ${
+      className={`fixed right-0 top-0 h-full w-full max-w-lg bg-background shadow-2xl z-drawer flex flex-col transition-transform duration-300 ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}
       role="dialog"

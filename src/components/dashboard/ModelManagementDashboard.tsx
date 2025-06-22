@@ -269,11 +269,11 @@ export const ModelManagementDashboard: React.FC = () => {
                   className="p-3 border rounded-lg flex items-start space-x-2"
                 >
                   {suggestion.includes('budget') ? (
-                    <DollarSign className="w-4 h-4 mt-1 text-yellow-500" />
+                    <DollarSign className="w-4 h-4 mt-1 text-warning" />
                   ) : suggestion.includes('error') ? (
-                    <AlertCircle className="w-4 h-4 mt-1 text-red-500" />
+                    <AlertCircle className="w-4 h-4 mt-1 text-destructive" />
                   ) : (
-                    <TrendingUp className="w-4 h-4 mt-1 text-green-500" />
+                    <TrendingUp className="w-4 h-4 mt-1 text-success" />
                   )}
                   <p className="text-sm">{suggestion}</p>
                 </div>

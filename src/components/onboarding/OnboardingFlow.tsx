@@ -14,7 +14,7 @@ import { BusinessSnapshotStep } from './BusinessSnapshotStep';
 import { n8nOnboardingManager } from '../../lib/n8nOnboardingManager';
 import type { OnboardingState, OnboardingStep } from '../../lib/n8nOnboardingManager';
 import type { UserN8nConfig } from '../../lib/userN8nConfig';
-import { LoadingStates } from '../patterns/LoadingStates';
+import { SetupLoader } from '../patterns/LoadingStates';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -97,8 +97,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   if (isLoading || !onboardingState) {
     return (
       <div className="h-full flex items-center justify-center">
-        <LoadingStates.SetupLoader 
-          title="Setting up your onboarding..." 
+        <SetupLoader
+          title="Setting up your onboarding..."
           subtitle="Preparing your personalized experience"
         />
       </div>
@@ -326,11 +326,11 @@ const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
         </p>
 
         {/* Setup Promise - Focused on onboarding */}
-        <div className="mb-6 p-4 bg-primary/5 dark:bg-blue-900/20 rounded-lg border border-border dark:border-blue-700/50">
-          <div className="text-primary dark:text-blue-200 font-semibold text-sm lg:text-base mb-2">
+        <div className="mb-6 p-4 bg-primary/5 dark:bg-primary/20/20 rounded-lg border border-border dark:border-primary/70/50">
+          <div className="text-primary dark:text-primary font-semibold text-sm lg:text-base mb-2">
             🚀 Quick Setup Process (5 minutes)
           </div>
-          <div className="text-primary dark:text-blue-300 text-xs space-y-1">
+          <div className="text-primary dark:text-primary text-xs space-y-1">
             <div>✅ Tell us about your role and goals</div>
             <div>✅ Configure your business context</div>
             <div>✅ Define success metrics</div>

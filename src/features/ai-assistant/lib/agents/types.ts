@@ -15,4 +15,5 @@ export interface AgentResponse {
   confidence: number;       // 0-1
   clarificationNeeded?: boolean;
   reasoning?: string;
+  routeToAgentId?: string; // suggested specialist to route conversation
 } 
