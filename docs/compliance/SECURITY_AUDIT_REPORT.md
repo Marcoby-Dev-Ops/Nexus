@@ -27,12 +27,9 @@
 **Impact**: IMMEDIATE BUSINESS RISK
 
 **Exposed Credentials**:
-- # **REDACTED CREDENTIALS (removed for publication)**
-- # - Stripe Live Secret Key: `REDACTED`
-- # - HubSpot Private Token: `REDACTED`
-- # - GitHub Personal Access Token: `REDACTED`
-- # - Coolify Access Token: `REDACTED`
-- # - Supabase API Key: `REDACTED`
+- Multiple production API keys and tokens were found exposed in configuration files
+- All sensitive credentials have been identified and flagged for rotation
+- Details removed for security reasons
 
 **IMMEDIATE ACTIONS REQUIRED**:
 1. ⚠️ **ROTATE ALL EXPOSED KEYS IMMEDIATELY**
@@ -177,13 +174,9 @@
 
 **THE EXPOSED API KEYS REPRESENT AN IMMEDIATE SECURITY THREAT**
 
-These credentials must be rotated immediately:
-- Stripe key can access payment data and process transactions
-- GitHub token can access private repositories
-- HubSpot token can access customer data
-- Coolify token can access deployment infrastructure
+Exposed production credentials must be rotated immediately to prevent unauthorized access to critical systems and data.
 
-**Failure to rotate these keys immediately could result in**:
+**Failure to rotate exposed keys immediately could result in**:
 - Financial fraud
 - Data breaches
 - Unauthorized system access
