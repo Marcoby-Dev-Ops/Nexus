@@ -5,7 +5,7 @@ export { Input } from './Input';
 export { Label } from './Label';
 export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './Select';
 export { Separator } from './Separator';
-export { Alert } from './Alert';
+export { Alert, AlertDescription } from './Alert';
 export { Badge } from './Badge';
 export { Textarea } from './Textarea';
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';

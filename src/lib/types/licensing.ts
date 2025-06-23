@@ -17,6 +17,7 @@ export interface ChatQuotas {
   // Message limits
   max_messages_per_day: number;
   max_messages_per_hour: number;
+  max_messages_per_month: number;
   max_conversation_length: number;
   max_concurrent_conversations: number;
   
@@ -64,6 +65,7 @@ export const LICENSE_TIERS: Record<string, LicenseTier> = {
     quotas: {
       max_messages_per_day: 20,
       max_messages_per_hour: 10,
+      max_messages_per_month: 600,
       max_conversation_length: 50,
       max_concurrent_conversations: 3,
       max_file_uploads_per_day: 0,
@@ -79,26 +81,28 @@ export const LICENSE_TIERS: Record<string, LicenseTier> = {
   pro: {
     name: 'Pro',
     quotas: {
-      max_messages_per_day: 500,
-      max_messages_per_hour: 100,
+      max_messages_per_day: 250,
+      max_messages_per_hour: 50,
+      max_messages_per_month: 7500,
       max_conversation_length: 200,
       max_concurrent_conversations: 10,
       max_file_uploads_per_day: 20,
       max_file_size_mb: 10,
       streaming_enabled: true,
       advanced_agents_enabled: true,
-      max_ai_requests_per_hour: 100,
+      max_ai_requests_per_hour: 75,
       max_context_tokens: 4000,
       priority_queue: false,
     },
     price_per_month: 29,
-    features: ['All agents', 'File uploads', 'Streaming responses', 'Priority support'],
+    features: ['All agents', 'File uploads', 'Streaming responses', 'Priority support', 'Overage billing available'],
   },
   enterprise: {
     name: 'Enterprise',
     quotas: {
       max_messages_per_day: 2000,
       max_messages_per_hour: 500,
+      max_messages_per_month: 60000,
       max_conversation_length: 1000,
       max_concurrent_conversations: 50,
       max_file_uploads_per_day: 100,
@@ -110,7 +114,7 @@ export const LICENSE_TIERS: Record<string, LicenseTier> = {
       priority_queue: true,
     },
     price_per_month: 99,
-    features: ['Unlimited agents', 'Large files', 'Priority queue', 'Custom integrations', 'Dedicated support'],
+    features: ['Unlimited agents', 'Large files', 'Priority queue', 'Custom integrations', 'Dedicated support', 'Team pooled quotas'],
   },
 };
 

@@ -39,9 +39,11 @@ import {
   Clock,
   Briefcase,
   Home,
-  Coffee
+  Coffee,
+  Brain
 } from 'lucide-react';
 import type { UserProfile } from '@/lib/types/userProfile';
+import { UserKnowledgeViewer } from '@/components/ai/UserKnowledgeViewer';
 
 export const Profile: React.FC = () => {
   const { user, updateProfile, loading } = useAuth();
@@ -332,11 +334,15 @@ export const Profile: React.FC = () => {
         {/* Main Content */}
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="professional">Professional</TabsTrigger>
               <TabsTrigger value="preferences">Preferences</TabsTrigger>
+              <TabsTrigger value="knowledge">
+                <Brain className="h-4 w-4 mr-2" />
+                Knowledge
+              </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -663,6 +669,11 @@ export const Profile: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Knowledge Tab */}
+            <TabsContent value="knowledge" className="space-y-6">
+              <UserKnowledgeViewer />
             </TabsContent>
           </Tabs>
         </div>

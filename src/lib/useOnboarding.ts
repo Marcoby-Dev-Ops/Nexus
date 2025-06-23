@@ -5,8 +5,30 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { safeGetLocalStorage, safeSetLocalStorage } from './storageUtils';
-import type { OnboardingState } from './n8nOnboardingManager';
-import type { UserN8nConfig } from './userN8nConfig';
+
+export interface OnboardingState {
+  step: number;
+  completed: boolean;
+}
+
+export interface UserN8nConfig {
+  enabled: boolean;
+  baseUrl?: string;
+  apiKey?: string;
+}
+
+// Mock n8n services for now
+const mockUserN8nConfigService = {
+  isEnabled: () => false,
+  getCurrentUserConfig: async () => null,
+  clearCache: () => {},
+  enableN8nIntegration: () => {},
+  disableN8nIntegration: () => {}
+};
+
+const mockN8nOnboardingManager = {
+  needsOnboarding: async () => false
+};
 
 export interface UseOnboardingReturn {
   // State
@@ -95,8 +117,8 @@ export function useN8nConfigStatus() {
     const loadConfig = async () => {
       try {
         // Only load config if n8n integration is enabled
-        if (userN8nConfigService.isEnabled()) {
-          const userConfig = await userN8nConfigService.getCurrentUserConfig();
+        if (mockUserN8nConfigService.isEnabled()) {
+          const userConfig = await mockUserN8nConfigService.getCurrentUserConfig();
           setConfig(userConfig);
         } else {
           setConfig(null);
@@ -114,10 +136,10 @@ export function useN8nConfigStatus() {
   const refreshConfig = useCallback(async () => {
     setIsLoading(true);
     try {
-      userN8nConfigService.clearCache();
+      mockUserN8nConfigService.clearCache();
       // Only load config if n8n integration is enabled
-      if (userN8nConfigService.isEnabled()) {
-        const userConfig = await userN8nConfigService.getCurrentUserConfig();
+      if (mockUserN8nConfigService.isEnabled()) {
+        const userConfig = await mockUserN8nConfigService.getCurrentUserConfig();
         setConfig(userConfig);
       } else {
         setConfig(null);
@@ -130,19 +152,19 @@ export function useN8nConfigStatus() {
   }, []);
 
   const enableN8nIntegration = useCallback(async () => {
-    userN8nConfigService.enableN8nIntegration();
+    mockUserN8nConfigService.enableN8nIntegration();
     await refreshConfig();
   }, [refreshConfig]);
 
   const disableN8nIntegration = useCallback(() => {
-    userN8nConfigService.disableN8nIntegration();
+    mockUserN8nConfigService.disableN8nIntegration();
     setConfig(null);
   }, []);
 
   return {
     config,
     isConfigured: config !== null,
-    isN8nEnabled: userN8nConfigService.isEnabled(),
+    isN8nEnabled: mockUserN8nConfigService.isEnabled(),
     isLoading,
     refreshConfig,
     enableN8nIntegration,
@@ -160,7 +182,7 @@ export function useShowOnboarding(): { shouldShow: boolean; isLoading: boolean }
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const needs = await n8nOnboardingManager.needsOnboarding();
+        const needs = await mockN8nOnboardingManager.needsOnboarding();
         setShouldShow(needs);
       } catch (error) {
         console.error('Failed to check onboarding status:', error);

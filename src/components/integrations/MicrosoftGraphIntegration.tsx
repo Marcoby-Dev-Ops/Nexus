@@ -44,29 +44,10 @@ const MicrosoftGraphIntegration: React.FC<MicrosoftGraphIntegrationProps> = ({
     if (!user) return;
     
     try {
-      // Check if user has Microsoft Graph integration connected
-      const { data: office365Integration } = await supabase
-        .from('integrations')
-        .select('id')
-        .eq('slug', 'office-365')
-        .single();
-
-      if (office365Integration) {
-        const { data: userIntegration } = await supabase
-          .from('user_integrations')
-          .select('status, config')
-          .eq('user_id', user.id)
-          .eq('integration_id', office365Integration.id)
-          .eq('name', 'Microsoft 365 Graph')
-          .single();
-
-        const isConnected = userIntegration?.status === 'active' && 
-                           userIntegration?.config?.graph_enabled === true;
-        
-        setConnectionStatus(isConnected ? 'connected' : 'disconnected');
-      } else {
-        setConnectionStatus('disconnected');
-      }
+      // Use the new Microsoft 365 service to check connection
+      const { microsoft365Service } = await import('@/lib/services/microsoft365Service');
+      const isConnected = await microsoft365Service.isConnected(user.id);
+      setConnectionStatus(isConnected ? 'connected' : 'disconnected');
     } catch (error) {
       console.error('Error checking Microsoft connection:', error);
       setConnectionStatus('disconnected');
@@ -110,56 +91,23 @@ const MicrosoftGraphIntegration: React.FC<MicrosoftGraphIntegrationProps> = ({
     setIsConnecting(true);
     
     try {
-      // Check if user is already authenticated
+      // Check if user is authenticated
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
-      if (currentUser) {
-        // User is already signed in, link the Microsoft identity
-        const { error } = await supabase.auth.linkIdentity({
-          provider: 'azure',
-          options: {
-            scopes: 'openid profile email https://graph.microsoft.com/User.Read https://graph.microsoft.com/Calendars.Read https://graph.microsoft.com/Mail.Read',
-            redirectTo: `${window.location.origin}/integrations?setup=microsoft365`
-          }
-        });
-
-        if (error) {
-          console.error('Failed to link Microsoft identity:', error);
-          // Fallback to regular OAuth if linking fails
-          const { error: oauthError } = await supabase.auth.signInWithOAuth({
-            provider: 'azure',
-            options: {
-              scopes: 'openid profile email https://graph.microsoft.com/User.Read https://graph.microsoft.com/Calendars.Read https://graph.microsoft.com/Mail.Read',
-              redirectTo: `${window.location.origin}/integrations?setup=microsoft365`
-            }
-          });
-          
-          if (oauthError) throw oauthError;
-        }
-      } else {
-        // No user signed in, use regular OAuth
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'azure',
-          options: {
-            scopes: 'openid profile email https://graph.microsoft.com/User.Read https://graph.microsoft.com/Calendars.Read https://graph.microsoft.com/Mail.Read',
-            redirectTo: `${window.location.origin}/integrations?setup=microsoft365`
-          }
-        });
-
-        if (error) throw error;
+      if (!currentUser) {
+        throw new Error('User not authenticated. Please log in first.');
       }
 
-      addNotification({
-        type: 'info',
-        message: 'Redirecting to Microsoft for authorization...'
-      });
+      // Use the new Microsoft 365 service for client-side OAuth
+      const { microsoft365Service } = await import('@/lib/services/microsoft365Service');
+      await microsoft365Service.connect(currentUser.id);
+
     } catch (error) {
       console.error('Microsoft connection error:', error);
       addNotification({
         type: 'error',
-        message: 'Failed to connect to Microsoft 365. Please try again.'
+        message: error instanceof Error ? error.message : 'Failed to connect to Microsoft 365. Please try again.'
       });
-    } finally {
       setIsConnecting(false);
     }
   };

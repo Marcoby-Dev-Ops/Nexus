@@ -1,22 +1,19 @@
 import { prisma } from '@/lib/prisma';
-import { ModelUsage, ModelPerformance } from '@prisma/client';
+import type { ModelUsage, ModelPerformance } from '@prisma/client';
 
 export class ModelService {
   /**
    * Track model usage and update performance metrics
    */
-  async trackModelUsage(usage: Omit<ModelUsage, 'id' | 'timestamp'>): Promise<ModelUsage> {
+  async trackModelUsage(usage: Omit<ModelUsage, 'id' | 'created_at'>): Promise<ModelUsage> {
     try {
       // Create usage record
       const modelUsage = await prisma.modelUsage.create({
-        data: {
-          ...usage,
-          timestamp: new Date()
-        }
+        data: usage
       });
 
       // Update performance metrics
-      await this.updateModelPerformance(usage.model, usage);
+      await this.updateModelPerformance(usage.model_name, usage);
 
       return modelUsage;
     } catch (error) {
@@ -30,7 +27,7 @@ export class ModelService {
    */
   private async updateModelPerformance(
     model: string,
-    usage: Omit<ModelUsage, 'id' | 'timestamp'>
+    usage: Omit<ModelUsage, 'id' | 'created_at'>
   ): Promise<void> {
     const month = new Date().toISOString().slice(0, 7); // YYYY-MM
 
@@ -148,14 +145,14 @@ export class ModelService {
 
       const usage = await prisma.modelUsage.findMany({
         where: {
-          timestamp: {
+          created_at: {
             gte: startDate
           }
         }
       });
 
       const totalCost = usage.reduce((sum, u) => sum + u.cost, 0);
-      const totalTokens = usage.reduce((sum, u) => sum + u.tokensUsed, 0);
+      const totalTokens = usage.reduce((sum, u) => sum + u.tokens_used, 0);
       const successCount = usage.filter(u => u.success).length;
       const successRate = usage.length > 0 ? successCount / usage.length : 0;
       const averageLatency = usage.reduce((sum, u) => sum + u.latency, 0) / usage.length;
@@ -207,7 +204,7 @@ export class ModelService {
   }
 
   /**
-   * Get detailed model usage history
+   * Get model usage history for a specific model
    */
   async getModelUsageHistory(
     model: string,
@@ -231,13 +228,13 @@ export class ModelService {
 
       return await prisma.modelUsage.findMany({
         where: {
-          model,
-          timestamp: {
+          model_name: model,
+          created_at: {
             gte: startDate
           }
         },
         orderBy: {
-          timestamp: 'desc'
+          created_at: 'desc'
         }
       });
     } catch (error) {

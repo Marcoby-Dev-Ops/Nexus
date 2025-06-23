@@ -70,6 +70,18 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
     window.open(url, '_blank');
   };
 
+  const handleCustomerPortal = async () => {
+    if (!user) return;
+    
+    try {
+      const { portalUrl } = await billingService.createCustomerPortalSession(user.id);
+      window.open(portalUrl, '_blank');
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+      setError('Failed to open customer portal. Please try again.');
+    }
+  };
+
   const getTierIcon = (tier: string) => {
     switch (tier) {
       case 'free': return <Zap className="h-5 w-5 text-primary" />;
@@ -331,7 +343,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
             {billingStatus.hasActiveSubscription && (
               <div className="pt-2 text-xs text-muted-foreground">
                 Manage your subscription and view invoices in the{' '}
-                <button className="text-primary underline">customer portal</button>
+                <button className="text-primary underline" onClick={handleCustomerPortal}>customer portal</button>
               </div>
             )}
           </CardContent>

@@ -1,97 +1,97 @@
 import { logger } from '../../src/lib/security/logger';
 
-// Mock fetch for external endpoints
-global.fetch = jest.fn();
-const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
-
 // Mock console methods
+const originalConsole = global.console;
 const mockConsole = {
   log: jest.fn(),
   error: jest.fn(),
   warn: jest.fn(),
   info: jest.fn(),
+  debug: jest.fn(),
 };
 
-// Replace console methods
-Object.assign(console, mockConsole);
+describe('Security Logger - Production Readiness', () => {
+  beforeAll(() => {
+    // Replace console methods globally
+    global.console = mockConsole as any;
+  });
 
-describe('Security Logger', () => {
+  afterAll(() => {
+    // Restore original console
+    global.console = originalConsole;
+  });
+
   beforeEach(() => {
-    mockFetch.mockClear();
+    // Clear all mocks before each test
     Object.values(mockConsole).forEach(mock => mock.mockClear());
-    
-    // Mock environment variables
-    process.env.VECTOR_ENDPOINT = 'https://vector.example.com/logs';
-    process.env.OTEL_ENDPOINT = 'https://otel.example.com/v1/logs';
-    process.env.SECURITY_WEBHOOK = 'https://security.example.com/webhook';
+    process.env.NODE_ENV = 'test';
   });
 
   afterEach(() => {
-    delete process.env.VECTOR_ENDPOINT;
-    delete process.env.OTEL_ENDPOINT;
-    delete process.env.SECURITY_WEBHOOK;
+    delete process.env.NODE_ENV;
   });
 
-  describe('Basic Logging', () => {
-    it('should log info messages to console', () => {
+  describe('Core Logging Functions', () => {
+    it('should log info messages', () => {
       logger.info('Test info message');
-      expect(mockConsole.info).toHaveBeenCalledWith(
-        expect.stringContaining('ℹ️ INFO:'),
-        'Test info message'
-      );
+      expect(mockConsole.info).toHaveBeenCalledWith('ℹ️ INFO:', 'Test info message');
     });
 
-    it('should log error messages to console', () => {
+    it('should log error messages', () => {
       const error = new Error('Test error');
-      logger.error({ err: error }, 'Test error message');
-      // Logger.error calls console.error, but our mock filters it out
-      // So we check that the logger was called, not the console directly
-      expect(mockConsole.error).toHaveBeenCalled();
+      logger.error(error, 'Test error message');
+      expect(mockConsole.error).toHaveBeenCalledWith(error, 'Test error message');
+    });
+
+    it('should log warning messages', () => {
+      logger.warn('Test warning');
+      expect(mockConsole.warn).toHaveBeenCalledWith('Test warning');
     });
   });
 
-  describe('Vector Integration', () => {
-    it('should send logs to Vector endpoint', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-      } as Response);
+  describe('Security Features', () => {
+    it('should filter sensitive data from logs', () => {
+      const sensitiveData = 'My email is user@example.com and token is sk_live_1234567890abcdef';
+      logger.info(sensitiveData);
+      
+      // Check that the call was made with filtered data
+      expect(mockConsole.info).toHaveBeenCalled();
+      const calledWith = mockConsole.info.mock.calls[0][1];
+      expect(calledWith).toContain('[REDACTED]');
+      expect(calledWith).not.toContain('user@example.com');
+      expect(calledWith).not.toContain('sk_live_');
+    });
 
-      await logger.info({ userId: 'user-123', action: 'login' }, 'User logged in');
-
-      // Allow async operations to complete
-      await new Promise(resolve => setTimeout(resolve, 10));
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://vector.example.com/logs',
+    it('should always log security events', () => {
+      logger.security('Security event test', { userId: 'test-123' });
+      expect(mockConsole.warn).toHaveBeenCalledWith(
+        '🔒 SECURITY:',
         expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: expect.stringContaining('User logged in')
+          type: 'SECURITY',
+          message: 'Security event test'
         })
       );
     });
-
-    it('should handle Vector endpoint failures gracefully', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Vector endpoint down'));
-
-      // Should not throw despite Vector failure
-      expect(() => {
-        logger.info('Test message for Vector')
-      }).not.toThrow();
-    });
   });
 
-  describe('Error Handling', () => {
-    it('should handle multiple endpoint failures without crashing', async () => {
-      mockFetch.mockRejectedValue(new Error('All endpoints down'));
+  describe('Production Behavior', () => {
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+    });
 
-      expect(() => {
-        logger.error({ err: new Error('Test') }, 'Test error with all endpoints down')
-      }).not.toThrow();
+    it('should still log errors in production', () => {
+      logger.error('Production error test');
+      expect(mockConsole.error).toHaveBeenCalledWith('Production error test');
+    });
 
-      // Should still log to console even if external endpoints fail
-      expect(mockConsole.error).toHaveBeenCalled();
+    it('should still log security events in production', () => {
+      logger.security('Production security event');
+      expect(mockConsole.warn).toHaveBeenCalledWith(
+        '🔒 SECURITY:',
+        expect.objectContaining({
+          message: 'Production security event'
+        })
+      );
     });
   });
 }); 

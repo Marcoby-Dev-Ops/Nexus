@@ -9,24 +9,37 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { session, loading } = useAuth();
+  const { session, loading, error } = useAuth();
   const location = useLocation();
 
+  // Show error state if there's an auth error
+  if (error) {
+    console.error('Auth error in ProtectedRoute:', error);
+    return <Navigate to="/login" state={{ from: location, error: error.message }} replace />;
+  }
+
+  // Show loading spinner while auth is initializing
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner size={32} />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <Spinner size={32} />
+          <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
 
+  // Check email verification
   if (session && !session.user.email_confirmed_at) {
     return <EmailNotVerified />;
   }
 
+  // Redirect to login if no session
   if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Render protected content
   return <>{children}</>;
 }; 

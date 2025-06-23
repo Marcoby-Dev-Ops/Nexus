@@ -13,6 +13,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useAIChatStore, useActiveConversation } from '@/lib/stores/useAIChatStore';
 import { executiveAgent } from '@/lib/agentRegistry';
+import { MVPScopeIndicator } from '@/components/chat/MVPScopeIndicator';
+import { MessageFeedback } from '@/components/chat/MessageFeedback';
 
 /**
  * Quick Chat - Compact sidebar chat for quick interactions
@@ -28,7 +30,7 @@ interface QuickChatProps {
  * Compact message bubble for sidebar
  */
 const CompactMessage: React.FC<{
-  message: { role: 'user' | 'assistant'; content: string };
+  message: { role: 'user' | 'assistant' | 'system'; content: string };
   isUser: boolean;
 }> = ({ message, isUser }) => (
   <div className={`flex gap-2 mb-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -163,9 +165,34 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
       <QuickActions onAction={handleQuickAction} />
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4">
-        {conversation?.messages.map((msg, idx) => (
-          <CompactMessage key={msg.id} message={msg} isUser={msg.role === 'user'} />
-        ))}
+        {conversation?.messages && conversation.messages.length > 0 ? (
+          conversation.messages.map((msg, idx) => (
+            <div key={msg.id} className="mb-3">
+              <CompactMessage message={msg} isUser={msg.role === 'user'} />
+              {/* Add feedback for AI responses */}
+              {msg.role === 'assistant' && (
+                <div className="mt-2 pl-8">
+                  <MessageFeedback
+                    messageId={msg.id}
+                    conversationId={conversationId}
+                    agentId="quick-chat"
+                    messageContent={msg.content}
+                    compact
+                  />
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center">
+            <div className="w-full mb-4">
+              <MVPScopeIndicator compact />
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Start a conversation with our IT Support assistant
+            </p>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
       {/* Input */}

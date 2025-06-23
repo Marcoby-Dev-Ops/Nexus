@@ -4,6 +4,7 @@ import { cn } from '@/lib/styles';
 
 export interface SelectProps {
   value?: string;
+  defaultValue?: string;
   onValueChange?: (value: string) => void;
   disabled?: boolean;
   children: React.ReactNode;
@@ -59,19 +60,38 @@ const SelectContext = React.createContext<{
  */
 export const Select: React.FC<SelectProps> = ({ 
   value, 
+  defaultValue,
   onValueChange, 
   disabled = false, 
   children 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [options, setOptions] = useState<Record<string, string>>({});
+  const [internalValue, setInternalValue] = useState(defaultValue);
+
+  const currentValue = value !== undefined ? value : internalValue;
+
+  const handleValueChange = React.useCallback((newValue: string) => {
+    if (value === undefined) {
+      setInternalValue(newValue);
+    }
+    onValueChange?.(newValue);
+  }, [value, onValueChange]);
 
   const registerOption = React.useCallback((val: string, label: string) => {
     setOptions(prev => (prev[val] ? prev : { ...prev, [val]: label }));
   }, []);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen, disabled, options, registerOption }}>
+    <SelectContext.Provider value={{ 
+      value: currentValue, 
+      onValueChange: handleValueChange, 
+      isOpen, 
+      setIsOpen, 
+      disabled, 
+      options, 
+      registerOption 
+    }}>
       <div className="relative">
         {children}
       </div>

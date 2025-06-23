@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { googleAnalyticsService } from '@/lib/services/googleAnalyticsService';
 import type { 
   UseSecondBrainReturn,
   SecondBrainContext,
@@ -106,25 +107,30 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
   const loadGoogleAnalyticsData = async (): Promise<IntegrationDataPoint | null> => {
     try {
-      const response = await fetch('/api/integrations/google-analytics/metrics', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      // Use the Google Analytics service directly
+      if (!googleAnalyticsService.isAuthenticated()) {
+        return null;
+      }
 
-      if (!response.ok) return null;
-
-      const data = await response.json();
+      const data = await googleAnalyticsService.getAnalyticsData('last7Days');
       return {
         source: 'google-analytics',
         type: 'metric',
         value: {
-          sessions: data.sessions || 0,
-          pageviews: data.pageviews || 0,
-          bounceRate: data.bounceRate || 0,
-          avgSessionDuration: data.avgSessionDuration || 0
+          sessions: parseInt(data.overview.sessions.value.replace(/[^\d]/g, '')) || 0,
+          pageviews: parseInt(data.overview.pageViews.value.replace(/[^\d]/g, '')) || 0,
+          bounceRate: parseFloat(data.overview.bounceRate.value.replace('%', '')) || 0,
+          avgSessionDuration: data.overview.avgSessionDuration.value || '0:00',
+          totalUsers: parseInt(data.overview.totalUsers.value.replace(/[^\d]/g, '')) || 0,
+          realTimeUsers: data.realTimeUsers || 0
         },
         timestamp: new Date().toISOString(),
-        metadata: { period: '7d', reportType: 'overview' },
+        metadata: { 
+          period: '7d', 
+          reportType: 'overview',
+          topPages: data.topPages.slice(0, 3),
+          topSources: data.topSources.slice(0, 3)
+        },
         relevanceScore: 0.9
       };
     } catch (error) {

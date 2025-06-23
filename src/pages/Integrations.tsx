@@ -31,12 +31,23 @@ import {
   TrendingUp,
   Plug,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Copy,
+  Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import EmailSetupModal from '@/components/integrations/EmailSetupModal';
 import { unifiedInboxService, type EmailAccount } from '@/lib/services/unifiedInboxService';
 import { useNotifications } from '@/contexts/NotificationContext';
+import { ApiIntegrationService } from '@/lib/services/apiIntegrationService';
+import { NinjaRmmSetup } from '@/components/integrations/NinjaRmmSetup';
+import Microsoft365EmailSetup from '@/components/ai/Microsoft365EmailSetup';
+import PayPalSetup from '@/components/integrations/PayPalSetup';
+import GoogleAnalyticsSetup from '@/components/integrations/GoogleAnalyticsSetup';
+import GoogleWorkspaceSetup from '@/components/integrations/GoogleWorkspaceSetup';
+import CloudflareSetup from '@/components/integrations/CloudflareSetup';
+import MarcobyCloudSetup from '@/components/integrations/MarcobyCloudSetup';
+import { HubSpotSetup } from '@/components/integrations/HubSpotSetup';
 
 interface Integration {
   id: string;
@@ -81,6 +92,7 @@ const ICONS: { [key: string]: React.ReactNode } = {
   n8n: <Zap className="w-6 h-6 text-secondary" />,
   'google-workspace': <Users className="w-6 h-6 text-warning" />,
   'office-365': <Users className="w-6 h-6 text-primary" />,
+  ninjarmm: <Settings className="w-6 h-6 text-success" />,
   default: <Plug className="w-6 h-6 text-muted-foreground" />,
 };
 
@@ -103,7 +115,15 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
   });
   const [emailSetupModal, setEmailSetupModal] = useState(false);
   const [microsoftGraphModal, setMicrosoftGraphModal] = useState(false);
+  const [manageModal, setManageModal] = useState<{
+    isOpen: boolean;
+    integration: any;
+  }>({
+    isOpen: false,
+    integration: null
+  });
   const [microsoftGraphConnected, setMicrosoftGraphConnected] = useState(false);
+  const [apiIntegrations, setApiIntegrations] = useState<any[]>([]);
 
   const fetchIntegrations = async () => {
     if (!user) {
@@ -160,6 +180,15 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
       });
 
       setIntegrations(mergedIntegrations);
+
+      // Also fetch API Learning integrations
+      try {
+        const userApiIntegrations = await ApiIntegrationService.getUserApiIntegrations(user.id);
+        setApiIntegrations(userApiIntegrations);
+      } catch (apiErr) {
+        console.warn('Failed to fetch API integrations:', apiErr);
+        // Don't fail the whole page if API integrations fail
+      }
     } catch (err: any) {
       console.error("Error fetching integrations:", err);
       setError("Failed to load integrations. Please try again later.");
@@ -450,6 +479,17 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
   };
 
   const handleConnectClick = (integration: Integration) => {
+    // Handle specific integrations with custom setup flows
+    if (integration.slug === 'google-analytics') {
+      setSetupModal({ isOpen: true, integration });
+      return;
+    }
+    
+    if (integration.slug === 'google-workspace') {
+      setSetupModal({ isOpen: true, integration });
+      return;
+    }
+    
     setSetupModal({ isOpen: true, integration });
   };
 
@@ -670,6 +710,105 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
         </CardContent>
       </Card>
 
+      {/* API Learning Integrations */}
+      {apiIntegrations.length > 0 && (
+        <Card className="w-full">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-primary" />
+                  Your Custom API Integrations
+                </CardTitle>
+                <CardDescription>
+                  Integrations created through the API Learning System
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                {apiIntegrations.length} Custom
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {apiIntegrations.map((apiIntegration) => (
+                <Card key={apiIntegration.id} className="border-primary/20 bg-primary/5">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
+                          <Plug className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-sm">{apiIntegration.name}</h3>
+                          <p className="text-xs text-muted-foreground">API Learning</p>
+                        </div>
+                      </div>
+                      <Badge 
+                        variant={apiIntegration.status === 'active' ? 'default' : 'outline'}
+                        className={apiIntegration.status === 'active' ? 'bg-success text-white' : ''}
+                      >
+                        {apiIntegration.status === 'active' ? 'Active' : 'Pending'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Endpoints:</span>
+                        <span>{apiIntegration.metadata?.endpoint_count || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Auth:</span>
+                        <span>{apiIntegration.config?.auth_methods?.join(', ') || 'Not configured'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Created:</span>
+                        <span>{new Date(apiIntegration.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1 text-xs h-8"
+                        onClick={() => {
+                          setManageModal({
+                            isOpen: true,
+                            integration: apiIntegration
+                          });
+                        }}
+                      >
+                        <Settings className="w-3 h-3 mr-1" />
+                        Configure
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1 text-xs h-8"
+                        onClick={() => {
+                          // TODO: Test connection
+                          ApiIntegrationService.testApiIntegration(apiIntegration.id)
+                            .then((result) => {
+                              addNotification({
+                                message: result.success ? 'Integration test successful! Working correctly.' : `Test failed: ${result.error || 'Unknown error'}`,
+                                type: result.success ? 'success' : 'error'
+                              });
+                            });
+                        }}
+                      >
+                        <RefreshCw className="w-3 h-3 mr-1" />
+                        Test
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Integrations Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredIntegrations.map(renderIntegrationCard)}
@@ -705,8 +844,56 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
               {setupModal.integration.slug === 'microsoft-teams' && 
                 <MicrosoftTeamsSetup onComplete={handleIntegrationComplete} onCancel={handleCloseModal} />
               }
+              {setupModal.integration.slug === 'office-365' && 
+                <Microsoft365EmailSetup 
+                  onEmailAccountCreated={() => {
+                    handleIntegrationComplete();
+                    addNotification({
+                      type: 'success',
+                      message: 'Office 365 email connected successfully!'
+                    });
+                  }}
+                />
+              }
+              {setupModal.integration.slug === 'ninjarmm' && 
+                <NinjaRmmSetup 
+                  onConnectionChange={(isConnected) => {
+                    if (isConnected) {
+                      handleIntegrationComplete();
+                      addNotification({
+                        type: 'success',
+                        message: 'NinjaRMM connected successfully!'
+                      });
+                    }
+                  }}
+                />
+              }
+              {setupModal.integration.slug === 'paypal' && 
+                <PayPalSetup 
+                  onComplete={() => {
+                    handleIntegrationComplete();
+                    addNotification({
+                      type: 'success',
+                      message: 'PayPal connected successfully!'
+                    });
+                  }}
+                  onCancel={handleCloseModal}
+                />
+              }
+              {setupModal.integration.slug === 'hubspot' && 
+                <HubSpotSetup 
+                  onComplete={() => {
+                    handleIntegrationComplete();
+                    addNotification({
+                      type: 'success',
+                      message: 'HubSpot CRM connected successfully!'
+                    });
+                  }}
+                  onCancel={handleCloseModal}
+                />
+              }
               {/* Add other integration setup components here */}
-              {![ 'slack', 'microsoft-teams' ].includes(setupModal.integration.slug) && (
+              {![ 'slack', 'microsoft-teams', 'office-365', 'ninjarmm', 'paypal', 'hubspot' ].includes(setupModal.integration.slug) && (
                  <div className="text-center p-8">
                    <p className="mb-4">
                      Setup for <strong>{setupModal.integration.name}</strong> is not yet implemented in this demo.
@@ -745,6 +932,187 @@ const Integrations: React.FC<IntegrationsProps> = ({ className = '' }) => {
                 }}
               />
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage API Integration Modal */}
+      {manageModal.isOpen && manageModal.integration && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <Card className="w-full max-w-2xl max-h-[80vh] overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  Manage {manageModal.integration.name}
+                </CardTitle>
+                <CardDescription>
+                  Configure and test your API integration
+                </CardDescription>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setManageModal({ isOpen: false, integration: null })}
+              >
+                ×
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-6 max-h-[60vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">API URL:</span>
+                  <p className="font-mono text-xs mt-1 break-all">{manageModal.integration.api_url}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Endpoints:</span>
+                  <p className="mt-1">{manageModal.integration.metadata?.endpoint_count || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Auth Type:</span>
+                  <p className="mt-1">{manageModal.integration.config?.auth_methods?.join(', ') || 'Not configured'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Status:</span>
+                  <Badge variant={manageModal.integration.is_active ? 'default' : 'secondary'} className="mt-1">
+                    {manageModal.integration.is_active ? 'Active' : 'Inactive'}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <h4 className="font-medium">Generated Code Preview</h4>
+                {manageModal.integration.generated_code ? (
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <pre className="text-xs overflow-x-auto max-h-40">
+                      <code>{manageModal.integration.generated_code.substring(0, 500)}...</code>
+                    </pre>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="mt-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(manageModal.integration.generated_code);
+                        addNotification({
+                          message: 'Code copied to clipboard!',
+                          type: 'success'
+                        });
+                      }}
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      Copy Full Code
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No generated code available</p>
+                )}
+              </div>
+            </CardContent>
+            <div className="flex items-center justify-between p-6 border-t">
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={async () => {
+                  if (window.confirm(`Delete integration "${manageModal.integration.name}"?`)) {
+                    try {
+                      await ApiIntegrationService.deleteApiIntegration(manageModal.integration.id);
+                      setApiIntegrations(prev => prev.filter(i => i.id !== manageModal.integration.id));
+                      setManageModal({ isOpen: false, integration: null });
+                      addNotification({
+                        message: 'Integration deleted successfully',
+                        type: 'success'
+                      });
+                    } catch (error) {
+                      addNotification({
+                        message: 'Failed to delete integration',
+                        type: 'error'
+                      });
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="w-3 h-3 mr-1" />
+                Delete
+              </Button>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setManageModal({ isOpen: false, integration: null })}
+                >
+                  Close
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={async () => {
+                    try {
+                      const result = await ApiIntegrationService.testApiIntegration(manageModal.integration.id);
+                      addNotification({
+                        message: result.success ? 'Integration test successful!' : `Test failed: ${result.error}`,
+                        type: result.success ? 'success' : 'error'
+                      });
+                    } catch (error) {
+                      addNotification({
+                        message: 'Failed to test integration',
+                        type: 'error'
+                      });
+                    }
+                  }}
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  Test Connection
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* Google Analytics Setup Modal */}
+      {setupModal.isOpen && setupModal.integration?.slug === 'google-analytics' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <GoogleAnalyticsSetup 
+              onComplete={handleIntegrationComplete}
+              onClose={handleCloseModal}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Google Workspace Setup Modal */}
+      {setupModal.isOpen && setupModal.integration?.slug === 'google-workspace' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <GoogleWorkspaceSetup 
+              onComplete={handleIntegrationComplete}
+              onClose={handleCloseModal}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Cloudflare Setup Modal */}
+      {setupModal.isOpen && setupModal.integration?.slug === 'cloudflare' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <CloudflareSetup 
+              onComplete={handleIntegrationComplete}
+              onClose={handleCloseModal}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Marcoby Cloud Setup Modal */}
+      {setupModal.isOpen && setupModal.integration?.slug === 'marcoby-cloud' && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <MarcobyCloudSetup 
+              onComplete={handleIntegrationComplete}
+              onClose={handleCloseModal}
+            />
           </div>
         </div>
       )}

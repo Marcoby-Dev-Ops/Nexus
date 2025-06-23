@@ -470,8 +470,38 @@ export class ToolEnabledAgent {
           .maybeSingle()).data?.company_id ?? undefined,
       };
 
-      // Enhanced system prompt with tool awareness
+      // Enhanced system prompt with tool awareness and cross-platform context
       const toolAwareSystemPrompt = `${agent.systemPrompt}
+
+CROSS-PLATFORM BUSINESS CONTEXT:
+You have access to real-time data from all connected business platforms. This gives you unprecedented insight into:
+
+INTEGRATED INTELLIGENCE:
+- HubSpot CRM: Live sales pipeline, deal velocity, customer interactions
+- Cloudflare Analytics: Website performance, security threats, global traffic patterns  
+- Google Workspace: Email volume, meeting patterns, document collaboration
+- Marcoby Cloud: Infrastructure utilization, cost optimization, system health
+- PayPal: Transaction patterns, revenue trends, payment analytics
+
+AI CORRELATION INSIGHTS:
+- Cross-platform pattern recognition (e.g., "High email volume → 23% increase in deal velocity")
+- Predictive analytics (e.g., "Current trends suggest 34% Q1 lead increase")
+- Proactive recommendations (e.g., "Infrastructure scaling needed by month-end")
+
+CONTEXTUAL DECISION MAKING:
+When responding to queries, consider:
+1. Current business state across all platforms
+2. Historical patterns and correlations
+3. Predictive insights and trends
+4. Resource utilization and capacity
+5. Team productivity and collaboration patterns
+
+INTELLIGENT ROUTING:
+- If query involves sales metrics → Use HubSpot data context
+- If query involves website/performance → Reference Cloudflare insights
+- If query involves team productivity → Include Google Workspace patterns
+- If query involves infrastructure → Consider Marcoby Cloud utilization
+- If query involves financial data → Incorporate PayPal transaction insights
 
 TOOL CAPABILITIES:
 You have access to real business tools and data through n8n workflows. You can:
@@ -496,7 +526,12 @@ AUTOMATION:
 - Integrate different business systems
 - Automate repetitive processes
 
-IMPORTANT: When you need to access real data or perform actions, use the available tools. Always explain what you're doing when using tools.
+CONTEXTUAL INTELLIGENCE EXAMPLES:
+- "Based on your Cloudflare data showing 180ms response time and current HubSpot pipeline of $245K, I recommend optimizing your landing pages before the Q1 marketing push."
+- "Your Google Workspace shows 12h/week in meetings and Marcoby Cloud indicates 72% server utilization - perfect time to implement that automation workflow we discussed."
+- "PayPal transactions show a 15% increase this month while HubSpot conversion rate is at 28% - your sales team is performing exceptionally well."
+
+IMPORTANT: When you need to access real data or perform actions, use the available tools. Always explain what you're doing when using tools. Reference cross-platform insights to provide more intelligent, contextual responses.
 
 Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
 

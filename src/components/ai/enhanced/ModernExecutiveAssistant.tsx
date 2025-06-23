@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Sparkles, FileText, Code, Lightbulb, MessageSquare, Send } from 'lucide-react';
 import { useAIChatStore, useActiveConversation, type AIConversation } from '@/lib/stores/useAIChatStore';
 import { VirtualizedMessageList } from './VirtualizedMessageList';
+import { MVPScopeIndicator } from '@/components/chat/MVPScopeIndicator';
+import { MessageFeedback } from '@/components/chat/MessageFeedback';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -84,8 +86,13 @@ const WelcomeScreen: React.FC<{
         ))}
       </div>
 
+      {/* MVP Scope Indicator */}
+      <div className="mt-8 w-full max-w-2xl">
+        <MVPScopeIndicator />
+      </div>
+
       {/* Suggestions */}
-      <div className="mt-8 text-sm text-muted-foreground max-w-md">
+      <div className="mt-6 text-sm text-muted-foreground max-w-md">
         <p>Try asking about your current page, data analysis, or workflow optimization.</p>
       </div>
     </div>
@@ -93,28 +100,43 @@ const WelcomeScreen: React.FC<{
 };
 
 type MessageType = import('@/lib/stores/useAIChatStore').AIMessage;
-const MessageBubble: React.FC<{ msg: MessageType }> = React.memo(
-  ({ msg }) => {
+const MessageBubble: React.FC<{ msg: MessageType; conversationId: string }> = React.memo(
+  ({ msg, conversationId }) => {
     const isUser = msg.role === 'user';
     return (
       <div className={`mb-4 flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-        <div
-          className={`max-w-[80%] px-4 py-2 rounded-lg whitespace-pre-wrap break-words ${isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}
-        >
-          {isUser ? (
-            msg.content
-          ) : (
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              rehypePlugins={[rehypeHighlight]}
-              className="prose prose-sm dark:prose-invert max-w-none"
-              components={{
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                a: ({node, ...props}: any) => <a {...props} target="_blank" rel="noreferrer" />,
-              }}
-            >
-              {msg.content}
-            </ReactMarkdown>
+        <div className={`max-w-[80%] ${isUser ? 'flex flex-col items-end' : 'flex flex-col items-start'}`}>
+          <div
+            className={`px-4 py-2 rounded-lg whitespace-pre-wrap break-words ${isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'}`}
+          >
+            {isUser ? (
+              msg.content
+            ) : (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeHighlight]}
+                className="prose prose-sm dark:prose-invert max-w-none"
+                components={{
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  a: ({node, ...props}: any) => <a {...props} target="_blank" rel="noreferrer" />,
+                }}
+              >
+                {msg.content}
+              </ReactMarkdown>
+            )}
+          </div>
+          
+          {/* Message Feedback for AI responses */}
+          {!isUser && (
+            <div className="mt-2 w-full">
+                             <MessageFeedback
+                 messageId={msg.id}
+                 conversationId={conversationId}
+                 agentId="executive"
+                 messageContent={msg.content}
+                 compact
+               />
+            </div>
           )}
         </div>
       </div>
@@ -226,7 +248,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
         ) : (
           <VirtualizedMessageList
             messages={conversation!.messages}
-            renderRow={(msg) => <MessageBubble key={msg.id} msg={msg} />}
+            renderRow={(msg) => <MessageBubble key={msg.id} msg={msg} conversationId={conversation!.id} />}
             followOutput={autoScrollRef.current}
             onLoadMore={async () => {
               if (loadingOlder) return;

@@ -5,6 +5,7 @@ interface SwitchProps {
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
   className?: string;
+  id?: string;
 }
 
 const Switch: React.FC<SwitchProps> = ({
@@ -12,6 +13,7 @@ const Switch: React.FC<SwitchProps> = ({
   onCheckedChange,
   disabled = false,
   className = '',
+  id,
 }) => {
   return (
     <button
@@ -19,6 +21,7 @@ const Switch: React.FC<SwitchProps> = ({
       role="switch"
       aria-checked={checked}
       disabled={disabled}
+      id={id}
       className={`
         inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full
         border-2 border-transparent transition-colors

@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Badge } from '@/components/ui/Badge';
 import { useLocation, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Settings, Store, Bot, BarChart2, Users, X, Building2, Plug, Brain, Sparkles, FileText, Database, PieChart, Inbox } from 'lucide-react';
+import { LayoutDashboard, Settings, Store, Bot, BarChart2, Users, X, Building2, Plug, Brain, Sparkles, FileText, Database, PieChart, Inbox, CreditCard, Zap, Calendar, CheckSquare, BookOpen, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { DEPARTMENTS } from '@/constants/departments';
@@ -39,9 +39,13 @@ interface NavItem {
 const overview: NavItem[] = [
   // { label: 'Command Center', href: '/nexus', icon: <Brain className="w-5 h-5" />, badge: 'TRINITY' }, // Hidden until ready
   { label: 'Business Overview', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+  { label: 'Calendar', href: '/calendar', icon: <Calendar className="w-5 h-5" /> },
+  { label: 'Tasks', href: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
   { label: 'Unified Inbox', href: '/inbox', icon: <Inbox className="w-5 h-5" />, badge: 'NEW' },
+  { label: 'Documents', href: '/documents', icon: <FileText className="w-5 h-5" />, badge: 'NEW' },
   { label: 'Workspace', href: '/workspace', icon: <Database className="w-5 h-5" /> },
   { label: 'Analytics', href: '/analytics', icon: <BarChart2 className="w-5 h-5" /> },
+  { label: 'Unified Analytics', href: '/analytics/unified', icon: <BarChart3 className="w-5 h-5" />, badge: 'New' },
 ];
 
 // Build Department nav list from central definition; filter out routes that don't exist yet
@@ -63,6 +67,7 @@ const departments: NavItem[] = DEPARTMENTS.map((d) => ({
 const aiPowered: NavItem[] = [
   { label: 'AI Hub', href: '/ai-hub', icon: <Brain className="w-5 h-5" /> },
   { label: 'AI Chat', href: '/chat', icon: <Bot className="w-5 h-5" /> },
+  { label: 'API Learning', href: '/api-learning', icon: <Zap className="w-5 h-5" />, badge: 'MVP' },
   // { label: 'AI Transformation', href: '/ai-transformation', icon: <Sparkles className="w-5 h-5" /> }, // Hidden until ready
   // Analytics now lives under Data Warehouse section – removed separate nav item (Pillar 5)
   // { label: 'Automation', href: '/automation', icon: <Settings className="w-5 h-5" /> }, // Hidden until ready
@@ -84,6 +89,8 @@ const marketplace: NavItem[] = ENABLE_MARKETPLACE
 
 const admin: NavItem[] = [
   // { label: 'Admin', href: '/admin', icon: <Users className="w-5 h-5" /> }, // Hidden until ready
+  { label: 'User Guide', href: '/user-guide', icon: <BookOpen className="w-5 h-5" />, badge: 'NEW' },
+  { label: 'Pricing', href: '/pricing', icon: <CreditCard className="w-5 h-5" /> },
   { label: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
 ];
 

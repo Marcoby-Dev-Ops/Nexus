@@ -312,6 +312,10 @@ INSERT INTO public.integrations (name, slug, category, auth_type, description, f
 ('Google Workspace', 'google-workspace', 'productivity', 'oauth', 'Cloud-based productivity and collaboration suite',
  '["Usage analytics", "Collaboration metrics", "Security insights", "License utilization"]', '15-20 min', 'medium'),
 
+-- IT Management & RMM
+('NinjaRMM', 'ninjarmm', 'rmm', 'oauth', 'Remote monitoring and management platform for IT service providers',
+ '["Device monitoring", "Patch management", "Backup status", "Antivirus monitoring", "System performance", "Alert management"]', '10-15 min', 'medium'),
+
 -- Development
 ('GitHub', 'github', 'development', 'oauth', 'Version control and collaboration platform for developers',
  '["Repository analytics", "Commit activity", "Pull request metrics", "Issue tracking"]', '10-15 min', 'medium')
@@ -407,5 +411,6 @@ INSERT INTO public.integrations (name, slug, category, auth_type, description) V
 ('Google Analytics', 'google-analytics', 'analytics', 'oauth', 'Web analytics and traffic insights'),
 ('Salesforce', 'salesforce', 'crm', 'oauth', 'Customer relationship management'),
 ('QuickBooks', 'quickbooks', 'accounting', 'oauth', 'Financial and accounting data'),
-('Slack', 'slack', 'communication', 'oauth', 'Team communication and collaboration')
+('Slack', 'slack', 'communication', 'oauth', 'Team communication and collaboration'),
+('NinjaRMM', 'ninjarmm', 'rmm', 'oauth', 'Remote monitoring and management platform')
 ON CONFLICT (slug) DO NOTHING; 

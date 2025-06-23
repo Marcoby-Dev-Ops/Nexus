@@ -40,6 +40,16 @@ export class QuotaService {
         };
       }
 
+      // Check monthly message quota (most important for cost control)
+      const monthlyUsage = await this.getMonthlyUsage(userId, orgId);
+      if (monthlyUsage.message_count >= quotas.max_messages_per_month) {
+        return {
+          allowed: false,
+          reason: `Monthly message limit of ${quotas.max_messages_per_month} reached. Upgrade your plan or wait for next billing cycle.`,
+          quotas,
+        };
+      }
+
       // Check daily message quota
       const today = new Date().toISOString().split('T')[0];
       const usage = await this.getUsageForDate(userId, today, orgId);
@@ -280,11 +290,86 @@ export class QuotaService {
   }
 
   private async getHourlyUsage(userId: string, type: 'messages' | 'ai_requests'): Promise<number> {
-    // This would typically query a more granular usage table
-    // For now, we'll use the rate limit cache as a simple implementation
-    const key = `${userId}:${type}`;
+    // Simple in-memory tracking for hourly limits
+    const key = `${userId}:${type}:hour`;
     const cached = this.rateLimitCache.get(key);
-    return cached?.count || 0;
+    const now = Date.now();
+    const hourStart = now - (now % (60 * 60 * 1000));
+    
+    if (cached && cached.resetTime > hourStart) {
+      return cached.count;
+    }
+    
+    return 0;
+  }
+
+  /**
+   * Get monthly usage for cost control
+   */
+  private async getMonthlyUsage(userId: string, orgId?: string): Promise<UsageTracking> {
+    try {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+      const { data } = await supabase
+        .from('chat_usage_tracking')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('org_id', orgId || '')
+        .gte('date', monthStart)
+        .lte('date', monthEnd);
+
+      if (!data || data.length === 0) {
+        return {
+          user_id: userId,
+          org_id: orgId || '',
+          date: monthStart,
+          message_count: 0,
+          ai_requests_made: 0,
+          files_uploaded: 0,
+          tokens_used: 0,
+          estimated_cost_usd: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+
+      // Aggregate monthly usage
+      return data.reduce((total, day) => ({
+        ...total,
+        message_count: (total.message_count || 0) + (day.message_count || 0),
+        ai_requests_made: (total.ai_requests_made || 0) + (day.ai_requests_made || 0),
+        files_uploaded: (total.files_uploaded || 0) + (day.files_uploaded || 0),
+        tokens_used: (total.tokens_used || 0) + (day.tokens_used || 0),
+        estimated_cost_usd: (total.estimated_cost_usd || 0) + (day.estimated_cost_usd || 0),
+      }), {
+        user_id: userId,
+        org_id: orgId || '',
+        date: monthStart,
+        message_count: 0,
+        ai_requests_made: 0,
+        files_uploaded: 0,
+        tokens_used: 0,
+        estimated_cost_usd: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('Monthly usage fetch error:', error);
+      return {
+        user_id: userId,
+        org_id: orgId || '',
+        date: new Date().toISOString().split('T')[0],
+        message_count: 0,
+        ai_requests_made: 0,
+        files_uploaded: 0,
+        tokens_used: 0,
+        estimated_cost_usd: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    }
   }
 
   /**

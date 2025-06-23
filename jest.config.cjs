@@ -1,7 +1,3 @@
-const { createDefaultPreset } = require("ts-jest");
-
-const tsJestTransformCfg = createDefaultPreset().transform;
-
 /** @type {import("jest").Config} **/
 module.exports = {
   preset: 'ts-jest',
@@ -43,9 +39,17 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transform: {
-    ...tsJestTransformCfg,
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      useESM: true,
+      diagnostics: false,
+      tsconfig: {
+        jsx: 'react-jsx',
+        esModuleInterop: true,
+        allowSyntheticDefaultImports: true,
+      },
+    }],
   },
-  // Coverage configuration - realistic for focused testing strategy
+  // Coverage configuration - production ready thresholds
   collectCoverage: true,
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
@@ -60,14 +64,14 @@ module.exports = {
   coverageReporters: ['text', 'text-summary', 'lcov', 'html'],
   coverageThreshold: {
     global: {
-      branches: 1, // Minimal threshold for core components only
-      functions: 1.5,
-      lines: 2.5,
-      statements: 2.5,
+      branches: 75, // Production ready threshold
+      functions: 80,
+      lines: 80,
+      statements: 80,
     },
   },
   // Performance and timeout settings
-  testTimeout: 10000,
+  testTimeout: 15000,
   maxWorkers: '50%',
   
   // Module file extensions
@@ -77,19 +81,6 @@ module.exports = {
   transformIgnorePatterns: [
     'node_modules/(?!(react-router|@testing-library|@supabase)/)',
   ],
-  
-  // Global setup for tests
-  globals: {
-    'ts-jest': {
-      useESM: true,
-      diagnostics: false,
-      tsconfig: {
-        jsx: 'react-jsx',
-        esModuleInterop: true,
-        allowSyntheticDefaultImports: true,
-      },
-    },
-  },
   
   // Clear mocks between tests
   clearMocks: true,

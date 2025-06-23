@@ -21,5 +21,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 Input.displayName = "Input"
 
 export { Input };
+export type { InputProps };
 // Backward compatibility default export
 export default Input; 

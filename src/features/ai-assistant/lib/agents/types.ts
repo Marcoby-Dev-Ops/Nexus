@@ -16,4 +16,5 @@ export interface AgentResponse {
   clarificationNeeded?: boolean;
   reasoning?: string;
   routeToAgentId?: string; // suggested specialist to route conversation
+  metadata?: Record<string, any>; // Additional context and performance metrics
 } 

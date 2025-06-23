@@ -29,6 +29,7 @@ import { upsertOnboardingProfile } from '@/lib/services/profileService';
 export interface UserOnboardingProfile {
   company: {
     name?: string;
+    domain?: string;
     industry?: string;
     size?: string;
     description?: string;

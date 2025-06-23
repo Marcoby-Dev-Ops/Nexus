@@ -8,6 +8,8 @@ export const ROUTE_LABELS: Record<string, string> = {
   '/chat': 'Chat',
   '/workspace': 'Workspace',
   '/ai-hub': 'AI Hub',
+  '/api-learning': 'API Learning System',
+  '/integrations/api-learning': 'API Learning System',
   '/settings': 'Settings',
   '/settings/profile': 'Profile',
   '/settings/security': 'Security',
@@ -18,6 +20,7 @@ export const ROUTE_LABELS: Record<string, string> = {
   '/marketing': 'Marketing',
   '/support': 'Support',
   '/analytics': 'Analytics',
+  '/pricing': 'Pricing',
 };
 
 export function getRouteLabel(path: string): string | undefined {

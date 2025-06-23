@@ -18,9 +18,9 @@ class BillingService {
       enterprise: 'prod_SSpW2AOu6axxoY'
     },
     prices: {
-      free: 'price_1RXtrgRsVFqVQ7BiOUTOF4xM',
-      pro: 'price_1RXtraRsVFqVQ7Biya1sIQZI',
-      enterprise: 'price_1RXtraRsVFqVQ7BikUOc02TQ'
+      free: 'price_1RY7qtRsVFqVQ7BisNs7B2vJ',        // $0/month recurring
+      pro: 'price_1RcuKcRsVFqVQ7Bi562UMbw6',         // $29/month recurring (NEWLY CREATED)
+      enterprise: 'price_1RY7qFRsVFqVQ7Bicy9ySWyJ'   // $99/month recurring
     },
     paymentLinks: {
       pro: 'https://buy.stripe.com/7sY7sNeAy0XrbIFd9e9R605',
@@ -264,6 +264,31 @@ class BillingService {
       });
     } catch (error) {
       console.error('Error reactivating subscription:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create Stripe customer portal session for self-service billing
+   */
+  async createCustomerPortalSession(userId: string, returnUrl?: string): Promise<{ portalUrl: string }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('stripe-customer-portal', {
+        body: {
+          userId,
+          returnUrl: returnUrl || `${window.location.origin}/settings/billing`
+        }
+      });
+
+      if (error) {
+        throw new Error(`Customer portal creation failed: ${error.message}`);
+      }
+
+      return {
+        portalUrl: data.data.portalUrl
+      };
+    } catch (error) {
+      console.error('Error creating customer portal session:', error);
       throw error;
     }
   }

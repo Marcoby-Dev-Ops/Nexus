@@ -1,16 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Button } from '../ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
-import { Textarea } from '../ui/textarea';
+import { Button } from '../ui/Button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/Card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
+import { Input } from '../ui/Input';
+import { Label } from '../ui/Label';
+import { Textarea } from '../ui/Textarea';
 import { AlertCircle, Check, ChevronRight, FileUp, DownloadCloud, Globe, Key, Lock } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { Progress } from '../ui/progress';
-import { Badge } from '../ui/badge';
-import { ScrollArea } from '../ui/scroll-area';
-import { Separator } from '../ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
+import { ApiIntegrationService, type ApiIntegrationData } from '@/lib/services/apiIntegrationService';
+import { Alert, AlertDescription } from '../ui/Alert';
+import { Progress } from '../ui/Progress';
+import { Badge } from '../ui/Badge';
+import { Separator } from '../ui/Separator';
 
 // Import HubSpot integration as an example
 import { hubspotIntegration } from '../../lib/integrations/hubspotIntegration';
@@ -43,6 +44,7 @@ interface ApiDocAnalysisResult {
 }
 
 const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onIntegrationCreated }) => {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [apiUrl, setApiUrl] = useState<string>('');
   const [apiDoc, setApiDoc] = useState<string>('');
@@ -56,6 +58,8 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
   const [generationProgress, setGenerationProgress] = useState<number>(0);
   const [integrationName, setIntegrationName] = useState<string>('');
   const [integrationConfig, setIntegrationConfig] = useState<Record<string, string>>({});
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [savedIntegrationId, setSavedIntegrationId] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -92,20 +96,88 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
     }
     
     setError(null);
+    setIsAnalyzing(true);
+    setAnalysisProgress(10);
     
     try {
-      // In a real implementation, we would proxy this request through a backend service
-      // For demo purposes, we'll simulate a successful response
-      setIsAnalyzing(true);
-      setAnalysisProgress(30);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // For demo, we'll use a mock HubSpot OpenAPI doc
-      const mockHubSpotOpenApi = JSON.parse(hubspotIntegration.getMockHubSpotOpenAPI());
-      setApiDoc(JSON.stringify(mockHubSpotOpenApi, null, 2));
-      setAnalysisProgress(100);
+      // Check if it's the NinjaOne API URL
+      if (apiUrl.includes('ninjarmm.com') || apiUrl.includes('ninjaone')) {
+        setAnalysisProgress(50);
+        
+        // Use the actual NinjaOne OpenAPI spec provided by the user
+        const ninjaOneApiSpec = {
+          "openapi": "3.0.1",
+          "info": {
+            "title": "NinjaOne Public API 2.0",
+            "description": "Ninja One Public API documentation for RMM and asset management",
+            "version": "2.0.9-draft"
+          },
+          "security": [
+            {"oauth2": ["monitoring", "management", "control"]},
+            {"sessionKey": ["monitoring", "management", "control"]}
+          ],
+          "tags": [
+            {"name": "devices", "description": "Device management and asset tracking"},
+            {"name": "organization", "description": "Organization management"},
+            {"name": "management", "description": "Asset and software management"},
+            {"name": "system", "description": "Core system entities and resources"}
+          ],
+          "paths": {
+            "/v2/devices": {
+              "get": {
+                "tags": ["devices"],
+                "summary": "Get devices",
+                "description": "Retrieve all managed devices with asset information",
+                "operationId": "getDevices"
+              }
+            },
+            "/v2/devices/{id}": {
+              "get": {
+                "tags": ["devices"],
+                "summary": "Get device details",
+                "description": "Get detailed information about a specific device including hardware specs",
+                "operationId": "getDevice"
+              }
+            },
+            "/v2/devices/{id}/software": {
+              "get": {
+                "tags": ["devices"],
+                "summary": "Get device software",
+                "description": "Retrieve software inventory for a specific device",
+                "operationId": "getDeviceSoftware"
+              }
+            },
+            "/v2/devices/{id}/activities": {
+              "get": {
+                "tags": ["devices"],
+                "summary": "Get device activities",
+                "description": "Get activity history and events for a device",
+                "operationId": "getDeviceActivities"
+              }
+            },
+            "/v2/organizations": {
+              "get": {
+                "tags": ["organization"],
+                "summary": "Get organizations",
+                "description": "Retrieve all client organizations",
+                "operationId": "getOrganizations"
+              }
+            }
+          }
+        };
+        
+        setApiDoc(JSON.stringify(ninjaOneApiSpec, null, 2));
+        setAnalysisProgress(100);
+      } else {
+        // For other URLs, try to fetch (in a real app, this would go through a proxy)
+        setAnalysisProgress(30);
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // For demo, fall back to mock data for non-NinjaOne URLs
+        const mockHubSpotOpenApi = JSON.parse(hubspotIntegration.getMockHubSpotOpenAPI());
+        setApiDoc(JSON.stringify(mockHubSpotOpenApi, null, 2));
+        setAnalysisProgress(100);
+      }
       
       // Proceed to analysis after a brief delay
       setTimeout(() => {
@@ -145,48 +217,84 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
       
       // Parse API doc to extract basic info
       const docObj = typeof apiDoc === 'string' ? JSON.parse(apiDoc) : apiDoc;
-      const mockResult: ApiDocAnalysisResult = {
-        title: docObj.info?.title || 'Untitled API',
-        version: docObj.info?.version || '1.0.0',
-        serverUrl: docObj.servers?.[0]?.url || 'https://api.example.com',
-        authMethods: ['oauth2', 'apiKey'],
-        endpointCount: Object.keys(docObj.paths || {}).length,
-        patterns: [
-          {
-            name: 'Contacts Management',
-            description: 'Manage contact records with full CRUD operations',
-            endpoints: [
-              { name: 'Get Contacts', path: '/crm/v3/objects/contacts', method: 'GET', description: 'Get a list of contacts' },
-              { name: 'Create Contact', path: '/crm/v3/objects/contacts', method: 'POST', description: 'Create a new contact' },
-              { name: 'Update Contact', path: '/crm/v3/objects/contacts/{contactId}', method: 'PATCH', description: 'Update a specific contact' }
-            ]
-          },
-          {
-            name: 'Companies Management',
-            description: 'Manage company records with full CRUD operations',
-            endpoints: [
-              { name: 'Get Companies', path: '/crm/v3/objects/companies', method: 'GET', description: 'Get a list of companies' },
-              { name: 'Create Company', path: '/crm/v3/objects/companies', method: 'POST', description: 'Create a new company' }
-            ]
-          },
-          {
-            name: 'Deals Management',
-            description: 'Manage deal records with full CRUD operations',
-            endpoints: [
-              { name: 'Get Deals', path: '/crm/v3/objects/deals', method: 'GET', description: 'Get a list of deals' },
-              { name: 'Create Deal', path: '/crm/v3/objects/deals', method: 'POST', description: 'Create a new deal' }
-            ]
-          }
-        ]
-      };
+      const isNinjaOne = docObj.info?.title?.includes('NinjaOne') || docObj.info?.title?.includes('Ninja');
+      
+      let analysisResult: ApiDocAnalysisResult;
+      
+      if (isNinjaOne) {
+        // Generate NinjaOne-specific analysis
+        analysisResult = {
+          title: docObj.info?.title || 'NinjaOne RMM API',
+          version: docObj.info?.version || '2.0.9',
+          serverUrl: 'https://app.ninjarmm.com',
+          authMethods: ['oauth2'],
+          endpointCount: Object.keys(docObj.paths || {}).length,
+          patterns: [
+            {
+              name: 'Asset Management',
+              description: 'Complete IT asset visibility and management for MSP clients',
+              endpoints: [
+                { name: 'Get All Devices', path: '/v2/devices', method: 'GET', description: 'Retrieve all managed devices with asset information' },
+                { name: 'Get Device Details', path: '/v2/devices/{id}', method: 'GET', description: 'Get detailed hardware specifications and status' },
+                { name: 'Get Software Inventory', path: '/v2/devices/{id}/software', method: 'GET', description: 'List all installed software and versions' },
+                { name: 'Get Device Activities', path: '/v2/devices/{id}/activities', method: 'GET', description: 'Track device changes and maintenance history' }
+              ]
+            },
+            {
+              name: 'Organization Management',
+              description: 'Manage client organizations and hierarchies',
+              endpoints: [
+                { name: 'Get Organizations', path: '/v2/organizations', method: 'GET', description: 'List all client organizations' },
+                { name: 'Get Organization Details', path: '/v2/organizations/{id}', method: 'GET', description: 'Get organization configuration and settings' }
+              ]
+            },
+            {
+              name: 'Monitoring & Alerts',
+              description: 'Proactive monitoring and automated alerting',
+              endpoints: [
+                { name: 'Get Device Health', path: '/v2/devices/{id}/health', method: 'GET', description: 'Monitor device performance and status' },
+                { name: 'Get Alerts', path: '/v2/alerts', method: 'GET', description: 'Retrieve system alerts and notifications' }
+              ]
+            }
+          ]
+        };
+      } else {
+        // Fallback for other APIs (HubSpot mock)
+        analysisResult = {
+          title: docObj.info?.title || 'Untitled API',
+          version: docObj.info?.version || '1.0.0',
+          serverUrl: docObj.servers?.[0]?.url || 'https://api.example.com',
+          authMethods: ['oauth2', 'apiKey'],
+          endpointCount: Object.keys(docObj.paths || {}).length,
+          patterns: [
+            {
+              name: 'Contacts Management',
+              description: 'Manage contact records with full CRUD operations',
+              endpoints: [
+                { name: 'Get Contacts', path: '/crm/v3/objects/contacts', method: 'GET', description: 'Get a list of contacts' },
+                { name: 'Create Contact', path: '/crm/v3/objects/contacts', method: 'POST', description: 'Create a new contact' },
+                { name: 'Update Contact', path: '/crm/v3/objects/contacts/{contactId}', method: 'PATCH', description: 'Update a specific contact' }
+              ]
+            },
+            {
+              name: 'Companies Management',
+              description: 'Manage company records with full CRUD operations',
+              endpoints: [
+                { name: 'Get Companies', path: '/crm/v3/objects/companies', method: 'GET', description: 'Get a list of companies' },
+                { name: 'Create Company', path: '/crm/v3/objects/companies', method: 'POST', description: 'Create a new company' }
+              ]
+            }
+          ]
+        };
+      }
       
       // Complete the progress bar
       clearInterval(progressInterval);
       setAnalysisProgress(100);
       
       // Set the results
-      setAnalysisResult(mockResult);
-      setIntegrationName(mockResult.title);
+      setAnalysisResult(analysisResult);
+      setIntegrationName(analysisResult.title);
       
       // Proceed to next step after a brief delay
       setTimeout(() => {
@@ -211,6 +319,11 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
       setError('Please provide a name for the integration');
       return;
     }
+
+    if (!user) {
+      setError('You must be logged in to create integrations');
+      return;
+    }
     
     setError(null);
     setIsGenerating(true);
@@ -225,36 +338,68 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
         });
       }, 300);
       
-      // In a real implementation, we would use the actual code generation
-      // For demo purposes, we'll simulate the generation
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      // Simulate code generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setGenerationProgress(70);
+      
+      // Generate TypeScript integration code
+      const generatedCode = `
+// Auto-generated ${integrationName} integration
+import { ApiClient } from '@/lib/apiClient';
+
+export class ${integrationName.replace(/[^a-zA-Z0-9]/g, '')}Integration {
+  private client: ApiClient;
+  
+  constructor(config: { baseUrl: string; apiKey?: string; clientId?: string; clientSecret?: string }) {
+    this.client = new ApiClient(config);
+  }
+  
+${analysisResult.patterns.map(pattern => 
+  pattern.endpoints.map(endpoint => `
+  // ${endpoint.description}
+  async ${endpoint.name.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}() {
+    return this.client.${endpoint.method.toLowerCase()}('${endpoint.path}');
+  }`).join('')
+).join('')}
+}`;
+
+      setGenerationProgress(85);
+      
+      // Save the integration to the database
+      setIsSaving(true);
+      const integrationData: ApiIntegrationData = {
+        name: integrationName,
+        description: `Custom API integration for ${integrationName}`,
+        apiDoc,
+        analysisResult,
+        config: integrationConfig,
+        generatedCode
+      };
+      
+      const result = await ApiIntegrationService.saveApiIntegration(user.id, integrationData);
+      setSavedIntegrationId(result.userIntegration.id);
       
       // Complete the progress bar
       clearInterval(progressInterval);
       setGenerationProgress(100);
       
-      // Simulate integration creation
-      const integration = {
-        id: `${integrationName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}`,
-        name: integrationName,
-        config: integrationConfig,
-        patterns: analysisResult.patterns
-      };
-      
       // Notify parent component of the new integration
       if (onIntegrationCreated) {
-        onIntegrationCreated(integration);
+        onIntegrationCreated(result);
       }
       
       // Proceed to next step after a brief delay
       setTimeout(() => {
         setIsGenerating(false);
+        setIsSaving(false);
         setCurrentStep(4);
       }, 500);
       
     } catch (err) {
-      setError('Failed to generate integration code. Please try again.');
+      console.error('Error generating integration:', err);
+      setError(`Failed to generate integration: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsGenerating(false);
+      setIsSaving(false);
     }
   };
   
@@ -365,11 +510,11 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
                   <div className="grid gap-4 mb-4">
                     <div>
                       <Label htmlFor="api-preview">API Documentation Preview</Label>
-                      <ScrollArea className="h-64 w-full border rounded-md p-4 mt-1.5">
+                      <div className="h-64 w-full border rounded-md p-4 mt-1.5 overflow-auto">
                         <pre className="text-xs text-muted-foreground whitespace-pre-wrap">
                           {apiDoc}
                         </pre>
-                      </ScrollArea>
+                      </div>
                     </div>
                   </div>
                   <div className="flex justify-end space-x-2">
@@ -441,7 +586,7 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
                               </div>
                               <Badge variant="secondary">{pattern.endpoints.length} endpoints</Badge>
                             </div>
-                            <ScrollArea className="h-32 mt-2">
+                            <div className="h-32 mt-2 overflow-auto">
                               <div className="space-y-2">
                                 {pattern.endpoints.map((endpoint, eidx) => (
                                   <div key={eidx} className="text-xs border-l-2 border-muted pl-2 py-1">
@@ -455,7 +600,7 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
                                   </div>
                                 ))}
                               </div>
-                            </ScrollArea>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -577,16 +722,26 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
                 </div>
                 <h3 className="text-lg font-semibold mb-1">{integrationName} Integration Created</h3>
                 <p className="text-sm text-muted-foreground text-center max-w-md mb-6">
-                  Your integration has been created and is ready to use. You can now use it to connect with {integrationName} from within Nexus.
+                  Your integration has been saved to your account and is ready to configure. You can find it in your Integrations Dashboard.
                 </p>
                 <div className="w-full max-w-md border rounded-md p-4 bg-muted/20">
                   <h4 className="text-sm font-medium mb-2">Integration Details</h4>
                   <div className="space-y-1 text-sm">
                     <p><span className="font-medium">Name:</span> {integrationName}</p>
+                    <p><span className="font-medium">Status:</span> <Badge variant="outline">Pending Configuration</Badge></p>
                     <p><span className="font-medium">Authentication:</span> {analysisResult?.authMethods.join(', ')}</p>
                     <p><span className="font-medium">Patterns:</span> {analysisResult?.patterns.length}</p>
                     <p><span className="font-medium">Endpoints:</span> {analysisResult?.endpointCount}</p>
+                    {savedIntegrationId && (
+                      <p><span className="font-medium">ID:</span> <code className="text-xs bg-muted px-1 rounded">{savedIntegrationId}</code></p>
+                    )}
                   </div>
+                </div>
+                
+                <div className="w-full max-w-md mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <strong>Next Steps:</strong> Go to the Integrations Dashboard to complete the authentication setup and start using your new {integrationName} integration.
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -604,7 +759,10 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
               }}>
                 Create Another Integration
               </Button>
-              <Button>
+              <Button onClick={() => {
+                // Navigate to integrations page to see the created integration
+                window.location.href = '/integrations';
+              }}>
                 Go to Integrations Dashboard
               </Button>
             </CardFooter>
@@ -656,10 +814,11 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
         </div>
         
         {error && (
-          <Alert variant="destructive" className="mb-6">
+          <Alert variant="error" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription>
+              <strong>Error:</strong> {error}
+            </AlertDescription>
           </Alert>
         )}
         

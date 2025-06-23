@@ -97,7 +97,7 @@
     "openai": "^4.28.4",
     "postcss": "^8.5.4",
     "prisma": "^6.9.0",
-    "supabase": "^2.24.3",
+    "supabase": "^2.26.9",
     "tailwindcss": "^3.3.0",
     "ts-jest": "^29.3.4",
     "tsx": "^4.7.0",

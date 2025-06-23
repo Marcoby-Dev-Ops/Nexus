@@ -1,5 +1,5 @@
 import { businessObservationService } from '../../../src/lib/services/businessObservationService';
-import { DomainAnalysisService } from '../../../src/lib/services/domainAnalysisService';
+import * as domainAnalysisModule from '../../../src/lib/services/domainAnalysisService';
 
 // Mock dependencies
 jest.mock('../../../src/lib/supabase', () => ({
@@ -23,7 +23,12 @@ jest.mock('../../../src/lib/security/logger', () => ({
   }
 }));
 
-jest.mock('../../../src/lib/services/domainAnalysisService');
+// Mock the domainAnalysisService
+jest.mock('../../../src/lib/services/domainAnalysisService', () => ({
+  domainAnalysisService: {
+    analyzeUserEmailDomains: jest.fn()
+  }
+}));
 
 describe('BusinessObservationService', () => {
   const mockUserId = 'user-123';
@@ -47,8 +52,40 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+      // Mock the service method
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
+
+      // Mock Supabase calls for integrations and security
+      const supabaseMock = jest.requireMock('../../../src/lib/supabase');
+      supabaseMock.supabase.from.mockImplementation((table: string) => {
+        if (table === 'ai_integrations') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: [] // No integrations
+                })
+              })
+            })
+          };
+        }
+        if (table === 'ai_user_profiles') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: { security_settings: { mfa_enabled: false } } // MFA not enabled
+                })
+              })
+            })
+          };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn()
+          })
+        };
+      });
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -76,8 +113,7 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -98,8 +134,7 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -122,8 +157,7 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -171,8 +205,7 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -194,8 +227,7 @@ describe('BusinessObservationService', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockRejectedValue(new Error('Analysis failed'));
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockRejectedValue(new Error('Analysis failed'));
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -215,8 +247,7 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
 
       const insights = await businessObservationService.getBusinessInsights(mockUserId, mockCompanyId);
 
@@ -243,8 +274,7 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      const mockDomainAnalysisService = DomainAnalysisService as jest.MockedClass<typeof DomainAnalysisService>;
-      mockDomainAnalysisService.prototype.analyzeUserEmailDomains = jest.fn().mockResolvedValue(mockDomainAnalysis);
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
 
       const dashboardInsights = await businessObservationService.getBusinessInsights(mockUserId, mockCompanyId, 'dashboard');
       const settingsInsights = await businessObservationService.getBusinessInsights(mockUserId, mockCompanyId, 'settings');

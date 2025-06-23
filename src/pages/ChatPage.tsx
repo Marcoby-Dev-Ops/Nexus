@@ -4,6 +4,7 @@ import StreamingComposer from '@/components/chat/StreamingComposer';
 import { Button } from '@/components/ui/Button';
 import AgentPicker from '@/components/chat/AgentPicker';
 import { getAgentsByType } from '@/lib/agentRegistry';
+import { MVPScopeIndicator } from '@/components/chat/MVPScopeIndicator';
 
 interface ConversationRow { id: string; title: string | null; updated_at: string }
 
@@ -66,6 +67,11 @@ const ChatPage: React.FC = () => {
       {/* Chat Area */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 overflow-hidden">
         <div className="w-full max-w-2xl h-full flex flex-col">
+          {!activeId && (
+            <div className="mb-6">
+              <MVPScopeIndicator />
+            </div>
+          )}
           <StreamingComposer
             conversationId={activeId}
             onConversationId={handleConversationCreated}

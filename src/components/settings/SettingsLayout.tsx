@@ -5,6 +5,7 @@ import {
   User, 
   Shield, 
   Wrench, 
+  Users,
   ChevronRight,
   Settings as SettingsIcon
 } from 'lucide-react';
@@ -41,6 +42,12 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
       title: 'Security',
       icon: <Shield className="h-4 w-4" />,
       path: '/settings/security',
+    },
+    {
+      title: 'Team',
+      icon: <Users className="h-4 w-4" />,
+      path: '/settings/team',
+      admin: true,
     },
     {
       title: 'Integrations',

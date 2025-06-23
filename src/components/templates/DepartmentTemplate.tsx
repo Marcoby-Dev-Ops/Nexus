@@ -8,7 +8,10 @@ import {
   Clock, 
   CheckCircle,
   AlertTriangle,
-  ArrowRight
+  ArrowRight,
+  Search,
+  Filter,
+  Bell
 } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';

@@ -46,8 +46,12 @@ serve(async (req) => {
       throw new Error('Missing code or state');
     }
 
-    // For simplicity, we expect `state` to be the org_id UUID
-    const orgId = state;
+    // Parse state to get user ID and timestamp
+    const [userId, timestamp] = state.split('-');
+    
+    if (!userId) {
+      throw new Error('Invalid state parameter');
+    }
 
     const tokenResp: any = await exchangeCodeForTokens(code);
 
@@ -55,19 +59,35 @@ serve(async (req) => {
 
     const expiresAt = new Date(Date.now() + tokenResp.expires_in * 1000).toISOString();
 
+    // Get PayPal integration ID
+    const { data: integration, error: integrationError } = await supabase
+      .from('integrations')
+      .select('id')
+      .eq('slug', 'paypal')
+      .single();
+
+    if (integrationError || !integration) {
+      throw new Error('PayPal integration not found in database');
+    }
+
+    // Store integration in user_integrations table
     const { error } = await supabase
-      .from('ai_integrations')
-      .upsert(
-        {
-          org_id: orgId,
-          provider: 'paypal',
+      .from('user_integrations')
+      .upsert({
+        user_id: userId,
+        integration_id: integration.id,
+        config: {
           access_token: tokenResp.access_token,
           refresh_token: tokenResp.refresh_token,
           expires_at: expiresAt,
-          metadata: tokenResp,
+          token_type: tokenResp.token_type || 'Bearer',
+          scope: tokenResp.scope,
         },
-        { onConflict: 'org_id,provider' } as any,
-      );
+        status: 'active',
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'user_id,integration_id'
+      });
     if (error) throw error;
 
     const html = `<html><body><script>window.close();</script>Integration connected. You may close this window.</body></html>`;
