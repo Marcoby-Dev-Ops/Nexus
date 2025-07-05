@@ -116,6 +116,14 @@ export const ModernMicrosoft365Integration: React.FC<ModernMicrosoft365Integrati
       icon: <MessageSquare className="w-6 h-6 text-secondary" />,
       component: 'FileList',
       status: isConnected ? 'available' : 'requires_auth'
+    },
+    {
+      id: 'calendar',
+      title: 'Calendar / Agenda',
+      description: 'View your Outlook calendar events and meetings',
+      icon: <Calendar className="w-6 h-6 text-accent" />,
+      component: 'Agenda',
+      status: isConnected ? 'available' : 'requires_auth'
     }
   ];
 
@@ -253,33 +261,29 @@ export const ModernMicrosoft365Integration: React.FC<ModernMicrosoft365Integrati
 
               <Card>
                 <CardHeader>
+                  <CardTitle>My Agenda</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <GraphAgenda />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
                   <CardTitle>File Browser</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <GraphFileList className="w-full h-64" />
+                  <GraphFileList />
                 </CardContent>
               </Card>
             </div>
           ) : (
-            <Card>
-              <CardContent className="text-center py-8">
-                <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-medium mb-2">Authentication Required</h3>
-                <p className="text-muted-foreground mb-4">
-                  Connect to Microsoft 365 to see live component demos
-                </p>
-                <Button onClick={handleConnect} disabled={isConnecting}>
-                  {isConnecting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Connecting...
-                    </>
-                  ) : (
-                    'Connect Now'
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+            <Alert>
+              <AlertCircle className="w-4 h-4" />
+              <AlertDescription>
+                Please connect to your Microsoft 365 account in the "Setup" tab to see live components.
+              </AlertDescription>
+            </Alert>
           )}
         </TabsContent>
 

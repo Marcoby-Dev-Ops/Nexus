@@ -29,6 +29,7 @@ interface StreamingComposerProps {
   conversationId?: string | null;
   onConversationId?: (id: string) => void;
   agentId: string;
+  context?: Record<string, any>;
 }
 
 interface ChatMessage {
@@ -37,7 +38,12 @@ interface ChatMessage {
   sources?: SourceMeta[];
 }
 
-export const StreamingComposer: React.FC<StreamingComposerProps> = ({ conversationId: initialId = null, onConversationId, agentId }) => {
+export const StreamingComposer: React.FC<StreamingComposerProps> = ({
+  conversationId: initialId = null,
+  onConversationId,
+  agentId,
+  context = {},
+}) => {
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(initialId);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -50,6 +56,11 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({ conversati
 
   // Determine enabled flag via constant for future gating if needed
   const enabled = isChatEnabled;
+
+  const {
+    context: composerContext,
+    ...restProps
+  } = { context: {}, ...{ conversationId: initialId, onConversationId, agentId } };
 
   // Ref for auto-scrolling streamed output (not currently used)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -133,7 +144,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({ conversati
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ query: currentInput }),
+        body: JSON.stringify({
+          query: currentInput,
+          context,
+        }),
       });
 
       if (!res.ok || !res.body) {

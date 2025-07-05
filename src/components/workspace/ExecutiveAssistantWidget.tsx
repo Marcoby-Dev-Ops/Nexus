@@ -7,6 +7,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 export const ExecutiveAssistantWidget: React.FC = () => {
   const [open, setOpen] = useState(false);
 
+  // Define the context to be passed to the assistant
+  const workspaceContext = {
+    activeWidgets: [
+      'AIInsightsWidget',
+      'CalendarWidget',
+      'TasksWidget',
+      'IdeasWidget',
+      'EmailWidget',
+      'ProactiveAlertsWidget',
+      'QuickActionsWidget',
+      'FavoritesWidget',
+      'RecentsWidget',
+    ],
+    currentPage: 'My Workspace',
+  };
+
   return (
     <>
       <Button
@@ -30,7 +46,7 @@ export const ExecutiveAssistantWidget: React.FC = () => {
           </DialogHeader>
 
           <div className="flex-1 overflow-hidden p-4 pt-2">
-            <StreamingComposer agentId="executive" />
+            <StreamingComposer agentId="executive" context={workspaceContext} />
           </div>
         </DialogContent>
       </Dialog>

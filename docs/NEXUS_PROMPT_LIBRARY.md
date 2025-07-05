@@ -90,13 +90,22 @@ All department modules must implement these three tabs/sections, ensuring every 
 >
 > **Acceptance Criteria:**  
 > - Recents/pins update in real-time  
-> - Quick actions trigger workflows  
-> - AI panel context-aware  
+> - Quick actions trigger workflows and automations  
+> - AI panel is context-aware and provides actionable, personalized insights  
 > - **Calendar widget** shows today's meetings, events, and deadlines. Integrates with Google/Outlook or internal calendar. Supports quick actions (join, view, add event). Real-time updates and error handling required.  
 > - **Email/Inbox widget** displays recent emails/messages, highlights unread/important communications. Integrates with Gmail/Outlook or internal messaging. Supports quick actions (reply, mark as read, open in inbox). Real-time updates and error handling required.  
-> - **Predictive/Proactive Alerts**: AI-driven alerts and warnings (risk, opportunity, anomaly detection). Users receive real-time, actionable alerts with context and recommended actions.  
-> - **Business Education Engine / Learning Feed**: Contextual business tips, explanations, and improvement suggestions, tailored to user role/department. Updated regularly and visible in workspace/dashboard.  
-> - **Emotional Engagement**: System celebrates wins, encourages progress, and fosters team unity (success banners, milestone celebrations, supportive guidance).  
+> - **Predictive/Proactive Alerts:** AI-driven alerts and warnings (risk, opportunity, anomaly detection). Users receive real-time, actionable alerts with context and recommended actions.  
+> - **Business Education Engine / Learning Feed:** Contextual business tips, explanations, and improvement suggestions, tailored to user role/department. Updated regularly and visible in workspace/dashboard.  
+> - **Emotional Engagement:** System celebrates wins, encourages progress, and fosters team unity (success banners, milestone celebrations, supportive guidance).  
+> - **Personal Productivity Trinity (THINK/SEE/ACT):**
+>     - **THINK:** Users can capture and organize ideas, notes, and brainstorms. Quick capture, idea board, and linking to tasks/projects.
+>     - **SEE:** Unified overview/home page with real-time insights, AI-powered summaries, and actionable intelligence. Widgets for calendar, tasks, ideas, and AI insights. Personalized, customizable dashboard.
+>     - **ACT:** Automate and execute tasks, schedule events, trigger workflows, and leverage quick actions. Integrate with external services and use the executive assistant for natural language actions.
+> - **Unified Search & Command Bar:** Global search across tasks, events, ideas, files, and messages. Command palette for quick actions and navigation.
+> - **Automations & Smart Suggestions:** Automated routines, smart reminders, and AI-driven next best actions. Proactive alerts and workflow triggers.
+> - **Notifications & Reminders:** Multi-channel, context-aware, and actionable.
+> - **Data Portability & Privacy:** Export/import, privacy controls, and compliance.
+> - **Mobile & Offline Support:** Responsive design and offline access for key data.
 > - Follows design system  
 > - Tests/docs
 

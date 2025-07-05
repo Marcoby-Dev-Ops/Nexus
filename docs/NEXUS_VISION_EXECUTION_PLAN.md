@@ -2,19 +2,19 @@
 
 ## I. North Star Vision
 
-> **Nexus is the AI-first operating system for modern business—uniting every department, workflow, and insight in a single, intuitive platform. It empowers startups and enterprises alike to operate smarter, automate more, and grow faster—with daily value, actionable intelligence, and scalable workflows.**
+> **Nexus is the AI-first operating system for modern business and personal productivity—uniting every department, workflow, and insight in a single, intuitive platform. It empowers startups, enterprises, and individuals alike to operate smarter, automate more, and grow faster—with daily value, actionable intelligence, and scalable workflows.**
 
 ---
 
 ## II. Strategic Pillars
 
-1. **Unified Experience:** Every function, one platform, no silos.
-2. **AI-First:** Embedded intelligence and automations in every workflow.
-3. **Modular/Extensible:** Add/remove features, customize, and scale.
-4. **Enterprise-Ready:** Security, compliance, and reliability from day one.
-5. **Startup-Friendly:** Easy onboarding, fast value, fair pricing.
+1. **Unified Experience:** Every function, one platform, no silos—for teams and individuals.
+2. **AI-First:** Embedded intelligence and automations in every workflow and personal workspace.
+3. **Modular/Extensible:** Add/remove features, customize, and scale for any user or org.
+4. **Enterprise-Ready & Personal-Ready:** Security, compliance, reliability, and privacy from day one.
+5. **Startup- and User-Friendly:** Easy onboarding, fast value, fair pricing, and personal enablement.
 6. **Continuous Improvement:** Learns and gets better with every user (data flywheel).
-7. **Trinity Architecture:** THINK (brainstorm/collaborate), SEE (analyze/understand), ACT (automate/execute).
+7. **Trinity Architecture:** THINK (brainstorm/collaborate), SEE (analyze/understand), ACT (automate/execute)—applies to both teams and individuals.
 
 ---
 
@@ -75,8 +75,18 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
     - [ ] **Predictive/Proactive Alerts:** AI-driven alerts and warnings (risk, opportunity, anomaly detection). Users receive real-time, actionable alerts with context and recommended actions.
     - [ ] **Business Education Engine / Learning Feed:** Contextual business tips, explanations, and improvement suggestions, tailored to user role/department. Updated regularly and visible in workspace/dashboard.
     - [ ] **Emotional Engagement:** System celebrates wins, encourages progress, and fosters team unity (success banners, milestone celebrations, supportive guidance).
+    - [ ] **Personal Productivity Trinity (THINK/SEE/ACT):**
+        - **THINK:** Capture and organize ideas, notes, and brainstorms (Personal/Team/Org memory). Quick capture, idea board, and linking to tasks/projects.
+        - **SEE:** Unified overview/home page with real-time insights, AI-powered summaries, and actionable intelligence. Widgets for calendar, tasks, ideas, and AI insights. Personalized, customizable dashboard.
+        - **ACT:** Automate and execute tasks, schedule events, trigger workflows, and leverage quick actions. Integrate with external services (Google, Slack, etc.) and use the executive assistant for natural language actions.
+    - [ ] **Unified Search & Command Bar:** Global search across tasks, events, ideas, files, and messages. Command palette for quick actions and navigation.
+    - [ ] **Automations & Smart Suggestions:** Automated routines, smart reminders, and AI-driven next best actions. Proactive alerts and workflow triggers.
+    - [ ] **Notifications & Reminders:** Multi-channel, context-aware, and actionable.
+    - [ ] **Data Portability & Privacy:** Export/import, privacy controls, and compliance.
+    - [ ] **Mobile & Offline Support:** Responsive design and offline access for key data.
 - [x] AI Assistant: Contextual chat, "next best action," workflow triggers.
-    - [ ] **Natural Language Business Query:** Users can ask the assistant any business question about data, metrics, or processes and receive clear, actionable answers in natural language.
+    - [ ] **Natural Language Business Query:** Users can ask the assistant any business or personal productivity question and receive clear, actionable answers in natural language.
+    - [ ] **Context-Aware Executive Assistant:** Floating AI chat that understands user context, can perform actions, and provides summaries, scheduling, and insights.
 - [x] Onboarding & Help: Guided onboarding, contextual help, user journey tracker.
 
 #### B. Technical Foundation
@@ -217,9 +227,14 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 ## IX. The Trinity & Data Flywheel
 
 - **THINK:** Brainstorm, collaborate, capture ideas (Personal/Team/Org memory)
-- **SEE:** Analyze, understand, get real-time insights (Dashboards, analytics, AI)
-- **ACT:** Automate, execute, optimize (Workflows, automations, integrations)
+- **SEE:** Analyze, understand, get real-time insights (Dashboards, analytics, AI, unified overview)
+- **ACT:** Automate, execute, optimize (Workflows, automations, integrations, quick actions)
 - **Continuous Learning:** Every action and insight feeds back into the system, making Nexus smarter for all users (data flywheel).
+
+- **Personal Workspace Trinity:**
+    - **THINK:** Capture and organize your ideas, notes, and brainstorms. Quick capture, idea board, and linking to tasks/projects.
+    - **SEE:** Unified home page with real-time insights, AI-powered summaries, and actionable intelligence. Widgets for calendar, tasks, ideas, and AI insights. Personalized, customizable dashboard.
+    - **ACT:** Automate and execute tasks, schedule events, trigger workflows, and leverage quick actions. Integrate with external services and use the executive assistant for natural language actions.
 
 ---
 

@@ -1,9 +1,15 @@
 import React from 'react';
-import { Brain } from 'lucide-react';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ThoughtDashboard } from '@/components/thoughts/ThoughtDashboard';
-import { PersonalMemoryCapture } from '@/components/ai/PersonalMemoryCapture';
-import { ActionCards } from '@/components/thoughts/ActionCards';
+import { Brain } from 'lucide-react';
+import { AIInsightsWidget } from '@/components/workspace/widgets/AIInsightsWidget';
+import { CalendarWidget } from '@/components/workspace/widgets/CalendarWidget';
+import { TasksWidget } from '@/components/workspace/widgets/TasksWidget';
+import { IdeasWidget } from '@/components/workspace/widgets/IdeasWidget';
+import { RecentsWidget } from '@/components/workspace/widgets/RecentsWidget';
+import { FavoritesWidget } from '@/components/workspace/widgets/FavoritesWidget';
+import { QuickActionsWidget } from '@/components/workspace/widgets/QuickActionsWidget';
+import { EmailWidget } from '@/components/workspace/widgets/EmailWidget';
+import { ProactiveAlertsWidget } from '@/components/workspace/widgets/ProactiveAlertsWidget';
 
 /**
  * WorkspacePage -> Second Brain
@@ -13,21 +19,31 @@ import { ActionCards } from '@/components/thoughts/ActionCards';
  */
 const WorkspacePage: React.FC = () => {
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
+    <div className="space-y-8">
       <PageHeader
         title="My Workspace"
-        description="Capture, clarify, and implement your ideas. Turn thoughts into actionable projects and tasks."
+        description="Your personal command center to think, see, and act."
         icon={<Brain className="w-6 h-6 text-primary" />}
       />
 
-      {/* AI Action Cards */}
-      <ActionCards />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Column */}
+        <div className="lg:col-span-2 space-y-8">
+          <AIInsightsWidget />
+          <CalendarWidget />
+          <TasksWidget />
+          <IdeasWidget />
+          <EmailWidget />
+        </div>
 
-      {/* Personal Memory Capture */}
-      <PersonalMemoryCapture />
-
-      {/* Thought Dashboard */}
-      <ThoughtDashboard />
+        {/* Side Column */}
+        <div className="lg:col-span-1 space-y-8">
+          <ProactiveAlertsWidget />
+          <QuickActionsWidget />
+          <FavoritesWidget />
+          <RecentsWidget />
+        </div>
+      </div>
     </div>
   );
 };

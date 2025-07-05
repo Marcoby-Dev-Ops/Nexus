@@ -223,37 +223,60 @@ export class GoogleWorkspaceService {
    * Get Google Calendar metrics
    */
   private async getCalendarMetrics() {
-    const calendarListResponse = await this.makeAuthenticatedRequest(
-      'https://www.googleapis.com/calendar/v3/users/me/calendarList'
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(today.getDate() + 7);
+
+    const params = new URLSearchParams({
+      timeMin: today.toISOString(),
+      timeMax: nextWeek.toISOString(),
+      singleEvents: 'true',
+      orderBy: 'startTime'
+    });
+
+    const response = await this.makeAuthenticatedRequest(
+      `https://www.googleapis.com/auth/calendar/v3/calendars/primary/events?${params.toString()}`
     );
 
-    // Get events from primary calendar for last 30 days
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const now = new Date().toISOString();
+    const totalMeetings = response.items.length;
+    const totalDuration = response.items.reduce((acc: number, item: any) => {
+      const start = new Date(item.start.dateTime || item.start.date);
+      const end = new Date(item.end.dateTime || item.end.date);
+      return acc + (end.getTime() - start.getTime());
+    }, 0) / (1000 * 60); // duration in minutes
 
-    const eventsResponse = await this.makeAuthenticatedRequest(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${thirtyDaysAgo}&timeMax=${now}&maxResults=1000`
-    );
-
-    const events = eventsResponse.items || [];
-    const totalDuration = events.reduce((sum: number, event: any) => {
-      if (event.start?.dateTime && event.end?.dateTime) {
-        const start = new Date(event.start.dateTime).getTime();
-        const end = new Date(event.end.dateTime).getTime();
-        return sum + (end - start);
-      }
-      return sum;
-    }, 0);
-
-    const totalParticipants = events.reduce((sum: number, event: any) => {
-      return sum + (event.attendees?.length || 0);
+    const participants = response.items.reduce((acc: number, item: any) => {
+      return acc + (item.attendees?.length || 0);
     }, 0);
 
     return {
-      total: events.length,
-      duration: Math.round(totalDuration / (1000 * 60)), // Convert to minutes
-      participants: totalParticipants
+      total: totalMeetings,
+      duration: Math.round(totalDuration),
+      participants
     };
+  }
+
+  /**
+   * Get Google Calendar events for a given time range
+   */
+  async getCalendarEvents(timeMin: Date, timeMax: Date): Promise<any[]> {
+    if (!this.isAuthenticated()) {
+      throw new Error('Not authenticated with Google Workspace');
+    }
+
+    const params = new URLSearchParams({
+      timeMin: timeMin.toISOString(),
+      timeMax: timeMax.toISOString(),
+      singleEvents: 'true',
+      orderBy: 'startTime',
+      maxResults: '20'
+    });
+    
+    const response = await this.makeAuthenticatedRequest(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`
+    );
+
+    return response.items || [];
   }
 
   /**
