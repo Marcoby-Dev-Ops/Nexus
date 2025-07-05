@@ -58,5 +58,4 @@ backups
 # Development tools
 .eslintrc.js
 jest.config.cjs
-jest.setup.js
-tsconfig.*.json 
+jest.setup.js 
