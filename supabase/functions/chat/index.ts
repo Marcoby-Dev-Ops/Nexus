@@ -212,7 +212,7 @@ serve(async (req) => {
     // Default to cost-efficient model; upgrade to `o3` only for final responses
     const isFinalResponse = metadata?.conversation_stage === 'resolution';
     const openaiRequest = {
-      model: isFinalResponse ? 'o3' : 'o3-mini-high',
+      model: isFinalResponse ? 'o3' : 'gpt-4o-mini',
       messages,
       temperature: 0.7,
       max_tokens: 1000,

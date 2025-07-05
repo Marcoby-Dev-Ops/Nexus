@@ -270,7 +270,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
       </div>
 
       {/* Summary Stats */}
-      <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg">
+      <div className="mt-6 p-4 rounded-lg">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
             <div className="text-2xl font-bold text-primary dark:text-primary">

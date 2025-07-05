@@ -23,28 +23,28 @@ import {
   X
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SuccessOutcome {
   id: string;
-  messageId: string;
-  conversationId: string;
+  message_id: string;
+  conversation_id: string;
   recommendation: string;
-  expectedOutcome: string;
-  actualOutcome?: string;
+  expected_outcome: string;
+  actual_outcome?: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'not_applicable';
-  impactType: 'time_savings' | 'cost_reduction' | 'revenue_increase' | 'efficiency_gain' | 'quality_improvement';
-  quantifiedImpact?: {
+  impact_type: 'time_savings' | 'cost_reduction' | 'revenue_increase' | 'efficiency_gain' | 'quality_improvement';
+  quantified_impact?: {
     metric: string;
     before: number;
     after?: number;
     unit: string;
     timeframe: string;
   };
-  followUpDate: string;
-  completedAt?: string;
-  userNotes?: string;
+  follow_up_date: string;
+  completed_at?: string;
+  user_notes?: string;
 }
 
 interface SuccessOutcomeTrackerProps {
@@ -52,7 +52,7 @@ interface SuccessOutcomeTrackerProps {
   conversationId: string;
   recommendation: string;
   expectedOutcome: string;
-  impactType?: SuccessOutcome['impactType'];
+  impactType?: SuccessOutcome['impact_type'];
   followUpDays?: number;
   onOutcomeTracked?: (outcome: SuccessOutcome) => void;
 }
@@ -122,13 +122,11 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
       const newOutcome: Partial<SuccessOutcome> = {
         message_id: messageId,
         conversation_id: conversationId,
-        user_id: user.id,
         recommendation,
         expected_outcome: expectedOutcome,
         status: 'pending',
         impact_type: impactType,
         follow_up_date: followUpDate.toISOString(),
-        created_at: new Date().toISOString()
       };
 
       const { data, error } = await supabase
@@ -171,7 +169,6 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
         status,
         actual_outcome: actualOutcome.trim() || undefined,
         user_notes: userNotes.trim() || undefined,
-        updated_at: new Date().toISOString()
       };
 
       if (status === 'completed' || status === 'failed') {
@@ -251,7 +248,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
     }
   };
 
-  const getImpactIcon = (type: SuccessOutcome['impactType']) => {
+  const getImpactIcon = (type: SuccessOutcome['impact_type']) => {
     switch (type) {
       case 'time_savings':
         return <Clock className="h-4 w-4" />;

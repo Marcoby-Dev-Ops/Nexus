@@ -16,6 +16,8 @@ export { Avatar } from './Avatar';
 export { AuthForm } from './AuthForm';
 export { Checkbox } from './Checkbox';
 export { RadioGroup, RadioGroupItem } from './RadioGroup';
+export { Switch } from './Switch';
+export { Dialog } from './Dialog';
 
 // Missing exports for 1.0
 export { default as Breadcrumbs } from './Breadcrumbs';
@@ -24,7 +26,7 @@ export { default as Form, FormField } from './Form';
 // Temporarily disabled for 1.0 build
 // export { default as Modal } from './Modal';
 // export { default as Table } from './Table';
-export { default as Tooltip } from './Tooltip';
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './Tooltip.tsx';
 
 // Types
 export type { ButtonProps } from './Button';
@@ -45,7 +47,10 @@ export type { DropdownItem, DropdownProps } from './Dropdown';
 export type { FormProps, FormFieldProps } from './Form';
 export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup';
 // Modal and Table types are exported with their components
-export type { TooltipProps } from './Tooltip';
+// export type { TooltipProps } from './Tooltip';
+
+// Re-export hooks
+export { useToast } from './use-toast';
 
 // Re-export styling utilities
 export {
@@ -60,4 +65,4 @@ export {
   statusColors,
   statusBackgrounds,
   interactiveStyles,
-} from '@/lib/styles'; 
+} from '../../lib/core/config/styles'; 

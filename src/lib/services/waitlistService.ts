@@ -3,9 +3,14 @@
  * @description Service for managing waitlist signups and operations
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
+import { logger } from '@/lib/security/logger';
 // Import HubSpot service for CRM integration
 import { hubspotService } from './hubspotService';
+
+export interface WaitlistMetadata {
+  [key: string]: string | number | boolean | null | undefined;
+}
 
 export interface WaitlistSignup {
   id?: string;
@@ -17,7 +22,7 @@ export interface WaitlistSignup {
   position: number;
   tier: 'early-bird' | 'vip' | 'founder';
   referral_count: number;
-  metadata?: any;
+  metadata?: WaitlistMetadata;
   created_at?: string;
   updated_at?: string;
 }
@@ -67,7 +72,7 @@ class WaitlistService {
         .single();
 
       if (error) {
-        console.error('Waitlist signup error:', error);
+        logger.error({ err: error }, 'Waitlist signup error');
         
         // Handle specific error cases
         if (error.code === '23505') { // Unique constraint violation
@@ -100,15 +105,22 @@ class WaitlistService {
 
       // Sync to HubSpot CRM for lead management
       try {
-        const hubspotResult = await hubspotService.syncWaitlistSignup(waitlistData);
+        const hubspotResult = await hubspotService.syncWaitlistSignup({
+          email: waitlistData.email,
+          firstName: waitlistData.first_name,
+          company: waitlistData.company_name,
+          tier: waitlistData.tier,
+          referralCode: waitlistData.referral_code
+        });
         if (!hubspotResult.success) {
-          console.warn('HubSpot sync failed:', hubspotResult.error);
+          logger.warn({ error: hubspotResult.error }, 'HubSpot sync failed');
           // Don't fail the signup if HubSpot sync fails, just log it
         } else {
-          console.log('Successfully synced to HubSpot:', hubspotResult.contactId);
+          logger.info({ contactId: hubspotResult.contactId }, 'Successfully synced to HubSpot');
         }
       } catch (hubspotError) {
-        console.warn('HubSpot sync error:', hubspotError);
+        const errorMessage = hubspotError instanceof Error ? hubspotError.message : String(hubspotError);
+        logger.warn({ err: hubspotError }, 'HubSpot sync error');
         // Continue with successful signup even if HubSpot sync fails
       }
 
@@ -117,7 +129,8 @@ class WaitlistService {
         data: waitlistData
       };
     } catch (error) {
-      console.error('Waitlist service error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Waitlist service error');
       return {
         success: false,
         error: 'Network error. Please check your connection and try again.'
@@ -136,7 +149,7 @@ class WaitlistService {
         .single();
 
       if (error) {
-        console.error('Failed to fetch waitlist stats:', error);
+        logger.error({ err: error }, 'Failed to fetch waitlist stats');
         return {
           success: false,
           error: 'Failed to load waitlist statistics'
@@ -154,7 +167,8 @@ class WaitlistService {
         }
       };
     } catch (error) {
-      console.error('Stats service error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Stats service error');
       return {
         success: false,
         error: 'Failed to load statistics'
@@ -198,7 +212,8 @@ class WaitlistService {
         }
       };
     } catch (error) {
-      console.error('Get signup by referral code error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Get signup by referral code error');
       return {
         success: false,
         error: 'Failed to fetch signup data'
@@ -218,7 +233,7 @@ class WaitlistService {
         .single();
 
       if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-        console.error('Check email exists error:', error);
+        logger.error({ err: error }, 'Check email exists error');
         return { exists: false };
       }
 
@@ -244,7 +259,8 @@ class WaitlistService {
 
       return { exists: false };
     } catch (error) {
-      console.error('Check email exists service error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Check email exists service error');
       return { exists: false };
     }
   }
@@ -252,7 +268,7 @@ class WaitlistService {
   /**
    * Update signup metadata (for tracking engagement, preferences, etc.)
    */
-  async updateSignupMetadata(email: string, metadata: any): Promise<SignupResult> {
+  async updateSignupMetadata(email: string, metadata: WaitlistMetadata): Promise<SignupResult> {
     try {
       const { data, error } = await supabase
         .from('waitlist_signups')
@@ -265,7 +281,7 @@ class WaitlistService {
         .single();
 
       if (error) {
-        console.error('Update metadata error:', error);
+        logger.error({ err: error }, 'Update metadata error');
         return {
           success: false,
           error: 'Failed to update signup data'
@@ -290,7 +306,8 @@ class WaitlistService {
         }
       };
     } catch (error) {
-      console.error('Update metadata service error:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Update metadata service error');
       return {
         success: false,
         error: 'Failed to update signup data'

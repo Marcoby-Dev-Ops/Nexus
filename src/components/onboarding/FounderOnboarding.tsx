@@ -43,35 +43,30 @@ interface ROICalculation {
 const INDUSTRY_SPECIFICS = {
   'ecommerce': {
     painPoints: ['Inventory management', 'Customer service', 'Order fulfillment', 'Marketing ROI'],
-    timeWasters: ['Manual order processing', 'Inventory updates', 'Customer inquiries', 'Report generation'],
     aiSolutions: ['Automated order processing', 'Smart inventory alerts', 'AI customer service', 'Predictive analytics'],
     avgSavings: 18,
     quickWin: 'Automate order processing and inventory updates'
   },
   'saas': {
     painPoints: ['Customer churn', 'Lead qualification', 'Product analytics', 'Customer onboarding'],
-    timeWasters: ['Manual lead scoring', 'Report compilation', 'Customer health checks', 'Support ticket routing'],
     aiSolutions: ['Predictive churn analysis', 'Automated lead scoring', 'Smart customer insights', 'Intelligent support routing'],
     avgSavings: 22,
     quickWin: 'Automate lead scoring and customer health monitoring'
   },
   'consulting': {
     painPoints: ['Time tracking', 'Project management', 'Client communication', 'Resource allocation'],
-    timeWasters: ['Manual timesheets', 'Status reporting', 'Scheduling', 'Invoice generation'],
     aiSolutions: ['Automated time tracking', 'Smart project insights', 'Client communication automation', 'Resource optimization'],
     avgSavings: 16,
     quickWin: 'Automate time tracking and project reporting'
   },
   'agency': {
     painPoints: ['Client reporting', 'Campaign management', 'Resource planning', 'Performance tracking'],
-    timeWasters: ['Manual reporting', 'Campaign optimization', 'Client updates', 'ROI calculations'],
     aiSolutions: ['Automated client reports', 'Smart campaign optimization', 'Real-time performance insights', 'Predictive ROI modeling'],
     avgSavings: 20,
     quickWin: 'Automate client reporting and campaign optimization'
   },
   'other': {
     painPoints: ['Data management', 'Process optimization', 'Team coordination', 'Performance tracking'],
-    timeWasters: ['Manual data entry', 'Report generation', 'Status updates', 'Task coordination'],
     aiSolutions: ['Automated data processing', 'Smart workflow optimization', 'Intelligent team coordination', 'Real-time analytics'],
     avgSavings: 15,
     quickWin: 'Automate data processing and reporting'

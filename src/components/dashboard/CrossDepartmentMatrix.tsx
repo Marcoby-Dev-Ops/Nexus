@@ -189,8 +189,8 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {departmentMetrics.map((dept, index) => (
           <Card 
-            key={index} 
-            className={`relative overflow-hidden transition-all hover:shadow-md ${getStatusColor(dept.status)}`}
+            key={index}
+            className="relative overflow-hidden transition-all hover:shadow-md"
           >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between text-sm font-semibold">

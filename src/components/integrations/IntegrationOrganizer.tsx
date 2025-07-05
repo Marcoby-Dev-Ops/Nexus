@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIntegrations } from '@/lib/hooks/useIntegrations';
-import { supabase } from '@/lib/supabase';
-import type { Database } from '@/lib/database.types';
+import { supabase } from '../../lib/core/supabase';
+import type { Database } from '@/lib/core/database.types';
 import {
   Clock,
   XCircle,

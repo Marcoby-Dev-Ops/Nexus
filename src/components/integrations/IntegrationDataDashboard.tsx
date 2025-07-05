@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import {
   Database,
   RefreshCw,
@@ -19,7 +19,6 @@ import {
   Users,
   DollarSign,
   Mail,
-  Calendar,
   Settings,
   ExternalLink
 } from 'lucide-react';
@@ -271,7 +270,7 @@ const IntegrationDataDashboard: React.FC = () => {
       'ninjarmm': <Settings className="w-5 h-5" />,
       'hubspot': <Users className="w-5 h-5" />,
       'quickbooks': <BarChart3 className="w-5 h-5" />,
-      'google-calendar': <Calendar className="w-5 h-5" />
+      'google-calendar': <Mail className="w-5 h-5" />
     };
     return iconMap[slug] || <Database className="w-5 h-5" />;
   };
@@ -573,6 +572,63 @@ const IntegrationDataDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="insights" className="space-y-6">
+          {/* Client Intelligence Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                Client Intelligence
+              </CardTitle>
+              <div className="text-sm text-muted-foreground">
+                AI-powered client insights from unified integration data
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="text-center p-4 bg-primary/5 rounded-lg">
+                  <div className="text-2xl font-bold text-primary">247</div>
+                  <div className="text-sm text-muted-foreground">Unified Profiles</div>
+                </div>
+                <div className="text-center p-4 bg-success/5 rounded-lg">
+                  <div className="text-2xl font-bold text-success">$1.2M</div>
+                  <div className="text-sm text-muted-foreground">Total Client Value</div>
+                </div>
+                <div className="text-center p-4 bg-warning/5 rounded-lg">
+                  <div className="text-2xl font-bold text-warning">12</div>
+                  <div className="text-sm text-muted-foreground">Active Opportunities</div>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => window.location.href = '/integrations/client-intelligence'}
+                  className="flex-1"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  View Client Intelligence Dashboard
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    // Trigger client intelligence refresh
+                    fetch('https://automate.marcoby.net/webhook/client-intelligence-monitor', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        user_id: user?.id,
+                        company_id: user?.company_id,
+                        trigger_type: 'manual'
+                      })
+                    });
+                  }}
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh Intelligence
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Existing Insights */}
           <div className="space-y-4">
             {insights.map((insight) => (
               <Card key={insight.id}>

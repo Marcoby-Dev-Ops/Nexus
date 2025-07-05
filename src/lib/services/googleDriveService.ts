@@ -3,10 +3,35 @@
  * Syncs documents from Google Drive for intelligent retrieval and business context
  */
 
+import { logger } from '@/lib/security/logger';
+
 interface GoogleDriveConfig {
   accessToken: string;
   refreshToken: string;
   folderId?: string; // Optional: specific folder to sync
+}
+
+interface GoogleWorkspaceCredentials {
+  access_token: string;
+  refresh_token: string;
+  drive_folder_id?: string;
+}
+
+function isGoogleWorkspaceCredentials(credentials: any): credentials is GoogleWorkspaceCredentials {
+  return credentials && typeof credentials.access_token === 'string' && typeof credentials.refresh_token === 'string';
+}
+
+interface DriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  modifiedTime: string;
+  webViewLink: string;
+  size?: number;
+  parents?: string[];
+  createdBy?: { displayName: string };
+  lastModifyingUser?: { displayName: string };
+  permissions?: { role: string; id: string; type: string }[];
 }
 
 interface DriveDocument {
@@ -47,7 +72,7 @@ export class GoogleDriveService {
         .single()
       );
 
-      if (integration?.credentials) {
+      if (integration?.credentials && isGoogleWorkspaceCredentials(integration.credentials)) {
         this.config = {
           accessToken: integration.credentials.access_token,
           refreshToken: integration.credentials.refresh_token,
@@ -58,7 +83,7 @@ export class GoogleDriveService {
       }
       return false;
     } catch (error) {
-      console.error('Failed to initialize Google Drive service:', error);
+      logger.error({ err: error }, 'Failed to initialize Google Drive service');
       return false;
     }
   }
@@ -110,13 +135,15 @@ export class GoogleDriveService {
             }
           }
         } catch (error) {
-          results.errors.push(`Failed to process ${doc.name}: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          results.errors.push(`Failed to process ${doc.name}: ${errorMessage}`);
         }
       }
 
       return results;
     } catch (error) {
-      throw new Error(`Document sync failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Document sync failed: ${errorMessage}`);
     }
   }
 
@@ -140,7 +167,7 @@ export class GoogleDriveService {
       const data = await response.json();
 
       if (data.files) {
-        documents.push(...data.files.map(file => ({
+        documents.push(...data.files.map((file: DriveFile) => ({
           id: file.id,
           name: file.name,
           mimeType: file.mimeType,
@@ -232,7 +259,7 @@ export class GoogleDriveService {
       return `${documentContext}\n\n${content}`.trim();
 
     } catch (error) {
-      console.error(`Failed to extract content from ${doc.name}:`, error);
+      logger.error({ err: error, docName: doc.name }, `Failed to extract content from ${doc.name}`);
       return `Document: ${doc.name}\nType: ${doc.mimeType}\nLocation: ${doc.webViewLink}\nNote: Content extraction failed`;
     }
   }
@@ -291,7 +318,7 @@ Link: ${doc.webViewLink}
    * Get human-readable document type label
    */
   private getDocumentTypeLabel(mimeType: string): string {
-    const typeMap = {
+    const typeMap: { [key: string]: string } = {
       'application/vnd.google-apps.document': 'Google Doc',
       'application/vnd.google-apps.spreadsheet': 'Google Sheet',
       'application/vnd.google-apps.presentation': 'Google Slides',
@@ -354,8 +381,9 @@ Link: ${doc.webViewLink}
         throw new Error(`Failed to store document: ${response.statusText}`);
       }
     } catch (error) {
-      console.error(`Failed to store document ${document.name} in RAG:`, error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error, documentId: document.id }, 'Error storing document for RAG in Supabase');
+      throw new Error(`Failed to store document ${document.id} for RAG: ${errorMessage}`);
     }
   }
 
@@ -451,9 +479,10 @@ Link: ${doc.webViewLink}
         );
       }
     } catch (error) {
-      console.error('Failed to refresh access token:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Google Drive token refresh failed');
       this.isAuthenticated = false;
-      throw error;
+      throw new Error(`Token refresh failed: ${errorMessage}`);
     }
   }
 
@@ -495,25 +524,28 @@ Link: ${doc.webViewLink}
         errors: []
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Failed to get sync status');
       return {
         lastSync: null,
         totalDocuments: 0,
         pendingSync: 0,
-        errors: [error.message]
+        errors: [errorMessage]
       };
     }
   }
 
   /**
-   * Manual sync trigger
+   * Trigger a manual sync process
    */
   async triggerSync(): Promise<{
     success: boolean;
     processed: number;
     errors: string[];
+    newDocuments: DriveDocument[];
   }> {
     try {
-      const result = await this.syncDocumentsForRAG();
+      const syncResult = await this.syncDocumentsForRAG();
       
       // Update last sync time
       const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
@@ -524,8 +556,8 @@ Link: ${doc.webViewLink}
             metadata: {
               lastDriveSync: new Date().toISOString(),
               lastSyncResult: {
-                processed: result.processed,
-                errors: result.errors.length
+                processed: syncResult.processed,
+                errors: syncResult.errors.length
               }
             }
           })
@@ -533,17 +565,18 @@ Link: ${doc.webViewLink}
           .eq('integration_name', 'google-workspace')
         );
       }
-
       return {
         success: true,
-        processed: result.processed,
-        errors: result.errors
+        ...syncResult,
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Manual sync trigger failed');
       return {
         success: false,
         processed: 0,
-        errors: [error.message]
+        errors: [errorMessage],
+        newDocuments: []
       };
     }
   }

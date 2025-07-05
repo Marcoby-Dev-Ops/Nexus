@@ -17,7 +17,13 @@ import {
   ChevronDown,
   Percent,
   UserPlus,
-  Phone
+  Phone,
+  AlertCircle,
+  Activity,
+  Lightbulb,
+  Zap,
+  TrendingUp,
+  Brain
 } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/Card';
@@ -36,6 +42,7 @@ import {
   SelectValue,
 } from '../../../components/ui/Select';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/Avatar';
+import { useSystemContext } from '../../../contexts/SystemContext';
 
 /**
  * SalesPerformancePage - Sales dashboard with leads, pipeline, and performance metrics
@@ -233,324 +240,476 @@ const SalesPerformancePage: React.FC = () => {
     deal.product.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Sales Performance</h1>
-          <p className="text-muted-foreground">Track sales activities, pipeline, and revenue metrics</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Select defaultValue={activeTimeframe} onValueChange={setActiveTimeframe}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Select Timeframe" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>Timeframe</SelectLabel>
-                <SelectItem value="day">Today</SelectItem>
-                <SelectItem value="week">This Week</SelectItem>
-                <SelectItem value="month">This Month</SelectItem>
-                <SelectItem value="quarter">This Quarter</SelectItem>
-                <SelectItem value="year">This Year</SelectItem>
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" size="icon">
-            <Filter className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <Download className="h-4 w-4" />
-          </Button>
-        </div>
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle2 className="w-4 h-4 text-success" />;
+      case 'syncing':
+        return <RefreshCw className="w-4 h-4 text-primary animate-spin" />;
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-destructive" />;
+      case 'paused':
+        return <Clock className="w-4 h-4 text-warning" />;
+      default:
+        return <Activity className="w-4 h-4 text-muted-foreground" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-success/10 text-success border-success/20';
+      case 'syncing': return 'bg-primary/10 text-primary border-primary/20';
+      case 'error': return 'bg-destructive/10 text-destructive border-destructive/20';
+      case 'paused': return 'bg-warning/10 text-warning border-warning/20';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
+
+  const SystemSalesCards: React.FC = () => {
+    const { integrationStatus, businessHealth, aiInsights, loading, refresh } = useSystemContext();
+    return (
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
+        {/* System Health Card */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-primary" />
+              System Health
+            </CardTitle>
+            <CardDescription>Business health score and trend</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-between">
+            <div className="mb-4">
+              <div className="text-4xl font-bold flex items-center gap-2">
+                {loading ? '...' : businessHealth.score}
+                <span className={`text-base font-medium ${businessHealth.trend === 'up' ? 'text-success' : businessHealth.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}>({businessHealth.trend})</span>
+              </div>
+              <div className="text-sm text-muted-foreground mt-2">
+                {businessHealth.summary}
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+              <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+            </Button>
+          </CardContent>
+        </Card>
+        {/* AI Opportunities Card */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-yellow-500" />
+              AI Opportunities
+            </CardTitle>
+            <CardDescription>AI-generated insights and recommendations</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-between">
+            <div className="space-y-2 mb-4">
+              {loading ? (
+                <div className="text-muted-foreground">Loading...</div>
+              ) : aiInsights.length === 0 ? (
+                <div className="text-muted-foreground">No insights available</div>
+              ) : (
+                aiInsights.slice(0, 3).map((insight) => (
+                  <div key={insight.id} className={`p-2 rounded border-l-4 ${
+                    insight.impact === 'high' ? 'border-destructive bg-destructive/5' :
+                    insight.impact === 'medium' ? 'border-warning bg-warning/5' :
+                    'border-muted bg-muted/5'
+                  }`}>
+                    <div className="font-semibold flex items-center gap-2">
+                      {insight.type === 'opportunity' && <Zap className="w-4 h-4 text-success" />}
+                      {insight.type === 'alert' && <AlertCircle className="w-4 h-4 text-destructive" />}
+                      {insight.type === 'trend' && <TrendingUp className="w-4 h-4 text-primary" />}
+                      {insight.type === 'optimization' && <Lightbulb className="w-4 h-4 text-yellow-500" />}
+                      {insight.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">{insight.description}</div>
+                  </div>
+                ))
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/ai-hub'}>
+              <Brain className="w-4 h-4 mr-2" /> Explore AI Hub
+            </Button>
+          </CardContent>
+        </Card>
+        {/* Integrations Status Card */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <RefreshCw className="w-5 h-5 text-blue-500" />
+              Integrations
+            </CardTitle>
+            <CardDescription>Status of connected services</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-between">
+            <div className="space-y-2 mb-4">
+              {loading ? (
+                <div className="text-muted-foreground">Loading...</div>
+              ) : integrationStatus.length === 0 ? (
+                <div className="text-muted-foreground">No integrations connected</div>
+              ) : (
+                integrationStatus.slice(0, 3).map((integration) => (
+                  <div key={integration.id} className="flex items-center gap-2 p-2 rounded border border-border">
+                    {getStatusIcon(integration.status)}
+                    <span className="font-medium">{integration.name}</span>
+                    <span className={`text-xs ml-auto px-2 py-0.5 rounded ${getStatusColor(integration.status)}`}>{integration.status}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={() => window.location.href = '/integrations'}>
+              <RefreshCw className="w-4 h-4 mr-2" /> Manage Integrations
+            </Button>
+          </CardContent>
+        </Card>
+        {/* Quick Actions Card */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5 text-green-500" />
+              Quick Actions
+            </CardTitle>
+            <CardDescription>Jump to key workflows</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 flex flex-col justify-between">
+            <div className="space-y-2 mb-4">
+              <Button variant="secondary" size="sm" className="w-full" onClick={() => window.location.href = '/sales/performance'}>
+                View Sales Performance
+              </Button>
+              <Button variant="secondary" size="sm" className="w-full" onClick={() => window.location.href = '/sales/pipeline'}>
+                View Pipeline
+              </Button>
+              <Button variant="secondary" size="sm" className="w-full" onClick={() => window.location.href = '/ai-hub'}>
+                Ask AI for Sales Insight
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+    );
+  };
 
-      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="team">Team</TabsTrigger>
-          <TabsTrigger value="deals">Deals</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="overview" className="space-y-6">
-          {/* Performance Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {performanceMetrics.map(metric => (
-              <Card key={metric.id}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between space-y-0 pb-2">
-                    <div className="font-medium">{metric.title}</div>
-                    <div className={`p-2 rounded-full bg-${metric.color}/10 ${metric.color}`}>
-                      {metric.icon}
-                    </div>
-                  </div>
-                  <div className="text-2xl font-bold">{metric.value}</div>
-                  <div className="flex items-center pt-1">
-                    {metric.trend === 'up' ? (
-                      <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-destructive' : 'text-success'}`} />
-                    ) : (
-                      <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-success' : 'text-destructive'}`} />
-                    )}
-                    <p className={`text-sm ${
-                      (metric.trend === 'up' && metric.id !== 'leads') || (metric.trend === 'down' && metric.id === 'leads')
-                        ? 'text-success'
-                        : 'text-destructive'
-                    }`}>
-                      {metric.change} from previous {activeTimeframe}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+  return (
+    <div className="space-y-8">
+      <SystemSalesCards />
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Sales Performance</h1>
+            <p className="text-muted-foreground">Track sales activities, pipeline, and revenue metrics</p>
           </div>
-
-          {/* Pipeline Summary & Team Performance */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2 text-primary" />
-                  Pipeline Summary
-                </CardTitle>
-                <CardDescription>
-                  Current sales pipeline by stage
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-4">
-                {pipelineStages.map(stage => (
-                  <div key={stage.id}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="text-sm font-medium">{stage.name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {stage.count} deals • {formatCurrency(stage.value)}
-                      </div>
-                    </div>
-                    <Progress value={(stage.count / pipelineStages[0].count) * 100} className={`h-2 ${stage.color}`} />
-                  </div>
-                ))}
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full" onClick={() => setActiveTab('pipeline')}>
-                  View Full Pipeline
-                </Button>
-              </CardFooter>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center">
-                  <LineChart className="h-5 w-5 mr-2 text-primary" />
-                  Top Performers
-                </CardTitle>
-                <CardDescription>
-                  Sales team quota attainment
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-5">
-                {teamPerformance.slice(0, 3).map(member => (
-                  <div key={member.id}>
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center">
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={member.avatar} alt={member.name} />
-                          <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="text-sm font-medium">{member.name}</div>
-                      </div>
-                      <div className="text-sm font-medium">
-                        {formatCurrency(member.revenue)} / {formatCurrency(member.quota)}
-                      </div>
-                    </div>
-                    <Progress 
-                      value={member.progress} 
-                      className={`h-2 ${member.progress >= 100 ? 'bg-success' : 'bg-primary'}`} 
-                    />
-                    <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                      <div>{member.deals} deals closed</div>
-                      <div>{member.progress}% of quota</div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full" onClick={() => setActiveTab('team')}>
-                  View All Team Members
-                </Button>
-              </CardFooter>
-            </Card>
+          <div className="flex items-center gap-2">
+            <Select defaultValue={activeTimeframe} onValueChange={setActiveTimeframe}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Select Timeframe" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>Timeframe</SelectLabel>
+                  <SelectItem value="day">Today</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="quarter">This Quarter</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="icon">
+              <Filter className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon">
+              <Download className="h-4 w-4" />
+            </Button>
           </div>
+        </div>
 
-          {/* Top Opportunities */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Top Opportunities</CardTitle>
-                <Button variant="outline" size="sm">View All</Button>
-              </div>
-              <CardDescription>
-                High-value deals currently in the pipeline
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {topOpportunities.map(opp => (
-                  <div key={opp.id} className="p-3 rounded-md hover:bg-muted/50">
-                    <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <h3 className="font-medium">{opp.company}</h3>
-                        <div className="text-sm text-muted-foreground">
-                          {formatCurrency(opp.value)} • {opp.stage}
-                        </div>
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="deals">Deals</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="overview" className="space-y-6">
+            {/* Performance Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {performanceMetrics.map(metric => (
+                <Card key={metric.id}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between space-y-0 pb-2">
+                      <div className="font-medium">{metric.title}</div>
+                      <div className={`p-2 rounded-full bg-${metric.color}/10 ${metric.color}`}>
+                        {metric.icon}
                       </div>
-                      <Badge className={`${
-                        opp.probability >= 70 ? 'bg-success' : 
-                        opp.probability >= 50 ? 'bg-amber-500' : 'bg-destructive'
+                    </div>
+                    <div className="text-2xl font-bold">{metric.value}</div>
+                    <div className="flex items-center pt-1">
+                      {metric.trend === 'up' ? (
+                        <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-destructive' : 'text-success'}`} />
+                      ) : (
+                        <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-success' : 'text-destructive'}`} />
+                      )}
+                      <p className={`text-sm ${
+                        (metric.trend === 'up' && metric.id !== 'leads') || (metric.trend === 'down' && metric.id === 'leads')
+                          ? 'text-success'
+                          : 'text-destructive'
                       }`}>
-                        {opp.probability}% Probability
-                      </Badge>
+                        {metric.change} from previous {activeTimeframe}
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <div className="flex items-center">
-                        <Avatar className="h-6 w-6 mr-2">
-                          <AvatarImage src={opp.rep.avatar} alt={opp.rep.name} />
-                          <AvatarFallback>{opp.rep.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span>{opp.rep.name}</span>
-                      </div>
-                      <div className="flex items-center text-muted-foreground">
-                        <Clock className="h-3.5 w-3.5 mr-1" />
-                        <span>{opp.nextAction} by {opp.nextActionDate}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
-        {/* Pipeline Tab */}
-        <TabsContent value="pipeline" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Sales Pipeline</CardTitle>
-              <CardDescription>
-                All active opportunities by stage
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Pipeline details would go here */}
-              <div className="text-center py-12 text-muted-foreground">
-                Pipeline visualization and detailed stage breakdowns would be displayed here.
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Team Tab */}
-        <TabsContent value="team" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Sales Team Performance</CardTitle>
-              <CardDescription>
-                Individual performance metrics and quota attainment
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Team details would go here */}
-              <div className="text-center py-12 text-muted-foreground">
-                Detailed team performance metrics, activities, and comparisons would be displayed here.
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Deals Tab */}
-        <TabsContent value="deals" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <CardTitle className="text-lg">Recent Deals</CardTitle>
+            {/* Pipeline Summary & Team Performance */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <BarChart3 className="h-5 w-5 mr-2 text-primary" />
+                    Pipeline Summary
+                  </CardTitle>
                   <CardDescription>
-                    Recently closed and pending deals
+                    Current sales pipeline by stage
                   </CardDescription>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search deals..."
-                    className="pl-8 w-full md:w-[250px]"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {filteredDeals.length > 0 ? (
-                  filteredDeals.map(deal => (
-                    <div key={deal.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <div className="font-medium">{deal.company}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {deal.product} • {deal.closedDate || 'Pending'}
-                          </div>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-4">
+                  {pipelineStages.map(stage => (
+                    <div key={stage.id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-sm font-medium">{stage.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {stage.count} deals • {formatCurrency(stage.value)}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <div className="text-right">
-                          <div className="font-medium">{formatCurrency(deal.value)}</div>
-                          <div className="text-xs">
-                            {deal.status === 'won' ? (
-                              <span className="text-success flex items-center">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                Won
-                              </span>
-                            ) : deal.status === 'lost' ? (
-                              <span className="text-destructive flex items-center">
-                                <AlertTriangle className="h-3 w-3 mr-1" />
-                                Lost
-                              </span>
-                            ) : (
-                              <span className="text-amber-500 flex items-center">
-                                <Clock className="h-3 w-3 mr-1" />
-                                Pending
-                              </span>
-                            )}
-                          </div>
+                      <Progress value={(stage.count / pipelineStages[0].count) * 100} className={`h-2 ${stage.color}`} />
+                    </div>
+                  ))}
+                </CardContent>
+                <CardFooter>
+                  <Button variant="outline" className="w-full" onClick={() => setActiveTab('pipeline')}>
+                    View Full Pipeline
+                  </Button>
+                </CardFooter>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center">
+                    <LineChart className="h-5 w-5 mr-2 text-primary" />
+                    Top Performers
+                  </CardTitle>
+                  <CardDescription>
+                    Sales team quota attainment
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-4 space-y-5">
+                  {teamPerformance.slice(0, 3).map(member => (
+                    <div key={member.id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center">
+                          <Avatar className="h-8 w-8 mr-2">
+                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div className="text-sm font-medium">{member.name}</div>
                         </div>
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={deal.rep.avatar} alt={deal.rep.name} />
-                          <AvatarFallback>{deal.rep.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <div className="text-sm font-medium">
+                          {formatCurrency(member.revenue)} / {formatCurrency(member.quota)}
+                        </div>
+                      </div>
+                      <Progress 
+                        value={member.progress} 
+                        className={`h-2 ${member.progress >= 100 ? 'bg-success' : 'bg-primary'}`} 
+                      />
+                      <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                        <div>{member.deals} deals closed</div>
+                        <div>{member.progress}% of quota</div>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-12 text-muted-foreground">
-                    No deals found matching your search.
+                  ))}
+                </CardContent>
+                <CardFooter>
+                  <Button variant="outline" className="w-full" onClick={() => setActiveTab('team')}>
+                    View All Team Members
+                  </Button>
+                </CardFooter>
+              </Card>
+            </div>
+
+            {/* Top Opportunities */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Top Opportunities</CardTitle>
+                  <Button variant="outline" size="sm">View All</Button>
+                </div>
+                <CardDescription>
+                  High-value deals currently in the pipeline
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {topOpportunities.map(opp => (
+                    <div key={opp.id} className="p-3 rounded-md hover:bg-muted/50">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-medium">{opp.company}</h3>
+                          <div className="text-sm text-muted-foreground">
+                            {formatCurrency(opp.value)} • {opp.stage}
+                          </div>
+                        </div>
+                        <Badge className={`${
+                          opp.probability >= 70 ? 'bg-success' : 
+                          opp.probability >= 50 ? 'bg-amber-500' : 'bg-destructive'
+                        }`}>
+                          {opp.probability}% Probability
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
+                        <div className="flex items-center">
+                          <Avatar className="h-6 w-6 mr-2">
+                            <AvatarImage src={opp.rep.avatar} alt={opp.rep.name} />
+                            <AvatarFallback>{opp.rep.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span>{opp.rep.name}</span>
+                        </div>
+                        <div className="flex items-center text-muted-foreground">
+                          <Clock className="h-3.5 w-3.5 mr-1" />
+                          <span>{opp.nextAction} by {opp.nextActionDate}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Pipeline Tab */}
+          <TabsContent value="pipeline" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Sales Pipeline</CardTitle>
+                <CardDescription>
+                  All active opportunities by stage
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Pipeline details would go here */}
+                <div className="text-center py-12 text-muted-foreground">
+                  Pipeline visualization and detailed stage breakdowns would be displayed here.
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Team Tab */}
+          <TabsContent value="team" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Sales Team Performance</CardTitle>
+                <CardDescription>
+                  Individual performance metrics and quota attainment
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {/* Team details would go here */}
+                <div className="text-center py-12 text-muted-foreground">
+                  Detailed team performance metrics, activities, and comparisons would be displayed here.
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Deals Tab */}
+          <TabsContent value="deals" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-lg">Recent Deals</CardTitle>
+                    <CardDescription>
+                      Recently closed and pending deals
+                    </CardDescription>
                   </div>
-                )}
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between border-t pt-6">
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter Deals
-              </Button>
-              <Button>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Data
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search deals..."
+                      className="pl-8 w-full md:w-[250px]"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {filteredDeals.length > 0 ? (
+                    filteredDeals.map(deal => (
+                      <div key={deal.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted/50">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <div className="font-medium">{deal.company}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {deal.product} • {deal.closedDate || 'Pending'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <div className="text-right">
+                            <div className="font-medium">{formatCurrency(deal.value)}</div>
+                            <div className="text-xs">
+                              {deal.status === 'won' ? (
+                                <span className="text-success flex items-center">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Won
+                                </span>
+                              ) : deal.status === 'lost' ? (
+                                <span className="text-destructive flex items-center">
+                                  <AlertTriangle className="h-3 w-3 mr-1" />
+                                  Lost
+                                </span>
+                              ) : (
+                                <span className="text-amber-500 flex items-center">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Pending
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={deal.rep.avatar} alt={deal.rep.name} />
+                            <AvatarFallback>{deal.rep.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      No deals found matching your search.
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter className="flex justify-between border-t pt-6">
+                <Button variant="outline">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filter Deals
+                </Button>
+                <Button>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh Data
+                </Button>
+              </CardFooter>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

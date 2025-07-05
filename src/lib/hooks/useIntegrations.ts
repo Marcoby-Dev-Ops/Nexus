@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/Toast';
+import { supabase } from '@/lib/core/supabase';
 
 interface Integration {
   id: string;
@@ -36,13 +37,16 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/integrations?userId=${user.id}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch integrations');
-      }
+      const { data, error } = await supabase
+        .from('user_integrations')
+        .select(`*
+          ,integrations:integrations!inner(id,name,slug,auth_type,category)`)
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
 
-      const data = await response.json();
-      setIntegrations(data);
+      if (error) throw error;
+
+      setIntegrations(data ?? []);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('An error occurred'));
       showToast({
@@ -62,19 +66,17 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/integrations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(integration)
-      });
+      const { data: newIntegration, error: insertError } = await supabase
+        .from('user_integrations')
+        .insert({
+          ...integration,
+          user_id: user.id,
+        })
+        .select()
+        .single();
 
-      if (!response.ok) {
-        throw new Error('Failed to add integration');
-      }
+      if (insertError) throw insertError;
 
-      const newIntegration = await response.json();
       setIntegrations(prev => [...prev, newIntegration]);
 
       showToast({
@@ -102,13 +104,12 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/integrations/${integrationId}`, {
-        method: 'DELETE'
-      });
+      const { error: deleteError } = await supabase
+        .from('user_integrations')
+        .delete()
+        .eq('id', integrationId);
 
-      if (!response.ok) {
-        throw new Error('Failed to remove integration');
-      }
+      if (deleteError) throw deleteError;
 
       setIntegrations(prev => prev.filter(integration => integration.id !== integrationId));
 
@@ -137,19 +138,18 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/integrations/${integrationId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updates)
-      });
+      const { data: updatedIntegration, error: updateError } = await supabase
+        .from('user_integrations')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', integrationId)
+        .select()
+        .single();
 
-      if (!response.ok) {
-        throw new Error('Failed to update integration');
-      }
+      if (updateError) throw updateError;
 
-      const updatedIntegration = await response.json();
       setIntegrations(prev => prev.map(integration => 
         integration.id === integrationId ? updatedIntegration : integration
       ));

@@ -53,27 +53,11 @@ export interface EmailContext {
   actionRequired: number;
 }
 
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
-  type: string;
-}
-
 export interface DocumentActivity {
   id: string;
   name: string;
   lastModified: Date;
   collaborators: number;
-}
-
-export interface TaskData {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  dueDate?: Date;
 }
 
 // Market Types

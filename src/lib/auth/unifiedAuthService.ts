@@ -4,7 +4,7 @@
  * Ensures all user interactions are properly linked to their account
  */
 
-import { supabase } from './supabase';
+import { supabase } from './core/supabase';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 export interface UnifiedUser {

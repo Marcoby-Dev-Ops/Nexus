@@ -87,7 +87,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
           title: 'Complete Your Profile',
           description: 'Set up your business profile for personalized AI assistance',
           action: 'Go to Profile Settings',
-          route: '/settings/profile',
+          route: '/settings',
           estimatedTime: '5 min',
           tips: [
             'Add your role and department for better AI recommendations',
@@ -280,16 +280,8 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
           title: 'Add Team Members',
           description: 'Invite colleagues and configure their access levels',
           action: 'Team Settings',
-          route: '/settings/team',
+          route: '/settings',
           estimatedTime: '20 min'
-        },
-        {
-          id: 'unified-inbox',
-          title: 'Set Up Team Communication',
-          description: 'Configure unified inbox for team collaboration',
-          action: 'Open Unified Inbox',
-          route: '/inbox',
-          estimatedTime: '15 min'
         },
         {
           id: 'document-sharing',
@@ -329,7 +321,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
           title: 'Advanced Integration Features',
           description: 'Configure webhooks, custom fields, and automation triggers',
           action: 'Integration Settings',
-          route: '/settings/integrations',
+          route: '/settings',
           estimatedTime: '25 min'
         },
         {

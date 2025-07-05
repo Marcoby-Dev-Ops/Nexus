@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { supabase } from '@/lib/supabase';
+import { supabase } from './lib/core/supabase';
 import { API_CONFIG } from '@/lib/constants';
 
 export interface AIMessage {
@@ -25,7 +25,7 @@ interface AIChatStoreState {
   activeConversationId: string | null;
   loading: boolean;
   error: string | null;
-  sendMessage: (conversationId: string, message: string, userId: string) => Promise<void>;
+  sendMessage: (conversationId: string, message: string, userId: string, companyId?: string) => Promise<void>;
   loadConversation: (conversationId: string) => Promise<void>;
   setActiveConversation: (conversationId: string) => void;
   newConversation: (title?: string) => Promise<string>;
@@ -38,7 +38,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
     loading: false,
     error: null,
 
-    async sendMessage(conversationId, message, userId) {
+    async sendMessage(conversationId, message, userId, companyId) {
       set({ loading: true, error: null });
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
@@ -96,6 +96,29 @@ export const useAIChatStore = create<AIChatStoreState>()(
             },
           },
         });
+
+        // Trigger n8n workflow for assessment analysis
+        if (companyId) {
+          try {
+            const conversationText = get().conversations[conversationId].messages.map(m => `${m.role}: ${m.content}`).join('\n');
+            
+            // Fire-and-forget, no need to await
+            supabase.functions.invoke('trigger-n8n-workflow', {
+              body: {
+                workflow_id: 'living_assessment_agent',
+                payload: {
+                  company_id: companyId,
+                  user_id: userId,
+                  conversation_text: conversationText,
+                }
+              }
+            });
+
+          } catch (e) {
+            console.warn('Failed to trigger n8n workflow', e);
+          }
+        }
+
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : 'Failed to send message';
         set({ error: errorMessage });

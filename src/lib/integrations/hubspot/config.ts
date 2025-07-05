@@ -22,7 +22,7 @@ export function getHubspotApiKey(): string | null {
 export function getHubspotConfig() {
   const clientId = process.env.HUBSPOT_CLIENT_ID;
   const clientSecret = process.env.HUBSPOT_CLIENT_SECRET;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 
   if (!clientId || !clientSecret) {
     throw new Error('HubSpot Client ID or Secret is not configured in environment variables.');
@@ -31,7 +31,7 @@ export function getHubspotConfig() {
   return {
     clientId: clientId,
     clientSecret: clientSecret,
-    redirectUri: `${appUrl}/api/integrations/hubspot/callback`,
+    redirectUri: `${supabaseUrl}/functions/v1/hubspot-callback`,
     scopes: [
       'contacts',
       'crm.objects.contacts.read',

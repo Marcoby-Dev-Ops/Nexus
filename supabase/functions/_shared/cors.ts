@@ -1,8 +1,9 @@
 // supabase/functions/_shared/cors.ts
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://localhost:5174', // Add port 5174 for current dev server
-  'https://app.your-production-domain.com' // TODO: Replace with your actual production URL
+  'http://127.0.0.1:5173', // WSL/Windows browsers sometimes use 127.0.0.1 instead of localhost
+  'http://localhost:5174', // Additional dev port
+  'https://nexus.marcoby.com'
 ];
 
 export const corsHeaders = {

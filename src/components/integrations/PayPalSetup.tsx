@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useNotifications } from '@/contexts/NotificationContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 
 interface PayPalSetupProps {
   onComplete?: () => void;

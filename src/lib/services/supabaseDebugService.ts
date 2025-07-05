@@ -3,7 +3,7 @@
  * Helps diagnose common API issues like 406 errors
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 
 interface DebugResult {
   success: boolean;

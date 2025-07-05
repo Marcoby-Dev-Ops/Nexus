@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui';
 import { Alert, AlertDescription } from '@/components/ui';
 import { Button } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/core/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
 

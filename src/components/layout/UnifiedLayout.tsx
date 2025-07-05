@@ -1,30 +1,49 @@
 import React, { type ReactNode, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { Menu, X, Search, Bell, Settings, User, Home, LayoutDashboard, Banknote, Truck, BarChart2, Brain, Bot, Sparkles, LineChart, Store, Plug, Users } from 'lucide-react';
+import { Menu, X, Bell, User, Sun, Moon, Sparkles } from 'lucide-react';
+import { navItems } from './navConfig.tsx';
+import { useTheme } from '@/components/ui/theme-provider';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { QuickChatTrigger } from '@/components/ai/QuickChatTrigger';
+import { OrgSwitcher } from './OrgSwitcher';
+import { Settings } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
+import { Input } from '@/components/ui/Input';
+import { features as featureRegistry } from '@/lib/ui/featureRegistry';
+import { Header } from './Header';
+import { Sidebar } from './Sidebar';
+import { OnboardingChecklist } from '../onboarding/OnboardingChecklist';
+type NavItem = import("./navConfig").NavItem;
 
 interface UnifiedLayoutProps {
   children: ReactNode;
 }
 
+/**
+ * UnifiedLayout
+ * Main application shell with sidebar, topbar, and global search.
+ * - Keyboard accessible
+ * - ARIA labels and roles
+ * - Focus management for modals and menus
+ * - Uses only design tokens/Tailwind
+ * @param {UnifiedLayoutProps} props
+ * @returns {JSX.Element}
+ */
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const userMenuRef = React.useRef<HTMLDivElement>(null);
+  const notificationsRef = React.useRef<HTMLDivElement>(null);
   const location = useLocation();
-
-  // Navigation items updated to match Sidebar.tsx and App.tsx routes
-  const navItems = [
-    // { name: 'Command Center', path: '/nexus', icon: <Brain className="h-5 w-5" /> }, // Hidden until ready
-    { name: 'Dashboard', path: '/dashboard', icon: <LayoutDashboard className="h-5 w-5" /> },
-    { name: 'Workspace', path: '/workspace', icon: <Search className="h-5 w-5" /> },
-    { name: 'Sales', path: '/departments/sales/performance', icon: <Users className="h-5 w-5" /> },
-    { name: 'Finance', path: '/departments/finance/operations', icon: <Banknote className="h-5 w-5" /> },
-    { name: 'Operations', path: '/departments/operations/analytics', icon: <Truck className="h-5 w-5" /> },
-    { name: 'Data Warehouse', path: '/data-warehouse', icon: <BarChart2 className="h-5 w-5" /> },
-    { name: 'AI Hub', path: '/ai-hub', icon: <Brain className="h-5 w-5" /> },
-    { name: 'AI Chat', path: '/chat', icon: <Bot className="h-5 w-5" /> },
-    { name: 'Marketplace', path: '/marketplace', icon: <Store className="h-5 w-5" /> },
-    { name: 'Integrations', path: '/integrations', icon: <Plug className="h-5 w-5" /> },
-    { name: 'Settings', path: '/settings', icon: <Settings className="h-5 w-5" /> },
-  ];
+  const { theme, setTheme } = useTheme();
+  const { notifications, unreadCount, markAsRead } = useNotifications();
+  const { user, signOut } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchIndex, setSearchIndex] = useState(0);
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   // Determine if a nav item is active
   const isActive = (path: string) => {
@@ -32,83 +51,76 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     return location.pathname.startsWith(path);
   };
 
+  // Derive display name and initials from auth user
+  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
+  const initials = user?.name
+    ? user.name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2)
+    : user?.email?.charAt(0).toUpperCase() || 'U';
+
+  // Close menus on outside click
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    if (showUserMenu || showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showUserMenu, showNotifications]);
+
+  // Keyboard shortcut: Ctrl+K / Cmd+K
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // Focus input when modal opens
+  React.useEffect(() => {
+    if (searchOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  // Search results: navItems + featureRegistry
+  const navResults = navItems.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const featureResults = featureRegistry.filter((f: { name: string }) => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const results = [...navResults, ...featureResults];
+
+  // Keyboard navigation in results
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      setSearchIndex(i => Math.min(i + 1, results.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      setSearchIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && results[searchIndex]) {
+      window.location.href = results[searchIndex].path;
+      setSearchOpen(false);
+      setSearchQuery('');
+      setSearchIndex(0);
+    }
+  };
+
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar for larger screens */}
-      <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-card border-r border-border transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto lg:z-auto ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex h-16 items-center justify-between px-4 border-b border-border">
-          <Link to="/" className="text-xl font-bold">Nexus</Link>
-          <button
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-        <nav className="mt-5 px-2 space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.path}
-              className={`flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                isActive(item.path)
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-foreground hover:bg-muted'
-              }`}
-            >
-              {item.icon}
-              <span className="ml-3">{item.name}</span>
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Mobile sidebar overlay */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Main content */}
+    <div className="flex h-screen bg-background text-foreground">
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-card shadow z-10 border-b border-border">
-          <div className="flex h-16 items-center justify-between px-4">
-            <div className="flex items-center">
-              <button
-                className="lg:hidden mr-2"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-6 w-6" />
-              </button>
-              <h1 className="text-xl font-semibold">
-                {navItems.find(item => isActive(item.path))?.name || 'Nexus'}
-              </h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="text-foreground p-1 rounded-full hover:bg-muted">
-                <Bell className="h-6 w-6" />
-              </button>
-              <button className="text-foreground p-1 rounded-full hover:bg-muted">
-                <User className="h-6 w-6" />
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Page content */}
-        <main className="flex-1 overflow-auto bg-background">
-          <div className="container mx-auto px-4 py-6">
-            {children}
-          </div>
+        <Header onSidebarToggle={() => setSidebarOpen(true)} />
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+          {children}
         </main>
       </div>
+      <OnboardingChecklist />
     </div>
   );
 }; 

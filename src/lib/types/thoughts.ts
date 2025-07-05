@@ -66,6 +66,12 @@ export interface Thought {
   parent_idea_id?: string;
   workflow_stage?: WorkflowStage;
   
+  // Workspace integration fields
+  department?: string;
+  priority?: 'low' | 'medium' | 'high';
+  estimated_effort?: string;
+  ai_clarification_data?: Record<string, any>;
+  
   // AI and interaction metadata
   ai_insights: Record<string, any>;
   interaction_method?: InteractionMethod;
@@ -108,6 +114,11 @@ export interface CreateThoughtRequest {
   parent_idea_id?: string;
   workflow_stage?: WorkflowStage;
   interaction_method?: InteractionMethod;
+  // Workspace integration fields
+  department?: string;
+  priority?: 'low' | 'medium' | 'high';
+  estimated_effort?: string;
+  ai_clarification_data?: Record<string, any>;
 }
 
 // Update thought request

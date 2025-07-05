@@ -614,8 +614,10 @@ const DigestibleMetricsDashboard: React.FC = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xl">{story.title}</CardTitle>
-                    <Badge variant={story.urgency === 'critical' ? 'destructive' : story.urgency === 'high' ? 'warning' : 'default'}>
-                      {story.urgency} priority
+                    <Badge variant={story.urgency === 'critical' ? 'destructive' : story.urgency === 'high' ? 'destructive' : 'default'}>
+                      {story.urgency === 'critical' && <AlertTriangle className="h-4 w-4 mr-2" />}
+                      {story.urgency === 'high' && <AlertTriangle className="h-4 w-4 mr-2" />}
+                      {story.urgency}
                     </Badge>
                   </div>
                 </CardHeader>

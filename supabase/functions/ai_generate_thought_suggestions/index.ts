@@ -1,6 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders } from './cors.ts';
 
 interface Payload {
   thoughtId: string;
@@ -63,7 +63,7 @@ User Thought: "${thought.content}"`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini-high',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'system', content: prompt }],
         temperature: 0.7,
       }),

@@ -13,23 +13,23 @@ describe('Header', () => {
     { label: 'Home', href: '/dashboard' },
     { label: 'Sales', href: '/sales' },
   ];
-  const subtitle = 'Sales Dashboard';
+  const pageTitle = 'Sales Dashboard';
 
   beforeEach(() => {
     mockToggleSidebar.mockClear();
   });
 
-  it('renders breadcrumbs and subtitle', () => {
+  it('renders breadcrumbs and pageTitle', () => {
     render(
       <Header
         toggleSidebar={mockToggleSidebar}
         breadcrumbs={breadcrumbs}
-        subtitle={subtitle}
+        pageTitle={pageTitle}
       />
     );
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Sales')).toBeInTheDocument();
-    expect(screen.getByText(subtitle)).toBeInTheDocument();
+    expect(screen.getByText(pageTitle)).toBeInTheDocument();
   });
 
   it('calls toggleSidebar when menu button is clicked', () => {
@@ -37,7 +37,7 @@ describe('Header', () => {
       <Header
         toggleSidebar={mockToggleSidebar}
         breadcrumbs={breadcrumbs}
-        subtitle={subtitle}
+        pageTitle={pageTitle}
       />
     );
     const menuButton = screen.getByRole('button');
@@ -50,7 +50,7 @@ describe('Header', () => {
       <Header
         toggleSidebar={mockToggleSidebar}
         breadcrumbs={breadcrumbs}
-        subtitle={subtitle}
+        pageTitle={pageTitle}
       />
     );
     expect(asFragment()).toMatchSnapshot();

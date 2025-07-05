@@ -62,6 +62,13 @@
     --z-notification: 70;              /* Notifications, toasts */
     --z-critical: 80;                  /* Critical overlays */
     --z-maximum: 9999;                 /* Absolute top layer */
+
+    --purple: 262 84% 72%;      /* #8b5cf6 */
+    --purple-foreground: 0 0% 100%;
+    --gray-alt: 222 9% 46%;     /* #6b7280 */
+    --gray-alt-foreground: 0 0% 100%;
+    --tertiary: 156 100% 28%;   /* #008f4c */
+    --tertiary-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -110,6 +117,13 @@
     --unread-border: 148 100% 33%;     /* Unread item border */
     --selected-bg: 160 20% 18%;        /* Selected item background */
     --hover-bg: 160 15% 17%;           /* General hover background */
+
+    --purple: 262 84% 72%;      /* #8b5cf6 */
+    --purple-foreground: 0 0% 100%;
+    --gray-alt: 222 9% 46%;     /* #6b7280 */
+    --gray-alt-foreground: 0 0% 100%;
+    --tertiary: 156 100% 28%;   /* #008f4c */
+    --tertiary-foreground: 0 0% 100%;
   }
 
   * {

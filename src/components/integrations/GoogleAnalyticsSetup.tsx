@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Separator } from '@/components/ui/Separator';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { 
+  Card, CardContent, CardHeader, CardTitle,
+  Button,
+  Badge,
+  Separator,
+  Alert, AlertDescription
+} from '@/components/ui';
 import { 
   BarChart3, 
   Users, 
@@ -18,7 +20,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { googleAnalyticsService } from '@/lib/services/googleAnalyticsService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -179,8 +181,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
 
       addNotification({
         type: 'success',
-        title: 'Google Analytics Connected',
-        message: `Successfully connected to ${selectedProperty.name}`
+        message: `Google Analytics Connected: Successfully connected to ${selectedProperty.name}`
       });
 
       onComplete?.();

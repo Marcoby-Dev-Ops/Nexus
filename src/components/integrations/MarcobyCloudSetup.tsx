@@ -24,7 +24,7 @@ import {
   HardDrive
 } from 'lucide-react';
 import { marcobyCloudService } from '@/lib/services/marcobyCloudService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 

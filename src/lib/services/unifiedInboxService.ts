@@ -5,7 +5,9 @@
  * Features: AI-powered prioritization, smart filtering, real-time updates
  */
 
-import { supabase } from '@/lib/supabase';
+// // import { Office365SyncProvider } from '../sync/office365';
+// import { EmailProcessor } from './emailProcessor';
+import { supabase } from '@/lib/core/supabase';
 import { logger } from '@/lib/security/logger';
 
 export interface EmailAccount {
@@ -97,6 +99,7 @@ export interface InboxItem {
   
   // Expanded fields when joined with source data
   email_data?: EmailMessage;
+  body_preview?: string;
 }
 
 export interface InboxSummary {
@@ -271,69 +274,79 @@ class UnifiedInboxService {
   }
 
   /**
-   * Mark inbox item as read/unread
+   * Mark an item as read or unread
    */
   async markAsRead(itemId: string, isRead = true): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('ai_inbox_items')
-        .update({ is_read: isRead, updated_at: new Date().toISOString() })
-        .eq('id', itemId);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
 
-      if (error) {
-        logger.error({ error, itemId }, 'Failed to mark item as read');
-        throw error;
-      }
-
-      // Note: Email message status is tracked in ai_inbox_items only
-    } catch (error) {
-      logger.error({ error }, 'Error in markAsRead');
+    const { error } = await supabase
+      .from('ai_inbox_items')
+      .update({ is_read: isRead })
+      .eq('id', itemId)
+      .eq('user_id', user.id);
+    if (error) {
+      logger.error({ error, itemId }, 'Failed to mark item as read');
       throw error;
     }
   }
 
   /**
-   * Mark multiple items as read
+   * Mark multiple items as read or unread
    */
-  async markMultipleAsRead(itemIds: string[]): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('ai_inbox_items')
-        .update({ is_read: true, updated_at: new Date().toISOString() })
-        .in('id', itemIds);
+  async markMultipleAsRead(itemIds: string[], isRead = true): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
 
-      if (error) {
-        logger.error({ error, itemIds }, 'Failed to mark multiple items as read');
-        throw error;
-      }
-    } catch (error) {
-      logger.error({ error }, 'Error in markMultipleAsRead');
+    const { error } = await supabase
+      .from('ai_inbox_items')
+      .update({ is_read: isRead })
+      .in('id', itemIds)
+      .eq('user_id', user.id);
+    if (error) {
+      logger.error({ error, itemIds }, 'Failed to mark multiple items as read');
       throw error;
     }
   }
 
   /**
-   * Archive inbox item
+   * Archive an item
    */
   async archiveItem(itemId: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from('ai_inbox_items')
-        .update({ is_archived: true, updated_at: new Date().toISOString() })
-        .eq('id', itemId);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
 
-      if (error) {
-        logger.error({ error, itemId }, 'Failed to archive item');
-        throw error;
-      }
-    } catch (error) {
-      logger.error({ error }, 'Error in archiveItem');
+    const { error } = await supabase
+      .from('ai_inbox_items')
+      .update({ is_archived: true })
+      .eq('id', itemId)
+      .eq('user_id', user.id);
+    if (error) {
+      logger.error({ error, itemId }, 'Failed to archive item');
+      throw error;
+    }
+  }
+  
+  /**
+   * Archive multiple items
+   */
+  async archiveMultiple(itemIds: string[]): Promise<void> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { error } = await supabase
+      .from('ai_inbox_items')
+      .update({ is_archived: true })
+      .in('id', itemIds)
+      .eq('user_id', user.id);
+    if (error) {
+      logger.error({ error, itemIds }, 'Failed to archive multiple items');
       throw error;
     }
   }
 
   /**
-   * Toggle important status
+   * Toggle an item's important status
    */
   async toggleImportant(itemId: string): Promise<void> {
     try {
@@ -632,107 +645,453 @@ class UnifiedInboxService {
    * Subscribe to real-time inbox updates
    */
   subscribeToInboxUpdates(callback: (payload: any) => void) {
-    return supabase
-      .channel('inbox-updates')
+    const channel = supabase
+      .channel('unified-inbox-updates')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ai_inbox_items'
-        },
-        callback
+        { event: '*', schema: 'public', table: 'ai_inbox_items' },
+        (payload) => {
+          callback(payload);
+        }
       )
       .subscribe();
+
+    return {
+      unsubscribe: () => {
+        supabase.removeChannel(channel);
+      },
+    };
   }
 
   /**
-   * Start email sync for an account
+   * Start a new email sync job
    */
-  async startEmailSync(accountId: string, jobType: 'full_sync' | 'incremental_sync' = 'incremental_sync'): Promise<EmailSyncJob> {
-    try {
-      const { data, error } = await supabase.functions.invoke('ai_email_sync', {
-        body: {
-          account_id: accountId,
-          job_type: jobType
-        }
-      });
+  async startEmailSync(
+    accountId: string,
+    jobType: 'full_sync' | 'incremental_sync' = 'incremental_sync'
+  ): Promise<any> {
+    const { data, error } = await supabase.functions.invoke('ai_email_sync', {
+      body: {
+        account_id: accountId,
+        job_type: jobType,
+      },
+    });
 
-      if (error) {
-        logger.error({ error, accountId }, 'Failed to invoke email sync function');
-        throw error;
+    if (error) {
+      logger.error({ error, accountId, jobType }, 'Failed to invoke email sync function');
+      throw error;
+    }
+    return data;
+  }
+
+  /**
+   * Automatically sets up an Office 365 email account after OAuth.
+   * Now requires an organization ID.
+   * Pillar: 1, 2
+   */
+  async autoSetupOffice365Account(orgId: string): Promise<EmailAccount | null> {
+    if (!orgId) {
+      const err = new Error('Organization ID is required to set up an Office 365 account.');
+      logger.error({ error: err }, 'autoSetupOffice365Account called without orgId.');
+      throw err;
+    }
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated for Office 365 setup.');
+      
+      // Import the microsoftGraphService dynamically to avoid circular dependencies
+      const { microsoftGraphService } = await import('./microsoftGraphService');
+      
+      // Initialize Microsoft Graph service
+      const initialized = microsoftGraphService.initialize();
+      if (!initialized) {
+        throw new Error('Failed to initialize Microsoft Graph service');
       }
       
-      return data as EmailSyncJob;
+      // Check if we're connected to Microsoft Graph
+      const isConnected = microsoftGraphService.isConnected();
+      if (!isConnected) {
+        throw new Error('Not connected to Microsoft Graph. Please connect first.');
+      }
+      
+      // Get user profile from Microsoft Graph
+      const profile = await microsoftGraphService.getCurrentUser();
+      if (!profile) {
+        throw new Error('Failed to get Microsoft Graph user profile');
+      }
+      
+      const emailAddress = profile.mail || profile.userPrincipalName;
+      if (!emailAddress) {
+        throw new Error('No email address found in Microsoft Graph profile');
+      }
+
+      // Check if an account already exists for this user and organization
+      const { data: existingAccount, error: existingError } = await supabase
+        .from('ai_email_accounts')
+        .select('id')
+        .eq('email_address', emailAddress)
+        .eq('company_id', orgId) // Use the orgId for the check
+        .eq('provider', 'outlook')
+        .maybeSingle();
+
+      if (existingError) {
+        logger.error({ error: existingError }, 'Error checking for existing Office 365 account.');
+        throw existingError;
+      }
+      
+      if (existingAccount) {
+        logger.info({ userId: user.id, orgId }, 'Office 365 account already exists for this user and organization.');
+        // Trigger a fresh sync for the existing account as well
+        try {
+          await this.startEmailSync(existingAccount.id, 'full_sync');
+        } catch (syncErr) {
+          logger.error({ error: syncErr }, 'Failed to start sync for existing Office 365 account');
+        }
+        return existingAccount as EmailAccount;
+      }
+      
+      const newAccount: Partial<EmailAccount> = {
+        user_id: user.id,
+        company_id: orgId,
+        email_address: emailAddress,
+        display_name: profile.displayName || emailAddress,
+        provider: 'outlook',
+        sync_enabled: true,
+        sync_status: 'pending',
+        ai_priority_enabled: true,
+        ai_summary_enabled: true,
+        ai_suggestions_enabled: true,
+        ai_auto_categorize_enabled: false,
+        sync_frequency: '15min',
+      };
+
+      const { data: createdAccount, error: insertError } = await supabase
+        .from('ai_email_accounts')
+        .insert(newAccount)
+        .select()
+        .single();
+      
+      if (insertError) {
+        logger.error({ error: insertError, email: emailAddress }, 'Failed to insert new Office 365 email account');
+        throw insertError;
+      }
+
+      logger.info({ accountId: createdAccount.id, orgId }, 'Successfully created Office 365 email account.');
+
+      // Kick off first full sync immediately
+      try {
+        await this.startEmailSync(createdAccount.id, 'full_sync');
+      } catch (syncErr) {
+        logger.error({ error: syncErr }, 'Failed to start initial sync for new Office 365 account');
+      }
+
+      return createdAccount;
 
     } catch (error) {
-      logger.error({ error, accountId }, 'Error starting email sync');
+      logger.error({ error }, 'Auto-setup for Office 365 account failed.');
       throw error;
     }
   }
 
   /**
-   * Auto-setup Office 365 email account for Microsoft-authenticated users
+   * Migrate existing Office 365 integrations to ai_email_accounts for the current user/org.
+   * Upserts an account for each active 365 integration not already present in ai_email_accounts.
+   * Triggers a sync job for each new account.
    */
-  async autoSetupOffice365Account(): Promise<EmailAccount | null> {
+  async migrateOffice365IntegrationsToEmailAccounts(): Promise<{ created: number, skipped: number, errors: string[] }> {
+    console.log('Starting Office 365 migration...');
+    const results = { created: 0, skipped: 0, errors: [] };
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-
-      // Check if user is authenticated with Microsoft
-      if (user.app_metadata?.provider !== 'azure' && !user.app_metadata?.providers?.includes('azure')) {
-        return null;
+      if (!user) {
+        const error = 'User not authenticated';
+        console.error(error);
+        results.errors.push(error);
+        return results;
       }
-
-      // Check if Office 365 account already exists
-      const existingAccounts = await this.getEmailAccounts();
-      const office365Account = existingAccounts.find(
-        account => account.provider === 'outlook' && account.email_address === user.email
-      );
-
-      if (office365Account) {
-        logger.info({ accountId: office365Account.id, userEmail: user.email }, 'Office 365 email account already exists');
-        return office365Account; // Already exists
-      }
-
+      console.log('User authenticated:', user.id);
+      
       // Get user's company
       const { data: profile } = await supabase
         .from('user_profiles')
         .select('company_id')
         .eq('id', user.id)
         .single();
-
-      if (!profile?.company_id) {
-        logger.error({ userId: user.id }, 'User company not found for Office 365 auto-setup');
-        return null;
-      }
-
-      // Create Office 365 email account
-      const userEmail = user.email || user.user_metadata?.email;
-      if (!userEmail) {
-        logger.error({ userId: user.id }, 'No email found for Office 365 auto-setup');
-        return null;
-      }
-
-      const accountData = {
-        email_address: userEmail,
-        display_name: user.user_metadata?.full_name || userEmail,
-        provider: 'outlook' as const,
-        sync_enabled: true
-      };
-
-      const account = await this.addEmailAccount(accountData);
       
-      // Start initial sync
-      await this.startEmailSync(account.id, 'full_sync');
+      if (!profile?.company_id) {
+        const error = 'User company not found';
+        console.error(error);
+        results.errors.push(error);
+        return results;
+      }
+      console.log('Company found:', profile.company_id);
 
-      logger.info({ accountId: account.id, userEmail }, 'Office 365 email account auto-setup completed');
-      return account;
+      // Get Office 365 integration id
+      const { data: integration } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('slug', 'office-365')
+        .single();
+        
+      if (!integration) {
+        const error = 'Office 365 integration not found';
+        console.error(error);
+        results.errors.push(error);
+        return results;
+      }
+      console.log('Integration found:', integration.id);
 
-    } catch (error) {
-      logger.error({ error }, 'Error in autoSetupOffice365Account');
-      return null; // Don't throw - this is auto-setup, failures should be silent
+      // Get all active user_integrations for this user/org/integration
+      const { data: userIntegrations, error: userIntError } = await supabase
+        .from('user_integrations')
+        .select('id, credentials, status, updated_at')
+        .eq('user_id', user.id)
+        .eq('company_id', profile.company_id)
+        .eq('integration_id', integration.id)
+        .eq('status', 'active');
+        
+      if (userIntError) {
+        console.error('Error fetching user integrations:', userIntError);
+        results.errors.push(`Error fetching integrations: ${userIntError.message}`);
+        return results;
+      }
+      
+      if (!userIntegrations || userIntegrations.length === 0) {
+        console.log('No active Office 365 integrations found');
+        return results;
+      }
+      
+      console.log(`Found ${userIntegrations.length} integration(s) to process`);
+
+      // Import Microsoft Graph service early to handle initialization
+      const { microsoftGraphService } = await import('./microsoftGraphService');
+      let graphInitialized = false;
+      try {
+        graphInitialized = microsoftGraphService.initialize();
+        console.log('Microsoft Graph initialized:', graphInitialized);
+      } catch (err) {
+        console.warn('Failed to initialize Microsoft Graph:', err);
+      }
+
+      for (const integ of userIntegrations) {
+        console.log(`Processing integration ${integ.id}...`);
+        
+        // Try to get email from credentials
+        let email: string | undefined = undefined;
+        let displayName: string | undefined = undefined;
+        
+        if (integ.credentials) {
+          // Try different possible locations in credentials
+          email = integ.credentials.username || 
+                 integ.credentials.email ||
+                 (typeof integ.credentials === 'string' ? integ.credentials : undefined);
+          
+          console.log('Email from credentials:', email || 'Not found');
+        }
+        
+        // If no email from credentials, try Microsoft Graph
+        if (!email && graphInitialized) {
+          try {
+            console.log('Trying to get email from Microsoft Graph...');
+            const isConnected = microsoftGraphService.isConnected();
+            console.log('Microsoft Graph connected:', isConnected);
+            
+            if (isConnected) {
+              const profile = await microsoftGraphService.getCurrentUser();
+              email = profile?.mail || profile?.userPrincipalName;
+              displayName = profile?.displayName;
+              console.log('Email from Graph:', email || 'Not found');
+            }
+          } catch (err) {
+            console.warn('Failed to get email from Microsoft Graph:', err);
+          }
+        }
+        
+        // Last resort: try to get from user profile
+        if (!email) {
+          email = user.email;
+          console.log('Using user email as fallback:', email || 'Not available');
+        }
+        
+        if (!email) {
+          console.error('Could not determine email for integration:', integ.id);
+          results.errors.push(`Could not determine email for integration: ${integ.id}`);
+          continue;
+        }
+
+        // Check if already in ai_email_accounts
+        const { data: existing } = await supabase
+          .from('ai_email_accounts')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('company_id', profile.company_id)
+          .eq('email_address', email)
+          .eq('provider', 'outlook')
+          .maybeSingle();
+          
+        if (existing) {
+          console.log(`Account already exists for ${email}, skipping`);
+          results.skipped++;
+          continue;
+        }
+
+        // Upsert new account
+        try {
+          console.log(`Creating account for ${email}...`);
+          const { data: created, error: insertError } = await supabase
+            .from('ai_email_accounts')
+            .insert({
+              user_id: user.id,
+              company_id: profile.company_id,
+              email_address: email,
+              display_name: displayName || email,
+              provider: 'outlook',
+              sync_enabled: true,
+              sync_status: 'pending',
+              ai_priority_enabled: true,
+              ai_summary_enabled: true,
+              ai_suggestions_enabled: true,
+              ai_auto_categorize_enabled: false,
+              sync_frequency: '15min',
+            })
+            .select()
+            .single();
+            
+          if (insertError) {
+            console.error('Failed to insert account:', insertError);
+            results.errors.push(`Failed to insert account for ${email}: ${insertError.message}`);
+            continue;
+          }
+          
+          console.log(`Account created with ID ${created.id}`);
+          results.created++;
+
+          // Start sync job
+          try {
+            console.log(`Starting sync job for account ${created.id}...`);
+            await this.startEmailSync(created.id, 'full_sync');
+            console.log('Sync job started successfully');
+          } catch (err) {
+            console.warn('Failed to start sync job:', err);
+            // Not fatal
+          }
+        } catch (err) {
+          console.error('Error creating account:', err);
+          results.errors.push(`Error creating account for ${email}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      }
+    } catch (err) {
+      console.error('Migration failed:', err);
+      results.errors.push(`Migration failed: ${err instanceof Error ? err.message : String(err)}`);
     }
+    
+    console.log('Migration complete:', results);
+    return results;
+  }
+
+  /**
+   * Discover integrations that can be activated as mailboxes (no ai_email_accounts row yet).
+   */
+  async discoverActivatableIntegrations(): Promise<Array<{integrationId: string, provider: string, email: string, displayName?: string}>> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+    if (!profile?.company_id) return [];
+
+    // Get all active user_integrations for this user/org
+    const { data: userIntegrations } = await supabase
+      .from('user_integrations')
+      .select('id, integration_id, credentials, status, integration:integration_id(slug, provider, name)')
+      .eq('user_id', user.id)
+      .eq('company_id', profile.company_id)
+      .eq('status', 'active');
+    if (!userIntegrations) return [];
+
+    // For each, check if an ai_email_accounts row exists
+    const activatable: Array<{integrationId: string, provider: string, email: string, displayName?: string}> = [];
+    for (const integ of userIntegrations) {
+      // Only consider office-365 for now (can add more later)
+      if (integ.integration?.slug !== 'office-365') continue;
+      const email = integ.credentials?.username || integ.credentials?.email || undefined;
+      const displayName = integ.credentials?.displayName || undefined;
+      // If no email, skip
+      if (!email) continue;
+      // Check if already in ai_email_accounts
+      const { data: existing } = await supabase
+        .from('ai_email_accounts')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('company_id', profile.company_id)
+        .eq('email_address', email)
+        .eq('provider', 'outlook')
+        .maybeSingle();
+      if (existing) continue;
+      activatable.push({
+        integrationId: integ.id,
+        provider: 'outlook',
+        email,
+        displayName
+      });
+    }
+    return activatable;
+  }
+
+  /**
+   * Activate a user_integration as a mailbox (create ai_email_accounts row and trigger sync).
+   */
+  async activateIntegrationAsMailbox(integrationId: string): Promise<EmailAccount> {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('company_id')
+      .eq('id', user.id)
+      .single();
+    if (!profile?.company_id) throw new Error('User company not found');
+    // Get the integration
+    const { data: integ } = await supabase
+      .from('user_integrations')
+      .select('id, credentials, integration:integration_id(slug, provider, name)')
+      .eq('id', integrationId)
+      .single();
+    if (!integ) throw new Error('Integration not found');
+    if (integ.integration?.slug !== 'office-365') throw new Error('Only office-365 supported for activation');
+    const email = integ.credentials?.username || integ.credentials?.email || undefined;
+    const displayName = integ.credentials?.displayName || email;
+    if (!email) throw new Error('No email found in integration credentials');
+    // Upsert ai_email_accounts
+    const { data: created, error: insertError } = await supabase
+      .from('ai_email_accounts')
+      .insert({
+        user_id: user.id,
+        company_id: profile.company_id,
+        email_address: email,
+        display_name: displayName || email,
+        provider: 'outlook',
+        sync_enabled: true,
+        sync_status: 'pending',
+        ai_priority_enabled: true,
+        ai_summary_enabled: true,
+        ai_suggestions_enabled: true,
+        ai_auto_categorize_enabled: false,
+        sync_frequency: '15min',
+      })
+      .select()
+      .single();
+    if (insertError) throw insertError;
+    // Start sync job
+    try {
+      await this.startEmailSync(created.id, 'full_sync');
+    } catch (err) {
+      // Not fatal
+    }
+    return created;
   }
 }
 

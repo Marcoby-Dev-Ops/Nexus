@@ -9,24 +9,20 @@ import {
 } from 'recharts';
 import { chartColors } from '../../lib/chartColors';
 import { format } from 'date-fns';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
-import { Button } from '../../components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
-import { Progress } from '../../components/ui/progress';
-import { ScrollArea } from '../../components/ui/scroll-area';
+import { 
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Badge,
+  Button,
+  Tabs, TabsContent, TabsList, TabsTrigger,
+  Alert, AlertDescription,
+  Progress
+} from '@/components/ui';
 import { 
   Activity, AlertTriangle, CheckCircle, FileText, Key, 
   Lock, RefreshCw, Shield, User, XCircle, Eye 
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
 import { TrendingUp, Download, Settings } from 'lucide-react';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/lib/core/supabase';
 
 interface SecurityEvent {
   id: string;
@@ -254,7 +250,7 @@ export const SecurityDashboard: React.FC = () => {
             <Download className="h-4 w-4 mr-2" />
             Export Report
           </Button>
-          <Tabs value={timeRange} onValueChange={(value) => setTimeRange(value as any)}>
+          <Tabs value={timeRange} onValueChange={(value: string) => setTimeRange(value as '24h' | '7d' | '30d')}>
             <TabsList>
               <TabsTrigger value="24h">24h</TabsTrigger>
               <TabsTrigger value="7d">7d</TabsTrigger>
@@ -264,23 +260,57 @@ export const SecurityDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Security Alerts */}
-      {alerts.length > 0 && (
-        <div className="space-y-4">
-          {alerts.map((alert) => (
-            <Alert key={alert.id} variant={alert.type === 'critical' ? 'destructive' : 'default'}>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>{alert.title}</AlertTitle>
-              <AlertDescription>
-                {alert.description}
-                <span className="block text-xs text-muted-foreground mt-1">
-                  {format(new Date(alert.timestamp), 'PPpp')}
-                </span>
-              </AlertDescription>
-            </Alert>
-          ))}
-        </div>
-      )}
+      {/* Active Security Alerts */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Active Security Alerts</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {alerts.length > 0 ? (
+            alerts.map(alert => (
+              <Alert key={alert.id} variant={alert.type === 'critical' ? 'destructive' : 'warning'}>
+                <AlertTriangle className="h-4 w-4" />
+                <div className="font-bold">{alert.title}</div>
+                <AlertDescription>
+                  {alert.description} - {new Date(alert.timestamp).toLocaleString()}
+                </AlertDescription>
+              </Alert>
+            ))
+          ) : (
+            <p className="text-muted-foreground text-sm">No active alerts.</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recent Security Events */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Security Events</CardTitle>
+          <CardDescription>
+            Showing last 100 events in the selected time range.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] overflow-y-auto">
+            {securityEvents.map(event => (
+              <div key={event.id} className="flex items-center space-x-4 p-2 hover:bg-muted/50 rounded-lg">
+                <div className="p-2 bg-muted rounded-full">
+                  {getEventIcon(event.event_type)}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold">{event.event_details.message || event.event_type.replace(/_/g, ' ')}</p>
+                  <p className="text-sm text-muted-foreground">
+                    User: {event.user_id} - IP: {event.ip_address}
+                  </p>
+                </div>
+                <div className="text-right text-sm text-muted-foreground">
+                  {format(new Date(event.created_at), 'Pp')}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Security Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -346,35 +376,22 @@ export const SecurityDashboard: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-96">
-                <div className="space-y-4">
-                  {securityEvents.map((event) => (
-                    <div key={event.id} className="flex items-center space-x-4 p-4 border rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        {getEventIcon(event.event_type)}
-                        <Badge className={getEventTypeColor(event.event_type)}>
-                          {event.event_type.replace('_', ' ')}
-                        </Badge>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {event.event_details?.description || `${event.event_type} event`}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          IP: {event.ip_address || 'Unknown'} • 
-                          {format(new Date(event.created_at), 'PPpp')}
-                        </p>
-                      </div>
+              <div className="h-[400px] overflow-y-auto">
+                {securityEvents.map((event) => (
+                  <div key={event.id} className="flex items-center space-x-4 p-2 hover:bg-muted/50 rounded-lg">
+                    <div className="p-2 bg-muted rounded-full">
+                      {getEventIcon(event.event_type)}
                     </div>
-                  ))}
-                  {securityEvents.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No security events found for the selected time range</p>
+                    <div className="flex-1">
+                      <p className="font-semibold">{event.event_details?.description || `${event.event_type} event`}</p>
+                      <p className="text-sm text-muted-foreground">
+                        IP: {event.ip_address || 'Unknown'} • 
+                        {format(new Date(event.created_at), 'PPpp')}
+                      </p>
                     </div>
-                  )}
-                </div>
-              </ScrollArea>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

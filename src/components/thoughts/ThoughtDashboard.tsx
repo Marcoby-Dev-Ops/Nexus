@@ -4,7 +4,7 @@
  * Based on Marcoby Nexus diagrams - displays ideas, tasks, reminders, and workflow
  */
 
-import React, { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -37,8 +37,9 @@ import {
 } from 'lucide-react';
 import { thoughtsService } from '../../lib/services/thoughtsService';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { logger } from '../../lib/security/logger';
+import { InteractivePrompts } from '@/components/ai/InteractivePrompts';
 import type { 
   Thought, 
   ThoughtCategory, 
@@ -57,7 +58,6 @@ interface ThoughtDashboardProps {
 
 const CATEGORY_CONFIG = {
   idea: { icon: Lightbulb, label: 'Ideas', color: 'bg-warning/10 text-warning-foreground' },
-  task: { icon: BookOpen, label: 'Tasks', color: 'bg-primary/10 text-primary' },
   reminder: { icon: Clock, label: 'Reminders', color: 'bg-accent/10 text-accent-foreground' },
   update: { icon: TrendingUp, label: 'Updates', color: 'bg-success/10 text-success' }
 };
@@ -205,18 +205,6 @@ export const ThoughtDashboard = forwardRef<ThoughtDashboardHandle, ThoughtDashbo
               </div>
               <p className="font-medium">Ideas</p>
               <p className="text-xs text-muted-foreground">Goals or initiatives</p>
-            </div>
-
-            {/* Tasks Circle */}
-            <div className="text-center">
-              <div className="relative mx-auto w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <BookOpen className="h-8 w-8 text-primary" />
-                <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                  {metrics.thoughts_by_category.task || 0}
-                </div>
-              </div>
-              <p className="font-medium">Tasks</p>
-              <p className="text-xs text-muted-foreground">Actions to complete ideas</p>
             </div>
 
             {/* Reminders Circle */}
@@ -418,7 +406,6 @@ export const ThoughtDashboard = forwardRef<ThoughtDashboardHandle, ThoughtDashbo
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="idea">Ideas</TabsTrigger>
-          <TabsTrigger value="task">Tasks</TabsTrigger>
           <TabsTrigger value="reminder">Reminders</TabsTrigger>
           <TabsTrigger value="update">Updates</TabsTrigger>
         </TabsList>

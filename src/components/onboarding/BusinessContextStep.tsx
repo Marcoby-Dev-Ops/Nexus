@@ -20,6 +20,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 interface BusinessContextData {
+  industry: string;
   business_model: string;
   revenue_stage: string;
   primary_departments: string[];
@@ -44,6 +45,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
   const { user, updateCompany } = useAuth();
   const company = user?.company;
   const [businessData, setBusinessData] = useState<BusinessContextData>({
+    industry: '',
     business_model: '',
     revenue_stage: '',
     primary_departments: [],

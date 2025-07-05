@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { chartColors } from '../../lib/chartColors';
+import { chartColors } from '../../lib/core/config/chartColors';
 
 export function SimpleBarChart({ data }: { data: { name: string; value: number }[] }) {
   return (

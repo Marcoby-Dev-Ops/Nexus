@@ -6,6 +6,7 @@ import {
   Shield, 
   Wrench, 
   Users,
+  CreditCard,
   ChevronRight,
   Settings as SettingsIcon
 } from 'lucide-react';
@@ -36,24 +37,24 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
     {
       title: 'Profile',
       icon: <User className="h-4 w-4" />,
-      path: '/settings/profile',
+      path: '/settings',
     },
     {
       title: 'Security',
       icon: <Shield className="h-4 w-4" />,
-      path: '/settings/security',
+      path: '/settings',
+    },
+    {
+      title: 'Billing',
+      icon: <CreditCard className="h-4 w-4" />,
+      path: '/settings',
     },
     {
       title: 'Team',
       icon: <Users className="h-4 w-4" />,
-      path: '/settings/team',
+      path: '/settings',
       admin: true,
     },
-    {
-      title: 'Integrations',
-      icon: <Wrench className="h-4 w-4" />,
-      path: '/settings/integrations',
-    }
   ];
   
   // Filter nav items based on admin status

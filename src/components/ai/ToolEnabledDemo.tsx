@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toolEnabledAgent } from '@/lib/aiAgentWithTools';
-import { executiveAgent } from '@/lib/agentRegistry';
+import { executiveAgent } from '@/lib/ai/agentRegistry';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DemoMessage {

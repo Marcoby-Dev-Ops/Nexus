@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, ChevronRight, Star, Clock, Lightning, Bookmark, Plus, Zap, BarChart2, Users, Calendar, MessageSquare, FileText, Settings, CreditCard, ArrowRight } from 'lucide-react';
+import { Search, Filter, ChevronRight, Star, Clock, Bookmark, Plus, Zap, BarChart2, Users, Calendar, MessageSquare, FileText, Settings, CreditCard, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { 
@@ -12,12 +12,14 @@ import {
   type FeatureAccessLevel
 } from '../../lib/featureRegistry';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
-import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
-import { Input } from '../ui/Input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
-import { Separator } from '../ui/Separator';
+import { 
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Button,
+  Badge,
+  Input,
+  Tabs, TabsContent, TabsList, TabsTrigger,
+  Separator
+} from '@/components/ui';
 
 interface FeatureExplorerProps {
   /** User's current plan */
@@ -95,13 +97,6 @@ export const FeatureExplorer: React.FC = () => {
     {
       name: 'Tools',
       features: [
-        { 
-          name: 'Calendar', 
-          description: 'Schedule and manage appointments and events', 
-          icon: <Calendar className="h-5 w-5" />, 
-          path: '/calendar',
-          color: 'bg-teal-500'
-        },
         { 
           name: 'Messaging', 
           description: 'Internal communication and team chat', 

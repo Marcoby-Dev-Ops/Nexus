@@ -7,16 +7,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Brain, Zap, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, Activity, Database, Network } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { 
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Button,
+  Badge,
+  Progress
+} from '@/components/ui';
 
 interface PlatformData {
   name: string;
   status: 'connected' | 'syncing' | 'error';
   lastUpdate: string;
-  keyMetrics: Record<string, any>;
+  keyMetrics: Record<string, string | number>;
   icon: string;
 }
 
@@ -178,7 +180,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
           <Button
             key={id}
             variant={selectedDemo === id ? 'default' : 'outline'}
-            onClick={() => setSelectedDemo(id as any)}
+            onClick={() => setSelectedDemo(id as 'overview' | 'routing' | 'llm' | 'insights')}
             className="flex items-center gap-2"
           >
             <Icon className="h-4 w-4" />

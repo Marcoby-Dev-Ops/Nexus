@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase';
-import { env } from '@/lib/environment';
+import { supabase } from '@/lib/core/supabase';
+import { env } from '@/lib/core/environment';
 
 export interface NinjaRmmConfig {
   clientId: string;

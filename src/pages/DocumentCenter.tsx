@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
-import { multiModalIntelligence } from '@/lib/multiModalIntelligence';
-import { supabase } from '@/lib/supabase';
+import { multiModalIntelligence } from '../lib/ai/multiModalIntelligence';
+import { supabase } from '../lib/core/supabase';
 import {
   FileText,
   Upload,

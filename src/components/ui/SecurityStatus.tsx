@@ -8,12 +8,7 @@ import { Badge } from './Badge';
 import { Button } from './Button';
 import Modal from './Modal';
 import { Shield, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { supabase } from '@/lib/core/supabase';
 
 interface SecurityStatus {
   level: 'secure' | 'warning' | 'critical';

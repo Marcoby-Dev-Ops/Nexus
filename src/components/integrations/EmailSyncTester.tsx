@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { Mail, RefreshCw, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
 
 interface EmailSyncTesterProps {

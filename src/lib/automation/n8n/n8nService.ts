@@ -4,8 +4,8 @@
  * Handles chat triggers, workflow execution, and department-specific assistants
  */
 import axios from 'axios';
-import { userN8nConfigService } from './userN8nConfig';
-import type { UserN8nConfig } from './userN8nConfig';
+// import { userN8nConfigService } from './userN8nConfig';
+// import type { UserN8nConfig } from './userN8nConfig';
 
 export interface N8nChatMessage {
   role: 'user' | 'assistant' | 'system';
@@ -171,17 +171,45 @@ export class N8nService {
   }
 
   /**
-   * Generate workflows using Nexus Builder
+   * Generate workflows using the new comprehensive workflow builder
    */
   async generateWorkflow(requirements: string, department?: Department): Promise<N8nResponse> {
-    const nexusBuilderWebhook = WORKFLOW_WEBHOOKS.nexusBuilder;
-    
-    return this.triggerWorkflow(nexusBuilderWebhook, {
-      chatInput: `Create a workflow for: ${requirements}`,
-      department: department || 'general',
-      requirements,
-      timestamp: new Date().toISOString()
-    });
+    try {
+      // Import the workflow builder dynamically to avoid circular imports
+      const { n8nWorkflowBuilder } = await import('./n8nWorkflowBuilder');
+      
+      // Use the new workflow builder to create a complete workflow
+      const result = await n8nWorkflowBuilder.generateFromDescription(requirements, department);
+      
+      if (result.success) {
+        return {
+          success: true,
+          data: {
+            workflowId: result.workflowId,
+            webhookUrl: result.webhookUrl,
+            definition: result.workflowDefinition,
+            message: 'Complete workflow created successfully with proper node connections'
+          }
+        };
+      } else {
+        // Fallback to the old method if the new builder fails
+        console.warn('New workflow builder failed, falling back to Nexus Builder webhook:', result.error);
+        const nexusBuilderWebhook = WORKFLOW_WEBHOOKS.nexusBuilder;
+        
+        return this.triggerWorkflow(nexusBuilderWebhook, {
+          chatInput: `Create a workflow for: ${requirements}`,
+          department: department || 'general',
+          requirements,
+          timestamp: new Date().toISOString()
+        });
+      }
+    } catch (error: any) {
+      console.error('Workflow generation failed:', error);
+      return {
+        success: false,
+        error: `Workflow generation failed: ${error.message}`
+      };
+    }
   }
 
   /**

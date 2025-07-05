@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Badge } from '@/components/ui/Badge';
-import { Separator } from '@/components/ui/Separator';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { 
+  Card, CardContent, CardHeader, CardTitle,
+  Button,
+  Input,
+  Label,
+  Badge,
+  Separator,
+  Alert, AlertDescription
+} from '@/components/ui';
 import { 
   Shield, 
   Globe, 
@@ -20,7 +22,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { cloudflareService } from '@/lib/services/cloudflareService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNotifications } from '@/contexts/NotificationContext';
 
@@ -224,8 +226,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
 
       addNotification({
         type: 'success',
-        title: 'Cloudflare Connected!',
-        message: 'Your Cloudflare integration is now active and monitoring your infrastructure.'
+        message: 'Cloudflare Connected! Your Cloudflare integration is now active and monitoring your infrastructure.'
       });
 
       onComplete();
@@ -240,8 +241,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
     navigator.clipboard.writeText(text);
     addNotification({
       type: 'success',
-      title: 'Copied!',
-      message: 'Text copied to clipboard'
+      message: 'Copied to clipboard'
     });
   };
 
@@ -402,7 +402,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
                         <div>
                           <h4 className="font-medium">{zone.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            Status: <Badge variant={zone.status === 'active' ? 'success' : 'secondary'}>
+                            Status: <Badge variant={zone.status === 'active' ? 'default' : 'secondary'}>
                               {zone.status}
                             </Badge>
                           </p>

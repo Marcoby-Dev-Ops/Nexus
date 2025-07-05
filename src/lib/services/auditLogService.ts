@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { logger } from '@/lib/security/logger';
 
 export async function sendAuditLog(action: string, details: Record<string, any> = {}) {

@@ -17,7 +17,7 @@ import {
   executiveAgent,
   departmentalAgents,
   type Agent 
-} from '@/lib/agentRegistry';
+} from '@/lib/ai/agentRegistry';
 import { ModernExecutiveAssistant } from './enhanced/ModernExecutiveAssistant';
 import { DepartmentalAgent } from './DepartmentalAgent';
 import { useAuth } from '@/contexts/AuthContext';
@@ -162,8 +162,8 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
     (async () => {
       if (user?.id) {
         try {
-          const { chatHistory } = await import('@/lib/supabase');
-          const { executiveAgent } = await import('@/lib/agentRegistry');
+          const { chatHistory } = await import('@/lib/core/supabase');
+          const { executiveAgent } = await import('@/lib/ai/agentRegistry');
           const conv = await chatHistory.createConversation(
             'Organizational Chat',
             executiveAgent.id,

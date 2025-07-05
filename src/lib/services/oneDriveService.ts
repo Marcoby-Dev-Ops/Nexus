@@ -3,12 +3,51 @@
  * Syncs documents from OneDrive and SharePoint for intelligent retrieval and business context
  */
 
+import { logger } from '@/lib/security/logger';
+
 interface OneDriveConfig {
   accessToken: string;
   refreshToken: string;
   tenantId?: string;
   siteId?: string; // For SharePoint integration
   driveId?: string; // Specific drive to sync
+}
+
+interface Microsoft365Credentials {
+  access_token: string;
+  refresh_token: string;
+  tenant_id?: string;
+  sharepoint_site_id?: string;
+  drive_id?: string;
+}
+
+function isMicrosoft365Credentials(credentials: any): credentials is Microsoft365Credentials {
+  return credentials && typeof credentials.access_token === 'string' && typeof credentials.refresh_token === 'string';
+}
+
+interface OneDriveItem {
+  id: string;
+  name: string;
+  file?: {
+    mimeType: string;
+  };
+  folder?: object;
+  lastModifiedDateTime: string;
+  webUrl: string;
+  size: number;
+  parentReference?: {
+    path: string;
+  };
+  createdBy?: {
+    user?: {
+      displayName: string;
+    };
+  };
+  lastModifiedBy?: {
+    user?: {
+      displayName: string;
+    };
+  };
 }
 
 interface OneDriveDocument {
@@ -52,7 +91,7 @@ export class OneDriveService {
         .single()
       );
 
-      if (integration?.credentials) {
+      if (integration?.credentials && isMicrosoft365Credentials(integration.credentials)) {
         this.config = {
           accessToken: integration.credentials.access_token,
           refreshToken: integration.credentials.refresh_token,
@@ -65,7 +104,7 @@ export class OneDriveService {
       }
       return false;
     } catch (error) {
-      console.error('Failed to initialize OneDrive service:', error);
+      logger.error({ err: error }, 'Failed to initialize OneDrive service');
       return false;
     }
   }
@@ -123,13 +162,15 @@ export class OneDriveService {
             }
           }
         } catch (error) {
-          results.errors.push(`Failed to process ${doc.name}: ${error.message}`);
+          const errorMessage = error instanceof Error ? error.message : String(error);
+          results.errors.push(`Failed to process ${doc.name}: ${errorMessage}`);
         }
       }
 
       return results;
     } catch (error) {
-      throw new Error(`Document sync failed: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Document sync failed: ${errorMessage}`);
     }
   }
 
@@ -151,14 +192,14 @@ export class OneDriveService {
 
       if (data.value) {
         documents.push(...data.value
-          .filter(item => !item.folder && this.isSupportedFileType(item.name))
-          .map(item => this.mapOneDriveItem(item, 'OneDrive'))
+          .filter((item: OneDriveItem) => !item.folder && this.isSupportedFileType(item.name))
+          .map((item: OneDriveItem) => this.mapOneDriveItem(item, 'OneDrive'))
         );
       }
 
       return documents;
     } catch (error) {
-      console.error('Failed to get OneDrive documents:', error);
+      logger.error({ err: error }, 'Failed to get OneDrive documents');
       return [];
     }
   }
@@ -185,21 +226,21 @@ export class OneDriveService {
 
           if (data.value) {
             documents.push(...data.value
-              .filter(item => !item.folder && this.isSupportedFileType(item.name))
-              .map(item => this.mapOneDriveItem(item, 'SharePoint', {
+              .filter((item: OneDriveItem) => !item.folder && this.isSupportedFileType(item.name))
+              .map((item: OneDriveItem) => this.mapOneDriveItem(item, 'SharePoint', {
                 siteName: library.name,
                 libraryName: library.name
               }))
             );
           }
         } catch (error) {
-          console.error(`Failed to get documents from library ${library.name}:`, error);
+          logger.error({ err: error, libraryName: library.name }, `Failed to get documents from library ${library.name}`);
         }
       }
 
       return documents;
     } catch (error) {
-      console.error('Failed to get SharePoint documents:', error);
+      logger.error({ err: error }, 'Failed to get SharePoint documents');
       return [];
     }
   }
@@ -230,7 +271,7 @@ export class OneDriveService {
    * Map OneDrive/SharePoint item to our document format
    */
   private mapOneDriveItem(
-    item: any, 
+    item: OneDriveItem, 
     source: 'OneDrive' | 'SharePoint',
     sharePointInfo?: { siteName: string; libraryName: string }
   ): Omit<OneDriveDocument, 'content'> {
@@ -275,8 +316,9 @@ export class OneDriveService {
       return `${documentContext}\n\n${content}`.trim();
 
     } catch (error) {
-      console.error(`Failed to extract content from ${doc.name}:`, error);
-      return `Document: ${doc.name}\nType: ${doc.mimeType}\nLocation: ${doc.webUrl}\nNote: Content extraction failed`;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error, docName: doc.name }, `Failed to extract content from ${doc.name}`);
+      return `Document: ${doc.name}\nType: ${this.getDocumentTypeLabel(doc.name)}\nLocation: ${doc.webUrl}\nNote: Content extraction failed: ${errorMessage}`;
     }
   }
 
@@ -301,7 +343,7 @@ export class OneDriveService {
         
         let content = `Spreadsheet: ${doc.name}\n\n`;
         if (workbookData.value) {
-          content += `Worksheets: ${workbookData.value.map(ws => ws.name).join(', ')}\n\n`;
+          content += `Worksheets: ${workbookData.value.map((ws: any) => ws.name).join(', ')}\n\n`;
           
           // Get sample data from first worksheet
           if (workbookData.value[0]) {
@@ -312,9 +354,9 @@ export class OneDriveService {
               
               if (rangeData.values) {
                 content += 'Sample Data:\n';
-                rangeData.values.forEach((row, index) => {
-                  if (row.some(cell => cell !== null && cell !== '')) {
-                    content += `Row ${index + 1}: ${row.filter(cell => cell !== null && cell !== '').join(' | ')}\n`;
+                rangeData.values.forEach((row: any, index: number) => {
+                  if (row.some((cell: any) => cell !== null && cell !== '')) {
+                    content += `Row ${index + 1}: ${row.filter((cell: any) => cell !== null && cell !== '').join(' | ')}\n`;
                   }
                 });
               }
@@ -331,8 +373,9 @@ export class OneDriveService {
         return `Document: ${doc.name}\nSize: ${blob.size} bytes\nContent extraction available via Microsoft Graph API`;
       }
     } catch (error) {
-      console.error(`Failed to extract Office content from ${doc.name}:`, error);
-      return `Office Document: ${doc.name}\nContent extraction failed: ${error.message}`;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error, docName: doc.name }, `Failed to extract Office content from ${doc.name}`);
+      return `Office Document: ${doc.name}\nContent extraction failed: ${errorMessage}`;
     }
   }
 
@@ -344,8 +387,8 @@ export class OneDriveService {
       const response = await this.authenticatedRequest(doc.webUrl);
       return await response.text();
     } catch (error) {
-      console.error(`Failed to extract text content from ${doc.name}:`, error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error, docName: doc.name }, `Failed to extract text content from ${doc.name}`);
       return `Text file: ${doc.name}\nContent extraction failed: ${errorMessage}`;
     }
   }
@@ -448,11 +491,13 @@ Library: ${doc.metadata.sharePoint.libraryName}`;
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to store document: ${response.statusText}`);
+        const errorBody = await response.text();
+        throw new Error(`Failed to store document: ${response.statusText} - ${errorBody}`);
       }
     } catch (error) {
-      console.error(`Failed to store document ${document.name} in RAG:`, error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error, documentId: document.id }, 'Error storing document for RAG in Supabase');
+      throw new Error(`Failed to store document ${document.id} for RAG: ${errorMessage}`);
     }
   }
 
@@ -504,7 +549,7 @@ Library: ${doc.metadata.sharePoint.libraryName}`;
     }
 
     try {
-      const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+      const res = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -516,22 +561,33 @@ Library: ${doc.metadata.sharePoint.libraryName}`;
         })
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to refresh token');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(`Failed to refresh token: ${errorData?.error_description || res.statusText}`);
       }
-
-      const data = await response.json();
-      this.config.accessToken = data.access_token;
+      const newTokens = await res.json();
+      
+      if (this.config) {
+        this.config.accessToken = newTokens.access_token;
+      
+        // Also update refresh token if a new one is provided (best practice)
+        if (newTokens.refresh_token) {
+          this.config.refreshToken = newTokens.refresh_token;
+        }
+      }
+      
+      this.isAuthenticated = true;
 
       // Update stored credentials
       const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
-      if (user) {
+      if (user && this.config) {
         await import('@/lib/supabase').then(m => m.supabase
           .from('user_integrations')
           .update({
             credentials: {
               ...this.config,
-              access_token: data.access_token
+              access_token: newTokens.access_token,
+              refresh_token: newTokens.refresh_token || this.config.refreshToken,
             }
           })
           .eq('user_id', user.id)
@@ -539,9 +595,10 @@ Library: ${doc.metadata.sharePoint.libraryName}`;
         );
       }
     } catch (error) {
-      console.error('Failed to refresh access token:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'OneDrive token refresh failed');
       this.isAuthenticated = false;
-      throw error;
+      throw new Error(`Token refresh failed: ${errorMessage}`);
     }
   }
 
@@ -583,56 +640,36 @@ Library: ${doc.metadata.sharePoint.libraryName}`;
         errors: []
       };
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Failed to get sync status');
       return {
         lastSync: null,
         totalDocuments: 0,
         pendingSync: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error']
+        errors: [errorMessage]
       };
     }
   }
 
   /**
-   * Manual sync trigger
+   * Trigger a manual sync process
    */
   async triggerSync(): Promise<{
     success: boolean;
     processed: number;
     errors: string[];
+    newDocuments: OneDriveDocument[];
   }> {
     try {
-      const result = await this.syncDocumentsForRAG();
-      
-      // Update last sync time
-      const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
-      if (user) {
-        await import('@/lib/supabase').then(m => m.supabase
-          .from('user_integrations')
-          .update({
-            metadata: {
-              lastOneDriveSync: new Date().toISOString(),
-              lastSyncResult: {
-                processed: result.processed,
-                errors: result.errors.length
-              }
-            }
-          })
-          .eq('user_id', user.id)
-          .eq('integration_name', 'microsoft-365')
-        );
+      if (!this.isAuthenticated) {
+        await this.initialize();
       }
-
-      return {
-        success: true,
-        processed: result.processed,
-        errors: result.errors
-      };
+      const syncResult = await this.syncDocumentsForRAG();
+      return { success: true, ...syncResult };
     } catch (error) {
-      return {
-        success: false,
-        processed: 0,
-        errors: [error instanceof Error ? error.message : 'Unknown error']
-      };
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Manual sync trigger failed');
+      return { success: false, processed: 0, errors: [errorMessage], newDocuments: [] };
     }
   }
 }

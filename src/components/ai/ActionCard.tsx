@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/core/supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { Button } from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
 import { toast } from 'sonner';
@@ -34,18 +35,9 @@ export interface ActionCardProps {
   /**
    * Optionally override the Supabase client if a shared instance exists.
    */
-  supabaseClient?: ReturnType<typeof createClient>;
+  supabaseClient?: SupabaseClient;
   className?: string;
 }
-
-// -----------------------------------------------------------------------------
-// Helper – lazy initialise client only if caller did not provide one.
-// -----------------------------------------------------------------------------
-const getClient = () =>
-  createClient(
-    import.meta.env.VITE_SUPABASE_URL,
-    import.meta.env.VITE_SUPABASE_ANON_KEY,
-  );
 
 // -----------------------------------------------------------------------------
 // Component
@@ -60,7 +52,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [executingActionId, setExecutingActionId] = useState<string | null>(null);
 
-  const client = supabaseClient ?? getClient();
+  const client = supabaseClient ?? supabase;
 
   const handleExecute = useCallback(
     async (action: Action) => {

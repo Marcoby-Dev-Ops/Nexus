@@ -184,7 +184,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               {currentStepId === 'organization-setup' && (
                 <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
                   <OrganizationSetupStep 
-                    onNext={(data) => handleStepComplete('organization-setup', { enriched: data.enriched_data })}
+                    onNext={(data) => { void handleStepComplete('organization-setup', { enriched: data.enriched_data }); }}
                     onBack={() => goToStep('welcome')}
                   />
                 </div>
@@ -202,7 +202,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               {currentStepId === 'business-context' && (
                 <div className="bg-card dark:bg-background rounded-lg shadow-lg p-4 lg:p-6">
                   <BusinessContextStep 
-                    onNext={(data) => handleStepComplete('business-context', data)}
+                    onNext={(data) => handleStepComplete('business-context', data as any)}
                     onBack={() => goToStep('user-context')}
                     enrichedData={onboardingData.enriched}
                   />

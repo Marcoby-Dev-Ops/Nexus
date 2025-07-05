@@ -62,7 +62,7 @@ const helpContent: HelpContent = {
     quickActions: [
       { label: 'View Analytics', action: 'Open detailed analytics', route: '/analytics' },
       { label: 'AI Chat', action: 'Ask AI about your data', route: '/chat' },
-      { label: 'Customize Dashboard', action: 'Personalize your view', route: '/settings/profile' }
+      { label: 'Customize Dashboard', action: 'Personalize your view', route: '/settings' }
     ]
   },
   'integrations': {
@@ -97,22 +97,6 @@ const helpContent: HelpContent = {
       { label: 'Learn Slash Commands', action: 'Master quick actions', route: '/user-guide' }
     ]
   },
-  'tasks': {
-    title: 'Smart Task Management',
-    description: 'AI-powered task creation, prioritization, and productivity tracking.',
-    tips: [
-      'Let AI suggest task priorities based on your business data',
-      'Connect calendar for intelligent time blocking',
-      'Use voice input for quick task creation',
-      'Set up automated task creation from emails and meetings'
-    ],
-    relatedJourneys: ['productivity-mastery'],
-    quickActions: [
-      { label: 'Create Task', action: 'Add new task', route: '/tasks' },
-      { label: 'View Calendar', action: 'Check schedule', route: '/calendar' },
-      { label: 'Set Up Automation', action: 'Automate task creation', route: '/automation-recipes' }
-    ]
-  },
   'analytics': {
     title: 'Business Intelligence',
     description: 'Comprehensive analytics and KPI tracking powered by your connected business data.',
@@ -127,22 +111,6 @@ const helpContent: HelpContent = {
       { label: 'Data Warehouse', action: 'Deep dive into data', route: '/analytics/data-warehouse' },
       { label: 'Custom KPIs', action: 'Set up metrics', route: '/analytics' },
       { label: 'Export Report', action: 'Generate report', route: '/analytics' }
-    ]
-  },
-  'calendar': {
-    title: 'Intelligent Calendar',
-    description: 'AI-enhanced scheduling with automatic time blocking and meeting insights.',
-    tips: [
-      'Connect your calendar for intelligent scheduling suggestions',
-      'Use AI to optimize your daily schedule',
-      'Set up automatic time blocking for focused work',
-      'Get meeting preparation insights from connected tools'
-    ],
-    relatedJourneys: ['productivity-mastery'],
-    quickActions: [
-      { label: 'Connect Calendar', action: 'Link your calendar', route: '/integrations' },
-      { label: 'Schedule Focus Time', action: 'Block time for work', route: '/calendar' },
-      { label: 'Meeting Insights', action: 'Prepare for meetings', route: '/ai-chat' }
     ]
   },
   'documents': {

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { 
+  Card, CardContent, CardHeader, CardTitle,
+  Badge,
+  Button
+} from '@/components/ui';
 import { 
   X, 
   ArrowRight, 
@@ -32,6 +34,15 @@ interface IntegrationSetupModalProps {
   onComplete: (data: Record<string, unknown>) => void;
 }
 
+interface SetupData {
+  authorized?: boolean;
+  apiKey?: string;
+  companyId?: string;
+  permissions?: {
+    [key: string]: boolean;
+  };
+}
+
 interface SetupStep {
   id: string;
   title: string;
@@ -50,7 +61,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
   onComplete
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [setupData, setSetupData] = useState<Record<string, unknown>>({});
+  const [setupData, setSetupData] = useState<SetupData>({});
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Setup steps based on integration type
@@ -227,7 +238,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
               onClick={() => {
                 // Simulate OAuth flow
                 setTimeout(() => {
-                  setSetupData({ ...setupData, authorized: true });
+                  setSetupData((prev) => ({ ...prev, authorized: true }));
                   handleNext();
                 }, 1000);
               }}
@@ -259,10 +270,10 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                   API Key
                 </label>
                 <input
+                  id="api_key"
                   type="password"
-                  placeholder="Enter your API key"
-                  className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  onChange={(e) => setSetupData({ ...setupData, apiKey: e.target.value })}
+                  className="w-full"
+                  onChange={(e) => setSetupData((prev) => ({ ...prev, apiKey: e.target.value }))}
                 />
               </div>
 
@@ -315,17 +326,21 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 <label key={index} className="flex items-center space-x-4 p-4 border border-border dark:border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer">
                   <input
                     type="checkbox"
-                    defaultChecked
+                    id={feature}
                     className="w-4 h-4 text-primary border-border rounded focus:ring-blue-500"
                     onChange={(e) => {
-                      const permissions = setupData.permissions || {};
-                      permissions[feature] = e.target.checked;
-                      setSetupData({ ...setupData, permissions });
+                      setSetupData(prev => ({
+                        ...prev,
+                        permissions: {
+                          ...prev.permissions,
+                          [feature]: (e.target as HTMLInputElement).checked
+                        }
+                      }));
                     }}
                   />
-                  <span className="text-sm font-medium text-foreground dark:text-primary-foreground">
+                  <label htmlFor={feature} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                     {feature}
-                  </span>
+                  </label>
                 </label>
               ))}
             </div>

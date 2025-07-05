@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/Separator';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Progress } from '@/components/ui/Progress';
 import { Spinner } from '@/components/ui/Spinner';
+import { logger } from '@/lib/security/logger';
 import { 
   User, 
   Mail, 
@@ -45,13 +46,103 @@ import {
 import type { UserProfile } from '@/lib/types/userProfile';
 import { UserKnowledgeViewer } from '@/components/ai/UserKnowledgeViewer';
 
+interface DatabaseProfile {
+  id?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  display_name?: string | null;
+  name?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  work_phone?: string | null;
+  personal_email?: string | null;
+  role?: string | null;
+  department?: string | null;
+  job_title?: string | null;
+  employee_id?: string | null;
+  hire_date?: string | null;
+  manager_id?: string | null;
+  direct_reports?: string[] | null;
+  timezone?: string | null;
+  location?: string | null;
+  work_location?: string | null;
+  address?: any; // Json type from database
+  linkedin_url?: string | null;
+  github_url?: string | null;
+  twitter_url?: string | null;
+  skills?: string[] | null;
+  certifications?: string[] | null;
+  languages?: any; // Json type from database
+  emergency_contact?: any;
+  preferences?: Record<string, any> | null;
+  status?: string | null;
+  last_login?: string | null;
+  onboarding_completed?: boolean | null;
+  profile_completion_percentage?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  company_id?: string | null;
+}
+
 export const Profile: React.FC = () => {
   const { user, updateProfile, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<UserProfile>>(user?.profile || {});
+
+  // Helper function to convert database profile to UserProfile format
+  const convertDbProfileToUserProfile = (dbProfile: DatabaseProfile | null | undefined): Partial<UserProfile> => {
+    if (!dbProfile) return {};
+    
+    return {
+      id: dbProfile.id || '',
+      first_name: dbProfile.first_name || undefined,
+      last_name: dbProfile.last_name || undefined,
+      display_name: dbProfile.display_name || dbProfile.name || undefined,
+      avatar_url: dbProfile.avatar_url || undefined,
+      bio: dbProfile.bio || undefined,
+      phone: dbProfile.phone || undefined,
+      mobile: dbProfile.mobile || undefined,
+      work_phone: dbProfile.work_phone || undefined,
+      personal_email: dbProfile.personal_email || undefined,
+      role: (dbProfile.role as 'owner' | 'admin' | 'manager' | 'user') || 'user',
+      department: dbProfile.department || undefined,
+      job_title: dbProfile.job_title || undefined,
+      employee_id: dbProfile.employee_id || undefined,
+      hire_date: dbProfile.hire_date || undefined,
+      manager_id: dbProfile.manager_id || undefined,
+      direct_reports: dbProfile.direct_reports || undefined,
+      timezone: dbProfile.timezone || 'UTC',
+      location: dbProfile.location || undefined,
+      work_location: (dbProfile.work_location as 'office' | 'remote' | 'hybrid') || undefined,
+      address: typeof dbProfile.address === 'object' && dbProfile.address !== null ? dbProfile.address : undefined,
+      linkedin_url: dbProfile.linkedin_url || undefined,
+      github_url: dbProfile.github_url || undefined,
+      twitter_url: dbProfile.twitter_url || undefined,
+      skills: dbProfile.skills || undefined,
+      certifications: dbProfile.certifications || undefined,
+      languages: dbProfile.languages?.map((lang: string) => ({ language: lang, proficiency: 'intermediate' as const })) || undefined,
+      emergency_contact: dbProfile.emergency_contact || undefined,
+      preferences: {
+        theme: 'light',
+        notifications: true,
+        language: 'en',
+        ...(typeof dbProfile.preferences === 'object' && dbProfile.preferences !== null ? dbProfile.preferences : {})
+      },
+      status: (dbProfile.status as 'active' | 'inactive' | 'pending' | 'suspended') || undefined,
+      last_login: dbProfile.last_login || undefined,
+      onboarding_completed: dbProfile.onboarding_completed || false,
+      profile_completion_percentage: dbProfile.profile_completion_percentage || undefined,
+      created_at: dbProfile.created_at || new Date().toISOString(),
+      updated_at: dbProfile.updated_at || new Date().toISOString(),
+      company_id: dbProfile.company_id || undefined
+    };
+  };
+
+  const [formData, setFormData] = useState<Partial<UserProfile>>(() => convertDbProfileToUserProfile(user?.profile as DatabaseProfile));
 
   // Calculate profile completion percentage
   const calculateCompletionPercentage = useCallback(() => {
@@ -63,22 +154,22 @@ export const Profile: React.FC = () => {
     ];
     
     const completedFields = fields.filter(field => {
-      const value = user.profile?.[field as keyof UserProfile];
+      const value = user.profile?.[field as keyof typeof user.profile];
       return value && value !== '';
     }).length;
     
     return Math.round((completedFields / fields.length) * 100);
   }, [user?.profile]);
 
-  const handleInputChange = (field: keyof UserProfile, value: any) => {
+  const handleInputChange = (field: keyof UserProfile, value: string | number | boolean | string[] | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNestedInputChange = (parentField: keyof UserProfile, nestedField: string, value: any) => {
+  const handleNestedInputChange = (parentField: keyof UserProfile, nestedField: string, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [parentField]: {
-        ...(prev[parentField] as any),
+        ...(prev[parentField] as Record<string, any>),
         [nestedField]: value
       }
     }));
@@ -94,7 +185,8 @@ export const Profile: React.FC = () => {
       setIsEditing(false);
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Error updating profile');
       setSaveMessage('Failed to update profile. Please try again.');
       setTimeout(() => setSaveMessage(null), 5000);
     } finally {
@@ -103,7 +195,7 @@ export const Profile: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setFormData(user?.profile || {});
+    setFormData(convertDbProfileToUserProfile(user?.profile as DatabaseProfile));
     setIsEditing(false);
   };
 
@@ -197,7 +289,7 @@ export const Profile: React.FC = () => {
                 {/* Avatar */}
                 <div className="relative">
                   <Avatar className="h-24 w-24 mx-auto">
-                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarImage src={profile?.avatar_url || undefined} />
                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                       {user?.initials || 'U'}
                     </AvatarFallback>
@@ -381,13 +473,14 @@ export const Profile: React.FC = () => {
 
               {/* Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {profile?.hire_date && (
+                {/* Employment Info */}
+                {(user?.profile as any)?.hire_date && (
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Calendar className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <p className="text-sm font-medium text-foreground">Joined</p>
                       <p className="text-lg font-bold text-primary">
-                        {new Date(profile.hire_date).toLocaleDateString()}
+                        {new Date((user?.profile as any).hire_date).toLocaleDateString()}
                       </p>
                     </CardContent>
                   </Card>
@@ -405,13 +498,14 @@ export const Profile: React.FC = () => {
                   </Card>
                 )}
 
-                {profile?.status && (
+                {/* Status Badge */}
+                {(user?.profile as any)?.status && (
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Shield className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <p className="text-sm font-medium text-foreground">Status</p>
-                      <Badge variant={profile.status === 'active' ? 'default' : 'secondary'} className="text-lg">
-                        {profile.status}
+                      <Badge variant={(user?.profile as any).status === 'active' ? 'default' : 'secondary'} className="text-lg">
+                        {(user?.profile as any).status}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -651,7 +745,12 @@ export const Profile: React.FC = () => {
                     <div className="space-y-2">
                       <Label htmlFor="language">Language</Label>
                       <Select
-                        value={isEditing ? (formData.preferences?.language || 'en') : (profile?.preferences?.language || 'en')}
+                        value={isEditing ? (formData.preferences?.language || 'en') : (
+                          typeof profile?.preferences === 'object' && 
+                          profile?.preferences !== null &&
+                          'language' in profile.preferences ? 
+                          (profile.preferences as Record<string, any>).language || 'en' : 'en'
+                        )}
                         onValueChange={(value) => handleNestedInputChange('preferences', 'language', value)}
                         disabled={!isEditing}
                       >

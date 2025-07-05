@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
-import type { Database } from '@/lib/database.types';
+import type { Database } from '@/lib/core/database.types';
+import { Spinner } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/Button';
 
 // Row types for profiles, companies, and integrations
 type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
@@ -12,18 +14,18 @@ type UserIntegrationRow = Database['public']['Tables']['user_integrations']['Row
 interface AuthUser {
   id: string;
   email: string;
-  name?: string;
-  full_name?: string;
+  name?: string | null;
+  full_name?: string | null;
   initials?: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
   created_at: string;
-  last_sign_in_at?: string;
-  role?: string;
-  department?: string;
+  last_sign_in_at?: string | null;
+  role?: string | null;
+  department?: string | null;
   company_id?: string | null;
   company?: CompanyRow | null;
   integrations?: UserIntegrationRow[];
-  onboardingCompleted?: boolean;
+  onboardingCompleted?: boolean | null;
   profile?: UserProfileRow | null;
 }
 
@@ -33,6 +35,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   error: Error | null;
+  activeOrgId: string | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -53,102 +56,157 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [integrations, setIntegrations] = useState<UserIntegrationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const [initialized, setInitialized] = useState(false);
+  
+  // Refs for cleanup and preventing race conditions
+  const mountedRef = useRef(true);
+  const processingRef = useRef(false);
+
+  // Helper: retry getSession up to 3 times
+  const getSessionWithRetry = async (retries = 3, delayMs = 500): Promise<{ session: Session | null, error: any }> => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session || error) return { session, error };
+      } catch (err) {
+        console.warn(`[Auth] getSession attempt ${i + 1} failed`, err);
+        if (i === retries - 1) return { session: null, error: err };
+      }
+      await new Promise(res => setTimeout(res, delayMs));
+    }
+    return { session: null, error: new Error('Session fetch failed after retries') };
+  };
 
   const handleAuthChange = useCallback(async (session: Session | null) => {
     // Prevent multiple simultaneous auth changes
-    if (!initialized) {
-      setLoading(true);
+    if (!mountedRef.current || processingRef.current) {
+      return;
     }
     
-    setSession(session);
-    setSupabaseUser(session?.user ?? null);
-    setError(null);
+    processingRef.current = true;
+    setLoading(true);
+    
+    try {
+      setSession(session);
+      setSupabaseUser(session?.user ?? null);
+      setError(null);
 
-    if (session?.user) {
-      try {
-        // Fetch user profile
-        const { data: userProfile, error: profileError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        
-        if (profileError) {
-          console.warn('Profile fetch error:', profileError);
-          setProfile(null);
-        } else {
-          setProfile(userProfile as UserProfileRow | null);
-        }
+      if (session?.user && mountedRef.current) {
+        try {
+          // Fetch profile, company, and integrations in parallel
+          const [profileResult, integrationsResult] = await Promise.all([
+            supabase
+              .from('user_profiles')
+              .select('*, company:companies(*)')
+              .eq('id', session.user.id)
+              .maybeSingle(),
+            supabase
+              .from('user_integrations')
+              .select('*')
+              .eq('user_id', session.user.id)
+          ]);
 
-        // Fetch company if user has company_id
-        if (userProfile?.company_id) {
-          const { data: companyData, error: companyError } = await supabase
-            .from('companies')
-            .select('*')
-            .eq('id', userProfile.company_id)
-            .maybeSingle();
+          if (!mountedRef.current) return;
           
-          if (companyError) {
-            console.warn('Company fetch error:', companyError);
-            setCompany(null);
-          } else {
-            setCompany(companyData as CompanyRow | null);
+          let finalProfile = profileResult.data as UserProfileRow & { company: CompanyRow | null } | null;
+          if (profileResult.error) {
+            console.warn('Profile fetch error:', profileResult.error);
           }
-        } else {
-          setCompany(null);
-        }
 
-        // Fetch integrations
-        const { data: integrationsData, error: integrationsError } = await supabase
-          .from('user_integrations')
-          .select('*')
-          .eq('user_id', session.user.id);
-        
-        if (integrationsError) {
-          console.warn('Integrations fetch error:', integrationsError);
-          setIntegrations([]);
-        } else {
-          setIntegrations(integrationsData || []);
+          // If no profile exists for a new user, create one
+          if (!finalProfile && session.user) {
+            console.log('No profile found for new user, creating one...');
+            const { data: newProfile, error: createError } = await supabase
+              .from('user_profiles')
+              .insert({
+                id: session.user.id,
+                email: session.user.email,
+                display_name: session.user.email?.split('@')[0],
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              console.error('Failed to create user profile:', createError);
+              throw createError;
+            }
+            finalProfile = newProfile as UserProfileRow & { company: CompanyRow | null };
+          }
+          
+          setProfile(finalProfile);
+
+          // The company data is now part of the profile fetch
+          setCompany(finalProfile?.company ?? null);
+
+          // Set integrations from the parallel fetch
+          if (integrationsResult.error) {
+            console.warn('Integrations fetch error:', integrationsResult.error);
+            setIntegrations([]);
+          } else {
+            setIntegrations(integrationsResult.data || []);
+          }
+        } catch (err) {
+          console.error('Auth change error:', err);
+          if (mountedRef.current) {
+            setError(err as Error);
+            setProfile(null);
+            setCompany(null);
+            setIntegrations([]);
+          }
         }
-      } catch (err) {
-        console.error('Auth change error:', err);
-        setError(err as Error);
+      } else {
+        // No session - clear all data
         setProfile(null);
         setCompany(null);
         setIntegrations([]);
       }
-    } else {
-      setProfile(null);
-      setCompany(null);
-      setIntegrations([]);
+    } catch (err) {
+      console.error('Auth change error:', err);
+      if (mountedRef.current) {
+        setError(err as Error);
+      }
+    } finally {
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+      processingRef.current = false;
     }
-    
-    setLoading(false);
-    setInitialized(true);
-  }, [initialized]);
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
     
     const initAuth = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
+        // Try to get session with retry
+        const { session, error: sessionError } = await getSessionWithRetry();
         if (sessionError) {
-          console.error('Session error:', sessionError);
-          setError(sessionError);
+          console.error('[Auth] Session error:', sessionError);
+          if (mountedRef.current) setError(sessionError);
         }
-        
-        if (mounted) {
-          await handleAuthChange(session);
+        if (mountedRef.current) {
+          // If session is missing, try to refresh session before logging out
+          if (!session && supabase.auth && typeof supabase.auth.refreshSession === 'function') {
+            try {
+              const { data, error: refreshError } = await supabase.auth.refreshSession();
+              if (refreshError) {
+                console.warn('[Auth] Session refresh failed:', refreshError);
+                setError(refreshError);
+              }
+              await handleAuthChange(data?.session || null);
+            } catch (refreshErr) {
+              console.error('[Auth] Session refresh threw:', refreshErr);
+              setError(refreshErr as Error);
+              await handleAuthChange(null);
+            }
+          } else {
+            await handleAuthChange(session);
+          }
         }
       } catch (err) {
-        console.error('Init auth error:', err);
-        if (mounted) {
+        console.error('[Auth] Init auth error:', err);
+        if (mountedRef.current) {
           setError(err as Error);
           setLoading(false);
-          setInitialized(true);
         }
       }
     };
@@ -157,17 +215,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted && initialized) {
-        console.log('Auth state change:', event);
+      if (mountedRef.current) {
+        console.log('[Auth] Auth state change detected:', event);
         await handleAuthChange(session);
       }
     });
 
+    // Listen for storage events (e.g., localStorage cleared)
+    window.addEventListener('storage', (e) => {
+      if (e.key && e.key.includes('supabase')) {
+        console.warn('[Auth] Storage event detected:', e);
+      }
+    });
+
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, []); // Only run once on mount
+  }, [handleAuthChange]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -199,7 +264,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select()
       .maybeSingle();
     if (updateError) throw updateError;
-    setProfile(updatedProfile as UserProfileRow | null);
+    if (mountedRef.current) {
+      setProfile(updatedProfile as UserProfileRow | null);
+    }
   };
 
   const updateCompany = async (updates: Partial<CompanyRow>) => {
@@ -210,7 +277,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', profile.company_id)
       .maybeSingle();
     if (error) throw error;
-    setCompany(data as CompanyRow | null);
+    if (mountedRef.current) {
+      setCompany(data as CompanyRow | null);
+    }
   };
 
   const refreshIntegrations = async () => {
@@ -220,7 +289,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select('*')
       .eq('user_id', supabaseUser.id);
     if (error) throw error;
-    setIntegrations((data as UserIntegrationRow[]) || []);
+    if (mountedRef.current) {
+      setIntegrations((data as UserIntegrationRow[]) || []);
+    }
   };
 
   const completeOnboarding = async () => {
@@ -231,33 +302,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .eq('id', profile.id)
       .maybeSingle();
     if (error) throw error;
-    setProfile(data as UserProfileRow | null);
+    if (mountedRef.current) {
+      setProfile(data as UserProfileRow | null);
+    }
   };
 
-  const contextValue: AuthContextType = {
-    user: supabaseUser
-      ? {
-          id: supabaseUser.id,
-          email: supabaseUser.email!,
-          name: supabaseUser.user_metadata?.full_name || undefined,
-          full_name: supabaseUser.user_metadata?.full_name,
-          initials: supabaseUser.user_metadata?.initials,
-          avatar_url: supabaseUser.user_metadata?.avatar_url,
-          created_at: supabaseUser.created_at,
-          last_sign_in_at: supabaseUser.last_sign_in_at,
-          role: profile?.role || undefined,
-          department: profile?.department || undefined,
-          company_id: profile?.company_id || undefined,
-          company,
-          integrations,
-          onboardingCompleted: profile?.onboarding_completed ?? false,
-          profile,
-        }
-      : null,
-    integrations,
+  const user = useMemo((): AuthUser | null => {
+    if (!supabaseUser || !profile) {
+      return null;
+    }
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      created_at: supabaseUser.created_at,
+      last_sign_in_at: supabaseUser.last_sign_in_at,
+      role: profile.role,
+      department: profile.department,
+      company_id: profile.company_id,
+      onboardingCompleted: profile.onboarding_completed,
+      profile,
+      company,
+      integrations,
+      name: profile.display_name,
+      full_name: profile.display_name,
+      initials: profile.display_name?.split(' ').map(n => n[0]).join('') || '?',
+      avatar_url: profile.avatar_url,
+    };
+  }, [supabaseUser, profile, company, integrations]);
+
+  const value: AuthContextType = useMemo(() => ({
+    user,
     session,
     loading,
     error,
+    integrations,
+    activeOrgId: profile?.company_id || null,
     signIn,
     signUp,
     signOut,
@@ -266,9 +345,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     updateCompany,
     refreshIntegrations,
     completeOnboarding,
-  };
+  }), [
+    user,
+    session,
+    loading,
+    error,
+    integrations,
+    profile,
+    refreshIntegrations,
+    completeOnboarding
+  ]);
 
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+  // Custom error UI for session expired
+  if (error && error.message && error.message.toLowerCase().includes('session')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-500 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Session Expired</h2>
+          <p className="text-muted-foreground mb-6">
+            Your session has expired or could not be restored. Please log in again to continue.
+          </p>
+          <Button variant="outline" onClick={() => window.location.href = '/login'}>
+            Go to Login
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -278,4 +388,6 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}
+
+export default AuthProvider; 

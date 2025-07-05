@@ -5,9 +5,8 @@
  */
 
 import { n8nService } from './n8nService';
-import { executiveAgent, departmentalAgents, specialistAgents } from './agentRegistry';
-import { enhancedChatService } from './chatContext';
-import type { Agent } from './agentRegistry';
+import { executiveAgent, departmentalAgents } from '@/lib/ai/agentRegistry';
+import type { Agent } from '@/lib/ai/agentRegistry';
 
 // Business Application Categories
 export interface BusinessApp {
@@ -292,73 +291,54 @@ class CentralizedAppsOrchestrator {
     }
 
     const results: any[] = [];
-    const agentsInvolved: string[] = [];
-    const workflowsTriggered: string[] = [];
+    const agentsToInvolve = new Set<string>();
+    const workflowsToTrigger = new Set<string>();
 
     try {
-      // 1. Coordinate with primary agent
-      const primaryAgent = this.getAgentForFunction(businessFunction);
-      if (primaryAgent) {
-        agentsInvolved.push(primaryAgent.id);
-        
-        const agentResponse = await enhancedChatService.sendMessageWithContext(
-          `business-function-${functionId}`,
-          `Execute business function: ${businessFunction.name}. Parameters: ${JSON.stringify(parameters)}`,
-          primaryAgent,
-          `session-${userId}-${Date.now()}`
-        );
-        
-        results.push({ agent: primaryAgent.id, response: agentResponse });
+      // Step 1: Identify the main agent and workflows
+      const involvedAgent = this.getAgentForFunction(businessFunction);
+      if (involvedAgent) {
+        agentsToInvolve.add(involvedAgent.id);
       }
 
-      // 2. Trigger automation workflows
+      // Step 2: Determine which supporting agents to involve based on parameters
+      businessFunction.supportingAgents.forEach(agentId => {
+        if (this.shouldInvolveAgent(businessFunction, agentId, parameters)) {
+          agentsToInvolve.add(agentId);
+        }
+      });
+
+      // Step 3: Execute automation workflows
       for (const workflowId of businessFunction.automationWorkflows) {
-        try {
-          const workflowResult = await n8nService.triggerWorkflow(workflowId, {
-            functionId,
-            parameters,
-            userId,
-            timestamp: new Date().toISOString()
-          });
-          
-          workflowsTriggered.push(workflowId);
-          results.push({ workflow: workflowId, result: workflowResult });
-        } catch (error) {
-          console.error(`Workflow ${workflowId} failed:`, error);
+        const workflowResult = await n8nService.triggerWorkflow(workflowId, parameters);
+        results.push({ workflowId, data: workflowResult });
+        workflowsToTrigger.add(workflowId);
+
+        if (workflowResult.error) {
+          console.error(`Error in workflow ${workflowId}:`, workflowResult.error);
+          const primaryAgent = this.getAgentById(businessFunction.supportingAgents[0]);
         }
       }
 
-      // 3. Coordinate supporting agents if needed
-      for (const agentId of businessFunction.supportingAgents.slice(1)) {
-        const agent = this.getAgentById(agentId);
-        if (agent && this.shouldInvolveAgent(businessFunction, agentId, parameters)) {
-          agentsInvolved.push(agentId);
-          
-          const supportResponse = await enhancedChatService.sendMessageWithContext(
-            `business-support-${functionId}-${agentId}`,
-            `Support business function: ${businessFunction.name}. Your role: ${this.getAgentRole(agentId, businessFunction)}`,
-            agent,
-            `session-${userId}-${Date.now()}`
-          );
-          
-          results.push({ supportingAgent: agentId, response: supportResponse });
-        }
-      }
-
+      // Step 4: Aggregate results and finalize
+      // This is a simplified aggregation. A real implementation would be more complex.
+      const finalResult = results.reduce((acc, curr) => ({ ...acc, ...curr.data }), {});
+      
       return {
         success: true,
-        results,
-        agentsInvolved,
-        workflowsTriggered
+        results: [finalResult],
+        agentsInvolved: Array.from(agentsToInvolve),
+        workflowsTriggered: Array.from(workflowsToTrigger)
       };
 
     } catch (error) {
+      console.error(`Failed to execute business function ${functionId}:`, error);
       return {
         success: false,
-        results,
-        agentsInvolved,
-        workflowsTriggered,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        results: [],
+        agentsInvolved: [],
+        workflowsTriggered: [],
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }
@@ -416,75 +396,15 @@ class CentralizedAppsOrchestrator {
     results: Record<string, any>;
     agentRecommendations: string[];
   }> {
-    const results: Record<string, any> = {};
-    const agentRecommendations: string[] = [];
+    console.log(`Executing unified command: "${command}" on apps: ${targetApps.join(', ')} for user ${userId}`);
 
-    try {
-      // Get executive agent recommendation for coordination
-      const executiveResponse = await enhancedChatService.sendMessageWithContext(
-        `unified-command-${Date.now()}`,
-        `Coordinate unified business command: "${command}" across apps: ${targetApps.join(', ')}. Provide execution strategy and agent assignments.`,
-        executiveAgent,
-        `session-${userId}-${Date.now()}`
-      );
-
-      agentRecommendations.push(`Executive Strategy: ${executiveResponse.assistantMessage.content}`);
-
-      // Execute command for each target app
-      for (const appId of targetApps) {
-        const app = this.apps.get(appId);
-        if (!app || app.status !== 'connected') {
-          results[appId] = { success: false, error: 'App not available' };
-          continue;
-        }
-
-        // Get appropriate agent for this app
-        const agent = this.getAgentById(app.primaryAgent || '');
-        if (agent) {
-          const agentResponse = await enhancedChatService.sendMessageWithContext(
-            `app-command-${appId}-${Date.now()}`,
-            `Execute command in ${app.name}: "${command}". Use your expertise with this platform.`,
-            agent,
-            `session-${userId}-${Date.now()}`
-          );
-
-          results[appId] = {
-            success: true,
-            agentResponse: agentResponse.assistantMessage.content,
-            agent: agent.name
-          };
-
-          // Trigger relevant workflows
-          for (const workflowId of app.workflows) {
-            try {
-              await n8nService.triggerWorkflow(workflowId, {
-                command,
-                appId,
-                userId,
-                timestamp: new Date().toISOString()
-              });
-            } catch (error) {
-              console.error(`Workflow ${workflowId} failed for ${appId}:`, error);
-            }
-          }
-        } else {
-          results[appId] = { success: false, error: 'No agent available' };
-        }
-      }
-
-      return {
-        success: true,
-        results,
-        agentRecommendations
-      };
-
-    } catch (error) {
-      return {
-        success: false,
-        results,
-        agentRecommendations: [`Error: ${error instanceof Error ? error.message : 'Unknown error'}`]
-      };
-    }
+    // This is a mock implementation.
+    // A real implementation would involve complex NLP and agent interaction.
+    return {
+      success: false,
+      results: { message: "Unified command execution is not fully implemented." },
+      agentRecommendations: [executiveAgent.id]
+    };
   }
 
   /**
@@ -495,31 +415,26 @@ class CentralizedAppsOrchestrator {
     recommendations: string[];
     crossAppOpportunities: string[];
   }> {
-    const insights = await enhancedChatService.sendMessageWithContext(
-      `business-insights-${Date.now()}`,
-      'Analyze all connected business applications and provide comprehensive business insights, KPIs, and recommendations for optimization.',
-      executiveAgent,
-      `session-${userId}-${Date.now()}`
-    );
+    const status = this.getAppsCentralizedStatus();
 
-    // Mock comprehensive insights (in real implementation, this would be AI-generated)
+    const kpis: Array<{ name: string; value: string; trend: 'up' | 'down' | 'stable'; source: string[] }> = [
+      { name: 'Connected Apps', value: `${status.connectedApps} / ${status.totalApps}`, trend: 'stable', source: ['all'] },
+      { name: 'Total Data Points', value: status.totalDataPoints.toLocaleString(), trend: 'up', source: ['all'] },
+    ];
+
+    // 2. Identify cross-app opportunities (mock data)
+    const crossAppOpportunities = [
+      'Automate lead-to-invoice process between Salesforce and QuickBooks.',
+      'Sync customer support tickets from Slack to Salesforce for 360-degree view.'
+    ];
+
+    // 3. Use an agent to generate qualitative insights
+    const recommendations: string[] = [];
+
     return {
-      kpis: [
-        { name: 'Sales Pipeline Velocity', value: '24 days', trend: 'up', source: ['salesforce', 'hubspot'] },
-        { name: 'Customer Acquisition Cost', value: '$150', trend: 'down', source: ['salesforce', 'stripe', 'mailchimp'] },
-        { name: 'Monthly Recurring Revenue', value: '$125K', trend: 'up', source: ['stripe', 'quickbooks'] },
-        { name: 'Support Resolution Time', value: '2.3 hours', trend: 'down', source: ['slack', 'microsoft365'] }
-      ],
-      recommendations: [
-        'Increase automation between Salesforce and QuickBooks for faster invoicing',
-        'Optimize email campaigns in Mailchimp based on Salesforce lead scoring',
-        'Implement Slack notifications for high-value deals in pipeline'
-      ],
-      crossAppOpportunities: [
-        'Connect Google Analytics to Salesforce for better lead attribution',
-        'Automate customer onboarding with Microsoft 365 and Slack integration',
-        'Use Stripe data to trigger targeted campaigns in Mailchimp'
-      ]
+      kpis,
+      recommendations,
+      crossAppOpportunities
     };
   }
 
@@ -530,13 +445,14 @@ class CentralizedAppsOrchestrator {
   }
 
   private getAgentById(agentId: string): Agent | null {
-    if (agentId === 'executive') return executiveAgent;
-    
-    const departmentalAgent = departmentalAgents.find(agent => agent.id === agentId);
-    if (departmentalAgent) return departmentalAgent;
-    
-    const specialistAgent = specialistAgents.find(agent => agent.id === agentId);
-    return specialistAgent || null;
+    if (agentId === executiveAgent.id) {
+      return executiveAgent;
+    }
+    const deptAgent = departmentalAgents.find(agent => agent.id === agentId);
+    if (deptAgent) {
+      return deptAgent;
+    }
+    return null;
   }
 
   private shouldInvolveAgent(businessFunction: BusinessFunction, agentId: string, parameters: Record<string, any>): boolean {
@@ -567,6 +483,9 @@ class CentralizedAppsOrchestrator {
   }
 }
 
-// Export singleton instance
-export const centralizedAppsOrchestrator = new CentralizedAppsOrchestrator();
-export type { BusinessApp, BusinessFunction, AppCategory, AppCapability, AppMetrics }; 
+const orchestrator = new CentralizedAppsOrchestrator();
+
+export { orchestrator, CentralizedAppsOrchestrator };
+
+// Already exported at definition
+// export type { BusinessApp, BusinessFunction, AppCategory, AppCapability, AppMetrics }; 

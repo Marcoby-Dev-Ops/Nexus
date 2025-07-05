@@ -36,8 +36,8 @@ export const PageTemplates = {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="p-8 space-y-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground dark:text-primary-foreground mb-2">{title}</h1>
-          <p className="text-lg text-muted-foreground dark:text-muted-foreground">{subtitle}</p>
+          <h1 className="text-3xl font-bold mb-2">{title}</h1>
+          <p className="text-lg">{subtitle}</p>
         </div>
         {children}
       </div>

@@ -5,11 +5,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Progress } from '@/components/ui/Progress';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+import { 
+  Card, CardContent, CardHeader, CardTitle,
+  Badge,
+  Progress,
+  Alert, AlertDescription,
+  Tabs, TabsContent, TabsList, TabsTrigger,
+  Button
+} from '@/components/ui';
 import { 
   MessageSquare, 
   Video,

@@ -9,7 +9,7 @@ import { Switch } from '../../components/ui/Switch';
 import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
 import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 import { Alert } from '../../components/ui/Alert';
 import { toast } from 'sonner';

@@ -84,20 +84,19 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
   return (
     <div className={`space-y-6 ${className}`}>
       {/* Department Header */}
-      <div className="bg-card border border-border rounded-xl p-6">
+      <div className="rounded-xl p-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center">
             {icon && (
-              <div className="mr-3 h-10 w-10 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+              <div className="mr-3 h-10 w-10 rounded-full flex items-center justify-center">
                 {icon}
               </div>
             )}
             <div>
-              <h1 className="text-2xl font-bold text-foreground">{title}</h1>
-              {description && <p className="text-muted-foreground">{description}</p>}
+              <h1 className="text-2xl font-bold">{title}</h1>
+              {description && <p>{description}</p>}
             </div>
           </div>
-          
           {actions.length > 0 && (
             <div className="flex items-center space-x-2">
               {actions.map((action, index) => (
@@ -105,7 +104,7 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
                   key={index}
                   onClick={action.onClick}
                   variant={action.primary ? 'default' : 'outline'}
-                  className={action.primary ? 'bg-brand-primary hover:bg-brand-secondary' : ''}
+                  className={action.primary ? '' : ''}
                 >
                   {action.icon && <span className="mr-2">{action.icon}</span>}
                   {action.label}
@@ -114,30 +113,27 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
             </div>
           )}
         </div>
-
         {/* Department Metrics */}
         {metrics.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             {metrics.map((metric, index) => (
-              <Card key={index} className="bg-card/50">
+              <Card key={index}>
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">{metric.label}</p>
+                      <p className="text-sm">{metric.label}</p>
                       <p className="text-2xl font-bold">{metric.value}</p>
                       {metric.change && (
                         <Badge
                           variant="outline"
-                          className={`text-xs ${
-                            metric.change.positive ? 'text-success' : 'text-destructive'
-                          }`}
+                          className={`text-xs ${metric.change.positive ? '' : ''}`}
                         >
                           {metric.change.positive ? '↑' : '↓'} {metric.change.value}
                         </Badge>
                       )}
                     </div>
                     {metric.icon && (
-                      <div className="h-8 w-8 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+                      <div className="h-8 w-8 rounded-full flex items-center justify-center">
                         {metric.icon}
                       </div>
                     )}
@@ -148,12 +144,11 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
           </div>
         )}
       </div>
-
       {/* Search and Filter Bar */}
       {showSearch && (
         <div className="flex flex-col sm:flex-row gap-3 items-center">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" />
             <Input
               placeholder={`Search ${title.toLowerCase()}...`}
               className="pl-9 w-full"
@@ -171,7 +166,6 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
           </div>
         </div>
       )}
-
       {/* Tabbed Interface */}
       {tabs.length > 0 ? (
         <Tabs defaultValue={defaultTab || tabs[0].id}>
@@ -182,7 +176,6 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
               </TabsTrigger>
             ))}
           </TabsList>
-          
           {tabs.map((tab) => (
             <TabsContent key={tab.id} value={tab.id}>
               {tab.content}

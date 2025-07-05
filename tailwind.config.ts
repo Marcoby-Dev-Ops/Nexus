@@ -77,6 +77,18 @@ const config = {
         'unread-border': 'hsl(var(--unread-border))',
         'selected-bg': 'hsl(var(--selected-bg))',
         'hover-bg': 'hsl(var(--hover-bg))',
+        purple: {
+          DEFAULT: 'hsl(var(--purple))',
+          foreground: 'hsl(var(--purple-foreground))',
+        },
+        'gray-alt': {
+          DEFAULT: 'hsl(var(--gray-alt))',
+          foreground: 'hsl(var(--gray-alt-foreground))',
+        },
+        tertiary: {
+          DEFAULT: 'hsl(var(--tertiary))',
+          foreground: 'hsl(var(--tertiary-foreground))',
+        },
       },
       zIndex: {
         'base': '1',

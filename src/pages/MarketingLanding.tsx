@@ -83,39 +83,42 @@ const MarketingLanding: React.FC = () => {
         </header>
 
         {/* Hero Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center pt-20 pb-24 md:pt-28 md:pb-32"
-        >
-          <Badge variant="secondary" className="mb-6 bg-primary/10 text-primary border-primary/20">
-            <Sparkles className="w-4 h-4 mr-2" />
-            Trusted by 2,847+ businesses
-          </Badge>
-          
-          <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tighter mb-6">
-            Stop doing work that
-            <span className="block text-primary">AI can automate</span>
-          </h1>
-          
-          <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-10">
-            Nexus is the AI-powered business OS that automates your operations, predicts opportunities, and helps you make data-driven decisions 4x faster.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Button size="lg" onClick={handleGetStarted} className="text-lg px-8 py-4">
-              Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
+        <div className="flex flex-col md:flex-row items-stretch min-h-[480px] md:min-h-[600px] lg:min-h-[700px] w-full">
+          {/* Left: Hero Content */}
+          <div className="flex-1 flex flex-col justify-center px-6 py-12 md:py-0 md:pl-12 md:pr-8 z-10 bg-background/90">
+            <Badge variant="secondary" className="mb-6 bg-primary/10 text-primary border-primary/20 w-fit">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Trusted by 2,847+ businesses
+            </Badge>
+            <h1 className="text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tighter mb-6 text-left">
+              Automate the 20% that eats 80% of your day
+              <span className="block text-primary">with Nexus</span>
+            </h1>
+            <p className="max-w-3xl text-lg md:text-xl text-muted-foreground mb-10 text-left">
+              Nexus unifies your business tools, automates repetitive work, and delivers AI-powered insights—so you can focus on what matters.
+            </p>
+            <Button size="lg" onClick={handleGetStarted} className="text-lg px-8 py-4 w-fit">
+              Get Started <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
-            <Button size="lg" variant="outline" onClick={() => setShowDemo(true)} className="text-lg px-8 py-4">
-              <Play className="w-5 h-5 mr-2" /> Watch Demo
-            </Button>
+            <p className="text-sm text-muted-foreground mt-6 text-left">
+              14-day free trial • No credit card required • Setup in 5 minutes
+            </p>
           </div>
-
-          <p className="text-sm text-muted-foreground">
-            14-day free trial • No credit card required • Setup in 5 minutes
-          </p>
-        </motion.div>
+          {/* Right: Video Section */}
+          <div className="flex-1 relative min-h-[320px] md:min-h-0">
+            <video
+              className="absolute inset-0 w-full h-full object-cover rounded-none"
+              src="/7947490-hd_1920_1080_30fps.mp4"
+              autoPlay
+              loop
+              muted
+              playsInline
+              aria-hidden="true"
+            />
+            {/* Overlay for readability on small screens */}
+            <div className="absolute inset-0 bg-background/30 md:bg-background/10" />
+          </div>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-16 border-t border-b border-border/50">
@@ -137,8 +140,14 @@ const MarketingLanding: React.FC = () => {
               One platform that replaces dozens of tools
             </p>
           </div>
-
           <div className="grid gap-8 md:grid-cols-3">
+            {/* Feature Screenshot Placeholders */}
+            {/*
+              SUGGESTED SCREENSHOTS (for later):
+              1. AI Assistant in action: Show a chat or recommendation from the AI for a department (e.g., sales or operations).
+              2. Workflow Automation: Visualize a workflow builder or automation running (e.g., invoice sent, email synced, etc.).
+              3. Predictive Analytics: Show a chart or dashboard with predictive metrics and actionable insights.
+            */}
             {features.map((feature, index) => (
               <Card key={index} className="h-full">
                 <CardContent className="p-6">
@@ -152,6 +161,13 @@ const MarketingLanding: React.FC = () => {
                   <Badge variant="secondary" className="bg-success/10 text-success">
                     {feature.benefit}
                   </Badge>
+                  {/* Placeholder for feature screenshot */}
+                  <div className="mt-4 w-full aspect-video bg-muted rounded-lg border-2 border-dashed border-primary/20 flex items-center justify-center">
+                    <span className="text-xs text-muted-foreground text-center">
+                      [Feature Screenshot Placeholder]<br />
+                      {feature.title} UI in action
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             ))}

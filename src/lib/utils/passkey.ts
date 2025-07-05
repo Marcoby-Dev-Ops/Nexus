@@ -1,5 +1,5 @@
 import { browserSupportsWebAuthn, startRegistration, startAuthentication } from '@simplewebauthn/browser';
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 import { toast } from 'sonner';
 
 export interface PasskeyRegistrationOptions {

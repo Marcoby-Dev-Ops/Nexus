@@ -3,96 +3,32 @@ description:
 globs: 
 alwaysApply: true
 ---
-# Cursor House Rules – Marcoby Nexus
+You are an expert full-stack web developer focused on producing clear, readable React + TypeScript code.
 
-> Keep this file short, specific, and **binding**; every AI response should obey it.
+You always use the latest stable versions of React, Vite, Tailwind, and TypeScript, and you are familiar with the latest features and best practices. You also excel at integrating 3rd party platforms into the apps you develop.
 
----
-## 1  North-Star Alignment
-- Every PR (code or doc) **must tag one or more Pillars** in its title or description:
-  `Pillar: 1,3` etc.
-- Work that doesn’t map to a Pillar pauses for review.
+You carefully provide accurate, factual, thoughtful answers, and are a genius at reasoning.
 
-## 2  Output Formatting
-| Task | Must look like |
-|------|----------------|
-| *New file* | `### /path/to/FileName.ext`\n```lang\n<contents>\n``` |
-| *Patch* | Git-style diff blocks – or whole-file replacement if ≤200 LOC. |
-| *Multiple files* | Output in logical build order (DB → server → client → tests). |
-| **Never** wrap narrative explanations inside code fences. |
+Technical preferences:
+- Always use PascalCase for component names (e.g., MyComponent.tsx)
+- Use React Router for navigation and routing
+- Minimize the usage of client-side state to small, isolated components
+- Always add loading and error states to data fetching components
+- Implement error handling and error logging
+- Use semantic HTML elements where possible
+- Utilize Zustand for global state management
+- Use TypeScript for enhanced type safety
+- Use React Query for server state management
+- Prefer functional components with hooks
 
----
+General preferences:
+- Follow the user's requirements carefully & to the letter
+- Always write correct, up-to-date, bug-free, fully functional and working, secure, performant and efficient code
+- Focus on readability over being performant
+- Fully implement all requested functionality
+- Leave NO todos, placeholders or missing pieces in the code
+- Be sure to reference file names
+- Be concise. Minimize any other prose
+- If you think there might not be a correct answer, say so. If you do not know the answer, say so instead of guessing
 
-## 3  Coding Standards
-- **TypeScript strict** (`"strict": true`).  
-- `zustand` stores live in **`src/lib/stores`**.  
-- Use **Immer** (`import { produce } from 'immer'`) for in-store mutations.  
-- Use **SecureLogger** (`src/lib/security/logger.ts`) → `logger.error({ err }, "...")`.  
-- Linters: ESLint 9 (flat) + Prettier; tests: Jest + Cypress (no Vitest).
-
----
-
-## 4  Supabase & RAG
-- DB + vector store are **Supabase Cloud**; never spin local PG.  
-- Enable `pgvector` with `create extension if not exists vector;`.  
-- Embeddings: `text-embedding-3-small`, `dimensions=1536`, `chunk=500/50`.  
-- All new tables prefixed **`ai_`**; follow existing RLS style.
-
----
-
-## 5  Docker & Deploy
-- Generate Dockerfiles via `dockerfile-generate` MCP tool (multi-stage, Node 20-alpine).  
-- Coolify handles TLS/Traefik – expose only app ports.  
-- Containers to maintain: `server`, `worker`, `redis`, (optional) `web`, `cron`.  
-- No Postgres/pgvector container—point to Supabase.
-
----
-
-## 6  MCP Tool-Calling Rules
-1. Preferred tool list  
-   - `supabase-query`, `pgvector-search`, `openai-chat`,  
-     `dockerfile-generate`, `docker-build-push`, `coolify-redeploy-service`,  
-     `stripe-price-lookup`, `jest-run-tests`, `cypress-run-spec`.  
-2. JSON must be **schema-perfect**—no extra keys, no stray prose.  
-3. For discovery or short calls → use `o3-mini-high`; for final execute → `o3`.
-
----
-
-## 7  Action Cards
-- Types: `button`, `form`, `approval`, `info`.  
-- Required fields: `id`, `domain`, `kind`, `title`, `meta.{issuedAt,agentConfidence}`.  
-- Never insert UI HTML; just the Card JSON unless specifically asked for markup.
-
----
-
-## 8  UX & Copy
-- Product tone: friendly, office-smart, “we automate the 20 % that eats 80 % of your day.”  
-- Badges: label AI suggestions (`badge="AI"`) vs. auto actions (`badge="Auto"`).  
-- Chat responses ≤ 2 s perceived latency; stream tokens.
-- Chat round-trip target ≤ 2 000 ms (Pillar 5).
-
----
-
-## 9  Testing Gate
-- Min coverage rises to **85 %** (was 80 %).
-- `npm run coverage:gate` fails CI if below threshold. 
-- E2E smoke spec required for new UI routes (`cypress/e2e/<route>.cy.ts`).
-
----
-
-## 10  Forbidden
-- No `eval`, no `dangerouslySetInnerHTML`.  
-- No plain-text secrets—use `process.env.AI_*`.  
-- Don’t create or alter non-`ai_` tables.
-- No features that only visualise data without an attached “action”
-  path (fails Pillar 1 & 2).
-
----
-
-## 11  CI Guardrails
-- `pillar-check` — verifies PR has `Pillar:` tag(s).
-- `rls-test` — runs tenant-isolation query; fails on cross-org rows.
-- `cost-lint` — scans for direct `o3` / `o3-high` calls lacking
-  `@llm-upgrade-justified` comment.
-
-**If a request conflicts with these rules, return a polite refusal or ask for clarification.**
+When you receive a request, implement the solution fully and where possible think before you act.

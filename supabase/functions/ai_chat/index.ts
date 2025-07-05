@@ -120,7 +120,7 @@ serve(async (req) => {
     const isOpenRouter = Boolean(openrouterApiKey) || (openaiApiKey?.startsWith('sk-or-'));
     const llmApiKey = isOpenRouter ? (openrouterApiKey || openaiApiKey) : openaiApiKey!;
     const llmUrl = isOpenRouter ? 'https://openrouter.ai/api/v1/chat/completions' : 'https://api.openai.com/v1/chat/completions';
-    const llmModelDefault = isOpenRouter ? 'o3-mini-high' : 'o3-mini-high';
+    const llmModelDefault = isOpenRouter ? 'gpt-4o-mini' : 'gpt-4o-mini';
 
     const { message, conversationId: rawConversationId, metadata } = await req.json();
 

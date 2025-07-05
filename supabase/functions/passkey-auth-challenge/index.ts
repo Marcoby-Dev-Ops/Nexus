@@ -26,11 +26,12 @@ serve(async (req) => {
     let { userId, email } = (await req.json()) as RequestBody;
     if (!userId) {
       if (!email) throw new Error('`userId` or `email` is required');
-      // lookup user by email
-      const { data: userRes, error: getErr } = await supabaseAdmin.auth.admin.getUserByEmail(email);
-      if (getErr) throw getErr;
-      if (!userRes?.user) throw new Error('User not found');
-      userId = userRes.user.id;
+      
+      // Look up user by email using the new `listUsers` method
+      const { data: { users }, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ email });
+      if (listErr) throw listErr;
+      if (!users || users.length === 0) throw new Error('User not found');
+      userId = users[0].id;
     }
 
     // Fetch registered passkeys for allowCredentials

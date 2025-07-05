@@ -2,7 +2,7 @@
  * Production quota and rate limiting service
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 import { LICENSE_TIERS, RATE_LIMITS, type ChatQuotas, type UsageTracking, type RateLimitConfig } from '../types/licensing';
 
 export class QuotaService {
@@ -143,14 +143,20 @@ export class QuotaService {
       const today = new Date().toISOString().split('T')[0];
       const orgId = metadata?.orgId;
 
-      // Update or insert usage record
-      const { data: existing } = await supabase
+      // Build query with proper NULL handling
+      let query = supabase
         .from('chat_usage_tracking')
         .select('*')
         .eq('user_id', userId)
-        .eq('date', today)
-        .eq('org_id', orgId || '')
-        .single();
+        .eq('date', today);
+
+      if (orgId) {
+        query = query.eq('org_id', orgId);
+      } else {
+        query = query.is('org_id', null);
+      }
+
+      const { data: existing } = await query.single();
 
       const updates: Partial<UsageTracking> = {
         user_id: userId,
@@ -170,11 +176,19 @@ export class QuotaService {
       }
 
       if (existing) {
-        await supabase
+        let updateQuery = supabase
           .from('chat_usage_tracking')
           .update(updates)
           .eq('user_id', userId)
           .eq('date', today);
+
+        if (orgId) {
+          updateQuery = updateQuery.eq('org_id', orgId);
+        } else {
+          updateQuery = updateQuery.is('org_id', null);
+        }
+
+        await updateQuery;
       } else {
         await supabase
           .from('chat_usage_tracking')
@@ -202,13 +216,19 @@ export class QuotaService {
    */
   private async getUserQuotas(userId: string, orgId?: string): Promise<ChatQuotas> {
     try {
-      // Try to get user license from database
-      const { data: license } = await supabase
+      // Build query with proper NULL handling
+      let query = supabase
         .from('user_licenses')
         .select('tier, status, expires_at')
-        .eq('user_id', userId)
-        .eq('org_id', orgId || '')
-        .single();
+        .eq('user_id', userId);
+
+      if (orgId) {
+        query = query.eq('org_id', orgId);
+      } else {
+        query = query.is('org_id', null);
+      }
+
+      const { data: license } = await query.single();
 
       if (!license || license.status !== 'active' || 
           (license.expires_at && new Date(license.expires_at) < new Date())) {
@@ -267,13 +287,20 @@ export class QuotaService {
   }
 
   private async getUsageForDate(userId: string, date: string, orgId?: string): Promise<UsageTracking> {
-    const { data } = await supabase
+    // Build query with proper NULL handling
+    let query = supabase
       .from('chat_usage_tracking')
       .select('*')
       .eq('user_id', userId)
-      .eq('date', date)
-      .eq('org_id', orgId || '')
-      .single();
+      .eq('date', date);
+
+    if (orgId) {
+      query = query.eq('org_id', orgId);
+    } else {
+      query = query.is('org_id', null);
+    }
+
+    const { data } = await query.single();
 
     return data || {
       user_id: userId,
@@ -312,18 +339,26 @@ export class QuotaService {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
       const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-      const { data } = await supabase
+      // Build query with proper NULL handling
+      let query = supabase
         .from('chat_usage_tracking')
         .select('*')
         .eq('user_id', userId)
-        .eq('org_id', orgId || '')
         .gte('date', monthStart)
         .lte('date', monthEnd);
+
+      if (orgId) {
+        query = query.eq('org_id', orgId);
+      } else {
+        query = query.is('org_id', null);
+      }
+
+      const { data } = await query;
 
       if (!data || data.length === 0) {
         return {
           user_id: userId,
-          org_id: orgId || '',
+          org_id: orgId,
           date: monthStart,
           message_count: 0,
           ai_requests_made: 0,
@@ -345,7 +380,7 @@ export class QuotaService {
         estimated_cost_usd: (total.estimated_cost_usd || 0) + (day.estimated_cost_usd || 0),
       }), {
         user_id: userId,
-        org_id: orgId || '',
+        org_id: orgId,
         date: monthStart,
         message_count: 0,
         ai_requests_made: 0,
@@ -359,7 +394,7 @@ export class QuotaService {
       console.error('Monthly usage fetch error:', error);
       return {
         user_id: userId,
-        org_id: orgId || '',
+        org_id: orgId,
         date: new Date().toISOString().split('T')[0],
         message_count: 0,
         ai_requests_made: 0,
@@ -393,12 +428,20 @@ export class QuotaService {
         return date.toISOString().split('T')[0];
       });
 
-      const { data: weeklyData } = await supabase
+      // Build query with proper NULL handling
+      let query = supabase
         .from('chat_usage_tracking')
         .select('*')
         .eq('user_id', userId)
-        .eq('org_id', orgId || '')
         .in('date', dates);
+
+      if (orgId) {
+        query = query.eq('org_id', orgId);
+      } else {
+        query = query.is('org_id', null);
+      }
+
+      const { data: weeklyData } = await query;
 
       const weeklyUsage = weeklyData || [];
       const totalCost = weeklyUsage.reduce((sum, day) => sum + (day.estimated_cost_usd || 0), 0);

@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/core/supabase';
 import StreamingComposer from '@/components/chat/StreamingComposer';
 import { Button } from '@/components/ui/Button';
 import AgentPicker from '@/components/chat/AgentPicker';
-import { getAgentsByType } from '@/lib/agentRegistry';
+import { getAgentsByType } from '@/lib/ai/agentRegistry';
 import { MVPScopeIndicator } from '@/components/chat/MVPScopeIndicator';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ConversationRow { id: string; title: string | null; updated_at: string }
 

@@ -11,61 +11,84 @@ datasource db {
 }
 
 model Company {
-  id            String   @id @default(uuid())
-  hubspotId     String?  @unique
-  name          String
-  domain        String   @unique
-  industry      String
-  size          String?
-  description   String?
-  logo          String?
-  website       String?
+  id              String   @id @default(uuid())
+  hubspotId       String?  @unique
+  name            String
+  domain          String   @unique
+  industry        String
+  size            String?
+  description     String?
+  logo            String?
+  website         String?
   social_profiles String[]
-  founded       String?
-  headquarters  String?
-  specialties   String[]
-  employee_count Int?
+  founded         String?
+  headquarters    String?
+  specialties     String[]
+  employee_count  Int?
   followers_count Int?
-  microsoft_365 Json?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  microsoft_365   Json?
 
-  users         UserProfile[]
-  deals         Deal[]
-  contacts      Contact[]
-  integrations  Integration[]
-  modelUsages   ModelUsage[]
+  // New "Business OS" fields
+  duns_number                 String?
+  business_phone              String?
+  inventory_management_system String?
+  business_licenses           Json?
+  client_base_description     String?
+
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  users        UserProfile[]
+  deals        Deal[]
+  contacts     Contact[]
+  integrations Integration[]
+  modelUsages  ModelUsage[]
+  varLeads     VARLead[]
+
+  responses          AssessmentResponse[]
+  category_scores    AssessmentCategoryScore[]
+  assessment_summary AssessmentSummary?
 }
 
 model UserProfile {
-  id          String   @id @default(uuid())
-  user_id     String   @unique
-  company_id  String
-  role        String?
-  industry    String?
+  id           String   @id @default(uuid())
+  user_id      String   @unique
+  company_id   String
+  role         String?
+  industry     String?
   company_size String?
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  company     Company  @relation(fields: [company_id], references: [id])
-  user        User     @relation(fields: [user_id], references: [id])
+  company Company @relation(fields: [company_id], references: [id])
+  user    User    @relation(fields: [user_id], references: [id])
+
+  accounts     Account[]
+  sessions     Session[]
+  integrations Integration[]
+  contacts     Contact[]
+  deals        Deal[]
+  varLeads     VARLead[]
+  modelUsages  ModelUsage[]
+  responses    AssessmentResponse[]
 }
 
 model User {
-  id            String   @id @default(uuid())
-  email         String   @unique
-  name          String?
-  profile       UserProfile?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id         String       @id @default(uuid())
+  email      String       @unique
+  name       String?
+  profile    UserProfile?
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
 
-  accounts      Account[]
-  sessions      Session[]
-  integrations  Integration[]
-  contacts      Contact[]
-  deals         Deal[]
-  varLeads      VARLead[]
-  modelUsages   ModelUsage[]
+  accounts     Account[]
+  sessions     Session[]
+  integrations Integration[]
+  contacts     Contact[]
+  deals        Deal[]
+  varLeads     VARLead[]
+  modelUsages  ModelUsage[]
+  responses    AssessmentResponse[]
 }
 
 model Account {
@@ -82,17 +105,21 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  UserProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 
   @@unique([provider, providerAccountId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String       @id @default(cuid())
+  sessionToken  String       @unique
+  userId        String
+  expires       DateTime
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  UserProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 }
 
 model VerificationToken {
@@ -104,94 +131,227 @@ model VerificationToken {
 }
 
 model Integration {
-  id            String   @id @default(uuid())
-  user_id       String
-  company_id    String
-  type          String
-  status        String
-  config        Json
-  last_synced   DateTime?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id          String    @id @default(uuid())
+  user_id     String
+  company_id  String
+  type        String
+  status      String
+  config      Json
+  last_synced DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
 
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  UserProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 }
 
 model Contact {
-  id            String   @id @default(uuid())
-  hubspotId     String?  @unique
-  user_id       String
-  company_id    String
-  name          String
-  email         String?
-  phone         String?
-  title         String?
-  department    String?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id         String   @id @default(uuid())
+  hubspotId  String?  @unique
+  user_id    String
+  company_id String
+  name       String
+  email      String?
+  phone      String?
+  title      String?
+  department String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  UserProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 }
 
 model Deal {
-  id            String   @id @default(uuid())
-  hubspotId     String?  @unique
-  user_id       String
-  company_id    String
-  name          String
-  value         Float
-  stage         String
-  probability   Float?
+  id                  String    @id @default(uuid())
+  hubspotId           String?   @unique
+  user_id             String
+  company_id          String
+  name                String
+  value               Float
+  stage               String
+  probability         Float?
   expected_close_date DateTime?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  created_at          DateTime  @default(now())
+  updated_at          DateTime  @updatedAt
 
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  UserProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 }
 
 model VARLead {
-  id            String   @id @default(uuid())
-  user_id       String
-  company_name  String
-  contact_name  String
-  email         String
-  phone         String?
-  status        String
-  notes         String?
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id           String   @id @default(uuid())
+  user_id      String
+  company_id   String
+  contact_name String
+  email        String
+  phone        String?
+  status       String
+  notes        String?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  UserProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 }
 
 model ModelUsage {
-  id            String   @id @default(uuid())
-  user_id       String
-  company_id    String
-  model_name    String
-  tokens_used   Int
-  cost          Float
-  success       Boolean
-  latency       Int
-  created_at    DateTime @default(now())
+  id          String   @id @default(uuid())
+  user_id     String
+  company_id  String
+  model_name  String
+  tokens_used Int
+  cost        Float
+  success     Boolean
+  latency     Int
+  created_at  DateTime @default(now())
 
-  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  company       Company  @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  company       Company      @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  model         AIModel      @relation(fields: [model_name], references: [name])
+  UserProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 }
 
 model ModelPerformance {
-  model         String
-  month         String
-  successRate   Float
+  model_name     String
+  month          String
+  successRate    Float
   averageLatency Float
-  averageCost   Float
-  lastUsed      DateTime
-  errorCount    Int
+  averageCost    Float
+  lastUsed       DateTime
+  errorCount     Int
 
-  @@id([model, month])
-  @@index([model])
+  model AIModel @relation(fields: [model_name], references: [name])
+
+  @@id([model_name, month])
+  @@index([model_name])
   @@index([month])
-} 
+}
+
+model AIModel {
+  name        String  @id
+  description String?
+  provider    String?
+  input_cost  Float?
+  output_cost Float?
+
+  usages       ModelUsage[]
+  performances ModelPerformance[]
+}
+
+// V1 Assessment Framework
+
+model AssessmentCategory {
+  id     String @id // e.g., 'SA'
+  name   String // e.g., 'Sales'
+  goal   String
+  weight Int
+
+  questions AssessmentQuestion[]
+  scores    AssessmentCategoryScore[]
+}
+
+model AssessmentQuestion {
+  id                String @id // e.g., 'SA-01'
+  prompt            String
+  question_type     String // 'bool', 'number', 'enum'
+  options           Json? // For enum: { "Zendesk": 100, "Freshdesk": 70, "None": 0 }
+  thresholds        Json? // For number: { "bands": [{ "min": 90, "score": 100 }, ...] }
+  integration_check String
+  marcovy_angle     String
+
+  category_id String
+  category    AssessmentCategory @relation(fields: [category_id], references: [id])
+
+  responses  AssessmentResponse[]
+  offer_slug String?
+  offer      Offer?               @relation(fields: [offer_slug], references: [slug])
+}
+
+model AssessmentResponse {
+  id          String @id @default(uuid())
+  company_id  String
+  question_id String
+  user_id     String
+
+  value String
+  score Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  company       Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  question      AssessmentQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  user          User               @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  UserProfile   UserProfile?       @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
+
+  @@unique([company_id, question_id])
+}
+
+model AssessmentCategoryScore {
+  id          String @id @default(uuid())
+  company_id  String
+  category_id String
+
+  score         Int
+  calculated_at DateTime @updatedAt
+
+  company  Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  category AssessmentCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+
+  @@unique([company_id, category_id])
+}
+
+model AssessmentSummary {
+  id                   String   @id @default(uuid())
+  company_id           String   @unique
+  overall_score        Int
+  needs_attention_cats String[]
+  calculated_at        DateTime @updatedAt
+
+  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+}
+
+model Offer {
+  slug     String @id
+  solution String
+  division String
+
+  questions AssessmentQuestion[]
+}
+
+model Recent {
+  id         String   @id @default(uuid())
+  userId     String
+  entityType String
+  entityId   String
+  viewedAt   DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+model Pin {
+  id         String   @id @default(uuid())
+  userId     String
+  entityType String
+  entityId   String
+  pinnedAt   DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, entityType, entityId])
+  @@index([entityType, entityId])
+}

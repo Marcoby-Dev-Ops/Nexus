@@ -4,7 +4,7 @@
  * Transforms Nexus into a true Business Operating System
  */
 
-import { supabase } from './supabase';
+import { supabase } from './core/supabase';
 import { n8nService } from './n8nService';
 
 // Core AI Capability Interfaces

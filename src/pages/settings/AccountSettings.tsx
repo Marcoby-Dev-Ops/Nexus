@@ -8,7 +8,7 @@ import { Label } from '../../components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import type { Database } from '../../lib/database.types';
 import { Separator } from '../../components/ui/Separator';
 

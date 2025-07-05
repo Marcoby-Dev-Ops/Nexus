@@ -1,4 +1,5 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
+import { APIDocAnalyzer, type GeneratedConnector } from '../integrations/apiDocAnalyzer';
 
 export interface ApiIntegrationData {
   name: string;
@@ -31,16 +32,24 @@ export interface ApiIntegrationData {
   generatedCode?: string;
 }
 
+export type UpdateApiIntegrationData = Partial<{
+  name: string;
+  description: string;
+  api_url: string;
+  is_active: boolean;
+  config: Partial<ApiIntegrationData['config']>;
+}>;
+
 export class ApiIntegrationService {
   /**
    * Save a new API integration created through the API Learning System
    */
   static async saveApiIntegration(userId: string, integrationData: ApiIntegrationData) {
     try {
-      // First, create the integration in the integrations table
+      // First, create or update the integration in the integrations table
       const { data: integration, error: integrationError } = await supabase
         .from('integrations')
-        .insert({
+        .upsert({
           name: integrationData.name,
           slug: integrationData.name.toLowerCase().replace(/[^a-z0-9]/g, '-'),
           category: 'api-learning',
@@ -55,7 +64,7 @@ export class ApiIntegrationService {
             generatedCode: integrationData.generatedCode,
             createdAt: new Date().toISOString()
           }
-        })
+        }, { onConflict: 'slug' })
         .select()
         .single();
 
@@ -130,13 +139,12 @@ export class ApiIntegrationService {
   /**
    * Update an API integration's configuration
    */
-  static async updateApiIntegration(userIntegrationId: string, config: Partial<ApiIntegrationData['config']>) {
+  static async updateApiIntegration(userIntegrationId: string, updates: UpdateApiIntegrationData) {
     try {
       const { data, error } = await supabase
         .from('user_integrations')
         .update({
-          config: config,
-          status: 'active', // Mark as active once configured
+          ...updates,
           updated_at: new Date().toISOString()
         })
         .eq('id', userIntegrationId)

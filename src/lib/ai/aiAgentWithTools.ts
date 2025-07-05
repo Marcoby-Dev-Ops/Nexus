@@ -10,7 +10,7 @@
  */
 
 import { n8nService } from './n8nService';
-import { supabase } from './supabase';
+import { supabase } from './core/supabase';
 import type { Agent } from './agentRegistry';
 import { listPayPalTxns } from '@/lib/ai/tools/paypal';
 
@@ -386,6 +386,40 @@ export const contentTools: AITool[] = [
       return {
         results: data,
         summary: `Found ${data?.length || 0} relevant documents for: ${args.query}`
+      };
+    }
+  },
+
+  {
+    name: "develop_business_plan",
+    description: "Interactively develop a concise business plan (mission, vision, goals, target market, value proposition) for the user's company when missing. If fields already exist, refine them.",
+    parameters: {
+      type: "object",
+      properties: {
+        focus_area: {
+          type: "string",
+          description: "Optional specific area to work on (e.g., 'mission', 'vision', 'goals'). Leave blank for full plan."
+        }
+      },
+      required: []
+    },
+    handler: async (args, context) => {
+      // Call edge function to generate or refine plan
+      if (!context.orgId) {
+        return { error: "Company not found" };
+      }
+
+      const { data, error } = await (supabase as any).functions.invoke('ai_generate_business_plan', {
+        body: { company_id: context.orgId, focus_area: args.focus_area }
+      });
+
+      if (error) {
+        return { error: error.message || 'Plan generation failed' };
+      }
+
+      return {
+        business_plan: data?.business_plan_md,
+        summary: 'Business plan generated and stored.'
       };
     }
   }

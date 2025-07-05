@@ -1,183 +1,91 @@
 import React, { useEffect, useState } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui';
-import { Alert, AlertDescription } from '@/components/ui';
+import { useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { microsoftGraphService } from '@/lib/services/microsoftGraphService';
 import { Button } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { useOrganizationStore } from '@/lib/stores/organizationStore';
+import { ProviderState } from '@microsoft/mgt-element';
 
-export default function Microsoft365Callback() {
-  const [searchParams] = useSearchParams();
+const Microsoft365Callback: React.FC = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('');
+  const { addNotification } = useNotifications();
+  const [error, setError] = useState<string | null>(null);
+  const activeOrgId = useOrganizationStore((state) => state.activeOrgId);
+  const [authState, setAuthState] = useState<ProviderState>(ProviderState.Loading);
 
   useEffect(() => {
-    // Don't process callback until auth is loaded
-    if (authLoading) {
-      setMessage('Loading user authentication...');
-      return;
-    }
+    // Just initializing the service is enough.
+    // The Msal2Provider will automatically handle the redirect flow.
+    microsoftGraphService.initialize();
 
-    const handleCallback = async () => {
-      try {
-        const code = searchParams.get('code');
-        const state = searchParams.get('state');
-        const error = searchParams.get('error');
-        const errorDescription = searchParams.get('error_description');
+    const onStateChange = () => {
+      setAuthState(microsoftGraphService.getProviderState());
+    };
 
-        console.log('Microsoft 365 callback received:', { code: !!code, state, error, user: !!user });
+    microsoftGraphService.onStateChange(onStateChange);
+    return () => microsoftGraphService.removeStateChange(onStateChange);
+  }, []);
 
-        if (error) {
-          throw new Error(`OAuth error: ${error}${errorDescription ? ` - ${errorDescription}` : ''}`);
+  useEffect(() => {
+    const setupAccount = async () => {
+      if (authState === ProviderState.SignedIn) {
+        if (!activeOrgId) {
+          const msg = 'No active organization found. Please select one and retry.';
+          setError(msg);
+          addNotification({ type: 'error', message: msg });
+          return;
         }
 
-        if (!code || !state) {
-          throw new Error('Missing authorization code or state parameter');
+        try {
+          addNotification({ type: 'info', message: 'Finalizing connection...' });
+          await microsoftGraphService.saveIntegrationToken(activeOrgId);
+
+          addNotification({
+            type: 'success',
+            message: 'Microsoft 365 account connected successfully.',
+          });
+
+          const returnUrl = sessionStorage.getItem('microsoft_auth_return_url');
+          sessionStorage.removeItem('microsoft_auth_return_url');
+          navigate(returnUrl || '/unified-inbox');
+        } catch (err: any) {
+          const msg = err.message || 'Failed to set up your Microsoft 365 account.';
+          setError(msg);
+          addNotification({ type: 'error', message: msg });
         }
-
-        if (!user) {
-          throw new Error('User not authenticated - please log in and try again');
-        }
-
-        // Parse state to get user ID - handle both pipe and hyphen formats
-        let userId, timestamp;
-        
-        if (state.includes('|')) {
-          // New format: userId|timestamp
-          const stateParts = state.split('|');
-          userId = stateParts[0];
-          timestamp = stateParts[1];
-        } else if (state.includes('-')) {
-          // Handle UUID with hyphens
-          const stateParts = state.split('-');
-          
-          if (stateParts.length >= 6) {
-            // UUID format: 8-4-4-4-12 + timestamp
-            const uuidParts = stateParts.slice(0, 5);
-            userId = uuidParts.join('-');
-            timestamp = stateParts[5];
-          } else {
-            // Simple format
-            userId = stateParts[0];
-            timestamp = stateParts[1];
-          }
-        } else {
-          throw new Error('Invalid state parameter format');
-        }
-        
-        console.log('State validation:', { 
-          state,
-          userId, 
-          userActual: user.id, 
-          timestamp
-        });
-        
-        if (!userId || userId !== user.id) {
-          throw new Error(`State parameter mismatch: expected ${user.id}, got ${userId}`);
-        }
-        
-        // Validate timestamp is reasonable (within last hour)
-        if (timestamp) {
-          const stateTimestamp = parseInt(timestamp);
-          const now = Date.now();
-          const oneHour = 60 * 60 * 1000;
-          
-          if (isNaN(stateTimestamp) || (now - stateTimestamp) > oneHour) {
-            throw new Error('State parameter expired or invalid');
-          }
-        }
-
-        setMessage('Exchanging authorization code for access token...');
-
-        // Call the edge function to complete the OAuth flow
-        const { data, error: functionError } = await supabase.functions.invoke('microsoft-graph-oauth-callback', {
-          body: {
-            code,
-            state,
-            userId: user.id
-          }
-        });
-
-        if (functionError) {
-          throw new Error(functionError.message || 'Failed to complete OAuth flow');
-        }
-
-        if (data?.error) {
-          throw new Error(data.error);
-        }
-
-        setStatus('success');
-        setMessage('Microsoft 365 integration connected successfully!');
-
-        // Redirect back to integrations page after a short delay
-        setTimeout(() => {
-          navigate('/integrations');
-        }, 2000);
-
-      } catch (error) {
-        console.error('Microsoft 365 OAuth callback error:', error);
-        setStatus('error');
-        setMessage(error instanceof Error ? error.message : 'An unexpected error occurred');
+      } else if (authState === ProviderState.SignedOut) {
+        const msg = 'Authentication failed. The sign-in process was not completed. Please try again.';
+        setError(msg);
+        addNotification({ type: 'error', message: msg });
       }
     };
 
-    // Only run callback when auth is loaded and we have the necessary parameters
-    if (!authLoading && searchParams.get('code')) {
-      handleCallback();
+    if (authState !== ProviderState.Loading) {
+      setupAccount();
     }
-  }, [searchParams, user, navigate, authLoading]);
+  }, [authState, activeOrgId, navigate, addNotification]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardContent className="p-6 text-center">
-          {status === 'loading' && (
-            <>
-              <Loader className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <h1 className="text-xl font-semibold text-gray-900 mb-2">
-                Connecting Microsoft 365
-              </h1>
-              <p className="text-gray-600 mb-4">
-                {message || 'Processing your Microsoft 365 connection...'}
-              </p>
-            </>
-          )}
-
-          {status === 'success' && (
-            <>
-              <CheckCircle className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <h1 className="text-xl font-semibold text-gray-900 mb-2">
-                Connection Successful!
-              </h1>
-              <p className="text-gray-600 mb-4">{message}</p>
-              <p className="text-sm text-gray-500">
-                Redirecting you back to the integrations page...
-              </p>
-            </>
-          )}
-
-          {status === 'error' && (
-            <>
-              <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-              <h1 className="text-xl font-semibold text-gray-900 mb-2">
-                Connection Failed
-              </h1>
-              <Alert variant="error" className="mb-4">
-                <AlertDescription>{message}</AlertDescription>
-              </Alert>
-              <Button
-                onClick={() => navigate('/integrations')}
-                className="w-full"
-              >
-                Return to Integrations
-              </Button>
-            </>
-          )}
-        </CardContent>
-      </Card>
+    <div className="flex flex-col items-center justify-center h-screen bg-background">
+      {error ? (
+        <div className="text-center text-destructive">
+          <h2 className="text-xl font-bold mb-4">Authentication Error</h2>
+          <p className="max-w-md">{error}</p>
+          <Button variant="link" onClick={() => navigate('/unified-inbox')} className="mt-4">
+            Return to Inbox
+          </Button>
+        </div>
+      ) : (
+        <>
+          <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+          <p className="text-lg text-muted-foreground">
+            Connecting your Microsoft 365 account, please wait...
+          </p>
+        </>
+      )}
     </div>
   );
-} 
+};
+
+export default Microsoft365Callback; 

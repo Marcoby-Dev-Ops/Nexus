@@ -4,7 +4,7 @@
  * Pillar: 1,2 - Automated infrastructure monitoring and business health assessment
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 import { logger } from '../security/logger';
 
 export interface CloudflareConfig {

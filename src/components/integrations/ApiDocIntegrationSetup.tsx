@@ -212,8 +212,7 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
       }, 300);
       
       // In a real implementation, we would use the apiDocAnalyzer service
-      // For demo purposes, we'll simulate the analysis
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // For demo purposes, the analysis is now instant
       
       // Parse API doc to extract basic info
       const docObj = typeof apiDoc === 'string' ? JSON.parse(apiDoc) : apiDoc;
@@ -310,18 +309,8 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
   
   // Generate integration code
   const generateIntegration = async () => {
-    if (!analysisResult) {
-      setError('No analysis result available');
-      return;
-    }
-    
-    if (!integrationName.trim()) {
-      setError('Please provide a name for the integration');
-      return;
-    }
-
-    if (!user) {
-      setError('You must be logged in to create integrations');
+    if (!user || !analysisResult) {
+      setError('User not authenticated or analysis not complete');
       return;
     }
     
@@ -338,8 +327,7 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
         });
       }, 300);
       
-      // Simulate code generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Generation is now effectively instant
       setGenerationProgress(70);
       
       // Generate TypeScript integration code

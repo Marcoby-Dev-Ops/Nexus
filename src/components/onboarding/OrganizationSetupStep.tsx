@@ -15,7 +15,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useToast } from '@/components/ui/Toast';
 import { microsoftTeamsService } from '@/lib/services/microsoftTeamsService';
 import { linkedinService } from '@/lib/services/linkedinService';
@@ -28,7 +28,12 @@ interface OrganizationData {
   domain: string;
   industry: string;
   size: string;
-    description?: string;
+  tagline?: string;
+  motto?: string;
+  mission_statement?: string;
+  vision_statement?: string;
+  about_md?: string;
+  description?: string;
   logo?: string;
   website?: string;
   social_profiles?: string[];
@@ -54,7 +59,7 @@ interface EnrichmentStatus {
 }
 
 interface OrganizationSetupStepProps {
-  onNext: () => void;
+  onNext: (data: { enriched_data: OrganizationData }) => void;
   onBack: () => void;
 }
 
@@ -74,6 +79,11 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
     domain: company?.domain || '',
     industry: company?.industry || '',
     size: company?.size || '',
+    tagline: '',
+    motto: '',
+    mission_statement: '',
+    vision_statement: '',
+    about_md: '',
   });
 
   const handleEnrichment = async () => {
@@ -199,16 +209,37 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
         throw profileError;
       }
 
+      // Upsert AI company profile details
+      await supabase
+        .from('ai_company_profiles')
+        .upsert({
+          company_id: company?.id,
+          tagline: data.tagline,
+          motto: data.motto,
+          mission_statement: data.mission_statement,
+          vision_statement: data.vision_statement,
+          about_md: data.about_md,
+        });
+
+      // Trigger embedding generation (fire & forget)
+      try {
+        await supabase.functions.invoke('ai_embed_company_profile', {
+          body: { company_id: company?.id },
+        });
+      } catch (err) {
+        console.warn('Embedding invoke failed', err);
+      }
+
       showToast({
         title: 'Success',
         description: 'Organization information updated successfully',
         type: 'success',
       });
 
-      // Move to next step
-      onNext();
+      onNext({ enriched_data: data });
+
     } catch (error) {
-      console.error('Error updating organization:', error);
+      console.error('Error submitting organization data:', error);
       showToast({
         title: 'Error',
         description: 'Failed to update organization information',
@@ -384,6 +415,21 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
                 <SelectItem value="1001+">1001+ employees</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Tagline */}
+          <div>
+            <label htmlFor="tagline" className="block text-sm font-medium text-gray-700">
+              Company Tagline
+            </label>
+            <Input
+              id="tagline"
+              type="text"
+              value={data.tagline || ''}
+              onChange={(e) => setData({ ...data, tagline: e.target.value })}
+              placeholder="e.g., Automate the 20% that eats 80% of your day"
+              className="mt-1"
+            />
           </div>
         </div>
 

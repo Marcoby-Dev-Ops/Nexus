@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { 
+  Card, CardContent, CardHeader, CardTitle,
+  Badge,
+  Button,
+  Checkbox,
+  Label,
+  Input
+} from '@/components/ui';
 import { 
   X, 
   ArrowRight, 
@@ -56,6 +61,13 @@ interface SetupStep {
   troubleshooting?: string;
 }
 
+interface SetupData {
+  apiKey?: string;
+  username?: string;
+  password?: string;
+  [key: string]: any; // For dynamic permissions
+}
+
 interface EnhancedIntegrationSetupProps {
   integration: Integration;
   isOpen: boolean;
@@ -74,7 +86,7 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
   onComplete
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [setupData, setSetupData] = useState<any>({});
+  const [setupData, setSetupData] = useState<SetupData>({});
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -479,20 +491,16 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                         API Key *
                       </label>
                       <div className="relative">
-                        <input
-                          type={showApiKey ? 'text' : 'password'}
+                        <Input
+                          id="api_key"
+                          type={showApiKey ? "text" : "password"}
                           value={setupData.apiKey || ''}
-                          onChange={(e) => setSetupData(prev => ({ ...prev, apiKey: e.target.value }))}
-                          className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter your API key"
+                          onChange={(e) => setSetupData((prev: SetupData) => ({ ...prev, apiKey: e.target.value }))}
+                          className="pr-10"
                         />
-                        <button
-                          type="button"
-                          onClick={() => setShowApiKey(!showApiKey)}
-                          className="absolute right-3 top-2.5 text-muted-foreground hover:text-muted-foreground"
-                        >
+                        <Button variant="ghost" size="icon" className="absolute top-0 right-0" onClick={() => setShowApiKey(!showApiKey)}>
                           {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
+                        </Button>
                       </div>
                       <p className="text-xs text-muted-foreground mt-1">
                         Find your API key in {integration.name} Settings → API → Generate Key
@@ -506,24 +514,22 @@ const EnhancedIntegrationSetup: React.FC<EnhancedIntegrationSetupProps> = ({
                         <label className="block text-sm font-medium text-foreground/90 dark:text-muted-foreground/60 mb-2">
                           Username *
                         </label>
-                        <input
+                        <Input
+                          id="username"
                           type="text"
                           value={setupData.username || ''}
-                          onChange={(e) => setSetupData(prev => ({ ...prev, username: e.target.value }))}
-                          className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter your username"
+                          onChange={(e) => setSetupData((prev: SetupData) => ({ ...prev, username: e.target.value }))}
                         />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-foreground/90 dark:text-muted-foreground/60 mb-2">
                           Password *
                         </label>
-                        <input
+                        <Input
+                          id="password"
                           type="password"
                           value={setupData.password || ''}
-                          onChange={(e) => setSetupData(prev => ({ ...prev, password: e.target.value }))}
-                          className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Enter your password"
+                          onChange={(e) => setSetupData((prev: SetupData) => ({ ...prev, password: e.target.value }))}
                         />
                       </div>
                     </>

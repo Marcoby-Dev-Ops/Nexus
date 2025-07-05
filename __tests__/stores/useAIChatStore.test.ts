@@ -7,7 +7,7 @@ describe('useAIChatStore', () => {
 
   it('optimistically appends user message', async () => {
     const convId = await useAIChatStore.getState().newConversation('Test');
-    await useAIChatStore.getState().sendMessage(convId, 'Hello world', 'user-1');
+    await useAIChatStore.getState().sendMessage(convId, 'Hello world', 'user-1', 'test-company-id');
     const conv = useAIChatStore.getState().conversations[convId];
     expect(conv.messages[0].content).toBe('Hello world');
     expect(conv.messages[0].role).toBe('user');

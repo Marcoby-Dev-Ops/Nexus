@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 import { format } from 'date-fns';
 import type { DepartmentId } from '../../constants/departments';
 

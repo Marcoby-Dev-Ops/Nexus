@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
@@ -118,17 +118,27 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
         <div className="mb-6">
           <Button
             type="button"
+            variant="outline"
             onClick={async () => {
               try {
                 setLoading(true);
+                setError(null);
+                // Always use window.location.origin for redirect
+                const redirectTo = `${window.location.origin}/auth/callback`;
                 const { error: oauthErr } = await supabase.auth.signInWithOAuth({
                   provider: 'azure',
                   options: {
                     scopes: 'openid profile email offline_access',
-                    redirectTo: `${window.location.origin}/auth/callback`,
+                    redirectTo,
                   },
                 });
                 if (oauthErr) throw oauthErr;
+                // If the OAuth flow does not redirect, show an error
+                setTimeout(() => {
+                  if (!window.location.href.includes('/microsoft365/callback')) {
+                    setError('Microsoft sign-in did not redirect. Please check your popup blocker or try again.');
+                  }
+                }, 3000);
               } catch (err) {
                 console.error('[AuthForm] Microsoft sign-in failed', err);
                 setError(err instanceof Error ? err.message : 'Microsoft sign-in failed');
@@ -136,10 +146,10 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
                 setLoading(false);
               }
             }}
-            className="w-full h-12 text-base font-semibold bg-[#2F2F2F] hover:bg-[#444] text-white border-0 rounded-xl shadow-lg mb-4 flex items-center justify-center space-x-4"
+            className="w-full h-12 text-base font-semibold rounded-xl shadow-lg mb-4 flex items-center justify-center space-x-4"
           >
             <div className="flex items-center justify-center w-5 h-5 bg-white rounded-sm">
-              <svg width="16" height="16" viewBox="0 0 21 21" className="text-[#2F2F2F]">
+              <svg width="16" height="16" viewBox="0 0 21 21" className="text-black">
                 <rect x="1" y="1" width="9" height="9" fill="currentColor" opacity="0.9"/>
                 <rect x="12" y="1" width="9" height="9" fill="currentColor" opacity="0.9"/>
                 <rect x="1" y="12" width="9" height="9" fill="currentColor" opacity="0.9"/>
@@ -148,14 +158,19 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
             </div>
             <span>Sign in with Microsoft 365</span>
           </Button>
-          
-          <div className="relative">
+          {/* Show error if OAuth fails */}
+          {error && (
+            <Alert variant="error" className="animate-in slide-in-from-top-2 duration-300 mt-2">
+              {error}
+            </Alert>
+          )}
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-4 bg-card text-muted-foreground">
-                for now, continue with email
+                Or
               </span>
             </div>
           </div>

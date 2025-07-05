@@ -3,16 +3,14 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useSupabase } from '../SupabaseProvider';
-import { supabase } from '../supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '../core/supabase';
 import { quotaService } from '../services/quotaService';
-import type { ChatMessage, ChatState, ChatActions, StreamingMessage, AttachmentData } from '../types/chat';
+import type { ChatMessage, ChatState, ChatActions } from '../types/chat';
 import type { ChatQuotas } from '../types/licensing';
 
 interface UseProductionChatOptions {
   conversationId: string;
-  enableTypingIndicators?: boolean;
-  enableStreaming?: boolean;
   enableReactions?: boolean;
   autoMarkAsRead?: boolean;
   pageSize?: number;
@@ -39,18 +37,26 @@ interface ProductionChatActions extends ChatActions {
 const messageCache = new Map<string, { messages: ChatMessage[]; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
+type ChatMessageType = ChatMessage['type'];
+
+type ChatMessageRow = {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  created_at: string;
+  metadata: { [key: string]: any; type?: ChatMessageType };
+};
+
 export function useProductionChat(options: UseProductionChatOptions): ProductionChatState & ProductionChatActions {
   const {
     conversationId,
-    enableTypingIndicators = true,
-    enableStreaming = false,
     enableReactions = true,
     autoMarkAsRead = true,
     pageSize = 50,
     enableCaching = true,
   } = options;
 
-  const { user } = useSupabase();
+  const { user } = useAuth();
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [quotas, setQuotas] = useState<ChatQuotas>();
@@ -67,10 +73,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     retryAfter: undefined,
   });
 
-  const abortControllerRef = useRef<AbortController | null>(null);
   const lastQuotaCheckRef = useRef<number>(0);
-
-  const cacheKey = useMemo(() => `${conversationId}-${currentPage}`, [conversationId, currentPage]);
 
   const getCachedMessages = useCallback((key: string): ChatMessage[] | null => {
     if (!enableCaching) return null;
@@ -151,7 +154,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
 
       if (error) throw error;
 
-      const formattedMessages: ChatMessage[] = (data || []).map((msg: any) => ({
+      const formattedMessages: ChatMessage[] = (data || []).map((msg: ChatMessageRow) => ({
         id: msg.id,
         role: msg.role,
         content: msg.content,
@@ -179,7 +182,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     }
   }, [conversationId, user?.id, pageSize, getCachedMessages, setCachedMessages]);
 
-  const sendMessage = useCallback(async (content: string, attachments?: File[]) => {
+  const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || !conversationId || !user?.id) return;
 
     const quotaCheck = await checkQuotas();
@@ -243,35 +246,22 @@ export function useProductionChat(options: UseProductionChatOptions): Production
       messageCache.delete(`${conversationId}-0`);
 
       // AI Response
+      /*
       const { enhancedChatService } = await import('../chatContext');
       const { executiveAgent } = await import('../agentRegistry');
       
       const result = await enhancedChatService.sendMessageWithContext(
         conversationId,
-        content,
+        content.trim(),
         executiveAgent,
-        `session-${Date.now()}`
+        user.id,
       );
-
-      if (result?.assistantMessage) {
-        const aiMessage: ChatMessage = {
-          id: result.assistantMessage.id,
-          role: 'assistant',
-          content: result.assistantMessage.content,
-          timestamp: new Date(result.assistantMessage.created_at || new Date()),
-          status: 'delivered',
-          type: 'text',
-          metadata: result.assistantMessage.metadata as any,
-        };
-
-        setState(prev => ({
-          ...prev,
-          messages: [...prev.messages, aiMessage],
-          isLoading: false,
-        }));
-      }
+      */
       
+      setState(prev => ({ ...prev, isLoading: false }));
+
     } catch (error) {
+      console.error("Failed to send message:", error);
       setState(prev => ({
         ...prev,
         messages: prev.messages.map(msg =>
@@ -338,7 +328,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     fetchMessages(0);
     checkQuotas();
     getUsageStats();
-  }, [conversationId]);
+  }, [conversationId, fetchMessages, checkQuotas, getUsageStats]);
 
   useEffect(() => {
     const interval = setInterval(() => {

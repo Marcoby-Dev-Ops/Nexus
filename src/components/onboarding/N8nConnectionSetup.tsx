@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, AlertCircle, ExternalLink, Info, Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface N8nConnectionConfig {

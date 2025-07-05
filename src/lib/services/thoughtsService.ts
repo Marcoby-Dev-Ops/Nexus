@@ -4,7 +4,7 @@
  * Handles all CRUD operations, AI interactions, and workflow management
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 import type {
   Thought,
   CreateThoughtRequest,
@@ -31,12 +31,21 @@ class ThoughtsService {
   // ====== CRUD Operations ======
   
   /**
-   * Create a new thought
+   * Create a new thought with n8n workflow integration
    */
   async createThought(request: CreateThoughtRequest): Promise<Thought> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('User not authenticated');
+    }
+
+    // First trigger smart deduplication workflow
+    const deduplicationResult = await this.triggerSmartDeduplication(request.content, user.id);
+    
+    // If deduplication suggests existing thought, handle accordingly
+    if (deduplicationResult?.recommendedAction !== 'create_new') {
+      // Return action card for user approval instead of creating immediately
+      throw new Error(`Similar thought detected: ${deduplicationResult.reasoning}. Please review the suggested action.`);
     }
 
     const thoughtData = {
@@ -65,8 +74,8 @@ class ThoughtsService {
       throw new Error(`Failed to create thought: ${error.message}`);
     }
 
-    // Generate AI insights for the new thought
-    await this.generateAIInsights(data.id);
+    // Trigger intelligent thought processor workflow
+    await this.triggerIntelligentProcessor(data.id, user.id);
 
     return this.mapDatabaseToThought(data);
   }
@@ -293,6 +302,66 @@ class ThoughtsService {
     };
   }
 
+  // ====== N8N Workflow Integration ======
+
+  /**
+   * Trigger smart thought deduplication workflow
+   */
+  private async triggerSmartDeduplication(content: string, userId: string): Promise<any> {
+    try {
+      const n8nUrl = import.meta.env.VITE_N8N_URL;
+      const response = await fetch(`${n8nUrl}/webhook/smart-thought-deduplication`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content,
+          user_id: userId,
+          company_id: 'default', // TODO: Get from user context
+          openai_api_key: import.meta.env.VITE_OPENROUTER_API_KEY,
+          supabase_url: import.meta.env.VITE_SUPABASE_URL,
+          supabase_anon_key: import.meta.env.VITE_SUPABASE_ANON_KEY
+        })
+      });
+
+      if (!response.ok) {
+        console.warn('Smart deduplication workflow failed, proceeding with creation');
+        return { recommendedAction: 'create_new' };
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.warn('Smart deduplication workflow error, proceeding with creation:', error);
+      return { recommendedAction: 'create_new' };
+    }
+  }
+
+  /**
+   * Trigger intelligent thought processor workflow
+   */
+  private async triggerIntelligentProcessor(thoughtId: string, userId: string): Promise<void> {
+    try {
+      const n8nUrl = import.meta.env.VITE_N8N_URL;
+      await fetch(`${n8nUrl}/webhook/intelligent-thought-processor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          thought_id: thoughtId,
+          user_id: userId,
+          company_id: 'default', // TODO: Get from user context
+          supabase_url: import.meta.env.VITE_SUPABASE_URL,
+          supabase_anon_key: import.meta.env.VITE_SUPABASE_ANON_KEY
+        })
+      });
+    } catch (error) {
+      console.warn('Intelligent thought processor workflow failed:', error);
+      // Don't throw error as thought creation should still succeed
+    }
+  }
+
   // ====== AI Integration ======
 
   /**
@@ -413,50 +482,6 @@ class ThoughtsService {
       next_actions: this.getNextActions(thought.thought.workflow_stage || 'create_idea'),
       progress_percentage: Math.round(((currentIndex + 1) / stages.length) * 100)
     };
-  }
-
-  /**
-   * Auto-spawn tasks and reminders from ideas
-   */
-  async spawnFromIdea(ideaId: string): Promise<{ tasks: Thought[], reminders: Thought[] }> {
-    const idea = await this.getThought(ideaId);
-    const tasks: Thought[] = [];
-    const reminders: Thought[] = [];
-
-    // Auto-generate tasks based on AI insights
-    const insights = idea.thought.ai_insights as AIInsights;
-    if (insights?.potential_tasks) {
-      for (const taskContent of insights.potential_tasks) {
-        const task = await this.createThought({
-          content: taskContent,
-          category: 'task',
-          status: 'not_started',
-          parent_idea_id: ideaId,
-          personal_or_professional: idea.thought.personal_or_professional
-        });
-        
-        await this.createRelationship(ideaId, task.id, 'spawns_task');
-        tasks.push(task);
-      }
-    }
-
-    // Auto-generate reminders
-    if (insights?.reminders) {
-      for (const reminderContent of insights.reminders) {
-        const reminder = await this.createThought({
-          content: reminderContent,
-          category: 'reminder',
-          status: 'upcoming',
-          parent_idea_id: ideaId,
-          personal_or_professional: idea.thought.personal_or_professional
-        });
-        
-        await this.createRelationship(ideaId, reminder.id, 'spawns_reminder');
-        reminders.push(reminder);
-      }
-    }
-
-    return { tasks, reminders };
   }
 
   // ====== Analytics & Metrics ======

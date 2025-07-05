@@ -87,11 +87,8 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
   };
 
   return (
-    <Card className={`relative overflow-hidden ${className}`}>
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20" />
-      
-      <CardContent className="relative p-6">
+    <Card className={className}>
+      <CardContent className="p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -106,7 +103,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
             <div className={`text-4xl font-bold ${getScoreColor()}`}>
               {overallScore}%
             </div>
-            <Badge variant="outline" className="mt-1 bg-card/80 dark:bg-background/80">
+            <Badge variant="outline" className="mt-1">
               Excellent Health
             </Badge>
           </div>
@@ -117,7 +114,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
           {healthMetrics.map((metric, index) => (
             <div
               key={index}
-              className="bg-card/80 dark:bg-background/80 backdrop-blur-sm rounded-lg p-4 border border-border/50 dark:border-border/50"
+              className="rounded-lg p-4 border border-border/50"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-muted-foreground dark:text-muted-foreground">
@@ -148,13 +145,13 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
 
         {/* Quick Actions */}
         <div className="mt-6 flex flex-wrap gap-2">
-          <Badge variant="secondary" className="bg-primary/10 text-primary dark:bg-primary/20/20 dark:text-primary">
+          <Badge variant="secondary">
             🔵 THINK: Cross-pattern analysis active
           </Badge>
-          <Badge variant="secondary" className="bg-secondary/10 text-purple-800 dark:bg-secondary/20/20 dark:text-purple-300">
+          <Badge variant="secondary">
             🟣 SEE: Real-time monitoring engaged
           </Badge>
-          <Badge variant="secondary" className="bg-warning/10 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+          <Badge variant="secondary">
             🟠 ACT: 3 optimization opportunities detected
           </Badge>
         </div>

@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 import type { 
   BillingStatus, 
   StripeCustomer, 
@@ -33,11 +33,12 @@ class BillingService {
    */
   async getBillingStatus(userId: string): Promise<BillingStatus> {
     try {
-      // First, get user's license info from Supabase
+      // First, get user's license info from Supabase with proper NULL handling
       const { data: userLicense, error } = await supabase
         .from('user_licenses')
         .select('*')
         .eq('user_id', userId)
+        .is('org_id', null)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -100,11 +101,12 @@ class BillingService {
    */
   async getOrCreateCustomer(userId: string, email: string, name?: string): Promise<StripeCustomer> {
     try {
-      // Check if customer already exists in our database
+      // Check if customer already exists in our database with proper NULL handling
       const { data: existingCustomer } = await supabase
         .from('user_licenses')
         .select('stripe_customer_id')
         .eq('user_id', userId)
+        .is('org_id', null)
         .single();
 
       if (existingCustomer?.stripe_customer_id) {
@@ -125,6 +127,7 @@ class BillingService {
         .from('user_licenses')
         .upsert({
           user_id: userId,
+          org_id: null,
           stripe_customer_id: customer.id,
           tier: 'free',
           updated_at: new Date().toISOString()
@@ -154,10 +157,12 @@ class BillingService {
     try {
       const startDate = period || new Date().toISOString().slice(0, 7); // YYYY-MM format
       
+      // Query with proper NULL handling for org_id
       const { data: usage } = await supabase
         .from('chat_usage_tracking')
         .select('*')
         .eq('user_id', userId)
+        .is('org_id', null)
         .gte('date', `${startDate}-01`)
         .lt('date', this.getNextMonth(startDate));
 
@@ -322,7 +327,7 @@ class BillingService {
     const [year, month] = yearMonth.split('-').map(Number);
     const nextMonth = month === 12 ? 1 : month + 1;
     const nextYear = month === 12 ? year + 1 : year;
-    return `${nextYear}-${nextMonth.toString().padStart(2, '0')}`;
+    return `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
   }
 }
 

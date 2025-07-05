@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 
 export interface SlashCommand {
   slug: string;       // the token inserted (after the '/')

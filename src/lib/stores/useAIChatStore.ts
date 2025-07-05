@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
-import type { AgentResponse } from '@/features/ai-assistant/lib/agents/types';
-import { supabase } from '@/lib/supabase';
+import type { AgentResponse } from '@/lib/ai/assistant/types';
+import { supabase } from '@/lib/core/supabase';
+import { immer } from 'zustand/middleware/immer';
 
 export type AIRole = 'user' | 'assistant' | 'system';
 
@@ -28,7 +29,7 @@ interface AIChatStoreState {
   activeConversationId: string | null;
   loading: boolean;
   error: string | null;
-  sendMessage: (conversationId: string, message: string, userId: string) => Promise<void>;
+  sendMessage: (conversationId: string, message: string, userId: string, companyId?: string) => Promise<void>;
   loadConversation: (conversationId: string) => Promise<void>;
   setActiveConversation: (conversationId: string) => void;
   newConversation: (title?: string) => Promise<string>;
@@ -81,7 +82,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
     loading: false,
     error: null,
 
-    async sendMessage(conversationId, message, userId) {
+    async sendMessage(conversationId, message, userId, companyId) {
       set({ loading: true, error: null });
       const msg: AIMessage = {
         id: crypto.randomUUID(),
@@ -133,6 +134,39 @@ export const useAIChatStore = create<AIChatStoreState>()(
           };
           conv.messages.push(aiMsg);
         }));
+
+        // After successful AI response, trigger Executive Assistant Orchestrator
+        // for complex query analysis and potential workflow routing
+        if (companyId) {
+          try {
+            // Get conversation history for context
+            const conversation = get().conversations[conversationId];
+            const conversationText = conversation?.messages
+              .slice(-5) // Last 5 messages for context
+              .map(m => `${m.role}: ${m.content}`)
+              .join('\n');
+
+            // Trigger orchestrator workflow (non-blocking)
+            await (supabase as any).functions.invoke('trigger-n8n-workflow', {
+              body: {
+                workflow_name: 'executive_assistant_orchestrator',
+                payload: {
+                  query: message,
+                  conversation: conversationText,
+                  user_id: userId,
+                  company_id: companyId,
+                  conversation_id: conversationId,
+                  user_context: `Recent conversation with ${conversation?.messages.length || 0} messages`,
+                  supabase_url: import.meta.env.VITE_SUPABASE_URL,
+                  supabase_anon_key: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                },
+              },
+            });
+          } catch (orchestratorError) {
+            // Don't fail the main chat if orchestrator fails
+            console.warn('Executive Assistant Orchestrator failed:', orchestratorError);
+          }
+        }
       } catch (e: any) {
         set({ error: e.message || 'Failed to send message' });
       } finally {

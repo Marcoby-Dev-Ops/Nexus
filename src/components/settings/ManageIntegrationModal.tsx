@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Modal from '@/components/ui/Modal';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { Button } from '@/components/ui/Button';
 
 interface IntegrationDetails {

@@ -5,7 +5,7 @@ import {
   clearSlashCommandsCache,
   type SlashCommand 
 } from '@/lib/services/slashCommandService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 
 // Mock Supabase
 jest.mock('@/lib/supabase', () => ({

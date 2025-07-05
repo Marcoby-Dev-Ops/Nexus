@@ -1,11 +1,5 @@
-import { securityManager } from '../security';
-import { createClient } from '@supabase/supabase-js';
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
+import { encrypt, decrypt } from '../security';
+import { supabase } from '@/lib/core/supabase';
 
 interface CredentialMetadata {
   id: string;
@@ -48,7 +42,7 @@ export class CredentialManager {
   ): Promise<string> {
     try {
       // Encrypt credentials
-      const encryptedData = await securityManager.encryptData(JSON.stringify(credentials));
+      const encryptedData = await encrypt(JSON.stringify(credentials));
 
       // Create metadata
       const credentialMetadata: CredentialMetadata = {
@@ -106,7 +100,7 @@ export class CredentialManager {
       }
 
       // Decrypt credentials
-      const decryptedData = await securityManager.decryptData(data.encrypted_data);
+      const decryptedData = await decrypt(data.encrypted_data);
       const credentials = JSON.parse(decryptedData);
 
       // Update last used timestamp

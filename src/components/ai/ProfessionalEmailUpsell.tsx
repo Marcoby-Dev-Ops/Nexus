@@ -5,10 +5,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { useToast } from '@/components/ui/Toast';
+import { 
+  Card, CardContent, CardHeader, CardTitle,
+  Button,
+  Badge
+} from '@/components/ui';
+import { useToast } from '@/components/ui/use-toast';
+import { logger } from '@/lib/security/logger';
 import { 
   Mail, 
   Shield, 
@@ -27,15 +30,24 @@ interface ProfessionalEmailUpsellProps {
   onDismiss?: () => void;
 }
 
+interface UpsellRecommendation {
+  title: string;
+  description: string;
+  urgency: 'low' | 'medium' | 'high';
+  benefits: string[];
+  pricing: string;
+  ctaText: string;
+}
+
 export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = ({
   userId,
   compact = false,
   onDismiss
 }) => {
   const { user } = useAuth();
-  const { showToast } = useToast();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [recommendation, setRecommendation] = useState<any>(null);
+  const [recommendation, setRecommendation] = useState<UpsellRecommendation | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
   const effectiveUserId = userId || user?.id;
@@ -49,10 +61,11 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
         const result = await domainAnalysisService.getMicrosoft365UpsellRecommendation(effectiveUserId);
         
         if (result.shouldShowUpsell && result.recommendation) {
-          setRecommendation(result.recommendation);
+          setRecommendation(result.recommendation as UpsellRecommendation);
         }
       } catch (error) {
-        console.error('Error fetching upsell recommendation:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        logger.error({ err: error }, 'Error fetching upsell recommendation');
       } finally {
         setLoading(false);
       }
@@ -63,10 +76,9 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
 
   const handleGetStarted = () => {
     // Track the upsell click
-    showToast({
+    toast({
       title: 'Redirecting to Microsoft 365',
       description: 'We\'ll help you set up professional email for your business.',
-      type: 'success'
     });
 
     // In a real implementation, this would redirect to Microsoft 365 signup
@@ -79,17 +91,18 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
 
     try {
       await domainAnalysisService.updateProfessionalEmailKPI(effectiveUserId, user?.company_id || '');
-      showToast({
+      toast({
         title: 'Business Health Updated',
         description: 'Your professional email status has been updated.',
-        type: 'success'
       });
       onDismiss?.();
     } catch (error) {
-      showToast({
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Failed to update professional email KPI');
+      toast({
         title: 'Update Failed',
         description: 'Failed to update your business health metrics.',
-        type: 'error'
+        variant: 'destructive'
       });
     }
   };

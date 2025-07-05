@@ -129,8 +129,8 @@ export const OnboardingChat: React.FC = () => {
   // Initialize chat with executive assistant introduction
   useEffect(() => {
     console.log('[OnboardingChat] useEffect for initialization triggered.');
-    if (user) {
-      initialize(user);
+    if (user && user.profile) {
+      initialize(user as any); // Still might need a proper type guard or mapping
     }
   }, [user, initialize]);
 

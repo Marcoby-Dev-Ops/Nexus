@@ -19,7 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface MessageFeedbackProps {

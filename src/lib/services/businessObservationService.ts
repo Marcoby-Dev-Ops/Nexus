@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase } from '../core/supabase';
 import { logger } from '../security/logger';
 import { domainAnalysisService } from './domainAnalysisService';
 import type { BusinessInsight } from '../types/learning-system';

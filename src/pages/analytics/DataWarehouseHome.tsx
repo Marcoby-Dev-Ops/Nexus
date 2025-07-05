@@ -4,7 +4,7 @@ import { ContentCard } from '@/components/patterns/ContentCard';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { SimpleBarChart } from '@/components/dashboard/SimpleBarChart';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 
 /**
  * @name DataWarehouseHome
@@ -106,15 +106,18 @@ const DataWarehouseHome: React.FC = () => {
           .select('*', { count: 'exact', head: true })
           .eq('user_integration_id', source.id);
 
+        // Handle integrations property which might be an array or object
+        const integration = Array.isArray(source.integrations) ? source.integrations[0] : source.integrations;
+
         return {
           id: source.id,
-          name: source.name || source.integrations?.name || 'Unknown',
-          integration_name: source.integrations?.name || 'Unknown',
+          name: source.name || integration?.name || 'Unknown',
+          integration_name: integration?.name || 'Unknown',
           status: source.status,
           last_sync_at: source.last_sync_at,
           total_syncs: source.total_syncs || 0,
           data_record_count: count || 0,
-          auth_type: source.integrations?.auth_type || 'unknown',
+          auth_type: integration?.auth_type || 'unknown',
           error_message: source.error_message
         };
       }) || [];
@@ -137,7 +140,9 @@ const DataWarehouseHome: React.FC = () => {
         const categoryMap = new Map<string, { count: number; integrations: number }>();
         
         categoryData.forEach(item => {
-          const category = item.integrations?.category || 'other';
+          // Handle integrations property which might be an array or object
+          const integration = Array.isArray(item.integrations) ? item.integrations[0] : item.integrations;
+          const category = integration?.category || 'other';
           const current = categoryMap.get(category) || { count: 0, integrations: 0 };
           categoryMap.set(category, {
             count: current.count,
@@ -152,7 +157,12 @@ const DataWarehouseHome: React.FC = () => {
             .select('*', { count: 'exact', head: true })
             .in('user_integration_id', 
               resolvedSources
-                .filter(s => s.integration_name && sourcesData?.find(sd => sd.id === s.id)?.integrations?.category === category)
+                .filter(s => {
+                  const sourceData = sourcesData?.find(sd => sd.id === s.id);
+                  if (!sourceData) return false;
+                  const integration = Array.isArray(sourceData.integrations) ? sourceData.integrations[0] : sourceData.integrations;
+                  return s.integration_name && integration?.category === category;
+                })
                 .map(s => s.id)
             );
           
@@ -189,14 +199,21 @@ const DataWarehouseHome: React.FC = () => {
         .limit(10);
 
       if (!activityError && activityData) {
-        const formattedActivity = activityData.map(item => ({
-          integration_name: item.user_integrations?.integrations?.name || item.user_integrations?.name || 'Unknown',
-          sync_type: item.sync_type,
-          status: item.status,
-          started_at: item.started_at,
-          duration_ms: item.duration_ms,
-          processed_records: item.processed_records || 0
-        }));
+        const formattedActivity = activityData.map(item => {
+          // Handle nested integrations property
+          const userIntegration = item.user_integrations;
+          const integration = Array.isArray(userIntegration?.integrations) ? 
+            userIntegration.integrations[0] : userIntegration?.integrations;
+          
+          return {
+            integration_name: integration?.name || userIntegration?.name || 'Unknown',
+            sync_type: item.sync_type,
+            status: item.status,
+            started_at: item.started_at,
+            duration_ms: item.duration_ms,
+            processed_records: item.processed_records || 0
+          };
+        });
         setRecentActivity(formattedActivity);
       }
 

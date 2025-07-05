@@ -1,5 +1,5 @@
-import type { DepartmentState } from '@/domains/operations';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
+import { type DepartmentState } from '@/lib/types';
 
 interface AdvisorParams {
   prompt: string;

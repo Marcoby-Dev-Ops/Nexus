@@ -9,6 +9,8 @@ import { MessageFeedback } from '@/components/chat/MessageFeedback';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import { ActionCard } from '../ActionCard';
+import { useActionCards } from '@/lib/hooks/useActionCards';
 
 /**
  * Modern Executive Assistant inspired by ChatGPT and Claude interfaces
@@ -161,6 +163,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
   const autoScrollRef = useRef(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const { cards: actionCards } = useActionCards(conversationId);
 
   const conv = conversation as AIConversation | undefined;
   const messagesLength = conv?.messages ? conv.messages.length : 0;
@@ -188,12 +191,12 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || !conversationId || !user?.id) return;
-    await sendMessage(conversationId, input, user.id);
+    await sendMessage(conversationId, input, user.id, user.company_id || undefined);
     setInput('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
     }
-  }, [input, conversationId, user?.id, sendMessage]);
+  }, [input, conversationId, user?.id, user?.company_id, sendMessage]);
 
   useEffect(() => {
     if (autoScrollRef.current && conversation && conversation.messages.length) {
@@ -243,6 +246,14 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
         ref={chatContainerRef}
         className="flex-1 min-h-0 overflow-hidden p-6"
       >
+        {/* Action Cards at top */}
+        {actionCards.length > 0 && (
+          <div className="mb-6 space-y-3">
+            {actionCards.map(card => (
+              <ActionCard key={card.id} card={card} className="max-w-md" />
+            ))}
+          </div>
+        )}
         {isConversationEmpty ? (
           <WelcomeScreen userName={user?.name} onQuickAction={handleQuickAction} />
         ) : (

@@ -3,8 +3,8 @@ import type { ComponentProps } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { supabase } from '@/lib/supabase';
-import { env } from '@/lib/environment';
+import { supabase } from '../../lib/core/supabase';
+import { env } from '@/lib/core/environment';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
@@ -21,8 +21,7 @@ const isChatEnabled = true;
 // Backend Edge Function URL (configure in .env)
 // When VITE_EA_CHAT_URL is not explicitly provided, fall back to the Supabase project URL so that
 // the path resolves correctly both in local (supabase start → http://localhost:54321) and production.
-const AI_CHAT_FUNC_URL =
-  import.meta.env.VITE_EA_CHAT_URL || `${env.supabase.url}/functions/v1/ai_ea_stream`;
+const AI_CHAT_FUNC_URL = `${env.supabase.url}/functions/v1/ai-rag-assessment-chat`;
 
 type CodeProps = ComponentProps<'code'> & { inline?: boolean; children?: React.ReactNode };
 
@@ -115,79 +114,73 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({ conversati
     if (!input.trim()) return;
     setError(null);
     setIsStreaming(true);
-    setHasFirstChunk(false);
 
-    // optimistic UI: add user message
-    setMessages((prev) => [...prev, { role: 'user', content: input.trim() }]);
+    const userMessage: ChatMessage = { role: 'user', content: input.trim() };
+    const newMessages: ChatMessage[] = [...messages, userMessage, { role: 'assistant', content: '' }];
+    setMessages(newMessages);
 
-    // add placeholder assistant message
-    setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
-    const placeholderIndex = messages.length + 1; // after adding user msg and before rendering? We'll compute differently after state update? We'll handle below by capturing index.
-
-    setAssistantStreamingIndex(messages.length + 1);
-
-    const currentMessagesIndex = messages.length + 1;
+    const assistantMessageIndex = newMessages.length - 1;
+    const currentInput = input;
+    setInput('');
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      const payload: Record<string, any> = {
-        message: input,
-        metadata: { userId: session?.user?.id, agentId },
-      };
-      if (conversationId) payload.conversationId = conversationId;
-
-      const res = await fetch(`${AI_CHAT_FUNC_URL}?stream=1`, {
+      const res = await fetch(AI_CHAT_FUNC_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ query: currentInput }),
       });
-
-      // Capture conversation ID from response header (first request)
-      const headerConvId = res.headers.get('x-conversation-id');
-      if (headerConvId && !conversationId) {
-        setConversationId(headerConvId);
-        onConversationId?.(headerConvId);
-      }
 
       if (!res.ok || !res.body) {
         throw new Error(`Request failed: ${res.status}`);
       }
 
-      setInput(''); // clear input box after sending
       sendAuditLog('chat_message_sent', { agentId });
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-
       let done = false;
+
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
-        if (value) {
-          const chunk = decoder.decode(value);
-          if (chunk && !hasFirstChunk) setHasFirstChunk(true);
-          // update assistant content
-          setMessages((prev) => {
-            if (currentMessagesIndex >= prev.length) return prev;
-            const updated = [...prev];
-            updated[currentMessagesIndex] = {
-              ...updated[currentMessagesIndex],
-              content: updated[currentMessagesIndex].content + chunk,
-            };
-            return updated;
-          });
+        const chunk = decoder.decode(value);
+        
+        // SSE format is `data: {"content": "..."}\n\n`
+        const lines = chunk.split('\n\n').filter(line => line.startsWith('data: '));
+        for (const line of lines) {
+          const jsonString = line.replace('data: ', '');
+          const parsed = JSON.parse(jsonString);
+          const content = parsed.content;
+          
+          if (content) {
+            setMessages(prev => {
+              const updated = [...prev];
+              updated[assistantMessageIndex] = {
+                ...updated[assistantMessageIndex],
+                content: updated[assistantMessageIndex].content + content,
+              };
+              return updated;
+            });
+          }
         }
       }
     } catch (err: any) {
       console.error('Streaming error', err);
-      setError(err.message || 'Streaming error');
+      const errorMessage = `Error: ${err.message}`;
+      setMessages(prev => {
+        const updated = [...prev];
+        updated[assistantMessageIndex] = { ...updated[assistantMessageIndex], content: errorMessage };
+        return updated;
+      });
+      setError(err.message || 'An error occurred.');
     } finally {
       setIsStreaming(false);
-      setAssistantStreamingIndex(null);
     }
   };
 

@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/Badge';
 import { CheckCircle, ExternalLink, Loader2, AlertCircle, Users, DollarSign, TrendingUp, Mail } from 'lucide-react';
 import { hubspotService } from '../../lib/services/hubspotService';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { useNotifications } from '../../contexts/NotificationContext';
 
 interface HubSpotSetupProps {

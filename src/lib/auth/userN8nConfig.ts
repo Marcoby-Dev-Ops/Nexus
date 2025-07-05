@@ -3,7 +3,7 @@
  * Service for managing user-specific n8n configurations
  * Handles storage, retrieval, and validation of n8n connection settings
  */
-import { supabase } from './supabase';
+import { supabase } from './core/supabase';
 
 export interface UserN8nConfig {
   id?: string;

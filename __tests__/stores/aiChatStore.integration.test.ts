@@ -24,7 +24,7 @@ describe('aiChatStore Supabase Integration', () => {
       } as Response);
 
       const convId = await useAIChatStore.getState().newConversation('Test');
-      await useAIChatStore.getState().sendMessage(convId, 'Hello AI', 'user-123');
+      await useAIChatStore.getState().sendMessage(convId, 'Hello AI', 'user-123', 'test-company-id');
 
       expect(mockFetch).toHaveBeenCalledWith('/functions/v1/ai_chat', {
         method: 'POST',
@@ -48,7 +48,7 @@ describe('aiChatStore Supabase Integration', () => {
       
       // Should not throw despite network error
       await expect(
-        useAIChatStore.getState().sendMessage(convId, 'Hello AI', 'user-123')
+        useAIChatStore.getState().sendMessage(convId, 'Hello AI', 'user-123', 'test-company-id')
       ).resolves.not.toThrow();
     });
   });

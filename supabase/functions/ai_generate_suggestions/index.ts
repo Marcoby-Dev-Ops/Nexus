@@ -71,7 +71,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini-high',
+        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.6,
         response_format: { type: "json_object" },

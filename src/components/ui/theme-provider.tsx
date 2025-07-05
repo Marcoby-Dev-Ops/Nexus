@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { safeGetLocalStorage, safeSetLocalStorage } from '../../lib/storageUtils';
+import { safeGetLocalStorage, safeSetLocalStorage } from '../../lib/utils/storageUtils';
 
 type Theme = 'dark' | 'light' | 'system';
 

@@ -3,11 +3,10 @@ import PropTypes from 'prop-types';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MessageSquare, ChevronDown, Send, Mic, MicOff, Paperclip, Zap } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
-import { chatHistory, supabase, type ChatMessage as SupabaseChatMessage } from '@/lib/supabase';
-import { useRealtimeChat } from '@/lib/useRealtimeChat';
+import { chatHistory, supabase, type ChatMessage as SupabaseChatMessage } from '../../lib/core/supabase';
+import { useRealtimeChat } from '@/lib/hooks/useRealtimeChat';
 import { useAuth } from '@/contexts/AuthContext';
-import { enhancedChatService, ChatContextBuilder } from '@/lib/chatContext';
-import { executiveAgent } from '@/lib/agentRegistry';
+import { agentRegistry } from '@/lib/ai/agentRegistry';
 
 /**
  * ExecutiveAssistant
@@ -118,56 +117,37 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
     const textToSend = message || input.trim();
     if (!textToSend || loading || !currentConversationId || !user || !sessionId) return;
 
+    setLoading(true);
+    setError(null);
+    
+    if (!message) {
+      setInput('');
+    }
+
     try {
-      setLoading(true);
-      setError(null);
-      
-      if (!message) {
-        setInput('');
-      }
+      await chatHistory.addMessage(currentConversationId, {
+        role: 'user',
+        content: textToSend,
+        metadata: { 
+          agent_id: selectedAgent,
+          context: `Current page: ${currentPageName}`,
+          session_id: sessionId
+        }
+      });
 
-      // Use enhanced chat service with comprehensive context
-      const result = await enhancedChatService.sendMessageWithContext(
-        currentConversationId,
-        textToSend,
-        executiveAgent,
-        sessionId
-      );
-
-      console.log('Message sent with context:', result.context);
-      
-      // ✅ FIXED: Always set loading to false after successful response
-      setLoading(false);
-
-    } catch (err) {
-      console.error('Error in handleSend:', err);
-      setError('Failed to send message. Please try again.');
-      
-      // Fallback: Add message directly if enhanced service fails
-      try {
+      // Simple fallback response
+      setTimeout(async () => {
         await chatHistory.addMessage(currentConversationId, {
-          role: 'user',
-          content: textToSend,
-          metadata: { 
-            agent_id: selectedAgent,
-            context: `Current page: ${currentPageName}`,
-            session_id: sessionId
-          }
+          role: 'assistant',
+          content: `I understand you asked: "${textToSend}". I'm here to help you with your tasks and productivity needs. How can I assist you further?`,
+          metadata: { agent_id: selectedAgent }
         });
-
-        // Simple fallback response
-        setTimeout(async () => {
-          await chatHistory.addMessage(currentConversationId, {
-            role: 'assistant',
-            content: `I understand you asked: "${textToSend}". I'm here to help you with your tasks and productivity needs. How can I assist you further?`,
-            metadata: { agent_id: selectedAgent }
-          });
-          setLoading(false);
-        }, 1000);
-      } catch (fallbackErr) {
-        console.error('Fallback also failed:', fallbackErr);
         setLoading(false);
-      }
+      }, 1000);
+    } catch (fallbackErr) {
+      console.error('Fallback also failed:', fallbackErr);
+      setError('Failed to send message. Please try again.');
+      setLoading(false);
     }
   };
 
@@ -271,145 +251,80 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
             </div>
           </div>
         ) : (
-          <div className="max-w-3xl mx-auto space-y-6 pb-4">
-                         {messages.map((msg, idx) => {
-               if (msg.role === 'system') {
-                 return (
-                   <div key={idx} className="text-center text-xs text-muted-foreground py-4">
-                     System initialized
-                   </div>
-                 );
-               }
-               const isUser = msg.role === 'user';
-               return (
-                 <div key={idx} className="space-y-2">
-                   <div className={`flex items-start gap-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
-                     <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center ${
-                       isUser 
-                         ? 'bg-primary' 
-                         : 'bg-gradient-to-br from-primary to-secondary'
-                     }`}>
-                       {isUser ? (
-                         <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                         </svg>
-                       ) : (
-                         <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                         </svg>
-                       )}
-                     </div>
-                     <div className={`flex-1 ${isUser ? 'text-right' : 'text-left'}`}>
-                       <div className={`inline-block max-w-full ${
-                         isUser 
-                           ? 'bg-primary text-primary-foreground' 
-                           : 'bg-muted text-foreground'
-                       } rounded-2xl px-4 py-4 break-words`}>
-                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                       </div>
-                     </div>
-                   </div>
-                 </div>
-               );
-             })}
-            {loading && (
-              <div className="flex items-start gap-4">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-secondary flex-shrink-0 flex items-center justify-center">
-                  <svg className="w-4 h-4 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                                 <div className="flex-1">
-                   <div className="inline-block bg-muted rounded-2xl px-4 py-4">
-                     <div className="flex items-center gap-1">
-                       <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                       <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                       <div className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                     </div>
-                   </div>
-                 </div>
-              </div>
-            )}
-          </div>
-        )}
-        {error && (
-          <div className="max-w-3xl mx-auto mt-4">
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-destructive">{error}</p>
-                <button
-                  onClick={() => setError(null)}
-                  className="ml-auto text-destructive hover:text-destructive/80"
+          <div className="space-y-6">
+            {messages.map((msg, index) => (
+              <div
+                key={`${currentConversationId}-${index}`}
+                className={`flex items-start gap-4 ${msg.role === 'user' ? 'justify-end' : ''}`}
+              >
+                {msg.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-sm font-semibold">
+                    N
+                  </div>
+                )}
+                <div
+                  className={`max-w-xl p-4 rounded-xl ${
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-foreground'
+                  }`}
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Scroll to Bottom Button - Hidden during onboarding */}
+      {/* Scroll to bottom button */}
       {showScrollButton && (
-        <div className="absolute bottom-20 right-6 z-10">
-          <button
-            onClick={scrollToBottom}
-            className="p-4 bg-primary text-primary-foreground rounded-full shadow-lg hover:bg-primary/90 transition-colors"
-            aria-label="Scroll to bottom"
-          >
-            <ChevronDown className="w-4 h-4" />
-          </button>
-        </div>
+        <button
+          onClick={scrollToBottom}
+          className="absolute bottom-24 right-6 w-10 h-10 bg-background/80 backdrop-blur-sm rounded-full flex items-center justify-center border transition-opacity"
+        >
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
+        </button>
       )}
 
-      {/* Clean Input Area - Copilot Style */}
-      <div className="border-t border-border p-4 bg-background">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-4 bg-muted rounded-xl p-4 border border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-blue-500 transition-all">
-            <div className="flex-1">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Ask me anything..."
-                className="w-full bg-transparent resize-none border-none outline-none text-foreground placeholder-muted-foreground text-sm leading-relaxed min-h-[24px] max-h-32"
-                rows={1}
-                style={{
-                  height: 'auto',
-                  minHeight: '24px',
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = Math.min(target.scrollHeight, 128) + 'px';
-                }}
-              />
-            </div>
+      {/* Clean Input Area */}
+      <div className="border-t p-4">
+        {error && (
+          <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-3">
+            {error}
+          </div>
+        )}
+        <div className="relative">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="Ask Nexus anything..."
+            className="w-full bg-muted border-transparent rounded-lg py-3 pl-4 pr-28 resize-none focus:ring-2 focus:ring-primary focus:border-transparent transition-shadow"
+            rows={1}
+            disabled={loading}
+          />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center space-x-1">
+            <button className="p-2 text-muted-foreground hover:text-foreground">
+              <Paperclip className="w-5 h-5" />
+            </button>
+            <button className="p-2 text-muted-foreground hover:text-foreground">
+              <Mic className="w-5 h-5" />
+            </button>
             <button
               onClick={() => handleSend()}
               disabled={loading || !input.trim()}
-              className={`p-4 rounded-lg transition-all ${
-                loading || !input.trim()
-                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                  : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
-              }`}
+              className="p-2 rounded-full bg-primary text-primary-foreground disabled:bg-primary/50"
             >
               {loading ? (
-                <Spinner size={16} className="text-muted-foreground" />
+                <Spinner className="w-5 h-5" />
               ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <Send className="w-5 h-5" />
               )}
             </button>
           </div>
@@ -421,4 +336,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
 
 ExecutiveAssistant.propTypes = {
   onClose: PropTypes.func.isRequired,
-}; 
+  sessionId: PropTypes.string,
+};
+
+export default ExecutiveAssistant; 

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button';
 import { Progress } from '@/components/ui/Progress';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import {
   Brain,
   TrendingUp,
@@ -102,9 +102,9 @@ const CrossPlatformInsightsEngine: React.FC = () => {
 
       // Generate insights based on available integrations
       await Promise.all([
-        generateCorrelations(integrations),
-        generatePredictions(integrations),
-        generateBusinessIntelligence(integrations)
+        generateCorrelations(integrations || []),
+        generatePredictions(integrations || []),
+        generateBusinessIntelligence(integrations || [])
       ]);
       
     } catch (error) {
@@ -453,8 +453,9 @@ const CrossPlatformInsightsEngine: React.FC = () => {
             {predictions.map((prediction) => (
               <div key={prediction.id} className="p-4 border rounded-lg space-y-3">
                 <div className="flex items-center justify-between">
-                  <Badge variant={prediction.type === 'anomaly' ? 'destructive' : prediction.type === 'forecast' ? 'success' : 'default'}>
-                    {prediction.type}
+                  <Badge variant={prediction.type === 'anomaly' ? 'destructive' : 'default'}>
+                    {prediction.type === 'anomaly' && <AlertTriangle className="h-4 w-4 mr-2" />}
+                    {prediction.type === 'forecast' && <TrendingUp className="h-4 w-4 mr-2" />}
                   </Badge>
                   <Badge variant="outline" className={getImpactColor(prediction.impact)}>
                     {prediction.impact} impact

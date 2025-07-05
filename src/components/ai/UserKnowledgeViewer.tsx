@@ -7,8 +7,8 @@ import { Progress } from '@/components/ui/Progress';
 import { Separator } from '@/components/ui/Separator';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
-import { ContextualRAG } from '@/lib/contextualRAG';
+import { supabase } from '../../lib/core/supabase';
+import { ContextualRAG } from '@/lib/ai/contextualRAG';
 import { thoughtsService } from '@/lib/services/thoughtsService';
 import {
   Brain,
@@ -25,7 +25,6 @@ import {
   Clock,
   TrendingUp,
   MessageSquare,
-  Calendar,
   MapPin,
   Mail,
   Phone,
@@ -185,8 +184,14 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
       .eq('id', user?.profile?.company_id)
       .single();
 
+    // Define an interface for the expected preferences shape
+    interface UserPreferences {
+      user_context?: any;
+    }
+
     // Get user context from onboarding
-    const userContext = user?.profile?.preferences?.user_context || {};
+    const preferences = user?.profile?.preferences as UserPreferences | null;
+    const userContext = preferences?.user_context || {};
 
     return {
       company: company || {},
@@ -469,14 +474,13 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   };
 
   const determineInteractionStyle = (interactions: any[]): string => {
-    const styles = {
-      detailed: interactions.filter(i => i.content && i.content.length > 100).length,
-      concise: interactions.filter(i => i.content && i.content.length <= 100).length,
-      question_heavy: interactions.filter(i => i.interaction_type === 'question').length,
-      action_oriented: interactions.filter(i => i.interaction_type === 'action').length
-    };
+    const styles = analyzeInteractionPatterns(interactions);
+    if (Object.values(styles).every(v => v === 0)) return 'balanced';
     
-    const maxStyle = Object.entries(styles).reduce((a, b) => styles[a[0]] > styles[b[0]] ? a : b);
+    type StyleKey = keyof typeof styles;
+    const maxStyle = Object.entries(styles).reduce((a, b) => 
+      styles[a[0] as StyleKey] > styles[b[0] as StyleKey] ? a : b
+    );
     return maxStyle[0];
   };
 
@@ -1079,7 +1083,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                 <div className="text-center py-8">
                   <Database className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">No integrations connected yet</p>
-                  <Button className="mt-4" onClick={() => window.location.href = '/settings/integrations'}>
+                  <Button className="mt-4" onClick={() => window.location.href = '/settings'}>
                     Connect Services
                   </Button>
                 </div>

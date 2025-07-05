@@ -21,6 +21,16 @@ serve(async (req) => {
 
     const sb = createClient(supabaseUrl, supabaseServiceKey);
 
+    // === New: Fetch all assessment questions to guide extraction ===
+    const { data: assessmentQuestions, error: questionsError } = await sb
+      .from('AssessmentQuestion')
+      .select('id, prompt, target_field, action_type');
+    
+    if (questionsError) {
+      // Log the error but don't block the summarization process
+      console.error("Error fetching assessment questions:", questionsError.message);
+    }
+
     // Fetch conversation row (to get current summary_chunks)
     const { data: conv, error: convErr } = await sb
       .from('ai_conversations')
@@ -63,7 +73,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'o3-mini-high',
+        model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: 'You are a helpful summariser.' },
           { role: 'user', content: prompt },
@@ -81,6 +91,156 @@ serve(async (req) => {
     const openJson = await openRes.json();
     const summary = openJson.choices?.[0]?.message?.content?.trim();
     if (!summary) throw new Error('No summary');
+
+    // === New: Dynamically build extraction prompt from assessment questions ===
+    const profileFieldsToExtract = (assessmentQuestions || [])
+      .filter(q => q.action_type === 'UPDATE_PROFILE' && q.target_field)
+      .map(q => `* "${q.target_field}": (Description: ${q.prompt})`);
+
+    const legacyFields = ['tagline', 'mission_statement', 'vision_statement', 'motto'];
+    const allFieldsToExtract = [...new Set([...legacyFields, ...profileFieldsToExtract.map(f => f.split('"')[1])])];
+
+    const extractPrompt = `From the conversation transcript, extract values for the following fields. Return a single JSON object with keys for ONLY the fields you find confident values for. If none, return empty JSON. Do NOT wrap in markdown.
+
+Fields to extract:
+${allFieldsToExtract.map(f => `- ${f}`).join('\n')}
+
+Transcript:
+${transcript}`;
+
+    const extractRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${openaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'You extract structured data.' },
+          { role: 'user', content: extractPrompt },
+        ],
+        max_tokens: 120,
+        temperature: 0,
+      }),
+    });
+
+    let extracted: Record<string, string> = {};
+    if (extractRes.ok) {
+      try {
+        const exJson = await extractRes.json();
+        const raw = exJson.choices?.[0]?.message?.content?.trim();
+        extracted = raw ? JSON.parse(raw) : {};
+      } catch (_) {
+        extracted = {};
+      }
+    }
+
+    // Upsert if we have extracted fields
+    if (Object.keys(extracted).length) {
+      // Identify company via first user in conversation -> user_profiles
+      const { data: firstMsg } = await sb
+        .from('ai_messages')
+        .select('user_id')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (firstMsg?.user_id) {
+        const { data: prof } = await sb
+          .from('user_profiles')
+          .select('company_id')
+          .eq('id', firstMsg.user_id)
+          .single();
+
+        if (prof?.company_id) {
+          // Separate data for different tables
+          const companyProfileUpdates: Record<string, any> = {};
+          const aiProfileUpdates: Record<string, any> = {};
+          const assessmentResponsesToUpsert: any[] = [];
+
+          for (const key in extracted) {
+            const question = (assessmentQuestions || []).find(q => q.target_field === key);
+            if (question) {
+              companyProfileUpdates[key] = extracted[key];
+              assessmentResponsesToUpsert.push({
+                company_id: prof.company_id,
+                question_id: question.id,
+                user_id: firstMsg.user_id,
+                value: String(extracted[key]),
+                // We let the DB trigger calculate the score
+              });
+            } else if (legacyFields.includes(key)) {
+              aiProfileUpdates[key] = extracted[key];
+            }
+          }
+
+          // Perform updates
+          if (Object.keys(companyProfileUpdates).length > 0) {
+            await sb.from('Company').update(companyProfileUpdates).eq('id', prof.company_id);
+          }
+          if (Object.keys(aiProfileUpdates).length > 0) {
+            await sb.from('ai_company_profiles').upsert({ company_id: prof.company_id, ...aiProfileUpdates });
+          }
+          if (assessmentResponsesToUpsert.length > 0) {
+            await sb.from('AssessmentResponse').upsert(assessmentResponsesToUpsert, { onConflict: 'company_id, question_id' });
+          }
+
+          // Determine which fields are still missing for action cards
+          const neededFields: [string, string][] = [
+            ['mission_statement', 'define-mission'],
+            ['vision_statement', 'define-vision'],
+            ['tagline', 'define-mission'],
+            ['value_proposition', 'define-value-proposition'],
+            ['goals', 'set-goals']
+          ];
+
+          const { data: profileRow } = await sb
+            .from('ai_company_profiles')
+            .select('*')
+            .eq('company_id', prof.company_id)
+            .single();
+
+          for (const [field, templateSlug] of neededFields) {
+            if (!profileRow?.[field]) {
+              // Check if card already exists for this conversation & template
+              const { count } = await sb
+                .from('ai_action_cards')
+                .select('id', { count: 'exact', head: true })
+                .eq('conversation_id', conversationId)
+                .contains('metadata', { field });
+
+              if (!count || count === 0) {
+                // Fetch template
+                const { data: template } = await sb
+                  .from('ai_action_card_templates')
+                  .select('*')
+                  .eq('slug', templateSlug)
+                  .single();
+
+                if (template) {
+                  await sb.from('ai_action_cards').insert({
+                    conversation_id: conversationId,
+                    title: template.title,
+                    description: template.description,
+                    actions: template.template_data->'actions',
+                    metadata: { field, template_slug: templateSlug }
+                  });
+                }
+              }
+            }
+          }
+
+          // Fire embedding function asynchronously
+          fetch(`${supabaseUrl}/functions/v1/ai_embed_company_profile`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${supabaseServiceKey}` },
+            body: JSON.stringify({ company_id: prof.company_id })
+          }).catch(() => {});
+        }
+      }
+    }
 
     const newChunks = [...existingChunks, summary];
     const { error: updErr } = await sb

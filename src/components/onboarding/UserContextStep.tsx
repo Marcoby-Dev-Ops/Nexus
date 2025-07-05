@@ -1,20 +1,16 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Input } from '../ui/Input';
 import { Label } from '../ui/Label';
 import { Textarea } from '../ui/Textarea';
 import { RadioGroup, RadioGroupItem } from '../ui/RadioGroup';
-import { Badge } from '../ui/Badge';
 import { 
   User, 
-  Users, 
-  Building2, 
-  TrendingUp, 
   Target, 
   Zap
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import type { Json } from '@/types/supabase';
 
 interface UserContextData {
   role: string;
@@ -33,7 +29,7 @@ interface UserContextStepProps {
 }
 
 export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip, onBack }) => {
-  const { user, updateProfile } = useAuth();
+  const { updateProfile } = useAuth();
   const [contextData, setContextData] = useState<UserContextData>({
     role: '',
     experience_level: 'intermediate',
@@ -65,7 +61,7 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
           theme: 'system',
           notifications: true,
           language: 'en',
-          user_context: contextData
+          user_context: contextData as unknown as Json
         }
       });
     } catch (error) {

@@ -5,15 +5,21 @@
  * Can switch between department head and specialists based on conversation needs
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, ArrowLeft, Users, ChevronDown, ChevronUp } from 'lucide-react';
-import { chatHistory } from '@/lib/supabase';
-import { useRealtimeChat } from '@/lib/useRealtimeChat';
+import { chatHistory } from '../../lib/core/supabase';
+import { useRealtimeChat } from '@/lib/hooks/useRealtimeChat';
 import { useAuth } from '@/contexts/AuthContext';
-import { getChildAgents, type Agent } from '@/lib/agentRegistry';
-import { supervisorAgent } from '@/features/ai-assistant/lib/agents/supervisor';
+import { getChildAgents, type Agent } from '@/lib/ai/agentRegistry';
+import { supervisorAgent } from '@/lib/ai/assistant/supervisor';
+import { Button } from '@/components/ui/Button';
+import { ScrollArea } from '@/components/ui/ScrollArea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
 
 /**
  * @interface DepartmentalAgentProps

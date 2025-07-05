@@ -12,7 +12,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useAIChatStore, useActiveConversation } from '@/lib/stores/useAIChatStore';
-import { executiveAgent } from '@/lib/agentRegistry';
+import { executiveAgent } from '@/lib/ai/agentRegistry';
 import { MVPScopeIndicator } from '@/components/chat/MVPScopeIndicator';
 import { MessageFeedback } from '@/components/chat/MessageFeedback';
 
@@ -118,7 +118,7 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
 
   const handleSend = async () => {
     if (!input.trim() || !conversationId || !user?.id) return;
-    await sendMessage(conversationId, input, user.id);
+    await sendMessage(conversationId, input, user.id, user.company_id || undefined);
     setInput('');
   };
 
@@ -146,7 +146,7 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed right-4 bottom-4 w-80 h-96 bg-background border border-border rounded-xl shadow-2xl z-50 flex flex-col overflow-hidden">
+    <div className="fixed right-4 bottom-4 w-80 h-96 bg-background border border-border rounded-xl shadow-2xl z-[120] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-background">
         <div className="flex items-center gap-2">

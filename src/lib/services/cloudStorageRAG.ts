@@ -3,7 +3,9 @@
  * Orchestrates document syncing from Google Drive and OneDrive for intelligent retrieval
  */
 
-import { supabase } from '@/lib/supabase';
+import { GoogleDriveService } from './googleDriveService';
+import { OneDriveService } from './oneDriveService';
+import { supabase } from '@/lib/core/supabase';
 
 interface CloudDocument {
   id: string;

@@ -10,7 +10,8 @@ import {
   Briefcase, 
   Mail, 
   MessageSquare, 
-  Search
+  Search,
+  Loader2
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
@@ -142,6 +143,75 @@ export const MyWorkspace: React.FC = () => {
             </Card>
           ))}
         </div>
+      </div>
+
+      {/* Productivity Suite Widgets */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Calendar Widget */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Calendar</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="animate-spin h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Loading your events...</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Your meetings, events, and deadlines from Google, Outlook, and more will appear here. Join, add, or view events in real time.</p>
+          </CardContent>
+        </Card>
+        {/* Email Widget */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Email / Inbox</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="animate-spin h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Loading your inbox...</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Recent emails and messages from Gmail, Outlook, and more. Quick actions: reply, mark as read, open in inbox.</p>
+          </CardContent>
+        </Card>
+        {/* Files Widget */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Files</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="animate-spin h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Loading your files...</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Browse, search, and open files from Google Drive, OneDrive, and your device. Unified search and quick actions.</p>
+          </CardContent>
+        </Card>
+        {/* Tasks Widget */}
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Tasks & Notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="animate-spin h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Loading your tasks...</span>
+            </div>
+            <p className="text-sm text-muted-foreground">Manage your tasks and notes, synced with Google Tasks, Microsoft To Do, and local notes. AI-powered prioritization coming soon.</p>
+          </CardContent>
+        </Card>
+        {/* AI Productivity Panel */}
+        <Card className="col-span-1 xl:col-span-2">
+          <CardHeader>
+            <CardTitle>AI Productivity Panel</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-2">
+              <Loader2 className="animate-spin h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">Preparing your productivity insights...</span>
+            </div>
+            <p className="text-sm text-muted-foreground">AI will summarize your day, suggest next actions, and provide proactive alerts here. Stay tuned for actionable insights!</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

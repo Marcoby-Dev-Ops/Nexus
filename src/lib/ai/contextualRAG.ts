@@ -6,8 +6,53 @@
  * the "Nexus gets me" experience across all AI interactions.
  */
 
-import type { Agent } from './agentRegistry';
-import { supabase } from './supabase';
+import { supabase } from './core/supabase';
+import type { EABusinessObservation } from './services/businessObservationService';
+
+interface UserActivityRow {
+  page: string;
+  timestamp: string;
+  [key: string]: unknown;
+}
+
+interface IntegratedPlatformData {
+  hubspot: {
+    deals: number;
+    pipeline_value: number;
+    conversion_rate: number;
+    trend: string;
+  };
+  cloudflare: {
+    uptime: number;
+    response_time: number;
+    threats_blocked: number;
+  };
+  google_workspace: {
+    email_volume: number;
+    meeting_hours: number;
+    shared_docs: number;
+    drive_usage: number;
+  };
+  marcoby_cloud: {
+    server_utilization: number;
+    uptime: number;
+    monthly_cost: number;
+    optimization_potential: number;
+  };
+}
+
+interface Correlation {
+  description: string;
+  confidence: number;
+  actionable: boolean;
+  impact: string;
+}
+
+interface Prediction {
+  insight: string;
+  timeframe: string;
+  recommended_action: string;
+}
 
 export interface EnhancedUserContext {
   profile: {
@@ -18,7 +63,7 @@ export interface EnhancedUserContext {
     department: string;
     company_id: string;
     permissions: string[];
-    preferences: Record<string, any>;
+    preferences: Record<string, unknown>;
     // Enhanced from onboarding
     experience_level: 'beginner' | 'intermediate' | 'advanced';
     communication_style: 'direct' | 'detailed' | 'visual';
@@ -187,8 +232,7 @@ export class ContextualRAG {
     const personalizationInsights = this.generatePersonalizationInsights();
     const contextualResponse = this.generateContextualResponseStrategy(query);
     const businessIntelligence = await this.getBusinessIntelligence();
-    const userIntelligence = this.buildEnhancedUserIntelligence();
-    const cloudStorageContext = await this.getCloudStorageContext(query);
+    const cloudStorageContext = await this.getCloudStorageContext();
 
     return `EXECUTIVE CONTEXT & USER INTELLIGENCE:
 
@@ -244,7 +288,7 @@ INSTRUCTIONS:
     const relevantData = this.extractRelevantData(departmentData, query);
     const userRole = this.userContext?.profile.role || 'Team Member';
     const departmentExpertise = this.assessDepartmentExpertise(department);
-    const contextualRecommendations = this.generateDepartmentRecommendations(department, query);
+    const contextualRecommendations = this.generateDepartmentRecommendations(department);
 
     return `DEPARTMENT CONTEXT & PERSONALIZED GUIDANCE:
 
@@ -291,10 +335,8 @@ INSTRUCTIONS:
     reasoning: string;
     contextualPrompt: string;
   }> {
-    const queryAnalysis = this.analyzeQuery(query);
-    
     // Analyze query intent and determine best agent
-    const routing = await this.analyzeQueryRouting(query, queryAnalysis);
+    const routing = await this.analyzeQueryRouting(query);
     
     return {
       recommendedAgent: routing.agent,
@@ -307,17 +349,21 @@ INSTRUCTIONS:
   }
 
   /**
-   * Get cloud storage document context for the query
+   * Get documents from cloud storage for RAG context
    */
-  private async getCloudStorageContext(query: string): Promise<string> {
+  private async getCloudStorageContext(): Promise<string> {
     try {
-      // Get recent documents from cloud storage that might be relevant
-      const { data: documents } = await supabase
+      // Find documents from Google Drive and OneDrive
+      const { data: documents, error } = await supabase
         .from('ai_vector_documents')
         .select('metadata, content')
         .or('document_id.like.google-drive-%,document_id.like.onedrive-%')
         .order('created_at', { ascending: false })
         .limit(5);
+
+      if (error) {
+        console.error('Error fetching cloud storage documents:', error);
+      }
 
       if (!documents || documents.length === 0) {
         return 'No cloud storage documents synced yet. Connect Google Drive or OneDrive to enable document-based insights.';
@@ -353,12 +399,15 @@ These documents are searchable and can be referenced in responses. The AI can pu
         .single();
 
       // Fetch user activity (using chat_messages as proxy for user activity)
-      const { data: activity } = await supabase
-        .from('chat_messages')
+      const { data: activity, error: activityError } = await supabase
+        .from('user_activity')
         .select('*')
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(100);
+
+      if (activityError) {
+        console.error('Error fetching user activity:', activityError);
+      }
 
       // Fetch company context (with defensive check for valid UUID)
       let company = null;
@@ -374,15 +423,16 @@ These documents are searchable and can be referenced in responses. The AI can pu
       return {
         profile: {
           id: profile?.id || userId,
-          email: profile?.personal_email || '',
+          email: profile?.email || '',
           name: profile?.first_name || 'User',
           role: profile?.role || 'Team Member',
           department: profile?.department || 'General',
           company_id: profile?.company_id || '',
           permissions: profile?.skills || [],
-          preferences: typeof profile?.preferences === 'object' && profile?.preferences 
-            ? profile.preferences as Record<string, any>
-            : {},
+          preferences:
+            typeof profile?.preferences === 'object' && profile?.preferences
+              ? (profile.preferences as Record<string, unknown>)
+              : {},
           experience_level: 'intermediate',
           communication_style: 'direct',
           primary_responsibilities: ['Sales', 'Marketing'],
@@ -393,13 +443,16 @@ These documents are searchable and can be referenced in responses. The AI can pu
           collaboration_frequency: 'small-team'
         },
         activity: {
-          recent_pages: activity?.slice(0, 10).map(() => 'chat') || [],
-          frequent_actions: this.calculateFrequentActions(activity || []),
-          last_active: activity?.[0]?.created_at || new Date().toISOString(),
-          session_duration: this.calculateSessionDuration(activity || []),
-          total_sessions: activity?.length || 0,
-          most_used_features: ['CRM', 'Marketing Automation'],
-          skill_level: 'intermediate'
+          recent_pages:
+            activity?.map((a: UserActivityRow) => a.page).slice(0, 5) || [
+              '/dashboard',
+            ],
+          frequent_actions: this.calculateFrequentActions(),
+          last_active: activity?.[0]?.timestamp || new Date().toISOString(),
+          session_duration: this.calculateSessionDuration(),
+          total_sessions: 5, // Placeholder
+          most_used_features: ['AI Chat', 'Analytics', 'Integrations'], // Placeholder
+          skill_level: 'intermediate', // Placeholder
         },
         business_context: {
           company_name: company?.name || 'Your Company',
@@ -444,71 +497,66 @@ These documents are searchable and can be referenced in responses. The AI can pu
   /**
    * Fetch department-specific business data
    */
-  private async fetchDepartmentData(department: string): Promise<any> {
-    // For now, return demo data until database integration is complete
+  private async fetchDepartmentData(
+    department: string,
+  ): Promise<DepartmentData[keyof DepartmentData] | {}> {
+    // In a real application, this would fetch data from a database or API
+    // For now, we'll use demo data
     return this.getDemoData(department);
   }
 
-  /**
-   * Get demo data for departments
-   */
-  private getDemoData(department: string): any {
-    switch (department) {
-      case 'sales':
-        return {
-          pipeline_value: 1850000,
-          deals_closing_this_month: 8,
-          conversion_rates: { prospect: 25, qualified: 45, proposal: 75, negotiation: 85 },
-          top_opportunities: [
-            { company: 'TechCorp Inc.', value: 250000, stage: 'Proposal', close_date: '2024-02-15' },
-            { company: 'Innovation Labs', value: 185000, stage: 'Negotiation', close_date: '2024-02-28' },
-            { company: 'Future Systems', value: 320000, stage: 'Qualified', close_date: '2024-03-15' }
-          ],
-          team_performance: { quota_attainment: 87, top_performer: 'Sarah Johnson' },
-          recent_wins: [
-            { company: 'DataFlow Corp', value: 125000, rep: 'Mike Chen' },
-            { company: 'CloudTech Solutions', value: 95000, rep: 'Sarah Johnson' }
-          ]
-        };
-      case 'marketing':
-        return {
-          campaign_performance: { total_campaigns: 12, active_campaigns: 5, avg_roi: 3.2 },
-          lead_generation: { total_leads: 847, qualified_leads: 234, cost_per_lead: 45 },
-          website_analytics: { traffic: 25000, conversion_rate: 2.8, top_pages: ['/pricing', '/features', '/demo'] },
-          content_performance: [
-            { title: 'Industry Report 2024', views: 5200, engagement: 78 },
-            { title: 'Product Demo Video', views: 3800, engagement: 85 }
-          ]
-        };
-      case 'finance':
-        return {
-          revenue: { current_month: 425000, previous_month: 385000, ytd: 4200000, forecast: 5200000 },
-          expenses: { current_month: 298000, budget_variance: -12000, top_categories: [
-            { category: 'Personnel', amount: 185000 },
-            { category: 'Technology', amount: 65000 },
-            { category: 'Marketing', amount: 48000 }
-          ]},
-          cash_flow: { current_balance: 850000, projected_30_days: 120000, burn_rate: 45000 },
-          key_metrics: { gross_margin: 78.5, customer_acquisition_cost: 450, lifetime_value: 12500 }
-        };
-      case 'operations':
-        return {
-          projects: { active_count: 8, on_track: 6, at_risk: 2, recent_completions: [
-            { name: 'Q4 Platform Update', completion_date: '2024-01-15', status: 'completed' },
-            { name: 'Security Audit', completion_date: '2024-01-28', status: 'completed' }
-          ]},
-          system_health: { uptime: 99.8, performance_score: 92, open_tickets: 12 },
-          team_utilization: { current_capacity: 85, upcoming_availability: '15% increase expected next month' }
-        };
-      default:
-        return {};
-    }
+  private getDemoData(department: string): DepartmentData[keyof DepartmentData] | {} {
+    const demoData: DepartmentData = {
+      sales: {
+        pipeline_value: 1250000,
+        deals_closing_this_month: 8,
+        conversion_rates: { prospect: 25, qualified: 45, proposal: 75, negotiation: 85 },
+        top_opportunities: [
+          { company: 'TechCorp Inc.', value: 250000, stage: 'Proposal', close_date: '2024-02-15' },
+          { company: 'Innovation Labs', value: 185000, stage: 'Negotiation', close_date: '2024-02-28' },
+          { company: 'Future Systems', value: 320000, stage: 'Qualified', close_date: '2024-03-15' }
+        ],
+        team_performance: { quota_attainment: 87, top_performer: 'Sarah Johnson' },
+        recent_wins: [
+          { company: 'DataFlow Corp', value: 125000, rep: 'Mike Chen' },
+          { company: 'CloudTech Solutions', value: 95000, rep: 'Sarah Johnson' }
+        ]
+      },
+      marketing: {
+        campaign_performance: { total_campaigns: 12, active_campaigns: 5, avg_roi: 3.2 },
+        lead_generation: { total_leads: 847, qualified_leads: 234, cost_per_lead: 45 },
+        website_analytics: { traffic: 25000, conversion_rate: 2.8, top_pages: ['/pricing', '/features', '/demo'] },
+        content_performance: [
+          { title: 'Industry Report 2024', views: 5200, engagement: 78 },
+          { title: 'Product Demo Video', views: 3800, engagement: 85 }
+        ]
+      },
+      finance: {
+        revenue: { current_month: 425000, previous_month: 385000, ytd: 4200000, forecast: 5200000 },
+        expenses: { current_month: 298000, budget_variance: -12000, top_categories: [
+          { category: 'Personnel', amount: 185000 },
+          { category: 'Technology', amount: 65000 },
+          { category: 'Marketing', amount: 48000 }
+        ]},
+        cash_flow: { current_balance: 850000, projected_30_days: 120000, burn_rate: 45000 },
+        key_metrics: { gross_margin: 78.5, customer_acquisition_cost: 450, lifetime_value: 12500 }
+      },
+      operations: {
+        projects: { active_count: 8, on_track: 6, at_risk: 2, recent_completions: [
+          { name: 'Q4 Platform Update', completion_date: '2024-01-15', status: 'completed' },
+          { name: 'Security Audit', completion_date: '2024-01-28', status: 'completed' }
+        ]},
+        system_health: { uptime: 99.8, performance_score: 92, open_tickets: 12 },
+        team_utilization: { current_capacity: 85, upcoming_availability: '15% increase expected next month' }
+      },
+    };
+    return demoData[department as keyof typeof demoData] || {};
   }
 
   /**
    * Analyze query to determine intent and routing
    */
-  private async analyzeQueryRouting(query: string, analysis: any): Promise<{
+  private async analyzeQueryRouting(query: string): Promise<{
     agent: string;
     department?: string;
     confidence: number;
@@ -610,27 +658,29 @@ These documents are searchable and can be referenced in responses. The AI can pu
 
     // Add EA business observations
     try {
-      const { businessObservationService } = await import('../services/businessObservationService');
-      const observations = await businessObservationService.generateBusinessObservations(
-        this.userContext?.profile.id || '',
-        this.userContext?.business_context.company_id || ''
+      const { businessObservationService } = await import(
+        './services/businessObservationService'
       );
 
-      if (observations.length > 0) {
-        insights.push('\n🔍 BUSINESS OBSERVATIONS:');
-        observations.slice(0, 3).forEach(obs => {
-          const priority = obs.priority === 'critical' ? '🚨' : obs.priority === 'high' ? '⚠️' : obs.priority === 'medium' ? '💡' : 'ℹ️';
-          insights.push(`${priority} ${obs.title}: ${obs.description}`);
-          if (obs.actionItems.length > 0) {
-            insights.push(`   → Recommended: ${obs.actionItems[0]}`);
-          }
+      const observations =
+        await businessObservationService.generateBusinessObservations(
+          this.userContext?.profile.id || '',
+          this.userContext?.profile.company_id || '',
+        );
+
+      let intelligence = 'Recent Business Observations:\n';
+      if (observations.length === 0) {
+        intelligence += '- No significant observations in the last 7 days.\n';
+      } else {
+        observations.slice(0, 3).forEach((obs: EABusinessObservation) => {
+          intelligence += `- [${obs.priority}] ${obs.title}: ${obs.description}\n`;
         });
       }
+      return intelligence;
     } catch (error) {
       console.error('Error fetching business observations:', error);
+      return 'No business context available.';
     }
-
-    return insights.join('\n');
   }
 
   /**
@@ -721,7 +771,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
   /**
    * Fetch integrated platform data from all connected sources
    */
-  private async fetchIntegratedPlatformData(): Promise<any> {
+  private async fetchIntegratedPlatformData(): Promise<IntegratedPlatformData> {
     // In a real implementation, this would fetch from your unified analytics dashboard
     return {
       hubspot: {
@@ -753,7 +803,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
   /**
    * Analyze correlations between different platforms
    */
-  private async analyzeCorrelations(): Promise<any[]> {
+  private async analyzeCorrelations(): Promise<Correlation[]> {
     return [
       {
         description: "High email volume correlates with 23% increase in deal velocity",
@@ -779,7 +829,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
   /**
    * Generate predictive insights based on historical patterns
    */
-  private async generatePredictions(): Promise<any[]> {
+  private async generatePredictions(): Promise<Prediction[]> {
     return [
       {
         insight: "Current email engagement trends suggest 34% increase in Q1 leads",
@@ -800,24 +850,18 @@ These documents are searchable and can be referenced in responses. The AI can pu
   }
 
   private analyzeQuery(query: string): string {
-    const urgentKeywords = ['urgent', 'asap', 'emergency', 'critical', 'immediately'];
-    const dataKeywords = ['show', 'report', 'analysis', 'metrics', 'performance'];
-    
-    const isUrgent = urgentKeywords.some(word => query.toLowerCase().includes(word));
-    const isDataRequest = dataKeywords.some(word => query.toLowerCase().includes(word));
-
-    return `- Query type: ${isDataRequest ? 'Data/Reporting' : 'Advisory'} ${isUrgent ? '(URGENT)' : ''}
-- Intent: ${isDataRequest ? 'User wants specific data or analysis' : 'User seeks expert guidance'}
-- Complexity: ${query.length > 100 ? 'Complex' : 'Standard'}`;
+    // Advanced analysis can be done here. For now, just returning the query.
+    return query;
   }
 
-  // Helper methods for data calculations
-  private calculateFrequentActions(activity: any[]): string[] {
-    return ['chat', 'dashboard', 'reports'];
+  private calculateFrequentActions(): string[] {
+    // This is a placeholder. In a real scenario, you'd analyze activity logs.
+    return ['viewed dashboard', 'ran report', 'updated settings'];
   }
 
-  private calculateSessionDuration(activity: any[]): number {
-    return 1800; // 30 minutes in seconds
+  private calculateSessionDuration(): number {
+    // Placeholder for session duration calculation
+    return 15; // in minutes
   }
 
   private getDefaultUserContext(userId: string): EnhancedUserContext {
@@ -884,11 +928,24 @@ These documents are searchable and can be referenced in responses. The AI can pu
     };
   }
 
-  private formatDepartmentData(department: string, data: any): string {
+  private formatDepartmentData(
+    department: string,
+    data: DepartmentData[keyof DepartmentData] | {},
+  ): string {
+    if (!data || Object.keys(data).length === 0) {
+      return `No data available for ${department}.`;
+    }
+    // Simple JSON.stringify for now, can be improved with custom formatters
     return JSON.stringify(data, null, 2);
   }
 
-  private extractRelevantData(data: any, query: string): string {
+  private extractRelevantData(
+    data: DepartmentData[keyof DepartmentData] | {},
+    query: string,
+  ): string {
+    if (!data || Object.keys(data).length === 0) {
+      return 'No specific data relates to the query.';
+    }
     // Simple keyword matching for relevance
     const queryLower = query.toLowerCase();
     
@@ -904,33 +961,23 @@ These documents are searchable and can be referenced in responses. The AI can pu
   }
 
   private preloadDepartmentData(): Promise<void> {
-    // Pre-load demo data
-    this.departmentData = {
-      sales: this.getDemoData('sales'),
-      marketing: this.getDemoData('marketing'),
-      finance: this.getDemoData('finance'),
-      operations: this.getDemoData('operations')
-    };
+    // Proactively fetch data for key departments
     return Promise.resolve();
   }
 
-  /**
-   * Generate deep personalization insights based on user profile
-   */
-  private generatePersonalizationInsights(): string {
-    if (!this.userContext) return '';
+  public generatePersonalizationInsights(): string {
+    if (!this.userContext) return 'Not enough data for personalization.';
+    
+    const insights = [
+      `• Expertise Assessment: ${this.assessUserExpertise()}`,
+      `• Communication Approach: ${this.determineCommunicationApproach()}`,
+      `• Problem-Solving Style: ${this.identifyProblemSolvingStyle()}`,
+      `• Key Focus Areas: ${this.identifyBusinessFocusAreas().join(', ')}`,
+      `• Automation Opportunities: ${this.identifyAutomationOpportunities().join(', ')}`,
+      `• Success Likelihood: ${this.assessSuccessLikelihood()}`
+    ];
 
-    const expertise = this.assessUserExpertise();
-    const communicationApproach = this.determineCommunicationApproach();
-    const problemSolvingStyle = this.identifyProblemSolvingStyle();
-    const focusAreas = this.identifyBusinessFocusAreas();
-
-    return `• Expertise Assessment: ${expertise}
-• Communication Approach: ${communicationApproach}
-• Problem-Solving Style: ${problemSolvingStyle}
-• Key Focus Areas: ${focusAreas.join(', ')}
-• Automation Opportunities: ${this.identifyAutomationOpportunities().join(', ')}
-• Success Likelihood: ${this.assessSuccessLikelihood()}`;
+    return insights.join('\n');
   }
 
   /**
@@ -995,7 +1042,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
   /**
    * Generate department-specific recommendations
    */
-  private generateDepartmentRecommendations(department: string, query: string): string {
+  private generateDepartmentRecommendations(department: string): string {
     if (!this.userContext) return '';
 
     const automationLevel = this.userContext.business_context.automation_maturity;
@@ -1109,7 +1156,6 @@ These documents are searchable and can be referenced in responses. The AI can pu
   private identifyAutomationOpportunities(): string[] {
     if (!this.userContext) return [];
     
-    const maturity = this.userContext.business_context.automation_maturity;
     const painPoints = this.userContext.profile.current_pain_points;
     
     const opportunities = [];

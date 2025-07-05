@@ -4,24 +4,24 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Cloud, 
-  FileText, 
-  Folder, 
-  RefreshCw, 
-  CheckCircle, 
+import {
+  Cloud,
+  FileText,
+  RefreshCw,
+  CheckCircle,
   AlertCircle,
-  Download,
-  Settings,
   Eye,
-  Zap
+  Zap,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Switch } from '@/components/ui/Switch';
-import { Progress } from '@/components/ui/Progress';
-import { useToast } from '@/components/ui/Toast';
+import {
+  Card,
+  CardContent,
+  Button,
+  Badge,
+  Progress,
+  Switch,
+  useToast,
+} from '@/components/ui';
 import { googleDriveService } from '@/lib/services/googleDriveService';
 import { oneDriveService } from '@/lib/services/oneDriveService';
 
@@ -141,7 +141,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
       try {
         toast({
           title: "Syncing Documents",
-          description: `Processing ${provider.name} documents...`
+          description: `Processing ${provider.name} documents...`,
         });
 
         const result = await provider.service.triggerSync();
@@ -156,12 +156,18 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
         ));
 
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
         console.error(`Failed to sync ${provider.name}:`, error);
         results.push({ 
           provider: provider.name, 
           success: false, 
           processed: 0, 
-          errors: [error.message] 
+          errors: [errorMessage] 
+        });
+        toast({
+          title: `Sync Error: ${provider.name}`,
+          description: errorMessage,
+          variant: 'destructive'
         });
       }
     }
@@ -244,7 +250,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
                   )}
                   <Switch
                     checked={provider.enabled}
-                    onCheckedChange={(checked) => toggleProvider(provider.id, checked)}
+                    onCheckedChange={(checked: boolean) => toggleProvider(provider.id, checked)}
                     disabled={!provider.connected}
                   />
                 </div>

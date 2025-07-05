@@ -22,7 +22,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnboardingChatStore } from '@/lib/stores/onboardingChatStore';
-import { chatHistory } from '@/lib/supabase';
+import { chatHistory } from '../../lib/core/supabase';
 import { upsertOnboardingProfile } from '@/lib/services/profileService';
 
 // Define a structured user profile for onboarding
@@ -393,15 +393,6 @@ ONBOARDING CONTEXT:
 
 You are Nex, their Executive Assistant with access to real business tools and data. Be warm, professional, and genuinely interested.
 Ask thoughtful follow-up questions.
-
-CURRENT TASK: ${currentOnboardingStep?.description}.
-
-IMPORTANT - INFORMATION EXTRACTION:
-- As the user provides information, extract it to fill their profile.
-- Look for any information that fills the following fields we still need: ${getNextEmptyFields().join(', ')}
-- After extracting information, you should update their profile with what you've learned.
-- Never ask for information they've already provided.
-- If they provide information for future steps, collect it, update their profile, and continue naturally.
 
 To help me track what you've learned, please include a structured JSON block at the end of your message like this:
 \`\`\`json

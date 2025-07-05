@@ -10,6 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { googleWorkspaceService } from '@/lib/services/googleWorkspaceService';
 import { CheckCircle, AlertCircle, Loader2, HardDrive, Calendar } from 'lucide-react';
+import { unifiedInboxService } from '@/lib/services/unifiedInboxService';
+import { supabase } from '@/lib/core/supabase';
 
 const GoogleWorkspaceCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -39,8 +41,49 @@ const GoogleWorkspaceCallback: React.FC = () => {
         // Exchange code for tokens
         await googleWorkspaceService.exchangeCodeForTokens(code);
         
+        // Fetch Google user profile
+        const profile = await googleWorkspaceService.makeAuthenticatedRequest('https://www.googleapis.com/oauth2/v2/userinfo');
+        if (!profile?.email) throw new Error('Could not fetch Google account email.');
+
+        // Get Supabase user and company_id
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('company_id')
+          .eq('id', user.id)
+          .single();
+        if (!userProfile?.company_id) throw new Error('User company not found');
+
+        // Upsert into ai_email_accounts
+        let account;
+        try {
+          account = await unifiedInboxService.addEmailAccount({
+            email_address: profile.email,
+            display_name: profile.name || profile.email,
+            provider: 'gmail',
+            sync_frequency: '15min',
+            ai_priority_enabled: true,
+            ai_summary_enabled: true,
+            ai_suggestions_enabled: true,
+            ai_auto_categorize_enabled: false,
+          });
+        } catch (err) {
+          setStatus('error');
+          setMessage('Failed to save Google account: ' + (err.message || err));
+          return;
+        }
+
+        // Start sync job
+        try {
+          await unifiedInboxService.startEmailSync(account.id, 'full_sync');
+        } catch (err) {
+          // Not fatal, but log error
+          console.error('Failed to start sync for Google account', err);
+        }
+        
         setStatus('success');
-        setMessage('Google Workspace connected successfully!');
+        setMessage('Google Workspace connected and account registered!');
 
         // Close popup if this is in a popup window
         if (window.opener) {

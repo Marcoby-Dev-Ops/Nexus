@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Brain, Lightbulb, Target, BookOpen, Tag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { thoughtsService } from '@/lib/services/thoughtsService';
 
 /**
@@ -54,6 +54,21 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
 
     setLoading(true);
     try {
+      // ---- Check for similar thoughts first (Smart Deduplication) ----
+      const dedupResult = await supabase.functions.invoke('trigger-n8n-workflow', {
+        body: {
+          workflow_name: 'smart_thought_deduplication',
+          content: content.trim(),
+          user_id: user.id,
+          company_id: user.company_id,
+          category: category,
+          context: currentContext
+        },
+      });
+
+      // If deduplication found matches, it will create an action card for user approval
+      // For now, we'll continue with creation (future: wait for user decision)
+      
       // ---- Map capture category to thoughts table schema ----
       const categoryMap: Record<string, 'idea' | 'task' | 'update' | 'reminder'> = {
         idea: 'idea',
@@ -90,7 +105,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       
       console.log('Personal thought saved with business context:', currentContext);
 
-      // Fire-and-forget embedding creation (no await to keep UI snappy)
+      // Fire-and-forget AI processing (no await to keep UI snappy)
       if (inserted?.id) {
         // Fire embedding
         supabase.functions.invoke('ai_embed_thought', {
@@ -102,7 +117,21 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
           console.error('Failed to invoke ai_embed_thought:', err);
         });
 
-        // Trigger suggestion generation (integration-aware)
+        // Trigger n8n Intelligent Thought Processor workflow
+        supabase.functions.invoke('trigger-n8n-workflow', {
+          body: {
+            workflow_name: 'intelligent_thought_processor',
+            thought_id: inserted.id,
+            user_id: user.id,
+            company_id: user.company_id,
+            trigger_source: 'thought_creation',
+            context: currentContext
+          },
+        }).catch((err) => {
+          console.error('Failed to trigger intelligent thought processor:', err);
+        });
+
+        // Legacy: Trigger suggestion generation (integration-aware) - will be replaced by n8n
         supabase.functions.invoke('ai_generate_thought_suggestions', {
           body: { thoughtId: inserted.id },
         }).catch((err) => {

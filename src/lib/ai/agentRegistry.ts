@@ -1098,4 +1098,17 @@ Always consider security, performance, and maintainability in your recommendatio
 };
 
 // Add to specialist agents array
-specialistAgents.push(apiIntegrationSpecialist); 
+specialistAgents.push(apiIntegrationSpecialist);
+
+// centralizedAppsOrchestrator.registerFrameProcessor((frame: Frame) => {
+//   // TODO: Fix this when FrameProcessor type is available
+//   console.log('Processing frame:', frame);
+// });
+
+/**
+ * Get all agents
+ * @returns {Agent[]} All available agents
+ */
+export const getAllAgents = () => {
+  return agentRegistry;
+}; 

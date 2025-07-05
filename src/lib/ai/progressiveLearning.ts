@@ -5,7 +5,7 @@
  * through conversation analysis, behavioral patterns, and contextual data collection.
  */
 
-import { supabase } from './supabase';
+import { supabase } from './core/supabase';
 import type { Agent } from './agentRegistry';
 
 export interface BusinessGoals {

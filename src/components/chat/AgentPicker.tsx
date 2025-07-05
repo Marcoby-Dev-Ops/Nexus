@@ -1,6 +1,6 @@
 import React from 'react';
-import { getAgentsByType } from '@/lib/agentRegistry';
-import type { Agent } from '@/lib/agentRegistry';
+import { getAgentsByType } from '@/lib/ai/agentRegistry';
+import type { Agent } from '@/lib/ai/agentRegistry';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem, SelectGroup, SelectLabel } from '@/components/ui/Select';
 
 interface Props {

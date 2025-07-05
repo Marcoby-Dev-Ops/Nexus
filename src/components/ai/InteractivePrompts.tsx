@@ -207,21 +207,6 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
 
   // ====== Thought Creation ======
   
-  const categorizeContent = (content: string): ThoughtCategory => {
-    const lowerContent = content.toLowerCase();
-    
-    if (lowerContent.includes('task') || lowerContent.includes('todo') || lowerContent.includes('action')) {
-      return 'task';
-    }
-    if (lowerContent.includes('remind') || lowerContent.includes('remember') || lowerContent.includes('deadline')) {
-      return 'reminder';
-    }
-    if (lowerContent.includes('update') || lowerContent.includes('progress') || lowerContent.includes('status')) {
-      return 'update';
-    }
-    return 'idea';
-  };
-
   const submitThought = async () => {
     if (!inputState.content.trim()) return;
     
@@ -229,13 +214,10 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
     setError(null);
     
     try {
-      const category = categorizeContent(inputState.content);
-      
       const thought = await thoughtsService.createThought({
         content: inputState.content,
-        category,
         interaction_method: inputState.method,
-        status: category === 'idea' ? 'concept' : 'not_started'
+        status: 'not_started'
       });
       
       // Reset form

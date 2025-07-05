@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { googleAnalyticsService } from '@/lib/services/googleAnalyticsService';
+import { callEdgeFunction } from '@/lib/services/supabaseFunctions';
 import type { 
   UseSecondBrainReturn,
   SecondBrainContext,
@@ -141,26 +142,20 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
   const loadSlackData = async (): Promise<IntegrationDataPoint | null> => {
     try {
-      const response = await fetch('/api/integrations/slack/activity', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const data = await callEdgeFunction<any>('slack_metrics');
 
-      if (!response.ok) return null;
-
-      const data = await response.json();
       return {
         source: 'slack',
         type: 'activity',
         value: {
-          messagesCount: data.messagesCount || 0,
-          activeUsers: data.activeUsers || 0,
-          channels: data.channels || 0,
-          responseTime: data.avgResponseTime || 0
+          messagesCount: data?.messagesCount || 0,
+          activeUsers: data?.activeUsers || 0,
+          channels: data?.channels || 0,
+          responseTime: data?.avgResponseTime || 0,
         },
         timestamp: new Date().toISOString(),
-        metadata: { period: '24h', workspaceId: data.workspaceId },
-        relevanceScore: 0.7
+        metadata: { period: '24h', workspaceId: data?.workspaceId },
+        relevanceScore: 0.7,
       };
     } catch (error) {
       console.warn('Failed to load Slack data:', error);
@@ -170,26 +165,20 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
   const loadHubSpotData = async (): Promise<IntegrationDataPoint | null> => {
     try {
-      const response = await fetch('/api/integrations/hubspot/metrics', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const data = await callEdgeFunction<any>('hubspot_metrics');
 
-      if (!response.ok) return null;
-
-      const data = await response.json();
       return {
         source: 'hubspot',
         type: 'crm',
         value: {
-          newContacts: data.newContacts || 0,
-          deals: data.deals || 0,
-          dealValue: data.totalDealValue || 0,
-          conversionRate: data.conversionRate || 0
+          newContacts: data?.newContacts || 0,
+          deals: data?.deals || 0,
+          dealValue: data?.totalDealValue || 0,
+          conversionRate: data?.conversionRate || 0,
         },
         timestamp: new Date().toISOString(),
-        metadata: { period: '7d', portalId: data.portalId },
-        relevanceScore: 0.8
+        metadata: { period: '7d', portalId: data?.portalId },
+        relevanceScore: 0.8,
       };
     } catch (error) {
       console.warn('Failed to load HubSpot data:', error);
@@ -199,26 +188,20 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
   const loadStripeData = async (): Promise<IntegrationDataPoint | null> => {
     try {
-      const response = await fetch('/api/integrations/stripe/metrics', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      const data = await callEdgeFunction<any>('stripe_metrics');
 
-      if (!response.ok) return null;
-
-      const data = await response.json();
       return {
         source: 'stripe',
         type: 'financial',
         value: {
-          revenue: data.revenue || 0,
-          transactions: data.transactions || 0,
-          customers: data.customers || 0,
-          mrr: data.mrr || 0
+          revenue: data?.revenue || 0,
+          transactions: data?.transactions || 0,
+          customers: data?.customers || 0,
+          mrr: data?.mrr || 0,
         },
         timestamp: new Date().toISOString(),
-        metadata: { period: '30d', currency: data.currency || 'usd' },
-        relevanceScore: 0.95
+        metadata: { period: '30d', currency: data?.currency || 'usd' },
+        relevanceScore: 0.95,
       };
     } catch (error) {
       console.warn('Failed to load Stripe data:', error);

@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/core/prisma';
 import { modelService } from '@/lib/services/modelService';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/core/supabase';
 
 interface ModelConfig {
   model: string;
@@ -77,7 +77,7 @@ const MODEL_CONFIGS: Record<string, ModelConfig> = {
   }
 };
 
-class ModelManager {
+export class ModelManager {
   private openRouter: OpenRouter;
   private performanceCache: Map<string, ModelPerformance>;
   private costTracker: Map<string, number>;
