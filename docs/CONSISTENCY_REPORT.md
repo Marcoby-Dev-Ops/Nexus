@@ -125,10 +125,10 @@
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 4
 
-#### `src/components/workspace/MyWorkspace.tsx`
+#### `src/pages/WorkspacePage.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 62
+   - Lines: 25
 
 #### `src/components/workspace/CalendarOverview.tsx`
 

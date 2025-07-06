@@ -22,16 +22,15 @@ The `UnifiedLayout` component serves as the primary layout wrapper for the entir
 - User profile and context
 - Responsive design for all devices
 
-### 2. Workspace Hub (`MyWorkspace.tsx`)
+### 2. Workspace Hub (`WorkspacePage.tsx`)
 
-The `MyWorkspace` component serves as the personalized central hub for each user, featuring:
+The `WorkspacePage` component serves as the personalized central hub for each user, featuring a dynamic, widget-based dashboard that includes:
 
-- Personalized welcome and metrics
-- Quick access to frequently used tools
-- Recent activities across departments
-- Upcoming tasks and deadlines
-- Pinned items for quick access
-- AI-powered suggestions
+- AI-driven insights and proactive alerts
+- A comprehensive calendar view
+- Task and idea management
+- A unified inbox for communications
+- Quick access to recent and favorite items
 
 ### 3. Feature Registry (`featureRegistry.tsx`)
 
@@ -181,7 +180,7 @@ graph TD
             E1[Navigation Bar]
             E2[Breadcrumbs]
             E3[User Profile]
-            F1[MyWorkspace]
+            F1[WorkspacePage]
             F2[FeatureExplorer]
             F3[Department Pages]
             F4[Settings Pages]

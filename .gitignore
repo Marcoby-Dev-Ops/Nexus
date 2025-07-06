@@ -55,3 +55,6 @@ mcp.json
 *.backup
 *.old
 *~
+
+*storybook.log
+storybook-static

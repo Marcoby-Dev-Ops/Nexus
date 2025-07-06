@@ -27,14 +27,6 @@ model Company {
   employee_count  Int?
   followers_count Int?
   microsoft_365   Json?
-
-  // New "Business OS" fields
-  duns_number                 String?
-  business_phone              String?
-  inventory_management_system String?
-  business_licenses           Json?
-  client_base_description     String?
-
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
@@ -89,9 +81,8 @@ model User {
   varLeads     VARLead[]
   modelUsages  ModelUsage[]
   responses    AssessmentResponse[]
-
-  recents      Recent[]
-  pins         Pin[]
+  Pin          Pin[]
+  Thought      Thought[]
 }
 
 model Account {
@@ -254,43 +245,42 @@ model AIModel {
 // V1 Assessment Framework
 
 model AssessmentCategory {
-  id     String @id // e.g., 'SA'
-  name   String // e.g., 'Sales'
-  goal   String
-  weight Int
-
-  questions AssessmentQuestion[]
-  scores    AssessmentCategoryScore[]
+  id                      String                    @id // e.g., 'SA'
+  name                    String                    @unique
+  goal                    String
+  weight                  Int
+  questions               AssessmentQuestion[]
+  AssessmentCategoryScore AssessmentCategoryScore[]
 }
 
 model AssessmentQuestion {
-  id                String @id // e.g., 'SA-01'
-  prompt            String
-  question_type     String // 'bool', 'number', 'enum'
-  options           Json? // For enum: { "Zendesk": 100, "Freshdesk": 70, "None": 0 }
-  thresholds        Json? // For number: { "bands": [{ "min": 90, "score": 100 }, ...] }
-  integration_check String
-  marcovy_angle     String
+  id                  String                @id @default(cuid())
+  category_id         String
+  prompt              String
+  question_type       String
+  options             Json?
+  integration_check   String?
+  marcovy_angle       String?
+  action_type         String?
+  target_field        String?
+  created_at          DateTime              @default(now())
+  updated_at          DateTime              @updatedAt
 
-  category_id String
-  category    AssessmentCategory @relation(fields: [category_id], references: [id])
-
-  responses  AssessmentResponse[]
-  offer_slug String?
-  offer      Offer?               @relation(fields: [offer_slug], references: [slug])
+  category            AssessmentCategory    @relation(fields: [category_id], references: [id])
+  offer_id            String?
+  offer               Offer?                @relation(fields: [offer_id], references: [id])
+  responses           AssessmentResponse[]
 }
 
 model AssessmentResponse {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   company_id  String
   question_id String
   user_id     String
-
-  value String
-  score Int
-
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  value       String
+  score       Int
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
   company       Company            @relation(fields: [company_id], references: [id], onDelete: Cascade)
   question      AssessmentQuestion @relation(fields: [question_id], references: [id], onDelete: Cascade)
@@ -302,10 +292,9 @@ model AssessmentResponse {
 }
 
 model AssessmentCategoryScore {
-  id          String @id @default(uuid())
-  company_id  String
-  category_id String
-
+  id            String   @id @default(uuid())
+  company_id    String
+  category_id   String
   score         Int
   calculated_at DateTime @updatedAt
 
@@ -316,45 +305,114 @@ model AssessmentCategoryScore {
 }
 
 model AssessmentSummary {
-  id                   String   @id @default(uuid())
-  company_id           String   @unique
-  overall_score        Int
-  needs_attention_cats String[]
-  calculated_at        DateTime @updatedAt
-
-  company Company @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  id                      String   @id @default(uuid())
+  company_id              String   @unique
+  overall_score           Float
+  category_scores_summary Json
+  last_updated            DateTime @updatedAt
+  company                 Company  @relation(fields: [company_id], references: [id])
 }
 
 model Offer {
-  slug     String @id
-  solution String
-  division String
-
-  questions AssessmentQuestion[]
-}
-
-model Recent {
-  id         String   @id @default(uuid())
-  userId     String
-  entityType String
-  entityId   String
-  viewedAt   DateTime @default(now())
-
-  user       User     @relation(fields: [userId], references: [id])
-
-  @@index([userId, entityType, entityId])
-  @@index([entityType, entityId])
+  id          String    @id @default(cuid())
+  solution    String
+  division    String
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  
+  questions   AssessmentQuestion[]
 }
 
 model Pin {
   id         String   @id @default(uuid())
   userId     String
-  entityType String
-  entityId   String
-  pinnedAt   DateTime @default(now())
+  entityId   String // e.g., document ID, chat ID
+  entityType String // e.g., 'document', 'chat'
+  createdAt  DateTime @default(now())
 
-  user       User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+}
 
-  @@index([userId, entityType, entityId])
-  @@index([entityType, entityId])
+// ===============================================
+// THINK Module
+// ===============================================
+
+model Thought {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String
+  status    String   @default("new") // e.g., new, processing, completed, archived
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id])
+  sources ThoughtSource[]
+}
+
+model ThoughtSource {
+  id        String   @id @default(uuid())
+  thoughtId String
+  source    String // e.g., "Slack", "Email", "Manual Entry"
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  thought Thought @relation(fields: [thoughtId], references: [id])
+}
+
+// ===============================================
+// SEE Module
+// ===============================================
+
+model Metric {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  source      String? // e.g., "Stripe", "Google Analytics", "Manual"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  dataPoints MetricDataPoint[]
+}
+
+model MetricDataPoint {
+  id        String   @id @default(uuid())
+  metricId  String
+  value     Float
+  timestamp DateTime
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  metric Metric @relation(fields: [metricId], references: [id])
+}
+
+// ===============================================
+// ACT Module
+// ===============================================
+
+model Workflow {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  trigger     String // e.g., "manual", "schedule", "webhook"
+  config      Json // n8n workflow definition or similar
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  runs WorkflowRun[]
+}
+
+model WorkflowRun {
+  id         String    @id @default(uuid())
+  workflowId String
+  status     String // e.g., "running", "completed", "failed"
+  output     Json?
+  startedAt  DateTime  @default(now())
+  endedAt    DateTime?
+
+  workflow Workflow @relation(fields: [workflowId], references: [id])
+}
+
+model Recent {
+  id String @id @default(uuid())
+  // ... existing code ...
 }

@@ -56,12 +56,9 @@ Total Reduction: 1,776 lines → ~200 lines (89% reduction)
 ✅ AFTER: 1 UnifiedCallbackPage + config
 
 Files to Consolidate:
-- src/pages/Microsoft365Callback.tsx (183 lines)
-- src/pages/NinjaRmmCallback.tsx (190 lines)
-- src/pages/GoogleWorkspaceCallback.tsx (147 lines)
 - src/pages/AuthCallback.tsx (199 lines)
 
-Total Reduction: 719 lines → ~80 lines (89% reduction)
+Total Reduction: 199 lines → ~80 lines (59% reduction)
 ```
 
 ---
@@ -173,7 +170,7 @@ export const microsoft365CallbackConfig: CallbackPageConfig = {
 ```
 Department Pages: 969 → 100 lines (-90%)
 Settings Pages:   1,776 → 200 lines (-89%)  
-Callback Pages:   719 → 80 lines (-89%)
+Callback Pages:   199 → 80 lines (-59%)
 Analytics Pages:  800 → 150 lines (-81%)
 
 TOTAL: 4,264 → 530 lines (-88% reduction)
