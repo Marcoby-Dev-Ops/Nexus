@@ -69,6 +69,12 @@
     --gray-alt-foreground: 0 0% 100%;
     --tertiary: 156 100% 28%;   /* #008f4c */
     --tertiary-foreground: 0 0% 100%;
+
+    --blue: 221.2 83.2% 53.3%;
+    --green: 142.1 76.2% 36.3%;
+    --orange: 24.6 95% 53.1%;
+    --red: 0 84.2% 60.2%;
+    --purple: 262.1 83.3% 57.8%;
   }
 
   .dark {
@@ -104,8 +110,8 @@
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
     --border: 160 15% 20%;
-    --input: 160 15% 20%;
-    --ring: 148 100% 33%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 215 20.2% 65.1%;
     
     /* Extended UI state colors - dark mode */
     --primary-subtle: 145 100% 8%;     /* Very dark primary for backgrounds */

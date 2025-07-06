@@ -8,6 +8,7 @@ import { ToastProvider } from './components/ui/Toast';
 import { initializeStorageCleanup } from './lib/utils/storageUtils';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './index.css';
+import './lib/i18n';
 
 // Initialize localStorage cleanup to prevent JSON parsing errors
 initializeStorageCleanup();
@@ -38,7 +39,7 @@ console.error = (...args) => {
 // Configure Lit for better Microsoft Graph Toolkit compatibility
 if (import.meta.env.PROD) {
   // Set production environment for Lit components
-  (window as any).process = { env: { NODE_ENV: 'production' } };
+  window.process = { env: { NODE_ENV: 'production' } };
 } else {
   // In development, suppress Lit warnings but keep functionality
   console.warn = (...args) => {
