@@ -8,12 +8,16 @@
  */
 
 import { thoughtsService } from './thoughtsService';
+import { supabase } from '../core/supabase';
 import type { Thought, CreateThoughtRequest } from '../types/thoughts';
 
 export interface Idea {
   id: string;
   text: string;
   date: string; // This will be a formatted string for display
+  category?: string; // New property for categorizing ideas
+  priority?: 'high' | 'medium' | 'low'; // New property for priority
+  estimatedImpact?: string; // New property for estimated impact
 }
 
 const mapThoughtToIdea = (thought: Thought): Idea => ({
@@ -21,6 +25,10 @@ const mapThoughtToIdea = (thought: Thought): Idea => ({
   text: thought.content,
   // A simple date formatting for now. Can be improved with a library like date-fns.
   date: new Date(thought.created_at).toLocaleDateString(),
+  category: thought.main_sub_categories?.[0] || 'general',
+  priority: thought.main_sub_categories?.includes('high_priority') ? 'high' : 
+           thought.main_sub_categories?.includes('medium_priority') ? 'medium' : 'low',
+  estimatedImpact: thought.ai_insights?.estimatedImpact as string || undefined,
 });
 
 class IdeasService {
@@ -30,24 +38,19 @@ class IdeasService {
    * @returns {Promise<Idea[]>} A promise that resolves to an array of ideas.
    */
   async getIdeas(): Promise<Idea[]> {
-    const { data: { user } } = await import('../core/supabase').then(m => m.supabase.auth.getUser());
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
 
-    const { data: thoughts, error } = await import('../core/supabase').then(m => m.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('category', 'idea')
-        .order('created_at', { ascending: false })
-    );
-    
-    if (error) {
-      throw new Error(`Failed to get ideas: ${error.message}`);
+    const { thoughts: allThoughts } = await thoughtsService.getThoughts({ category: ['idea'] });
+    if (!allThoughts) {
+      return [];
     }
 
-    return thoughts.map(mapThoughtToIdea);
+    const userIdeas = allThoughts.filter(t => t.user_id === user?.id);
+
+    return userIdeas.map(mapThoughtToIdea);
   }
 
   /**

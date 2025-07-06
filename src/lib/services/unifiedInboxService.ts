@@ -685,116 +685,6 @@ class UnifiedInboxService {
   }
 
   /**
-   * Automatically sets up an Office 365 email account after OAuth.
-   * Now requires an organization ID.
-   * Pillar: 1, 2
-   */
-  async autoSetupOffice365Account(orgId: string): Promise<EmailAccount | null> {
-    if (!orgId) {
-      const err = new Error('Organization ID is required to set up an Office 365 account.');
-      logger.error({ error: err }, 'autoSetupOffice365Account called without orgId.');
-      throw err;
-    }
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated for Office 365 setup.');
-      
-      // Import the microsoftGraphService dynamically to avoid circular dependencies
-      const { microsoftGraphService } = await import('./microsoftGraphService');
-      
-      // Initialize Microsoft Graph service
-      const initialized = microsoftGraphService.initialize();
-      if (!initialized) {
-        throw new Error('Failed to initialize Microsoft Graph service');
-      }
-      
-      // Check if we're connected to Microsoft Graph
-      const isConnected = microsoftGraphService.isConnected();
-      if (!isConnected) {
-        throw new Error('Not connected to Microsoft Graph. Please connect first.');
-      }
-      
-      // Get user profile from Microsoft Graph
-      const profile = await microsoftGraphService.getCurrentUser();
-      if (!profile) {
-        throw new Error('Failed to get Microsoft Graph user profile');
-      }
-      
-      const emailAddress = profile.mail || profile.userPrincipalName;
-      if (!emailAddress) {
-        throw new Error('No email address found in Microsoft Graph profile');
-      }
-
-      // Check if an account already exists for this user and organization
-      const { data: existingAccount, error: existingError } = await supabase
-        .from('ai_email_accounts')
-        .select('id')
-        .eq('email_address', emailAddress)
-        .eq('company_id', orgId) // Use the orgId for the check
-        .eq('provider', 'outlook')
-        .maybeSingle();
-
-      if (existingError) {
-        logger.error({ error: existingError }, 'Error checking for existing Office 365 account.');
-        throw existingError;
-      }
-      
-      if (existingAccount) {
-        logger.info({ userId: user.id, orgId }, 'Office 365 account already exists for this user and organization.');
-        // Trigger a fresh sync for the existing account as well
-        try {
-          await this.startEmailSync(existingAccount.id, 'full_sync');
-        } catch (syncErr) {
-          logger.error({ error: syncErr }, 'Failed to start sync for existing Office 365 account');
-        }
-        return existingAccount as EmailAccount;
-      }
-      
-      const newAccount: Partial<EmailAccount> = {
-        user_id: user.id,
-        company_id: orgId,
-        email_address: emailAddress,
-        display_name: profile.displayName || emailAddress,
-        provider: 'outlook',
-        sync_enabled: true,
-        sync_status: 'pending',
-        ai_priority_enabled: true,
-        ai_summary_enabled: true,
-        ai_suggestions_enabled: true,
-        ai_auto_categorize_enabled: false,
-        sync_frequency: '15min',
-      };
-
-      const { data: createdAccount, error: insertError } = await supabase
-        .from('ai_email_accounts')
-        .insert(newAccount)
-        .select()
-        .single();
-      
-      if (insertError) {
-        logger.error({ error: insertError, email: emailAddress }, 'Failed to insert new Office 365 email account');
-        throw insertError;
-      }
-
-      logger.info({ accountId: createdAccount.id, orgId }, 'Successfully created Office 365 email account.');
-
-      // Kick off first full sync immediately
-      try {
-        await this.startEmailSync(createdAccount.id, 'full_sync');
-      } catch (syncErr) {
-        logger.error({ error: syncErr }, 'Failed to start initial sync for new Office 365 account');
-      }
-
-      return createdAccount;
-
-    } catch (error) {
-      logger.error({ error }, 'Auto-setup for Office 365 account failed.');
-      throw error;
-    }
-  }
-
-  /**
    * Migrate existing Office 365 integrations to ai_email_accounts for the current user/org.
    * Upserts an account for each active 365 integration not already present in ai_email_accounts.
    * Triggers a sync job for each new account.
@@ -865,16 +755,6 @@ class UnifiedInboxService {
       
       console.log(`Found ${userIntegrations.length} integration(s) to process`);
 
-      // Import Microsoft Graph service early to handle initialization
-      const { microsoftGraphService } = await import('./microsoftGraphService');
-      let graphInitialized = false;
-      try {
-        graphInitialized = microsoftGraphService.initialize();
-        console.log('Microsoft Graph initialized:', graphInitialized);
-      } catch (err) {
-        console.warn('Failed to initialize Microsoft Graph:', err);
-      }
-
       for (const integ of userIntegrations) {
         console.log(`Processing integration ${integ.id}...`);
         
@@ -892,24 +772,6 @@ class UnifiedInboxService {
         }
         
         // If no email from credentials, try Microsoft Graph
-        if (!email && graphInitialized) {
-          try {
-            console.log('Trying to get email from Microsoft Graph...');
-            const isConnected = microsoftGraphService.isConnected();
-            console.log('Microsoft Graph connected:', isConnected);
-            
-            if (isConnected) {
-              const profile = await microsoftGraphService.getCurrentUser();
-              email = profile?.mail || profile?.userPrincipalName;
-              displayName = profile?.displayName;
-              console.log('Email from Graph:', email || 'Not found');
-            }
-          } catch (err) {
-            console.warn('Failed to get email from Microsoft Graph:', err);
-          }
-        }
-        
-        // Last resort: try to get from user profile
         if (!email) {
           email = user.email;
           console.log('Using user email as fallback:', email || 'Not available');

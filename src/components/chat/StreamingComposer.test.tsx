@@ -12,14 +12,12 @@ jest.mock('@/lib/services/slashCommandService', () => ({
 const mockSlashCommandService = slashCommandService as jest.Mocked<typeof slashCommandService>;
 
 describe('StreamingComposer', () => {
-  beforeAll(() => {
-    // Mock VITE_CHAT_V2 env
-    (import.meta as any).env = { ...import.meta.env, VITE_CHAT_V2: '1' };
-  });
+  const originalEnv = import.meta.env;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    
+    jest.resetModules();
+    (import.meta as any).env = { ...originalEnv, VITE_CHAT_V2: '1' };
+
     // Mock default commands
     mockSlashCommandService.getSlashCommands.mockResolvedValue([
       { slug: 'create-task', title: 'Create Task', description: 'Create a task in your PM tool', category: 'productivity' },

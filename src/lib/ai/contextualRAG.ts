@@ -864,7 +864,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
     return 15; // in minutes
   }
 
-  private getDefaultUserContext(userId: string): EnhancedUserContext {
+  private getDefaultUserContext(userId: string, companyId: string = 'default'): EnhancedUserContext {
     return {
       profile: {
         id: userId,
@@ -872,7 +872,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
         name: 'User',
         role: 'Team Member',
         department: 'General',
-        company_id: 'default',
+        company_id: companyId,
         permissions: [],
         preferences: {},
         experience_level: 'beginner',

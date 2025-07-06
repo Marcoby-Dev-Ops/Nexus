@@ -14,35 +14,67 @@ interface GoogleWorkspaceConfig {
   scope: string[];
 }
 
-interface GoogleWorkspaceMetrics {
-  // Gmail metrics
-  emailVolume: {
-    sent: number;
-    received: number;
-    unread: number;
+interface GmailThread {
+  id: string;
+  snippet: string;
+  historyId: string;
+}
+
+interface CalendarEvent {
+  id: string;
+  summary: string;
+  start: {
+    dateTime: string;
   };
-  
-  // Drive metrics
-  storage: {
-    used: number;
-    total: number;
-    fileCount: number;
-  };
-  
-  // Calendar metrics
-  meetings: {
-    total: number;
-    duration: number;
-    participants: number;
-  };
-  
-  // Business insights
-  productivity: {
-    activeUsers: number;
-    collaborationScore: number;
-    documentSharing: number;
+  end: {
+    dateTime: string;
   };
 }
+
+interface GmailProfile {
+  messagesTotal: number;
+}
+
+interface GmailThreads {
+  threads: GmailThread[];
+}
+
+interface DriveAbout {
+  storageQuota?: {
+    usage: string;
+    limit: string;
+  };
+}
+
+interface DriveFiles {
+  files: { id: string; name: string; size: string; mimeType: string }[];
+}
+
+interface Email {
+    id: string;
+    snippet: string;
+    payload: {
+        headers: { name: string, value: string }[]
+    }
+}
+
+interface CalendarListResponse {
+  items: CalendarEvent[];
+}
+
+interface SearchConsoleSites {
+  siteEntry: { siteUrl: string }[];
+}
+
+// GoogleEmail type for Gmail API responses
+export type GoogleEmail = {
+    id: string;
+    snippet: string;
+    labelIds: string[];
+    payload: {
+        headers: { name: string, value: string }[];
+    };
+};
 
 export class GoogleWorkspaceService {
   private config: GoogleWorkspaceConfig | null = null;
@@ -154,7 +186,7 @@ export class GoogleWorkspaceService {
   /**
    * Get comprehensive Google Workspace metrics
    */
-  async getWorkspaceMetrics(): Promise<GoogleWorkspaceMetrics> {
+  async getWorkspaceMetrics(): Promise<any> {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated with Google Workspace');
     }
@@ -183,18 +215,18 @@ export class GoogleWorkspaceService {
    * Get Gmail metrics
    */
   private async getGmailMetrics() {
-    const response = await this.makeAuthenticatedRequest(
+    const response = (await this.makeAuthenticatedRequest(
       'https://gmail.googleapis.com/gmail/v1/users/me/profile'
-    );
+    )) as GmailProfile;
 
-    const threadsResponse = await this.makeAuthenticatedRequest(
+    const threadsResponse = (await this.makeAuthenticatedRequest(
       'https://gmail.googleapis.com/gmail/v1/users/me/threads?maxResults=100'
-    );
+    )) as GmailThreads;
 
     return {
       sent: response.messagesTotal || 0,
       received: response.messagesTotal || 0,
-      unread: threadsResponse.threads?.filter((t: any) => t.snippet?.includes('UNREAD')).length || 0
+      unread: (threadsResponse.threads as GmailThread[])?.filter((t: GmailThread) => t.snippet?.includes('UNREAD')).length || 0
     };
   }
 
@@ -202,13 +234,13 @@ export class GoogleWorkspaceService {
    * Get Google Drive metrics
    */
   private async getDriveMetrics() {
-    const aboutResponse = await this.makeAuthenticatedRequest(
+    const aboutResponse = (await this.makeAuthenticatedRequest(
       'https://www.googleapis.com/drive/v3/about?fields=storageQuota,user'
-    );
+    )) as DriveAbout;
 
-    const filesResponse = await this.makeAuthenticatedRequest(
+    const filesResponse = (await this.makeAuthenticatedRequest(
       'https://www.googleapis.com/drive/v3/files?pageSize=1000&fields=files(id,name,size,mimeType)'
-    );
+    )) as DriveFiles;
 
     const quota = aboutResponse.storageQuota;
     
@@ -259,7 +291,7 @@ export class GoogleWorkspaceService {
   /**
    * Get Google Calendar events for a given time range
    */
-  async getCalendarEvents(timeMin: Date, timeMax: Date): Promise<any[]> {
+  async getCalendarEvents(timeMin: Date, timeMax: Date): Promise<CalendarEvent[]> {
     if (!this.isAuthenticated()) {
       throw new Error('Not authenticated with Google Workspace');
     }
@@ -269,11 +301,11 @@ export class GoogleWorkspaceService {
       timeMax: timeMax.toISOString(),
       singleEvents: 'true',
       orderBy: 'startTime',
-      maxResults: '20'
+      maxResults: '100'
     });
     
     const response = await this.makeAuthenticatedRequest(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`
+      `https://www.googleapis.com/v1/calendars/primary/events?${params.toString()}`
     );
 
     return response.items || [];
@@ -283,13 +315,13 @@ export class GoogleWorkspaceService {
    * Get business productivity metrics
    */
   private async getBusinessMetrics() {
-    // This would typically require admin access
-    // For now, return calculated metrics based on available data
-    
+    // These would make calls to Google My Business API, etc.
+    // For now, returning mock data
     return {
       activeUsers: 1, // Current user
       collaborationScore: 85, // Based on sharing activity
-      documentSharing: 45 // Based on Drive sharing
+      documentSharing: 45, // Based on Drive sharing
+      customerInteractions: 0
     };
   }
 
@@ -297,125 +329,43 @@ export class GoogleWorkspaceService {
    * Get Google My Business insights
    */
   async getBusinessProfileMetrics() {
-    if (!this.isAuthenticated()) {
-      throw new Error('Not authenticated with Google');
+    const response = await this.makeAuthenticatedRequest(
+      'https://mybusinessbusinessinformation.googleapis.com/v1/accounts'
+    );
+
+    if (!response.accounts || response.accounts.length === 0) {
+      return { locations: 0, reviews: 0, rating: 0 };
     }
 
-    try {
-      // Get business accounts
-      const accountsResponse = await this.makeAuthenticatedRequest(
-        'https://mybusinessbusinessinformation.googleapis.com/v1/accounts'
-      );
+    const accountName = response.accounts[0].name;
+    const locationsResponse = await this.makeAuthenticatedRequest(
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${accountName}/locations`
+    );
 
-      const accounts = accountsResponse.accounts || [];
-      if (accounts.length === 0) {
-        return null;
-      }
-
-      // Get locations for first account
-      const account = accounts[0];
-      const locationsResponse = await this.makeAuthenticatedRequest(
-        `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations`
-      );
-
-      return {
-        accounts: accounts.length,
-        locations: locationsResponse.locations?.length || 0,
-        businessInfo: locationsResponse.locations?.[0] || null
-      };
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to fetch Google Business Profile data');
-      return null;
-    }
-  }
-
-  /**
-   * Get Google Search Console data
-   */
-  async getSearchConsoleMetrics() {
-    if (!this.isAuthenticated()) {
-      throw new Error('Not authenticated with Google');
-    }
-
-    try {
-      // Get list of sites
-      const sitesResponse = await this.makeAuthenticatedRequest(
-        'https://www.googleapis.com/webmasters/v3/sites'
-      );
-
-      const sites = sitesResponse.siteEntry || [];
-      if (sites.length === 0) {
-        return null;
-      }
-
-      // Get search analytics for first site
-      const site = sites[0];
-      const endDate = new Date().toISOString().split('T')[0];
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      const analyticsResponse = await this.makeAuthenticatedRequest(
-        `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(site.siteUrl)}/searchAnalytics/query`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            startDate,
-            endDate,
-            dimensions: ['query'],
-            rowLimit: 100
-          })
-        }
-      );
-
-      return {
-        sites: sites.length,
-        totalClicks: analyticsResponse.rows?.reduce((sum: number, row: any) => sum + row.clicks, 0) || 0,
-        totalImpressions: analyticsResponse.rows?.reduce((sum: number, row: any) => sum + row.impressions, 0) || 0,
-        averageCTR: analyticsResponse.rows?.reduce((sum: number, row: any) => sum + row.ctr, 0) / (analyticsResponse.rows?.length || 1) || 0,
-        averagePosition: analyticsResponse.rows?.reduce((sum: number, row: any) => sum + row.position, 0) / (analyticsResponse.rows?.length || 1) || 0
-      };
-    } catch (error) {
-      logger.error({ err: error }, 'Failed to fetch Search Console data');
-      return null;
-    }
+    return {
+      locations: locationsResponse.locations?.length || 0,
+      reviews: 0, // Additional API calls needed for reviews
+      rating: 0
+    };
   }
 
   /**
    * Test connection to Google Workspace
    */
   async testConnection(): Promise<{ success: boolean; message: string; details?: any }> {
-    if (!this.isAuthenticated()) {
-      return { success: false, message: 'Not authenticated' };
-    }
-
     try {
-      // Test basic profile access
-      const profile = await this.makeAuthenticatedRequest(
-        'https://www.googleapis.com/oauth2/v2/userinfo'
-      );
-
-      // Test Gmail access
-      const gmailProfile = await this.makeAuthenticatedRequest(
-        'https://gmail.googleapis.com/gmail/v1/users/me/profile'
-      );
-
-      return {
-        success: true,
-        message: 'Successfully connected to Google Workspace',
-        details: {
-          user: profile.name || profile.email,
-          email: profile.email,
-          emailsTotal: gmailProfile.messagesTotal,
-          scopes: this.config?.scope || []
-        }
-      };
+      const metrics = await this.getWorkspaceMetrics();
+      if (metrics) {
+        return { success: true, message: 'Successfully connected to Google Workspace' };
+      } else {
+        return { success: false, message: 'Failed to fetch metrics, but no error thrown' };
+      }
     } catch (error) {
       logger.error({ err: error }, 'Google Workspace connection test failed');
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Connection test failed'
+      return { 
+        success: false, 
+        message: 'Connection test failed',
+        details: error instanceof Error ? error.message : String(error)
       };
     }
   }
@@ -425,28 +375,44 @@ export class GoogleWorkspaceService {
    */
   private async makeAuthenticatedRequest(url: string, options: RequestInit = {}): Promise<any> {
     if (!this.config?.accessToken) {
-      throw new Error('No access token available');
+      throw new Error('Not authenticated');
     }
 
-    const response = await fetch(url, {
+    let currentToken = this.config.accessToken;
+
+    const authOptions: RequestInit = {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.config.accessToken}`,
-        'Content-Type': 'application/json',
         ...options.headers,
-      },
-    });
+        'Authorization': `Bearer ${currentToken}`
+      }
+    };
+
+    let response = await fetch(url, authOptions);
 
     if (response.status === 401) {
-      // Token expired, try to refresh
       await this.refreshAccessToken();
+      currentToken = this.config.accessToken;
       
-      // Retry the request with new token
-      return this.makeAuthenticatedRequest(url, options);
+      // Retry request with new token
+      authOptions.headers = {
+        ...authOptions.headers,
+        'Authorization': `Bearer ${currentToken}`
+      };
+      response = await fetch(url, authOptions);
     }
-
+    
     if (!response.ok) {
-      throw new Error(`Google API request failed: ${response.status} ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      logger.error({
+        err: {
+          message: `API request failed: ${response.statusText}`,
+          status: response.status,
+          url,
+          errorData
+        }
+      }, 'Google Workspace API request failed');
+      throw new Error(`API request failed: ${response.statusText}`);
     }
 
     return response.json();
@@ -488,19 +454,57 @@ export class GoogleWorkspaceService {
   getAvailableServices(): string[] {
     if (!this.config?.scope) return [];
 
-    const services = [];
-    const scopes = this.config.scope;
+    const serviceMap: Record<string, string> = {
+      'gmail': 'Gmail',
+      'drive': 'Google Drive',
+      'calendar': 'Google Calendar',
+      'contacts': 'Google Contacts',
+      'business.manage': 'Google Business Profile',
+      'analytics': 'Google Analytics',
+      'webmasters': 'Google Search Console',
+      'admin.directory': 'Google Admin SDK'
+    };
+    
+    return this.config.scope
+      .map(s => {
+        const key = Object.keys(serviceMap).find(k => s.includes(k));
+        return key ? serviceMap[key] : null;
+      })
+      .filter((v, i, a) => v && a.indexOf(v) === i) as string[];
+  }
 
-    if (scopes.some(s => s.includes('gmail'))) services.push('Gmail');
-    if (scopes.some(s => s.includes('drive'))) services.push('Google Drive');
-    if (scopes.some(s => s.includes('calendar'))) services.push('Google Calendar');
-    if (scopes.some(s => s.includes('contacts'))) services.push('Google Contacts');
-    if (scopes.some(s => s.includes('business'))) services.push('Google My Business');
-    if (scopes.some(s => s.includes('analytics'))) services.push('Google Analytics');
-    if (scopes.some(s => s.includes('webmasters'))) services.push('Search Console');
-    if (scopes.some(s => s.includes('admin'))) services.push('Admin SDK');
+  /**
+   * Get recent emails from Gmail
+   */
+  async getEmails(limit = 10): Promise<GoogleEmail[]> {
+    const response = await this.makeAuthenticatedRequest(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${limit}`
+    );
 
-    return services;
+    const emailPromises = response.messages.map((msg: { id: string; }) =>
+      this.makeAuthenticatedRequest(
+        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`
+      )
+    );
+    
+    return Promise.all(emailPromises);
+  }
+
+  /**
+   * Mark a Gmail message as read by removing the UNREAD label
+   */
+  public async markEmailAsRead(emailId: string): Promise<void> {
+    if (!this.isAuthenticated()) {
+      throw new Error('Not authenticated with Google Workspace');
+    }
+    await this.makeAuthenticatedRequest(
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}/modify`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ removeLabelIds: ['UNREAD'] })
+      }
+    );
   }
 }
 

@@ -2,12 +2,10 @@
 
 exports[`Tooltip matches snapshot 1`] = `
 <DocumentFragment>
-  <div
-    class="relative inline-block"
+  <span
+    data-state="closed"
   >
-    <span>
-      Hover me
-    </span>
-  </div>
+    Hover me
+  </span>
 </DocumentFragment>
 `;

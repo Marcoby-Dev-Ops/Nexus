@@ -46,6 +46,12 @@ interface AnalyticsData {
   }>;
 }
 
+interface GoogleAnalyticsProperty {
+  name: string;
+  displayName: string;
+  websiteUrl?: string;
+}
+
 export class GoogleAnalyticsService {
   private config: GoogleAnalyticsConfig | null = null;
   private baseUrl = 'https://analyticsreporting.googleapis.com/v4';
@@ -147,7 +153,7 @@ export class GoogleAnalyticsService {
     }
 
     const data = await response.json();
-    return data.properties?.map((prop: any) => ({
+    return data.properties?.map((prop: GoogleAnalyticsProperty) => ({
       id: prop.name.split('/').pop(),
       name: prop.displayName,
       websiteUrl: prop.websiteUrl || '',
@@ -199,7 +205,7 @@ export class GoogleAnalyticsService {
   /**
    * Fetch comprehensive analytics data
    */
-  async getAnalyticsData(dateRange: 'last7Days' | 'last30Days' | 'last90Days' = 'last30Days'): Promise<AnalyticsData> {
+  async getAnalyticsData(): Promise<AnalyticsData> {
     if (!this.config?.propertyId || !this.config?.accessToken) {
       throw new Error('Not properly configured');
     }
@@ -237,7 +243,7 @@ export class GoogleAnalyticsService {
    */
   async testConnection(): Promise<{ success: boolean; message: string }> {
     try {
-      await this.getAnalyticsData('last7Days');
+      await this.getAnalyticsData();
       return { success: true, message: 'Successfully connected to Google Analytics' };
     } catch (error) {
       return { 

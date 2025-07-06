@@ -4,8 +4,8 @@
  * Ensures all user interactions are properly linked to their account
  */
 
-import { supabase } from './core/supabase';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import { supabase } from '../core/supabase';
+import type { User as SupabaseUser, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 export interface UnifiedUser {
   id: string;
@@ -25,11 +25,25 @@ export interface UnifiedUser {
   };
 }
 
+interface UserProfile {
+  id: string;
+  name: string;
+  avatar_url?: string;
+  role: 'admin' | 'user' | 'manager';
+  department?: string;
+  company?: string;
+  preferences?: {
+    theme: 'light' | 'dark' | 'system';
+    notifications: boolean;
+    language: string;
+  };
+}
+
 export interface AuthState {
   user: UnifiedUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  session: any;
+  session: Session | null;
 }
 
 class UnifiedAuthService {
@@ -63,7 +77,7 @@ class UnifiedAuthService {
       await this.handleAuthChange(session);
 
       // Listen for auth changes
-      supabase.auth.onAuthStateChange(async (event, session) => {
+      supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
         console.log('Auth state changed:', event, session?.user?.email);
         await this.handleAuthChange(session);
       });
@@ -77,7 +91,7 @@ class UnifiedAuthService {
   /**
    * Handle authentication state changes
    */
-  private async handleAuthChange(session: any) {
+  private async handleAuthChange(session: Session | null) {
     this.updateState({ ...this.currentState, isLoading: true, session });
 
     if (session?.user) {
@@ -159,7 +173,7 @@ class UnifiedAuthService {
   /**
    * Map Supabase user and profile to unified user
    */
-  private mapToUnifiedUser(supabaseUser: SupabaseUser, profile: any): UnifiedUser {
+  private mapToUnifiedUser(supabaseUser: SupabaseUser, profile: UserProfile | null): UnifiedUser {
     return {
       id: supabaseUser.id,
       email: supabaseUser.email!,

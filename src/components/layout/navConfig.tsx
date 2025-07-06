@@ -1,4 +1,4 @@
-import { LayoutDashboard, Search, Users, Banknote, Truck, BarChart2, Brain, Bot, Store, Plug, Settings } from 'lucide-react';
+import { LayoutDashboard, Search, Users, Banknote, Truck, BarChart2, Brain, Bot, Store, Plug, Settings, Info } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export interface NavItem {
@@ -43,4 +43,5 @@ export const navItems: NavItem[] = [
   { name: 'AI Hub', path: '/ai-hub', icon: <Brain className="h-5 w-5" /> },
   { name: 'AI Chat', path: '/chat', icon: <Bot className="h-5 w-5" /> },
   { name: 'Settings', path: '/settings', icon: <Settings className="h-5 w-5" /> },
+  { name: 'Help', path: '/help', icon: <Info className="h-5 w-s" /> },
 ]; 

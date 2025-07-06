@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { supabase } from '@/lib/core/supabase';
 import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import type { Database } from '@/lib/core/database.types';
-import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 
 // Row types for profiles, companies, and integrations
@@ -36,6 +35,7 @@ interface AuthContextType {
   loading: boolean;
   error: Error | null;
   activeOrgId: string | null;
+  initialized: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -79,17 +79,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleAuthChange = useCallback(async (session: Session | null) => {
     // Prevent multiple simultaneous auth changes
     if (!mountedRef.current || processingRef.current) {
+      console.log('[AuthContext] handleAuthChange: Skipping due to unmounted or processingRef');
       return;
     }
     
     processingRef.current = true;
     setLoading(true);
+    console.log('[AuthContext] handleAuthChange: session', session);
     
     try {
       setSession(session);
       setSupabaseUser(session?.user ?? null);
       setError(null);
-
+      
       if (session?.user && mountedRef.current) {
         try {
           // Fetch profile, company, and integrations in parallel
@@ -109,12 +111,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           let finalProfile = profileResult.data as UserProfileRow & { company: CompanyRow | null } | null;
           if (profileResult.error) {
-            console.warn('Profile fetch error:', profileResult.error);
+            console.warn('[AuthContext] Profile fetch error:', profileResult.error);
           }
 
           // If no profile exists for a new user, create one
           if (!finalProfile && session.user) {
-            console.log('No profile found for new user, creating one...');
+            console.log('[AuthContext] No profile found for new user, creating one...');
             const { data: newProfile, error: createError } = await supabase
               .from('user_profiles')
               .insert({
@@ -126,26 +128,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               .single();
 
             if (createError) {
-              console.error('Failed to create user profile:', createError);
+              console.error('[AuthContext] Failed to create user profile:', createError);
               throw createError;
             }
             finalProfile = newProfile as UserProfileRow & { company: CompanyRow | null };
           }
           
           setProfile(finalProfile);
+          console.log('[AuthContext] setProfile:', finalProfile);
 
           // The company data is now part of the profile fetch
           setCompany(finalProfile?.company ?? null);
+          console.log('[AuthContext] setCompany:', finalProfile?.company ?? null);
 
           // Set integrations from the parallel fetch
           if (integrationsResult.error) {
-            console.warn('Integrations fetch error:', integrationsResult.error);
+            console.warn('[AuthContext] Integrations fetch error:', integrationsResult.error);
             setIntegrations([]);
           } else {
             setIntegrations(integrationsResult.data || []);
+            console.log('[AuthContext] setIntegrations:', integrationsResult.data || []);
           }
         } catch (err) {
-          console.error('Auth change error:', err);
+          console.error('[AuthContext] Auth change error (inner):', err);
           if (mountedRef.current) {
             setError(err as Error);
             setProfile(null);
@@ -158,15 +163,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfile(null);
         setCompany(null);
         setIntegrations([]);
+        console.log('[AuthContext] No session: cleared profile, company, integrations');
       }
     } catch (err) {
-      console.error('Auth change error:', err);
+      console.error('[AuthContext] Auth change error (outer):', err);
       if (mountedRef.current) {
         setError(err as Error);
       }
     } finally {
       if (mountedRef.current) {
         setLoading(false);
+        console.log('[AuthContext] setLoading(false)');
       }
       processingRef.current = false;
     }
@@ -174,39 +181,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     mountedRef.current = true;
+    console.log('[AuthContext] useEffect: mounted');
     
     const initAuth = async () => {
       try {
         // Try to get session with retry
         const { session, error: sessionError } = await getSessionWithRetry();
+        console.log('[AuthContext] initAuth: session', session, 'error', sessionError);
+        
         if (sessionError) {
-          console.error('[Auth] Session error:', sessionError);
-          if (mountedRef.current) setError(sessionError);
+          console.error('[AuthContext] Session error:', sessionError);
+          if (mountedRef.current) {
+            setError(sessionError);
+            setLoading(false); // Ensure loading is set to false on error
+          }
+          return;
         }
+        
         if (mountedRef.current) {
           // If session is missing, try to refresh session before logging out
           if (!session && supabase.auth && typeof supabase.auth.refreshSession === 'function') {
             try {
               const { data, error: refreshError } = await supabase.auth.refreshSession();
               if (refreshError) {
-                console.warn('[Auth] Session refresh failed:', refreshError);
+                console.warn('[AuthContext] Session refresh failed:', refreshError);
                 setError(refreshError);
+                setLoading(false); // Ensure loading is set to false on refresh error
+                return;
               }
               await handleAuthChange(data?.session || null);
             } catch (refreshErr) {
-              console.error('[Auth] Session refresh threw:', refreshErr);
+              console.error('[AuthContext] Session refresh threw:', refreshErr);
               setError(refreshErr as Error);
-              await handleAuthChange(null);
+              setLoading(false); // Ensure loading is set to false on refresh error
+              return;
             }
           } else {
             await handleAuthChange(session);
           }
         }
       } catch (err) {
-        console.error('[Auth] Init auth error:', err);
+        console.error('[AuthContext] Init auth error:', err);
         if (mountedRef.current) {
           setError(err as Error);
-          setLoading(false);
+          setLoading(false); // Ensure loading is set to false on error
+        }
+      } finally {
+        if (mountedRef.current) {
+          setLoading(false); // Final fallback to ensure loading is always set to false
         }
       }
     };
@@ -216,7 +238,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mountedRef.current) {
-        console.log('[Auth] Auth state change detected:', event);
+        console.log('[AuthContext] Auth state change detected:', event, session);
         await handleAuthChange(session);
       }
     });
@@ -224,13 +246,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Listen for storage events (e.g., localStorage cleared)
     window.addEventListener('storage', (e) => {
       if (e.key && e.key.includes('supabase')) {
-        console.warn('[Auth] Storage event detected:', e);
+        console.warn('[AuthContext] Storage event detected:', e);
       }
     });
 
     return () => {
       mountedRef.current = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
+      console.log('[AuthContext] useEffect: unmounted');
     };
   }, [handleAuthChange]);
 
@@ -337,6 +360,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     error,
     integrations,
     activeOrgId: profile?.company_id || null,
+    initialized: !loading,
     signIn,
     signUp,
     signOut,

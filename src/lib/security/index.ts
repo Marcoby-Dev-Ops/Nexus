@@ -3,7 +3,7 @@
  * Comprehensive frontend security utilities for Nexus
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/core/supabase';
 
 // Types
 export interface SecurityEvent {
@@ -25,12 +25,6 @@ export interface SecurityConfig {
   sessionTimeout: { hours: number };
   maxFailedLogins: { attempts: number; lockoutMinutes: number };
 }
-
-// Initialize Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
 
 // Security utilities class
 export class SecurityManager {

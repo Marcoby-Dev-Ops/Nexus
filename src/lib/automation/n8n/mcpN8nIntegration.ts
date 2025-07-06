@@ -44,212 +44,75 @@ export class McpN8nIntegrationService {
   private isInitialized = false;
 
   /**
-   * Initialize n8n connection
-   * Replace with: mcp_n8n_Workflow_Integration_Server_init_n8n
+   * Initialize n8n connection (no-op for Edge Function, always returns success)
    */
   async initializeConnection(url: string, apiKey: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      // TODO: Replace with actual MCP tool call
-      // await mcp_n8n_Workflow_Integration_Server_init_n8n({
-      //   url,
-      //   apiKey
-      // });
-
-      // Placeholder implementation
-      if (!url || !apiKey) {
-        return { success: false, error: 'Invalid URL or API key' };
-      }
-
-      this.isInitialized = true;
-      console.log('MCP n8n connection initialized (placeholder)');
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+    // For Edge Function, assume always initialized
+    this.isInitialized = true;
+    return { success: true };
   }
 
   /**
-   * Create workflow in n8n
-   * Replace with: mcp_n8n_Workflow_Integration_Server_create_workflow
+   * Create workflow in n8n via Supabase Edge Function
    */
   async createWorkflow(workflow: N8nWorkflowDefinition): Promise<CreateWorkflowResponse> {
     try {
       if (!this.isInitialized) {
         return { success: false, error: 'n8n connection not initialized' };
       }
-
-      // TODO: Replace with actual MCP tool call
-      // const result = await mcp_n8n_Workflow_Integration_Server_create_workflow({
-      //   clientId: this.clientId,
-      //   name: workflow.name,
-      //   nodes: workflow.nodes,
-      //   connections: workflow.connections
-      // });
-
-      // Placeholder implementation
-      const workflowId = `workflow-${Date.now()}`;
-      console.log('Created workflow (placeholder):', workflowId);
-      
-      return {
-        success: true,
-        workflowId
-      };
+      const response = await fetch('/functions/v1/trigger-n8n-workflow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workflow: workflow.name, parameters: { nodes: workflow.nodes, connections: workflow.connections } })
+      });
+      const data = await response.json();
+      if (!data.success) return { success: false, error: data.error };
+      return { success: true, workflowId: data.response?.workflowId };
     } catch (error: any) {
       return { success: false, error: error.message };
     }
   }
 
   /**
-   * Update workflow in n8n
-   * Replace with: mcp_n8n_Workflow_Integration_Server_update_workflow
+   * Update workflow (not supported via Edge Function, return error)
    */
-  async updateWorkflow(workflowId: string, workflow: Partial<N8nWorkflowDefinition>): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (!this.isInitialized) {
-        return { success: false, error: 'n8n connection not initialized' };
-      }
-
-      // TODO: Replace with actual MCP tool call
-      // await mcp_n8n_Workflow_Integration_Server_update_workflow({
-      //   clientId: this.clientId,
-      //   id: workflowId,
-      //   workflow: {
-      //     name: workflow.name,
-      //     nodes: workflow.nodes,
-      //     connections: workflow.connections,
-      //     active: workflow.active
-      //   }
-      // });
-
-      // Placeholder implementation
-      console.log('Updated workflow (placeholder):', workflowId);
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  async updateWorkflow(): Promise<{ success: boolean; error?: string }> {
+    return { success: false, error: 'Update workflow not supported via Edge Function' };
   }
 
   /**
-   * Activate workflow
-   * Replace with: mcp_n8n_Workflow_Integration_Server_activate_workflow
+   * Activate workflow (not supported via Edge Function, return error)
    */
-  async activateWorkflow(workflowId: string): Promise<ActivateWorkflowResponse> {
-    try {
-      if (!this.isInitialized) {
-        return { success: false, error: 'n8n connection not initialized' };
-      }
-
-      // TODO: Replace with actual MCP tool call
-      // await mcp_n8n_Workflow_Integration_Server_activate_workflow({
-      //   clientId: this.clientId,
-      //   id: workflowId
-      // });
-
-      // Placeholder implementation
-      console.log('Activated workflow (placeholder):', workflowId);
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  async activateWorkflow(): Promise<{ success: boolean; error?: string }> {
+    return { success: false, error: 'Activate workflow not supported via Edge Function' };
   }
 
   /**
-   * Deactivate workflow
-   * Replace with: mcp_n8n_Workflow_Integration_Server_deactivate_workflow
+   * Deactivate workflow (not supported via Edge Function, return error)
    */
-  async deactivateWorkflow(workflowId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (!this.isInitialized) {
-        return { success: false, error: 'n8n connection not initialized' };
-      }
-
-      // TODO: Replace with actual MCP tool call
-      // await mcp_n8n_Workflow_Integration_Server_deactivate_workflow({
-      //   clientId: this.clientId,
-      //   id: workflowId
-      // });
-
-      // Placeholder implementation
-      console.log('Deactivated workflow (placeholder):', workflowId);
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  async deactivateWorkflow(): Promise<{ success: boolean; error?: string }> {
+    return { success: false, error: 'Deactivate workflow not supported via Edge Function' };
   }
 
   /**
-   * List workflows
-   * Replace with: mcp_n8n_Workflow_Integration_Server_list_workflows
+   * List workflows (not supported via Edge Function, return error)
    */
   async listWorkflows(): Promise<{ success: boolean; workflows?: any[]; error?: string }> {
-    try {
-      if (!this.isInitialized) {
-        return { success: false, error: 'n8n connection not initialized' };
-      }
-
-      // TODO: Replace with actual MCP tool call
-      // const result = await mcp_n8n_Workflow_Integration_Server_list_workflows({
-      //   clientId: this.clientId
-      // });
-
-      // Placeholder implementation
-      return {
-        success: true,
-        workflows: []
-      };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+    return { success: false, error: 'List workflows not supported via Edge Function' };
   }
 
   /**
-   * Get workflow by ID
-   * Replace with: mcp_n8n_Workflow_Integration_Server_get_workflow
+   * Get workflow (not supported via Edge Function, return error)
    */
-  async getWorkflow(workflowId: string): Promise<{ success: boolean; workflow?: any; error?: string }> {
-    try {
-      if (!this.isInitialized) {
-        return { success: false, error: 'n8n connection not initialized' };
-      }
-
-      // TODO: Replace with actual MCP tool call
-      // const result = await mcp_n8n_Workflow_Integration_Server_get_workflow({
-      //   clientId: this.clientId,
-      //   id: workflowId
-      // });
-
-      // Placeholder implementation
-      return {
-        success: true,
-        workflow: { id: workflowId, name: 'Placeholder Workflow' }
-      };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  async getWorkflow(): Promise<{ success: boolean; workflow?: any; error?: string }> {
+    return { success: false, error: 'Get workflow not supported via Edge Function' };
   }
 
   /**
-   * Delete workflow
-   * Replace with: mcp_n8n_Workflow_Integration_Server_delete_workflow
+   * Delete workflow (not supported via Edge Function, return error)
    */
-  async deleteWorkflow(workflowId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      if (!this.isInitialized) {
-        return { success: false, error: 'n8n connection not initialized' };
-      }
-
-      // TODO: Replace with actual MCP tool call
-      // await mcp_n8n_Workflow_Integration_Server_delete_workflow({
-      //   clientId: this.clientId,
-      //   id: workflowId
-      // });
-
-      // Placeholder implementation
-      console.log('Deleted workflow (placeholder):', workflowId);
-      return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
+  async deleteWorkflow(): Promise<{ success: boolean; error?: string }> {
+    return { success: false, error: 'Delete workflow not supported via Edge Function' };
   }
 
   /**
@@ -280,11 +143,11 @@ export async function createN8nWorkflow(workflow: N8nWorkflowDefinition) {
 }
 
 export async function activateN8nWorkflow(workflowId: string) {
-  return mcpN8nIntegration.activateWorkflow(workflowId);
+  return mcpN8nIntegration.activateWorkflow();
 }
 
 export async function deactivateN8nWorkflow(workflowId: string) {
-  return mcpN8nIntegration.deactivateWorkflow(workflowId);
+  return mcpN8nIntegration.deactivateWorkflow();
 }
 
 export async function listN8nWorkflows() {
@@ -292,9 +155,9 @@ export async function listN8nWorkflows() {
 }
 
 export async function getN8nWorkflow(workflowId: string) {
-  return mcpN8nIntegration.getWorkflow(workflowId);
+  return mcpN8nIntegration.getWorkflow();
 }
 
 export async function deleteN8nWorkflow(workflowId: string) {
-  return mcpN8nIntegration.deleteWorkflow(workflowId);
+  return mcpN8nIntegration.deleteWorkflow();
 } 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart, 
   PieChart, 
@@ -37,6 +37,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui
 import { Separator } from '../../../components/ui/Separator';
 import { Progress } from '../../../components/ui/Progress';
 import { useSystemContext } from '../../../contexts/SystemContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { API_CONFIG } from '../../../lib/constants';
+import { Skeleton } from '../../../components/ui/Skeleton';
+
+interface FinancialStat {
+  id: string;
+  title: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down';
+  icon?: React.ReactNode;
+}
 
 /**
  * FinancialOperationsPage - Interactive financial dashboard for finance department
@@ -44,42 +56,47 @@ import { useSystemContext } from '../../../contexts/SystemContext';
 const FinancialOperationsPage: React.FC = () => {
   const [activeTimeframe, setActiveTimeframe] = useState<string>('month');
   const [selectedReport, setSelectedReport] = useState<string>('expenses');
+  const [financialStats, setFinancialStats] = useState<FinancialStat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
 
-  // Financial summary stats
-  const financialStats = [
-    { 
-      id: 'revenue',
-      title: 'Revenue',
-      value: '$147,891.29',
-      change: '+12.5%',
-      trend: 'up',
-      icon: <DollarSign className="h-4 w-4" />
-    },
-    {
-      id: 'expenses',
-      title: 'Expenses',
-      value: '$43,128.94',
-      change: '+2.3%',
-      trend: 'up',
-      icon: <TrendingDown className="h-4 w-4" />
-    },
-    {
-      id: 'profit',
-      title: 'Net Profit',
-      value: '$104,762.35',
-      change: '+15.8%',
-      trend: 'up',
-      icon: <TrendingUp className="h-4 w-4" />
-    },
-    {
-      id: 'runway',
-      title: 'Cash Runway',
-      value: '9.2 months',
-      change: '-0.8 months',
-      trend: 'down',
-      icon: <Calendar className="h-4 w-4" />
-    }
-  ];
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!session) {
+        setLoading(false);
+        setError('Authentication is required to get financial stats.');
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/get_finance_performance`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to fetch financial stats');
+        }
+
+        const data = await res.json();
+        setFinancialStats(data.stats || []);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, [session]);
 
   // Expense categories
   const expenseCategories = [
@@ -238,7 +255,7 @@ const FinancialOperationsPage: React.FC = () => {
   };
 
   const SystemFinanceCards: React.FC = () => {
-    const { integrationStatus, businessHealth, aiInsights, loading, refresh } = useSystemContext();
+    const { integrationStatus, businessHealth, aiInsights, loading: systemLoading, refresh } = useSystemContext();
     return (
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
         {/* System Health Card */}
@@ -253,14 +270,14 @@ const FinancialOperationsPage: React.FC = () => {
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="mb-4">
               <div className="text-4xl font-bold flex items-center gap-2">
-                {loading ? '...' : businessHealth.score}
+                {systemLoading ? '...' : businessHealth.score}
                 <span className={`text-base font-medium ${businessHealth.trend === 'up' ? 'text-success' : businessHealth.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}>({businessHealth.trend})</span>
               </div>
               <div className="text-sm text-muted-foreground mt-2">
                 {businessHealth.summary}
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={refresh} disabled={systemLoading}>
               <RefreshCw className="w-4 h-4 mr-2" /> Refresh
             </Button>
           </CardContent>
@@ -276,7 +293,7 @@ const FinancialOperationsPage: React.FC = () => {
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="space-y-2 mb-4">
-              {loading ? (
+              {systemLoading ? (
                 <div className="text-muted-foreground">Loading...</div>
               ) : aiInsights.length === 0 ? (
                 <div className="text-muted-foreground">No insights available</div>
@@ -315,7 +332,7 @@ const FinancialOperationsPage: React.FC = () => {
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="space-y-2 mb-4">
-              {loading ? (
+              {systemLoading ? (
                 <div className="text-muted-foreground">Loading...</div>
               ) : integrationStatus.length === 0 ? (
                 <div className="text-muted-foreground">No integrations connected</div>
@@ -361,6 +378,51 @@ const FinancialOperationsPage: React.FC = () => {
     );
   };
 
+  const renderFinancialStats = () => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-1/2 mb-2" />
+                <Skeleton className="h-8 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-destructive p-4 border border-destructive/20 rounded-md col-span-full">
+          <p>Could not load financial stats: {error}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {financialStats.map(stat => (
+          <Card key={stat.id}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+              {stat.icon}
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stat.value}</div>
+              <p className={`text-xs ${stat.trend === 'up' ? 'text-success' : 'text-destructive'}`}>
+                {stat.change}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <SystemFinanceCards />
@@ -371,66 +433,43 @@ const FinancialOperationsPage: React.FC = () => {
             <p className="text-muted-foreground">Track, analyze, and optimize your company's finances</p>
           </div>
           <div className="flex items-center gap-2">
-            <Select defaultValue={activeTimeframe} onValueChange={setActiveTimeframe}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Select Timeframe" />
+            <Select value={activeTimeframe} onValueChange={setActiveTimeframe}>
+              <SelectTrigger className="w-[180px]">
+                <Calendar className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Select timeframe" />
               </SelectTrigger>
               <SelectContent>
-                <SelectGroup>
-                  <SelectLabel>Timeframe</SelectLabel>
-                  <SelectItem value="day">Today</SelectItem>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="quarter">This Quarter</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
-                </SelectGroup>
+                <SelectItem value="week">This Week</SelectItem>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="quarter">This Quarter</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon">
-              <Download className="h-4 w-4" />
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              Export
             </Button>
           </div>
         </div>
 
-        {/* Key Financial Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {financialStats.map(stat => (
-            <Card key={stat.id}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between space-y-0 pb-2">
-                  <div className="font-medium">{stat.title}</div>
-                  <div className={`p-2 rounded-full ${
-                    stat.trend === 'up' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                  }`}>
-                    {stat.icon}
-                  </div>
-                </div>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="flex items-center pt-1">
-                  {stat.trend === 'up' ? (
-                    <ArrowUpRight className={`h-4 w-4 mr-1 ${
-                      stat.id === 'expenses' ? 'text-destructive' : 'text-success'
-                    }`} />
-                  ) : (
-                    <ArrowDownRight className={`h-4 w-4 mr-1 ${
-                      stat.id === 'expenses' ? 'text-success' : 'text-destructive'
-                    }`} />
-                  )}
-                  <p className={`text-sm ${
-                    (stat.trend === 'up' && stat.id !== 'expenses') || (stat.trend === 'down' && stat.id === 'expenses')
-                      ? 'text-success'
-                      : 'text-destructive'
-                  }`}>
-                    {stat.change} from previous {activeTimeframe}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {renderFinancialStats()}
+
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview">
+            {/* Overview content */}
+          </TabsContent>
+          <TabsContent value="expenses">
+            {/* Expenses content */}
+          </TabsContent>
+          <TabsContent value="reports">
+            {/* Reports content */}
+          </TabsContent>
+        </Tabs>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Expense Breakdown */}

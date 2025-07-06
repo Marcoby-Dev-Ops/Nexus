@@ -1,67 +1,80 @@
 import React from 'react';
-import { PageTemplates } from '../../components/patterns/PageTemplates';
-import { ContentCard } from '../../components/patterns/ContentCard';
-import ErrorBoundary from '../../components/ui/ErrorBoundary';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/Tabs';
+import { UnifiedSettingsPage } from '@/components/patterns/UnifiedPages';
 import AccountSettings from './AccountSettings';
 import SecuritySettings from './SecuritySettings';
+import NotificationsSettings from './NotificationsSettings';
+import IntegrationsSettings from './IntegrationsSettings';
+import DataPrivacySettings from './DataPrivacySettings';
+import AppearanceSettings from './AppearanceSettings';
+import AdvancedSettings from './AdvancedSettings';
 
-// Analytics hook placeholder (implement as needed)
-const useSettingsAnalytics = (tab: string) => {
-  React.useEffect(() => {
-    // TODO: Replace with real analytics event
-    // analytics.track('settings_tab_view', { tab });
-  }, [tab]);
+// Placeholder components for new sections
+const BillingSettings = () => <div>Billing & subscription management coming soon.</div>;
+const TeamSettings = () => <div>Team & access management coming soon.</div>;
+
+const settingsConfig = {
+  title: 'Settings',
+  description: 'Manage your account and application preferences',
+  sections: [
+    {
+      id: 'profile',
+      title: 'Profile & Preferences',
+      description: 'Manage your personal information and preferences',
+      component: AccountSettings,
+    },
+    {
+      id: 'security',
+      title: 'Security & Privacy',
+      description: 'Manage your account security and privacy settings',
+      component: SecuritySettings,
+    },
+    {
+      id: 'notifications',
+      title: 'Notifications',
+      description: 'Set your notification preferences',
+      component: NotificationsSettings,
+    },
+    {
+      id: 'billing',
+      title: 'Billing & Subscription',
+      description: 'Manage your plan, payment methods, and invoices',
+      component: BillingSettings,
+    },
+    {
+      id: 'team',
+      title: 'Team & Access',
+      description: 'Manage team members, roles, and permissions',
+      component: TeamSettings,
+    },
+    {
+      id: 'integrations',
+      title: 'Integrations',
+      description: 'Manage connected apps and integrations',
+      component: IntegrationsSettings,
+    },
+    {
+      id: 'data-privacy',
+      title: 'Data & Privacy',
+      description: 'Export your data and manage privacy settings',
+      component: DataPrivacySettings,
+    },
+    {
+      id: 'appearance',
+      title: 'Appearance',
+      description: 'Customize your theme and layout preferences',
+      component: AppearanceSettings,
+    },
+    {
+      id: 'advanced',
+      title: 'Advanced/Developer',
+      description: 'API tokens, developer tools, and audit logs',
+      component: AdvancedSettings,
+    },
+  ],
 };
 
 const SettingsPage: React.FC = () => {
-  const [tab, setTab] = React.useState('overview');
-  useSettingsAnalytics(tab);
-
-  return (
-    <ErrorBoundary>
-      <PageTemplates.Settings>
-        <h1 className="text-3xl font-bold mb-2">Settings</h1>
-        <p className="text-muted-foreground mb-6">Manage your account and application preferences</p>
-        <Tabs value={tab} onValueChange={setTab} defaultValue="overview">
-          <TabsList className="mb-6">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="advice">Advice</TabsTrigger>
-            <TabsTrigger value="resources">Resources</TabsTrigger>
-          </TabsList>
-          <TabsContent value="overview">
-            <div className="space-y-8">
-              <ContentCard title="Profile & Preferences">
-                <AccountSettings />
-              </ContentCard>
-              <ContentCard title="Security & Privacy">
-                <SecuritySettings />
-              </ContentCard>
-            </div>
-          </TabsContent>
-          <TabsContent value="advice">
-            <ContentCard title="Personalized Advice">
-              <div className="text-muted-foreground">
-                {/* TODO: Integrate AI-powered recommendations */}
-                <p>AI-powered security, personalization, and best practice recommendations will appear here.</p>
-              </div>
-            </ContentCard>
-          </TabsContent>
-          <TabsContent value="resources">
-            <ContentCard title="Resources & Actions">
-              <div className="space-y-4">
-                {/* TODO: Add real links and actions */}
-                <a href="/user-guide" className="text-primary underline">User Guide</a>
-                <a href="/support" className="text-primary underline">Contact Support</a>
-                <a href="/settings/data-export" className="text-primary underline">Export My Data</a>
-                <a href="/settings/delete-account" className="text-destructive underline">Delete My Account</a>
-              </div>
-            </ContentCard>
-          </TabsContent>
-        </Tabs>
-      </PageTemplates.Settings>
-    </ErrorBoundary>
-  );
+  return <UnifiedSettingsPage config={settingsConfig} />;
 };
 
 export default SettingsPage; 

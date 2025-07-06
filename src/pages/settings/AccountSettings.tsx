@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { User, MapPin, Globe, Save } from 'lucide-react';
 
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Input } from '../../components/ui/Input';
-import { Button } from '../../components/ui/Button';
-import { Label } from '../../components/ui/Label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
-import { useAuth } from '../../contexts/AuthContext';
-import { useNotifications } from '../../contexts/NotificationContext';
-import { supabase } from '../../lib/core/supabase';
-import type { Database } from '../../lib/database.types';
-import { Separator } from '../../components/ui/Separator';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Label } from '@/components/ui/Label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNotifications } from '@/contexts/NotificationContext';
+import { supabase } from '@/lib/core/supabase';
+import type { Database } from '@/lib/core/database.types';
+import { Separator } from '@/components/ui/Separator';
+import { analyticsService } from '@/lib/services/analyticsService';
 
 /**
  * AccountSettings - Personal account settings page
@@ -60,9 +61,24 @@ const AccountSettings: React.FC = () => {
     }));
   }, [user]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  // Initialize analytics when user is available
+  useEffect(() => {
+    if (user) {
+      analyticsService.init(user.id, {
+        email: user.email,
+        company_id: user.company?.id,
+      });
+    }
+    return () => analyticsService.reset();
+  }, [user]);
+
+  const handleValueChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    analyticsService.track('profile_field_edited', { field_name: name });
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    handleValueChange(e.target.name, e.target.value);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -107,6 +123,11 @@ const AccountSettings: React.FC = () => {
       if (formData.orgName && formData.orgName !== user.company?.name) {
         await updateCompany({ name: formData.orgName });
       }
+
+      analyticsService.track('profile_updated', {
+        user_id: user.id,
+        updated_fields: Object.keys(profileUpdates),
+      });
 
       addNotification({
         message: 'Profile updated successfully',
@@ -248,35 +269,27 @@ const AccountSettings: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="country">Country</Label>
-                <Select value={formData.country} onValueChange={(value) => setFormData(prev => ({ ...prev, country: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="us">United States</SelectItem>
-                    <SelectItem value="ca">Canada</SelectItem>
-                    <SelectItem value="uk">United Kingdom</SelectItem>
-                    <SelectItem value="au">Australia</SelectItem>
-                    <SelectItem value="de">Germany</SelectItem>
-                    <SelectItem value="fr">France</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input 
+                  id="country" 
+                  name="country"
+                  placeholder="Country" 
+                  value={formData.country}
+                  onChange={handleChange}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="timezone">Timezone</Label>
-                <Select value={formData.timezone} onValueChange={(value) => setFormData(prev => ({ ...prev, timezone: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Timezone" />
+                <Select
+                  value={formData.timezone}
+                  onValueChange={(value) => handleValueChange('timezone', value)}
+                >
+                  <SelectTrigger id="timezone">
+                    <SelectValue placeholder="Select your timezone" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="UTC">UTC</SelectItem>
-                    <SelectItem value="America/New_York">Eastern Time</SelectItem>
-                    <SelectItem value="America/Chicago">Central Time</SelectItem>
-                    <SelectItem value="America/Denver">Mountain Time</SelectItem>
-                    <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
-                    <SelectItem value="Europe/London">London</SelectItem>
-                    <SelectItem value="Europe/Berlin">Berlin</SelectItem>
-                    <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
+                    <SelectItem value="PST">Pacific Standard Time</SelectItem>
+                    <SelectItem value="EST">Eastern Standard Time</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -284,54 +297,35 @@ const AccountSettings: React.FC = () => {
           </CardContent>
         </Card>
         
-        {/* Preferences */}
+        {/* Language & Organization */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <Globe className="h-5 w-5 mr-2" />
-              Preferences
+              Language & Organization
             </CardTitle>
-            <CardDescription>Your language and notification preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <Select value={formData.language} onValueChange={(value) => setFormData(prev => ({ ...prev, language: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Language" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="es">Spanish</SelectItem>
-                  <SelectItem value="fr">French</SelectItem>
-                  <SelectItem value="de">German</SelectItem>
-                  <SelectItem value="ja">Japanese</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-          <CardFooter className="border-t border-border pt-4 flex justify-end">
-            <Button isLoading={loading} disabled={loading}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
-            </Button>
-          </CardFooter>
-        </Card>
-
-        {/* Organization */}
-        {user?.company && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="h-5 w-5 mr-2" />
-                Organization
-              </CardTitle>
-              <CardDescription>Update your company / organization details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="language">Language</Label>
+                <Select
+                  value={formData.language}
+                  onValueChange={(value) => handleValueChange('language', value)}
+                >
+                  <SelectTrigger id="language">
+                    <SelectValue placeholder="Select your language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="orgName">Organization Name</Label>
-                <Input
+                <Input 
                   id="orgName"
                   name="orgName"
                   placeholder="Organization Name"
@@ -339,9 +333,16 @@ const AccountSettings: React.FC = () => {
                   onChange={handleChange}
                 />
               </div>
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </CardContent>
+        </Card>
+        
+        <CardFooter className="flex justify-end">
+          <Button type="submit" disabled={loading}>
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Saving...' : 'Save All'}
+          </Button>
+        </CardFooter>
       </form>
     </div>
   );

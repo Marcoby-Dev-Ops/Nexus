@@ -8,21 +8,35 @@ import { useAuth } from '@/contexts/AuthContext'; // We might need this for the 
 
 export interface AIInsight {
   id: string;
-  type: 'suggestion' | 'alert' | 'success'; // This can be expanded
-  icon: React.ReactNode;
+  type: 'suggestion' | 'alert' | 'success' | 'revenue' | 'productivity' | 'team' | 'growth'; // Extended types
+  icon?: React.ReactNode;
   message: string;
   action: string | null;
+  severity?: 'critical' | 'warning' | 'info';
+  priority?: 'high' | 'medium' | 'low'; // New property
+  category?: string; // New property
+  estimatedImpact?: string; // New property
 }
 
 // This is a placeholder for a more sophisticated mapping in the future
-const mapSuggestionToInsight = (suggestion: any, index: number): AIInsight => ({
-  id: `suggestion-${index}`,
-  type: 'suggestion',
-  // A real implementation would have more dynamic icons
-  icon: '💡', // Placeholder
-  message: suggestion.description,
-  action: suggestion.actionLabel,
-});
+const mapSuggestionToInsight = (suggestion: any, index: number): AIInsight => {
+    // Mock severity for now. In a real system, the API would provide this.
+    const severities: AIInsight['severity'][] = ['critical', 'warning', 'info'];
+    const randomSeverity = severities[Math.floor(Math.random() * severities.length)];
+
+    return {
+        id: `suggestion-${index}`,
+        type: suggestion.type || 'suggestion', // Assume the function might return a type
+        // A real implementation would have more dynamic icons
+        icon: '💡', // Placeholder
+        message: suggestion.description,
+        action: suggestion.actionLabel,
+        severity: suggestion.type === 'alert' ? randomSeverity : undefined,
+        priority: suggestion.priority,
+        category: suggestion.category,
+        estimatedImpact: suggestion.estimatedImpact,
+    }
+};
 
 class AIInsightsService {
   /**

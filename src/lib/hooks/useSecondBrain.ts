@@ -47,12 +47,12 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
   const loadUserProfile = async () => {
     try {
       // Fetch the current authenticated user
-      const { data: { user }, error: userError } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
+      const { data: { user }, error: userError } = await import('@/lib/core/supabase').then(m => m.supabase.auth.getUser());
       if (userError) throw userError;
       if (!user) throw new Error('User not authenticated');
 
       // Fetch the user profile from Supabase
-      const { data, error } = await import('@/lib/supabase').then(m => m.supabase
+      const { data, error } = await import('@/lib/core/supabase').then(m => m.supabase
         .from('user_profiles')
         .select('*')
         .eq('id', user.id)

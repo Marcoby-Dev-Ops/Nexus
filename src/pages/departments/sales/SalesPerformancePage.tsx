@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowUpRight, 
   ArrowDownRight, 
@@ -43,6 +43,32 @@ import {
 } from '../../../components/ui/Select';
 import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/Avatar';
 import { useSystemContext } from '../../../contexts/SystemContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { API_CONFIG } from '../../../lib/constants';
+import { Skeleton } from '../../../components/ui/Skeleton';
+import Modal from '../../../components/ui/Modal';
+
+interface PerformanceMetric {
+  id: string;
+  title: string;
+  value: string;
+  change: string;
+  trend: 'up' | 'down';
+}
+
+interface TopOpportunity {
+  id: string;
+  company: string;
+  probability: number;
+  value: number;
+  stage: string;
+  nextAction: string;
+  nextActionDate: string;
+  rep: {
+    name: string;
+    avatar: string;
+  };
+}
 
 /**
  * SalesPerformancePage - Sales dashboard with leads, pipeline, and performance metrics
@@ -51,46 +77,66 @@ const SalesPerformancePage: React.FC = () => {
   const [activeTimeframe, setActiveTimeframe] = useState<string>('month');
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetric[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { session } = useAuth();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<TopOpportunity | null>(null);
+  const [generatedEmail, setGeneratedEmail] = useState<string>('');
+  const [generatingEmail, setGeneratingEmail] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [isTalkingPointsModalOpen, setIsTalkingPointsModalOpen] = useState(false);
+  const [talkingPoints, setTalkingPoints] = useState<string[]>([]);
+  const [generatingTalkingPoints, setGeneratingTalkingPoints] = useState(false);
+  const [talkingPointsError, setTalkingPointsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      if (!session) {
+        setLoading(false);
+        setError('Authentication is required to get performance metrics.');
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/get_sales_performance`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || 'Failed to fetch performance metrics');
+        }
+
+        const data = await res.json();
+        setPerformanceMetrics(data.metrics || []);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, [session]);
 
   // Performance Metrics
+  /*
   const performanceMetrics = [
     {
-      id: 'revenue',
-      title: 'Revenue',
-      value: '$246,389',
-      change: '+12.3%',
-      trend: 'up',
-      icon: <DollarSign className="h-4 w-4" />,
-      color: 'text-success'
-    },
-    {
-      id: 'deals',
-      title: 'Deals Closed',
-      value: '27',
-      change: '+4',
-      trend: 'up',
-      icon: <CheckCircle2 className="h-4 w-4" />,
-      color: 'text-primary'
-    },
-    {
-      id: 'conversion',
-      title: 'Conversion Rate',
-      value: '24.8%',
-      change: '+2.1%',
-      trend: 'up',
-      icon: <Percent className="h-4 w-4" />,
-      color: 'text-secondary'
-    },
-    {
-      id: 'leads',
-      title: 'New Leads',
-      value: '109',
-      change: '-12',
-      trend: 'down',
-      icon: <UserPlus className="h-4 w-4" />,
+// ... existing code ...
       color: 'text-amber-500'
     }
   ];
+  */
 
   // Pipeline Stages
   const pipelineStages = [
@@ -266,7 +312,7 @@ const SalesPerformancePage: React.FC = () => {
   };
 
   const SystemSalesCards: React.FC = () => {
-    const { integrationStatus, businessHealth, aiInsights, loading, refresh } = useSystemContext();
+    const { integrationStatus, businessHealth, aiInsights, loading: systemLoading, refresh } = useSystemContext();
     return (
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
         {/* System Health Card */}
@@ -281,14 +327,14 @@ const SalesPerformancePage: React.FC = () => {
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="mb-4">
               <div className="text-4xl font-bold flex items-center gap-2">
-                {loading ? '...' : businessHealth.score}
+                {systemLoading ? '...' : businessHealth.score}
                 <span className={`text-base font-medium ${businessHealth.trend === 'up' ? 'text-success' : businessHealth.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}>({businessHealth.trend})</span>
               </div>
               <div className="text-sm text-muted-foreground mt-2">
                 {businessHealth.summary}
               </div>
             </div>
-            <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={refresh} disabled={systemLoading}>
               <RefreshCw className="w-4 h-4 mr-2" /> Refresh
             </Button>
           </CardContent>
@@ -304,7 +350,7 @@ const SalesPerformancePage: React.FC = () => {
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="space-y-2 mb-4">
-              {loading ? (
+              {systemLoading ? (
                 <div className="text-muted-foreground">Loading...</div>
               ) : aiInsights.length === 0 ? (
                 <div className="text-muted-foreground">No insights available</div>
@@ -343,7 +389,7 @@ const SalesPerformancePage: React.FC = () => {
           </CardHeader>
           <CardContent className="flex-1 flex flex-col justify-between">
             <div className="space-y-2 mb-4">
-              {loading ? (
+              {systemLoading ? (
                 <div className="text-muted-foreground">Loading...</div>
               ) : integrationStatus.length === 0 ? (
                 <div className="text-muted-foreground">No integrations connected</div>
@@ -389,15 +435,161 @@ const SalesPerformancePage: React.FC = () => {
     );
   };
 
+  const renderPerformanceMetrics = () => {
+    if (loading) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index}>
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-1/2 mb-2" />
+                <Skeleton className="h-8 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="text-destructive p-4 border border-destructive/20 rounded-md col-span-full">
+          <p>Could not load performance metrics: {error}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {performanceMetrics.map(metric => (
+          <Card key={metric.id}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <div className="font-medium">{metric.title}</div>
+              </div>
+              <div className="text-2xl font-bold">{metric.value}</div>
+              <div className="flex items-center pt-1">
+                {metric.trend === 'up' ? (
+                  <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-destructive' : 'text-success'}`} />
+                ) : (
+                  <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-success' : 'text-destructive'}`} />
+                )}
+                <p className={`text-sm ${
+                  (metric.trend === 'up' && metric.id !== 'leads') || (metric.trend === 'down' && metric.id === 'leads')
+                    ? 'text-success'
+                    : 'text-destructive'
+                }`}>
+                  {metric.change} from previous {activeTimeframe}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  };
+
+  const handleGenerateFollowup = async (opportunity: TopOpportunity) => {
+    if (!session) {
+      setGenerationError('Authentication is required to generate emails.');
+      return;
+    }
+
+    setSelectedOpportunity(opportunity);
+    setIsModalOpen(true);
+    setGeneratingEmail(true);
+    setGenerationError(null);
+    setGeneratedEmail('');
+
+    try {
+      const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/generate_followup_email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ opportunity }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to generate email');
+      }
+
+      const data = await res.json();
+      setGeneratedEmail(data.email || '');
+    } catch (e: any) {
+      setGenerationError(e.message);
+    } finally {
+      setGeneratingEmail(false);
+    }
+  };
+
+  const handleGetTalkingPoints = async (opportunity: TopOpportunity) => {
+    if (!session) {
+      setTalkingPointsError('Authentication is required to get talking points.');
+      return;
+    }
+
+    setSelectedOpportunity(opportunity);
+    setIsTalkingPointsModalOpen(true);
+    setGeneratingTalkingPoints(true);
+    setTalkingPointsError(null);
+    setTalkingPoints([]);
+
+    try {
+      const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/get_talking_points`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ opportunity }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to get talking points');
+      }
+
+      const data = await res.json();
+      setTalkingPoints(data.talkingPoints || []);
+    } catch (e: any) {
+      setTalkingPointsError(e.message);
+    } finally {
+      setGeneratingTalkingPoints(false);
+    }
+  };
+
   return (
-    <div className="space-y-8">
-      <SystemSalesCards />
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <>
+      <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Generate Follow-up Email">
+        {generatingEmail && <p>Generating email...</p>}
+        {generationError && <p className="text-destructive">Error: {generationError}</p>}
+        {generatedEmail && (
           <div>
-            <h1 className="text-2xl font-bold">Sales Performance</h1>
-            <p className="text-muted-foreground">Track sales activities, pipeline, and revenue metrics</p>
+            <pre className="whitespace-pre-wrap bg-muted p-4 rounded-md">{generatedEmail}</pre>
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => navigator.clipboard.writeText(generatedEmail)}>Copy to Clipboard</Button>
+            </div>
           </div>
+        )}
+      </Modal>
+      <Modal open={isTalkingPointsModalOpen} onClose={() => setIsTalkingPointsModalOpen(false)} title="AI-Generated Talking Points">
+        {generatingTalkingPoints && <p>Generating talking points...</p>}
+        {talkingPointsError && <p className="text-destructive">Error: {talkingPointsError}</p>}
+        {talkingPoints.length > 0 && (
+          <ul className="list-disc list-inside space-y-2">
+            {talkingPoints.map((point, index) => (
+              <li key={index}>{point}</li>
+            ))}
+          </ul>
+        )}
+      </Modal>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Sales Performance</h1>
           <div className="flex items-center gap-2">
             <Select defaultValue={activeTimeframe} onValueChange={setActiveTimeframe}>
               <SelectTrigger className="w-[160px]">
@@ -423,7 +615,9 @@ const SalesPerformancePage: React.FC = () => {
           </div>
         </div>
 
-        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+        {renderPerformanceMetrics()}
+
+        <Tabs defaultValue="overview" className="w-full">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
@@ -432,37 +626,6 @@ const SalesPerformancePage: React.FC = () => {
           </TabsList>
           
           <TabsContent value="overview" className="space-y-6">
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {performanceMetrics.map(metric => (
-                <Card key={metric.id}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between space-y-0 pb-2">
-                      <div className="font-medium">{metric.title}</div>
-                      <div className={`p-2 rounded-full bg-${metric.color}/10 ${metric.color}`}>
-                        {metric.icon}
-                      </div>
-                    </div>
-                    <div className="text-2xl font-bold">{metric.value}</div>
-                    <div className="flex items-center pt-1">
-                      {metric.trend === 'up' ? (
-                        <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-destructive' : 'text-success'}`} />
-                      ) : (
-                        <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-success' : 'text-destructive'}`} />
-                      )}
-                      <p className={`text-sm ${
-                        (metric.trend === 'up' && metric.id !== 'leads') || (metric.trend === 'down' && metric.id === 'leads')
-                          ? 'text-success'
-                          : 'text-destructive'
-                      }`}>
-                        {metric.change} from previous {activeTimeframe}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
             {/* Pipeline Summary & Team Performance */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card>
@@ -542,46 +705,39 @@ const SalesPerformancePage: React.FC = () => {
             {/* Top Opportunities */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Top Opportunities</CardTitle>
-                  <Button variant="outline" size="sm">View All</Button>
-                </div>
-                <CardDescription>
-                  High-value deals currently in the pipeline
-                </CardDescription>
+                <CardTitle>Top Opportunities</CardTitle>
+                <CardDescription>High-value deals to focus on</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {topOpportunities.map(opp => (
-                    <div key={opp.id} className="p-3 rounded-md hover:bg-muted/50">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-medium">{opp.company}</h3>
-                          <div className="text-sm text-muted-foreground">
-                            {formatCurrency(opp.value)} • {opp.stage}
-                          </div>
-                        </div>
-                        <Badge className={`${
-                          opp.probability >= 70 ? 'bg-success' : 
-                          opp.probability >= 50 ? 'bg-amber-500' : 'bg-destructive'
-                        }`}>
-                          {opp.probability}% Probability
-                        </Badge>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <div className="flex items-center">
-                          <Avatar className="h-6 w-6 mr-2">
-                            <AvatarImage src={opp.rep.avatar} alt={opp.rep.name} />
+                    <Card key={opp.id}>
+                      <CardContent className="p-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <Avatar>
+                            <AvatarImage src={opp.rep.avatar} />
                             <AvatarFallback>{opp.rep.name.charAt(0)}</AvatarFallback>
                           </Avatar>
-                          <span>{opp.rep.name}</span>
+                          <div>
+                            <p className="font-semibold">{opp.company}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatCurrency(opp.value)} • {opp.probability}% probability
+                            </p>
+                            <p className="text-xs text-muted-foreground">Next action: {opp.nextAction} on {opp.nextActionDate}</p>
+                          </div>
                         </div>
-                        <div className="flex items-center text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5 mr-1" />
-                          <span>{opp.nextAction} by {opp.nextActionDate}</span>
+                        <div className="flex items-center space-x-4">
+                          <Button variant="secondary" size="sm" onClick={() => handleGenerateFollowup(opp)}>
+                            <Zap className="h-4 w-4 mr-2" />
+                            Generate Follow-up
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleGetTalkingPoints(opp)}>
+                            <Lightbulb className="h-4 w-4 mr-2" />
+                            Get Talking Points
+                          </Button>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   ))}
                 </div>
               </CardContent>
@@ -710,7 +866,7 @@ const SalesPerformancePage: React.FC = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </>
   );
 };
 

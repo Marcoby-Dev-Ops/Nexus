@@ -124,7 +124,7 @@ export class CloudflareService {
       } else {
         return { success: false, message: data.errors?.[0]?.message || 'Authentication failed' };
       }
-    } catch (error) {
+    } catch {
       return { success: false, message: 'Network error connecting to Cloudflare' };
     }
   }
@@ -154,10 +154,10 @@ export class CloudflareService {
         trafficData,
         dnsData
       ] = await Promise.all([
-        this.fetchPerformanceMetrics(startDate, endDate),
-        this.fetchSecurityMetrics(startDate, endDate),
-        this.fetchTrafficMetrics(startDate, endDate),
-        this.fetchDnsMetrics(startDate, endDate)
+        this.fetchPerformanceMetrics(),
+        this.fetchSecurityMetrics(),
+        this.fetchTrafficMetrics(),
+        this.fetchDnsMetrics()
       ]);
 
       // Get uptime status
@@ -199,7 +199,7 @@ export class CloudflareService {
     };
   }
 
-  private async fetchPerformanceMetrics(startDate: Date, endDate: Date) {
+  private async fetchPerformanceMetrics() {
     // For demo purposes, return mock data
     // In production, this would make actual Cloudflare Analytics API calls
     return {
@@ -212,7 +212,7 @@ export class CloudflareService {
     };
   }
 
-  private async fetchSecurityMetrics(startDate: Date, endDate: Date) {
+  private async fetchSecurityMetrics() {
     return {
       threats: Math.floor(Math.random() * 1000),
       challengesSolved: Math.floor(Math.random() * 5000),
@@ -222,7 +222,7 @@ export class CloudflareService {
     };
   }
 
-  private async fetchTrafficMetrics(startDate: Date, endDate: Date) {
+  private async fetchTrafficMetrics() {
     return {
       uniqueVisitors: Math.floor(Math.random() * 50000) + 10000,
       pageViews: Math.floor(Math.random() * 200000) + 50000,
@@ -243,7 +243,7 @@ export class CloudflareService {
     };
   }
 
-  private async fetchDnsMetrics(startDate: Date, endDate: Date) {
+  private async fetchDnsMetrics() {
     return {
       queries: Math.floor(Math.random() * 100000) + 50000,
       responseTime: Math.round((Math.random() * 50 + 10) * 100) / 100, // 10-60ms

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { Shield, Key, Smartphone, Eye, EyeOff, AlertTriangle, LogOut, RefreshCw, Lock, Fingerprint, Trash2 } from 'lucide-react';
-
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -15,15 +14,10 @@ import { Alert } from '../../components/ui/Alert';
 import { toast } from 'sonner';
 import { registerPasskey, handlePasskeyError, handlePasskeyRegistrationSuccess, isPasskeySupported, fetchUserPasskeys, deletePasskey } from '../../lib/utils/passkey';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/Dialog';
-
-// Mock security activity data
-const securityActivity = [
-  { type: 'login', device: 'Chrome on MacOS', location: 'San Francisco, CA', ip: '192.168.1.1', time: 'Just now', status: 'success' },
-  { type: 'login', device: 'Mobile App on iPhone', location: 'San Francisco, CA', ip: '192.168.1.2', time: '2 days ago', status: 'success' },
-  { type: 'login', device: 'Firefox on Windows', location: 'New York, NY', ip: '192.168.1.3', time: '5 days ago', status: 'success' },
-  { type: 'failed_login', device: 'Chrome on Windows', location: 'Chicago, IL', ip: '192.168.1.4', time: '1 week ago', status: 'failed' },
-  { type: 'password_change', device: 'Chrome on MacOS', location: 'San Francisco, CA', ip: '192.168.1.1', time: '2 weeks ago', status: 'success' },
-];
+import { useQuery } from '@tanstack/react-query';
+import { userService } from '@/lib/services/userService';
+import { userDataService } from '@/lib/services/userDataService';
+import { analyticsService } from '@/lib/services/analyticsService';
 
 /**
  * SecuritySettings - Security and privacy settings page
@@ -50,6 +44,25 @@ const SecuritySettings: React.FC = () => {
   const [friendlyName, setFriendlyName] = useState('');
   const [showAddPasskeyDialog, setShowAddPasskeyDialog] = useState(false);
   const [deletingPasskeyId, setDeletingPasskeyId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  
+  const { data: loginHistory, isLoading: isLoadingHistory } = useQuery({
+      queryKey: ['loginHistory'],
+      queryFn: () => userService.getLoginHistory(),
+  })
+  
+  // Initialize analytics when user is available
+  useEffect(() => {
+    if (user) {
+      analyticsService.init(user.id, {
+        email: user.email,
+        company_id: user.company?.id,
+      });
+    }
+    return () => analyticsService.reset();
+  }, [user]);
   
   // Check WebAuthn support
   const isWebAuthnSupported = isPasskeySupported();
@@ -65,6 +78,7 @@ const SecuritySettings: React.FC = () => {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
 
+      analyticsService.track('password_changed');
       setMessage({ type: 'success', text: 'Password updated successfully. You will need to use the new password next time you sign in.' });
       addNotification({ message: 'Password updated successfully', type: 'success' });
 
@@ -72,6 +86,7 @@ const SecuritySettings: React.FC = () => {
       setNewPassword('');
       setConfirmPassword('');
     } catch (err) {
+      analyticsService.track('password_change_failed', { error: err instanceof Error ? err.message : 'Unknown error' });
       const errorText = err instanceof Error ? err.message : 'Failed to update password';
       setMessage({ type: 'error', text: errorText });
       addNotification({ message: errorText, type: 'error' });
@@ -82,9 +97,11 @@ const SecuritySettings: React.FC = () => {
   
   // Toggle two-factor authentication
   const handleToggleTwoFactor = () => {
-    setTwoFactorEnabled(!twoFactorEnabled);
+    const newState = !twoFactorEnabled;
+    setTwoFactorEnabled(newState);
+    analyticsService.track('two_factor_toggled', { enabled: newState });
     // In a real implementation, this would trigger 2FA setup flow
-    console.log(`Two-factor authentication ${!twoFactorEnabled ? 'enabled' : 'disabled'}`);
+    console.log(`Two-factor authentication ${!newState ? 'enabled' : 'disabled'}`);
   };
 
   // ---------------------------------------------------------------------
@@ -120,6 +137,7 @@ const SecuritySettings: React.FC = () => {
         friendlyName: friendlyName.trim() || undefined
       });
 
+      analyticsService.track('passkey_registered', { friendly_name: friendlyName.trim() });
       // Success feedback and cleanup
       handlePasskeyRegistrationSuccess();
       setFriendlyName('');
@@ -127,6 +145,7 @@ const SecuritySettings: React.FC = () => {
       fetchPasskeys();
       
     } catch (err: any) {
+      analyticsService.track('passkey_registration_failed', { error: err?.message });
       handlePasskeyError(err, 'registration');
     } finally {
       setIsRegisteringPasskey(false);
@@ -139,15 +158,61 @@ const SecuritySettings: React.FC = () => {
       
       await deletePasskey(credentialId);
       
+      analyticsService.track('passkey_deleted', { credential_id: credentialId });
       toast.success('Passkey deleted successfully');
       fetchPasskeys();
     } catch (err: any) {
+      analyticsService.track('passkey_deletion_failed', { credential_id: credentialId, error: err?.message });
       console.error('[SecuritySettings] Failed to delete passkey', err);
       toast.error(err?.message ?? 'Failed to delete passkey');
     } finally {
       setDeletingPasskeyId(null);
     }
   };
+
+  const handleExportData = async () => {
+    try {
+      setIsExporting(true);
+      toast.info('Preparing your data for export...');
+      const userDataJson = await userDataService.exportUserData();
+      
+      const blob = new Blob([userDataJson], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `nexus-user-data-${user?.id}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      analyticsService.track('user_data_exported');
+      toast.success('Your data has been exported successfully.');
+    } catch (err) {
+      analyticsService.track('user_data_export_failed', { error: err instanceof Error ? err.message : 'Unknown error' });
+      toast.error('Failed to export your data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmation !== 'DELETE') {
+      toast.error('Please type DELETE to confirm.');
+      return;
+    }
+    try {
+      setIsDeleting(true);
+      toast.info('Deleting your account...');
+      await userService.deleteAccount();
+      analyticsService.track('account_deleted');
+    } catch (err) {
+      analyticsService.track('account_deletion_failed', { error: err instanceof Error ? err.message : 'Unknown error' });
+      toast.error('Failed to delete your account. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -184,7 +249,10 @@ const SecuritySettings: React.FC = () => {
                   variant="ghost"
                   size="sm"
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => {
+                    setShowPassword(!showPassword);
+                    analyticsService.track('toggle_show_password', { on: !showPassword });
+                  }}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -276,62 +344,58 @@ const SecuritySettings: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Login Activity */}
+      {/* Data & Privacy */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center">
             <Shield className="h-5 w-5 mr-2" />
+            Data & Privacy
+          </CardTitle>
+          <CardDescription>Manage your personal data and privacy settings.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="flex items-center justify-between">
+                <div>
+                    <Label htmlFor="exportData">Export Your Data</Label>
+                    <p className="text-xs text-muted-foreground">Download a JSON file containing all of your personal data.</p>
+                </div>
+                <Button onClick={handleExportData} isLoading={isExporting} disabled={isExporting}>
+                    Export Data
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
+      
+      {/* Login Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Lock className="h-5 w-5 mr-2" />
             Recent Security Activity
           </CardTitle>
-          <CardDescription>Recent account activity and login attempts</CardDescription>
+          <CardDescription>Review recent login activity on your account</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {securityActivity.map((activity, i) => (
-              <div key={i} className="flex items-center justify-between p-3 border border-border rounded-md">
-                <div className="flex items-center space-x-3">
-                  <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                    activity.status === 'failed' 
-                      ? 'bg-destructive/10 text-destructive' 
-                      : 'bg-brand-primary/10 text-brand-primary'
-                  }`}>
-                    {activity.type === 'login' 
-                      ? <Lock className="h-5 w-5" /> 
-                      : activity.type === 'failed_login' 
-                        ? <AlertTriangle className="h-5 w-5" /> 
-                        : <RefreshCw className="h-5 w-5" />}
-                  </div>
+            {isLoadingHistory && <p>Loading history...</p>}
+            {!isLoadingHistory && loginHistory?.map((activity: any, index: number) => (
+              <div key={index} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {activity.action === 'login' ? <Fingerprint className="h-5 w-5 text-success" /> : <AlertTriangle className="h-5 w-5 text-destructive" />}
                   <div>
-                    <div className="flex items-center space-x-2">
-                      <p className="font-medium">
-                        {activity.type === 'login' ? 'Login' : 
-                        activity.type === 'failed_login' ? 'Failed login attempt' : 
-                        'Password changed'}
-                      </p>
-                      <Badge variant={activity.status === 'failed' ? 'destructive' : 'outline'}>
-                        {activity.status === 'failed' ? 'Failed' : 'Success'}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {activity.device} • {activity.location}
+                    <p className="font-medium text-sm capitalize">{activity.action.replace('_', ' ')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(activity.timestamp).toLocaleString()}
                     </p>
                   </div>
                 </div>
-                <div className="text-right text-sm">
-                  <p>{activity.time}</p>
-                  <p className="text-xs text-muted-foreground">{activity.ip}</p>
-                </div>
+                <Badge variant={activity.action === 'login' ? 'outline' : 'destructive'} className={activity.action === 'login' ? 'text-green-500 border-green-500' : ''}>
+                  {activity.action === 'login' ? 'Success' : 'Failed'}
+                </Badge>
               </div>
             ))}
           </div>
         </CardContent>
-        <CardFooter className="border-t border-border pt-4 flex justify-between">
-          <Button variant="outline">View All Activity</Button>
-          <Button variant="destructive">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out All Devices
-          </Button>
-        </CardFooter>
       </Card>
 
       {/* Passkeys */}
@@ -441,6 +505,33 @@ const SecuritySettings: React.FC = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </CardContent>
+      </Card>
+
+      {/* Delete Account */}
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="flex items-center text-destructive">
+            <Trash2 className="h-5 w-5 mr-2" />
+            Delete Account
+          </CardTitle>
+          <CardDescription>Permanently delete your account and all associated data. This action cannot be undone.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="delete-confirm">Type DELETE to confirm</Label>
+              <Input 
+                id="delete-confirm"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="DELETE"
+              />
+            </div>
+            <Button variant="destructive" onClick={handleDeleteAccount} disabled={isDeleting || deleteConfirmation !== 'DELETE'}>
+              {isDeleting ? 'Deleting...' : 'Delete My Account'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

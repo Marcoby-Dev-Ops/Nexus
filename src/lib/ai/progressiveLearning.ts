@@ -5,7 +5,7 @@
  * through conversation analysis, behavioral patterns, and contextual data collection.
  */
 
-import { supabase } from './core/supabase';
+import { supabase } from '../core/supabase';
 import type { Agent } from './agentRegistry';
 
 export interface BusinessGoals {
@@ -30,7 +30,7 @@ export interface CurrentChallenges {
 export interface LearningInsight {
   user_id: string;
   insight_type: 'preference' | 'pattern' | 'goal' | 'challenge' | 'skill_gap';
-  insight_data: Record<string, any>;
+  insight_data: Record<string, unknown>;
   confidence_score: number; // 0-1
   source: 'conversation' | 'behavior' | 'feedback' | 'integration';
   created_at: string;
@@ -76,6 +76,11 @@ export class ProgressiveLearning {
     // Analyze communication patterns
     const patternInsights = this.analyzeCommunicationPatterns(userMessage, agent);
     insights.push(...patternInsights);
+
+    if (feedback) {
+      // In a real scenario, this feedback would be used to adjust agent models or strategies.
+      console.log(`Feedback for agent ${agent.name}: ${feedback}`);
+    }
 
     // Store insights for future use
     await this.storeInsights(insights);
@@ -278,62 +283,40 @@ export class ProgressiveLearning {
    * Store learning insights in the database
    */
   private async storeInsights(insights: LearningInsight[]): Promise<void> {
-    if (!this.userId) {
-      console.warn('[ProgressiveLearning] Missing userId. Skipping insight storage.');
-      return;
+    if (insights.length === 0) return;
+
+    const { data, error } = await supabase
+      .from('learning_insights')
+      .insert(insights.map(i => ({ ...i, company_id: this.companyId })));
+
+    if (error) {
+      console.error('Error storing learning insights:', error);
+      throw error;
     }
-    
-    // Map LearningInsights to ai_interactions table structure
-    const records = insights.map(insight => ({
-      user_id: insight.user_id,
-      interaction_type: 'insight', // Use valid constraint value
-      ai_response: JSON.stringify(insight.insight_data),
-      context_data: {
-        insight_type: insight.insight_type,
-        confidence_score: insight.confidence_score,
-        source: insight.source,
-        ...(this.companyId && { company_id: this.companyId })
-      }
-    }));
 
-    if (records.length > 0) {
-      const { error } = await supabase
-        .from('ai_interactions')
-        .insert(records);
-
-      if (error) {
-        console.error('Error storing learning insights:', error);
-      }
+    const insertedData = data as LearningInsight[] | null;
+    if (insertedData) {
+      console.log(`Stored ${insertedData.length} new learning insights.`);
     }
   }
 
   /**
-   * Get existing insights for user
+   * Fetch existing insights from the database
    */
   private async getExistingInsights(): Promise<LearningInsight[]> {
-    try {
-      const { data, error } = await supabase
-        .from('ai_interactions')
-        .select('*')
-        .eq('user_id', this.userId)
-        .eq('interaction_type', 'insight')
-        .order('created_at', { ascending: false })
-        .limit(100);
+    const { data, error } = await supabase
+      .from('learning_insights')
+      .select('*')
+      .eq('user_id', this.userId)
+      .order('created_at', { ascending: false })
+      .limit(100);
 
-      if (error) throw error;
-
-      return data?.map(item => ({
-        user_id: item.user_id,
-        insight_type: (item.context_data as any)?.insight_type || 'preference',
-        insight_data: item.ai_response ? JSON.parse(item.ai_response) : {},
-        confidence_score: (item.context_data as any)?.confidence_score || 0.5,
-        source: (item.context_data as any)?.source || 'conversation',
-        created_at: item.created_at || new Date().toISOString()
-      })) || [];
-    } catch (error) {
-      console.error('Error fetching insights:', error);
+    if (error) {
+      console.error('Error fetching existing insights:', error);
       return [];
     }
+
+    return data as LearningInsight[];
   }
 
   // Helper methods
@@ -424,18 +407,22 @@ export class ProgressiveLearning {
   }
 
   private hasInsightType(insights: LearningInsight[], type: string): boolean {
-    return insights.some(insight => insight.insight_type === type);
+    if (!insights || insights.length === 0) return false;
+    return insights.some(i => i.insight_type === type);
   }
 
   private hasSpecificInsight(insights: LearningInsight[], specificType: string): boolean {
-    return insights.some(insight => 
-      insight.insight_data && 
-      JSON.stringify(insight.insight_data).includes(specificType)
-    );
+    if (!insights) return false;
+    return insights.some(i => {
+      if (i.insight_data && typeof i.insight_data === 'object') {
+        return Object.keys(i.insight_data).includes(specificType);
+      }
+      return false;
+    });
   }
 
   private extractTopicsFromHistory(history: string[]): string[] {
-    const topics = new Set<string>();
+    const topics: Set<string> = new Set();
     const topicKeywords = {
       sales: ['sales', 'revenue', 'deals', 'pipeline', 'quota'],
       marketing: ['marketing', 'campaigns', 'leads', 'conversion', 'brand'],

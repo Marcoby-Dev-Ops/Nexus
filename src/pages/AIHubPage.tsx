@@ -25,6 +25,7 @@ import { Progress } from '../components/ui/Progress';
 import { Separator } from '../components/ui/Separator';
 import { Avatar } from '../components/ui/Avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs';
+import { PageLayout } from '@/components/layout/PageLayout';
 
 /**
  * AIHubPage - Central hub for AI functionality
@@ -159,45 +160,35 @@ const AIHubPage: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* AI Hub Header */}
-      <div className="bg-gradient-to-r from-brand-primary/20 to-brand-secondary/20 p-6 rounded-xl border border-brand-primary/20">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center">
-              <Zap className="h-6 w-6 mr-2 text-brand-primary" />
-              AI Hub
-            </h1>
-            <p className="text-muted-foreground">
-              Your central dashboard for AI-powered features and insights
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button onClick={() => navigate('/chat')}>
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Chat with AI
-            </Button>
-          </div>
-        </div>
-        
-        {/* AI Usage Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-          {Object.entries(aiUsage).map(([key, usage]) => (
-            <Card key={key} className="bg-background/60 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="font-medium capitalize">{key} Credits</p>
-                  <Badge variant="outline">{usage.used}/{usage.total}</Badge>
-                </div>
-                <Progress value={usage.percentage} className="h-2" />
-                <p className="text-xs text-muted-foreground mt-2">
-                  {usage.total - usage.used} credits remaining this month
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+    <PageLayout 
+      title="AI Hub"
+      actions={
+        <Button onClick={() => navigate('/chat')}>
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Chat with AI
+        </Button>
+      }
+    >
+      <p className="text-muted-foreground mb-6">
+        Your central dashboard for AI-powered features and insights
+      </p>
+      
+      {/* AI Usage Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {Object.entries(aiUsage).map(([key, usage]) => (
+          <Card key={key} className="bg-background/60 backdrop-blur-sm">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-center mb-2">
+                <p className="font-medium capitalize">{key} Credits</p>
+                <Badge variant="outline">{usage.used}/{usage.total}</Badge>
+              </div>
+              <Progress value={usage.percentage} className="h-2" />
+              <p className="text-xs text-muted-foreground mt-2">
+                {usage.total - usage.used} credits remaining this month
+              </p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
       
       {/* Main Content Grid */}
@@ -610,7 +601,7 @@ const AIHubPage: React.FC = () => {
           </Card>
         </div>
       )}
-    </div>
+    </PageLayout>
   );
 };
 

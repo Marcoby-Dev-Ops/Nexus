@@ -3,10 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/components/ui/theme-provider';
 import { useNotifications } from '@/contexts/NotificationContext';
-import Modal from '@/components/ui/Modal';
-import { Input } from '@/components/ui/Input';
+import { CommandPalette } from './CommandPalette';
 import { QuickChatTrigger } from '@/components/ai/QuickChatTrigger';
-import { Menu, Bell, Sun, Moon, User, Settings, Search } from 'lucide-react';
+import { Menu, Bell, Sun, Moon, User, Settings, Search, Palette } from 'lucide-react';
 import { navItems } from './navConfig';
 import { features as featureRegistry } from '@/lib/ui/featureRegistry';
 
@@ -19,46 +18,21 @@ interface FeatureItem {
   icon?: React.ReactNode;
 }
 
-export function Header({ onSidebarToggle }: { onSidebarToggle: () => void }) {
+export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggle: () => void; onThemePanelToggle: () => void; }) {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchIndex, setSearchIndex] = useState(0);
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const location = useLocation();
 
   const displayName = user?.profile?.display_name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
   
-  const results: (NavItem | FeatureItem)[] = [
-    ...navItems.filter(item => item.name.toLowerCase().includes(searchQuery.toLowerCase())),
-    ...featureRegistry.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()))
-  ];
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSearchIndex(prev => (prev + 1) % (results.length || 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSearchIndex(prev => (prev - 1 + (results.length || 1)) % (results.length || 1));
-    } else if (e.key === 'Enter' && results[searchIndex]) {
-      const targetPath = results[searchIndex].path;
-      if (targetPath) {
-        window.location.href = targetPath;
-      }
-      setSearchOpen(false);
-      setSearchQuery('');
-    }
-  };
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
@@ -72,11 +46,17 @@ export function Header({ onSidebarToggle }: { onSidebarToggle: () => void }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
+  // Keyboard shortcut for Command Palette
   useEffect(() => {
-    if (searchOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [searchOpen]);
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(o => !o);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
@@ -96,46 +76,21 @@ export function Header({ onSidebarToggle }: { onSidebarToggle: () => void }) {
         </div>
         <div className="flex items-center space-x-2 sm:space-x-4">
           <button
-            aria-label="Open global search"
+            aria-label="Open command palette"
             className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             onClick={() => setSearchOpen(true)}
           >
             <Search className="w-5 h-5" />
           </button>
-          <Modal open={searchOpen} onClose={() => setSearchOpen(false)} title="Global Search">
-            <Input
-              ref={inputRef}
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setSearchIndex(0); }}
-              onKeyDown={handleKeyDown}
-              placeholder="Search pages, features..."
-              aria-label="Search"
-              className="mb-4"
-            />
-            <ul role="listbox" aria-label="Search results">
-              {results.length === 0 && <li className="p-4 text-center text-muted-foreground">No results found.</li>}
-              {results.map((item, i) => (
-                <li
-                  key={item.path || (item as FeatureItem).id}
-                  role="option"
-                  aria-selected={i === searchIndex}
-                  className={`flex items-center px-4 py-2 rounded-md cursor-pointer ${i === searchIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
-                  onMouseEnter={() => setSearchIndex(i)}
-                  onClick={() => {
-                    if (item.path) {
-                      window.location.href = item.path;
-                    }
-                    setSearchOpen(false);
-                    setSearchQuery('');
-                    setSearchIndex(0);
-                  }}
-                >
-                  {item.icon && <span className="mr-3 text-muted-foreground">{item.icon}</span>}
-                  {item.name}
-                </li>
-              ))}
-            </ul>
-          </Modal>
+          <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+          <button
+            onClick={onThemePanelToggle}
+            title="Customize Theme"
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          >
+            <Palette className="w-5 h-5" />
+          </button>
 
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

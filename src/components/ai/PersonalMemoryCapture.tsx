@@ -88,7 +88,8 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         impact: currentContext?.department ? `Dept:${currentContext.department}` : undefined,
       };
 
-      const inserted = await thoughtsService.createThought(createReq);
+      if (!user?.company_id) throw new Error('No company_id in user context');
+      const inserted = await thoughtsService.createThought({ ...createReq, company_id: user.company_id });
 
       // Reset form
       setContent('');

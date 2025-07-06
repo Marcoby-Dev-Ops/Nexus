@@ -19,7 +19,7 @@ export interface UserProfile {
     communicationStyle: 'direct' | 'detailed' | 'visual';
     updateFrequency: 'realtime' | 'hourly' | 'daily' | 'weekly';
     focusAreas: string[];
-    dashboardLayout: Record<string, any>;
+    dashboardLayout: Record<string, unknown>;
   };
   learningMetadata: {
     onboardingCompleted: boolean;
@@ -49,8 +49,8 @@ export interface BusinessInsight {
   automationPotential: AutomationOpportunity | null;
   context: {
     pageRelevance: string[]; // Which pages this insight is most relevant for
-    triggerConditions: Record<string, any>;
-    historicalData: any[];
+    triggerConditions: Record<string, unknown>;
+    historicalData: unknown[];
   };
   createdAt: string;
   expiresAt?: string;
@@ -76,7 +76,7 @@ export interface ActionStep {
   description: string;
   type: 'navigation' | 'form_fill' | 'api_call' | 'external_action';
   component?: string; // Component to render for this step
-  validation?: Record<string, any>;
+  validation?: Record<string, unknown>;
   automatable: boolean;
 }
 
@@ -100,13 +100,13 @@ export interface AutomationOpportunity {
 
 export interface WorkflowTrigger {
   type: 'schedule' | 'webhook' | 'data_change' | 'threshold' | 'manual';
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   description: string;
 }
 
 export interface WorkflowAction {
   type: 'api_call' | 'notification' | 'data_update' | 'report_generation';
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   description: string;
   fallbackAction?: WorkflowAction;
 }
@@ -114,7 +114,7 @@ export interface WorkflowAction {
 export interface WorkflowCondition {
   field: string;
   operator: 'equals' | 'greater_than' | 'less_than' | 'contains' | 'not_equals';
-  value: any;
+  value: unknown;
   description: string;
 }
 
@@ -122,7 +122,7 @@ export interface LearningEvent {
   id: string;
   userId: string;
   type: 'page_view' | 'action_taken' | 'insight_dismissed' | 'automation_created' | 'integration_connected';
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   context: {
     page: string;
     sessionId: string;
@@ -143,7 +143,7 @@ export interface ProgressiveAction {
   position: 'header' | 'sidebar' | 'floating' | 'inline' | 'contextual';
   trigger: {
     type: 'page_load' | 'data_threshold' | 'time_based' | 'user_behavior';
-    conditions: Record<string, any>;
+    conditions: Record<string, unknown>;
   };
   action: ActionSuggestion;
   displayConfig: {
@@ -178,9 +178,9 @@ export interface SecondBrainContext {
 export interface IntegrationDataPoint {
   source: string;
   type: string;
-  value: any;
+  value: unknown;
   timestamp: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   relevanceScore: number; // 0-1 scale for how relevant this data is to current context
 }
 
@@ -255,7 +255,7 @@ export interface UseProgressiveUIReturn {
     automations: AutomationOpportunity[];
   };
   uiAdaptations: {
-    layoutAdjustments: Record<string, any>;
+    layoutAdjustments: Record<string, unknown>;
     contentPriority: string[];
     interactionHints: string[];
   };

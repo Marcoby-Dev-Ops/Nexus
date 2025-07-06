@@ -200,7 +200,7 @@ class DomainAnalysisService {
   /**
    * Update business health KPI based on domain analysis
    */
-  async updateProfessionalEmailKPI(userId: string, companyId?: string): Promise<boolean> {
+  async updateProfessionalEmailKPI(userId: string): Promise<boolean> {
     try {
       const analysis = await this.analyzeUserEmailDomains(userId);
       

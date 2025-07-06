@@ -40,8 +40,8 @@ export interface Integration {
   }>;
   
   // Configuration Schema
-  configSchema?: Record<string, any>;
-  defaultConfig?: Record<string, any>;
+  configSchema?: Record<string, unknown>;
+  defaultConfig?: Record<string, unknown>;
   
   // Platform Metadata
   isActive: boolean;
@@ -79,7 +79,7 @@ export interface SetupStep {
   // Validation
   validation?: {
     required: boolean;
-    validator?: (data: any) => ValidationResult;
+    validator?: (data: unknown) => ValidationResult;
   };
   
   // Analytics
@@ -105,13 +105,13 @@ export interface ValidationResult {
  */
 export interface SetupData {
   integrationId: string;
-  stepData: Record<string, any>;
+  stepData: Record<string, unknown>;
   credentials?: {
     encrypted: boolean;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
   };
   permissions: Record<string, boolean>;
-  configuration: Record<string, any>;
+  configuration: Record<string, unknown>;
   metadata: {
     startTime: string;
     completionTime?: string;

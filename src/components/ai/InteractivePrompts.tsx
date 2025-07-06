@@ -27,6 +27,7 @@ import { Spinner } from '../ui/Spinner';
 import { Alert } from '../ui/Alert';
 import { thoughtsService } from '../../lib/services/thoughtsService';
 import type { InteractionMethod, ThoughtCategory } from '../../lib/types/thoughts';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InteractivePromptsProps {
   onThoughtCreated?: (thoughtId: string) => void;
@@ -87,6 +88,7 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const { user } = useAuth();
 
   // ====== Voice Recording ======
   
@@ -214,10 +216,13 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
     setError(null);
     
     try {
+      if (!user?.company_id) throw new Error('No company_id in user context');
       const thought = await thoughtsService.createThought({
         content: inputState.content,
         interaction_method: inputState.method,
-        status: 'not_started'
+        status: 'not_started',
+        company_id: user.company_id,
+        category: 'idea'
       });
       
       // Reset form

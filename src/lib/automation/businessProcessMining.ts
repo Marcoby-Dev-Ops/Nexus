@@ -12,7 +12,7 @@ interface ProcessStep {
   duration: number;
   userId: string;
   sessionId: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   outcome: 'success' | 'failure' | 'abandoned';
 }
 

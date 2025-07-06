@@ -6,7 +6,7 @@
  * Pillar: 5 (Speed & Performance) - Eliminates redundant page code
  */
 
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { 
   DashboardLayout, 
@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { ErrorBoundary } from 'react-error-boundary';
+import { analyticsService } from '@/lib/services/analyticsService';
+import { useAuth } from '@/contexts/AuthContext';
 
 // ===== UNIFIED DEPARTMENT PAGE =====
 
@@ -248,18 +250,17 @@ interface CallbackPageConfig {
 }
 
 /**
- * UnifiedCallbackPage - Single component to replace all OAuth callback pages
- * Replaces: Microsoft365Callback, GoogleWorkspaceCallback, etc.
+ * UnifiedCallbackPage - Handles OAuth, etc. callbacks
  */
 export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ config }) => {
   const [status, setStatus] = React.useState<'loading' | 'success' | 'error'>('loading');
 
   React.useEffect(() => {
-    // Simulate callback processing
+    // Mocking the async operation
     const timer = setTimeout(() => {
-      setStatus(Math.random() > 0.1 ? 'success' : 'error');
+      // Logic to determine success/error would go here
+      setStatus('success');
     }, 2000);
-
     return () => clearTimeout(timer);
   }, []);
 
@@ -277,7 +278,7 @@ export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ 
           
           {status === 'success' && (
             <>
-              <div className="text-emerald-500 text-4xl mb-4">✓</div>
+              <div className="text-success text-4xl mb-4">✓</div>
               <h2 className="text-xl font-semibold mb-2">Success!</h2>
               <p className="text-muted-foreground mb-4">{config.successMessage}</p>
               <button 
@@ -291,7 +292,7 @@ export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ 
           
           {status === 'error' && (
             <>
-              <div className="text-red-500 text-4xl mb-4">✗</div>
+              <div className="text-destructive text-4xl mb-4">✗</div>
               <h2 className="text-xl font-semibold mb-2">Error</h2>
               <p className="text-muted-foreground mb-4">{config.errorMessage}</p>
               <button 
@@ -308,36 +309,29 @@ export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ 
   );
 };
 
-// ===== EXPORTS =====
-
-export {
-  type DepartmentConfig,
-  type SettingsPageConfig,
-  type AnalyticsConfig,
-  type CallbackPageConfig
-}; 
+// ===== UNIFIED DEPARTMENT PAGE COMPONENTS =====
 
 // AI-Powered Insights Panel Component
 const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) => {
-  const [activeInsight, setActiveInsight] = useState<string>('recommendations');
+  const [activeInsight, setActiveInsight] = React.useState<string>('recommendations');
 
   return (
-    <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50">
+    <Card className="border-primary-subtle bg-gradient-to-br from-primary-subtle to-background">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <Brain className="w-5 h-5 text-blue-600" />
-          <CardTitle className="text-blue-900">AI Business Intelligence</CardTitle>
-          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+          <Brain className="w-5 h-5 text-primary" />
+          <CardTitle className="text-primary-foreground">AI Business Intelligence</CardTitle>
+          <Badge variant="secondary" className="bg-primary-foreground text-primary">
             Powered by Nexus AI
           </Badge>
         </div>
-        <CardDescription className="text-blue-700">
+        <CardDescription className="text-primary-foreground/80">
           Intelligent insights that connect your department to the bigger picture
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs value={activeInsight} onValueChange={setActiveInsight} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-blue-100">
+          <TabsList className="grid w-full grid-cols-4 bg-primary-subtle">
             <TabsTrigger value="recommendations" className="text-xs">AI Recommendations</TabsTrigger>
             <TabsTrigger value="impact" className="text-xs">Cross-Dept Impact</TabsTrigger>
             <TabsTrigger value="drivers" className="text-xs">Business Drivers</TabsTrigger>
@@ -346,37 +340,37 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
           
           <TabsContent value="recommendations" className="space-y-3 mt-4">
             {insights.aiRecommendations.map((rec, index) => (
-              <Alert key={index} className="border-green-200 bg-green-50">
-                <Zap className="h-4 w-4 text-green-600" />
-                <h3 className="font-semibold text-green-800">AI Recommendation #{index + 1}</h3>
-                <p className="text-green-700">{rec}</p>
+              <Alert key={index} className="border-success-subtle bg-success-subtle">
+                <Zap className="h-4 w-4 text-success" />
+                <h3 className="font-semibold text-success-foreground">AI Recommendation #{index + 1}</h3>
+                <p className="text-success-foreground/80">{rec}</p>
               </Alert>
             ))}
           </TabsContent>
           
           <TabsContent value="impact" className="space-y-3 mt-4">
             {insights.crossDepartmentalImpact.map((impact, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100">
-                <ArrowUpRight className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
-                <p className="text-sm text-gray-700">{impact}</p>
+              <div key={index} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+                <ArrowUpRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">{impact}</p>
               </div>
             ))}
           </TabsContent>
           
           <TabsContent value="drivers" className="space-y-3 mt-4">
             {insights.keyBusinessDrivers.map((driver, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100">
-                <Target className="w-4 h-4 text-purple-600 mt-1 flex-shrink-0" />
-                <p className="text-sm text-gray-700">{driver}</p>
+              <div key={index} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+                <Target className="w-4 h-4 text-secondary mt-1 flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">{driver}</p>
               </div>
             ))}
           </TabsContent>
           
           <TabsContent value="practices" className="space-y-3 mt-4">
             {insights.bestPractices.map((practice, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-blue-100">
-                <Award className="w-4 h-4 text-orange-600 mt-1 flex-shrink-0" />
-                <p className="text-sm text-gray-700">{practice}</p>
+              <div key={index} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+                <Award className="w-4 h-4 text-warning mt-1 flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">{practice}</p>
               </div>
             ))}
           </TabsContent>
@@ -389,95 +383,90 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
 // Business Education Panel Component
 const BusinessEducationPanel: React.FC<{ content: EducationalContent }> = ({ content }) => {
   return (
-    <Card className="border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50">
+    <Card className="border-secondary-subtle bg-gradient-to-br from-secondary-subtle to-background">
       <CardHeader>
         <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-purple-600" />
-          <CardTitle className="text-purple-900">Business Education Center</CardTitle>
-          <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+          <BookOpen className="w-5 h-5 text-secondary" />
+          <CardTitle className="text-secondary-foreground">Business Education Center</CardTitle>
+          <Badge variant="secondary" className="bg-secondary-foreground text-secondary">
             Learn & Grow
           </Badge>
         </div>
-        <CardDescription className="text-purple-700">
+        <CardDescription className="text-secondary-foreground/80">
           Understanding your business better leads to better decisions
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="bg-white rounded-lg p-4 border border-purple-100">
-          <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+        <div className="bg-background rounded-lg p-4 border border-border">
+          <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <Lightbulb className="w-4 h-4" />
             What This Means
           </h4>
-          <p className="text-sm text-gray-700">{content.whatThisMeans}</p>
+          <p className="text-sm text-muted-foreground">{content.whatThisMeans}</p>
         </div>
         
-        <div className="bg-white rounded-lg p-4 border border-purple-100">
-          <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+        <div className="bg-background rounded-lg p-4 border border-border">
+          <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             Why It Matters
           </h4>
-          <p className="text-sm text-gray-700">{content.whyItMatters}</p>
+          <p className="text-sm text-muted-foreground">{content.whyItMatters}</p>
         </div>
         
-        <div className="bg-white rounded-lg p-4 border border-purple-100">
-          <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+        <div className="bg-background rounded-lg p-4 border border-border">
+          <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
             How to Improve
           </h4>
           <ul className="space-y-2">
             {content.howToImprove.map((tip, index) => (
-              <li key={index} className="text-sm text-gray-700 flex items-start gap-2">
-                <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mt-2 flex-shrink-0"></span>
+              <li key={index} className="text-sm text-muted-foreground flex items-start gap-2">
+                <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
                 {tip}
               </li>
             ))}
           </ul>
         </div>
         
-        <div className="bg-white rounded-lg p-4 border border-purple-100">
-          <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+        <div className="bg-background rounded-lg p-4 border border-border">
+          <h4 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <Globe className="w-4 h-4" />
             Industry Benchmarks
           </h4>
-          <p className="text-sm text-gray-700">{content.industryBenchmarks}</p>
+          <p className="text-sm text-muted-foreground">{content.industryBenchmarks}</p>
         </div>
       </CardContent>
     </Card>
   );
 };
 
-// Enhanced Activity Feed with Badges
+// Enhanced Activity Feed Component
 const EnhancedActivityFeed: React.FC<{ activities: EnhancedActivity[] }> = ({ activities }) => {
   const getBadgeColor = (badge?: string) => {
     switch (badge) {
-      case 'AI': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Auto': return 'bg-green-100 text-green-800 border-green-200';
-      case 'Insight': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Learning': return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'Collaboration': return 'bg-pink-100 text-pink-800 border-pink-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'AI': return 'bg-primary-subtle text-primary border-primary-subtle';
+      case 'Auto': return 'bg-success-subtle text-success border-success-subtle';
+      case 'Insight': return 'bg-secondary-subtle text-secondary border-secondary-subtle';
+      case 'Learning': return 'bg-warning-subtle text-warning border-warning-subtle';
+      case 'Collaboration': return 'bg-info-subtle text-info border-info-subtle';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5" />
-          Intelligent Activity Feed
-        </CardTitle>
-        <CardDescription>
-          Real-time insights and cross-departmental collaboration
-        </CardDescription>
+        <CardTitle>Activity Stream</CardTitle>
+        <CardDescription>Live feed of key events and actions</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
           {activities.map((activity, index) => (
-            <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+            <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900">{activity.description}</p>
+                <p className="text-sm font-medium text-foreground">{activity.description}</p>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-xs text-gray-500">{activity.time}</span>
+                  <span className="text-xs text-muted-foreground">{activity.time}</span>
                   {activity.badge && (
                     <Badge 
                       variant="outline" 
@@ -496,112 +485,103 @@ const EnhancedActivityFeed: React.FC<{ activities: EnhancedActivity[] }> = ({ ac
         </div>
       </CardContent>
     </Card>
-  );
+  )
 };
 
-// Main Unified Department Page Component
+// Main Component
 export const UnifiedDepartmentPage: React.FC<{ config: DepartmentConfig }> = ({ config }) => {
-  const [tab, setTab] = React.useState('think');
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      analyticsService.init(user.id, { department: config.title });
+      analyticsService.track('department_page_viewed', {
+        department: config.title,
+      });
+    }
+    return () => analyticsService.reset();
+  }, [user, config.title]);
+
+  const handleActionClick = (action: QuickAction) => {
+    analyticsService.track('department_quick_action_clicked', {
+      department: config.title,
+      action: action.label,
+    });
+    action.onClick();
+  };
 
   return (
-    <DashboardLayout title={config.title} subtitle={config.subtitle}>
-      <Tabs value={tab} onValueChange={setTab} className="mb-8">
-        <TabsList aria-label="Department Tabs">
-          <TabsTrigger value="think">THINK (Analysis)</TabsTrigger>
-          <TabsTrigger value="see">SEE (Advice)</TabsTrigger>
-          <TabsTrigger value="act">ACT (Resources)</TabsTrigger>
-        </TabsList>
-        {/* THINK: Analysis Tab */}
-        <TabsContent value="think">
-          <ErrorBoundary fallback={<div>Failed to load THINK tab.</div>}>
-            {/* 1. KPI Grid */}
-            <ContentSection title="Key Performance Indicators" className="mb-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {config.kpis.map((kpi, idx) => (
-                  <Card key={idx} className="p-4 flex flex-col items-center">
-                    <CardTitle>{kpi.title}</CardTitle>
-                    <div className="text-2xl font-bold">{kpi.value}</div>
-                    {kpi.delta && <span className="text-sm">{kpi.delta}</span>}
-                  </Card>
-                ))}
-              </div>
-            </ContentSection>
-            {/* 2. Primary Chart */}
-            <ContentSection title={config.charts.primary.title} className="mb-8">
-              <p>{config.charts.primary.description}</p>
-              <SimpleBarChart data={config.charts.primary.data} />
-            </ContentSection>
-            {/* 3. Secondary Chart */}
-            <ContentSection title={config.charts.secondary.title} className="mb-8">
-              <p>{config.charts.secondary.description}</p>
-              <SimpleBarChart data={config.charts.secondary.data} />
-            </ContentSection>
-            {/* 4. Quick Actions */}
-            <ContentSection title="Quick Actions" className="mb-8">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {config.quickActions.map((action, index) => {
-                  const IconComponent = action.icon;
-                  return (
-                    <button
-                      key={index}
-                      onClick={action.onClick}
-                      className="flex flex-col items-center p-6 rounded-lg border group"
-                    >
-                      <div className="p-4 rounded-lg mb-3">
-                        <IconComponent className="w-5 h-5" />
-                      </div>
-                      <span className="text-sm font-medium">
-                        {action.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </ContentSection>
-            {/* 5. Recent Activities */}
-            <ContentSection title="Recent Activities" className="mb-8">
-              <div className="space-y-4">
-                {config.activities.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="text-2xl">
-                        {activity.type}
-                      </div>
-                      <div>
-                        <h4 className="font-medium">{activity.description}</h4>
-                        <p className="text-sm">{activity.time}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium`}>{activity.status}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ContentSection>
-          </ErrorBoundary>
-        </TabsContent>
-        {/* SEE: Advice Tab */}
-        <TabsContent value="see">
-          <ErrorBoundary fallback={<div>Failed to load SEE tab.</div>}>
-            {config.businessInsights ? (
-              <AIInsightsPanel insights={config.businessInsights} />
-            ) : (
-              <div className="p-8 text-center">No advice available for this department yet.</div>
-            )}
-          </ErrorBoundary>
-        </TabsContent>
-        {/* ACT: Resources Tab */}
-        <TabsContent value="act">
-          <ErrorBoundary fallback={<div>Failed to load ACT tab.</div>}>
-            {config.educationalContent ? (
-              <BusinessEducationPanel content={config.educationalContent} />
-            ) : (
-              <div className="p-8 text-center">No resources available for this department yet.</div>
-            )}
-          </ErrorBoundary>
-        </TabsContent>
-      </Tabs>
+    <DashboardLayout 
+      title={config.title}
+      subtitle={config.subtitle}
+    >
+      <ContentSection title="Key Performance Indicators">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {config.kpis.map((kpi, index) => (
+            <Card key={index}>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-muted-foreground">{kpi.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{kpi.value}</div>
+                {kpi.delta && <p className="text-xs text-muted-foreground">{kpi.delta}</p>}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </ContentSection>
+
+      <ContentSection title="Quick Actions">
+        <div className="flex flex-wrap gap-4">
+          {config.quickActions.map((action, index) => (
+            <Button key={index} variant="outline" onClick={() => handleActionClick(action)}>
+              <action.icon className="mr-2 h-4 w-4" />
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      </ContentSection>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+        <ContentSection title="Analytics Overview">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>{config.charts.primary.title}</CardTitle>
+                <CardDescription>{config.charts.primary.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[250px]">
+                <SimpleBarChart data={config.charts.primary.data} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>{config.charts.secondary.title}</CardTitle>
+                <CardDescription>{config.charts.secondary.description}</CardDescription>
+              </CardHeader>
+              <CardContent className="h-[250px]">
+                <SimpleBarChart data={config.charts.secondary.data} />
+              </CardContent>
+            </Card>
+          </div>
+        </ContentSection>
+
+        <ContentSection title="Live Activity">
+          <EnhancedActivityFeed activities={config.activities} />
+        </ContentSection>
+      </div>
+
+      {config.businessInsights && (
+        <ContentSection title="Strategic Intelligence">
+          <AIInsightsPanel insights={config.businessInsights} />
+        </ContentSection>
+      )}
+
+      {config.educationalContent && (
+        <ContentSection title="Knowledge Hub">
+          <BusinessEducationPanel content={config.educationalContent} />
+        </ContentSection>
+      )}
     </DashboardLayout>
   );
 };

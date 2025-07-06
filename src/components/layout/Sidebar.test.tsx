@@ -5,36 +5,51 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Sidebar from './Sidebar';
+import { MemoryRouter } from 'react-router-dom';
+import { Sidebar } from './Sidebar';
 
 describe('Sidebar', () => {
-  const mockToggleSidebar = jest.fn();
+  const mockOnClose = jest.fn();
 
   beforeEach(() => {
-    mockToggleSidebar.mockClear();
+    mockOnClose.mockClear();
   });
+
+  const renderWithRouter = (ui: React.ReactElement) => {
+    return render(<MemoryRouter>{ui}</MemoryRouter>);
+  };
 
   it('renders sidebar content', () => {
-    render(<Sidebar isOpen={true} toggleSidebar={mockToggleSidebar} />);
-    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+    renderWithRouter(<Sidebar isOpen={true} onClose={mockOnClose} />);
+    expect(screen.getByText('Nexus')).toBeInTheDocument();
   });
 
-  it('shows open/close state', () => {
-    const { rerender } = render(<Sidebar isOpen={true} toggleSidebar={mockToggleSidebar} />);
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-open', 'true');
-    rerender(<Sidebar isOpen={false} toggleSidebar={mockToggleSidebar} />);
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-open', 'false');
+  it('is hidden when isOpen is false', () => {
+    const { container } = renderWithRouter(<Sidebar isOpen={false} onClose={mockOnClose} />);
+    const aside = container.querySelector('aside');
+    expect(aside).toHaveClass('-translate-x-full');
   });
 
-  it('calls toggleSidebar when toggle button is clicked', () => {
-    render(<Sidebar isOpen={true} toggleSidebar={mockToggleSidebar} />);
-    const toggleButton = screen.getByRole('button');
-    fireEvent.click(toggleButton);
-    expect(mockToggleSidebar).toHaveBeenCalled();
+  it('is visible when isOpen is true', () => {
+    const { container } = renderWithRouter(<Sidebar isOpen={true} onClose={mockOnClose} />);
+    const aside = container.querySelector('aside');
+    expect(aside).toHaveClass('translate-x-0');
   });
 
-  it('matches snapshot', () => {
-    const { asFragment } = render(<Sidebar isOpen={true} toggleSidebar={mockToggleSidebar} />);
+  it('calls onClose when close button is clicked', () => {
+    renderWithRouter(<Sidebar isOpen={true} onClose={mockOnClose} />);
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    fireEvent.click(closeButton);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('matches snapshot when open', () => {
+    const { asFragment } = renderWithRouter(<Sidebar isOpen={true} onClose={mockOnClose} />);
+    expect(asFragment()).toMatchSnapshot();
+  });
+
+  it('matches snapshot when closed', () => {
+    const { asFragment } = renderWithRouter(<Sidebar isOpen={false} onClose={mockOnClose} />);
     expect(asFragment()).toMatchSnapshot();
   });
 }); 

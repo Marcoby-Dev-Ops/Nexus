@@ -49,20 +49,20 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
     
     try {
       // Get document count from Supabase
-      const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
+      const { data: { user } } = await import('@/lib/core/supabase').then(m => m.supabase.auth.getUser());
       if (!user) {
         setSyncStats(prev => ({ ...prev, isLoading: false }));
         return;
       }
 
-      const { count } = await import('@/lib/supabase').then(m => m.supabase
+      const { count } = await import('@/lib/core/supabase').then(m => m.supabase
         .from('ai_vector_documents')
         .select('*', { count: 'exact', head: true })
         .or('document_id.like.google-drive-%,document_id.like.onedrive-%')
       );
 
       // Get last sync time from most recent document
-      const { data: lastDoc } = await import('@/lib/supabase').then(m => m.supabase
+      const { data: lastDoc } = await import('@/lib/core/supabase').then(m => m.supabase
         .from('ai_vector_documents')
         .select('created_at')
         .or('document_id.like.google-drive-%,document_id.like.onedrive-%')

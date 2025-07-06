@@ -12,14 +12,10 @@ import {
   Building2,
   Zap,
   MessageSquare,
-  Calendar,
   Sparkles,
   Wrench,
-  PieChart,
-  Bell,
   Database,
   Bot,
-  LineChart,
   UserCheck,
 } from 'lucide-react';
 
@@ -312,11 +308,11 @@ export const getFeatureById = (id: string): FeatureDefinition | undefined => {
  */
 export const getRelatedFeatures = (featureId: string): FeatureDefinition[] => {
   const feature = getFeatureById(featureId);
-  if (!feature || !feature.relatedFeatures || feature.relatedFeatures.length === 0) {
+  const related = Array.isArray(feature?.relatedFeatures) ? feature.relatedFeatures : [];
+  if (!feature || related.length === 0) {
     return [];
   }
-  
-  return featuresList.filter(f => feature.relatedFeatures?.includes(f.id));
+  return featuresList.filter(f => related.includes(f.id));
 };
 
 /**

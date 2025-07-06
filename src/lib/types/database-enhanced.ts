@@ -6,7 +6,7 @@
  * especially for tables that might be missing from auto-generated types
  */
 
-import type { Database } from '../database.types';
+import type { Database } from '../core/database.types';
 
 // Enhanced types for better type safety
 export type Tables = Database['public']['Tables'];
@@ -105,7 +105,7 @@ export interface EnhancedCompany {
       session_timeout?: number;
       allowed_domains?: string[];
     };
-    [key: string]: any;
+    [key: string]: unknown;
   } | null;
 }
 
@@ -132,10 +132,10 @@ export interface EnhancedUserProfile {
   bio?: string | null;
   skills?: string[] | null;
   certifications?: string[] | null;
-  languages?: any | null;
-  address?: any | null;
-  emergency_contact?: any | null;
-  preferences?: any | null;
+  languages?: unknown | null;
+  address?: unknown | null;
+  emergency_contact?: unknown | null;
+  preferences?: unknown | null;
   onboarding_completed?: boolean | null;
   profile_completion_percentage?: number | null;
   created_at?: string | null;
@@ -165,13 +165,19 @@ export interface IntegrationConfig {
   webhook_url?: string;
   sync_frequency?: 'real-time' | 'hourly' | 'daily' | 'weekly' | 'manual';
   enabled_features?: string[];
-  custom_fields?: Record<string, any>;
-  [key: string]: any;
+  custom_fields?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface EnhancedUserIntegration extends Omit<Tables['user_integrations']['Row'], 'config'> {
   config: IntegrationConfig;
   integration?: Tables['integrations']['Row'];
+  metadata?: {
+    department?: string;
+    context?: string;
+    session_id?: string;
+    [key: string]: unknown;
+  };
 }
 
 // Conversation and Message Types
@@ -186,7 +192,7 @@ export interface AIConversation {
     department?: string;
     context?: string;
     session_id?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -206,7 +212,7 @@ export interface AIMessage {
       title: string;
       url?: string;
     }>;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -222,7 +228,7 @@ export interface Thought {
   initiative?: boolean;
   workflow_stage?: string;
   parent_idea_id?: string;
-  ai_insights?: Record<string, any>;
+  ai_insights?: Record<string, unknown>;
   interaction_method?: 'text' | 'speech' | 'copy_paste' | 'upload';
   created_at: string;
   updated_at: string;
@@ -235,7 +241,7 @@ export interface AIInteraction {
   prompt_text?: string;
   ai_response?: string;
   interaction_type?: string;
-  context_data?: Record<string, any>;
+  context_data?: Record<string, unknown>;
   created_at: string;
 }
 

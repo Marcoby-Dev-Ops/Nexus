@@ -9,6 +9,7 @@
  */
 
 import { thoughtsService } from './thoughtsService';
+import { supabase } from '../core/supabase';
 import type { Thought } from '../types/thoughts';
 
 export interface Task {
@@ -38,25 +39,19 @@ class TasksService {
    * @returns {Promise<Task[]>} A promise that resolves to an array of tasks.
    */
   async getTasks(): Promise<Task[]> {
-    const { data: { user } } = await import('../core/supabase').then(m => m.supabase.auth.getUser());
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user?.id) {
       throw new Error('User not authenticated');
     }
 
     // Leveraging thoughtsService to get all thoughts and then filtering for tasks.
-    // In a real-world scenario with more data, you would want to filter this at the query level.
-    const { data: thoughts, error } = await import('../core/supabase').then(m => m.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('category', 'task')
-    );
-    
-    if (error) {
-      throw new Error(`Failed to get tasks: ${error.message}`);
+    const { thoughts: allThoughts } = await thoughtsService.getThoughts();
+    if (!allThoughts) {
+      return [];
     }
-
-    return thoughts.map(mapThoughtToTask);
+    const taskThoughts = allThoughts.filter((t: Thought) => t.category === 'task' && t.user_id === user.id);
+    
+    return taskThoughts.map(mapThoughtToTask);
   }
 
    /**

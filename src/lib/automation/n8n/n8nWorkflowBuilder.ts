@@ -12,7 +12,7 @@ export interface N8nNode {
   type: string;
   typeVersion: number;
   position: [number, number];
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
   credentials?: Record<string, string>;
   webhookId?: string;
 }
@@ -51,7 +51,7 @@ export interface WorkflowGenerationRequest {
 export interface WorkflowAction {
   type: 'http_request' | 'database' | 'email' | 'slack' | 'transform' | 'ai_process';
   name: string;
-  parameters: Record<string, any>;
+  parameters: Record<string, unknown>;
 }
 
 export interface WorkflowGenerationResult {
@@ -63,8 +63,6 @@ export interface WorkflowGenerationResult {
 }
 
 class N8nWorkflowBuilder {
-  private clientId: string = 'nexus-workflow-builder';
-
   /**
    * Initialize connection to user's n8n instance
    */
@@ -82,8 +80,8 @@ class N8nWorkflowBuilder {
       // }
       
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred' };
     }
   }
 
@@ -128,9 +126,9 @@ class N8nWorkflowBuilder {
         webhookUrl: createResult.webhookUrl,
       };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Workflow generation failed:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred' };
     }
   }
 
@@ -385,9 +383,9 @@ return items;
         workflowId,
         webhookUrl,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to create workflow in n8n:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred' };
     }
   }
 
@@ -399,8 +397,8 @@ return items;
       // Use MCP integration to activate workflow (placeholder)
       console.log(`Activating workflow: ${workflowId}`);
       return { success: true };
-    } catch (error: any) {
-      return { success: false, error: error.message };
+    } catch (error: unknown) {
+      return { success: false, error: error instanceof Error ? error.message : 'An unknown error occurred' };
     }
   }
 

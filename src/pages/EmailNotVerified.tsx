@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
-import { supabase } from '../lib/core/supabase';
-import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/Button';
 
-const EmailNotVerified: React.FC = () => {
-  const { user } = useAuth();
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const resend = async () => {
-    if (!user?.email) return;
-    setError(null);
-    const { error } = await supabase.auth.resend({ type: 'signup', email: user.email });
-    if (error) setError(error.message);
-    else setSent(true);
-  };
+export default function EmailNotVerified() {
+  const { signOut } = useAuth();
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center space-y-4">
-      <h1 className="text-2xl font-semibold">Verify your email</h1>
-      <p className="text-muted-foreground text-center max-w-sm">
-        We&apos;ve sent a confirmation link to <strong>{user?.email}</strong>. Please click the link in that email to activate your account.
-      </p>
-      <Button onClick={resend} disabled={sent}>
-        {sent ? 'Verification email sent' : 'Resend email'}
-      </Button>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center max-w-md mx-auto p-6">
+        <div className="text-primary mb-4">
+          <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-semibold text-foreground mb-2">Verify Your Email</h2>
+        <p className="text-muted-foreground mb-6">
+          A confirmation link has been sent to your email address. Please click the link to complete your registration.
+        </p>
+        <p className="text-sm text-muted-foreground mb-6">
+          Didn't get the email? Check your spam folder or request a new one.
+        </p>
+        <div className="flex justify-center gap-4">
+          <Button onClick={signOut}>Back to Login</Button>
+        </div>
+      </div>
     </div>
   );
-};
-
-export default EmailNotVerified; 
+} 

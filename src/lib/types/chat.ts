@@ -11,7 +11,7 @@ export interface ChatMessage {
     citations?: string[];
     attachments?: AttachmentData[];
     reactions?: MessageReaction[];
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

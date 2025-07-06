@@ -12,7 +12,7 @@ export interface BaseComponentProps {
 }
 
 // API Response patterns
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: string;
   success: boolean;
@@ -54,7 +54,7 @@ export interface FormField {
   label: string;
   type: 'text' | 'email' | 'password' | 'select' | 'textarea' | 'checkbox';
   required?: boolean;
-  validation?: (value: any) => string | undefined;
+  validation?: (value: unknown) => string | undefined;
   options?: { label: string; value: string }[];
 }
 
@@ -62,7 +62,7 @@ export interface FormField {
 export interface AppError {
   code: string;
   message: string;
-  details?: any;
+  details?: unknown;
   timestamp: Date;
 }
 
@@ -76,7 +76,7 @@ export interface ThemeConfig {
 }
 
 // Testing types
-export interface MockData<T = any> {
+export interface MockData<T = unknown> {
   data: T;
   loading?: boolean;
   error?: string | null;
@@ -100,7 +100,7 @@ export interface ModuleConfig {
  */
 
 // Core database types
-export type { Database } from '../database.types';
+export type { Database } from '../core/database.types';
 
 // Enhanced database types with improved type safety
 export * from './database-enhanced';
@@ -126,4 +126,4 @@ export * from './billing';
 export * from './integrations';
 
 // Legacy compatibility  
-export * from './database-fixes'; 
+// export * from './database-fixes'; 

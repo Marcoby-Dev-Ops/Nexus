@@ -36,6 +36,30 @@ interface CompanyEnrichmentData {
   };
 }
 
+interface LinkedInOrganizationSearch {
+  elements: { id: string }[];
+}
+
+interface LinkedInOrganization {
+  id: string;
+  name: string;
+  description: string;
+  industry: string;
+  specialties: string[];
+  staffCount: number;
+  websiteUrl: string;
+  logoUrl: string;
+  founded: string;
+  headquarters: string;
+  followersCount: number;
+}
+
+interface LinkedInSocialProfiles {
+  twitter?: string;
+  facebook?: string;
+  instagram?: string;
+}
+
 class LinkedInService {
   private config: LinkedInConfig;
   private baseUrl = 'https://api.linkedin.com/v2';
@@ -126,9 +150,9 @@ class LinkedInService {
   async enrichCompanyData(domain: string): Promise<CompanyEnrichmentData> {
     try {
       // First try to find company by domain
-      const searchResponse = await this.makeAuthenticatedRequest(
+      const searchResponse = (await this.makeAuthenticatedRequest(
         `/organizationSearch?q=domain&domain=${domain}`
-      );
+      )) as LinkedInOrganizationSearch;
 
       if (!searchResponse.elements?.length) {
         throw new Error('Company not found on LinkedIn');
@@ -137,14 +161,14 @@ class LinkedInService {
       const companyId = searchResponse.elements[0].id;
 
       // Get detailed company information
-      const companyData = await this.makeAuthenticatedRequest(
+      const companyData = (await this.makeAuthenticatedRequest(
         `/organizations/${companyId}?projection=(id,name,description,industry,specialties,staffCount,websiteUrl,logoUrl)`
-      );
+      )) as LinkedInOrganization;
 
       // Get company social profiles
-      const socialData = await this.makeAuthenticatedRequest(
+      const socialData = (await this.makeAuthenticatedRequest(
         `/organizations/${companyId}/socialProfiles`
-      );
+      )) as LinkedInSocialProfiles;
 
       // Format the enriched data
       return {
@@ -175,7 +199,7 @@ class LinkedInService {
   /**
    * Make authenticated request to LinkedIn API
    */
-  private async makeAuthenticatedRequest(endpoint: string): Promise<any> {
+  private async makeAuthenticatedRequest(endpoint: string): Promise<unknown> {
     const tokens = this.getStoredTokens();
     if (!tokens) {
       throw new Error('No authentication tokens available');

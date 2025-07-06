@@ -3,7 +3,7 @@
  * Tests for the enhanced n8n workflow builder
  */
 
-import { n8nWorkflowBuilder, type WorkflowGenerationRequest } from '../n8nWorkflowBuilder';
+import { n8nWorkflowBuilder, type WorkflowGenerationRequest } from '@/lib/automation/n8n/n8nWorkflowBuilder';
 import { userN8nConfigService } from '../userN8nConfig';
 
 // Mock the userN8nConfigService

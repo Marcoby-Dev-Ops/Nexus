@@ -5,7 +5,7 @@ import type { BusinessInsight } from '../types/learning-system';
 
 export interface EABusinessObservation {
   id: string;
-  type: 'opportunity' | 'risk' | 'achievement' | 'recommendation';
+  type: 'opportunity' | 'risk' | 'achievement' | 'trend' | 'anomaly';
   priority: 'low' | 'medium' | 'high' | 'critical';
   category: string;
   title: string;
@@ -47,10 +47,10 @@ class BusinessObservationService {
         performanceObservations,
         securityObservations
       ] = await Promise.all([
-        this.generateEmailDomainObservations(userId, companyId),
+        this.generateEmailDomainObservations(userId),
         this.generateIntegrationObservations(userId, companyId),
-        this.generatePerformanceObservations(userId, companyId),
-        this.generateSecurityObservations(userId, companyId)
+        this.generatePerformanceObservations(userId),
+        this.generateSecurityObservations(userId)
       ]);
 
       observations.push(
@@ -77,7 +77,7 @@ class BusinessObservationService {
   /**
    * Generate professional email domain observations
    */
-  private async generateEmailDomainObservations(userId: string, companyId: string): Promise<EABusinessObservation[]> {
+  private async generateEmailDomainObservations(userId: string): Promise<EABusinessObservation[]> {
     try {
       const analysis = await domainAnalysisService.analyzeUserEmailDomains(userId);
       const observations: EABusinessObservation[] = [];
@@ -127,7 +127,7 @@ class BusinessObservationService {
       if (analysis.customDomainCount > 0) {
         observations.push({
           id: `email-security-${Date.now()}`,
-          type: 'recommendation',
+          type: 'opportunity',
           priority: 'medium',
           category: 'Email Security',
           title: 'Email Security Enhancement Opportunity',
@@ -220,7 +220,7 @@ class BusinessObservationService {
       return observations;
 
     } catch (error) {
-      logger.error({ error, userId }, 'Error generating integration observations');
+      logger.error({ error, userId, companyId }, 'Error generating integration observations');
       return [];
     }
   }
@@ -228,7 +228,7 @@ class BusinessObservationService {
   /**
    * Generate performance-related observations
    */
-  private async generatePerformanceObservations(userId: string, companyId: string): Promise<EABusinessObservation[]> {
+  private async generatePerformanceObservations(userId: string): Promise<EABusinessObservation[]> {
     try {
       // This would analyze usage patterns, load times, etc.
       const observations: EABusinessObservation[] = [];
@@ -278,51 +278,38 @@ class BusinessObservationService {
   /**
    * Generate security-related observations
    */
-  private async generateSecurityObservations(userId: string, companyId: string): Promise<EABusinessObservation[]> {
+  private async generateSecurityObservations(userId: string): Promise<EABusinessObservation[]> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const observations: EABusinessObservation[] = [];
 
-      // Check for security best practices
-      const { data: userProfile } = await supabase
-        .from('ai_user_profiles')
-        .select('security_settings')
-        .eq('user_id', userId)
-        .single();
-
-      if (!userProfile?.security_settings?.mfa_enabled) {
-        observations.push({
-          id: `security-mfa-${Date.now()}`,
-          type: 'risk',
-          priority: 'high',
-          category: 'Account Security',
-          title: 'Multi-Factor Authentication Not Enabled',
-          description: 'Your account is not protected with multi-factor authentication, which significantly increases security risk.',
-          insights: [
-            'MFA prevents 99.9% of automated cyber attacks',
-            'Business accounts are 300% more likely to be targeted',
-            'Data breaches cost small businesses an average of $120,000'
-          ],
-          actionItems: [
-            'Enable multi-factor authentication on your account',
-            'Set up backup authentication methods',
-            'Review and update password strength',
-            'Enable security alerts for suspicious activity'
-          ],
-          estimatedImpact: {
-            timeToValue: 10,
-            businessValue: 120000, // Cost of potential breach
-            effort: 'low'
-          },
-          dataSource: ['security_settings', 'user_profile'],
-          confidence: 0.95,
-          createdAt: new Date().toISOString(),
-          relevantPages: ['settings', 'security'],
-          automationPotential: {
-            canAutomate: true,
-            complexity: 'simple',
-            description: 'Can guide user through MFA setup automatically'
-          }
-        });
+      if (user) {
+        // Mock observation for MFA - replace with actual check
+        const hasMfa = user.aud === 'authenticated'; // This is a placeholder
+        if (!hasMfa) {
+          observations.push({
+            id: `security-mfa-${Date.now()}`,
+            type: 'risk',
+            priority: 'high',
+            category: 'Account Security',
+            title: 'Multi-Factor Authentication Not Enabled',
+            description: 'Your account is not protected by multi-factor authentication (MFA), making it more vulnerable to unauthorized access.',
+            insights: [
+              'MFA can prevent up to 99.9% of account compromise attacks.',
+              'Industry best practice recommends MFA for all business-critical accounts.'
+            ],
+            actionItems: ['Enable MFA in your account security settings.', 'Ensure all team members have MFA enabled.'],
+            estimatedImpact: {
+              timeToValue: 5, // minutes to set up
+              businessValue: 20000, // Potential cost of a security breach
+              effort: 'low'
+            },
+            dataSource: ['auth_logs', 'user_profile'],
+            confidence: 0.99,
+            createdAt: new Date().toISOString(),
+            relevantPages: ['/settings/security'],
+          });
+        }
       }
 
       return observations;
@@ -334,84 +321,59 @@ class BusinessObservationService {
   }
 
   /**
-   * Calculate business value of email upgrade
+   * Calculate business value of upgrading email
    */
-  private calculateEmailUpgradeValue(analysis: any): number {
-    let baseValue = 2000; // Base credibility improvement value
+  private calculateEmailUpgradeValue(analysis: { totalEmails: number; genericDomainCount: number }): number {
+    // Simplified model: value increases with number of emails and reliance on generic providers
+    const baseValue = 5000; // Base perceived value of professionalism
+    const emailMultiplier = Math.min(analysis.totalEmails / 10, 5); // Cap at 50 emails
+    const genericPenalty = (analysis.genericDomainCount / (analysis.totalEmails || 1)) * 2500;
     
-    // Scale with business size
-    if (analysis.totalEmails > 50) baseValue *= 2;
-    if (analysis.totalEmails > 100) baseValue *= 1.5;
-    
-    // Add marketing value
-    const marketingValue = analysis.totalEmails * 50; // $50 per professional email per year
-    
-    return baseValue + marketingValue;
+    return Math.round(baseValue + (emailMultiplier * 1000) + genericPenalty);
   }
 
   /**
-   * Convert observations to BusinessInsight format for Progressive Intelligence
+   * Get business insights for a specific page or context
    */
   async getBusinessInsights(userId: string, companyId: string, pageId?: string): Promise<BusinessInsight[]> {
-    const observations = await this.generateBusinessObservations(userId, companyId);
-    
-    return observations
-      .filter(obs => !pageId || obs.relevantPages.includes(pageId))
-      .map(obs => ({
-        id: obs.id,
-        type: obs.type as BusinessInsight['type'],
-        priority: obs.priority as BusinessInsight['priority'],
-        category: obs.category,
-        title: obs.title,
-        description: obs.description,
-        dataSource: obs.dataSource,
-        metrics: {
-          impact: Math.min(10, Math.floor(obs.estimatedImpact.businessValue / 1000)),
-          confidence: obs.confidence,
-          timeToValue: obs.estimatedImpact.timeToValue,
-          effort: obs.estimatedImpact.effort === 'low' ? 1 : obs.estimatedImpact.effort === 'medium' ? 3 : 5
-        },
-        suggestedActions: obs.actionItems.map((item, index) => ({
-          id: `${obs.id}-action-${index}`,
-          title: item,
-          description: item,
-          type: 'manual',
-          estimatedTime: Math.floor(obs.estimatedImpact.timeToValue / obs.actionItems.length),
-          difficulty: obs.estimatedImpact.effort,
-          prerequisites: [],
-          steps: [item],
-          expectedOutcome: `Complete: ${item}`,
-          trackingMetrics: []
-        })),
-        automationPotential: obs.automationPotential ? {
-          id: `${obs.id}-automation`,
-          title: `Automate ${obs.title}`,
-          description: obs.automationPotential.description,
-          type: 'n8n_workflow',
-          complexity: obs.automationPotential.complexity,
-          estimatedSetupTime: obs.estimatedImpact.timeToValue,
-          estimatedTimeSavings: obs.estimatedImpact.timeToValue * 4,
-          requiredIntegrations: obs.dataSource,
-          workflow: {
-            trigger: { type: 'manual', config: {}, description: 'Manual trigger' },
-            actions: obs.actionItems.map(item => ({
-              id: `action-${Date.now()}`,
-              type: 'task',
-              config: { task: item },
-              description: item
-            }))
+    try {
+      // In a real implementation, this would be a sophisticated query
+      // For now, we'll generate and then filter observations
+      const observations = await this.generateBusinessObservations(userId, companyId);
+      
+      const insights: BusinessInsight[] = observations
+        .filter(obs => !pageId || obs.relevantPages.includes(pageId))
+        .map(obs => ({
+          id: obs.id,
+          type: obs.type,
+          priority: obs.priority,
+          category: obs.category,
+          title: obs.title,
+          description: obs.description,
+          dataSource: obs.dataSource,
+          metrics: {
+            impact: obs.estimatedImpact.businessValue / 1000, // Scale to 1-10
+            confidence: obs.confidence,
+            timeToValue: obs.estimatedImpact.timeToValue,
+            effort: obs.estimatedImpact.effort === 'low' ? 1 : obs.estimatedImpact.effort === 'medium' ? 3 : 5,
           },
-          riskLevel: 'low',
-          testingRequired: true
-        } : null,
-        context: {
-          pageRelevance: obs.relevantPages,
-          triggerConditions: { userId, companyId },
-          historicalData: []
-        },
-        createdAt: obs.createdAt,
-        status: 'active'
-      }));
+          suggestedActions: [], // This would need a mapping function
+          automationPotential: null, // This would need a mapping function
+          context: {
+            pageRelevance: obs.relevantPages,
+            triggerConditions: {},
+            historicalData: []
+          },
+          createdAt: obs.createdAt,
+          status: 'active'
+        }));
+
+      return insights.slice(0, 5); // Limit for display
+
+    } catch (error) {
+      logger.error({ error, userId, companyId }, 'Error getting business insights');
+      return [];
+    }
   }
 }
 

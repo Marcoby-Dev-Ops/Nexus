@@ -392,8 +392,7 @@ class CommunicationAnalyticsService {
     // Calculate platform comparison
     const slackMessages = slackData?.messageActivity.totalMessages || 0;
     const teamsMessages = teamsData?.messageActivity.totalMessages || 0;
-    const totalMessages = slackMessages + teamsMessages;
-
+    
     let primaryPlatform: 'slack' | 'teams' | 'balanced' = 'balanced';
     let reasoning = 'Both platforms are used equally';
 
@@ -415,22 +414,51 @@ class CommunicationAnalyticsService {
     const collaborationScore = this.calculateCollaborationScore(slackData, teamsData);
     const toolUtilizationScore = this.calculateToolUtilizationScore(slackConnected, teamsConnected);
 
+    // Cross-Platform Patterns
+    const crossPlatformPatterns = {
+      communicationFlow: {
+        quickDecisions: primaryPlatform === 'slack' || primaryPlatform === 'balanced' ? 'slack' : 'teams',
+        formalCommunications: primaryPlatform === 'teams' || primaryPlatform === 'balanced' ? 'teams' : 'slack',
+        teamMeetings: 'teams',
+        projectDiscussions: slackMessages > teamsMessages ? 'slack' : 'teams',
+      },
+      userBehavior: {
+        platformSwitchers: Math.min(slackData?.overview.activeUsers || 0, teamsData?.overview.activeUsers || 0),
+        slackOnlyUsers: Math.max(0, slackData?.overview.activeUsers || 0 - teamsData?.overview.activeUsers || 0),
+        teamsOnlyUsers: Math.max(0, teamsData?.overview.activeUsers || 0 - slackData?.overview.activeUsers || 0),
+        averagePlatformsPerUser: (slackData?.overview.activeUsers || 0 > 0 && teamsData?.overview.activeUsers || 0 > 0) ? 1.5 : 1
+      },
+      timePatterns: {
+        slackPeakHours: slackData?.messageActivity.peakActivityHours || [],
+        teamsPeakHours: teamsData?.messageActivity.peakActivityHours || [],
+        overlapHours: this.findOverlapHours(
+          slackData?.messageActivity.peakActivityHours || [],
+          teamsData?.messageActivity.peakActivityHours || []
+        ),
+        platformByTimeOfDay: {
+          'morning': 'teams',
+          'afternoon': 'slack',
+          'evening': 'slack'
+        }
+      }
+    };
+
     return {
       platformComparison: {
         slack: {
           connected: slackConnected,
           messageVolume: slackMessages,
           activeUsers: slackData?.overview.activeUsers || 0,
-          responseTime: slackData?.overview.averageResponseTime || 0,
-          preferredFor: ['Quick decisions', 'Informal chat', 'Development coordination']
+          responseTime: avgResponseTime,
+          preferredFor: ['Quick Syncs', 'DevOps Alerts', 'Social Banter']
         },
         teams: {
           connected: teamsConnected,
           messageVolume: teamsMessages,
           meetingVolume: teamsData?.meetingInsights.totalMeetings || 0,
           activeUsers: teamsData?.overview.activeUsers || 0,
-          responseTime: teamsData?.overview.averageResponseTime || 0,
-          preferredFor: ['Formal meetings', 'Document collaboration', 'Executive communication']
+          responseTime: avgResponseTime,
+          preferredFor: ['Scheduled Meetings', 'Formal Announcements', 'Project Planning']
         },
         recommendation: {
           primaryPlatform,
@@ -438,33 +466,7 @@ class CommunicationAnalyticsService {
           optimizations: this.generateOptimizations(slackData, teamsData)
         }
       },
-      crossPlatformPatterns: {
-        communicationFlow: {
-          quickDecisions: slackMessages > teamsMessages ? 'slack' : 'teams',
-          formalCommunications: teamsData?.meetingInsights.totalMeetings ? 'teams' : 'slack',
-          teamMeetings: 'teams',
-          projectDiscussions: primaryPlatform
-        },
-        userBehavior: {
-          platformSwitchers: Math.min(slackData?.overview.activeUsers || 0, teamsData?.overview.activeUsers || 0),
-          slackOnlyUsers: Math.max(0, (slackData?.overview.activeUsers || 0) - (teamsData?.overview.activeUsers || 0)),
-          teamsOnlyUsers: Math.max(0, (teamsData?.overview.activeUsers || 0) - (slackData?.overview.activeUsers || 0)),
-          averagePlatformsPerUser: slackConnected && teamsConnected ? 1.8 : 1.0
-        },
-        timePatterns: {
-          slackPeakHours: slackData?.messageActivity.peakActivityHours || [],
-          teamsPeakHours: teamsData?.messageActivity.peakActivityHours || [],
-          overlapHours: this.findOverlapHours(
-            slackData?.messageActivity.peakActivityHours || [],
-            teamsData?.messageActivity.peakActivityHours || []
-          ),
-          platformByTimeOfDay: {
-            'morning': 'teams',
-            'afternoon': 'slack',
-            'evening': 'slack'
-          }
-        }
-      },
+      crossPlatformPatterns,
       efficiencyMetrics: {
         overallResponseTime: avgResponseTime,
         communicationEfficiency: Math.min(100, Math.max(0, 100 - (avgResponseTime / 2))),

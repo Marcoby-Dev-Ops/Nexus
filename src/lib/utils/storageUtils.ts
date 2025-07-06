@@ -99,7 +99,7 @@ function cleanupLocalStorage(keysToCheck: string[] = [
             JSON.parse(value);
           }
         }
-      } catch (e) {
+      } catch {
         console.warn(`Removing corrupted localStorage key: ${key}`);
         localStorage.removeItem(key);
         cleanedCount++;
@@ -137,7 +137,7 @@ function aggressiveCleanup(): void {
           // Try to parse all values to check validity
           try {
             JSON.parse(value);
-          } catch (e) {
+          } catch {
             // If it's not valid JSON and not a simple string, remove it
             if (value.includes('{') || value.includes('[') || value.includes('object')) {
               console.warn(`Aggressive cleanup removing invalid JSON: ${key}`);
@@ -178,7 +178,7 @@ function initializeStorageCleanup(): void {
       if (value && (value.startsWith('{') || value.startsWith('['))) {
         JSON.parse(value); // This will throw if invalid
       }
-    } catch (e) {
+    } catch {
       console.warn(`Removing invalid JSON from localStorage key "${key}"`);
       localStorage.removeItem(key);
     }

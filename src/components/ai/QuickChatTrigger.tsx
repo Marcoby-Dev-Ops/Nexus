@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { MessageSquare, X, Zap } from 'lucide-react';
+import { Bot, X } from 'lucide-react';
 import { QuickChat } from './QuickChat';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -83,10 +83,8 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
           <div className="flex items-center justify-center">
             {isOpen ? (
               <X className="w-6 h-6" />
-            ) : theme === 'vibrant' ? (
-              <Zap className="w-6 h-6" />
             ) : (
-              <MessageSquare className="w-6 h-6" />
+              <Bot className="w-6 h-6" />
             )}
           </div>
 
@@ -107,7 +105,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
         {!isOpen && (
           <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
             <div className="bg-background text-primary-foreground text-sm px-4 py-1 rounded-lg whitespace-nowrap">
-              Quick AI Help
+              Executive Assistant
               <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
             </div>
           </div>

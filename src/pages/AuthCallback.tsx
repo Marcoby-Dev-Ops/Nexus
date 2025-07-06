@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Spinner } from '@/components/ui/Spinner';
 import { supabase } from '@/lib/core/supabase';
 
 /**
@@ -27,7 +26,6 @@ export default function AuthCallback() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background">
       <div className="text-center">
-        <Spinner size={40} className="mb-4" />
         <h2 className="text-xl font-semibold text-foreground mb-2">Finalizing Authentication</h2>
         <p className="text-muted-foreground">Please wait...</p>
       </div>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { 
   Send, 
-  Sparkles, 
+  Bot, 
   Maximize2, 
   X,
   ChevronDown,
@@ -98,7 +98,7 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
     (async () => {
       if (!conversationId && user?.id) {
         // Use a stable quick chat conversation per user session
-        const id = await newConversation('Quick Chat');
+        const id = await newConversation('Executive Assistant');
         setConversationId(id);
         setActiveConversation(id);
       }
@@ -150,8 +150,8 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-background">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-primary" />
-          <span className="font-semibold text-foreground">Quick Chat</span>
+          <Bot className="w-5 h-5 text-primary" />
+          <span className="font-semibold text-foreground">Executive Assistant</span>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={onExpandToFullChat} title="Expand to full chat" className="p-2 rounded hover:bg-muted transition-colors">
@@ -189,7 +189,7 @@ const QuickChatContent: React.FC<QuickChatProps> = ({
               <MVPScopeIndicator compact />
             </div>
             <p className="text-xs text-muted-foreground text-center">
-              Start a conversation with our IT Support assistant
+              Start a conversation with your Executive Assistant.
             </p>
           </div>
         )}

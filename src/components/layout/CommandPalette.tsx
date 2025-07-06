@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { navItems } from './navConfig';
 import { features as featureRegistry } from '@/lib/ui/featureRegistry';
 import { getSlashCommands, type SlashCommand } from '@/lib/services/slashCommandService';
 import Modal from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { Search, Bot, Code, Terminal } from 'lucide-react';
+import { Search, Terminal, ArrowRight } from 'lucide-react';
 
 type NavItem = import('./navConfig').NavItem;
 interface FeatureItem {
@@ -21,9 +21,9 @@ interface CommandPaletteProps {
   onClose: () => void;
 }
 
-// Type guard to check if an item is a NavItem or FeatureItem
-const isNavOrFeature = (item: any): item is NavItem | FeatureItem => {
-  return 'path' in item;
+// Type guard to differentiate command items from navigation items
+const isCommand = (item: any): item is SlashCommand => {
+  return 'slug' in item && typeof item.slug === 'string';
 };
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose }) => {
@@ -31,30 +31,47 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
   const [searchIndex, setSearchIndex] = useState(0);
   const [commands, setCommands] = useState<SlashCommand[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
       setTimeout(() => inputRef.current?.focus(), 100);
       const loadCommands = async () => {
-        const slashCommands = await getSlashCommands();
-        setCommands(slashCommands);
+        try {
+          const slashCommands = await getSlashCommands();
+          setCommands(slashCommands);
+        } catch (error) {
+          console.error("Failed to load slash commands:", error);
+          setCommands([]);
+        }
       };
       loadCommands();
     }
   }, [open]);
 
-  const navResults: (NavItem | FeatureItem)[] = [
+  const navResults = [
     ...navItems.filter(item => item.name.toLowerCase().includes(query.toLowerCase())),
     ...featureRegistry.filter(f => f.name.toLowerCase().includes(query.toLowerCase())),
   ];
 
-  const commandResults = commands.filter(c => 
-    c.title.toLowerCase().includes(query.toLowerCase()) || 
+  const commandResults = commands.filter(c =>
+    c.title.toLowerCase().includes(query.toLowerCase()) ||
     c.slug.toLowerCase().includes(query.toLowerCase())
   );
-  
+
   const results: (NavItem | FeatureItem | SlashCommand)[] = [...navResults, ...commandResults];
+
+  const handleSelect = (item: NavItem | FeatureItem | SlashCommand) => {
+    if (isCommand(item)) {
+      // Basic command execution - can be expanded
+      console.log(`Executing command: /${item.slug}`);
+      // You might want to pass this to a global command handler
+    } else {
+      navigate(item.path);
+    }
+    setQuery('');
+    onClose();
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
@@ -62,16 +79,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
       setSearchIndex(prev => (prev + 1) % (results.length || 1));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSearchIndex(prev => (prev - 1 + (results.length || 1)) % (results.length || 1));
+      setSearchIndex(prev => (prev > 0 ? prev - 1 : results.length - 1));
     } else if (e.key === 'Enter' && results[searchIndex]) {
-      const result = results[searchIndex];
-      if (isNavOrFeature(result)) {
-        window.location.href = result.path;
-      } else {
-        console.log('Executing command:', result);
-      }
-      onClose();
-      setQuery('');
+      e.preventDefault();
+      handleSelect(results[searchIndex]);
     }
   };
 
@@ -82,39 +93,38 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
         <Input
           ref={inputRef}
           value={query}
-          onChange={e => { setQuery(e.target.value); setSearchIndex(0); }}
+          onChange={e => {
+            setQuery(e.target.value);
+            setSearchIndex(0);
+          }}
           onKeyDown={handleKeyDown}
           placeholder="Search for pages, features, or commands..."
           aria-label="Search"
           className="pl-10"
         />
       </div>
-      <ul role="listbox" aria-label="Search results" className="mt-4 max-h-80 overflow-y-auto">
-        {results.length === 0 && <li className="p-4 text-center text-muted-foreground">No results found.</li>}
+      <ul role="listbox" aria-label="Search results" className="mt-4 max-h-[60vh] overflow-y-auto">
+        {results.length === 0 && (
+          <li className="p-4 text-center text-muted-foreground">No results found.</li>
+        )}
         {results.map((item, i) => (
           <li
-            key={isNavOrFeature(item) ? item.path : item.slug}
+            key={isCommand(item) ? item.slug : item.path}
             role="option"
             aria-selected={i === searchIndex}
-            className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer ${i === searchIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted'}`}
+            className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer ${
+              i === searchIndex ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+            }`}
             onMouseEnter={() => setSearchIndex(i)}
-            onClick={() => {
-              if (isNavOrFeature(item)) {
-                window.location.href = item.path;
-              } else {
-                console.log('Executing command:', item);
-              }
-              onClose();
-              setQuery('');
-            }}
+            onClick={() => handleSelect(item)}
           >
             <div className="flex items-center">
               <span className="mr-3 text-muted-foreground">
-                {isNavOrFeature(item) && item.icon ? item.icon : <Terminal className="w-4 h-4" />}
+                {isCommand(item) ? <Terminal className="w-4 h-4" /> : item.icon || <ArrowRight className="w-4 h-4" />}
               </span>
-              <span>{isNavOrFeature(item) ? item.name : item.title}</span>
+              <span>{isCommand(item) ? item.title : item.name}</span>
             </div>
-            <Badge variant="secondary">{isNavOrFeature(item) ? 'Navigate' : 'Command'}</Badge>
+            <Badge variant="secondary">{isCommand(item) ? 'Command' : 'Navigate'}</Badge>
           </li>
         ))}
       </ul>

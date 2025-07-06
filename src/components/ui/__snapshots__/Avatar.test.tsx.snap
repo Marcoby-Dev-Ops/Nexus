@@ -2,14 +2,19 @@
 
 exports[`Avatar matches snapshot 1`] = `
 <DocumentFragment>
-  <div
-    class="inline-flex items-center justify-center rounded-full bg-muted text-foreground w-10 h-10 "
+  <span
+    class="relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full"
   >
     <img
       alt="User Avatar"
-      class="w-full h-full object-cover rounded-full"
+      class="aspect-square h-full w-full"
       src="/avatar.png"
     />
-  </div>
+    <span
+      class="flex h-full w-full items-center justify-center rounded-full bg-muted text-foreground font-medium"
+    >
+      UA
+    </span>
+  </span>
 </DocumentFragment>
 `;

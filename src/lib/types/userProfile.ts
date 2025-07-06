@@ -31,7 +31,7 @@ export interface CompanySettings {
     session_timeout?: number;
     allowed_domains?: string[];
   };
-  [key: string]: any; // For extensibility
+  [key: string]: unknown; // For extensibility
 }
 
 export interface UserProfile {
@@ -98,7 +98,7 @@ export interface UserProfile {
     date_format?: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
     time_format?: '12h' | '24h';
     currency?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   
   // Status and Metadata
@@ -117,7 +117,7 @@ export interface Integration {
   category: 'crm' | 'payment' | 'email' | 'automation' | 'communication' | 'productivity' | 'accounting';
   description?: string;
   icon_url?: string;
-  config_schema?: Record<string, any>;
+  config_schema?: Record<string, unknown>;
   is_active: boolean;
   created_at: string;
 }
@@ -129,7 +129,7 @@ export interface UserIntegration {
   integration_id: string;
   integration?: Integration;
   name?: string; // User-defined name for this integration instance
-  config: Record<string, any>;
+  config: Record<string, unknown>;
   status: 'active' | 'inactive' | 'error' | 'setup';
   last_sync?: string;
   error_message?: string;

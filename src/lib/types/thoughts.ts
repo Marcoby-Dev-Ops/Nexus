@@ -70,10 +70,10 @@ export interface Thought {
   department?: string;
   priority?: 'low' | 'medium' | 'high';
   estimated_effort?: string;
-  ai_clarification_data?: Record<string, any>;
+  ai_clarification_data?: Record<string, unknown>;
   
   // AI and interaction metadata
-  ai_insights: Record<string, any>;
+  ai_insights: Record<string, unknown>;
   interaction_method?: InteractionMethod;
   
   // Timestamps
@@ -98,7 +98,7 @@ export interface AIInteraction {
   prompt_text?: string;
   ai_response?: string;
   interaction_type: AIInteractionType;
-  context_data: Record<string, any>;
+  context_data: Record<string, unknown>;
   created_at: Date;
 }
 
@@ -118,7 +118,8 @@ export interface CreateThoughtRequest {
   department?: string;
   priority?: 'low' | 'medium' | 'high';
   estimated_effort?: string;
-  ai_clarification_data?: Record<string, any>;
+  ai_clarification_data?: Record<string, unknown>;
+  company_id?: string;
 }
 
 // Update thought request

@@ -3,8 +3,8 @@
  * Service for interacting with n8n workflows and automations
  * Handles chat triggers, workflow execution, and department-specific assistants
  */
-import axios from 'axios';
-// import { userN8nConfigService } from './userN8nConfig';
+import axios, { AxiosError } from 'axios';
+import { userN8nConfigService } from '../../auth/userN8nConfig';
 // import type { UserN8nConfig } from './userN8nConfig';
 
 export interface N8nChatMessage {
@@ -16,14 +16,14 @@ export interface N8nChatMessage {
 
 export interface N8nWorkflowTrigger {
   workflowId: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   department?: Department;
   userId?: string;
 }
 
 export interface N8nResponse {
   success: boolean;
-  data?: any;
+  data?: unknown;
   error?: string;
   executionId?: string;
 }
@@ -32,7 +32,7 @@ export interface WorkflowExecution {
   id: string;
   workflowId: string;
   status: 'success' | 'error' | 'waiting' | 'running';
-  data?: any;
+  data?: unknown;
   startedAt: string;
   finishedAt?: string;
 }
@@ -108,7 +108,7 @@ export class N8nService {
   /**
    * Trigger a workflow via webhook
    */
-  async triggerWorkflow(webhookId: string, data: Record<string, any>): Promise<N8nResponse> {
+  async triggerWorkflow(webhookId: string, data: Record<string, unknown>): Promise<N8nResponse> {
     try {
       const config = await this.getUserConfig();
       if (!config) {
@@ -133,11 +133,18 @@ export class N8nService {
         data: response.data,
         executionId: response.headers['x-n8n-execution-id']
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('n8n workflow trigger failed:', error);
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        return {
+          success: false,
+          error: (axiosError.response?.data as { message: string })?.message || axiosError.message || 'Workflow trigger failed'
+        };
+      }
       return {
         success: false,
-        error: error.response?.data?.message || error.message || 'Workflow trigger failed'
+        error: error instanceof Error ? error.message : 'An unknown error occurred'
       };
     }
   }
@@ -148,7 +155,7 @@ export class N8nService {
   async chatWithAssistant(
     department: Department,
     message: string,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ): Promise<N8nResponse> {
     const webhookId = this.getDepartmentWebhook(department, 'assistant');
     
@@ -218,22 +225,24 @@ export class N8nService {
   async createContent(
     contentType: 'blog' | 'social' | 'email',
     prompt: string,
-    options?: Record<string, any>
+    options?: Record<string, unknown>
   ): Promise<N8nResponse> {
-    const blogWebhook = WORKFLOW_WEBHOOKS.beyondItBlogging;
+    const webhookId = this.getDepartmentWebhook('marketing', 'content');
     
-    return this.triggerWorkflow(blogWebhook, {
-      chatInput: `Create ${contentType}: ${prompt}`,
-      contentType,
-      options: options || {},
-      timestamp: new Date().toISOString()
-    });
+    if (!webhookId) {
+      return {
+        success: false,
+        error: 'No content creation workflow configured for marketing department'
+      };
+    }
+
+    return this.triggerWorkflow(webhookId, { contentType, prompt, ...options });
   }
 
   /**
    * Sales department specific actions
    */
-  async salesAction(action: 'pipeline' | 'lead' | 'forecast', data: Record<string, any>): Promise<N8nResponse> {
+  async salesAction(action: 'pipeline' | 'lead' | 'forecast', data: Record<string, unknown>): Promise<N8nResponse> {
     const webhookId = this.getDepartmentWebhook('sales', action);
     
     if (!webhookId) {
@@ -247,7 +256,7 @@ export class N8nService {
   /**
    * Finance department specific actions
    */
-  async financeAction(action: 'invoice' | 'report' | 'payment', data: Record<string, any>): Promise<N8nResponse> {
+  async financeAction(action: 'invoice' | 'report' | 'payment', data: Record<string, unknown>): Promise<N8nResponse> {
     const webhookId = this.getDepartmentWebhook('finance', action);
     
     if (!webhookId) {
@@ -260,7 +269,7 @@ export class N8nService {
   /**
    * Operations department specific actions
    */
-  async operationsAction(action: 'automate' | 'monitor' | 'deploy', data: Record<string, any>): Promise<N8nResponse> {
+  async operationsAction(action: 'automate' | 'monitor' | 'deploy', data: Record<string, unknown>): Promise<N8nResponse> {
     const webhookId = this.getDepartmentWebhook('operations', action);
     
     if (!webhookId) {
@@ -273,12 +282,9 @@ export class N8nService {
   /**
    * Pulse Marketplace integration
    */
-  async installPulseApp(appId: string, config: Record<string, any>): Promise<N8nResponse> {
-    // This could trigger the Nexus Builder to create a custom workflow for the app
-    return this.generateWorkflow(
-      `Install and configure Pulse app: ${appId} with configuration: ${JSON.stringify(config)}`,
-      'operations'
-    );
+  async installPulseApp(appId: string, config: Record<string, unknown>): Promise<N8nResponse> {
+    // This would likely interact with a specific n8n workflow for app installation
+    return this.triggerWorkflow('pulse-app-installer', { appId, ...config });
   }
 
   /**
@@ -372,7 +378,7 @@ export const n8nService = new N8nService();
 export async function chatWithDepartment(
   department: Department,
   message: string,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): Promise<N8nResponse> {
   return n8nService.chatWithAssistant(department, message, context);
 }
@@ -384,7 +390,7 @@ export async function generateWorkflow(requirements: string, department?: Depart
 export async function createContent(
   contentType: 'blog' | 'social' | 'email',
   prompt: string,
-  options?: Record<string, any>
+  options?: Record<string, unknown>
 ): Promise<N8nResponse> {
   return n8nService.createContent(contentType, prompt, options);
 } 

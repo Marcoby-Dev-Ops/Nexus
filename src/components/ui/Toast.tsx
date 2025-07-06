@@ -52,23 +52,23 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className={`max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden ${
-                toast.type === 'error' ? 'ring-red-500' :
-                toast.type === 'success' ? 'ring-green-500' :
-                toast.type === 'warning' ? 'ring-yellow-500' :
-                'ring-blue-500'
+              className={`max-w-sm w-full bg-card shadow-lg rounded-lg pointer-events-auto ring-1 ring-border overflow-hidden ${
+                toast.type === 'error' ? 'ring-destructive' :
+                toast.type === 'success' ? 'ring-success' :
+                toast.type === 'warning' ? 'ring-warning' :
+                'ring-primary'
               }`}
             >
               <div className="p-4">
                 <div className="flex items-start">
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-900">{toast.title}</p>
-                    <p className="mt-1 text-sm text-gray-500">{toast.description}</p>
+                    <p className="text-sm font-medium text-foreground">{toast.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{toast.description}</p>
                   </div>
                   <div className="ml-4 flex-shrink-0 flex">
                     <button
                       type="button"
-                      className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      className="bg-card rounded-md inline-flex text-muted-foreground hover:text-foreground focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring"
                       onClick={() => removeToast(toast.id)}
                     >
                       <span className="sr-only">Close</span>

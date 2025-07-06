@@ -3,34 +3,28 @@
 exports[`Tabs matches snapshot 1`] = `
 <DocumentFragment>
   <div
-    class=""
+    class="w-full"
   >
     <div
-      class="flex border-b border-border mb-2"
+      class="inline-flex items-center justify-start space-x-2 rounded-md bg-muted px-2 py-1 text-muted-foreground"
     >
       <button
-        aria-selected="true"
-        class="px-4 py-2 -mb-px border-b-2 font-medium transition-colors border-primary text-primary"
-        role="tab"
-        tabindex="0"
+        class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-background text-foreground shadow-sm"
+        type="button"
       >
         Tab 1
       </button>
       <button
-        aria-selected="false"
-        class="px-4 py-2 -mb-px border-b-2 font-medium transition-colors border-transparent text-muted-foreground hover:text-foreground"
-        role="tab"
-        tabindex="-1"
+        class="inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-muted hover:text-foreground"
+        type="button"
       >
         Tab 2
       </button>
     </div>
     <div
-      role="tabpanel"
+      class="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
-      <div>
-        Content 1
-      </div>
+      Content 1
     </div>
   </div>
 </DocumentFragment>

@@ -3,7 +3,7 @@
  * Service for managing user-specific n8n configurations
  * Handles storage, retrieval, and validation of n8n connection settings
  */
-import { supabase } from './core/supabase';
+import { supabase } from '../core/supabase';
 
 export interface UserN8nConfig {
   id?: string;
@@ -14,6 +14,17 @@ export interface UserN8nConfig {
   isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+interface N8nConfigurationTableRow {
+  id: string;
+  user_id: string;
+  instance_name?: string;
+  base_url: string;
+  api_key: string;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 class UserN8nConfigService {
@@ -119,7 +130,7 @@ class UserN8nConfigService {
           }
         ])
         .select()
-        .single();
+        .single<N8nConfigurationTableRow>();
 
       if (error) {
         console.error('Database save failed, falling back to localStorage:', error);
@@ -137,6 +148,10 @@ class UserN8nConfigService {
         return true;
       }
 
+      if (!data) {
+        throw new Error('Failed to save configuration to database and did not receive data.');
+      }
+      
       // Convert database response to UserN8nConfig format
       const fullConfig: UserN8nConfig = {
         id: data.id,
@@ -204,11 +219,11 @@ class UserN8nConfigService {
       }
 
       return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Connection test failed:', error);
       return { 
         success: false, 
-        error: error.message || 'Failed to connect to n8n instance'
+        error: error instanceof Error ? error.message : 'Failed to connect to n8n instance'
       };
     }
   }
@@ -328,29 +343,29 @@ class UserN8nConfigService {
 
   private async getFromDatabase(userId: string): Promise<UserN8nConfig | null> {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('n8n_configurations')
         .select('*')
         .eq('user_id', userId)
         .eq('is_active', true)
-        .single();
-        
+        .single<N8nConfigurationTableRow>();
+
       if (error || !data) {
         return null;
       }
-      
+
       return {
         id: data.id,
         userId: data.user_id,
-        instanceName: data.instance_name || undefined,
+        instanceName: data.instance_name,
         baseUrl: data.base_url,
         apiKey: data.api_key,
-        isActive: data.is_active || false,
-        createdAt: data.created_at || undefined,
-        updatedAt: data.updated_at || undefined
+        isActive: data.is_active,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at
       };
-    } catch (error) {
-      console.error('Failed to get config from database:', error);
+    } catch (dbError) {
+      console.error('Error fetching from database:', dbError);
       return null;
     }
   }

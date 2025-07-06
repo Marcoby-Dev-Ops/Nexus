@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import type { ReactNode } from 'react';
+import { supabase } from '@/lib/core/supabase';
 
 // --- Types ---
 export interface IntegrationStatus {
@@ -93,20 +95,39 @@ const MOCK_AI_INSIGHTS: AIInsight[] = [
 ];
 
 // --- Stub Fetch Functions ---
-async function fetchIntegrationStatus(): Promise<IntegrationStatus[]> {
-  // TODO: Replace with real fetch from Supabase or API
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_INTEGRATIONS), 400));
-}
+const fetchIntegrationStatus = async () => {
+  try {
+    const { data, error } = await supabase.from('integration_status').select('*');
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error('Error fetching integration status:', err);
+    return [];
+  }
+};
 
-async function fetchBusinessHealth(): Promise<BusinessHealth> {
-  // TODO: Replace with real fetch from Supabase or API
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_BUSINESS_HEALTH), 300));
-}
+const fetchBusinessHealth = async (): Promise<BusinessHealth> => {
+  try {
+    const { data, error } = await supabase.from('business_health').select('*');
+    if (error) throw error;
+    if (data && data.length > 0) return data[0] as BusinessHealth;
+    return MOCK_BUSINESS_HEALTH;
+  } catch (err) {
+    console.error('Error fetching business health:', err);
+    return MOCK_BUSINESS_HEALTH;
+  }
+};
 
-async function fetchAIInsights(): Promise<AIInsight[]> {
-  // TODO: Replace with real fetch from Supabase or API
-  return new Promise((resolve) => setTimeout(() => resolve(MOCK_AI_INSIGHTS), 350));
-}
+const fetchAIInsights = async () => {
+  try {
+    const { data, error } = await supabase.from('ai_insights').select('*');
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error('Error fetching AI insights:', err);
+    return [];
+  }
+};
 
 // --- Provider ---
 export const SystemContextProvider = ({ children }: { children: ReactNode }) => {

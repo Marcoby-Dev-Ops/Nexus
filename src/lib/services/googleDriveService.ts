@@ -17,8 +17,9 @@ interface GoogleWorkspaceCredentials {
   drive_folder_id?: string;
 }
 
-function isGoogleWorkspaceCredentials(credentials: any): credentials is GoogleWorkspaceCredentials {
-  return credentials && typeof credentials.access_token === 'string' && typeof credentials.refresh_token === 'string';
+function isGoogleWorkspaceCredentials(credentials: unknown): credentials is GoogleWorkspaceCredentials {
+  const creds = credentials as GoogleWorkspaceCredentials;
+  return !!(creds && typeof creds.access_token === 'string' && typeof creds.refresh_token === 'string');
 }
 
 interface DriveFile {
@@ -61,10 +62,10 @@ export class GoogleDriveService {
    */
   async initialize(): Promise<boolean> {
     try {
-      const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
+      const { data: { user } } = await import('@/lib/core/supabase').then(m => m.supabase.auth.getUser());
       if (!user) return false;
 
-      const { data: integration } = await import('@/lib/supabase').then(m => m.supabase
+      const { data: integration } = await import('@/lib/core/supabase').then(m => m.supabase
         .from('user_integrations')
         .select('credentials')
         .eq('user_id', user.id)
@@ -336,16 +337,17 @@ Link: ${doc.webViewLink}
    */
   private async isNewDocument(documentId: string, modifiedTime: string): Promise<boolean> {
     try {
-      const { data } = await import('@/lib/supabase').then(m => m.supabase
-        .from('ai_vector_documents')
-        .select('metadata')
+      const { data, error } = await import('@/lib/core/supabase').then(m => m.supabase
+        .from('rag_documents')
+        .select('last_modified')
         .eq('document_id', `google-drive-${documentId}`)
-        .single()
-      );
+        .single());
 
-      if (!data) return true; // New document
+      if (error && error.code !== 'PGRST116') { // Ignore 'not found' errors
+        return true; // Assume new if check fails
+      }
 
-      const lastSync = data.metadata?.lastModified;
+      const lastSync = data?.last_modified;
       return !lastSync || new Date(modifiedTime) > new Date(lastSync);
     } catch {
       return true; // Assume new if check fails
@@ -464,9 +466,9 @@ Link: ${doc.webViewLink}
       this.config.accessToken = data.access_token;
 
       // Update stored credentials
-      const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
+      const { data: { user } } = await import('@/lib/core/supabase').then(m => m.supabase.auth.getUser());
       if (user) {
-        await import('@/lib/supabase').then(m => m.supabase
+        await import('@/lib/core/supabase').then(m => m.supabase
           .from('user_integrations')
           .update({
             credentials: {
@@ -495,44 +497,37 @@ Link: ${doc.webViewLink}
     pendingSync: number;
     errors: string[];
   }> {
-    try {
-      // Get last sync time from user_integrations
-      const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
-      if (!user) throw new Error('User not authenticated');
+    const { data: { user } } = await import('@/lib/core/supabase').then(m => m.supabase.auth.getUser());
+    if (!user) throw new Error('Not authenticated');
 
-      const { data: integration } = await import('@/lib/supabase').then(m => m.supabase
-        .from('user_integrations')
-        .select('metadata')
-        .eq('user_id', user.id)
-        .eq('integration_name', 'google-workspace')
-        .single()
-      );
+    const { data: status, error: statusError } = await import('@/lib/core/supabase').then(m => m.supabase
+      .from('rag_sync_status')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('source', 'google-drive')
+      .single());
 
-      const lastSync = integration?.metadata?.lastDriveSync || null;
+    if (statusError && statusError.code !== 'PGRST116') throw statusError;
 
-      // Count documents in RAG system
-      const { count: totalDocuments } = await import('@/lib/supabase').then(m => m.supabase
-        .from('ai_vector_documents')
-        .select('*', { count: 'exact', head: true })
-        .like('document_id', 'google-drive-%')
-      );
+    const { data: allDocs } = await import('@/lib/core/supabase').then(m => m.supabase
+      .from('rag_documents')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('source', 'google-drive'));
+      
+    const { data: pendingDocs } = await import('@/lib/core/supabase').then(m => m.supabase
+      .from('rag_documents')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('source', 'google-drive')
+      .is('last_indexed_at', null));
 
-      return {
-        lastSync,
-        totalDocuments: totalDocuments || 0,
-        pendingSync: 0, // Would need to calculate based on Drive API
-        errors: []
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error({ err: error }, 'Failed to get sync status');
-      return {
-        lastSync: null,
-        totalDocuments: 0,
-        pendingSync: 0,
-        errors: [errorMessage]
-      };
-    }
+    return {
+      lastSync: status?.last_sync_time || null,
+      totalDocuments: allDocs?.length || 0,
+      pendingSync: pendingDocs?.length || 0,
+      errors: status?.errors || []
+    };
   }
 
   /**
@@ -548,9 +543,9 @@ Link: ${doc.webViewLink}
       const syncResult = await this.syncDocumentsForRAG();
       
       // Update last sync time
-      const { data: { user } } = await import('@/lib/supabase').then(m => m.supabase.auth.getUser());
+      const { data: { user } } = await import('@/lib/core/supabase').then(m => m.supabase.auth.getUser());
       if (user) {
-        await import('@/lib/supabase').then(m => m.supabase
+        await import('@/lib/core/supabase').then(m => m.supabase
           .from('user_integrations')
           .update({
             metadata: {

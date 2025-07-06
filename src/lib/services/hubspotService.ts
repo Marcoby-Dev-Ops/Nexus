@@ -88,6 +88,10 @@ export interface HubSpotDeal {
   };
 }
 
+interface HubSpotResponse<T> {
+  results: T[];
+}
+
 export class HubSpotService {
   private config: HubSpotConfig | null = null;
 
@@ -296,7 +300,7 @@ export class HubSpotService {
   /**
    * Make authenticated API request
    */
-  private async apiRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
+  private async apiRequest(endpoint: string, options: RequestInit = {}): Promise<unknown> {
     if (!this.config?.accessToken) {
       throw new Error('HubSpot not authenticated');
     }
@@ -315,7 +319,7 @@ export class HubSpotService {
       // Try to refresh token and retry
       const refreshed = await this.refreshAccessToken();
       if (refreshed) {
-        return this.apiRequest(endpoint, options);
+        return await this.apiRequest(endpoint, options);
       } else {
         throw new Error('Authentication failed - please reconnect HubSpot');
       }
@@ -337,60 +341,32 @@ export class HubSpotService {
     }
 
     try {
-      // Get contacts data
-      const contactsData = await this.apiRequest('/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,lifecyclestage,createdate');
-      
-      // Get deals data
-      const dealsData = await this.apiRequest('/crm/v3/objects/deals?limit=100&properties=dealname,amount,dealstage,closedate,createdate');
-      
-      // Get companies data
-      const companiesData = await this.apiRequest('/crm/v3/objects/companies?limit=100&properties=name,domain,createdate');
+      const contactsResponse = (await this.apiRequest('/crm/v3/objects/contacts?limit=100&properties=email,firstname,lastname,lifecyclestage,createdate')) as HubSpotResponse<HubSpotContact>;
+      const dealsResponse = (await this.apiRequest('/crm/v3/objects/deals?limit=100&properties=dealname,amount,dealstage,closedate,createdate')) as HubSpotResponse<HubSpotDeal>;
+      const companiesResponse = (await this.apiRequest('/crm/v3/objects/companies?limit=100&properties=name,domain,createdate')) as HubSpotResponse<{ id: string }>;
 
-      // Process contacts metrics
-      const contacts = contactsData.results || [];
-      const currentMonth = new Date();
-      currentMonth.setDate(1);
-      
-      const newContactsThisMonth = contacts.filter((contact: any) => 
-        new Date(contact.properties.createdate) >= currentMonth
+      const contacts = contactsResponse.results || [];
+      const deals = dealsResponse.results || [];
+      const companies = companiesResponse.results || [];
+
+      const newContactsThisMonth = contacts.filter(c => 
+        c.properties.createdate && new Date(c.properties.createdate) > new Date(new Date().setDate(1))
       ).length;
 
-      const qualifiedLeads = contacts.filter((contact: any) => 
-        ['lead', 'marketingqualifiedlead', 'salesqualifiedlead'].includes(contact.properties.lifecyclestage)
-      ).length;
+      const qualifiedLeads = contacts.filter(c => c.properties.lifecyclestage === 'marketingqualifiedlead' || c.properties.lifecyclestage === 'salesqualifiedlead').length;
+      const customers = contacts.filter(c => c.properties.lifecyclestage === 'customer').length;
+      const conversionRate = contacts.length > 0 ? (customers / contacts.length) * 100 : 0;
 
-      const customers = contacts.filter((contact: any) => 
-        contact.properties.lifecyclestage === 'customer'
-      ).length;
-
-      // Process deals metrics
-      const deals = dealsData.results || [];
-      const openDeals = deals.filter((deal: any) => 
-        !['closedwon', 'closedlost'].includes(deal.properties.dealstage)
-      );
-      
-      const closedWonDeals = deals.filter((deal: any) => 
-        deal.properties.dealstage === 'closedwon'
-      );
-
-      const closedLostDeals = deals.filter((deal: any) => 
-        deal.properties.dealstage === 'closedlost'
-      );
-
-      const totalDealValue = closedWonDeals.reduce((sum: number, deal: any) => 
-        sum + (parseFloat(deal.properties.amount) || 0), 0
-      );
-
-      const averageDealSize = closedWonDeals.length > 0 ? totalDealValue / closedWonDeals.length : 0;
+      const openDeals = deals.filter(d => d.properties.dealstage !== 'closedwon' && d.properties.dealstage !== 'closedlost').length;
+      const closedWon = deals.filter(d => d.properties.dealstage === 'closedwon').length;
+      const closedLost = deals.filter(d => d.properties.dealstage === 'closedlost').length;
+      const totalValue = closedWon > 0 ? deals.reduce((sum, d) => sum + Number(d.properties.amount || 0), 0) : 0;
+      const averageDealSize = closedWon > 0 ? totalValue / closedWon : 0;
 
       // Process companies metrics
-      const companies = companiesData.results || [];
       const newCompaniesThisMonth = companies.filter((company: any) => 
-        new Date(company.properties.createdate) >= currentMonth
+        new Date(company.properties.createdate) >= new Date(new Date().setDate(1))
       ).length;
-
-      // Calculate conversion rate
-      const conversionRate = contacts.length > 0 ? (customers / contacts.length) * 100 : 0;
 
       // Mock marketing data (would need additional API calls for real data)
       const marketingMetrics = {
@@ -417,10 +393,10 @@ export class HubSpotService {
         },
         deals: {
           total: deals.length,
-          openDeals: openDeals.length,
-          closedWon: closedWonDeals.length,
-          closedLost: closedLostDeals.length,
-          totalValue: Math.round(totalDealValue),
+          openDeals: openDeals,
+          closedWon: closedWon,
+          closedLost: closedLost,
+          totalValue: Math.round(totalValue),
           averageDealSize: Math.round(averageDealSize),
           salesCycleLength: 45 // Mock data - would need calculation
         },
@@ -431,8 +407,8 @@ export class HubSpotService {
         },
         marketing: marketingMetrics,
         sales: {
-          revenue: totalDealValue,
-          monthlyRecurringRevenue: totalDealValue * 0.1, // Mock calculation
+          revenue: totalValue,
+          monthlyRecurringRevenue: totalValue * 0.1, // Mock calculation
           customerLifetimeValue: averageDealSize * 3, // Mock calculation
           churnRate: 5.2, // Mock data
           salesVelocity: averageDealSize / 45 // Mock calculation
@@ -527,38 +503,37 @@ export class HubSpotService {
    * Get contacts
    */
   async getContacts(limit = 100): Promise<HubSpotContact[]> {
-    const data = await this.apiRequest(`/crm/v3/objects/contacts?limit=${limit}&properties=email,firstname,lastname,company,phone,lifecyclestage,createdate,lastmodifieddate,hubspot_owner_id`);
-    return data.results || [];
+    const response = (await this.apiRequest(`crm/v3/objects/contacts?limit=${limit}&properties=email,firstname,lastname,company,phone,lifecyclestage,hubspot_owner_id,createdate,lastmodifieddate`)) as HubSpotResponse<HubSpotContact>;
+    return response.results;
   }
 
   /**
    * Get deals
    */
   async getDeals(limit = 100): Promise<HubSpotDeal[]> {
-    const data = await this.apiRequest(`/crm/v3/objects/deals?limit=${limit}&properties=dealname,amount,dealstage,closedate,pipeline,createdate,hubspot_owner_id`);
-    return data.results || [];
+    const response = (await this.apiRequest(`crm/v3/objects/deals?limit=${limit}&properties=dealname,amount,dealstage,closedate,pipeline,createdate,hubspot_owner_id`)) as HubSpotResponse<HubSpotDeal>;
+    return response.results;
   }
 
   /**
    * Create a contact
    */
   async createContact(properties: Record<string, string>): Promise<HubSpotContact> {
-    const data = await this.apiRequest('/crm/v3/objects/contacts', {
+    const response = (await this.apiRequest('crm/v3/objects/contacts', {
       method: 'POST',
-      body: JSON.stringify({ properties })
-    });
-    return data;
+      body: JSON.stringify({ properties }),
+    })) as HubSpotContact;
+    return response;
   }
 
   /**
    * Create a deal
    */
   async createDeal(properties: Record<string, string>): Promise<HubSpotDeal> {
-    const response = await this.apiRequest('/crm/v3/objects/deals', {
+    const response = (await this.apiRequest('crm/v3/objects/deals', {
       method: 'POST',
-      body: JSON.stringify({ properties })
-    });
-    
+      body: JSON.stringify({ properties }),
+    })) as HubSpotDeal;
     return response;
   }
 
@@ -573,29 +548,44 @@ export class HubSpotService {
     referralCode?: string;
   }): Promise<{ success: boolean; contactId?: string; error?: string }> {
     try {
-      const contactProperties = {
+      const existingContact = (await this.apiRequest(`crm/v3/objects/contacts/${waitlistData.email}?idProperty=email`)) as HubSpotContact;
+      
+      if (existingContact?.id) {
+        // Contact exists, maybe update properties
+        return { success: true, contactId: existingContact.id };
+      }
+
+      const newContact = await this.createContact({
         email: waitlistData.email,
         firstname: waitlistData.firstName,
         company: waitlistData.company || '',
-        lifecyclestage: 'lead',
-        lead_status: 'waitlist',
-        waitlist_tier: waitlistData.tier || 'early-bird',
-        referral_code: waitlistData.referralCode || '',
-        source: 'Nexus Waitlist'
-      };
+        nexus_waitlist_tier: waitlistData.tier || 'Standard',
+        referral_code: waitlistData.referralCode || ''
+      });
 
-      const contact = await this.createContact(contactProperties);
-      
-      return {
-        success: true,
-        contactId: contact.id
-      };
+      return { success: true, contactId: newContact.id };
+
     } catch (error) {
-      logger.error({ error }, 'Failed to sync waitlist signup to HubSpot');
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
+      if (error instanceof Error && error.message.includes('404')) {
+        // Contact doesn't exist, create new
+        try {
+          const newContact = await this.createContact({
+            email: waitlistData.email,
+            firstname: waitlistData.firstName,
+            company: waitlistData.company || '',
+            nexus_waitlist_tier: waitlistData.tier || 'Standard',
+            referral_code: waitlistData.referralCode || ''
+          });
+          return { success: true, contactId: newContact.id };
+        } catch (creationError) {
+          const errorMessage = creationError instanceof Error ? creationError.message : String(creationError);
+          logger.error({ error: creationError }, 'Failed to create HubSpot contact after 404');
+          return { success: false, error: errorMessage };
+        }
+      }
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ error }, 'Failed to sync HubSpot waitlist signup');
+      return { success: false, error: errorMessage };
     }
   }
 }

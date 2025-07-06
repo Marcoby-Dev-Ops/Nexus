@@ -3,9 +3,16 @@
  * Orchestrates document syncing from Google Drive and OneDrive for intelligent retrieval
  */
 
-import { GoogleDriveService } from './googleDriveService';
-import { OneDriveService } from './oneDriveService';
 import { supabase } from '@/lib/core/supabase';
+
+interface GoogleDriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  modifiedTime: string;
+  webViewLink: string;
+  size?: number;
+}
 
 interface CloudDocument {
   id: string;
@@ -20,7 +27,7 @@ interface CloudDocument {
     size: number;
     createdBy: string;
     lastModifiedBy: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -153,7 +160,7 @@ export class CloudStorageRAGService {
   /**
    * Get provider credentials from database
    */
-  private async getProviderCredentials(provider: string): Promise<any> {
+  private async getProviderCredentials(provider: string): Promise<{ access_token: string } | null> {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
@@ -165,7 +172,7 @@ export class CloudStorageRAGService {
         .eq('integration_name', provider)
         .single();
 
-      return integration?.credentials || null;
+      return (integration?.credentials as { access_token: string }) || null;
     } catch (error) {
       console.error(`Failed to get ${provider} credentials:`, error);
       return null;
@@ -175,7 +182,7 @@ export class CloudStorageRAGService {
   /**
    * Fetch documents from Google Drive API
    */
-  private async fetchGoogleDriveDocuments(credentials: any): Promise<Omit<CloudDocument, 'content' | 'source'>[]> {
+  private async fetchGoogleDriveDocuments(credentials: { access_token: string }): Promise<Omit<CloudDocument, 'content' | 'source'>[]> {
     const documents = [];
     const supportedTypes = [
       'application/vnd.google-apps.document',
@@ -207,7 +214,7 @@ export class CloudStorageRAGService {
     const data = await response.json();
     
     if (data.files) {
-      documents.push(...data.files.map((file: any) => ({
+      documents.push(...data.files.map((file: GoogleDriveFile) => ({
         id: file.id,
         name: file.name,
         mimeType: file.mimeType,
@@ -228,7 +235,7 @@ export class CloudStorageRAGService {
   /**
    * Extract content from Google Drive document
    */
-  private async extractGoogleDriveContent(doc: Omit<CloudDocument, 'content' | 'source'>, credentials: any): Promise<string> {
+  private async extractGoogleDriveContent(doc: Omit<CloudDocument, 'content' | 'source'>, credentials: { access_token: string }): Promise<string> {
     try {
       let content = '';
       
@@ -287,27 +294,28 @@ Link: ${doc.webUrl}
    */
   private async storeDocumentInRAG(document: CloudDocument): Promise<void> {
     try {
-      // Call the embed document edge function
-      const response = await fetch('/api/ai/embed-document', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          documentId: `${document.source}-${document.id}`,
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { error } = await supabase
+        .from('ai_rag_documents')
+        .upsert({
+          id: document.id,
+          user_id: user.id,
+          source: document.source,
+          name: document.name,
           content: document.content,
           metadata: {
-            source: document.source,
-            fileName: document.name,
-            fileType: document.mimeType,
-            lastModified: document.lastModified,
-            webUrl: document.webUrl,
-            processedAt: new Date().toISOString()
-          }
-        })
-      });
+            ...document.metadata,
+            lastModified: document.lastModified
+          },
+          last_modified: document.lastModified,
+          last_indexed_at: new Date().toISOString()
+        });
 
-      if (!response.ok) {
-        throw new Error(`Failed to store document: ${response.statusText}`);
-      }
+      if (error) throw error;
     } catch (error) {
       console.error(`Failed to store document ${document.name} in RAG:`, error);
       throw error;
@@ -315,16 +323,16 @@ Link: ${doc.webUrl}
   }
 
   /**
-   * Sync documents from OneDrive (placeholder)
+   * Sync documents from OneDrive
    */
   private async syncOneDrive(): Promise<SyncResult> {
-    // Implementation similar to Google Drive
-    return {
+    // Placeholder implementation for OneDrive sync
+    return Promise.resolve({
       success: true,
       processed: 0,
       errors: [],
       newDocuments: []
-    };
+    });
   }
 }
 

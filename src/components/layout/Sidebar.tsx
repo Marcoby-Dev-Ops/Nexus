@@ -21,7 +21,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           <Link to="/dashboard" className="text-xl font-bold">
             Nexus
           </Link>
-          <button className="lg:hidden p-2" onClick={onClose}>
+          <button className="lg:hidden p-2" onClick={onClose} aria-label="Close">
             <X className="h-6 w-6" />
           </button>
         </div>

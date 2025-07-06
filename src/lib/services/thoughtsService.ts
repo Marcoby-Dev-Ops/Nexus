@@ -40,7 +40,7 @@ class ThoughtsService {
     }
 
     // First trigger smart deduplication workflow
-    const deduplicationResult = await this.triggerSmartDeduplication(request.content, user.id);
+    const deduplicationResult = await this.triggerSmartDeduplication(request.content, user.id, request.company_id || 'default');
     
     // If deduplication suggests existing thought, handle accordingly
     if (deduplicationResult?.recommendedAction !== 'create_new') {
@@ -75,7 +75,7 @@ class ThoughtsService {
     }
 
     // Trigger intelligent thought processor workflow
-    await this.triggerIntelligentProcessor(data.id, user.id);
+    await this.triggerIntelligentProcessor(data.id, user.id, request.company_id || 'default');
 
     return this.mapDatabaseToThought(data);
   }
@@ -307,7 +307,7 @@ class ThoughtsService {
   /**
    * Trigger smart thought deduplication workflow
    */
-  private async triggerSmartDeduplication(content: string, userId: string): Promise<any> {
+  private async triggerSmartDeduplication(content: string, userId: string, companyId: string): Promise<any> {
     try {
       const n8nUrl = import.meta.env.VITE_N8N_URL;
       const response = await fetch(`${n8nUrl}/webhook/smart-thought-deduplication`, {
@@ -318,7 +318,7 @@ class ThoughtsService {
         body: JSON.stringify({
           content,
           user_id: userId,
-          company_id: 'default', // TODO: Get from user context
+          company_id: companyId,
           openai_api_key: import.meta.env.VITE_OPENROUTER_API_KEY,
           supabase_url: import.meta.env.VITE_SUPABASE_URL,
           supabase_anon_key: import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -340,7 +340,7 @@ class ThoughtsService {
   /**
    * Trigger intelligent thought processor workflow
    */
-  private async triggerIntelligentProcessor(thoughtId: string, userId: string): Promise<void> {
+  private async triggerIntelligentProcessor(thoughtId: string, userId: string, companyId: string): Promise<void> {
     try {
       const n8nUrl = import.meta.env.VITE_N8N_URL;
       await fetch(`${n8nUrl}/webhook/intelligent-thought-processor`, {
@@ -351,7 +351,7 @@ class ThoughtsService {
         body: JSON.stringify({
           thought_id: thoughtId,
           user_id: userId,
-          company_id: 'default', // TODO: Get from user context
+          company_id: companyId,
           supabase_url: import.meta.env.VITE_SUPABASE_URL,
           supabase_anon_key: import.meta.env.VITE_SUPABASE_ANON_KEY
         })

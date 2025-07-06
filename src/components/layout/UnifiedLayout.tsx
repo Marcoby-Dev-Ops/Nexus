@@ -14,6 +14,7 @@ import { features as featureRegistry } from '@/lib/ui/featureRegistry';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { OnboardingChecklist } from '../onboarding/OnboardingChecklist';
+import { ThemePanel } from '../theme/ThemePanel';
 type NavItem = import("./navConfig").NavItem;
 
 interface UnifiedLayoutProps {
@@ -44,6 +45,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const [isThemePanelOpen, setIsThemePanelOpen] = useState(false);
 
   // Determine if a nav item is active
   const isActive = (path: string) => {
@@ -115,12 +117,13 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     <div className="flex h-screen bg-background text-foreground">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onSidebarToggle={() => setSidebarOpen(true)} />
+        <Header onSidebarToggle={() => setSidebarOpen(true)} onThemePanelToggle={() => setIsThemePanelOpen(!isThemePanelOpen)} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {children}
         </main>
       </div>
       <OnboardingChecklist />
+      {isThemePanelOpen && <ThemePanel />}
     </div>
   );
 }; 

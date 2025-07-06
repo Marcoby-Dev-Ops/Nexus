@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { supabase } from './lib/core/supabase';
+import { supabase } from '@/lib/core/supabase';
 import { API_CONFIG } from '@/lib/constants';
 
 export interface AIMessage {

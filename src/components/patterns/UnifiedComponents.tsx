@@ -46,25 +46,25 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
       case 'AI':
         return {
           icon: Brain,
-          className: 'bg-blue-100 text-blue-800 border-blue-200',
+          className: 'bg-primary-subtle text-primary border-primary-subtle',
           label: 'AI Powered'
         };
       case 'Auto':
         return {
           icon: Zap,
-          className: 'bg-green-100 text-green-800 border-green-200',
+          className: 'bg-success-subtle text-success border-success-subtle',
           label: 'Automated'
         };
       case 'Insight':
         return {
           icon: Lightbulb,
-          className: 'bg-purple-100 text-purple-800 border-purple-200',
+          className: 'bg-secondary-subtle text-secondary border-secondary-subtle',
           label: 'Business Insight'
         };
       case 'Learning':
         return {
           icon: BookOpen,
-          className: 'bg-orange-100 text-orange-800 border-orange-200',
+          className: 'bg-warning-subtle text-warning border-warning-subtle',
           label: 'Learning System'
         };
       default:
@@ -75,22 +75,22 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
   const getTrendIcon = () => {
     switch (determinedTrend) {
       case 'up':
-        return <TrendingUp className="w-4 h-4 text-green-600" />;
+        return <TrendingUp className="w-4 h-4 text-success" />;
       case 'down':
-        return <TrendingDown className="w-4 h-4 text-red-600" />;
+        return <TrendingDown className="w-4 h-4 text-destructive" />;
       default:
-        return <Minus className="w-4 h-4 text-gray-400" />;
+        return <Minus className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
   const getTrendColor = () => {
     switch (determinedTrend) {
       case 'up':
-        return 'text-green-600';
+        return 'text-success';
       case 'down':
-        return 'text-red-600';
+        return 'text-destructive';
       default:
-        return 'text-gray-500';
+        return 'text-muted-foreground';
     }
   };
 
@@ -100,15 +100,15 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
     <Card className={cn(
       'relative overflow-hidden transition-all duration-200 hover:shadow-md',
       badge && 'border-l-4',
-      badge === 'AI' && 'border-l-blue-500 bg-gradient-to-br from-blue-50/50 to-white',
-      badge === 'Auto' && 'border-l-green-500 bg-gradient-to-br from-green-50/50 to-white',
-      badge === 'Insight' && 'border-l-purple-500 bg-gradient-to-br from-purple-50/50 to-white',
-      badge === 'Learning' && 'border-l-orange-500 bg-gradient-to-br from-orange-50/50 to-white',
+      badge === 'AI' && 'border-l-primary bg-gradient-to-br from-primary-subtle/50 to-background',
+      badge === 'Auto' && 'border-l-success bg-gradient-to-br from-success-subtle/50 to-background',
+      badge === 'Insight' && 'border-l-secondary bg-gradient-to-br from-secondary-subtle/50 to-background',
+      badge === 'Learning' && 'border-l-warning bg-gradient-to-br from-warning-subtle/50 to-background',
       className
     )}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-gray-600">{title}</CardTitle>
+          <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
           {badgeConfig && (
             <Badge 
               variant="outline" 
@@ -127,7 +127,7 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
       <CardContent>
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-2xl font-bold text-gray-900">{value}</div>
+            <div className="text-2xl font-bold text-foreground">{value}</div>
             {delta && (
               <div className={cn('flex items-center gap-1 text-sm', getTrendColor())}>
                 {getTrendIcon()}
@@ -137,7 +137,7 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
           </div>
           {badge && (
             <div className="opacity-20">
-              <Sparkles className="w-8 h-8 text-gray-400" />
+              <Sparkles className="w-8 h-8 text-muted-foreground" />
             </div>
           )}
         </div>
