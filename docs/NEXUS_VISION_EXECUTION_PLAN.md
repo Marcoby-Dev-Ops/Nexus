@@ -1,5 +1,23 @@
 # 🚀 Nexus Ultimate Vision & Execution Plan (2025 Edition)
 
+> **Update (2024-06-10):** Workspace, Admin UI, Theme Panel, AI Next Best Actions, UI/UX Consistency, and related critical path items are now complete.
+
+## How to Use This Document & The Prompt Library
+
+This document outlines the strategic vision and execution roadmap for Nexus. To ensure clarity and consistency in development, each major feature listed in the roadmap is accompanied by a **prompt**. These prompts, sourced from the `NEXUS_PROMPT_LIBRARY.md`, should be used to create detailed tickets or epics in our project management tool.
+
+**For Developers:**
+- Each prompt serves as the foundation for a new feature build.
+- The **Acceptance Criteria** within each prompt are the "Definition of Done" for that feature.
+- All development must adhere to the global instructions on testing, security, and design systems outlined in the prompt library.
+
+**For Project Managers:**
+- Copy each prompt and its acceptance criteria into a new ticket/epic.
+- Use the phased roadmap to prioritize development efforts.
+- Ensure all new work is aligned with the prompts to maintain consistency.
+
+---
+
 ## I. North Star Vision
 
 > **Nexus is the AI-first operating system for modern business and personal productivity—uniting every department, workflow, and insight in a single, intuitive platform. It empowers startups, enterprises, and individuals alike to operate smarter, automate more, and grow faster—with daily value, actionable intelligence, and scalable workflows.**
@@ -14,7 +32,56 @@
 4. **Enterprise-Ready & Personal-Ready:** Security, compliance, reliability, and privacy from day one.
 5. **Startup- and User-Friendly:** Easy onboarding, fast value, fair pricing, and personal enablement.
 6. **Continuous Improvement:** Learns and gets better with every user (data flywheel).
-7. **Trinity Architecture:** THINK (brainstorm/collaborate), SEE (analyze/understand), ACT (automate/execute)—applies to both teams and individuals.
+7. **Trinity Architecture:** THINK (generate ideas/deliverables), SEE (analyze business health), ACT (automate execution)—the core loop for all workflows.
+
+---
+
+## IIb. Dashboard vs Workspace: Clear Differentiation
+
+Nexus provides two distinct but complementary interfaces to serve different user needs and contexts:
+
+### **Dashboard - Strategic Business Intelligence Hub**
+**Purpose**: Executive-level business oversight and strategic decision-making  
+**Users**: Executives, managers, business leaders, department heads  
+**Scope**: Organization-wide insights and company performance  
+
+**Key Features**:
+- **Executive KPIs**: Annual revenue, active users, global markets, system uptime
+- **Strategic Metrics**: Company-wide innovation, intelligence, and execution tracking  
+- **Business Intelligence**: Cross-departmental insights and strategic activities
+- **Executive Actions**: Board reports, department analysis, forecast reviews, risk assessments
+- **System Status**: Real-time monitoring of data sources and automations
+- **Auto-refresh**: Business data updates every 5 minutes
+- **Design**: Professional, corporate aesthetic focused on strategic oversight
+
+### **Workspace - Personal Productivity Command Center**  
+**Purpose**: Individual productivity optimization and personal task management  
+**Users**: Individual contributors, knowledge workers, anyone focused on personal productivity  
+**Scope**: Personal workflows, tasks, and individual performance  
+
+**Key Features**:
+- **Personal Metrics**: Tasks completed today, focus time, learning streaks
+- **Productivity Tools**: Pomodoro timers, deep work mode, break reminders, mindfulness exercises
+- **Individual Workflows**: Task management, idea capture, personal calendar, email management
+- **Personal AI Assistant**: Individual productivity optimization and workflow suggestions
+- **Wellness Features**: Celebration widgets, productivity tips, motivational elements
+- **Learning & Development**: Personal learning feed, skill development tracking
+- **Design**: Friendly, motivating aesthetic focused on individual empowerment
+
+### **Key Differentiators**:
+
+| Aspect | Dashboard | Workspace |
+|--------|-----------|-----------|
+| **Scope** | Organization-wide | Personal/Individual |
+| **Data** | Business metrics & KPIs | Personal tasks & activities |
+| **Time Horizon** | Strategic (quarterly/yearly) | Tactical (daily/weekly) |
+| **Visual Design** | Executive/corporate aesthetic | Personal/friendly aesthetic |
+| **Actions** | Strategic decisions | Personal productivity |
+| **Refresh** | Auto-refresh business data | User-initiated personal updates |
+| **Access Control** | Role-based for sensitive metrics | Personal data only |
+| **Primary Goal** | "What's happening with the business?" | "What do I need to do today?" |
+
+This clear separation ensures users can seamlessly switch between strategic oversight and personal productivity without confusion or feature overlap.
 
 ---
 
@@ -58,48 +125,224 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 ### Phase 1: Foundation & MVP (0–3 Months)
 
 #### A. Core Product
-- [x] Unified Navigation/UI: Sidebar, topbar, global theming, mobile-first.
-- [x] Dashboard: Real-time KPIs, activity, customizable widgets, daily briefing (AI-powered).
-    - [x] Dashboard-specific onboarding and empty states for new users
-    - [x] Lazy loading/code-splitting for heavy dashboard widgets
-    - [x] Widget-level analytics/event tracking (usage, dismissals, actions)
-    - [x] Error boundaries for all dashboard widgets (graceful UI degradation)
-    - [x] Dashboard personalization by user role/department
-- [x] Department Modules: Sales, Finance, Operations (each w/ KPIs, workflows, AI suggestions).
-- [x] My Workspace: Personal hub, recents, pins, action shortcuts.
-    - [ ] Recents/pins update in real-time
-    - [ ] Quick actions trigger workflows
-    - [ ] AI panel context-aware
-    - [ ] **Calendar Widget:** Shows today's meetings, events, and deadlines. Integrates with Google/Outlook or internal calendar. Supports quick actions (join, view, add event). Real-time updates and error handling required.
-    - [ ] **Email/Inbox Widget:** Displays recent emails/messages, highlights unread/important communications. Integrates with Gmail/Outlook or internal messaging. Supports quick actions (reply, mark as read, open in inbox). Real-time updates and error handling required.
-    - [ ] **Predictive/Proactive Alerts:** AI-driven alerts and warnings (risk, opportunity, anomaly detection). Users receive real-time, actionable alerts with context and recommended actions.
-    - [ ] **Business Education Engine / Learning Feed:** Contextual business tips, explanations, and improvement suggestions, tailored to user role/department. Updated regularly and visible in workspace/dashboard.
-    - [ ] **Emotional Engagement:** System celebrates wins, encourages progress, and fosters team unity (success banners, milestone celebrations, supportive guidance).
-    - [ ] **Personal Productivity Trinity (THINK/SEE/ACT):**
-        - **THINK:** Capture and organize ideas, notes, and brainstorms (Personal/Team/Org memory). Quick capture, idea board, and linking to tasks/projects.
-        - **SEE:** Unified overview/home page with real-time insights, AI-powered summaries, and actionable intelligence. Widgets for calendar, tasks, ideas, and AI insights. Personalized, customizable dashboard.
-        - **ACT:** Automate and execute tasks, schedule events, trigger workflows, and leverage quick actions. Integrate with external services (Google, Slack, etc.) and use the executive assistant for natural language actions.
-    - [ ] **Unified Search & Command Bar:** Global search across tasks, events, ideas, files, and messages. Command palette for quick actions and navigation.
-    - [ ] **Automations & Smart Suggestions:** Automated routines, smart reminders, and AI-driven next best actions. Proactive alerts and workflow triggers.
-    - [ ] **Notifications & Reminders:** Multi-channel, context-aware, and actionable.
-    - [ ] **Data Portability & Privacy:** Export/import, privacy controls, and compliance.
-    - [ ] **Mobile & Offline Support:** Responsive design and offline access for key data.
-- [x] AI Assistant: Contextual chat, "next best action," workflow triggers.
-    - [ ] **Natural Language Business Query:** Users can ask the assistant any business or personal productivity question and receive clear, actionable answers in natural language.
-    - [ ] **Context-Aware Executive Assistant:** Floating AI chat that understands user context, can perform actions, and provides summaries, scheduling, and insights.
-- [x] Onboarding & Help: Guided onboarding, contextual help, user journey tracker.
+- [x] **Unified Navigation/UI:** Sidebar, topbar, global theming, mobile-first.
+    > **Prompt:**  
+    > Build a modular, mobile-first sidebar and topbar layout in React/TypeScript using shadcn/ui. Add theme support, accessibility (WCAG 2.1), and dynamic department pages. Include global search and user profile menu.
+    >
+    > **Acceptance Criteria:**  
+    > - Responsive/adaptive layout  
+    > - Navigation items are config-driven  
+    > - Uses only design tokens  
+    > - Keyboard accessible, ARIA labels  
+    > - Unit/integration/a11y tests  
+    > - Storybook/docs updated
+
+- [x] **Dashboard:** Strategic Business Intelligence Hub - Executive overview of company performance with real-time KPIs, cross-departmental insights, and strategic decision-making tools.
+    > **Prompt:**  
+    > Build a strategic business intelligence dashboard for executives and managers with company-wide KPIs (revenue, users, markets, uptime), Trinity business metrics (Innovation/Intelligence/Execution), strategic activity streams, and executive actions (board reports, department analysis, forecast reviews, risk assessments). Focus on strategic oversight, not personal productivity.
+    >
+    > **Acceptance Criteria:**  
+    > - Executive-focused design with corporate aesthetic
+    > - Company-wide KPIs and business metrics only
+    > - Strategic activities and cross-departmental insights
+    > - Executive action buttons for strategic decisions
+    > - Auto-refreshing business data (5-minute intervals)
+    > - Role-based access control for sensitive metrics
+    > - System status monitoring (data sources, automations)
+    > - Strategic business insights panel
+    > - Follows design tokens with professional styling
+    > - Error boundaries and graceful degradation
+    > - Analytics tracking for executive actions
+    > - Dashboard personalization by user role/department
+
+- [x] **Department Modules:** Sales, Finance, Operations (each w/ KPIs, workflows, AI suggestions).
+    > **Prompt:**  
+    > Scaffold Sales, Finance, and Operations modules with:
+    > - **THINK:** Analysis tab (KPI grid, workflow/task panel, AI summaries)
+    > - **SEE:** Advice tab (AI suggestions, actionable recommendations, prioritized actions)
+    > - **ACT:** Resources tab (playbooks, product/service info, templates, enablement materials)
+    > All layouts must use standardized PageTemplates and ContentCard.
+    >
+    > **Acceptance Criteria:**  
+    > - UnifiedDepartmentPage and departmentConfigs used  
+    > - Tabs: Analysis, Advice, Resources present in every department  
+    > - AI suggestions actionable (1-click) in Advice tab  
+    > - All forms validated, standardized error display  
+    > - Department configs/docs updated  
+    > - Tests + Storybook
+
+- [x] **My Workspace:** Personal Productivity Command Center - Individual hub for task management, personal workflows, and productivity optimization.
+    > **Prompt:**  
+    > Create a personal productivity workspace focused on individual task management, idea capture, personal calendar, email management, learning, and wellness. Include personal productivity metrics (tasks completed, focus time, learning streaks), productivity tools (focus timers, break reminders, mindfulness), and personal AI assistant for individual workflow optimization.
+    >
+    > **Acceptance Criteria:**  
+    > - Personal productivity focus with friendly, motivating design
+    > - Individual task management and idea capture
+    > - Personal metrics (tasks done, focus time, learning streaks)
+    > - Productivity tools (pomodoro timers, break reminders, deep work mode)
+    > - Personal calendar and email widgets
+    > - Learning and development features
+    > - Wellness and mindfulness tools
+    > - Personal AI assistant for individual productivity
+    > - Quick actions for personal workflows
+    > - Celebration and motivation features
+    > - Daily focus setting and productivity tips
+    > - Personal data only (no business metrics)
+    > - Responsive design optimized for individual use
+    > - Tests and documentation for all productivity features
+
+- [x] **AI Assistant:** Contextual chat, "next best action," workflow triggers.
+    > **Prompt:**  
+    > Integrate an AI chat/assistant with:  
+    > - Contextual chat  
+    > - "Next best action" shortcuts  
+    > - Workflow triggers  
+    > - Natural language business query: Users can ask any business question about data, metrics, or processes and receive clear, actionable answers in natural language.  
+    > Support @mentions and (optionally) voice input.
+    >
+    > **Acceptance Criteria:**  
+    > - Works on every page  
+    > - 2+ automations per department  
+    > - Keyboard and screen-reader accessible  
+    > - **Natural language business query**: Users can ask the assistant any business question and receive actionable, accurate answers.  
+    > - Includes sample inputs/outputs in docs  
+    > - Tests/Storybook
+
+- [x] **Onboarding & Help:** Guided onboarding, contextual help, user journey tracker.
+    > **Prompt:**  
+    > Implement progressive onboarding: checklist, contextual tips, user journey tracking. Add help panel with searchable guides and video links.
+    >
+    > **Acceptance Criteria:**  
+    > - New users see onboarding checklist  
+    > - Tips/guide popups are context-aware  
+    > - User progress tracked and persisted  
+    > - Docs/Storybook/screenshots
+
+- [x] **Settings:** Config-driven, extensible, and comprehensive settings system.
+    > **Prompt:**  
+    > Implement a unified, config-driven settings page using a single configuration object. Scaffold all major SaaS settings sections: Profile & Preferences, Security & Privacy, Notifications, Billing & Subscription, Team & Access, Integrations, Data & Privacy, Appearance, and Advanced/Developer. Ensure the architecture is modular and extensible for future settings.
+    > 
+    > **Acceptance Criteria:**  
+    > - Settings page uses a config-driven architecture  
+    > - All major sections are present as modular config entries  
+    > - Profile & Security sections are fully functional  
+    > - Other sections are scaffolded with placeholders, ready for business logic/UI implementation  
+    > - UI/UX follows the THINK/SEE/ACT structure for all settings modules  
+    > - Automated tests and Storybook coverage  
+    > - Analytics/event tracking where relevant  
+    > - Documentation updated
+
+- [x] **Department Module Unification:** All department modules are now config-driven, use a single unified page/component, and explicitly follow the THINK/SEE/ACT structure.
+    > **Prompt:**  
+    > Refactor all department pages to use a unified, config-driven architecture. Remove legacy/duplicate files. Ensure every department module (Sales, Finance, Operations, etc.) uses a type-safe config and the UnifiedDepartmentPage component. Enforce the THINK/SEE/ACT structure in every department module.
+    > 
+    > **Acceptance Criteria:**  
+    > - All department pages use UnifiedDepartmentPage and a config object  
+    > - No legacy or duplicate department page files remain  
+    > - THINK/SEE/ACT structure is present in every department module  
+    > - Consistent UI/UX and rapid scalability across departments  
+    > - Automated tests and Storybook coverage  
+    > - Analytics/event tracking where relevant  
+    > - Documentation updated
+
+- [ ] **Callback Configuration System:** All callback/integration flows (OAuth, API, etc.) are being migrated to a config-driven architecture, with legacy callback files being removed.
+    > **Prompt:**  
+    > Refactor all callback and integration routes to use a unified, config-driven system. Remove legacy callback files. Ensure all new and existing integrations (OAuth, API, etc.) are extensible via configuration, not hardcoded routes.
+    > 
+    > **Acceptance Criteria:**  
+    > - All callback routes use a config-driven system  
+    > - No legacy callback files remain  
+    > - System is extensible for new integrations  
+    > - Automated tests and Storybook coverage  
+    > - Analytics/event tracking where relevant  
+    > - Documentation updated
+
+- [x] **Progressive Learning System:** AI-powered platform that learns user patterns and provides contextual business insights with progressive actions.
+    > **Prompt:**  
+    > Implement a learning system that analyzes user behavior and business data to provide contextual insights and progressive actions. Include `useSecondBrain` hook, `ProgressiveIntelligence` component, integration-driven learning, and automation opportunity detection with one-click deployment through n8n.
+    >
+    > **Acceptance Criteria:**  
+    > - Learning loop: Business Data → Pattern Recognition → Contextual Insights → Progressive Actions
+    > - Integration-driven learning from real business data (Google Analytics, Slack, Salesforce, etc.)
+    > - Contextual intelligence that adapts to each page (Dashboard, Sales, Finance, etc.)
+    > - Progressive action framework with estimated time, difficulty, and expected outcomes
+    > - Automation opportunity detection and one-click deployment
+    > - User behavior tracking and preference learning
+    > - Cross-platform pattern recognition and real-time learning events
+    > - Tests and documentation for all learning components
+
+- [x] **Personal Memory & Organizational Mind:** Hybrid personal-business intelligence system that captures individual thoughts within business context.
+    > **Prompt:**  
+    > Implement a personal memory system that captures individual thoughts, ideas, and insights within business context. Include personal thought capture, business context integration, AI memory enhancement, and personal-business connection bridges that turn individual insights into organizational intelligence.
+    >
+    > **Acceptance Criteria:**  
+    > - Personal thought capture system with categories (idea, learning, reflection, goal)
+    > - Business context linking (department, project, related tasks)
+    > - AI context enhancement with personal memory awareness
+    > - Dual-context AI responses combining personal history and business data
+    > - Personal-business bridges (learning goals → skill development, insights → process improvements)
+    > - Long-term memory retrieval and search capabilities
+    > - Individual growth tracking within business performance
+    > - Tests and documentation for personal memory architecture
 
 #### B. Technical Foundation
-- [x] Authentication/RBAC: SSO, OAuth, multi-tenant, roles.
-- [x] API Gateway & DB: Secure, scalable, audit-logged, multi-tenant.
-- [x] CI/CD & Observability: Lint/tests, auto-deploy, logging, error reporting.
+- [x] **Authentication/RBAC:** SSO, OAuth, multi-tenant, roles.
+    > **Prompt:**  
+    > Add SSO/OAuth, multi-tenant support, and RBAC (roles: Admin, Member, Viewer). Scaffold admin UI for managing users/roles/tenants.
+    >
+    > **Acceptance Criteria:**  
+    > - Roles enforce all protected routes  
+    > - Admin UI lists users, invites, removes, edits roles  
+    > - Tests for permission logic  
+    > - User/role docs updated
+
+- [x] **API Gateway & DB:** Secure, scalable, audit-logged, multi-tenant.
+    > **Prompt:**  
+    > Scaffold API gateway (REST or GraphQL) with versioning, audit logging, and multi-tenant user/org/department schemas.
+    >
+    > **Acceptance Criteria:**  
+    > - API versioning works  
+    > - Audit logs written/readable  
+    > - Multi-tenant separation tested  
+    > - Prisma/ORM types match docs
+
+- [x] **CI/CD & Observability:** Lint/tests, auto-deploy, logging, error reporting.
+    > **Prompt:**  
+    > Implement CI/CD pipeline (lint, test, deploy), set up Sentry/error logging, and basic uptime/health endpoints.
+    >
+    > **Acceptance Criteria:**  
+    > - All PRs require tests to pass  
+    > - Logs visible in admin panel  
+    > - Health endpoints monitored  
+    > - Docs/screenshots
 
 #### C. Quality & Compliance
-- [ ] Accessibility (WCAG 2.1)
-- [ ] i18n readiness
-- [ ] Basic compliance: GDPR, audit logs, data export
-- [ ] Error boundaries implemented for all major UI modules (esp. dashboard)
-- [ ] Widget-level analytics/event tracking for dashboards and key modules
+- [x] **Accessibility (WCAG 2.1)**
+    > **Prompt:**  
+    > Audit all flows for a11y, add keyboard navigation, ARIA labels, high-contrast support, and write a11y tests for each page.
+    >
+    > **Acceptance Criteria:**  
+    > - All critical flows pass Axe or pa11y  
+    > - Keyboard/reader nav demoable  
+    > - a11y docs/screenshots
+
+- [x] **i18n readiness**
+    > **Prompt:**  
+    > Add language files, language picker, and scaffold UI copy for future multi-language support.
+    >
+    > **Acceptance Criteria:**  
+    > - Language switcher visible  
+    > - All UI copy pulled from i18n files  
+    > - Docs/screenshots
+
+- [x] **Basic compliance:** GDPR, audit logs, data export
+    > **Prompt:**  
+    > Add endpoints for user/org data export and deletion. Ensure compliance with GDPR data requests.
+    >
+    > **Acceptance Criteria:**  
+    > - API endpoints documented  
+    > - Tests for export/delete flows  
+    > - Legal/compliance docs updated
 
 #### Definition of Done for MVP
 - All core modules live, UI consistent, AI features functional, onboarding smooth, critical flows tested, users can run their day in Nexus.
@@ -110,14 +353,45 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 ### Phase 2: Feature Depth & Extensibility (3–6 Months)
 
 #### A. Departmental Depth
+- [x] **Specialized Dashboards:** Security, VAR Leads, and Model Management dashboards for advanced business intelligence.
+  - **SecurityDashboard:** Audit logs, security events monitoring, and compliance tracking
+  - **VARLeadDashboard:** Sales pipeline management and lead tracking
+  - **ModelManagementDashboard:** AI model performance monitoring and cost optimization
+
+- [x] **Centralized Apps System:** Unified business operating system with AI orchestration across all connected applications.
+    > **Prompt:**  
+    > Build a centralized apps orchestrator that manages all business applications through AI coordination. Include unified command execution, business function automation, cross-platform analytics, and real-time app status monitoring across 8+ major platforms (Salesforce, HubSpot, QuickBooks, Stripe, Microsoft 365, Slack, Mailchimp, Google Analytics).
+    >
+    > **Acceptance Criteria:**  
+    > - Centralized Apps Orchestrator with unified interface
+    > - Connected to 8+ major business platforms
+    > - Automated business functions (Lead to Cash 75%, Financial Reporting 90%, Customer Onboarding 65%, Marketing Campaigns 80%)
+    > - Cross-platform command execution and insights generation
+    > - Real-time app status monitoring and health checks
+    > - Business function automation with one-click execution
+    > - Unified analytics across all connected systems
+    > - CentralizedAppsHub UI component built and tested
+
 - [ ] Sales: Pipeline, deals, forecasting, lead follow-up, basic CRM, integrations.
 - [ ] Finance: Expenses, invoicing, reports, QBO/Xero integration.
 - [ ] Operations: Tasks, automations, process workflows.
 - [ ] AI in Every Department: Role-specific suggestions, AI automations, trend alerts.
+- [x] **Real-Time Provider Sync:** Backend service for webhooks from external providers with live updates to client.
+    > **Prompt:**  
+    > Implement a backend service to handle webhooks from external providers (Google, Microsoft 365) and push live updates to the client for features like Calendar and Email. Include real-time data synchronization, webhook processing, and push notification system.
+    >
+    > **Acceptance Criteria:**  
+    > - Webhook handlers for Google and Microsoft 365
+    > - Real-time data synchronization for Calendar and Email widgets
+    > - Push notification system for business events
+    > - Live updates without page refresh
+    > - Error handling and retry mechanisms
+    > - Audit logging for all webhook events
 
 #### B. Marketplace & Integrations
 - [ ] Marketplace UI: App discovery, install/uninstall, licensing/billing.
-- [ ] Integration Framework: n8n, Zapier, HubSpot, M365, Stripe, etc.
+- [x] Integration Framework: n8n, Zapier, HubSpot, M365, Stripe, etc.
+  - **CentralizedAppsHub:** UI component for this framework has been built and tested
 - [ ] Integration SDK: For 3rd-party and internal connectors.
 
 #### C. Customization
@@ -126,7 +400,60 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 
 #### D. Security & Compliance
 - [ ] SSO, advanced RBAC, audit logging, encryption
+- [x] Security Monitoring Dashboard: Dedicated dashboard for viewing audit logs and monitoring security events.
+  - **SecurityDashboard:** Component has been built and tested
 - [ ] SOC2 planning, pen test pipeline
+
+#### E. Mobile & Performance Optimization
+- [ ] **Mobile-First Design:** Responsive design optimization and mobile-specific features.
+    > **Prompt:**  
+    > Optimize Nexus for mobile devices with responsive design improvements, mobile-specific UI patterns, touch-friendly interactions, and offline capabilities for personal productivity features.
+    >
+    > **Acceptance Criteria:**  
+    > - Mobile-first responsive design across all pages
+    > - Touch-friendly interactions and gestures
+    > - Offline data access for personal productivity (tasks, notes, calendar)
+    > - Mobile-specific navigation patterns
+    > - Performance optimization for mobile devices
+    > - Progressive Web App (PWA) capabilities
+
+- [ ] **Performance & Scale:** Sub-100ms response times, horizontal scaling, and optimization.
+    > **Prompt:**  
+    > Implement performance optimization and scaling infrastructure including sub-100ms API responses, horizontal scaling capabilities, global CDN, caching strategies, and database optimization.
+    >
+    > **Acceptance Criteria:**  
+    > - Sub-100ms response times for all API endpoints
+    > - Horizontal scaling architecture
+    > - Global CDN implementation
+    > - Advanced caching strategies (Redis, edge caching)
+    > - Database query optimization
+    > - Real-time performance monitoring
+    > - Load testing and capacity planning
+
+#### F. Advanced Trinity Implementation
+- [ ] **Personal Trinity:** Individual THINK/SEE/ACT workflows for personal productivity optimization.
+    > **Prompt:**  
+    > Implement personal-level Trinity workflows where individual thoughts (THINK) inform personal analytics (SEE) which trigger personal automations (ACT). Include personal goal tracking, individual performance analytics, and automated personal workflow optimization.
+    >
+    > **Acceptance Criteria:**  
+    > - Personal THINK: Individual idea capture and goal setting
+    > - Personal SEE: Individual performance analytics and insights
+    > - Personal ACT: Personal workflow automation and optimization
+    > - Cross-Trinity connections (personal insights → business actions)
+    > - Individual growth tracking and visualization
+    > - Personal automation opportunities detection
+
+- [ ] **Organizational Trinity:** Company-wide intelligence sharing and cross-departmental automation.
+    > **Prompt:**  
+    > Implement organizational-level Trinity workflows where departmental insights flow between teams, creating company-wide intelligence and automated cross-departmental coordination.
+    >
+    > **Acceptance Criteria:**  
+    > - Cross-departmental intelligence sharing
+    > - Organizational pattern recognition
+    > - Company-wide automation triggers
+    > - Strategic alignment tracking
+    > - Collective learning and knowledge management
+    > - Enterprise-wide optimization recommendations
 
 #### Definition of Done for Phase 2
 - Every core department "workspace" is powerful, integrations marketplace open, AI/automation is present in every key flow, branding/theming ready for early adopters.
@@ -139,16 +466,41 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 - [ ] Horizontal scaling, global CDN, failover
 - [ ] Performance: sub-100ms responses, mobile polish
 
-#### B. Analytics & Intelligence
+#### B. Advanced Analytics & Intelligence
 - [ ] BI Dashboards: Drag-and-drop, SQL, no-code analytics.
 - [ ] Cross-dept/benchmarking, trend analysis, anomaly detection.
+- [ ] **Predictive Analytics:** AI-powered business forecasting and trend prediction.
+    > **Prompt:**  
+    > Implement predictive analytics engine that forecasts business trends, identifies opportunities and risks, and provides strategic recommendations based on historical data and industry benchmarks.
+    >
+    > **Acceptance Criteria:**  
+    > - Revenue and growth forecasting models
+    > - Customer churn prediction and prevention
+    > - Market opportunity identification
+    > - Risk assessment and early warning systems
+    > - Industry benchmarking and competitive analysis
+    > - Strategic planning assistance with scenario modeling
 
-#### C. Ecosystem & GTM
+#### C. Data Privacy & Portability
+- [ ] **User Data Control:** Comprehensive data privacy controls and export capabilities.
+    > **Prompt:**  
+    > Implement comprehensive data privacy and portability features including personal data export/import, privacy controls for personal vs business data, right to be forgotten compliance, and data residency options.
+    >
+    > **Acceptance Criteria:**  
+    > - Personal data export in standard formats (JSON, CSV)
+    > - Data import from other productivity platforms
+    > - Granular privacy controls (personal vs business data separation)
+    > - Right to be forgotten implementation (GDPR compliance)
+    > - Data residency options for enterprise customers
+    > - Audit trail for all data access and modifications
+    > - User consent management for data processing
+
+#### D. Ecosystem & GTM
 - [ ] App Store: 3rd-party apps, billing, revenue share.
 - [ ] API quotas, advanced audit, eDiscovery, data residency
 - [ ] Support portal, knowledge base, customer success playbooks
 
-#### D. Certifications
+#### E. Certifications
 - [ ] SOC2, ISO, HIPAA as required
 
 #### Definition of Done for Phase 3
@@ -170,14 +522,14 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 
 ## IV. Critical Path (Immediate MVP Gap Closure)
 
-1. UI/UX Consistency: Every page uses standardized layouts, loading/error states.
-2. Department Depth: Sales/Finance/Ops get real workflows, analytics, quick actions, and AI suggestions.
-3. AI "Next Best Actions": At least 2–3 user-facing automations per department.
-4. Onboarding: Progressive, contextual, department-specific help.
-5. Marketplace Decision: Complete (app install/activate/billing) or hide for MVP.
-6. Admin UI: Basic RBAC, user/role/tenant management.
-7. Theme Panel: Minimal branding customization.
-8. Core Integration/Accessibility Tests: Login, dashboard, department flows, a11y check.
+- [x] UI/UX Consistency: Every page uses standardized layouts, loading/error states.
+- [x] Department Depth: Sales/Finance/Ops get real workflows, analytics, quick actions, and AI suggestions.
+- [x] AI "Next Best Actions": At least 2–3 user-facing automations per department.
+- [x] Onboarding: Progressive, contextual, department-specific help.
+- [x] Marketplace Decision: Complete (app install/activate/billing) or hide for MVP.
+- [x] Admin UI: Basic RBAC, user/role/tenant management.
+- [x] Theme Panel: Minimal branding customization.
+- [x] Core Integration/Accessibility Tests: Login, dashboard, department flows, a11y check.
 
 ---
 
@@ -226,15 +578,21 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 
 ## IX. The Trinity & Data Flywheel
 
-- **THINK:** Brainstorm, collaborate, capture ideas (Personal/Team/Org memory)
-- **SEE:** Analyze, understand, get real-time insights (Dashboards, analytics, AI, unified overview)
-- **ACT:** Automate, execute, optimize (Workflows, automations, integrations, quick actions)
-- **Continuous Learning:** Every action and insight feeds back into the system, making Nexus smarter for all users (data flywheel).
+The Trinity is the core, dynamic workflow of Nexus, defining how users interact with the platform to produce outcomes. It is a powerful cycle that makes intelligence actionable.
 
-- **Personal Workspace Trinity:**
-    - **THINK:** Capture and organize your ideas, notes, and brainstorms. Quick capture, idea board, and linking to tasks/projects.
-    - **SEE:** Unified home page with real-time insights, AI-powered summaries, and actionable intelligence. Widgets for calendar, tasks, ideas, and AI insights. Personalized, customizable dashboard.
-    - **ACT:** Automate and execute tasks, schedule events, trigger workflows, and leverage quick actions. Integrate with external services and use the executive assistant for natural language actions.
+-   **THINK: The Generative Engine**
+    -   This is our creative capability. THINK is used to generate new ideas, strategies, content, and deliverables within Nexus. It's the engine for innovation.
+-   **SEE: The Diagnostic Engine**
+    -   This is our analytical lens. SEE provides a clear, data-driven understanding of the health of the company, its departments, and its workflows. It's the engine for objective insight.
+-   **ACT: The Automation Engine**
+    -   This is our operational force. ACT is used to implement the creative ideas from THINK and execute on the factual insights from SEE through powerful, automated workflows. It's the engine for execution.
+-   **Continuous Learning:** Every cycle of THINK, SEE, and ACT feeds back into the Nexus Brain, making the entire system smarter, more proactive, and more valuable for all users (the data flywheel).
+
+### Personal & Team Workspace Trinity:
+This Trinity is applied at every level:
+-   **THINK:** Brainstorm new marketing campaigns, draft project proposals, generate code, or outline a new business strategy.
+-   **SEE:** Analyze real-time sales performance, review project velocity, diagnose operational bottlenecks, or assess team engagement metrics.
+-   **ACT:** Launch an automated marketing sequence, trigger a project-kickoff workflow, schedule a series of strategic meetings, or deploy a new internal tool.
 
 ---
 
@@ -257,18 +615,18 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 
 ---
 
-## Universal Department Structure: THINK → SEE → ACT
+## Universal Department Structure: SEE → THINK → ACT
 
-To maximize clarity, enablement, and action, every department module in Nexus now follows a universal structure:
+To maximize clarity, enablement, and action, every department module in Nexus now follows the universal SEE → THINK → ACT workflow:
 
-- **Analysis (THINK):** Automated and on-demand analysis of department performance, trends, and diagnostics (KPIs, charts, summaries)
-- **Advice (SEE):** AI-powered recommendations, prioritized actions, and strategic guidance (Next Best Actions, improvement suggestions)
-- **Resources (ACT):** Curated playbooks, templates, product/service info, and enablement materials (Knowledge cards, tools, templates)
+-   **SEE (Analysis & Diagnosis):** First, understand the current state with automated and on-demand analysis of department performance, trends, and diagnostics (KPIs, charts, summaries). This is where you see the objective reality.
+-   **THINK (Strategy & Ideas):** Based on the analysis, use Nexus's generative capabilities to brainstorm solutions, develop strategies, and create new deliverables (AI-powered recommendations, strategic plans, creative content). This is where you decide what to do.
+-   **ACT (Execution & Automation):** Finally, put the plan into action. Use curated playbooks, automation workflows, and integrated tools to execute the strategy and achieve the desired outcome (Automated workflows, one-click actions, integrated tools).
 
 This structure ensures:
-- Every user can THINK (understand), SEE (get advice), and ACT (take action) in a consistent, empowering way
-- Cross-departmental work is seamless and intuitive
-- Continuous learning and improvement are built into daily workflows
+-   Every user can SEE (diagnose), THINK (strategize), and ACT (execute) in a consistent, empowering way.
+-   Cross-departmental work is seamless and intuitive.
+-   Continuous learning and improvement are built into daily workflows.
 
 ---
 
