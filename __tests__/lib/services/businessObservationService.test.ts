@@ -44,7 +44,7 @@ describe('BusinessObservationService', () => {
       const mockDomainAnalysis = {
         totalEmails: 5,
         customDomainCount: 0,
-        genericProviderCount: 3,
+        genericDomainCount: 3,
         overallProfessionalScore: 30,
         emailsByDomain: {
           'gmail.com': ['user@gmail.com', 'contact@gmail.com'],
@@ -105,7 +105,7 @@ describe('BusinessObservationService', () => {
       const mockDomainAnalysis = {
         totalEmails: 75,
         customDomainCount: 0,
-        genericProviderCount: 75,
+        genericDomainCount: 75,
         overallProfessionalScore: 20,
         emailsByDomain: {
           'gmail.com': Array(50).fill('user@gmail.com'),
@@ -126,7 +126,7 @@ describe('BusinessObservationService', () => {
       const mockDomainAnalysis = {
         totalEmails: 10,
         customDomainCount: 8,
-        genericProviderCount: 2,
+        genericDomainCount: 2,
         overallProfessionalScore: 85,
         emailsByDomain: {
           'company.com': Array(8).fill('user@company.com'),
@@ -140,7 +140,7 @@ describe('BusinessObservationService', () => {
 
       const securityObservation = observations.find(obs => obs.category === 'Email Security');
       expect(securityObservation).toBeDefined();
-      expect(securityObservation?.type).toBe('recommendation');
+      expect(securityObservation?.type).toBe('opportunity');
       expect(securityObservation?.title).toBe('Email Security Enhancement Opportunity');
       expect(securityObservation?.insights).toContain('DMARC, SPF, and DKIM records prevent email spoofing');
       expect(securityObservation?.actionItems).toContain('Configure DMARC, SPF, and DKIM DNS records');
@@ -150,7 +150,7 @@ describe('BusinessObservationService', () => {
       const mockDomainAnalysis = {
         totalEmails: 15,
         customDomainCount: 15,
-        genericProviderCount: 0,
+        genericDomainCount: 0,
         overallProfessionalScore: 95,
         emailsByDomain: {
           'company.com': Array(15).fill('user@company.com')
@@ -198,7 +198,7 @@ describe('BusinessObservationService', () => {
       const mockDomainAnalysis = {
         totalEmails: 50,
         customDomainCount: 0,
-        genericProviderCount: 50,
+        genericDomainCount: 50,
         overallProfessionalScore: 25,
         emailsByDomain: {
           'gmail.com': Array(50).fill('user@gmail.com')
@@ -240,7 +240,7 @@ describe('BusinessObservationService', () => {
       const mockDomainAnalysis = {
         totalEmails: 10,
         customDomainCount: 0,
-        genericProviderCount: 10,
+        genericDomainCount: 10,
         overallProfessionalScore: 30,
         emailsByDomain: {
           'gmail.com': Array(10).fill('user@gmail.com')
@@ -267,7 +267,7 @@ describe('BusinessObservationService', () => {
       const mockDomainAnalysis = {
         totalEmails: 5,
         customDomainCount: 0,
-        genericProviderCount: 5,
+        genericDomainCount: 5,
         overallProfessionalScore: 30,
         emailsByDomain: {
           'gmail.com': Array(5).fill('user@gmail.com')

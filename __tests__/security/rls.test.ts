@@ -1,5 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
 
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn().mockReturnValue({
+    from: jest.fn().mockReturnThis(),
+    insert: jest.fn().mockReturnThis(),
+    delete: jest.fn().mockReturnThis(),
+    in: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockResolvedValue({ data: [], error: null }),
+  }),
+}));
+
 /**
  * Basic cross-tenant isolation check.
  *

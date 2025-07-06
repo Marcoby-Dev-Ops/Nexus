@@ -1,4 +1,4 @@
-import { ProductionSupervisorAgent, supervisorAgent } from '../../../src/features/ai-assistant/lib/agents/supervisor';
+import { ProductionSupervisorAgent, supervisorAgent } from '@/lib/ai/assistant/supervisor';
 import type { Agent } from '../../../src/lib/agentRegistry';
 
 describe('Production Supervisor Agent', () => {

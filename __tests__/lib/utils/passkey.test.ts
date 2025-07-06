@@ -21,38 +21,71 @@ jest.mock('sonner');
 const mockBrowserSupportsWebAuthn = browserSupportsWebAuthn as jest.MockedFunction<typeof browserSupportsWebAuthn>;
 const mockStartRegistration = startRegistration as jest.MockedFunction<typeof startRegistration>;
 const mockStartAuthentication = startAuthentication as jest.MockedFunction<typeof startAuthentication>;
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
 const mockToast = toast as jest.Mocked<typeof toast>;
+
+// Add at the top, after other mocks
+const mockRegistrationResponse = {
+  id: 'test-credential',
+  rawId: 'test-raw-id',
+  response: {
+    clientDataJSON: 'base64-client-data',
+    attestationObject: 'base64-attestation',
+  },
+  type: 'public-key' as const,
+  clientExtensionResults: {},
+  authenticatorAttachment: 'platform' as const,
+};
+
+const mockAuthenticationResponse = {
+  id: 'test-credential',
+  rawId: 'test-raw-id',
+  response: {
+    clientDataJSON: 'base64-client-data',
+    authenticatorData: 'base64-auth-data',
+    signature: 'base64-signature',
+    userHandle: undefined,
+  },
+  type: 'public-key' as const,
+  clientExtensionResults: {},
+};
+
+let mockGetSession: jest.Mock;
+let mockSetSession: jest.Mock;
+let mockRefreshSession: jest.Mock;
+let mockInvoke: jest.Mock;
+let mockFrom: jest.Mock;
+let mockSelect: jest.Mock;
+let mockOrder: jest.Mock;
+let mockDelete: jest.Mock;
+let mockEq: jest.Mock;
 
 describe('Passkey Utils', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    // Default mocks
-    mockSupabase.auth = {
+
+    // Replace supabase.auth with a fully mocked object
+    (supabase as any).auth = {
       getSession: jest.fn(),
       setSession: jest.fn(),
       refreshSession: jest.fn(),
-    } as any;
+    };
+    mockGetSession = (supabase as any).auth.getSession;
+    mockSetSession = (supabase as any).auth.setSession;
+    mockRefreshSession = (supabase as any).auth.refreshSession;
 
-    mockSupabase.functions = {
+    // Replace supabase.functions with a fully mocked object
+    (supabase as any).functions = {
       invoke: jest.fn(),
-    } as any;
+    };
+    mockInvoke = (supabase as any).functions.invoke;
 
-    mockSupabase.from = jest.fn().mockReturnValue({
-      select: jest.fn().mockReturnValue({
-        order: jest.fn().mockReturnValue({
-          data: [],
-          error: null,
-        }),
-      }),
-      delete: jest.fn().mockReturnValue({
-        eq: jest.fn().mockResolvedValue({
-          data: null,
-          error: null,
-        }),
-      }),
-    });
+    // Mock supabase.from chain
+    mockOrder = jest.fn().mockResolvedValue({ data: [], error: null });
+    mockSelect = jest.fn(() => ({ order: mockOrder }));
+    mockEq = jest.fn().mockResolvedValue({ data: null, error: null });
+    mockDelete = jest.fn(() => ({ eq: mockEq }));
+    mockFrom = jest.fn(() => ({ select: mockSelect, delete: mockDelete }));
+    jest.spyOn(supabase, 'from').mockImplementation(mockFrom);
   });
 
   describe('isPasskeySupported', () => {
@@ -92,7 +125,7 @@ describe('Passkey Utils', () => {
 
     beforeEach(() => {
       mockBrowserSupportsWebAuthn.mockReturnValue(true);
-      mockSupabase.auth.getSession.mockResolvedValue({
+      mockGetSession.mockResolvedValue({
         data: { session: { access_token: 'mock-token' } },
         error: null,
       });
@@ -101,21 +134,20 @@ describe('Passkey Utils', () => {
     it('successfully registers a passkey', async () => {
       const mockAttestationResponse = { id: 'test-credential' };
       
-      mockSupabase.functions.invoke
-        .mockResolvedValueOnce({
-          data: { challenge: 'test-challenge' },
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: { verified: true },
-          error: null,
-        });
+      mockInvoke.mockResolvedValueOnce({
+        data: { challenge: 'test-challenge' },
+        error: null,
+      });
+      mockInvoke.mockResolvedValueOnce({
+        data: { verified: true },
+        error: null,
+      });
 
-      mockStartRegistration.mockResolvedValue(mockAttestationResponse);
+      mockStartRegistration.mockResolvedValue(mockRegistrationResponse);
 
       await registerPasskey(mockOptions);
 
-      expect(mockSupabase.functions.invoke).toHaveBeenCalledWith(
+      expect(mockInvoke).toHaveBeenCalledWith(
         'passkey-register-challenge',
         {
           body: { userId: 'test-user-id', friendlyName: 'Test Device' },
@@ -127,12 +159,12 @@ describe('Passkey Utils', () => {
         optionsJSON: { challenge: 'test-challenge' },
       });
 
-      expect(mockSupabase.functions.invoke).toHaveBeenCalledWith(
+      expect(mockInvoke).toHaveBeenCalledWith(
         'passkey-register-verify',
         {
           body: {
             userId: 'test-user-id',
-            attestationResponse: mockAttestationResponse,
+            attestationResponse: mockRegistrationResponse,
             friendlyName: 'Test Device',
           },
         }
@@ -148,7 +180,7 @@ describe('Passkey Utils', () => {
     });
 
     it('throws error when no session is available', async () => {
-      mockSupabase.auth.getSession.mockResolvedValue({
+      mockGetSession.mockResolvedValue({
         data: { session: null },
         error: null,
       });
@@ -159,7 +191,7 @@ describe('Passkey Utils', () => {
     });
 
     it('throws error when challenge request fails', async () => {
-      mockSupabase.functions.invoke.mockResolvedValue({
+      mockInvoke.mockResolvedValue({
         data: null,
         error: { message: 'Challenge failed' },
       });
@@ -168,7 +200,7 @@ describe('Passkey Utils', () => {
     });
 
     it('throws error when verification fails', async () => {
-      mockSupabase.functions.invoke
+      mockInvoke
         .mockResolvedValueOnce({
           data: { challenge: 'test-challenge' },
           error: null,
@@ -178,7 +210,7 @@ describe('Passkey Utils', () => {
           error: { message: 'Verification failed' },
         });
 
-      mockStartRegistration.mockResolvedValue({ id: 'test-credential' });
+      mockStartRegistration.mockResolvedValue(mockRegistrationResponse);
 
       await expect(registerPasskey(mockOptions)).rejects.toThrow('Verification failed');
     });
@@ -188,7 +220,7 @@ describe('Passkey Utils', () => {
         userId: 'test-user-id',
       };
 
-      mockSupabase.functions.invoke
+      mockInvoke
         .mockResolvedValueOnce({
           data: { challenge: 'test-challenge' },
           error: null,
@@ -198,11 +230,11 @@ describe('Passkey Utils', () => {
           error: null,
         });
 
-      mockStartRegistration.mockResolvedValue({ id: 'test-credential' });
+      mockStartRegistration.mockResolvedValue(mockRegistrationResponse);
 
       await registerPasskey(optionsWithoutName);
 
-      expect(mockSupabase.functions.invoke).toHaveBeenCalledWith(
+      expect(mockInvoke).toHaveBeenCalledWith(
         'passkey-register-challenge',
         {
           body: { userId: 'test-user-id', friendlyName: undefined },
@@ -230,27 +262,26 @@ describe('Passkey Utils', () => {
         refresh_token: 'refresh-token',
       };
 
-      mockSupabase.functions.invoke
-        .mockResolvedValueOnce({
-          data: {
-            userId: 'user-id',
-            challenge: 'auth-challenge',
-            allowCredentials: [],
-          },
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: mockVerifyResult,
-          error: null,
-        });
+      mockInvoke.mockResolvedValueOnce({
+        data: {
+          userId: 'user-id',
+          challenge: 'auth-challenge',
+          allowCredentials: [],
+        },
+        error: null,
+      });
+      mockInvoke.mockResolvedValueOnce({
+        data: mockVerifyResult,
+        error: null,
+      });
 
-      mockStartAuthentication.mockResolvedValue(mockAssertionResponse);
+      mockStartAuthentication.mockResolvedValue(mockAuthenticationResponse);
 
       const result = await authenticateWithPasskey(mockOptions);
 
       expect(result).toEqual(mockVerifyResult);
 
-      expect(mockSupabase.functions.invoke).toHaveBeenCalledWith(
+      expect(mockInvoke).toHaveBeenCalledWith(
         'passkey-auth-challenge',
         { body: { email: 'test@example.com' } }
       );
@@ -259,9 +290,9 @@ describe('Passkey Utils', () => {
         optionsJSON: { challenge: 'auth-challenge', allowCredentials: [] },
       });
 
-      expect(mockSupabase.functions.invoke).toHaveBeenCalledWith(
+      expect(mockInvoke).toHaveBeenCalledWith(
         'passkey-auth-verify',
-        { body: { userId: 'user-id', assertionResponse: mockAssertionResponse } }
+        { body: { userId: 'user-id', assertionResponse: mockAuthenticationResponse } }
       );
     });
 
@@ -274,7 +305,7 @@ describe('Passkey Utils', () => {
     });
 
     it('throws error when challenge request fails', async () => {
-      mockSupabase.functions.invoke.mockResolvedValue({
+      mockInvoke.mockResolvedValue({
         data: null,
         error: { message: 'Challenge failed' },
       });
@@ -283,7 +314,7 @@ describe('Passkey Utils', () => {
     });
 
     it('throws error when verification fails', async () => {
-      mockSupabase.functions.invoke
+      mockInvoke
         .mockResolvedValueOnce({
           data: { userId: 'user-id', challenge: 'challenge' },
           error: null,
@@ -293,7 +324,7 @@ describe('Passkey Utils', () => {
           error: { message: 'Verification failed' },
         });
 
-      mockStartAuthentication.mockResolvedValue({ id: 'test-credential' });
+      mockStartAuthentication.mockResolvedValue(mockAuthenticationResponse);
 
       await expect(authenticateWithPasskey(mockOptions)).rejects.toThrow('Verification failed');
     });
@@ -316,7 +347,7 @@ describe('Passkey Utils', () => {
         },
       ];
 
-      mockSupabase.from.mockReturnValue({
+      mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
           order: jest.fn().mockResolvedValue({
             data: mockPasskeys,
@@ -328,11 +359,11 @@ describe('Passkey Utils', () => {
       const result = await fetchUserPasskeys();
 
       expect(result).toEqual(mockPasskeys);
-      expect(mockSupabase.from).toHaveBeenCalledWith('ai_passkeys');
+      expect(mockFrom).toHaveBeenCalledWith('ai_passkeys');
     });
 
     it('throws error when fetch fails', async () => {
-      mockSupabase.from.mockReturnValue({
+      mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
           order: jest.fn().mockResolvedValue({
             data: null,
@@ -345,7 +376,7 @@ describe('Passkey Utils', () => {
     });
 
     it('returns empty array when no passkeys exist', async () => {
-      mockSupabase.from.mockReturnValue({
+      mockFrom.mockReturnValue({
         select: jest.fn().mockReturnValue({
           order: jest.fn().mockResolvedValue({
             data: null,
@@ -364,11 +395,11 @@ describe('Passkey Utils', () => {
     it('successfully deletes a passkey', async () => {
       await deletePasskey('test-credential-id');
 
-      expect(mockSupabase.from).toHaveBeenCalledWith('ai_passkeys');
+      expect(mockFrom).toHaveBeenCalledWith('ai_passkeys');
     });
 
     it('throws error when deletion fails', async () => {
-      mockSupabase.from.mockReturnValue({
+      mockFrom.mockReturnValue({
         delete: jest.fn().mockReturnValue({
           eq: jest.fn().mockResolvedValue({
             data: null,
@@ -389,14 +420,14 @@ describe('Passkey Utils', () => {
         refresh_token: 'refresh-token',
       };
 
-      mockSupabase.auth.setSession.mockResolvedValue({
+      mockSetSession.mockResolvedValue({
         data: { session: {} },
         error: null,
       });
 
       await establishPasskeySession(authResult);
 
-      expect(mockSupabase.auth.setSession).toHaveBeenCalledWith({
+      expect(mockSetSession).toHaveBeenCalledWith({
         access_token: 'access-token',
         refresh_token: 'refresh-token',
       });
@@ -405,14 +436,14 @@ describe('Passkey Utils', () => {
     it('refreshes session when no tokens provided', async () => {
       const authResult = { verified: true };
 
-      mockSupabase.auth.refreshSession.mockResolvedValue({
+      mockRefreshSession.mockResolvedValue({
         data: { session: {} },
         error: null,
       });
 
       await establishPasskeySession(authResult);
 
-      expect(mockSupabase.auth.refreshSession).toHaveBeenCalled();
+      expect(mockRefreshSession).toHaveBeenCalled();
     });
 
     it('throws error when verification failed', async () => {
@@ -430,7 +461,7 @@ describe('Passkey Utils', () => {
         refresh_token: 'refresh-token',
       };
 
-      mockSupabase.auth.setSession.mockResolvedValue({
+      mockSetSession.mockResolvedValue({
         data: null,
         error: { message: 'Session failed' },
       });

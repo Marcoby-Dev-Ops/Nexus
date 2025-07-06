@@ -1,10 +1,11 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/lib/core/supabase';
+import '@testing-library/jest-dom';
+import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
+import { supabase } from '../../src/lib/core/supabase';
 
 // Mock Supabase
-jest.mock('@/lib/supabase', () => ({
+jest.mock('../../src/lib/core/supabase', () => ({
   supabase: {
     auth: {
       getSession: jest.fn(),
@@ -18,7 +19,17 @@ jest.mock('@/lib/supabase', () => ({
   },
 }));
 
-const mockSupabase = supabase as jest.Mocked<typeof supabase>;
+const mockSupabase = supabase as typeof supabase & {
+  auth: {
+    getSession: jest.Mock;
+    onAuthStateChange: jest.Mock;
+    signInWithPassword: jest.Mock;
+    signUp: jest.Mock;
+    signOut: jest.Mock;
+    resetPasswordForEmail: jest.Mock;
+  };
+  from: jest.Mock;
+};
 
 // Test component that uses auth
 const TestComponent = () => {

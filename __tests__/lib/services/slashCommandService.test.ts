@@ -8,7 +8,7 @@ import {
 import { supabase } from '@/lib/core/supabase';
 
 // Mock Supabase
-jest.mock('@/lib/supabase', () => ({
+jest.mock('@/lib/core/supabase', () => ({
   supabase: {
     from: jest.fn(),
   },

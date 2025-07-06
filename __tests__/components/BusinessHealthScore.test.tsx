@@ -1,10 +1,10 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import { BusinessHealthScore } from '@/components/dashboard/BusinessHealthScore';
-import { useAuth } from '@/contexts/AuthContext';
-import { businessHealthService } from '@/lib/services/businessHealthService';
-import { useToast } from '@/components/ui/Toast';
+import OrganizationalHealthScore from '../../src/components/dashboard/OrganizationalHealthScore';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { businessHealthService } from '../../src/lib/services/businessHealthService';
+import { useToast } from '../../src/components/ui/Toast';
 
 // Mock dependencies
 jest.mock('@/contexts/AuthContext');
@@ -65,7 +65,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -83,7 +83,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -104,7 +104,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -125,7 +125,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -149,7 +149,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -168,7 +168,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -197,7 +197,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -218,7 +218,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -242,7 +242,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -274,7 +274,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -299,7 +299,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -324,7 +324,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
@@ -344,7 +344,7 @@ describe('BusinessHealthScore Component', () => {
 
     render(
       <TestWrapper>
-        <BusinessHealthScore />
+        <OrganizationalHealthScore />
       </TestWrapper>
     );
 
