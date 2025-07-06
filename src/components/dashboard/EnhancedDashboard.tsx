@@ -19,7 +19,12 @@ import {
   GripVertical,
   Eye as EyeIcon,
   EyeOff,
-  PlusCircle
+  PlusCircle,
+  RefreshCw,
+  Building2,
+  DollarSign,
+  Globe,
+  Shield
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
@@ -33,13 +38,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DashboardOnboarding } from './DashboardOnboarding';
 import { analyticsService } from '@/lib/services/analyticsService';
 import { ErrorBoundary as CommonErrorBoundary } from "@/components/common/ErrorBoundary";
-import { Recents } from "./Recents";
-import { Pins } from "./Pins";
-import { QuickActionsPanel } from "./QuickActionsPanel";
+import { BusinessInsightsPanel } from "./BusinessInsightsPanel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
+import { Switch } from "@/components/ui/Switch";
+import { Label } from "@/components/ui/Label";
 
 /**
  * @name EnhancedDashboard
- * @description Modern Trinity-powered dashboard with contemporary design principles
+ * @description Strategic Business Intelligence Dashboard - Executive overview of company performance
  * @returns {JSX.Element} The rendered enhanced dashboard component.
  */
 
@@ -52,15 +58,28 @@ interface WidgetConfig {
 }
 
 const DEFAULT_WIDGETS: WidgetConfig[] = [
-  { key: 'think', label: 'THINK', visible: true },
-  { key: 'see', label: 'SEE', visible: true },
-  { key: 'act', label: 'ACT', visible: true },
+  { key: 'think', label: 'INNOVATION', visible: true },
+  { key: 'see', label: 'INTELLIGENCE', visible: true },
+  { key: 'act', label: 'EXECUTION', visible: true },
 ];
 
 // Lazy load heavy widgets
 const OrganizationalHealthScore = lazy(() => import('./OrganizationalHealthScore'));
 const CrossDepartmentMatrix = lazy(() => import('./CrossDepartmentMatrix'));
 const TrinityInsightsEngine = lazy(() => import('./TrinityInsightsEngine'));
+const SecurityDashboard = lazy(() => import('@/components/dashboard/SecurityDashboard').then(module => ({ default: module.SecurityDashboard })));
+const VARLeadDashboard = lazy(() => import('@/components/dashboard/VARLeadDashboard').then(module => ({ default: module.VARLeadDashboard })));
+const ModelManagementDashboard = lazy(() => import('@/components/dashboard/ModelManagementDashboard').then(module => ({ default: module.ModelManagementDashboard })));
+const CentralizedAppsHub = lazy(() => import('@/components/dashboard/CentralizedAppsHub').then(module => ({ default: module.CentralizedAppsHub })));
+
+const DashboardSuspenseFallback = () => (
+  <div className="flex items-center justify-center h-96">
+    <div className="flex items-center space-x-2 text-muted-foreground">
+      <RefreshCw className="w-6 h-6 animate-spin" />
+      <span>Loading Dashboard...</span>
+    </div>
+  </div>
+);
 
 const EnhancedDashboard: React.FC = () => {
   const { user, completeOnboarding } = useAuth();
@@ -86,16 +105,18 @@ const EnhancedDashboard: React.FC = () => {
   });
   const [recentActivities, setRecentActivities] = useState<DashboardActivity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [showBriefing, setShowBriefing] = useState(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    return localStorage.getItem('aiBriefingDismissed') !== today;
-  });
+  const [error, setError] = useState<Error | null>(null);
+
+  // Auto-refresh interval (5 minutes)
+  const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
 
   const trinityData = [
-    { name: 'Ideas', value: dashboardMetrics.think.ideasCaptured },
-    { name: 'Insights', value: dashboardMetrics.see.realTimeInsights },
-    { name: 'Actions', value: dashboardMetrics.act.automationsRunning }
+    { name: 'Innovation', value: dashboardMetrics.think.ideasCaptured },
+    { name: 'Intelligence', value: dashboardMetrics.see.realTimeInsights },
+    { name: 'Execution', value: dashboardMetrics.act.automationsRunning }
   ];
 
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfig[]>(() => {
@@ -113,10 +134,12 @@ const EnhancedDashboard: React.FC = () => {
   // Initialize analytics
   useEffect(() => {
     if (user) {
+      const userRole = user.role || '';
+      const userDepartment = user.department || '';
       analyticsService.init(user.id, {
         email: user.email,
-        role: user.role,
-        department: user.department,
+        role: userRole,
+        department: userDepartment,
       });
     }
     // Cleanup on unmount or user change
@@ -148,31 +171,88 @@ const EnhancedDashboard: React.FC = () => {
 
   // Fetch real Dashboard data
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = async (isRefresh = false) => {
       try {
+        if (isRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+        
         const { metrics, activities } = await dashboardService.getDashboardData();
         setDashboardMetrics(metrics);
         setRecentActivities(activities);
+        setLastUpdated(new Date());
+        setError(null);
+        
+        if (isRefresh) {
+          analyticsService.track('dashboard_auto_refresh');
+        }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        setError(error as Error);
+        setDashboardMetrics({
+          think: {
+            ideasCaptured: 0,
+            collaborationSessions: 0,
+            innovationScore: 0,
+            crossDeptConnections: 0
+          },
+          see: {
+            dataSourcesConnected: 0,
+            realTimeInsights: 0,
+            predictiveAccuracy: 0,
+            alertsGenerated: 0
+          },
+          act: {
+            automationsRunning: 0,
+            workflowsOptimized: 0,
+            timeSaved: 0,
+            processEfficiency: 0
+          }
+        });
+        setRecentActivities([]);
       } finally {
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
     fetchDashboardData();
-  }, []);
+
+    // Set up auto-refresh
+    const interval = setInterval(() => {
+      fetchDashboardData(true);
+    }, AUTO_REFRESH_INTERVAL);
+
+    return () => clearInterval(interval);
+  }, [AUTO_REFRESH_INTERVAL]);
+
+  const handleManualRefresh = async () => {
+    try {
+      setRefreshing(true);
+      const { metrics, activities } = await dashboardService.getDashboardData();
+      setDashboardMetrics(metrics);
+      setRecentActivities(activities);
+      setLastUpdated(new Date());
+      analyticsService.track('dashboard_refresh_manual');
+    } catch (error) {
+      console.error("Failed to refresh dashboard data", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   function getStatusColor(status: string): string {
     switch (status) {
       case "success":
-        return "bg-green-100 text-green-700";
+        return "bg-success-subtle text-success";
       case "warning":
-        return "bg-yellow-100 text-yellow-700";
+        return "bg-warning-subtle text-warning";
       case "error":
-        return "bg-red-100 text-red-700";
+        return "bg-destructive-subtle text-destructive";
       default:
-        return "";
+        return "bg-muted text-muted-foreground";
     }
   }
 
@@ -185,17 +265,11 @@ const EnhancedDashboard: React.FC = () => {
     }
   };
 
-  const handleDismissBriefing = () => {
-    const today = new Date().toISOString().slice(0, 10);
-    localStorage.setItem('aiBriefingDismissed', today);
-    setShowBriefing(false);
-  };
-
   // Widget access control by role/department
   const isWidgetAllowed = (key: WidgetConfig['key']) => {
     if (!user) return false;
-    const role = user.role || user.profile?.role || '';
-    const department = user.department || user.profile?.department || '';
+    const role = user.role || '';
+    const department = user.department || '';
     // Demo config: adjust as needed
     switch (key) {
       case 'think':
@@ -217,393 +291,295 @@ const EnhancedDashboard: React.FC = () => {
       <div className="p-6">
         <DashboardOnboarding 
           onComplete={handleCompleteOnboarding}
-          userName={user?.name}
+          userName={user?.name || 'New User'}
         />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen">
-      {/* Modern Header with Trinity Navigation */}
-      <div className="relative overflow-hidden border-b border-border/50">
-        <div className="relative px-6 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-900 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent">
-                Nexus Organizational Command Center
-              </h1>
-              <p className="text-muted-foreground dark:text-muted-foreground mt-1">
-                Single source of truth for organizational intelligence • Powered by Trinity
-              </p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="px-4 py-2 bg-success/5 text-success border-success/20">
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                All Systems Active
-              </Badge>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={async () => {
-                  try {
-                    const { metrics, activities } = await dashboardService.getDashboardData();
-                    setDashboardMetrics(metrics);
-                    setRecentActivities(activities);
-                  } catch (error) {
-                    console.error('Failed to refresh dashboard data:', error);
-                  }
-                }}
-              >
-                Refresh Data
-              </Button>
-            </div>
-          </div>
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center space-y-4">
+          <AlertCircle className="w-12 h-12 mx-auto text-destructive" />
+          <h2 className="text-xl font-semibold">Failed to load dashboard data</h2>
+          <p className="text-muted-foreground">
+            We couldn't load your dashboard data. Please try refreshing the page.
+          </p>
+          <Button onClick={handleManualRefresh} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Dashboard
+          </Button>
         </div>
       </div>
+    );
+  }
 
-      <div className="p-6 space-y-8">
-        {/* AI Daily Briefing Widget */}
-        <AnimatePresence>
-          {showBriefing && !showOnboarding && (
-            <motion.div
-              initial={{ opacity: 0, y: -24 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -24 }}
-              transition={{ duration: 0.4 }}
-            >
-              <ContentCard
-                title="AI Daily Briefing"
-                variant="elevated"
-                className="mb-6 relative"
-                aria-live="polite"
-                aria-label="AI Daily Briefing"
-              >
-                <button
-                  onClick={() => { handleDismissBriefing(); analyticsService.track('dashboard_briefing_dismissed'); }}
-                  aria-label="Dismiss daily briefing"
-                  className="absolute top-4 right-4 text-muted-foreground hover:text-destructive focus:outline-none"
-                  tabIndex={0}
-                >
-                  <span aria-hidden="true">&times;</span>
-                </button>
-                <div className="flex items-center gap-3 mb-2">
-                  <Sparkles className="w-5 h-5 text-warning" />
-                  <span className="font-semibold text-lg">Your AI-powered summary for {new Date().toLocaleDateString()}</span>
-                </div>
-                <div className="text-base text-muted-foreground">
-                  Welcome back! Here's your daily snapshot:
-                  <ul className="list-disc ml-6 mt-2">
-                    <li>Revenue is up 4.2% week-over-week.</li>
-                    <li>3 new cross-department projects started.</li>
-                    <li>AI detected a workflow bottleneck in onboarding—review suggested optimizations.</li>
-                  </ul>
-                  <span className="block mt-2 text-xs text-muted-foreground">(This briefing updates daily. Dismiss to hide until tomorrow.)</span>
-                </div>
-              </ContentCard>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Trinity Performance Overview */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <AnimatePresence>
-            {allowedWidgetConfigs.filter(w => w.visible).map((w, i) => (
-              <motion.div
-                key={w.key}
-                initial={{ opacity: 0, y: 24 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 24 }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                onViewportEnter={() => analyticsService.track('dashboard_widget_view', { widget: w.key })}
-              >
-                <ErrorBoundary>
-                  {w.key === 'think' && (
-                    <Card className="group hover:shadow-xl transition-all duration-300">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="p-4 rounded-xl bg-primary/10 text-primary">
-                              <Brain className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg">THINK Engine</CardTitle>
-                              <CardDescription>Creative Intelligence</CardDescription>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
-                            <div className="text-2xl font-bold text-primary">
-                              {loading ? '...' : dashboardMetrics.think.ideasCaptured}
-                            </div>
-                            <div className="text-sm text-muted-foreground dark:text-muted-foreground">Ideas Captured</div>
-                          </div>
-                          <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
-                            <div className="text-2xl font-bold text-primary">
-                              {loading ? '...' : dashboardMetrics.think.collaborationSessions}
-                            </div>
-                            <div className="text-sm text-muted-foreground dark:text-muted-foreground">Active Sessions</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {w.key === 'see' && (
-                    <Card className="group hover:shadow-xl transition-all duration-300">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="p-4 rounded-xl bg-secondary/10 text-secondary">
-                              <Eye className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg">SEE Analytics</CardTitle>
-                              <CardDescription>Business Intelligence</CardDescription>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
-                            <div className="text-2xl font-bold text-secondary">
-                              {loading ? '...' : dashboardMetrics.see.dataSourcesConnected}
-                            </div>
-                            <div className="text-sm text-muted-foreground dark:text-muted-foreground">Data Sources</div>
-                          </div>
-                          <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
-                            <div className="text-2xl font-bold text-secondary">
-                              {loading ? '...' : dashboardMetrics.see.realTimeInsights}
-                            </div>
-                            <div className="text-sm text-muted-foreground dark:text-muted-foreground">Live Insights</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                  {w.key === 'act' && (
-                    <Card className="group hover:shadow-xl transition-all duration-300">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="p-4 rounded-xl bg-primary/10 text-primary">
-                              <Zap className="w-6 h-6" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg">ACT Automation</CardTitle>
-                              <CardDescription>Operational Intelligence</CardDescription>
-                            </div>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
-                            <div className="text-2xl font-bold text-primary">
-                              {loading ? '...' : dashboardMetrics.act.automationsRunning}
-                            </div>
-                            <div className="text-sm text-muted-foreground dark:text-muted-foreground">Active Automations</div>
-                          </div>
-                          <div className="text-center p-4 rounded-lg bg-card/60 dark:bg-background/40">
-                            <div className="text-2xl font-bold text-primary">
-                              {loading ? '...' : `${Math.floor(dashboardMetrics.act.timeSaved / 60)}h`}
-                            </div>
-                            <div className="text-sm text-muted-foreground dark:text-muted-foreground">Time Saved</div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </ErrorBoundary>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+      <div className="p-8 space-y-8">
+        {/* Enhanced Executive Header */}
+        <div className="text-center space-y-6">
+          <div className="flex items-center justify-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-full">
+              <Building2 className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Executive Dashboard
+              </h1>
+              <p className="text-lg text-muted-foreground mt-2">
+                Strategic Business Intelligence & Company Performance Overview
+              </p>
+            </div>
+          </div>
+          
+          {/* Executive KPIs */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            <Card className="border-green-200 bg-green-50/50">
+              <CardContent className="p-6 text-center">
+                <DollarSign className="w-8 h-8 mx-auto mb-3 text-green-600" />
+                <div className="text-3xl font-bold text-green-700">$2.4M</div>
+                <div className="text-sm text-green-600">Annual Revenue</div>
+                <div className="text-xs text-green-500 mt-1">+15% YoY</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-blue-200 bg-blue-50/50">
+              <CardContent className="p-6 text-center">
+                <Users className="w-8 h-8 mx-auto mb-3 text-blue-600" />
+                <div className="text-3xl font-bold text-blue-700">1,247</div>
+                <div className="text-sm text-blue-600">Active Users</div>
+                <div className="text-xs text-blue-500 mt-1">+8% MTD</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-purple-200 bg-purple-50/50">
+              <CardContent className="p-6 text-center">
+                <Globe className="w-8 h-8 mx-auto mb-3 text-purple-600" />
+                <div className="text-3xl font-bold text-purple-700">23</div>
+                <div className="text-sm text-purple-600">Markets</div>
+                <div className="text-xs text-purple-500 mt-1">Global Reach</div>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-orange-200 bg-orange-50/50">
+              <CardContent className="p-6 text-center">
+                <Shield className="w-8 h-8 mx-auto mb-3 text-orange-600" />
+                <div className="text-3xl font-bold text-orange-700">99.9%</div>
+                <div className="text-sm text-orange-600">Uptime</div>
+                <div className="text-xs text-orange-500 mt-1">System Health</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
-        {/* Organizational Health Score - New Command Center View */}
-        <Suspense fallback={<div className="mb-8"><div className="animate-pulse h-24 bg-muted rounded-lg" /></div>}>
-          <ErrorBoundary>
-            <OrganizationalHealthScore className="mb-8" />
-          </ErrorBoundary>
-        </Suspense>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full grid-cols-5 mb-8">
+            <TabsTrigger value="overview">Business Overview</TabsTrigger>
+            <TabsTrigger value="security">Security</TabsTrigger>
+            <TabsTrigger value="var_leads">VAR Leads</TabsTrigger>
+            <TabsTrigger value="model_management">Model Management</TabsTrigger>
+            <TabsTrigger value="centralized_apps">Centralized Apps</TabsTrigger>
+          </TabsList>
 
-        {/* Cross-Department Intelligence Grid */}
-        <Suspense fallback={<div className="mb-8"><div className="animate-pulse h-24 bg-muted rounded-lg" /></div>}>
-          <ErrorBoundary>
-            <CrossDepartmentMatrix className="mb-8" />
-          </ErrorBoundary>
-        </Suspense>
-
-        {/* Trinity Insights Engine */}
-        <Suspense fallback={<div className="mb-8"><div className="animate-pulse h-24 bg-muted rounded-lg" /></div>}>
-          <ErrorBoundary>
-            <TrinityInsightsEngine className="mb-8" />
-          </ErrorBoundary>
-        </Suspense>
-
-        {/* Trinity Flow Visualization and Activity Feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Trinity Flow Chart */}
-          <Card className="border-0">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <BarChart3 className="w-5 h-5 mr-2 text-primary" />
-                    Trinity Performance Flow
-                  </CardTitle>
-                  <CardDescription>Real-time intelligence cycle metrics</CardDescription>
-                </div>
-                <Button variant="outline" size="sm" className="text-xs">
-                  View Details <ArrowUpRight className="w-3 h-3 ml-1" />
-                </Button>
+          <TabsContent value="overview" className="space-y-8">
+            {/* Refresh Indicator */}
+            {refreshing && (
+              <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-lg border border-primary/20">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Updating data...</span>
               </div>
-            </CardHeader>
-            <CardContent>
-              <SimpleBarChart data={trinityData} />
-            </CardContent>
-          </Card>
+            )}
 
-          {/* Enhanced Activity Feed */}
-          <Card className="border-0">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center">
-                    <Activity className="w-5 h-5 mr-2 text-success" />
-                    Trinity Activity Stream
-                  </CardTitle>
-                  <CardDescription>Live organizational intelligence flow</CardDescription>
-                </div>
-                <Badge variant="outline" className="animate-pulse">
-                  <div className="w-2 h-2 bg-success rounded-full mr-2" />
-                  Live
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <AnimatePresence>
-                {!loading && recentActivities.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Zap className="mx-auto h-12 w-12 mb-4" />
-                    <h3 className="text-lg font-semibold">No Activity Yet</h3>
-                    <p className="text-sm">
-                      Connect a data source or start a new workflow to see your activity stream here.
-                    </p>
-                    <Button variant="outline" size="sm" className="mt-4">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Connect Source
-                    </Button>
-                  </div>
-                ) : (
-                  recentActivities.map((activity, index) => (
+            <div className="grid grid-cols-12 gap-8">
+              {/* Primary Content - Strategic Metrics */}
+              <div className="col-span-12 lg:col-span-8 space-y-8">
+                {/* Trinity Business Intelligence Widgets */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {allowedWidgetConfigs.map(widget => (
                     <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: 32 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 32 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                      className="flex items-start space-x-4 p-4 rounded-xl bg-slate-50/60 dark:bg-background/40 hover:bg-muted/60 dark:hover:bg-slate-700/40 transition-colors"
+                      key={widget.key}
+                      layout
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      className={widget.visible ? "block" : "hidden"}
                     >
-                      <div className={`p-2 rounded-lg ${getStatusColor(activity.status) || ""}`}>{getTypeIcon(activity.type)}</div>
-                      <div className="flex-1">
-                        <div className="font-medium text-slate-900 dark:text-slate-100">{activity.title}</div>
-                        <div className="text-sm text-muted-foreground dark:text-muted-foreground">{activity.department}</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground dark:text-muted-foreground">{activity.time}</div>
+                      <Card className="hover:shadow-lg transition-shadow duration-200 border-2">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-3">
+                            {widget.key === 'think' ? <Brain className="w-6 h-6 text-primary" /> : widget.key === 'see' ? <Eye className="w-6 h-6 text-secondary" /> : <Zap className="w-6 h-6 text-primary" />}
+                            <CardTitle className="text-lg">{widget.label}</CardTitle>
+                          </div>
+                          <CardDescription>Company-wide metrics</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-4">
+                            {Object.entries(dashboardMetrics[widget.key]).slice(0, 2).map(([key, value]) => (
+                              <div key={key} className="text-center">
+                                <p className="text-3xl font-bold text-foreground">{value}</p>
+                                <p className="text-xs text-muted-foreground capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
                     </motion.div>
-                  ))
-                )}
-              </AnimatePresence>
-            </CardContent>
-          </Card>
-        </div>
+                  ))}
+                </div>
 
-        {/* Smart Insights Panel */}
-        <Card className="border-0">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center text-xl">
-                  <Sparkles className="w-6 h-6 mr-3 text-warning" />
-                  AI-Powered Trinity Insights
-                </CardTitle>
-                <CardDescription>Intelligent recommendations from your organizational data</CardDescription>
+                {/* Strategic Business Insights */}
+                <BusinessInsightsPanel />
+
+                {/* Company-wide Activity Stream */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="w-5 h-5" />
+                      Strategic Activities
+                    </CardTitle>
+                    <CardDescription>Cross-departmental initiatives and key business events</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {recentActivities.map((activity, index) => (
+                        <div key={index} className="flex items-center gap-4 p-4 rounded-lg bg-muted/50">
+                          <div className="flex-shrink-0">
+                            {getTypeIcon(activity.type)}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium">{activity.title}</p>
+                            <p className="text-sm text-muted-foreground">{activity.department}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className={getStatusColor(activity.status)}>
+                              {activity.status}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">{activity.time}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
-              <Button variant="default" className="bg-primary text-white shadow focus:ring-2 focus:ring-primary/50">
-                <Lightbulb className="w-4 h-4 mr-2" />
-                Generate New Insights
-              </Button>
+
+              {/* Executive Controls Sidebar */}
+              <div className="col-span-12 lg:col-span-4 space-y-6">
+                {/* Executive Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Target className="w-5 h-5" />
+                      Executive Actions
+                    </CardTitle>
+                    <CardDescription>Strategic decision-making tools</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button variant="outline" className="w-full justify-start">
+                      <BarChart3 className="w-4 h-4 mr-2" />
+                      Generate Board Report
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <Users className="w-4 h-4 mr-2" />
+                      Department Analysis
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Forecast Review
+                    </Button>
+                    <Button variant="outline" className="w-full justify-start">
+                      <AlertCircle className="w-4 h-4 mr-2" />
+                      Risk Assessment
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Dashboard Customization */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      Dashboard Settings
+                    </CardTitle>
+                    <CardDescription>Customize your executive view</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {allowedWidgetConfigs.map(widget => (
+                        <div key={widget.key} className="flex items-center justify-between">
+                          <Label htmlFor={`toggle-${widget.key}`} className="flex items-center gap-2">
+                            {widget.key === 'think' ? <Brain className="w-4 h-4" /> : widget.key === 'see' ? <EyeIcon className="w-4 h-4" /> : <Zap className="w-4 h-4" />}
+                            <span className="text-sm">{widget.label}</span>
+                          </Label>
+                          <Switch
+                            id={`toggle-${widget.key}`}
+                            checked={widget.visible}
+                            onCheckedChange={() => handleWidgetToggle(widget.key)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* System Status */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Database className="w-5 h-5" />
+                      System Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Data Sources</span>
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          {dashboardMetrics.see.dataSourcesConnected} Connected
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Automations</span>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                          {dashboardMetrics.act.automationsRunning} Running
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Last Updated</span>
+                        <span className="text-sm text-muted-foreground">
+                          {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Never'}
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="p-6 rounded-xl bg-card/60 dark:bg-background/40 space-y-4">
-                <div className="flex items-center text-primary">
-                  <Brain className="w-5 h-5 mr-2" />
-                  <span className="font-medium">Think Insight</span>
-                </div>
-                <p className="text-sm text-slate-700 dark:text-slate-300">
-                  Cross-department collaboration has increased 34% this week. Consider expanding innovation sessions.
-                </p>
-              </div>
-              <div className="p-6 rounded-xl bg-card/60 dark:bg-background/40 space-y-4">
-                <div className="flex items-center text-secondary">
-                  <Eye className="w-5 h-5 mr-2" />
-                  <span className="font-medium">See Insight</span>
-                </div>
-                <p className="text-sm text-slate-700 dark:text-slate-300">
-                  Revenue pattern shows 15% uptick correlation with new automation deployment.
-                </p>
-              </div>
-              <div className="p-6 rounded-xl bg-card/60 dark:bg-background/40 space-y-4">
-                <div className="flex items-center text-primary">
-                  <Zap className="w-5 h-5 mr-2" />
-                  <span className="font-medium">Act Insight</span>
-                </div>
-                <p className="text-sm text-slate-700 dark:text-slate-300">
-                  Workflow optimization opportunity detected in customer onboarding process.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Widget Visibility Controls */}
-        <div className="flex gap-2 mb-4" role="group" aria-label="Widget visibility controls">
-          {allowedWidgetConfigs.map(w => (
-            <Button
-              key={w.key}
-              variant={w.visible ? 'default' : 'outline'}
-              size="sm"
-              aria-pressed={w.visible}
-              aria-label={`Toggle ${w.label} widget`}
-              onClick={() => handleWidgetToggle(w.key)}
-              tabIndex={0}
-            >
-              {w.visible ? <EyeIcon className="w-4 h-4 mr-1" /> : <EyeOff className="w-4 h-4 mr-1" />}
-              {w.label}
-            </Button>
-          ))}
-        </div>
-
-        {/* Recents */}
-        <ErrorBoundary>
-          <Recents />
-        </ErrorBoundary>
-
-        {/* Pins */}
-        <ErrorBoundary>
-          <Pins />
-        </ErrorBoundary>
-
-        {/* Quick Actions Panel */}
-        <ErrorBoundary>
-          <QuickActionsPanel />
-        </ErrorBoundary>
+          </TabsContent>
+          
+          <TabsContent value="security">
+            <Suspense fallback={<DashboardSuspenseFallback />}>
+              <SecurityDashboard />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="var_leads">
+            <Suspense fallback={<DashboardSuspenseFallback />}>
+              <VARLeadDashboard />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="model_management">
+            <Suspense fallback={<DashboardSuspenseFallback />}>
+              <ModelManagementDashboard />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="centralized_apps">
+            <Suspense fallback={<DashboardSuspenseFallback />}>
+              <CentralizedAppsHub />
+            </Suspense>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

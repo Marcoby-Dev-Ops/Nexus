@@ -10,7 +10,7 @@ exports[`QuickLaunchTiles matches snapshot 1`] = `
       class="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
     >
       <div
-        class="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
+        class="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
       >
         <span
           class="text-lg"
@@ -23,13 +23,18 @@ exports[`QuickLaunchTiles matches snapshot 1`] = `
       >
         New Deal
       </span>
+      <span
+        class="text-xs text-muted-foreground mt-1"
+      >
+        Create a new sales deal
+      </span>
     </button>
     <button
       aria-label="Reports"
       class="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
     >
       <div
-        class="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
+        class="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
       >
         <span
           class="text-lg"
@@ -42,13 +47,18 @@ exports[`QuickLaunchTiles matches snapshot 1`] = `
       >
         Reports
       </span>
+      <span
+        class="text-xs text-muted-foreground mt-1"
+      >
+        View sales reports
+      </span>
     </button>
     <button
       aria-label="Contacts"
       class="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
     >
       <div
-        class="p-3 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
+        class="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-200 mb-3"
       >
         <span
           class="text-lg"
@@ -60,6 +70,11 @@ exports[`QuickLaunchTiles matches snapshot 1`] = `
         class="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200"
       >
         Contacts
+      </span>
+      <span
+        class="text-xs text-muted-foreground mt-1"
+      >
+        Manage contacts
       </span>
     </button>
   </div>

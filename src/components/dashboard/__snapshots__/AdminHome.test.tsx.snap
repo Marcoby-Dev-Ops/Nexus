@@ -12,12 +12,12 @@ exports[`AdminHome matches snapshot 1`] = `
         class="mb-8"
       >
         <h1
-          class="text-3xl font-bold text-foreground dark:text-primary-foreground mb-2"
+          class="text-3xl font-bold mb-2"
         >
           Admin Panel
         </h1>
         <p
-          class="text-lg text-muted-foreground dark:text-muted-foreground"
+          class="text-lg"
         >
           Manage your NEXUS settings, users, and system administration
         </p>
@@ -44,7 +44,6 @@ exports[`AdminHome matches snapshot 1`] = `
               class="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 mb-3"
             >
               <svg
-                aria-hidden="true"
                 class="lucide lucide-users w-5 h-5"
                 fill="none"
                 height="24"
@@ -59,16 +58,16 @@ exports[`AdminHome matches snapshot 1`] = `
                 <path
                   d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
                 />
-                <path
-                  d="M16 3.128a4 4 0 0 1 0 7.744"
-                />
-                <path
-                  d="M22 21v-2a4 4 0 0 0-3-3.87"
-                />
                 <circle
                   cx="9"
                   cy="7"
                   r="4"
+                />
+                <path
+                  d="M22 21v-2a4 4 0 0 0-3-3.87"
+                />
+                <path
+                  d="M16 3.13a4 4 0 0 1 0 7.75"
                 />
               </svg>
             </div>
@@ -85,7 +84,6 @@ exports[`AdminHome matches snapshot 1`] = `
               class="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 mb-3"
             >
               <svg
-                aria-hidden="true"
                 class="lucide lucide-settings w-5 h-5"
                 fill="none"
                 height="24"
@@ -120,7 +118,6 @@ exports[`AdminHome matches snapshot 1`] = `
               class="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 mb-3"
             >
               <svg
-                aria-hidden="true"
                 class="lucide lucide-shield w-5 h-5"
                 fill="none"
                 height="24"
@@ -150,7 +147,6 @@ exports[`AdminHome matches snapshot 1`] = `
               class="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 mb-3"
             >
               <svg
-                aria-hidden="true"
                 class="lucide lucide-activity w-5 h-5"
                 fill="none"
                 height="24"
@@ -364,7 +360,6 @@ exports[`AdminHome matches snapshot 1`] = `
                   class="p-4 rounded-lg bg-primary/10"
                 >
                   <svg
-                    aria-hidden="true"
                     class="lucide lucide-users w-5 h-5 text-primary"
                     fill="none"
                     height="24"
@@ -379,16 +374,16 @@ exports[`AdminHome matches snapshot 1`] = `
                     <path
                       d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
                     />
-                    <path
-                      d="M16 3.128a4 4 0 0 1 0 7.744"
-                    />
-                    <path
-                      d="M22 21v-2a4 4 0 0 0-3-3.87"
-                    />
                     <circle
                       cx="9"
                       cy="7"
                       r="4"
+                    />
+                    <path
+                      d="M22 21v-2a4 4 0 0 0-3-3.87"
+                    />
+                    <path
+                      d="M16 3.13a4 4 0 0 1 0 7.75"
                     />
                   </svg>
                 </div>
@@ -430,7 +425,6 @@ exports[`AdminHome matches snapshot 1`] = `
                   class="p-4 rounded-lg bg-primary/10"
                 >
                   <svg
-                    aria-hidden="true"
                     class="lucide lucide-users w-5 h-5 text-primary"
                     fill="none"
                     height="24"
@@ -445,16 +439,16 @@ exports[`AdminHome matches snapshot 1`] = `
                     <path
                       d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
                     />
-                    <path
-                      d="M16 3.128a4 4 0 0 1 0 7.744"
-                    />
-                    <path
-                      d="M22 21v-2a4 4 0 0 0-3-3.87"
-                    />
                     <circle
                       cx="9"
                       cy="7"
                       r="4"
+                    />
+                    <path
+                      d="M22 21v-2a4 4 0 0 0-3-3.87"
+                    />
+                    <path
+                      d="M16 3.13a4 4 0 0 1 0 7.75"
                     />
                   </svg>
                 </div>
@@ -496,7 +490,6 @@ exports[`AdminHome matches snapshot 1`] = `
                   class="p-4 rounded-lg bg-primary/10"
                 >
                   <svg
-                    aria-hidden="true"
                     class="lucide lucide-users w-5 h-5 text-primary"
                     fill="none"
                     height="24"
@@ -511,16 +504,16 @@ exports[`AdminHome matches snapshot 1`] = `
                     <path
                       d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
                     />
-                    <path
-                      d="M16 3.128a4 4 0 0 1 0 7.744"
-                    />
-                    <path
-                      d="M22 21v-2a4 4 0 0 0-3-3.87"
-                    />
                     <circle
                       cx="9"
                       cy="7"
                       r="4"
+                    />
+                    <path
+                      d="M22 21v-2a4 4 0 0 0-3-3.87"
+                    />
+                    <path
+                      d="M16 3.13a4 4 0 0 1 0 7.75"
                     />
                   </svg>
                 </div>
@@ -562,7 +555,6 @@ exports[`AdminHome matches snapshot 1`] = `
                   class="p-4 rounded-lg bg-primary/10"
                 >
                   <svg
-                    aria-hidden="true"
                     class="lucide lucide-users w-5 h-5 text-primary"
                     fill="none"
                     height="24"
@@ -577,16 +569,16 @@ exports[`AdminHome matches snapshot 1`] = `
                     <path
                       d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
                     />
-                    <path
-                      d="M16 3.128a4 4 0 0 1 0 7.744"
-                    />
-                    <path
-                      d="M22 21v-2a4 4 0 0 0-3-3.87"
-                    />
                     <circle
                       cx="9"
                       cy="7"
                       r="4"
+                    />
+                    <path
+                      d="M22 21v-2a4 4 0 0 0-3-3.87"
+                    />
+                    <path
+                      d="M16 3.13a4 4 0 0 1 0 7.75"
                     />
                   </svg>
                 </div>
@@ -651,7 +643,6 @@ exports[`AdminHome matches snapshot 1`] = `
                 class="p-4 rounded-lg bg-warning/10 text-warning"
               >
                 <svg
-                  aria-hidden="true"
                   class="lucide lucide-triangle-alert w-5 h-5"
                   fill="none"
                   height="24"
@@ -696,7 +687,6 @@ exports[`AdminHome matches snapshot 1`] = `
                 class="p-4 rounded-lg bg-primary/10 text-primary"
               >
                 <svg
-                  aria-hidden="true"
                   class="lucide lucide-activity w-5 h-5"
                   fill="none"
                   height="24"
@@ -735,7 +725,6 @@ exports[`AdminHome matches snapshot 1`] = `
                 class="p-4 rounded-lg bg-success/10 text-success"
               >
                 <svg
-                  aria-hidden="true"
                   class="lucide lucide-circle-check-big w-5 h-5"
                   fill="none"
                   height="24"
@@ -777,7 +766,6 @@ exports[`AdminHome matches snapshot 1`] = `
                 class="p-4 rounded-lg bg-warning/10 text-warning"
               >
                 <svg
-                  aria-hidden="true"
                   class="lucide lucide-triangle-alert w-5 h-5"
                   fill="none"
                   height="24"

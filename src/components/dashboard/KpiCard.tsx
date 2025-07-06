@@ -27,7 +27,7 @@ export function KpiCard({ title, value, delta, sparklineData }: KpiCardProps) {
       <div className="flex items-end justify-between gap-2">
         <p className="text-3xl font-semibold">{value}</p>
         {sparklineData && (
-          <svg width="64" height="18" viewBox="0 0 64 18" fill="none" className="text-primary/70">
+          <svg data-testid="kpi-sparkline" width="64" height="18" viewBox="0 0 64 18" fill="none" className="text-primary/70">
             <polyline
               fill="none"
               stroke="currentColor"

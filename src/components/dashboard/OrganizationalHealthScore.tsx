@@ -114,6 +114,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
           {healthMetrics.map((metric, index) => (
             <div
               key={index}
+              data-testid={`metric-${metric.label}`}
               className="rounded-lg p-4 border border-border/50"
             >
               <div className="flex items-center justify-between mb-2">

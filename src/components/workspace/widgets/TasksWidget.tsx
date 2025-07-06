@@ -1,83 +1,122 @@
-import React from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { CheckSquare, AlertCircle, Plus, Loader2 } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { tasksService } from '@/lib/services/tasksService';
+import { thoughtsService } from '@/lib/services/thoughtsService';
+import type { Task } from '@/lib/services/tasksService';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Badge } from '@/components/ui/Badge';
-import { tasksService } from '@/lib/services/tasksService';
-import type { Task } from '@/lib/services/tasksService';
-import { Loader2 } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+
+interface TasksWidgetProps {
+  onTaskComplete: () => void;
+}
 
 const priorityColors: { [key: string]: string } = {
   High: 'bg-red-500',
   Medium: 'bg-yellow-500',
-  Low: 'bg-green-500',
-  None: 'bg-gray-400',
+  Low: 'bg-blue-500',
+  None: 'bg-gray-500',
 };
 
-export const TasksWidget: React.FC = () => {
+export const TasksWidget: React.FC<TasksWidgetProps> = ({ onTaskComplete }) => {
   const queryClient = useQueryClient();
+  const [newTask, setNewTask] = useState('');
 
-  const { data: tasks, isLoading, isError, error } = useQuery<Task[], Error>({
+  const { data: tasks, isLoading, isError } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => tasksService.getTasks(),
   });
 
-  const { mutate: toggleCompletion } = useMutation({
+  const toggleCompletionMutation = useMutation({
     mutationFn: ({ taskId, completed }: { taskId: string; completed: boolean }) =>
       tasksService.toggleTaskCompletion(taskId, completed),
-    onSuccess: () => {
+    onSuccess: (updatedTask) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      if (updatedTask.completed) {
+        onTaskComplete();
+      }
     },
   });
 
-  const handleCheckedChange = (taskId: string, checked: boolean) => {
-    toggleCompletion({ taskId, completed: checked });
+  const addTaskMutation = useMutation({
+    mutationFn: (taskTitle: string) => thoughtsService.createThought({
+      content: taskTitle,
+      category: 'task',
+      main_sub_categories: ['medium_priority'],
+      status: 'not_started'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setNewTask('');
+    },
+  });
+
+  const handleAddTask = () => {
+    if (newTask.trim()) {
+      addTaskMutation.mutate(newTask);
+    }
   };
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>My Tasks</CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center items-center p-6">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>My Tasks</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertDescription>
-              <strong>Error:</strong> Failed to load tasks: {error.message}
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>My Tasks</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <CheckSquare className="h-5 w-5" />
+            <span>Tasks</span>
+          </CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleAddTask}
+            disabled={!newTask.trim() || addTaskMutation.isPending}
+          >
+            {addTaskMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+        <div className="mt-3">
+          <Input
+            placeholder="Add a new task..."
+            value={newTask}
+            onChange={(e) => setNewTask(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAddTask();
+            }}
+            disabled={addTaskMutation.isPending}
+          />
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {tasks?.map((task) => (
+          {isLoading && (
+            <>
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </>
+          )}
+
+          {isError && (
+            <div className="text-red-500 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              <p>Error loading tasks.</p>
+            </div>
+          )}
+
+          {tasks && tasks.map((task: Task) => (
             <div key={task.id} className="flex items-center gap-3">
               <Checkbox
                 id={task.id}
                 checked={task.completed}
-                onCheckedChange={(checked) => handleCheckedChange(task.id, !!checked)}
+                onCheckedChange={(checked) => toggleCompletionMutation.mutate({ taskId: task.id, completed: !!checked })}
               />
               <label
                 htmlFor={task.id}
@@ -93,8 +132,9 @@ export const TasksWidget: React.FC = () => {
               </Badge>
             </div>
           ))}
-          {tasks?.length === 0 && (
-            <p className="text-sm text-muted-foreground">You have no tasks.</p>
+
+          {!isLoading && !isError && tasks?.length === 0 && (
+            <p className="text-sm text-muted-foreground">No tasks to complete.</p>
           )}
         </div>
       </CardContent>

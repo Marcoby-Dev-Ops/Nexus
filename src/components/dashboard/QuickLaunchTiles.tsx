@@ -7,6 +7,7 @@ export interface QuickLaunchAction {
   icon?: React.ReactNode;
   onClick: () => void;
   loading?: boolean;
+  description?: string;
 }
 
 /**
@@ -33,6 +34,9 @@ const QuickLaunchTiles: React.FC<{ actions: QuickLaunchAction[] }> = ({ actions 
           <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors duration-200">
             {action.label}
           </span>
+          {action.description && (
+            <span className="text-xs text-muted-foreground mt-1">{action.description}</span>
+          )}
         </button>
       ))}
     </div>
@@ -46,6 +50,7 @@ QuickLaunchTiles.propTypes = {
       icon: PropTypes.node,
       onClick: PropTypes.func.isRequired,
       loading: PropTypes.bool,
+      description: PropTypes.string,
     })
   ).isRequired,
 };

@@ -6,6 +6,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ActivityFeed from './ActivityFeed';
+import { ActivityFeed as ActivityFeedNamed } from './ActivityFeed';
 
 describe('ActivityFeed', () => {
   const activities = [

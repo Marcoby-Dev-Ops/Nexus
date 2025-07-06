@@ -14,7 +14,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { centralizedAppsOrchestrator } from '@/lib/centralizedAppsOrchestrator';
+import { orchestrator } from '@/lib/centralizedAppsOrchestrator';
 import type { BusinessApp, BusinessFunction, AppCategory } from '@/lib/centralizedAppsOrchestrator';
 
 interface CentralizedAppsHubProps {
@@ -37,16 +37,16 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
   const initializeDashboard = async (): Promise<void> => {
     try {
       // Get all connected apps and business functions
-      const connectedApps = centralizedAppsOrchestrator.getConnectedApps();
-      const businessFunctions = centralizedAppsOrchestrator.getBusinessFunctions();
-      const status = centralizedAppsOrchestrator.getAppsCentralizedStatus();
+      const connectedApps = orchestrator.getConnectedApps();
+      const businessFunctions = orchestrator.getBusinessFunctions();
+      const status = orchestrator.getAppsCentralizedStatus();
       
       setApps(connectedApps);
       setFunctions(businessFunctions);
       setCentralizedStatus(status);
 
       // Get business insights (mock for demo)
-      const businessInsights = await centralizedAppsOrchestrator.getBusinessInsights('current-user');
+      const businessInsights = await orchestrator.getBusinessInsights('current-user');
       setInsights(businessInsights);
 
     } catch (error) {
@@ -60,7 +60,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
     if (!activeCommand.trim() || selectedApps.length === 0) return;
 
     try {
-      const result = await centralizedAppsOrchestrator.executeUnifiedCommand(
+      const result = await orchestrator.executeUnifiedCommand(
         activeCommand,
         selectedApps,
         'current-user'
@@ -75,7 +75,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
 
   const executeBusinessFunction = async (functionId: string): Promise<void> => {
     try {
-      const result = await centralizedAppsOrchestrator.executeBusinessFunction(
+      const result = await orchestrator.executeBusinessFunction(
         functionId,
         { initiated: 'dashboard' },
         'current-user'

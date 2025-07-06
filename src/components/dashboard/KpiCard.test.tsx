@@ -28,7 +28,7 @@ describe('KpiCard', () => {
 
   it('renders sparkline if sparklineData is provided', () => {
     render(<KpiCard title="Revenue" value="$1000" sparklineData={[1,2,3,4,5]} />);
-    expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+    expect(screen.getByTestId('kpi-sparkline')).toBeInTheDocument();
   });
 
   it('matches snapshot', () => {
