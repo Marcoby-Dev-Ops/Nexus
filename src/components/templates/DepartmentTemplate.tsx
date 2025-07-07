@@ -146,7 +146,7 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
       </div>
       {/* Search and Filter Bar */}
       {showSearch && (
-        <div className="flex flex-col sm:flex-row gap-3 items-center">
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" />
             <Input

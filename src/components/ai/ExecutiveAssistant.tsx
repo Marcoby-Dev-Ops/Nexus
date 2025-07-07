@@ -290,7 +290,7 @@ export const ExecutiveAssistant: React.FC<ExecutiveAssistantProps> = ({ onClose,
       {/* Clean Input Area */}
       <div className="border-t p-4">
         {error && (
-          <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-3">
+          <div className="bg-destructive/10 text-destructive text-sm p-4 rounded-md mb-3">
             {error}
           </div>
         )}

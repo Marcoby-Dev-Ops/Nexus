@@ -760,7 +760,7 @@ class UnifiedInboxService {
         
         // Try to get email from credentials
         let email: string | undefined = undefined;
-        let displayName: string | undefined = undefined;
+        const displayName: string | undefined = undefined;
         
         if (integ.credentials) {
           // Try different possible locations in credentials

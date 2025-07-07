@@ -75,7 +75,11 @@ export class GoogleAnalyticsService {
    * Initialize OAuth 2.0 flow for Google Analytics
    */
   async initializeOAuth(): Promise<string> {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      throw new Error('Google Client ID not configured');
+    }
+    
     const redirectUri = `${window.location.origin}/integrations/google-analytics/callback`;
     
     const params = new URLSearchParams({
@@ -94,8 +98,13 @@ export class GoogleAnalyticsService {
    * Exchange authorization code for access tokens
    */
   async exchangeCodeForTokens(code: string): Promise<void> {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+    const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+    
+    if (!clientId || !clientSecret) {
+      throw new Error('Google OAuth credentials not configured');
+    }
+    
     const redirectUri = `${window.location.origin}/integrations/google-analytics/callback`;
 
     const response = await fetch('https://oauth2.googleapis.com/token', {

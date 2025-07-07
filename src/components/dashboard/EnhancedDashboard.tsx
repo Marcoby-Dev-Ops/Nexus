@@ -42,6 +42,8 @@ import { BusinessInsightsPanel } from "./BusinessInsightsPanel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/Tabs";
 import { Switch } from "@/components/ui/Switch";
 import { Label } from "@/components/ui/Label";
+import { ProfileCompletionBanner } from "@/components/profile/ProfileCompletionBanner";
+import { AIPerformanceWidget } from "./AIPerformanceWidget";
 
 /**
  * @name EnhancedDashboard
@@ -316,12 +318,12 @@ const EnhancedDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+    <div className="min-h-screen">
       <div className="p-8 space-y-8">
         {/* Enhanced Executive Header */}
         <div className="text-center space-y-6">
           <div className="flex items-center justify-center gap-4">
-            <div className="p-3 bg-primary/10 rounded-full">
+            <div className="p-4 bg-primary/10 rounded-full">
               <Building2 className="w-8 h-8 text-primary" />
             </div>
             <div>
@@ -336,43 +338,46 @@ const EnhancedDashboard: React.FC = () => {
           
           {/* Executive KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <Card className="border-green-200 bg-green-50/50">
+            <Card>
               <CardContent className="p-6 text-center">
-                <DollarSign className="w-8 h-8 mx-auto mb-3 text-green-600" />
-                <div className="text-3xl font-bold text-green-700">$2.4M</div>
-                <div className="text-sm text-green-600">Annual Revenue</div>
-                <div className="text-xs text-green-500 mt-1">+15% YoY</div>
+                <DollarSign className="w-8 h-8 mx-auto mb-3 text-success" />
+                <div className="text-3xl font-bold text-success">$2.4M</div>
+                <div className="text-sm text-success">Annual Revenue</div>
+                <div className="text-xs text-success mt-1">+15% YoY</div>
               </CardContent>
             </Card>
             
-            <Card className="border-blue-200 bg-blue-50/50">
+            <Card>
               <CardContent className="p-6 text-center">
-                <Users className="w-8 h-8 mx-auto mb-3 text-blue-600" />
-                <div className="text-3xl font-bold text-blue-700">1,247</div>
-                <div className="text-sm text-blue-600">Active Users</div>
-                <div className="text-xs text-blue-500 mt-1">+8% MTD</div>
+                <Users className="w-8 h-8 mx-auto mb-3 text-primary" />
+                <div className="text-3xl font-bold text-primary">1,247</div>
+                <div className="text-sm text-primary">Active Users</div>
+                <div className="text-xs text-primary mt-1">+8% MTD</div>
               </CardContent>
             </Card>
             
-            <Card className="border-purple-200 bg-purple-50/50">
+            <Card>
               <CardContent className="p-6 text-center">
-                <Globe className="w-8 h-8 mx-auto mb-3 text-purple-600" />
+                <Globe className="w-8 h-8 mx-auto mb-3 text-secondary" />
                 <div className="text-3xl font-bold text-purple-700">23</div>
-                <div className="text-sm text-purple-600">Markets</div>
-                <div className="text-xs text-purple-500 mt-1">Global Reach</div>
+                <div className="text-sm text-secondary">Markets</div>
+                <div className="text-xs text-secondary mt-1">Global Reach</div>
               </CardContent>
             </Card>
             
-            <Card className="border-orange-200 bg-orange-50/50">
+            <Card>
               <CardContent className="p-6 text-center">
-                <Shield className="w-8 h-8 mx-auto mb-3 text-orange-600" />
-                <div className="text-3xl font-bold text-orange-700">99.9%</div>
-                <div className="text-sm text-orange-600">Uptime</div>
+                <Shield className="w-8 h-8 mx-auto mb-3 text-warning" />
+                <div className="text-3xl font-bold text-warning">99.9%</div>
+                <div className="text-sm text-warning">Uptime</div>
                 <div className="text-xs text-orange-500 mt-1">System Health</div>
               </CardContent>
             </Card>
           </div>
         </div>
+
+        {/* Profile Completion Banner */}
+        <ProfileCompletionBanner showDetailed={false} />
 
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-8">
@@ -386,7 +391,7 @@ const EnhancedDashboard: React.FC = () => {
           <TabsContent value="overview" className="space-y-8">
             {/* Refresh Indicator */}
             {refreshing && (
-              <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-lg border border-primary/20">
+              <div className="fixed top-4 right-4 z-50 flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-lg border border-primary/20">
                 <RefreshCw className="w-4 h-4 animate-spin" />
                 <span className="text-sm">Updating data...</span>
               </div>
@@ -408,7 +413,7 @@ const EnhancedDashboard: React.FC = () => {
                     >
                       <Card className="hover:shadow-lg transition-shadow duration-200 border-2">
                         <CardHeader className="pb-3">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-4">
                             {widget.key === 'think' ? <Brain className="w-6 h-6 text-primary" /> : widget.key === 'see' ? <Eye className="w-6 h-6 text-secondary" /> : <Zap className="w-6 h-6 text-primary" />}
                             <CardTitle className="text-lg">{widget.label}</CardTitle>
                           </div>
@@ -467,6 +472,9 @@ const EnhancedDashboard: React.FC = () => {
 
               {/* Executive Controls Sidebar */}
               <div className="col-span-12 lg:col-span-4 space-y-6">
+                {/* AI Performance Widget */}
+                <AIPerformanceWidget />
+                
                 {/* Executive Actions */}
                 <Card>
                   <CardHeader>
@@ -476,7 +484,7 @@ const EnhancedDashboard: React.FC = () => {
                     </CardTitle>
                     <CardDescription>Strategic decision-making tools</CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-4">
                     <Button variant="outline" className="w-full justify-start">
                       <BarChart3 className="w-4 h-4 mr-2" />
                       Generate Board Report
@@ -506,7 +514,7 @@ const EnhancedDashboard: React.FC = () => {
                     <CardDescription>Customize your executive view</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {allowedWidgetConfigs.map(widget => (
                         <div key={widget.key} className="flex items-center justify-between">
                           <Label htmlFor={`toggle-${widget.key}`} className="flex items-center gap-2">
@@ -533,16 +541,16 @@ const EnhancedDashboard: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Data Sources</span>
-                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                        <Badge variant="outline" className="bg-success/5 text-success">
                           {dashboardMetrics.see.dataSourcesConnected} Connected
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">Automations</span>
-                        <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                        <Badge variant="outline" className="bg-primary/5 text-primary">
                           {dashboardMetrics.act.automationsRunning} Running
                         </Badge>
                       </div>

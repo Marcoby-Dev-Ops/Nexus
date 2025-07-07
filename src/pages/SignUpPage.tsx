@@ -60,7 +60,7 @@ export function SignUpPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="Enter your Email Address"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

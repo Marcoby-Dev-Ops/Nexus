@@ -144,9 +144,9 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
       <Card className={`${urgencyColors[recommendation.urgency]} border-l-4`}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Mail className="h-5 w-5 text-blue-600" />
+            <div className="flex items-center space-x-4">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Mail className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <h4 className="font-semibold text-sm">{recommendation.title}</h4>
@@ -174,7 +174,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center space-x-2">
-            <Crown className="h-5 w-5 text-blue-600" />
+            <Crown className="h-5 w-5 text-primary" />
             <span>{recommendation.title}</span>
             <Badge className={urgencyBadgeColors[recommendation.urgency]}>
               {recommendation.urgency} priority
@@ -193,13 +193,13 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
         {/* Benefits */}
         <div>
           <h4 className="font-semibold mb-2 flex items-center">
-            <Star className="h-4 w-4 mr-1 text-yellow-500" />
+            <Star className="h-4 w-4 mr-1 text-warning" />
             Benefits
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {recommendation.benefits.map((benefit: string, index: number) => (
               <div key={index} className="flex items-center space-x-2 text-sm">
-                <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
                 <span>{benefit}</span>
               </div>
             ))}
@@ -207,17 +207,17 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
         </div>
 
         {/* Pricing */}
-        <div className="bg-white/50 rounded-lg p-3">
+        <div className="bg-card/50 rounded-lg p-4">
           <div className="flex items-center justify-between">
             <div>
               <h4 className="font-semibold">Pricing</h4>
-              <p className="text-lg font-bold text-blue-600">{recommendation.pricing}</p>
+              <p className="text-lg font-bold text-primary">{recommendation.pricing}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Business Health Impact</p>
               <div className="flex items-center">
-                <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                <span className="font-semibold text-green-600">+7 points</span>
+                <TrendingUp className="h-4 w-4 text-success mr-1" />
+                <span className="font-semibold text-success">+7 points</span>
               </div>
             </div>
           </div>
@@ -225,26 +225,26 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
 
         {/* Security Features */}
         {showDetails && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <h4 className="font-semibold flex items-center">
-              <Shield className="h-4 w-4 mr-1 text-blue-500" />
+              <Shield className="h-4 w-4 mr-1 text-primary" />
               Security & Compliance Features
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <span>Advanced Threat Protection</span>
               </div>
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <span>Data Loss Prevention</span>
               </div>
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <span>Multi-factor Authentication</span>
               </div>
               <div className="flex items-center space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-500" />
+                <CheckCircle className="h-4 w-4 text-success" />
                 <span>Compliance Center</span>
               </div>
             </div>
@@ -252,10 +252,10 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-4">
           <Button 
             onClick={handleGetStarted}
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-primary hover:bg-primary/90"
           >
             <ExternalLink className="h-4 w-4 mr-2" />
             {recommendation.ctaText}
@@ -277,7 +277,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
         </div>
 
         {/* Additional Info */}
-        <div className="text-xs text-muted-foreground bg-white/30 rounded p-2">
+        <div className="text-xs text-muted-foreground bg-card/30 rounded p-2">
           <p>
             💡 <strong>Tip:</strong> Professional email addresses increase customer trust by 
             up to 42% and improve email deliverability rates significantly.

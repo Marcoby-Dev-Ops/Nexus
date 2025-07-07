@@ -277,8 +277,8 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
   // Show initial tracking prompt
   if (!outcome && !showTracker) {
     return (
-      <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
-        <div className="flex items-start gap-3">
+      <div className="mt-3 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+        <div className="flex items-start gap-4">
           <Target className="h-5 w-5 text-primary mt-0.5" />
           <div className="flex-1">
             <p className="text-sm font-medium">Track the outcome of this recommendation</p>

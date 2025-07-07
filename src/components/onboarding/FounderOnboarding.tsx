@@ -224,7 +224,7 @@ const IndustryStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComplet
       <h3 className="text-lg font-semibold text-center mb-6">
         What industry is your business in?
       </h3>
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-4">
         {industries.map((industry) => (
           <Button
             key={industry.id}
@@ -259,7 +259,7 @@ const CompanySizeStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComp
       <h3 className="text-lg font-semibold text-center mb-6">
         How big is your team?
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {sizes.map((size) => (
           <Button
             key={size.id}
@@ -292,7 +292,7 @@ const ChallengeStep: React.FC<{ onComplete: (data: any) => void; industry: strin
       <h3 className="text-lg font-semibold text-center mb-6">
         What's your biggest operational challenge?
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {industryData.painPoints.map((challenge, index) => (
           <Button
             key={index}
@@ -327,7 +327,7 @@ const RevenueStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComplete
       <h3 className="text-lg font-semibold text-center mb-6">
         What's your approximate monthly revenue?
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {ranges.map((range) => (
           <Button
             key={range.id}
@@ -362,7 +362,7 @@ const TimeStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComplete })
       <h3 className="text-lg font-semibold text-center mb-6">
         How much time do you spend on admin/operational tasks?
       </h3>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {timeRanges.map((range) => (
           <Button
             key={range.id}
@@ -501,7 +501,7 @@ const FounderDemo: React.FC<{
               <Badge variant="outline">Running</Badge>
             </div>
             
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center text-sm">
                 <CheckCircle className="h-4 w-4 text-success mr-2" />
                 <span>Analyzed 247 data points from your systems</span>

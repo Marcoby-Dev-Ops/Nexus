@@ -25,7 +25,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
       aria-label="Slash command suggestions"
     >
       {loading ? (
-        <div className="px-3 py-4 text-sm text-muted-foreground flex items-center gap-2">
+        <div className="px-4 py-4 text-sm text-muted-foreground flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           Loading commands...
         </div>
@@ -36,7 +36,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
               key={cmd.slug}
               role="option"
               aria-selected={idx === selectedIndex}
-              className={`px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors ${
+              className={`px-4 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors ${
                 idx === selectedIndex 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-popover text-popover-foreground'
@@ -65,7 +65,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
           ))}
         </ul>
       ) : (
-        <div className="px-3 py-3 text-sm text-muted-foreground">
+        <div className="px-4 py-3 text-sm text-muted-foreground">
           {query ? `No commands found for "${query}"` : 'No commands available'}
         </div>
       )}

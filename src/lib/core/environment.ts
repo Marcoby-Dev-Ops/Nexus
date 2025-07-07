@@ -8,6 +8,10 @@ interface EnvironmentConfig {
     url: string;
     anonKey: string;
   };
+  google: {
+    mapsApiKey: string;
+    placesApiKey: string;
+  };
   development: {
     isDevelopment: boolean;
     isProduction: boolean;
@@ -42,6 +46,10 @@ export function getEnvironmentConfig(): EnvironmentConfig {
       supabase: {
         url: requireEnvVar('VITE_SUPABASE_URL', import.meta.env.VITE_SUPABASE_URL),
         anonKey: requireEnvVar('VITE_SUPABASE_ANON_KEY', import.meta.env.VITE_SUPABASE_ANON_KEY),
+      },
+      google: {
+        mapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+        placesApiKey: import.meta.env.VITE_GOOGLE_PLACES_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
       },
       development: {
         isDevelopment: import.meta.env.DEV || false,

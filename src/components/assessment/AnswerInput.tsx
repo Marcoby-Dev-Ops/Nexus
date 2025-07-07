@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { AssessmentQuestion } from '@prisma/client';
+import type { AssessmentQuestion } from '@/types/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
@@ -57,7 +57,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({ question, onAnswer, isAnswere
         );
         break;
       default:
-        return <p className="text-red-500">Unknown question type</p>;
+        return <p className="text-destructive">Unknown question type</p>;
     }
 
     return (
@@ -71,7 +71,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({ question, onAnswer, isAnswere
   return (
     <div className="mt-4">
       {isAnswered ? (
-        <p className="text-sm text-green-600 font-medium">Answered, thank you!</p>
+        <p className="text-sm text-success font-medium">Answered, thank you!</p>
       ) : (
         renderInput()
       )}

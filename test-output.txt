@@ -1,4 +1,0 @@
-
-> nexus-dashboard@0.1.0 test /home/vonj/Github/Nexus
-> jest --passWithNoTests --ci --reporters\=default --reporters\=jest-junit
-

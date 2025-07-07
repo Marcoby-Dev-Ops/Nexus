@@ -372,7 +372,7 @@ const DataWarehouseHome: React.FC = () => {
           <p className="text-muted-foreground">Access and analyze your business data</p>
         </div>
         <ContentCard title="Error Loading Data" variant="elevated">
-          <div className="flex items-center space-x-3 text-destructive">
+          <div className="flex items-center space-x-4 text-destructive">
             <AlertCircle className="w-5 h-5" />
             <span>{error}</span>
           </div>

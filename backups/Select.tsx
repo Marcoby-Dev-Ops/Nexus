@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-import { cn } from '@/lib/styles';
+import { cn } from '../../lib/core/config/styles';
 
 export interface SelectProps {
   value?: string;
+  defaultValue?: string;
   onValueChange?: (value: string) => void;
   disabled?: boolean;
   children: React.ReactNode;
@@ -29,15 +30,29 @@ export interface SelectItemProps {
   className?: string;
 }
 
+export interface SelectGroupProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface SelectLabelProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
 const SelectContext = React.createContext<{
   value?: string;
   onValueChange?: (value: string) => void;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   disabled?: boolean;
+  options: Record<string, string>;
+  registerOption: (value: string, label: string) => void;
 }>({
   isOpen: false,
   setIsOpen: () => {},
+  options: {},
+  registerOption: () => {},
 });
 
 /**
@@ -45,14 +60,38 @@ const SelectContext = React.createContext<{
  */
 export const Select: React.FC<SelectProps> = ({ 
   value, 
+  defaultValue,
   onValueChange, 
   disabled = false, 
   children 
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [options, setOptions] = useState<Record<string, string>>({});
+  const [internalValue, setInternalValue] = useState(defaultValue);
+
+  const currentValue = value !== undefined ? value : internalValue;
+
+  const handleValueChange = React.useCallback((newValue: string) => {
+    if (value === undefined) {
+      setInternalValue(newValue);
+    }
+    onValueChange?.(newValue);
+  }, [value, onValueChange]);
+
+  const registerOption = React.useCallback((val: string, label: string) => {
+    setOptions(prev => (prev[val] ? prev : { ...prev, [val]: label }));
+  }, []);
 
   return (
-    <SelectContext.Provider value={{ value, onValueChange, isOpen, setIsOpen, disabled }}>
+    <SelectContext.Provider value={{ 
+      value: currentValue, 
+      onValueChange: handleValueChange, 
+      isOpen, 
+      setIsOpen, 
+      disabled, 
+      options, 
+      registerOption 
+    }}>
       <div className="relative">
         {children}
       </div>
@@ -106,11 +145,11 @@ export const SelectTrigger: React.FC<SelectTriggerProps> = ({ className, childre
  * Select value display
  */
 export const SelectValue: React.FC<SelectValueProps> = ({ placeholder }) => {
-  const { value } = React.useContext(SelectContext);
-  
+  const { value, options } = React.useContext(SelectContext);
+  const display = value ? (options[value] ?? value) : undefined;
   return (
-    <span className={cn(!value && 'text-muted-foreground')}>
-      {value || placeholder}
+    <span className={cn(!display && 'text-muted-foreground')}>
+      {display || placeholder}
     </span>
   );
 };
@@ -126,7 +165,7 @@ export const SelectContent: React.FC<SelectContentProps> = ({ className, childre
   return (
     <div
       className={cn(
-        'absolute top-full z-50 mt-1 w-full rounded-md border bg-popover p-4 text-popover-foreground shadow-md',
+        'absolute top-full z-dropdown mt-1 w-full rounded-md border bg-popover p-4 text-popover-foreground shadow-md',
         'animate-in fade-in-0 zoom-in-95',
         className
       )}
@@ -140,12 +179,19 @@ export const SelectContent: React.FC<SelectContentProps> = ({ className, childre
  * Select item option
  */
 export const SelectItem: React.FC<SelectItemProps> = ({ value, children, className }) => {
-  const { value: selectedValue, onValueChange, setIsOpen } = React.useContext(SelectContext);
+  const { value: selectedValue, onValueChange, setIsOpen, registerOption } = React.useContext(SelectContext);
   const isSelected = selectedValue === value;
+
+  React.useEffect(() => {
+    if (typeof children === 'string') {
+      registerOption(value, children);
+    }
+  }, [children, registerOption, value]);
 
   return (
     <div
-      onClick={() => {
+      onMouseDown={(e) => {
+        e.preventDefault(); // Prevent focus loss
         onValueChange?.(value);
         setIsOpen(false);
       }}
@@ -161,6 +207,34 @@ export const SelectItem: React.FC<SelectItemProps> = ({ value, children, classNa
           <Check className="h-4 w-4" />
         </span>
       )}
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Select group for organizing options
+ */
+export const SelectGroup: React.FC<SelectGroupProps> = ({ 
+  children, 
+  className 
+}) => {
+  return (
+    <div className={cn('space-y-2', className)}>
+      {children}
+    </div>
+  );
+};
+
+/**
+ * Select label for group headings
+ */
+export const SelectLabel: React.FC<SelectLabelProps> = ({ 
+  children, 
+  className 
+}) => {
+  return (
+    <div className={cn('px-2 py-1.5 text-sm font-semibold', className)}>
       {children}
     </div>
   );

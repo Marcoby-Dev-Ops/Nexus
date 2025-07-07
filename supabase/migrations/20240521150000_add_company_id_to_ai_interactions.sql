@@ -1,6 +1,3 @@
-ALTER TABLE public.ai_interactions
-ADD COLUMN company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE;
-
 -- Create an index on the new company_id column for performance
 CREATE INDEX IF NOT EXISTS idx_ai_interactions_company_id ON public.ai_interactions(company_id);
 

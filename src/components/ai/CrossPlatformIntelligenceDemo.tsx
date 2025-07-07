@@ -139,19 +139,19 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'connected': return 'text-green-600';
-      case 'syncing': return 'text-yellow-600';
-      case 'error': return 'text-red-600';
-      default: return 'text-gray-600';
+      case 'connected': return 'text-success';
+      case 'syncing': return 'text-warning';
+      case 'error': return 'text-destructive';
+      default: return 'text-muted-foreground';
     }
   };
 
   const getImpactColor = (impact: string) => {
     switch (impact) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-destructive/10 text-destructive';
+      case 'medium': return 'bg-warning/10 text-yellow-800';
+      case 'low': return 'bg-success/10 text-success';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -160,10 +160,10 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center gap-2">
-          <Brain className="h-8 w-8 text-purple-600" />
+          <Brain className="h-8 w-8 text-secondary" />
           <h1 className="text-3xl font-bold">Cross-Platform AI Intelligence</h1>
         </div>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <p className="text-muted-foreground max-w-2xl mx-auto">
           See how combining data from multiple platforms creates a contextual intelligence multiplier 
           that transforms AI decision-making, LLM calls, and app routing.
         </p>
@@ -212,17 +212,17 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
               <CardContent className="space-y-2">
                 {Object.entries(platform.keyMetrics).map(([key, value]) => (
                   <div key={key} className="flex justify-between text-sm">
-                    <span className="text-gray-600 capitalize">{key}:</span>
+                    <span className="text-muted-foreground capitalize">{key}:</span>
                     <span className="font-medium">{value}</span>
                   </div>
                 ))}
-                <div className="text-xs text-gray-500 mt-2">
+                <div className="text-xs text-muted-foreground mt-2">
                   Updated {platform.lastUpdate}
                 </div>
               </CardContent>
               {platform.status === 'connected' && (
                 <div className="absolute top-2 right-2">
-                  <CheckCircle className="h-4 w-4 text-green-500" />
+                  <CheckCircle className="h-4 w-4 text-success" />
                 </div>
               )}
             </Card>
@@ -253,11 +253,11 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
               <CardContent className="p-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 animate-spin text-purple-600" />
+                    <Activity className="h-5 w-5 animate-spin text-secondary" />
                     <span className="font-medium">AI Correlation Engine Active</span>
                   </div>
                   <Progress value={75} className="w-full" />
-                  <div className="text-sm text-gray-600">
+                  <div className="text-sm text-muted-foreground">
                     Analyzing patterns across HubSpot, Cloudflare, Google Workspace, and Marcoby Cloud...
                   </div>
                 </div>
@@ -266,11 +266,11 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
           )}
 
           {currentInsight && (
-            <Card className="border-purple-200 bg-purple-50">
+            <Card className="border-purple-200 bg-secondary/5">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2">
-                    <Brain className="h-5 w-5 text-purple-600" />
+                    <Brain className="h-5 w-5 text-secondary" />
                     AI-Discovered Insight
                   </CardTitle>
                   <Badge className={getImpactColor(currentInsight.impact)}>
@@ -281,18 +281,18 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
               <CardContent className="space-y-4">
                 <p className="text-lg font-medium">{currentInsight.description}</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-600">Confidence:</span>
+                  <span className="text-sm text-muted-foreground">Confidence:</span>
                   <Progress value={currentInsight.confidence} className="flex-1 max-w-32" />
                   <span className="text-sm font-medium">{currentInsight.confidence}%</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-sm text-gray-600">Data sources:</span>
+                  <span className="text-sm text-muted-foreground">Data sources:</span>
                   {currentInsight.platforms.map((platform, idx) => (
                     <Badge key={idx} variant="outline">{platform}</Badge>
                   ))}
                 </div>
                 {currentInsight.actionable && (
-                  <div className="flex items-center gap-2 text-green-700">
+                  <div className="flex items-center gap-2 text-success">
                     <CheckCircle className="h-4 w-4" />
                     <span className="text-sm">Actionable recommendation available</span>
                   </div>
@@ -312,7 +312,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
                                       insight.type === 'prediction' ? 'secondary' : 'outline'}>
                           {insight.type}
                         </Badge>
-                        <span className="text-sm text-gray-600">{insight.confidence}% confidence</span>
+                        <span className="text-sm text-muted-foreground">{insight.confidence}% confidence</span>
                       </div>
                       <p className="font-medium">{insight.description}</p>
                       <div className="flex flex-wrap gap-1">
@@ -338,7 +338,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Network className="h-5 w-5 text-blue-600" />
+                <Network className="h-5 w-5 text-primary" />
                 Intelligent Agent Routing
               </CardTitle>
               <CardDescription>
@@ -348,22 +348,22 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
             <CardContent>
               <div className="space-y-6">
                 {routingExamples.map((example, index) => (
-                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                  <div key={index} className="border rounded-lg p-4 space-y-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-600">User Query:</span>
+                      <span className="text-sm font-medium text-muted-foreground">User Query:</span>
                       <span className="font-medium">"{example.query}"</span>
                     </div>
                     
                     <div className="flex items-center gap-4">
-                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                      <ArrowRight className="h-4 w-4 text-muted-foreground" />
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-600">Routed to:</span>
+                        <span className="text-sm text-muted-foreground">Routed to:</span>
                         <Badge>{example.recommendedAgent}</Badge>
-                        <span className="text-sm text-gray-600">({example.confidence}% confidence)</span>
+                        <span className="text-sm text-muted-foreground">({example.confidence}% confidence)</span>
                       </div>
                     </div>
                     
-                    <div className="bg-gray-50 rounded p-3 space-y-2">
+                    <div className="bg-background rounded p-4 space-y-2">
                       <div className="text-sm">
                         <span className="font-medium">AI Reasoning:</span> {example.reasoning}
                       </div>
@@ -390,7 +390,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Zap className="h-5 w-5 text-yellow-600" />
+                <Zap className="h-5 w-5 text-warning" />
                 Enhanced LLM Calls
               </CardTitle>
               <CardDescription>
@@ -400,35 +400,35 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
             <CardContent>
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Before */}
-                <div className="space-y-3">
-                  <h4 className="font-medium text-red-600">❌ Without Cross-Platform Context</h4>
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-destructive">❌ Without Cross-Platform Context</h4>
+                  <div className="bg-destructive/5 border border-red-200 rounded-lg p-4">
                     <div className="text-sm font-medium mb-2">User: "How's our sales performance?"</div>
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-foreground/90">
                       "I'd be happy to help you check your sales performance. Could you provide more details about what specific metrics you'd like to see?"
                     </div>
                   </div>
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-muted-foreground">
                     Generic response requiring clarification • No business context • Reactive assistance
                   </div>
                 </div>
 
                 {/* After */}
-                <div className="space-y-3">
-                  <h4 className="font-medium text-green-600">✅ With Cross-Platform Intelligence</h4>
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-success">✅ With Cross-Platform Intelligence</h4>
+                  <div className="bg-success/5 border border-green-200 rounded-lg p-4">
                     <div className="text-sm font-medium mb-2">User: "How's our sales performance?"</div>
-                    <div className="text-sm text-gray-700 space-y-2">
+                    <div className="text-sm text-foreground/90 space-y-2">
                       <div>"Your sales performance is strong! Based on real-time data:"</div>
                       <div>📊 Current Pipeline: $245,000 (47 active deals)</div>
                       <div>📈 Conversion Rate: 28% (up 5% from last month)</div>
                       <div>🚀 Deal Velocity: 23% faster due to high email engagement</div>
-                      <div className="mt-2 text-blue-700">
+                      <div className="mt-2 text-primary">
                         "🧠 AI Insight: Your Google Workspace shows 156 emails/day, which correlates with improved deal velocity!"
                       </div>
                     </div>
                   </div>
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-muted-foreground">
                     Immediately actionable • Complete business context • Proactive insights with correlations
                   </div>
                 </div>
@@ -443,7 +443,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="bg-primary/5 border border-border rounded-lg p-4">
                   <h5 className="font-medium mb-2">Enhanced System Prompt Includes:</h5>
                   <ul className="text-sm space-y-1">
                     <li>• Real-time data from all connected platforms</li>
@@ -455,16 +455,16 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
                 </div>
                 
                 <div className="grid md:grid-cols-3 gap-4 text-sm">
-                  <div className="text-center p-3 bg-gray-50 rounded">
-                    <div className="font-medium text-2xl text-purple-600">90%</div>
+                  <div className="text-center p-4 bg-background rounded">
+                    <div className="font-medium text-2xl text-secondary">90%</div>
                     <div>Response Relevance</div>
                   </div>
-                  <div className="text-center p-3 bg-gray-50 rounded">
-                    <div className="font-medium text-2xl text-purple-600">85%</div>
+                  <div className="text-center p-4 bg-background rounded">
+                    <div className="font-medium text-2xl text-secondary">85%</div>
                     <div>Include Predictions</div>
                   </div>
-                  <div className="text-center p-3 bg-gray-50 rounded">
-                    <div className="font-medium text-2xl text-purple-600">8+</div>
+                  <div className="text-center p-4 bg-background rounded">
+                    <div className="font-medium text-2xl text-secondary">8+</div>
                     <div>Data Sources</div>
                   </div>
                 </div>
@@ -478,7 +478,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
       <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
         <CardContent className="p-6 text-center space-y-4">
           <h3 className="text-xl font-bold">The Intelligence Multiplier Effect</h3>
-          <p className="text-gray-700 max-w-2xl mx-auto">
+          <p className="text-foreground/90 max-w-2xl mx-auto">
             Cross-platform analytics doesn't just add data—it multiplies intelligence. 
             With 8+ integrated platforms, Nexus creates AI that truly understands your business holistically.
           </p>
@@ -486,7 +486,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
             <Badge variant="outline">1 Platform: Basic metrics</Badge>
             <Badge variant="outline">2-3 Platforms: Simple correlations</Badge>
             <Badge variant="outline">4-6 Platforms: Pattern recognition</Badge>
-            <Badge className="bg-purple-600">8+ Platforms: Unified intelligence</Badge>
+            <Badge className="bg-secondary">8+ Platforms: Unified intelligence</Badge>
           </div>
         </CardContent>
       </Card>

@@ -90,7 +90,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({ 
                 Refresh Token
               </Button>
             )}
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button variant="destructive" onClick={handleDisconnect}>Disconnect</Button>
               <Button variant="outline" onClick={onClose}>Close</Button>
             </div>

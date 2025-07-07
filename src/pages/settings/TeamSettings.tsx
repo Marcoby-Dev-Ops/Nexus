@@ -72,7 +72,7 @@ const TeamSettings: React.FC = () => {
           <CardDescription>Add new people to your team</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-3">
+          <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -118,8 +118,8 @@ const TeamSettings: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {teamMembers.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-3 rounded-md hover:bg-muted transition-colors">
-                <div className="flex items-center space-x-3">
+              <div key={member.id} className="flex items-center justify-between p-4 rounded-md hover:bg-muted transition-colors">
+                <div className="flex items-center space-x-4">
                   <Avatar>
                     <span>{member.name.charAt(0)}</span>
                   </Avatar>
@@ -176,7 +176,7 @@ const TeamSettings: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {teamRoles.map((role) => (
-              <div key={role.id} className="p-3 border border-border rounded-md">
+              <div key={role.id} className="p-4 border border-border rounded-md">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center space-x-2">
                     <Badge variant={role.id === 'owner' || role.id === 'admin' ? 'default' : 'outline'}>
@@ -184,7 +184,7 @@ const TeamSettings: React.FC = () => {
                     </Badge>
                   </div>
                   {role.id === user?.role && (
-                    <Badge variant="outline" className="border-green-500 text-success">
+                    <Badge variant="outline" className="border-success text-success">
                       Your Role
                     </Badge>
                   )}

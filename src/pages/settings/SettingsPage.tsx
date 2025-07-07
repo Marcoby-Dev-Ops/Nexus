@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { UnifiedSettingsPage } from '@/components/patterns/UnifiedPages';
 import AccountSettings from './AccountSettings';
 import SecuritySettings from './SecuritySettings';
@@ -7,10 +7,32 @@ import IntegrationsSettings from './IntegrationsSettings';
 import DataPrivacySettings from './DataPrivacySettings';
 import AppearanceSettings from './AppearanceSettings';
 import AdvancedSettings from './AdvancedSettings';
+import AIModelSettings from './AIModelSettings';
+import { BillingSettings } from './BillingSettings';
+import { ContinuousImprovementDashboard } from '@/components/ai/ContinuousImprovementDashboard';
+import { useAuth } from '@/contexts/AuthContext';
+
+// AI Performance Settings Component
+const AIPerformanceSettings = () => {
+  const { user } = useAuth();
+  
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">AI Performance & Analytics</h3>
+        <p className="text-sm text-muted-foreground">
+          Monitor your AI usage, track improvements, and view detailed analytics.
+        </p>
+      </div>
+      <ContinuousImprovementDashboard userId={user?.id || ''} timeframe="week" />
+    </div>
+  );
+};
 
 // Placeholder components for new sections
-const BillingSettings = () => <div>Billing & subscription management coming soon.</div>;
 const TeamSettings = () => <div>Team & access management coming soon.</div>;
+
+const CompanyProfilePage = lazy(() => import('../onboarding/CompanyProfilePage').then(m => ({ default: m.CompanyProfilePage })));
 
 const settingsConfig = {
   title: 'Settings',
@@ -23,10 +45,28 @@ const settingsConfig = {
       component: AccountSettings,
     },
     {
+      id: 'company-profile',
+      title: 'Company Profile',
+      description: 'View and edit your company information',
+      component: CompanyProfilePage,
+    },
+    {
       id: 'security',
       title: 'Security & Privacy',
       description: 'Manage your account security and privacy settings',
       component: SecuritySettings,
+    },
+    {
+      id: 'ai-models',
+      title: 'AI Models & Keys',
+      description: 'Configure AI models and manage API keys',
+      component: AIModelSettings,
+    },
+    {
+      id: 'ai-performance',
+      title: 'AI Performance',
+      description: 'Monitor AI usage, performance metrics, and improvements',
+      component: AIPerformanceSettings,
     },
     {
       id: 'notifications',
@@ -37,7 +77,7 @@ const settingsConfig = {
     {
       id: 'billing',
       title: 'Billing & Subscription',
-      description: 'Manage your plan, payment methods, and invoices',
+      description: 'Manage your plan, payment methods, and usage',
       component: BillingSettings,
     },
     {

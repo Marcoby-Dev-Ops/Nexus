@@ -280,12 +280,16 @@ class BusinessObservationService {
    */
   private async generateSecurityObservations(userId: string): Promise<EABusinessObservation[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: userProfile } = await supabase
+        .from('ai_user_profiles')
+        .select('security_settings')
+        .eq('user_id', userId)
+        .single();
+
       const observations: EABusinessObservation[] = [];
 
-      if (user) {
-        // Mock observation for MFA - replace with actual check
-        const hasMfa = user.aud === 'authenticated'; // This is a placeholder
+      if (userProfile) {
+        const hasMfa = userProfile.security_settings?.mfa_enabled === true;
         if (!hasMfa) {
           observations.push({
             id: `security-mfa-${Date.now()}`,
@@ -326,7 +330,7 @@ class BusinessObservationService {
   private calculateEmailUpgradeValue(analysis: { totalEmails: number; genericDomainCount: number }): number {
     // Simplified model: value increases with number of emails and reliance on generic providers
     const baseValue = 5000; // Base perceived value of professionalism
-    const emailMultiplier = Math.min(analysis.totalEmails / 10, 5); // Cap at 50 emails
+    const emailMultiplier = analysis.totalEmails / 10; // Remove cap to allow proper scaling
     const genericPenalty = (analysis.genericDomainCount / (analysis.totalEmails || 1)) * 2500;
     
     return Math.round(baseValue + (emailMultiplier * 1000) + genericPenalty);

@@ -425,7 +425,7 @@ const AutomationRecipesPage: React.FC = () => {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-4 py-2 border border-border rounded-md bg-background"
               >
                 {categories.map(category => (
                   <option key={category.value} value={category.value}>
@@ -436,7 +436,7 @@ const AutomationRecipesPage: React.FC = () => {
               <select
                 value={selectedDifficulty}
                 onChange={(e) => setSelectedDifficulty(e.target.value)}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-4 py-2 border border-border rounded-md bg-background"
               >
                 <option value="all">All Difficulties</option>
                 <option value="beginner">Beginner</option>
@@ -585,7 +585,7 @@ const AutomationRecipesPage: React.FC = () => {
                             <h4 className="font-semibold mb-2">Description</h4>
                             <p className="text-sm text-muted-foreground">{recipe.description}</p>
                           </div>
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             <div className="flex justify-between">
                               <span className="text-sm">Difficulty:</span>
                               <Badge className={getDifficultyColor(recipe.difficulty)}>
@@ -643,9 +643,9 @@ const AutomationRecipesPage: React.FC = () => {
                       <TabsContent value="setup" className="space-y-4">
                         <div>
                           <h4 className="font-semibold mb-3">Step-by-Step Setup Instructions</h4>
-                          <div className="space-y-3">
+                          <div className="space-y-4">
                             {recipe.deploymentInstructions.map((instruction, index) => (
-                              <div key={index} className="flex gap-3">
+                              <div key={index} className="flex gap-4">
                                 <div className="flex-shrink-0 w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
                                   {index + 1}
                                 </div>

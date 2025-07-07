@@ -16,9 +16,9 @@ interface TasksWidgetProps {
 }
 
 const priorityColors: { [key: string]: string } = {
-  High: 'bg-red-500',
-  Medium: 'bg-yellow-500',
-  Low: 'bg-blue-500',
+  High: 'bg-destructive',
+  Medium: 'bg-warning',
+  Low: 'bg-primary',
   None: 'bg-gray-500',
 };
 
@@ -105,14 +105,14 @@ export const TasksWidget: React.FC<TasksWidgetProps> = ({ onTaskComplete }) => {
           )}
 
           {isError && (
-            <div className="text-red-500 flex items-center gap-2">
+            <div className="text-destructive flex items-center gap-2">
               <AlertCircle className="h-5 w-5" />
               <p>Error loading tasks.</p>
             </div>
           )}
 
           {tasks && tasks.map((task: Task) => (
-            <div key={task.id} className="flex items-center gap-3">
+            <div key={task.id} className="flex items-center gap-4">
               <Checkbox
                 id={task.id}
                 checked={task.completed}

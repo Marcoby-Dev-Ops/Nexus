@@ -219,7 +219,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
       ]
     },
     {
-      id: 'ai-transformation',
+      id: 'ai-hub',
       title: 'AI-Powered Business Transformation',
       description: 'Advanced AI features for business optimization and growth',
       estimatedTime: '90 min',
@@ -379,10 +379,10 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
   // Get difficulty color
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Beginner': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'Intermediate': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'Advanced': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+      case 'Beginner': return 'bg-success/10 text-success dark:bg-green-900 dark:text-green-200';
+      case 'Intermediate': return 'bg-warning/10 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'Advanced': return 'bg-destructive/10 text-destructive dark:bg-red-900 dark:text-red-200';
+      default: return 'bg-muted text-foreground dark:bg-background dark:text-foreground';
     }
   };
 
@@ -429,7 +429,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
                 <Card key={journey.id} className="hover:shadow-lg transition-shadow cursor-pointer">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-4">
                         <div className="p-2 bg-primary/10 rounded-lg">
                           {journey.icon}
                         </div>
@@ -552,7 +552,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
                                           Step {index + 1}
                                         </span>
                                         {isCompleted && (
-                                          <CheckCircle className="h-4 w-4 text-green-500" />
+                                          <CheckCircle className="h-4 w-4 text-success" />
                                         )}
                                         <div className="flex items-center text-xs text-muted-foreground">
                                           <Clock className="h-3 w-3 mr-1" />

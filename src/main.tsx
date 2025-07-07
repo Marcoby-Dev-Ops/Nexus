@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
-import AuthProvider from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './components/ui/theme-provider';
 import { ToastProvider } from './components/ui/Toast';
 import { initializeStorageCleanup } from './lib/utils/storageUtils';
@@ -39,7 +39,7 @@ console.error = (...args) => {
 // Configure Lit for better Microsoft Graph Toolkit compatibility
 if (import.meta.env.PROD) {
   // Set production environment for Lit components
-  window.process = { env: { NODE_ENV: 'production' } };
+  (window as any).process = { env: { NODE_ENV: 'production' } };
 } else {
   // In development, suppress Lit warnings but keep functionality
   console.warn = (...args) => {

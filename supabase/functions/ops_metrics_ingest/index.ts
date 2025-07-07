@@ -58,7 +58,12 @@ serve(async (req) => {
     const jwt = authHeader.replace('Bearer ', '');
     const [, payloadB64] = jwt.split('.');
     const claims = JSON.parse(atob(payloadB64));
-    const orgId = claims.org_id as string | undefined;
+    let orgId = claims.org_id as string | undefined;
+
+    // Filter out string "null" values which can cause UUID errors
+    if (orgId === 'null' || orgId === '') {
+      orgId = undefined;
+    }
 
     if (!orgId) {
       return new Response(

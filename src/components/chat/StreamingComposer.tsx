@@ -14,6 +14,14 @@ import type { SourceMeta } from './SourceDrawer';
 import { sendAuditLog } from '@/lib/services/auditLogService';
 import { getSlashCommands, filterSlashCommands, type SlashCommand } from '@/lib/services/slashCommandService';
 import SlashCommandMenu from './SlashCommandMenu';
+import DomainAgentIndicator from './DomainAgentIndicator';
+import { hybridModelService } from '@/lib/ai/hybridModelService';
+import { continuousImprovementService } from '@/lib/ai/continuousImprovementService';
+import { aiUsageBillingService } from '@/lib/billing/aiUsageBillingService';
+// import { Badge } from '@/components/ui/badge';
+// import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Cpu, Shield, DollarSign, Clock, MessageSquare, Activity, Star, User } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
 
 // Chat is always enabled; previous VITE_CHAT_V2 gate removed
 const isChatEnabled = true;
@@ -36,6 +44,40 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   sources?: SourceMeta[];
+  routing?: {
+    agent: string;
+    confidence: number;
+    reasoning: string;
+  };
+  agentId?: string;
+  domainCapabilities?: {
+    tools: string[];
+    expertise: string[];
+    insights: string[];
+  };
+}
+
+// Add model info to the streaming response interface
+interface StreamingResponse {
+  content: string;
+  routing?: {
+    agent: string;
+    confidence: number;
+    reasoning: string;
+  };
+  agent?: string;
+  modelInfo?: {
+    model: string;
+    provider: string;
+    securityLevel: string;
+    tier: string;
+  };
+  domainCapabilities?: {
+    tools: string[];
+    expertise: string[];
+    insights: any;
+  };
+  error?: string;
 }
 
 export const StreamingComposer: React.FC<StreamingComposerProps> = ({
@@ -119,6 +161,13 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
     return filterSlashCommands(availableCommands, commandQuery);
   }, [commandQuery, showCommandMenu, availableCommands, commandsLoading]);
 
+  const [currentModelInfo, setCurrentModelInfo] = useState<StreamingResponse['modelInfo'] | null>(null);
+  const [estimatedCost, setEstimatedCost] = useState<number>(0);
+
+  // Add near the top of the component, after existing state
+  const [showFeedback, setShowFeedback] = useState<{ [key: string]: boolean }>({});
+  const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
+
   if (!enabled) return null;
 
   const handleSend = async () => {
@@ -147,6 +196,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         body: JSON.stringify({
           query: currentInput,
           context,
+          agentId: agentId === 'auto' ? undefined : agentId, // Let supervisor route if 'auto'
         }),
       });
 
@@ -171,6 +221,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
           const jsonString = line.replace('data: ', '');
           const parsed = JSON.parse(jsonString);
           const content = parsed.content;
+          const routing = parsed.routing;
+          const agentId = parsed.agent;
           
           if (content) {
             setMessages(prev => {
@@ -178,6 +230,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
               updated[assistantMessageIndex] = {
                 ...updated[assistantMessageIndex],
                 content: updated[assistantMessageIndex].content + content,
+                routing: routing || updated[assistantMessageIndex].routing,
+                agentId: agentId || updated[assistantMessageIndex].agentId,
               };
               return updated;
             });
@@ -202,39 +256,268 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
     <div className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[75%] whitespace-pre-wrap break-words px-4 py-2 rounded-2xl text-sm shadow ${
         role === 'user'
-          ? 'bg-primary text-white rounded-br-none'
-          : 'bg-gray-200 text-gray-900 rounded-bl-none'
+          ? 'bg-primary text-primary-foreground rounded-br-none'
+          : 'bg-gray-200 text-foreground rounded-bl-none'
       }`}>
         {children}
       </div>
     </div>
   );
 
+  // Add model info display component
+  const ModelInfoDisplay = ({ modelInfo }: { modelInfo: StreamingResponse['modelInfo'] }) => {
+    if (!modelInfo) return null;
+    
+    return (
+      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+        <div className="flex items-center space-x-1" title={`AI Model: ${modelInfo.model} (${modelInfo.provider})`}>
+          <Cpu className="h-3 w-3" />
+          <span>{modelInfo.model}</span>
+        </div>
+
+        <div className="flex items-center space-x-1 px-2 py-1 bg-muted rounded text-xs" title={`Security Level: ${modelInfo.securityLevel}`}>
+          <Shield className="h-3 w-3" />
+          <span>{modelInfo.securityLevel}</span>
+        </div>
+
+        {estimatedCost > 0 && (
+          <div className="flex items-center space-x-1" title="Estimated cost for this query">
+            <DollarSign className="h-3 w-3" />
+            <span>${estimatedCost.toFixed(4)}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Enhanced handleSend with billing integration
+  const handleSendWithBilling = async () => {
+    if (!input.trim()) return;
+    
+    const currentInput = input;
+    handleSend(); // Use existing handleSend logic
+    
+    // Add billing tracking in background
+    setTimeout(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        // Simple billing record for demonstration
+        await aiUsageBillingService.recordUsageForBilling(
+          session.user.id,
+          session.user.user_metadata?.organization_id,
+          agentId,
+          'unknown', // model will be filled by edge function
+          'hybrid', // provider
+          currentInput.length, // approximate tokens
+          0.001, // estimated cost
+          'operations',
+          {
+            departmentId: agentId,
+            projectId: conversationId || 'default'
+          }
+        );
+      } catch (error) {
+        console.error('Error recording billing:', error);
+      }
+    }, 1000);
+  };
+
+  // Add feedback handler for continuous improvement
+  const handleMessageFeedback = async (messageIndex: number, rating: number) => {
+    try {
+      const message = messages[messageIndex];
+      if (!message) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      await continuousImprovementService.trackUserFeedback({
+        userId: session.user.id,
+        conversationId: conversationId || 'current',
+        messageId: `msg_${messageIndex}`,
+        rating: rating as 1 | 2 | 3 | 4 | 5,
+        feedbackType: 'overall',
+        agentId: message.agentId || agentId,
+        modelUsed: 'unknown',
+        provider: 'unknown'
+      });
+
+      // Update message with feedback (extend ChatMessage type if needed)
+      console.log(`Feedback recorded: ${rating} stars for message ${messageIndex}`);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
+  };
+
+  // Add this function after the existing functions
+  const handleFeedback = async (messageId: string, rating: number, feedback?: string) => {
+    try {
+      await continuousImprovementService.submitUserFeedback(user?.id || '', {
+        messageId,
+        rating,
+        feedback,
+        timestamp: new Date().toISOString()
+      });
+      
+      setUserRatings(prev => ({ ...prev, [messageId]: rating }));
+      setShowFeedback(prev => ({ ...prev, [messageId]: false }));
+      
+      // Show success message
+      toast({
+        title: "Feedback submitted",
+        description: "Thank you for helping us improve!",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      toast({
+        title: "Error",
+        description: "Failed to submit feedback. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
+
+  // Add this component after the existing components but before the main return
+  const FeedbackWidget: React.FC<{ messageId: string; isVisible: boolean }> = ({ messageId, isVisible }) => {
+    const [selectedRating, setSelectedRating] = useState<number | null>(null);
+    const [feedbackText, setFeedbackText] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    if (!isVisible) return null;
+
+    const handleSubmit = async () => {
+      if (!selectedRating) return;
+      
+      setIsSubmitting(true);
+      await handleFeedback(messageId, selectedRating, feedbackText);
+      setIsSubmitting(false);
+      setSelectedRating(null);
+      setFeedbackText('');
+    };
+
+    return (
+      <div className="mt-3 p-4 bg-background rounded-lg border">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-foreground/90">How was this response?</span>
+          <button
+            onClick={() => setShowFeedback(prev => ({ ...prev, [messageId]: false }))}
+            className="text-muted-foreground hover:text-muted-foreground"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="flex items-center gap-2 mb-2">
+          {[1, 2, 3, 4, 5].map((rating) => (
+            <button
+              key={rating}
+              onClick={() => setSelectedRating(rating)}
+              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors ${
+                selectedRating === rating
+                  ? 'bg-primary border-primary text-primary-foreground'
+                  : 'border-border text-muted-foreground hover:border-border'
+              }`}
+            >
+              {rating}
+            </button>
+          ))}
+        </div>
+        
+        <textarea
+          value={feedbackText}
+          onChange={(e) => setFeedbackText(e.target.value)}
+          placeholder="Any additional feedback? (optional)"
+          className="w-full p-2 border border-border rounded text-sm resize-none"
+          rows={2}
+        />
+        
+        <div className="flex gap-2 mt-2">
+          <Button
+            size="sm"
+            onClick={handleSubmit}
+            disabled={!selectedRating || isSubmitting}
+            className="flex-1"
+          >
+            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowFeedback(prev => ({ ...prev, [messageId]: false }))}
+          >
+            Skip
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="streaming-composer flex flex-col h-full max-h-[90vh] gap-2 relative">
       <Card className="flex-1 overflow-hidden">
         <CardContent ref={chatRef} className="overflow-y-auto space-y-2 p-4 h-full">
-          {messages.map((m, idx) => (
-            <ChatBubble key={idx} role={m.role}>
-              {m.role === 'assistant' ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeHighlight]}
-                  className="prose prose-sm dark:prose-invert max-w-none"
-                >
-                  {m.content || (idx === assistantStreamingIndex && isStreaming ? '…' : '')}
-                </ReactMarkdown>
-              ) : (
-                m.content
-              )}
-              {m.sources && m.sources.length > 0 && (
-                <div className="flex gap-1 mt-2">
-                  {m.sources.map((s, i) => (
-                    <SourceChip key={i} index={i + 1} onClick={() => setActiveSource(s)} />
-                  ))}
+          {messages.map((message, index) => (
+            <div key={index} className="mb-4">
+              <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-3xl rounded-lg px-4 py-2 ${
+                  message.role === 'user' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'bg-muted text-foreground'
+                }`}>
+                  <div className="prose prose-sm max-w-none">
+                    {message.content}
+                  </div>
+                  
+                  {message.role === 'assistant' && message.modelInfo && (
+                    <div className="mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
+                      <div className="flex items-center justify-between">
+                        <span>
+                          {message.modelInfo.model} • {message.modelInfo.provider}
+                          {message.modelInfo.securityLevel && (
+                            <span className="ml-2 px-1 py-0.5 bg-gray-200 rounded text-xs">
+                              {message.modelInfo.securityLevel}
+                            </span>
+                          )}
+                        </span>
+                        {message.modelInfo.cost && (
+                          <span>${message.modelInfo.cost.toFixed(4)}</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {message.role === 'assistant' && (
+                <div className="ml-4 mt-2">
+                  {userRatings[message.id || index.toString()] ? (
+                    <div className="text-sm text-muted-foreground">
+                      ✓ Rated {userRatings[message.id || index.toString()]}/5
+                    </div>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setShowFeedback(prev => ({ 
+                          ...prev, 
+                          [message.id || index.toString()]: true 
+                        }))}
+                        className="text-sm text-primary hover:text-primary underline"
+                      >
+                        Rate this response
+                      </button>
+                      <FeedbackWidget 
+                        messageId={message.id || index.toString()}
+                        isVisible={showFeedback[message.id || index.toString()] || false}
+                      />
+                    </>
+                  )}
                 </div>
               )}
-            </ChatBubble>
+            </div>
           ))}
           {isStreaming && !hasFirstChunk && (
             <ChatBubble role="assistant">
@@ -304,10 +587,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
           }
 
           if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (!isStreaming && input.trim()) {
-              handleSend();
-            }
+                          e.preventDefault();
+              if (!isStreaming && input.trim()) {
+                handleSendWithBilling();
+              }
           }
         }}
         placeholder="Type your message..."
@@ -325,10 +608,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
           query={commandQuery}
         />
       )}
-      <Button onClick={handleSend} disabled={!input || isStreaming} className="self-end">
+              <Button onClick={handleSendWithBilling} disabled={!input || isStreaming} className="self-end">
         {isStreaming ? 'Streaming…' : 'Send'}
       </Button>
-      {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
+      {error && <p className="text-destructive text-sm mb-2">{error}</p>}
 
       {/* Source Drawer */}
       <SourceDrawer open={!!activeSource} source={activeSource} onClose={() => setActiveSource(null)} />

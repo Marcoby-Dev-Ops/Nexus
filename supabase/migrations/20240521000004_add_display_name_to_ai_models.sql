@@ -1,7 +1,3 @@
--- Add display_name column
-ALTER TABLE public.ai_models
-ADD COLUMN display_name TEXT;
-
 -- Update existing models with a display_name
 UPDATE public.ai_models
 SET display_name = 'GPT-4o'

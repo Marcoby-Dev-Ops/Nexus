@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 import PropTypes from 'prop-types';
 
 /**
@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
  * @description Props for the Alert component.
  */
 export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'error' | 'success' | 'warning';
+  variant?: 'default' | 'error' | 'success' | 'warning' | 'destructive';
   action?: React.ReactNode;
 }
 
@@ -34,7 +34,8 @@ export const Alert: React.FC<AlertProps> = ({
     default: 'bg-muted text-foreground',
     error: 'bg-destructive/10 text-destructive',
     success: 'bg-success/10 text-success',
-    warning: 'bg-warning/10 text-warning'
+    warning: 'bg-warning/10 text-warning',
+    destructive: 'bg-destructive/10 text-destructive'
   };
 
   return (
@@ -72,7 +73,7 @@ Alert.displayName = 'Alert';
 AlertDescription.displayName = 'AlertDescription';
 
 Alert.propTypes = {
-  variant: PropTypes.oneOf(['default', 'error', 'success', 'warning']),
+  variant: PropTypes.oneOf(['default', 'error', 'success', 'warning', 'destructive']),
   action: PropTypes.node,
   className: PropTypes.string,
 };

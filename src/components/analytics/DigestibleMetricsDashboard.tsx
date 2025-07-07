@@ -571,7 +571,7 @@ const DigestibleMetricsDashboard: React.FC = () => {
                   )}
 
                   {/* Context */}
-                  <div className="space-y-3 pt-3 border-t">
+                  <div className="space-y-4 pt-3 border-t">
                     <div>
                       <h5 className="font-medium text-sm mb-1">What this means</h5>
                       <p className="text-sm text-muted-foreground">{metric.context.whatItMeans}</p>
@@ -658,7 +658,7 @@ const DigestibleMetricsDashboard: React.FC = () => {
                       {story.recommendations.map((rec, index) => {
                         const badges = getEffortImpactBadge(rec.effort, rec.impact);
                         return (
-                          <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                          <div key={index} className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
                             <div>
                               <span className="font-medium text-sm">{rec.action}</span>
                               <div className="flex items-center space-x-2 mt-1">

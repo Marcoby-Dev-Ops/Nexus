@@ -93,15 +93,15 @@ export const Login = () => {
           </div>
           {/* Feature Highlights */}
           <ul className="space-y-4 w-full mb-8">
-            <li className="flex items-center gap-3 text-primary-foreground/90">
+            <li className="flex items-center gap-4 text-primary-foreground/90">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
               Unified dashboard for all business operations
             </li>
-            <li className="flex items-center gap-3 text-primary-foreground/90">
+            <li className="flex items-center gap-4 text-primary-foreground/90">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               AI-powered analytics and automation
             </li>
-            <li className="flex items-center gap-3 text-primary-foreground/90">
+            <li className="flex items-center gap-4 text-primary-foreground/90">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" /></svg>
               Team collaboration and workflow management
             </li>

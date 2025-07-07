@@ -86,7 +86,7 @@ export const NotificationsWidget: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {isLoading && (
               <>
                 <Skeleton className="h-12 w-full" />
@@ -105,7 +105,7 @@ export const NotificationsWidget: React.FC = () => {
             {notifications && notifications.length > 0 && notifications.map((notification: Notification) => (
               <div
                 key={notification.id}
-                className={`flex items-start gap-3 p-3 rounded-md ${notification.read ? 'bg-muted/30' : 'bg-muted/80'}`}
+                className={`flex items-start gap-4 p-4 rounded-md ${notification.read ? 'bg-muted/30' : 'bg-muted/80'}`}
               >
                 <div className="pt-1">
                   {NOTIFICATION_ICONS[notification.type]}

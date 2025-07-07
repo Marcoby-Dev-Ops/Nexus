@@ -103,7 +103,7 @@ export const AISuggestionCard: React.FC<AISuggestionCardProps> = ({ departmentId
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Lightbulb className="w-6 h-6 text-warning" />
           <CardTitle>AI Suggestions</CardTitle>
         </div>

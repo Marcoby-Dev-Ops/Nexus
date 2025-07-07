@@ -173,7 +173,7 @@ export const EmailWidget: React.FC = () => {
             <div className="w-full mt-6 space-y-2">
               <h4 className="text-sm font-medium text-muted-foreground">Demo Emails:</h4>
               {mockEmails.slice(0, 2).map((email) => (
-                <div key={email.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border/30">
+                <div key={email.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/30 border border-border/30">
                   <Avatar>
                     <AvatarFallback>{email.fromInitials}</AvatarFallback>
                   </Avatar>
@@ -190,8 +190,8 @@ export const EmailWidget: React.FC = () => {
                     {/* Read status indicator */}
                     {!email.isRead && (
                       <div className="flex items-center mt-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
-                        <span className="text-xs text-blue-600 font-medium">Unread</span>
+                        <div className="w-2 h-2 bg-primary rounded-full mr-1"></div>
+                        <span className="text-xs text-primary font-medium">Unread</span>
                       </div>
                     )}
                   </div>
@@ -231,7 +231,7 @@ export const EmailWidget: React.FC = () => {
     return (
       <div className="space-y-1">
             {displayEmails.map((email) => (
-            <div key={email.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors group border border-transparent hover:border-border/50">
+            <div key={email.id} className="flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors group border border-transparent hover:border-border/50">
                 <Avatar>
                     <AvatarFallback>{email.fromInitials}</AvatarFallback>
                 </Avatar>
@@ -248,8 +248,8 @@ export const EmailWidget: React.FC = () => {
                     {/* Read status indicator */}
                     {!email.isRead && (
                         <div className="flex items-center mt-1">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full mr-1"></div>
-                            <span className="text-xs text-blue-600 font-medium">Unread</span>
+                            <div className="w-2 h-2 bg-primary rounded-full mr-1"></div>
+                            <span className="text-xs text-primary font-medium">Unread</span>
                         </div>
                     )}
                 </div>

@@ -1,8 +1,10 @@
-# RAG System Integration Guide
+# RAG System Implementation Guide
 
 ## Overview
 
-The **Contextual RAG (Retrieval Augmented Generation)** system transforms Nexus AI assistants from generic conversational agents into data-driven business experts. By combining real-time business data with expert personalities, users receive contextually intelligent responses that reference actual company performance metrics.
+This document provides technical implementation details for the **Contextual RAG (Retrieval Augmented Generation)** system. For architecture overview, see [RAG System Architecture](../architecture/RAG_SYSTEM_ARCHITECTURE.md). For feature descriptions, see [RAG System Features](../features/RAG_SYSTEM_FEATURES.md).
+
+The RAG system transforms Nexus AI assistants from generic conversational agents into data-driven business experts by combining real-time business data with expert personalities to deliver contextually intelligent responses.
 
 ## Architecture
 

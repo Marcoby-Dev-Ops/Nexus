@@ -6,7 +6,8 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, AlertCircle, ExternalLink, Info, Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../lib/core/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface N8nConnectionConfig {
   baseUrl: string;
@@ -26,6 +27,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
   onSkip,
   className = ''
 }) => {
+  const { user } = useAuth();
   const [config, setConfig] = useState<N8nConnectionConfig>({
     baseUrl: '',
     apiKey: '',
@@ -38,27 +40,17 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-
-  // Get current user
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setCurrentUser(user);
-    };
-    getCurrentUser();
-  }, []);
 
   // Load existing configuration if any
   useEffect(() => {
     const loadExistingConfig = async () => {
-      if (!currentUser?.id) return;
+      if (!user?.id) return;
       
       try {
         const { data, error } = await supabase
           .from('n8n_configurations')
           .select('*')
-          .eq('user_id', currentUser.id)
+          .eq('user_id', user.id)
           .eq('is_active', true)
           .single();
           
@@ -77,7 +69,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
     };
     
     loadExistingConfig();
-  }, [currentUser]);
+  }, [user]);
 
   const validateUrl = (url: string): boolean => {
     try {
@@ -147,7 +139,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
   };
 
   const saveConfiguration = async (): Promise<boolean> => {
-    if (!currentUser?.id) {
+    if (!user?.id) {
       setErrorMessage('User not authenticated');
       return false;
     }
@@ -159,14 +151,14 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
       await supabase
         .from('n8n_configurations')
         .update({ is_active: false })
-        .eq('user_id', currentUser.id);
+        .eq('user_id', user.id);
 
       // Insert new configuration
       const { error } = await supabase
         .from('n8n_configurations')
         .insert([
           {
-            user_id: currentUser.id,
+            user_id: user.id,
             base_url: config.baseUrl.replace(/\/$/, ''),
             api_key: config.apiKey,
             instance_name: config.instanceName || 'My n8n Instance',

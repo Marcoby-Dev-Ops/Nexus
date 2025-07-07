@@ -106,7 +106,7 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
   const getTokenStatusBadge = () => {
     switch (tokenStatus) {
       case 'valid':
-        return <Badge className="bg-green-100 text-green-800">Valid</Badge>;
+        return <Badge className="bg-success/10 text-success">Valid</Badge>;
       case 'expired':
         return <Badge variant="destructive">Expired</Badge>;
       case 'missing':
@@ -126,16 +126,16 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <Alert className="border-red-200 bg-red-50">
+          <Alert className="border-red-200 bg-destructive/5">
             <AlertCircle className="w-4 h-4" />
-            <AlertDescription className="text-red-800">
+            <AlertDescription className="text-destructive">
               {error}
             </AlertDescription>
           </Alert>
         )}
 
         {/* Token Status */}
-        <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
           <div className="flex items-center space-x-2">
             <span className="text-sm font-medium">Microsoft Graph Token:</span>
             {getTokenStatusBadge()}
@@ -178,9 +178,9 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
 
         {/* Sync Result */}
         {syncResult && (
-          <Alert className="border-green-200 bg-green-50">
+          <Alert className="border-green-200 bg-success/5">
             <CheckCircle2 className="w-4 h-4" />
-            <AlertDescription className="text-green-800">
+            <AlertDescription className="text-success">
               <strong>Sync Complete!</strong><br />
               Total: {syncResult.total_messages} | 
               Processed: {syncResult.processed_messages} | 

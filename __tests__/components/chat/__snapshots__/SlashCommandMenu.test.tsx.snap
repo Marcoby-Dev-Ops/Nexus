@@ -1,0 +1,378 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`SlashCommandMenu renders command menu with commands 1`] = `
+<div>
+  <div
+    aria-label="Slash command suggestions"
+    class="absolute bottom-20 left-4 w-80 z-20 bg-popover border border-border rounded-md shadow-lg overflow-hidden"
+    role="listbox"
+  >
+    <ul
+      class="max-h-48 overflow-y-auto"
+    >
+      <li
+        aria-selected="true"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-primary text-primary-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            create-task
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            productivity
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Create a task in your project management tool
+        </span>
+      </li>
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            send-invoice
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            finance
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Send a Stripe invoice to a customer
+        </span>
+      </li>
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            update-crm
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            sales
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Update a customer record in HubSpot
+        </span>
+      </li>
+    </ul>
+  </div>
+</div>
+`;
+
+exports[`SlashCommandMenu renders commands without categories 1`] = `
+<div>
+  <div
+    aria-label="Slash command suggestions"
+    class="absolute bottom-20 left-4 w-80 z-20 bg-popover border border-border rounded-md shadow-lg overflow-hidden"
+    role="listbox"
+  >
+    <ul
+      class="max-h-48 overflow-y-auto"
+    >
+      <li
+        aria-selected="true"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-primary text-primary-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            create-task
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Create a task in your project management tool
+        </span>
+      </li>
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            send-invoice
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Send a Stripe invoice to a customer
+        </span>
+      </li>
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            update-crm
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Update a customer record in HubSpot
+        </span>
+      </li>
+    </ul>
+  </div>
+</div>
+`;
+
+exports[`SlashCommandMenu renders commands without descriptions 1`] = `
+<div>
+  <div
+    aria-label="Slash command suggestions"
+    class="absolute bottom-20 left-4 w-80 z-20 bg-popover border border-border rounded-md shadow-lg overflow-hidden"
+    role="listbox"
+  >
+    <ul
+      class="max-h-48 overflow-y-auto"
+    >
+      <li
+        aria-selected="true"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-primary text-primary-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            create-task
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            productivity
+          </span>
+        </div>
+      </li>
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            send-invoice
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            finance
+          </span>
+        </div>
+      </li>
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            update-crm
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            sales
+          </span>
+        </div>
+      </li>
+    </ul>
+  </div>
+</div>
+`;
+
+exports[`SlashCommandMenu renders loading state 1`] = `
+<div>
+  <div
+    aria-label="Slash command suggestions"
+    class="absolute bottom-20 left-4 w-80 z-20 bg-popover border border-border rounded-md shadow-lg overflow-hidden"
+    role="listbox"
+  >
+    <div
+      class="px-3 py-4 text-sm text-muted-foreground flex items-center gap-2"
+    >
+      <div
+        class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"
+      />
+      Loading commands...
+    </div>
+  </div>
+</div>
+`;
+
+exports[`SlashCommandMenu renders no commands found state 1`] = `
+<div>
+  <div
+    aria-label="Slash command suggestions"
+    class="absolute bottom-20 left-4 w-80 z-20 bg-popover border border-border rounded-md shadow-lg overflow-hidden"
+    role="listbox"
+  >
+    <div
+      class="px-3 py-3 text-sm text-muted-foreground"
+    >
+      No commands found for "nonexistent"
+    </div>
+  </div>
+</div>
+`;
+
+exports[`SlashCommandMenu renders with selected command highlighted 1`] = `
+<div>
+  <div
+    aria-label="Slash command suggestions"
+    class="absolute bottom-20 left-4 w-80 z-20 bg-popover border border-border rounded-md shadow-lg overflow-hidden"
+    role="listbox"
+  >
+    <ul
+      class="max-h-48 overflow-y-auto"
+    >
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            create-task
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            productivity
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Create a task in your project management tool
+        </span>
+      </li>
+      <li
+        aria-selected="true"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-primary text-primary-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            send-invoice
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            finance
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Send a Stripe invoice to a customer
+        </span>
+      </li>
+      <li
+        aria-selected="false"
+        class="px-3 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors bg-popover text-popover-foreground"
+        role="option"
+      >
+        <div
+          class="flex items-center justify-between"
+        >
+          <span
+            class="font-medium"
+          >
+            /
+            update-crm
+          </span>
+          <span
+            class="text-xs px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground"
+          >
+            sales
+          </span>
+        </div>
+        <span
+          class="text-xs opacity-80 leading-relaxed"
+        >
+          Update a customer record in HubSpot
+        </span>
+      </li>
+    </ul>
+  </div>
+</div>
+`;

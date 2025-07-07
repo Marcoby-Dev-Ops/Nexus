@@ -160,7 +160,7 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
       
       <CardContent className="space-y-4">
         {syncStats.error ? (
-          <div className="flex items-center space-x-2 text-red-600">
+          <div className="flex items-center space-x-2 text-destructive">
             <AlertCircle className="w-4 h-4" />
             <span className="text-sm">{syncStats.error}</span>
           </div>
@@ -169,8 +169,8 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
             {/* Document Count */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600">Documents Synced</span>
+                <FileText className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Documents Synced</span>
               </div>
               <Badge variant="secondary" className="text-xs">
                 {syncStats.totalDocuments}
@@ -180,10 +180,10 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
             {/* Last Sync */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600">Last Sync</span>
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Last Sync</span>
               </div>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {formatLastSync(syncStats.lastSync)}
               </span>
             </div>
@@ -191,19 +191,19 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
             {/* Status Indicator */}
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Database className="w-4 h-4 text-gray-500" />
-                <span className="text-sm text-gray-600">RAG Status</span>
+                <Database className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">RAG Status</span>
               </div>
               <div className="flex items-center space-x-1">
                 {syncStats.totalDocuments > 0 ? (
                   <>
-                    <CheckCircle className="w-3 h-3 text-green-500" />
-                    <span className="text-xs text-green-600">Active</span>
+                    <CheckCircle className="w-3 h-3 text-success" />
+                    <span className="text-xs text-success">Active</span>
                   </>
                 ) : (
                   <>
                     <AlertCircle className="w-3 h-3 text-orange-500" />
-                    <span className="text-xs text-orange-600">No Documents</span>
+                    <span className="text-xs text-warning">No Documents</span>
                   </>
                 )}
               </div>
@@ -211,13 +211,13 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
 
             {/* Info */}
             {syncStats.totalDocuments > 0 && (
-              <div className="p-2 bg-blue-50 rounded text-xs text-blue-700">
+              <div className="p-2 bg-primary/5 rounded text-xs text-primary">
                 <strong>AI Ready:</strong> Your documents are available for intelligent search and contextual insights.
               </div>
             )}
 
             {syncStats.totalDocuments === 0 && (
-              <div className="p-2 bg-orange-50 rounded text-xs text-orange-700">
+              <div className="p-2 bg-orange-50 rounded text-xs text-warning">
                 <strong>Setup Needed:</strong> Connect Google Drive or OneDrive to enable document-based AI insights.
               </div>
             )}

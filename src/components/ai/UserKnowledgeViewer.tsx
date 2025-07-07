@@ -264,14 +264,22 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   const fetchIntegrationsKnowledge = async () => {
     const { data: integrations } = await supabase
       .from('user_integrations')
-      .select('*')
+      .select(`
+        *,
+        integrations!inner(category, name, slug)
+      `)
       .eq('user_id', user?.id);
 
     return {
       connected_services: integrations || [],
-      data_sources: (integrations || []).map(i => i.integration_type),
+      data_sources: (integrations || []).map(i => {
+        const integrationInfo = Array.isArray(i.integrations) ? i.integrations[0] : i.integrations;
+        return integrationInfo?.category || integrationInfo?.name || 'unknown';
+      }),
       sync_status: (integrations || []).reduce((acc, integration) => {
-        acc[integration.integration_type] = integration.status;
+        const integrationInfo = Array.isArray(integration.integrations) ? integration.integrations[0] : integration.integrations;
+        const key = integrationInfo?.category || integrationInfo?.name || 'unknown';
+        acc[key] = integration.status;
         return acc;
       }, {} as Record<string, any>)
     };
@@ -556,7 +564,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+          <h1 className="text-3xl font-bold flex items-center gap-4">
             <Brain className="h-8 w-8 text-primary" />
             What Nexus Knows About You
           </h1>
@@ -756,7 +764,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
               <CardHeader>
                 <CardTitle>Basic Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {Object.entries(knowledge.profile.basic).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
                     <span className="text-sm text-muted-foreground capitalize">
@@ -773,7 +781,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
               <CardHeader>
                 <CardTitle>Professional Information</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {Object.entries(knowledge.profile.professional).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
                     <span className="text-sm text-muted-foreground capitalize">
@@ -821,7 +829,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                   Company Information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {Object.entries(knowledge.business_context.company).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
                     <span className="text-sm text-muted-foreground capitalize">
@@ -841,7 +849,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                   Role Context
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {Object.entries(knowledge.business_context.role_context).map(([key, value]) => (
                   <div key={key}>
                     <h4 className="text-sm font-medium text-muted-foreground capitalize mb-1">
@@ -868,7 +876,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                   <h4 className="text-sm font-medium text-muted-foreground capitalize mb-2">
                     {key.replace('_', ' ')}
                   </h4>
-                  <p className="text-sm bg-muted p-3 rounded-lg">{value || 'Not defined'}</p>
+                  <p className="text-sm bg-muted p-4 rounded-lg">{value || 'Not defined'}</p>
                 </div>
               ))}
             </CardContent>
@@ -886,7 +894,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                   Session Analytics
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {Object.entries(knowledge.activity_patterns.session_data).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
                     <span className="text-sm text-muted-foreground capitalize">
@@ -911,7 +919,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                   Productivity Metrics
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {Object.entries(knowledge.activity_patterns.productivity_metrics).map(([key, value]) => (
                   <div key={key} className="flex justify-between">
                     <span className="text-sm text-muted-foreground capitalize">
@@ -955,9 +963,9 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                   Recent Personal Thoughts
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {knowledge.memory_bank.personal_thoughts.map((thought, index) => (
-                  <div key={index} className="border rounded-lg p-3">
+                  <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <Badge variant="secondary">{thought.category}</Badge>
                       <span className="text-xs text-muted-foreground">
@@ -989,9 +997,9 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
                   Business Observations
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 {knowledge.memory_bank.business_observations.map((observation, index) => (
-                  <div key={index} className="border rounded-lg p-3">
+                  <div key={index} className="border rounded-lg p-4">
                     <p className="text-sm">{observation.observation}</p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-muted-foreground">{observation.context}</span>
@@ -1055,11 +1063,16 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
             </CardHeader>
             <CardContent>
               {knowledge.integrations.connected_services.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {knowledge.integrations.connected_services.map((service, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                       <div>
-                        <h4 className="font-medium capitalize">{service.integration_type}</h4>
+                        <h4 className="font-medium capitalize">
+                          {(() => {
+                            const integrationInfo = Array.isArray(service.integrations) ? service.integrations[0] : service.integrations;
+                            return integrationInfo?.name || integrationInfo?.category || 'Unknown Service';
+                          })()}
+                        </h4>
                         <p className="text-sm text-muted-foreground">
                           Connected on {new Date(service.created_at).toLocaleDateString()}
                         </p>

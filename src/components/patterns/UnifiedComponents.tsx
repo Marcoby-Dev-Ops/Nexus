@@ -166,7 +166,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => (
   <div className="flex items-center justify-between mb-8">
     <div>
-      <div className="flex items-center gap-3 mb-2">
+      <div className="flex items-center gap-4 mb-2">
         <h1 className="text-3xl font-bold text-foreground">{title}</h1>
         {badges?.map((badge, index) => (
           <Badge key={index} variant={badge.variant || 'default'}>
@@ -257,18 +257,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   className
 }) => {
   return (
-    <div className={cn('min-h-screen bg-background text-foreground', className)}>
+    <div className={cn('text-foreground', className)}>
       <div className="container mx-auto px-4 py-6 space-y-6">
         {/* Enhanced Header */}
         <div className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-4">
             <h1 className="text-3xl font-bold text-foreground">
               {title}
             </h1>
             {badge && (
               <Badge 
                 variant="outline" 
-                className="bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border-blue-200 px-3 py-1"
+                className="bg-gradient-to-r from-blue-100 to-purple-100 text-primary border-border px-4 py-1"
               >
                 <Sparkles className="w-3 h-3 mr-1" />
                 {badge}
@@ -320,7 +320,7 @@ export const TableCard: React.FC<TableCardProps> = ({
           {description && <CardDescription>{description}</CardDescription>}
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-8 bg-gray-200 rounded animate-pulse" />
             ))}
@@ -347,7 +347,7 @@ export const TableCard: React.FC<TableCardProps> = ({
             <thead>
               <tr className="border-b border-border">
                 {headers.map((header, index) => (
-                  <th key={index} className="text-left py-2 px-3 text-sm font-medium text-muted-foreground">
+                  <th key={index} className="text-left py-2 px-4 text-sm font-medium text-muted-foreground">
                     {header}
                   </th>
                 ))}
@@ -357,7 +357,7 @@ export const TableCard: React.FC<TableCardProps> = ({
               {data.map((row, rowIndex) => (
                 <tr key={rowIndex} className="hover:bg-muted transition-colors">
                   {headers.map((header, colIndex) => (
-                    <td key={colIndex} className="py-3 px-3 text-sm text-foreground">
+                    <td key={colIndex} className="py-3 px-4 text-sm text-foreground">
                       {row[header.toLowerCase().replace(/\s+/g, '_')] || '-'}
                     </td>
                   ))}

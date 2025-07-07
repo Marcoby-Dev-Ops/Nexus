@@ -110,7 +110,10 @@ class DashboardService {
       // Data sources from user_integrations
       const { data: dataSources, error: dataSourcesError } = await supabase
         .from('user_integrations')
-        .select('id, integration_type')
+        .select(`
+          id,
+          integrations!inner(category)
+        `)
         .eq('user_id', user.id)
         .eq('status', 'connected');
 
@@ -170,7 +173,11 @@ class DashboardService {
       // Automations running from active integrations
       const { data: automations, error: automationsError } = await supabase
         .from('user_integrations')
-        .select('id, integration_type, status')
+        .select(`
+          id,
+          status,
+          integrations!inner(category)
+        `)
         .eq('user_id', user.id)
         .eq('status', 'connected');
 
@@ -274,16 +281,21 @@ class DashboardService {
       // Get recent integration activity (ACT)
       const { data: recentIntegrations } = await supabase
         .from('user_integrations')
-        .select('created_at, integration_type')
+        .select(`
+          created_at,
+          integrations!inner(category, name)
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1);
 
       if (recentIntegrations?.[0]) {
         const integration = recentIntegrations[0];
+        const integrationInfo = Array.isArray(integration.integrations) ? integration.integrations[0] : integration.integrations;
+        const integrationName = integrationInfo?.name || integrationInfo?.category || 'Unknown';
         activities.push({
           type: 'act',
-          title: `${integration.integration_type} Integration Automated`,
+          title: `${integrationName} Integration Automated`,
           department: 'Operations',
           time: this.getTimeAgo(integration.created_at),
           status: 'completed'

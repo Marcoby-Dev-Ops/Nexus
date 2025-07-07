@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, MapPin, Globe, Save } from 'lucide-react';
+import { User, MapPin, Globe, Save, CheckCircle, AlertTriangle } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -12,6 +12,7 @@ import { supabase } from '@/lib/core/supabase';
 import type { Database } from '@/lib/core/database.types';
 import { Separator } from '@/components/ui/Separator';
 import { analyticsService } from '@/lib/services/analyticsService';
+import AddressAutocomplete from '@/components/forms/AddressAutocomplete';
 
 /**
  * AccountSettings - Personal account settings page
@@ -21,7 +22,7 @@ import { analyticsService } from '@/lib/services/analyticsService';
 type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
 
 const AccountSettings: React.FC = () => {
-  const { user, updateProfile, updateCompany } = useAuth();
+  const { user, session, updateProfile, updateCompany } = useAuth();
   const { addNotification } = useNotifications();
 
   const [loading, setLoading] = useState(false);
@@ -81,67 +82,125 @@ const AccountSettings: React.FC = () => {
     handleValueChange(e.target.name, e.target.value);
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!user) return;
-    setLoading(true);
-
+  const handleResendVerification = async () => {
+    if (!user?.email) return;
+    
     try {
-      // 1. Update profile table first (important fields)
-      const profileUpdates: Record<string, any> = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        phone: formData.phone,
-        address: {
-          line1: formData.businessAddress1,
-          line2: formData.businessAddress2,
-          city: formData.city,
-          postal_code: formData.postalCode,
-          country: formData.country,
-        },
-        timezone: formData.timezone,
-        preferences: { language: formData.language },
-      };
-
-      await updateProfile(profileUpdates as any);
-
-      // 2. Attempt to update auth user metadata (non-critical)
-      const { error: authError } = await supabase.auth.updateUser({
-        data: {
-          full_name: `${formData.firstName} ${formData.lastName}`.trim(),
-          language: formData.language,
-          timezone: formData.timezone,
-        },
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: user.email,
       });
-
-      if (authError) {
-        // Log but don't block profile save
-        console.warn('Auth metadata update failed', authError);
-      }
-
-      // Update organization if name changed and user has company_id
-      if (formData.orgName && formData.orgName !== user.company?.name) {
-        await updateCompany({ name: formData.orgName });
-      }
-
-      analyticsService.track('profile_updated', {
-        user_id: user.id,
-        updated_fields: Object.keys(profileUpdates),
-      });
-
+      
+      if (error) throw error;
+      
       addNotification({
-        message: 'Profile updated successfully',
+        message: 'Verification email sent successfully',
         type: 'success',
       });
     } catch (err) {
       addNotification({
-        message: err instanceof Error ? err.message : 'Failed to update profile',
+        message: err instanceof Error ? err.message : 'Failed to send verification email',
+        type: 'error',
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!user) {
+      addNotification({
+        message: 'No user session found. Please log in again.',
+        type: 'error',
+      });
+      return;
+    }
+    
+    setLoading(true);
+    console.log('[AccountSettings] Starting profile update...', formData);
+
+    try {
+      // 1. Update profile table first (important fields)
+      const profileUpdates: Record<string, any> = {
+        first_name: formData.firstName || null,
+        last_name: formData.lastName || null,
+        phone: formData.phone || null,
+        address: {
+          line1: formData.businessAddress1 || null,
+          line2: formData.businessAddress2 || null,
+          city: formData.city || null,
+          postal_code: formData.postalCode || null,
+          country: formData.country || null,
+        },
+        timezone: formData.timezone || 'UTC',
+        preferences: { language: formData.language || 'en' },
+      };
+
+      // Update display name if first/last name provided
+      if (formData.firstName || formData.lastName) {
+        profileUpdates.display_name = `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || null;
+      }
+
+      console.log('[AccountSettings] Profile updates:', profileUpdates);
+      await updateProfile(profileUpdates as any);
+      console.log('[AccountSettings] Profile updated successfully');
+
+      // 2. Attempt to update auth user metadata (non-critical)
+      try {
+        const { error: authError } = await supabase.auth.updateUser({
+          data: {
+            full_name: `${formData.firstName || ''} ${formData.lastName || ''}`.trim() || null,
+            language: formData.language || 'en',
+            timezone: formData.timezone || 'UTC',
+          },
+        });
+
+        if (authError) {
+          console.warn('[AccountSettings] Auth metadata update failed:', authError);
+        } else {
+          console.log('[AccountSettings] Auth metadata updated successfully');
+        }
+      } catch (authErr) {
+        console.warn('[AccountSettings] Auth metadata update error:', authErr);
+      }
+
+      // 3. Update organization if name changed and user has company_id
+      if (formData.orgName && formData.orgName !== user.company?.name) {
+        try {
+          await updateCompany({ name: formData.orgName });
+          console.log('[AccountSettings] Company updated successfully');
+        } catch (companyErr) {
+          console.warn('[AccountSettings] Company update failed:', companyErr);
+          // Don't fail the entire operation for company update
+        }
+      }
+
+      // 4. Track analytics
+      try {
+        analyticsService.track('profile_updated', {
+          user_id: user.id,
+          updated_fields: Object.keys(profileUpdates),
+        });
+      } catch (analyticsErr) {
+        console.warn('[AccountSettings] Analytics tracking failed:', analyticsErr);
+      }
+
+      addNotification({
+        message: 'Profile updated successfully!',
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('[AccountSettings] Profile update failed:', err);
+      addNotification({
+        message: err instanceof Error ? err.message : 'Failed to update profile. Please try again.',
         type: 'error',
       });
     } finally {
       setLoading(false);
     }
   };
+  
+  // Check if user email is verified
+  const isEmailVerified = session?.user?.email_confirmed_at;
   
   return (
     <div className="space-y-6">
@@ -151,6 +210,31 @@ const AccountSettings: React.FC = () => {
       </div>
       
       <Separator />
+      
+      {!isEmailVerified && (
+        <Card className="border-warning bg-warning/5">
+          <CardContent className="p-4">
+            <div className="flex items-start space-x-4">
+              <AlertTriangle className="h-5 w-5 text-warning mt-0.5" />
+              <div>
+                <h3 className="font-medium text-warning">Email Verification Required</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Please verify your email address to access all account features and save your profile information.
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2 border-warning text-warning hover:bg-warning/10"
+                  onClick={handleResendVerification}
+                  disabled={loading}
+                >
+                  Resend Verification Email
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Personal Information */}
@@ -188,14 +272,44 @@ const AccountSettings: React.FC = () => {
             
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="Email Address" 
-                defaultValue={user?.email || ''}
-                disabled
-              />
-              <p className="text-xs text-muted-foreground">Your email address cannot be changed</p>
+              <div className="flex items-center space-x-2">
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="Email Address" 
+                  value={user?.email || ''}
+                  disabled
+                  className="flex-1"
+                />
+                <div className="flex items-center space-x-2">
+                  {user?.email ? (
+                    <div className="flex items-center space-x-1 text-success">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-xs">Verified</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-1 text-warning">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="text-xs">Loading...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  {user?.email ? 'Your email address is verified and cannot be changed' : 'Loading email address...'}
+                </p>
+                {user?.email && (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleResendVerification}
+                    disabled={loading}
+                  >
+                    Resend Verification
+                  </Button>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">
@@ -222,13 +336,25 @@ const AccountSettings: React.FC = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="businessAddress1">Business Address Line 1</Label>
-              <Input 
-                id="businessAddress1" 
-                name="businessAddress1"
-                placeholder="Street, Building No." 
+              <AddressAutocomplete
+                label="Business Address"
+                placeholder="Start typing your business address..."
                 value={formData.businessAddress1}
-                onChange={handleChange}
+                onInputChange={(value) => setFormData(prev => ({ ...prev, businessAddress1: value }))}
+                onChange={(address) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    businessAddress1: address.formatted_address,
+                    businessAddress2: address.street_number && address.route 
+                      ? `${address.street_number} ${address.route}` 
+                      : prev.businessAddress2,
+                    city: address.locality || prev.city,
+                    postalCode: address.postal_code || prev.postalCode,
+                    country: address.country || prev.country,
+                  }));
+                }}
+                showBusinessSuggestions={true}
+                countryRestriction={['US', 'CA', 'GB', 'AU']}
               />
             </div>
 
@@ -237,7 +363,7 @@ const AccountSettings: React.FC = () => {
               <Input 
                 id="businessAddress2" 
                 name="businessAddress2"
-                placeholder="Suite, Floor, etc." 
+                placeholder="Suite, Floor, etc. (optional)" 
                 value={formData.businessAddress2}
                 onChange={handleChange}
               />
@@ -283,7 +409,7 @@ const AccountSettings: React.FC = () => {
                   value={formData.timezone}
                   onValueChange={(value) => handleValueChange('timezone', value)}
                 >
-                  <SelectTrigger id="timezone">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select your timezone" />
                   </SelectTrigger>
                   <SelectContent>
@@ -313,7 +439,7 @@ const AccountSettings: React.FC = () => {
                   value={formData.language}
                   onValueChange={(value) => handleValueChange('language', value)}
                 >
-                  <SelectTrigger id="language">
+                  <SelectTrigger>
                     <SelectValue placeholder="Select your language" />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,8 +463,11 @@ const AccountSettings: React.FC = () => {
           </CardContent>
         </Card>
         
-        <CardFooter className="flex justify-end">
-          <Button type="submit" disabled={loading}>
+        <CardFooter className="flex justify-between items-center">
+          <div className="text-sm text-muted-foreground">
+            {user?.profile ? 'Profile loaded' : 'Profile loading...'}
+          </div>
+          <Button type="submit" disabled={loading || !user}>
             <Save className="h-4 w-4 mr-2" />
             {loading ? 'Saving...' : 'Save All'}
           </Button>

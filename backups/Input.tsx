@@ -1,41 +1,26 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import * as React from "react"
 
 /**
  * @interface InputProps
  * @description Props for the Input component.
  */
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  error?: string;
-  icon?: React.ReactNode;
-}
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-/**
- * @name Input
- * @description A styled input field with error and icon support.
- * @param {InputProps} props - The props for the component.
- * @returns {JSX.Element} The rendered Input component.
- */
-export const Input: React.FC<InputProps> = React.memo(({ error, icon, className = '', ...props }) => (
-  <div className="flex flex-col gap-1">
-    <div className={`relative flex items-center ${error ? 'border-destructive' : 'border-input'} border rounded-md px-4 py-4 bg-background ${className}`}>
-      {icon && <span className="mr-2 text-muted-foreground">{icon}</span>}
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
       <input
-        className="flex-1 bg-transparent outline-none"
-        aria-invalid={!!error}
+        type={type}
+        className={`flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className || ''}`}
+        ref={ref}
         {...props}
       />
-    </div>
-    {error && <span className="text-xs text-destructive mt-1">{error}</span>}
-  </div>
-));
+    )
+  }
+)
+Input.displayName = "Input"
 
-Input.displayName = 'Input';
-
-Input.propTypes = {
-  error: PropTypes.string,
-  icon: PropTypes.node,
-  className: PropTypes.string,
-};
-
+export { Input };
+export type { InputProps };
+// Backward compatibility default export
 export default Input; 

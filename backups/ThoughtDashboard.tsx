@@ -4,58 +4,74 @@
  * Based on Marcoby Nexus diagrams - displays ideas, tasks, reminders, and workflow
  */
 
-import React, { useState, useEffect } from 'react';
-import { 
-  Lightbulb, 
-  CheckSquare, 
-  Bell, 
-  BarChart3, 
-  Filter,
-  Plus,
-  ArrowRight,
-  Target,
-  TrendingUp,
-  Brain
-} from 'lucide-react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/Dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
 import { Progress } from '../ui/Progress';
+import { Avatar, AvatarFallback } from '../ui/Avatar';
+import { Skeleton } from '../ui/Skeleton';
 import { Alert } from '../ui/Alert';
-import { Avatar } from '../ui/Avatar';
-import { Spinner } from '../ui/Spinner';
-import { InteractivePrompts } from '../ai/InteractivePrompts';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/Tabs';
+import { 
+  Plus, 
+  Search, 
+  Brain, 
+  Lightbulb, 
+  BookOpen, 
+  Clock, 
+  Tag, 
+  Zap, 
+  TrendingUp,
+  Edit,
+  Trash2,
+  Eye,
+  X,
+  ArrowRight,
+  BarChart3,
+  Target
+} from 'lucide-react';
 import { thoughtsService } from '../../lib/services/thoughtsService';
+import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/core/supabase';
+import { logger } from '../../lib/security/logger';
+import { InteractivePrompts } from '@/components/ai/InteractivePrompts';
 import type { 
   Thought, 
-  ThoughtMetrics, 
   ThoughtCategory, 
-  ThoughtStatus,
-  WorkflowStage 
+  ThoughtMetrics,
+  CreateThoughtRequest,
+  UpdateThoughtRequest
 } from '../../lib/types/thoughts';
+
+export interface ThoughtDashboardHandle {
+  refresh: () => void;
+}
 
 interface ThoughtDashboardProps {
   className?: string;
 }
 
 const CATEGORY_CONFIG = {
-      idea: { icon: Lightbulb, label: 'Ideas', color: 'bg-warning/10 text-warning-foreground' },
-  task: { icon: CheckSquare, label: 'Tasks', color: 'bg-primary/10 text-primary' },
-  reminder: { icon: Bell, label: 'Reminders', color: 'bg-secondary/10 text-purple-800' },
+  idea: { icon: Lightbulb, label: 'Ideas', color: 'bg-warning/10 text-warning-foreground' },
+  reminder: { icon: Clock, label: 'Reminders', color: 'bg-accent/10 text-accent-foreground' },
   update: { icon: TrendingUp, label: 'Updates', color: 'bg-success/10 text-success' }
 };
 
 const STATUS_CONFIG = {
   future_goals: { label: 'Future Goals', color: 'bg-muted text-foreground' },
-      concept: { label: 'Concept', color: 'bg-warning/10 text-warning-foreground' },
+  concept: { label: 'Concept', color: 'bg-warning/10 text-warning-foreground' },
   in_progress: { label: 'In Progress', color: 'bg-primary/10 text-primary' },
   completed: { label: 'Completed', color: 'bg-success/10 text-success' },
-  pending: { label: 'Pending', color: 'bg-orange-100 text-orange-800' },
-  reviewed: { label: 'Reviewed', color: 'bg-indigo-100 text-indigo-800' },
-      implemented: { label: 'Implemented', color: 'bg-success/10 text-success-foreground' },
+  pending: { label: 'Pending', color: 'bg-warning/10 text-warning' },
+  reviewed: { label: 'Reviewed', color: 'bg-primary/10 text-primary' },
+  implemented: { label: 'Implemented', color: 'bg-success/10 text-success-foreground' },
   not_started: { label: 'Not Started', color: 'bg-muted text-foreground' },
-  upcoming: { label: 'Upcoming', color: 'bg-cyan-100 text-cyan-800' },
+  upcoming: { label: 'Upcoming', color: 'bg-secondary/10 text-secondary' },
   due: { label: 'Due', color: 'bg-destructive/10 text-destructive' },
   overdue: { label: 'Overdue', color: 'bg-destructive/20 text-destructive' }
 };
@@ -63,13 +79,12 @@ const STATUS_CONFIG = {
 const WORKFLOW_STAGES = [
   { id: 'create_idea', label: 'Create Idea', icon: Plus },
   { id: 'update_idea', label: 'Update Idea', icon: TrendingUp },
-  { id: 'implement_idea', label: 'Implement Idea', icon: Target },
-  { id: 'achievement', label: 'Achievement', icon: CheckSquare }
+  { id: 'implement_idea', label: 'Implement Idea', icon: BookOpen },
+  { id: 'achievement', label: 'Achievement', icon: BookOpen }
 ];
 
-export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
-  className = ''
-}) => {
+export const ThoughtDashboard = forwardRef<ThoughtDashboardHandle, ThoughtDashboardProps>(
+({ className = '' }, ref) => {
   const [thoughts, setThoughts] = useState<Thought[]>([]);
   const [metrics, setMetrics] = useState<ThoughtMetrics | null>(null);
   const [activeTab, setActiveTab] = useState<ThoughtCategory | 'all'>('all');
@@ -99,6 +114,8 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
       setIsLoading(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({ refresh: loadDashboardData }), []);
 
   const handleThoughtCreated = () => {
     loadDashboardData();
@@ -143,9 +160,9 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
             return (
               <div
                 key={stage.id}
-                className={`flex items-center gap-1 px-4 py-4 rounded ${
+                className={`flex items-center gap-1 px-2 py-1 rounded ${
                   isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
-                } ${isCurrent ? 'ring-2 ring-blue-500' : ''}`}
+                } ${isCurrent ? 'ring-2 ring-primary' : ''}`}
               >
                 <Icon className="h-3 w-3" />
                 <span className="hidden sm:inline">{stage.label}</span>
@@ -190,23 +207,11 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
               <p className="text-xs text-muted-foreground">Goals or initiatives</p>
             </div>
 
-            {/* Tasks Circle */}
-            <div className="text-center">
-              <div className="relative mx-auto w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <CheckSquare className="h-8 w-8 text-primary" />
-                <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                  {metrics.thoughts_by_category.task || 0}
-                </div>
-              </div>
-              <p className="font-medium">Tasks</p>
-              <p className="text-xs text-muted-foreground">Actions to complete ideas</p>
-            </div>
-
             {/* Reminders Circle */}
             <div className="text-center">
-              <div className="relative mx-auto w-24 h-24 bg-secondary/10 rounded-full flex items-center justify-center mb-4">
-                <Bell className="h-8 w-8 text-secondary" />
-                <div className="absolute -top-2 -right-2 bg-secondary text-secondary-foreground text-xs rounded-full w-6 h-6 flex items-center justify-center">
+              <div className="relative mx-auto w-24 h-24 bg-accent/10 rounded-full flex items-center justify-center mb-4">
+                <Clock className="h-8 w-8 text-accent" />
+                <div className="absolute -top-2 -right-2 bg-accent text-accent-foreground text-xs rounded-full w-6 h-6 flex items-center justify-center">
                   {metrics.thoughts_by_category.reminder || 0}
                 </div>
               </div>
@@ -236,7 +241,7 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
     
     return (
       <Card key={thought.id} className="hover:shadow-md transition-shadow">
-        <CardContent className="p-4">
+        <CardContent className="pt-6">
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-2">
               <Icon className="h-4 w-4" />
@@ -248,11 +253,9 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
               <Badge variant="outline" className={statusConfig.color}>
                 {statusConfig.label}
               </Badge>
-              <Avatar 
-                initials="U" 
-                className="w-6 h-6 text-xs"
-                alt="Thought creator"
-              />
+              <Avatar className="w-6 h-6 text-xs">
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
             </div>
           </div>
           
@@ -285,50 +288,34 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Thoughts</p>
-                <p className="text-2xl font-bold">{metrics.total_thoughts}</p>
-              </div>
-              <Brain className="h-8 w-8 text-muted-foreground" />
-            </div>
+          <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
+            <Brain className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Total Thoughts</p>
+            <p className="text-2xl font-bold">{metrics.total_thoughts}</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Completion Rate</p>
-                <p className="text-2xl font-bold">{Math.round(metrics.completion_rate)}%</p>
-              </div>
-              <BarChart3 className="h-8 w-8 text-muted-foreground" />
-            </div>
+          <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
+            <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Completion Rate</p>
+            <p className="text-2xl font-bold">{Math.round(metrics.completion_rate)}%</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Active Ideas</p>
-                <p className="text-2xl font-bold">{metrics.active_ideas}</p>
-              </div>
-              <Lightbulb className="h-8 w-8 text-muted-foreground" />
-            </div>
+          <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
+            <Lightbulb className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Active Ideas</p>
+            <p className="text-2xl font-bold">{metrics.active_ideas}</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Productivity Score</p>
-                <p className="text-2xl font-bold">{metrics.productivity_score}</p>
-              </div>
-              <Target className="h-8 w-8 text-muted-foreground" />
-            </div>
+          <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
+            <Target className="h-8 w-8 text-muted-foreground" />
+            <p className="text-sm text-muted-foreground">Productivity Score</p>
+            <p className="text-2xl font-bold">{metrics.productivity_score}</p>
           </CardContent>
         </Card>
       </div>
@@ -338,11 +325,28 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
   // ====== Main Render ======
   
   if (isLoading) {
+    // Render skeleton placeholders that mimic the dashboard layout so the user
+    // perceives faster loading and avoids layout shift.
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Spinner size={32} className="mx-auto mb-4" />
-          <p>Loading your thoughts...</p>
+      <div className={`space-y-6 ${className}`}>
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-8 w-24" />
+        </div>
+
+        {/* Metrics overview skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, idx) => (
+            <Skeleton key={idx} className="h-24 w-full" />
+          ))}
+        </div>
+
+        {/* Thought cards skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <Skeleton key={idx} className="h-40 w-full" />
+          ))}
         </div>
       </div>
     );
@@ -402,7 +406,6 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="idea">Ideas</TabsTrigger>
-          <TabsTrigger value="task">Tasks</TabsTrigger>
           <TabsTrigger value="reminder">Reminders</TabsTrigger>
           <TabsTrigger value="update">Updates</TabsTrigger>
         </TabsList>
@@ -410,7 +413,7 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
         <TabsContent value={activeTab} className="mt-6">
           {filteredThoughts.length === 0 ? (
             <Card>
-              <CardContent className="p-8 text-center">
+              <CardContent className="text-center">
                 <Brain className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <p className="text-lg font-medium mb-2">No thoughts yet</p>
                 <p className="text-muted-foreground mb-4">
@@ -423,7 +426,11 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${
+                filteredThoughts.length === 1 ? 'justify-items-center' : ''
+              }`}
+            >
               {filteredThoughts.map(renderThoughtCard)}
             </div>
           )}
@@ -431,4 +438,6 @@ export const ThoughtDashboard: React.FC<ThoughtDashboardProps> = ({
       </Tabs>
     </div>
   );
-}; 
+});
+
+ThoughtDashboard.displayName = 'ThoughtDashboard'; 

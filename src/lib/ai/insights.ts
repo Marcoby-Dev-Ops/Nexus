@@ -1,4 +1,4 @@
-import type { Integration } from '@prisma/client';
+import type { Integration } from '@/types/supabase';
 import OpenAI from 'openai';
 
 const openai = new OpenAI({

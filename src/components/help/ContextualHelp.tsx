@@ -90,7 +90,7 @@ const helpContent: HelpContent = {
       'Request insights: "What should I focus on today?"',
       'Ask for recommendations: "How can I improve my cash flow?"'
     ],
-    relatedJourneys: ['getting-started', 'ai-transformation'],
+    relatedJourneys: ['getting-started', 'ai-hub'],
     quickActions: [
       { label: 'Start Chat', action: 'Begin conversation', route: '/chat' },
       { label: 'View AI Hub', action: 'Explore AI features', route: '/ai-hub' },
@@ -138,7 +138,7 @@ const helpContent: HelpContent = {
       'Test automations in sandbox mode before going live',
       'Monitor automation performance and ROI'
     ],
-    relatedJourneys: ['productivity-mastery', 'ai-transformation'],
+    relatedJourneys: ['productivity-mastery', 'ai-hub'],
     quickActions: [
       { label: 'Browse Recipes', action: 'Find automation templates', route: '/automation-recipes' },
       { label: 'Create Custom', action: 'Build your own', route: '/api-learning' },

@@ -23,7 +23,7 @@ export const OrgSwitcher: React.FC = () => {
   return (
     <div className="relative" onBlur={() => setOpen(false)} tabIndex={0}>
       <button
-        className="flex items-center gap-1 px-3 py-2 rounded-md bg-muted text-sm hover:bg-muted/80"
+        className="flex items-center gap-1 px-4 py-2 rounded-md bg-muted text-sm hover:bg-muted/80"
         title="Switch organisation"
         onClick={() => setOpen((p) => !p)}
       >

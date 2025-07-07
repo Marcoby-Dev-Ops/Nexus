@@ -1,0 +1,153 @@
+name: 🤖 Project Automation
+
+on:
+  issues:
+    types: [opened, closed, reopened, labeled]
+  pull_request:
+    types: [opened, closed, ready_for_review]
+  issue_comment:
+    types: [created]
+
+jobs:
+  auto-label:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Auto-assign labels based on title
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = context.payload.issue?.title || context.payload.pull_request?.title || '';
+            const labels = [];
+            
+            // Component-based labels
+            if (title.includes('[AI]') || title.includes('chat') || title.includes('agent')) {
+              labels.push('ai-system');
+            }
+            if (title.includes('[INTEGRATION]') || title.includes('oauth') || title.includes('api')) {
+              labels.push('integration');
+            }
+            if (title.includes('[UI]') || title.includes('component') || title.includes('design')) {
+              labels.push('ui-ux');
+            }
+            if (title.includes('[DB]') || title.includes('database') || title.includes('migration')) {
+              labels.push('database');
+            }
+            
+            // Priority labels
+            if (title.includes('CRITICAL') || title.includes('URGENT')) {
+              labels.push('priority-critical');
+            }
+            if (title.includes('HIGH')) {
+              labels.push('priority-high');
+            }
+            
+            // Pillar labels
+            if (title.includes('Pillar 1') || title.includes('supervisor') || title.includes('domain-agent')) {
+              labels.push('pillar-1-core-ai');
+            }
+            if (title.includes('Pillar 2') || title.includes('kpi') || title.includes('business-health')) {
+              labels.push('pillar-2-business-intelligence');
+            }
+            
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue?.number || context.payload.pull_request?.number,
+                labels: labels
+              });
+            }
+
+  assign-to-project:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'opened'
+    steps:
+      - name: Add to Nexus Development Project
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // This would add issues to a GitHub Project
+            // You'll need to replace PROJECT_ID with your actual project ID
+            console.log('Issue/PR would be added to project');
+            
+  update-todo-status:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed' && github.event.issue.state == 'closed'
+    steps:
+      - name: Mark todo as completed
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueBody = context.payload.issue.body || '';
+            const todoMatch = issueBody.match(/Related Todo\/Epic.*?(\w+-\w+-\w+)/);
+            
+            if (todoMatch) {
+              const todoId = todoMatch[1];
+              console.log(`Todo ${todoId} should be marked as completed`);
+              // Here you could integrate with your todo system
+            }
+
+  notify-storybook:
+    runs-on: ubuntu-latest
+    if: contains(github.event.issue.labels.*.name, 'ui-ux') && github.event.action == 'opened'
+    steps:
+      - name: Comment with Storybook reminder
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `🎨 **UI/UX Issue Detected**
+              
+              Since this is a UI/UX related issue, please remember to:
+              - [ ] Update Storybook stories if creating new components
+              - [ ] Test responsive design on mobile and desktop
+              - [ ] Verify accessibility compliance
+              - [ ] Update design system documentation if needed
+              
+              Storybook is running at: http://localhost:6006`
+            });
+
+  milestone-assignment:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'labeled'
+    steps:
+      - name: Assign to milestone based on priority
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(label => label.name);
+            let milestoneTitle = null;
+            
+            if (labels.includes('priority-critical')) {
+              milestoneTitle = 'Sprint - Current';
+            } else if (labels.includes('priority-high')) {
+              milestoneTitle = 'Sprint - Next';
+            } else if (labels.includes('pillar-1-core-ai')) {
+              milestoneTitle = 'Pillar 1 - Core AI';
+            } else if (labels.includes('pillar-2-business-intelligence')) {
+              milestoneTitle = 'Pillar 2 - Business Intelligence';
+            }
+            
+            if (milestoneTitle) {
+              // Get all milestones
+              const milestones = await github.rest.issues.listMilestones({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open'
+              });
+              
+              const milestone = milestones.data.find(m => m.title === milestoneTitle);
+              
+              if (milestone) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  milestone: milestone.number
+                });
+              }
+            } 

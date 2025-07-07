@@ -150,11 +150,11 @@ export const QuickActionsPanel: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {availableActions.map((action: QuickAction) => (
             <button
               key={action.id}
-              className="w-full flex items-start gap-3 p-4 bg-muted/50 border border-border rounded-lg hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 text-left group"
+              className="w-full flex items-start gap-4 p-4 bg-muted/50 border border-border rounded-lg hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 text-left group"
               aria-label={action.label}
               onClick={() => handleQuickAction(action, { navigate })}
             >

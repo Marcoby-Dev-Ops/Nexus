@@ -4,16 +4,7 @@ import * as domainAnalysisModule from '../../../src/lib/services/domainAnalysisS
 // Mock dependencies
 jest.mock('../../../src/lib/supabase', () => ({
   supabase: {
-    from: jest.fn(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(),
-          eq: jest.fn(() => ({
-            eq: jest.fn()
-          }))
-        }))
-      }))
-    }))
+    from: jest.fn()
   }
 }));
 
@@ -36,11 +27,60 @@ describe('BusinessObservationService', () => {
   
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Reset domain analysis mock to default behavior
+    (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue({
+      totalEmails: 5,
+      customDomainCount: 0,
+      genericDomainCount: 5,
+      overallProfessionalScore: 30,
+      emailsByDomain: {
+        'gmail.com': Array(5).fill('user@gmail.com')
+      }
+    });
+    
+    // Reset Supabase mock to default behavior with proper method chaining
+    const supabaseMock = jest.requireMock('../../../src/lib/supabase');
+    supabaseMock.supabase.from.mockImplementation((table: string) => {
+      if (table === 'ai_integrations') {
+        // For integrations: .select('*').eq('company_id', companyId).eq('status', 'active')
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              eq: jest.fn().mockResolvedValue({
+                data: [] // No integrations by default to trigger integration observation
+              })
+            })
+          })
+        };
+      }
+      if (table === 'ai_user_profiles') {
+        // For user profiles: .select('security_settings').eq('user_id', userId).single()
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn().mockReturnValue({
+              single: jest.fn().mockResolvedValue({
+                data: { security_settings: { mfa_enabled: false } } // MFA not enabled by default to trigger security observation
+              })
+            })
+          })
+        };
+      }
+      // Fallback for any other tables - ensure all methods return proper mock objects
+      return {
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            eq: jest.fn().mockResolvedValue({ data: null }),
+            single: jest.fn().mockResolvedValue({ data: null })
+          })
+        })
+      };
+    });
   });
 
   describe('generateBusinessObservations', () => {
     it('should generate professional email opportunity observation for users with generic email', async () => {
-      // Mock domain analysis to return generic email usage
+      // The mock is already set up in beforeEach, so we just need to override the domain analysis
       const mockDomainAnalysis = {
         totalEmails: 5,
         customDomainCount: 0,
@@ -52,40 +92,7 @@ describe('BusinessObservationService', () => {
         }
       };
 
-      // Mock the service method
       (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
-
-      // Mock Supabase calls for integrations and security
-      const supabaseMock = jest.requireMock('../../../src/lib/supabase');
-      supabaseMock.supabase.from.mockImplementation((table: string) => {
-        if (table === 'ai_integrations') {
-          return {
-            select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockReturnValue({
-                eq: jest.fn().mockResolvedValue({
-                  data: [] // No integrations
-                })
-              })
-            })
-          };
-        }
-        if (table === 'ai_user_profiles') {
-          return {
-            select: jest.fn().mockReturnValue({
-              eq: jest.fn().mockReturnValue({
-                single: jest.fn().mockResolvedValue({
-                  data: { security_settings: { mfa_enabled: false } } // MFA not enabled
-                })
-              })
-            })
-          };
-        }
-        return {
-          select: jest.fn().mockReturnValue({
-            eq: jest.fn()
-          })
-        };
-      });
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -172,16 +179,49 @@ describe('BusinessObservationService', () => {
     });
 
     it('should generate integration opportunity observation for businesses with few integrations', async () => {
+      // Mock domain analysis to return generic email usage
+      const mockDomainAnalysis = {
+        totalEmails: 5,
+        customDomainCount: 0,
+        genericDomainCount: 5,
+        overallProfessionalScore: 30,
+        emailsByDomain: {
+          'gmail.com': Array(5).fill('user@gmail.com')
+        }
+      };
+
+      (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockResolvedValue(mockDomainAnalysis);
+
       // Mock supabase to return few integrations
       const supabaseMock = jest.requireMock('../../../src/lib/supabase');
-      supabaseMock.supabase.from.mockReturnValue({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            eq: jest.fn().mockResolvedValue({
-              data: [{ id: 1, name: 'Basic Integration' }] // Only 1 integration
+      supabaseMock.supabase.from.mockImplementation((table: string) => {
+        if (table === 'ai_integrations') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                eq: jest.fn().mockResolvedValue({
+                  data: [{ id: 1, name: 'Basic Integration' }] // Only 1 integration
+                })
+              })
             })
+          };
+        }
+        if (table === 'ai_user_profiles') {
+          return {
+            select: jest.fn().mockReturnValue({
+              eq: jest.fn().mockReturnValue({
+                single: jest.fn().mockResolvedValue({
+                  data: { security_settings: { mfa_enabled: false } } // MFA not enabled
+                })
+              })
+            })
+          };
+        }
+        return {
+          select: jest.fn().mockReturnValue({
+            eq: jest.fn()
           })
-        })
+        };
       });
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
@@ -228,6 +268,12 @@ describe('BusinessObservationService', () => {
 
     it('should handle errors gracefully', async () => {
       (domainAnalysisModule.domainAnalysisService.analyzeUserEmailDomains as jest.Mock).mockRejectedValue(new Error('Analysis failed'));
+
+      // Mock Supabase to also fail
+      const supabaseMock = jest.requireMock('../../../src/lib/supabase');
+      supabaseMock.supabase.from.mockImplementation(() => {
+        throw new Error('Database error');
+      });
 
       const observations = await businessObservationService.generateBusinessObservations(mockUserId, mockCompanyId);
 
@@ -297,9 +343,9 @@ describe('BusinessObservationService', () => {
     it('should calculate higher value for larger businesses', async () => {
       const service = businessObservationService as any;
 
-      const smallBusiness = { totalEmails: 10 };
-      const mediumBusiness = { totalEmails: 60 };
-      const largeBusiness = { totalEmails: 120 };
+      const smallBusiness = { totalEmails: 10, genericDomainCount: 10 };
+      const mediumBusiness = { totalEmails: 60, genericDomainCount: 60 };
+      const largeBusiness = { totalEmails: 120, genericDomainCount: 120 };
 
       const smallValue = service.calculateEmailUpgradeValue(smallBusiness);
       const mediumValue = service.calculateEmailUpgradeValue(mediumBusiness);

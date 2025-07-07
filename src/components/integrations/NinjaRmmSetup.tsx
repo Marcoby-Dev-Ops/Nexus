@@ -203,13 +203,13 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
               </p>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm">
-                <Shield className="h-4 w-4 text-green-600" />
+                <Shield className="h-4 w-4 text-success" />
                 <span>Secure OAuth 2.0 authentication</span>
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <Monitor className="h-4 w-4 text-blue-600" />
+                <Monitor className="h-4 w-4 text-primary" />
                 <span>Access to device monitoring and management</span>
               </div>
             </div>
@@ -235,7 +235,7 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <CheckCircle className="h-5 w-5 text-success" />
               <span className="font-medium">Connected to NinjaRMM</span>
             </div>
 

@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '@/lib/core/supabase';
-import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import type { Session, User as SupabaseUser, PostgrestError } from '@supabase/supabase-js';
 import type { Database } from '@/lib/core/database.types';
 import { Button } from '@/components/ui/Button';
+import { useLocation } from 'react-router-dom';
 
 // Row types for profiles, companies, and integrations
 type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
@@ -36,6 +37,8 @@ interface AuthContextType {
   error: Error | null;
   activeOrgId: string | null;
   initialized: boolean;
+  timeoutWarning: boolean;
+  status: 'idle'|'loading'|'success'|'timeout'|'error';
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -48,6 +51,10 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Timeout constants for auth and profile fetch
+const AUTH_CHANGE_TIMEOUT_MS = 60000; // 60 seconds
+const PROFILE_FETCH_TIMEOUT_MS = 60000; // 60 seconds
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
@@ -56,19 +63,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [integrations, setIntegrations] = useState<UserIntegrationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [timeoutWarning, setTimeoutWarning] = useState(false);
+  const [authStatus, setAuthStatus] = useState<'idle'|'loading'|'success'|'timeout'|'error'>('idle');
+  const [initialized, setInitialized] = useState(false);
   
   // Refs for cleanup and preventing race conditions
   const mountedRef = useRef(true);
   const processingRef = useRef(false);
 
+  const location = useLocation();
+  const publicRoutes = ['/login', '/signup', '/password-reset'];
+  const isPublic = publicRoutes.includes(location.pathname);
+
   // Helper: retry getSession up to 3 times
   const getSessionWithRetry = async (retries = 3, delayMs = 500): Promise<{ session: Session | null, error: any }> => {
     for (let i = 0; i < retries; i++) {
       try {
+        console.log(`[AuthContext] getSessionWithRetry: Attempt ${i + 1}`);
         const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('[AuthContext] getSessionWithRetry: Result', { session, error });
         if (session || error) return { session, error };
       } catch (err) {
-        console.warn(`[Auth] getSession attempt ${i + 1} failed`, err);
+        console.error(`[AuthContext] getSessionWithRetry: Exception on attempt ${i + 1}`, err);
         if (i === retries - 1) return { session: null, error: err };
       }
       await new Promise(res => setTimeout(res, delayMs));
@@ -87,90 +103,150 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     console.log('[AuthContext] handleAuthChange: session', session);
     
+    // Set a timeout for this auth change
+    const authChangeTimeout = setTimeout(() => {
+      if (mountedRef.current && processingRef.current) {
+        console.warn('[AuthContext] Auth change timeout - forcing completion');
+        setLoading(false);
+        processingRef.current = false;
+      }
+    }, AUTH_CHANGE_TIMEOUT_MS); // Increased to 60 seconds
+    
     try {
       setSession(session);
       setSupabaseUser(session?.user ?? null);
       setError(null);
       
-      if (session?.user && mountedRef.current) {
+      if (session?.user) {
+        let finalProfile: UserProfileRow | null = null;
+        let companyData: CompanyRow | null = null;
+        let integrationsData: UserIntegrationRow[] = [];
         try {
-          // Fetch profile, company, and integrations in parallel
-          const [profileResult, integrationsResult] = await Promise.all([
-            supabase
-              .from('user_profiles')
-              .select('*, company:companies(*)')
-              .eq('id', session.user.id)
-              .maybeSingle(),
-            supabase
-              .from('user_integrations')
-              .select('*')
-              .eq('user_id', session.user.id)
-          ]);
-
-          if (!mountedRef.current) return;
+          console.log('[AuthContext] Fetching profile for user:', session.user.id);
+          const timerId = `Profile fetch ${Date.now()}`;
+          console.time(timerId);
           
-          let finalProfile = profileResult.data as UserProfileRow & { company: CompanyRow | null } | null;
-          if (profileResult.error) {
-            console.warn('[AuthContext] Profile fetch error:', profileResult.error);
+          // First try to fetch just the profile without joins for speed
+          console.log('[AuthContext] Querying user_profiles for id', session.user.id);
+          const profilePromise = supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          
+          console.log('[AuthContext] Querying user_integrations for user_id', session.user.id);
+          const integrationsPromise = supabase
+            .from('user_integrations')
+            .select('*')
+            .eq('user_id', session.user.id);
+
+          console.log('[AuthContext] Profile and integrations queries sent');
+
+          // Add timeout to prevent hanging - increased to 60 seconds
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Database query timeout')), PROFILE_FETCH_TIMEOUT_MS);
+          });
+
+          console.log('[AuthContext] Awaiting profile and integrations results...');
+          const [profileResult, integrationsResult] = await Promise.race([
+            Promise.all([profilePromise, integrationsPromise]),
+            timeoutPromise
+          ]) as [any, any];
+
+          console.timeEnd(timerId);
+          console.log('[AuthContext] Profile query result:', profileResult);
+          console.log('[AuthContext] Integrations query result:', integrationsResult);
+
+          finalProfile = profileResult.data as UserProfileRow | null;
+          integrationsData = integrationsResult.data || [];
+
+          // If we have a profile with company_id, fetch the company separately
+          if (finalProfile?.company_id) {
+            console.log('[AuthContext] Fetching company data for company_id:', finalProfile.company_id);
+            try {
+              console.log('[AuthContext] Querying companies for id', finalProfile.company_id);
+              const { data: company, error: cError } = await supabase
+                .from('companies')
+                .select('*')
+                .eq('id', finalProfile.company_id)
+                .maybeSingle();
+              console.log('[AuthContext] Company query result:', { company, cError });
+              companyData = company;
+              if (cError) {
+                console.warn('[AuthContext] Company fetch error:', cError);
+              } else {
+                console.log('[AuthContext] Company data fetched:', company);
+              }
+            } catch (companyErr) {
+              console.warn('[AuthContext] Company fetch failed:', companyErr);
+            }
           }
 
-          // If no profile exists for a new user, create one
-          if (!finalProfile && session.user) {
-            console.log('[AuthContext] No profile found for new user, creating one...');
+          // If no profile exists for a verified user, create one (but don't block on it)
+          if (!finalProfile && session.user.email_confirmed_at) {
+            console.log('[AuthContext] No profile found for verified user, creating one...');
+            const displayName = session.user.user_metadata?.full_name || 
+                               session.user.email?.split('@')[0] || 
+                               'User';
+            console.log('[AuthContext] Inserting new user_profiles row:', {
+              id: session.user.id,
+              display_name: displayName,
+              first_name: session.user.user_metadata?.first_name || null,
+              last_name: session.user.user_metadata?.last_name || null,
+            });
+            // Await the insert and re-fetch
             const { data: newProfile, error: createError } = await supabase
               .from('user_profiles')
               .insert({
                 id: session.user.id,
-                email: session.user.email,
-                display_name: session.user.email?.split('@')[0],
+                display_name: displayName,
+                first_name: session.user.user_metadata?.first_name || null,
+                last_name: session.user.user_metadata?.last_name || null,
               })
               .select()
               .single();
-
             if (createError) {
               console.error('[AuthContext] Failed to create user profile:', createError);
-              throw createError;
+            } else {
+              console.log('[AuthContext] Created profile for verified user:', newProfile);
+              finalProfile = newProfile as UserProfileRow;
             }
-            finalProfile = newProfile as UserProfileRow & { company: CompanyRow | null };
-          }
-          
-          setProfile(finalProfile);
-          console.log('[AuthContext] setProfile:', finalProfile);
-
-          // The company data is now part of the profile fetch
-          setCompany(finalProfile?.company ?? null);
-          console.log('[AuthContext] setCompany:', finalProfile?.company ?? null);
-
-          // Set integrations from the parallel fetch
-          if (integrationsResult.error) {
-            console.warn('[AuthContext] Integrations fetch error:', integrationsResult.error);
-            setIntegrations([]);
-          } else {
-            setIntegrations(integrationsResult.data || []);
-            console.log('[AuthContext] setIntegrations:', integrationsResult.data || []);
+          } else if (!finalProfile && !session.user.email_confirmed_at) {
+            console.log('[AuthContext] User email not verified yet, skipping profile creation');
           }
         } catch (err) {
-          console.error('[AuthContext] Auth change error (inner):', err);
-          if (mountedRef.current) {
-            setError(err as Error);
-            setProfile(null);
-            setCompany(null);
-            setIntegrations([]);
+          console.error('[AuthContext] Error during profile/integrations/company fetch:', err);
+          if (err instanceof Error && err.message.includes('timeout')) {
+            console.warn('[AuthContext] Profile fetch timed out, continuing without profile');
           }
+          finalProfile = null;
+          companyData = null;
+          integrationsData = [];
+        }
+        // Only update state if still mounted
+        if (mountedRef.current) {
+          console.log('[AuthContext] Setting profile, company, integrations:', { finalProfile, companyData, integrationsData });
+          setProfile(finalProfile);
+          setCompany(companyData);
+          setIntegrations(integrationsData);
         }
       } else {
         // No session - clear all data
-        setProfile(null);
-        setCompany(null);
-        setIntegrations([]);
-        console.log('[AuthContext] No session: cleared profile, company, integrations');
+        if (mountedRef.current) {
+          console.log('[AuthContext] No session: clearing profile, company, integrations');
+          setProfile(null);
+          setCompany(null);
+          setIntegrations([]);
+          console.log('[AuthContext] No session: cleared profile, company, integrations');
+        }
       }
     } catch (err) {
-      console.error('[AuthContext] Auth change error (outer):', err);
+      console.error('[AuthContext] Outer error in handleAuthChange:', err);
       if (mountedRef.current) {
         setError(err as Error);
       }
     } finally {
+      clearTimeout(authChangeTimeout);
       if (mountedRef.current) {
         setLoading(false);
         console.log('[AuthContext] setLoading(false)');
@@ -180,8 +256,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    if (isPublic) return; // Don't do session polling on public routes
     mountedRef.current = true;
     console.log('[AuthContext] useEffect: mounted');
+    
+    // Set a maximum timeout for initialization
+    const initTimeout = setTimeout(() => {
+      if (mountedRef.current && loading) {
+        console.warn('[AuthContext] Initialization timeout - still trying');
+        setTimeoutWarning(true); // Set warning, not error
+        // Do NOT setError here
+      }
+    }, 60000); // 60 second timeout
     
     const initAuth = async () => {
       try {
@@ -220,6 +306,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await handleAuthChange(session);
           }
         }
+        // If we get here, initialization succeeded
+        setTimeoutWarning(false); // Clear warning
+        setError(null); // Clear any previous error
       } catch (err) {
         console.error('[AuthContext] Init auth error:', err);
         if (mountedRef.current) {
@@ -230,6 +319,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (mountedRef.current) {
           setLoading(false); // Final fallback to ensure loading is always set to false
         }
+        clearTimeout(initTimeout); // Clear the timeout since we're done
       }
     };
 
@@ -253,9 +343,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       mountedRef.current = false;
       subscription?.unsubscribe();
+      clearTimeout(initTimeout);
       console.log('[AuthContext] useEffect: unmounted');
     };
-  }, [handleAuthChange]);
+  }, [handleAuthChange, loading, isPublic]);
+
+  useEffect(() => {
+    // If user and session are both present, clear loading and timeoutWarning immediately
+    if (session && supabaseUser && loading) {
+      setLoading(false);
+      setTimeoutWarning(false);
+    }
+  }, [session, supabaseUser, loading]);
+
+  // After all session/profile fetch logic (success, error, or timeout), set initialized to true
+  useEffect(() => {
+    if (!loading && (profile !== undefined || error || timeoutWarning)) {
+      setInitialized(true);
+    }
+  }, [loading, profile, error, timeoutWarning]);
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -263,12 +369,64 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error: error ?? null };
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      return { error };
+    }
+
+    // If user is returned, create a profile immediately
+    const user = data?.user;
+    if (user) {
+      const userId = user.id;
+      const userMeta = user.user_metadata || {};
+      const firstName = userMeta.first_name || null;
+      const lastName = userMeta.last_name || null;
+      const displayName = userMeta.full_name || email.split('@')[0] || 'User';
+      // Insert profile row
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId,
+          display_name: displayName,
+          first_name: firstName,
+          last_name: lastName,
+          email: email,
+        });
+      if (profileError) {
+        // Optionally log or handle profile creation error
+        console.error('[AuthContext] Failed to create user profile on sign up:', profileError);
+        // Still return success for sign up, but you may want to surface this error
+      }
+    }
+    return { error: null };
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      // Clear local state immediately
+      setSession(null);
+      setSupabaseUser(null);
+      setProfile(null);
+      setCompany(null);
+      setIntegrations([]);
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+        // Even if signOut fails, we've cleared local state
+      }
+      
+      // Clear any cached data
+      localStorage.removeItem('supabase.auth.token');
+      
+      // Redirect to login
+      window.location.href = '/login';
+    } catch (err) {
+      console.error('Unexpected sign out error:', err);
+      // Force redirect even on error
+      window.location.href = '/login';
+    }
   };
 
   const resetPassword = async (email: string) => {
@@ -279,14 +437,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateProfile = async (updates: Partial<UserProfileRow>) => {
-    if (!profile) return;
+    if (!supabaseUser) {
+      throw new Error('No authenticated user found');
+    }
+    
+    if (!profile) {
+      throw new Error('User profile not found. Please verify your email address first.');
+    }
+    
+    // Update the existing profile
     const { data: updatedProfile, error: updateError } = await supabase
       .from('user_profiles')
       .update(updates)
       .eq('id', profile.id)
       .select()
       .maybeSingle();
-    if (updateError) throw updateError;
+      
+    if (updateError) {
+      console.error('[AuthContext] Failed to update profile:', updateError);
+      throw updateError;
+    }
+    
     if (mountedRef.current) {
       setProfile(updatedProfile as UserProfileRow | null);
     }
@@ -331,27 +502,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const user = useMemo((): AuthUser | null => {
-    if (!supabaseUser || !profile) {
-      return null;
-    }
+    if (loading || timeoutWarning || authStatus === 'loading' || authStatus === 'timeout') return null;
+    if (!supabaseUser) return null;
+    
+    // Create a basic user object even if profile is not loaded yet
+    const displayName = profile?.display_name || 
+                       (profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}` : null) ||
+                       supabaseUser.email?.split('@')[0] || 
+                       'User';
+    
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
       created_at: supabaseUser.created_at,
       last_sign_in_at: supabaseUser.last_sign_in_at,
-      role: profile.role,
-      department: profile.department,
-      company_id: profile.company_id,
-      onboardingCompleted: profile.onboarding_completed,
+      role: profile?.role || null,
+      department: profile?.department || null,
+      company_id: profile?.company_id || null,
+      onboardingCompleted: profile?.onboarding_completed || false,
       profile,
       company,
       integrations,
-      name: profile.display_name,
-      full_name: profile.display_name,
-      initials: profile.display_name?.split(' ').map(n => n[0]).join('') || '?',
-      avatar_url: profile.avatar_url,
+      name: displayName,
+      full_name: displayName,
+      initials: displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?',
+      avatar_url: profile?.avatar_url || null,
     };
-  }, [supabaseUser, profile, company, integrations]);
+  }, [supabaseUser, profile, company, integrations, loading, timeoutWarning, authStatus]);
 
   const value: AuthContextType = useMemo(() => ({
     user,
@@ -360,7 +537,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     error,
     integrations,
     activeOrgId: profile?.company_id || null,
-    initialized: !loading,
+    initialized,
+    timeoutWarning,
+    status: authStatus,
     signIn,
     signUp,
     signOut,
@@ -377,7 +556,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     integrations,
     profile,
     refreshIntegrations,
-    completeOnboarding
+    completeOnboarding,
+    timeoutWarning,
+    updateCompany,
+    updateProfile,
+    authStatus,
+    initialized
   ]);
 
   // Custom error UI for session expired
@@ -385,7 +569,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-red-500 mb-4">
+          <div className="text-destructive mb-4">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>

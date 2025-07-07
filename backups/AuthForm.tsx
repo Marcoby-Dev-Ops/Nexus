@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../../lib/core/supabase';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Card } from '@/components/ui/Card';
+import { handleCompletePasskeySignIn, handlePasskeyError, isPasskeySupported } from '@/lib/utils/passkey';
 
 type AuthMode = 'login' | 'signup' | 'reset';
 
@@ -20,6 +21,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +69,34 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
     }
   };
 
+  // -------------------------------------------------------------
+  // Passkey Sign-in
+  // -------------------------------------------------------------
+  const handlePasskeySignIn = async () => {
+    try {
+      if (!email) {
+        setError('Enter email first so we can locate your account');
+        return;
+      }
+      
+      if (!isPasskeySupported()) {
+        setError('Your browser does not support passkeys');
+        return;
+      }
+      
+      setError(null);
+      setPasskeyLoading(true);
 
+      // Use centralized passkey sign-in flow
+      await handleCompletePasskeySignIn(email, undefined, onSuccess);
+      
+    } catch (err: unknown) {
+      handlePasskeyError(err, 'authentication');
+      setError(err instanceof Error ? err.message : 'Passkey sign-in failed');
+    } finally {
+      setPasskeyLoading(false);
+    }
+  };
 
   return (
     <Card className="w-full max-w-md mx-auto p-8 bg-card shadow-xl border-0">
@@ -84,39 +113,6 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
         </p>
       </div>
 
-      {/* Microsoft 365 OAuth - Coming Soon */}
-      {mode !== 'reset' && (
-        <div className="mb-6">
-          <Button
-            disabled={true}
-            className="w-full h-12 text-base font-semibold bg-muted cursor-not-allowed border-0 rounded-xl shadow-lg mb-4"
-          >
-            <div className="flex items-center justify-center space-x-4">
-              <div className="flex items-center justify-center w-5 h-5 bg-card rounded-sm">
-                <svg width="16" height="16" viewBox="0 0 21 21" className="text-muted-foreground">
-                  <rect x="1" y="1" width="9" height="9" fill="currentColor" opacity="0.8"/>
-                  <rect x="12" y="1" width="9" height="9" fill="currentColor" opacity="0.9"/>
-                  <rect x="1" y="12" width="9" height="9" fill="currentColor" opacity="0.7"/>
-                  <rect x="12" y="12" width="9" height="9" fill="currentColor"/>
-                </svg>
-              </div>
-              <span>Microsoft 365 - Coming Soon</span>
-            </div>
-          </Button>
-          
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-card text-muted-foreground">
-                for now, continue with email
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Email/Password Form - Secondary Method */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
@@ -129,6 +125,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
               required
               disabled={loading}
               className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+              data-testid="email-input"
             />
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,6 +175,18 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
           {mode === 'login' && 'Sign in with email'}
           {mode === 'signup' && 'Create account with email'}
           {mode === 'reset' && 'Send reset link'}
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12 text-base font-medium"
+          isLoading={passkeyLoading}
+          disabled={passkeyLoading}
+          onClick={handlePasskeySignIn}
+          data-testid="passkey-signin-button"
+        >
+          Sign in with Passkey
         </Button>
 
         <div className="text-center space-y-4">

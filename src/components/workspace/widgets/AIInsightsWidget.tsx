@@ -9,13 +9,13 @@ import type { AIInsight } from '@/lib/services/aiInsightsService';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 
 const iconMap: { [key: string]: React.ReactNode } = {
-  suggestion: <Lightbulb className="h-5 w-5 text-blue-600" />,
-  alert: <AlertCircle className="h-5 w-5 text-orange-600" />,
-  success: <CheckCircle className="h-5 w-5 text-green-600" />,
-  revenue: <DollarSign className="h-5 w-5 text-green-600" />,
-  productivity: <Target className="h-5 w-5 text-blue-600" />,
-  team: <Users className="h-5 w-5 text-purple-600" />,
-  growth: <TrendingUp className="h-5 w-5 text-orange-600" />,
+  suggestion: <Lightbulb className="h-5 w-5 text-primary" />,
+  alert: <AlertCircle className="h-5 w-5 text-warning" />,
+  success: <CheckCircle className="h-5 w-5 text-success" />,
+  revenue: <DollarSign className="h-5 w-5 text-success" />,
+  productivity: <Target className="h-5 w-5 text-primary" />,
+  team: <Users className="h-5 w-5 text-secondary" />,
+  growth: <TrendingUp className="h-5 w-5 text-warning" />,
 };
 
 // Enhanced mock insights with business focus
@@ -82,15 +82,15 @@ export const AIInsightsWidget: React.FC = () => {
   const getActionColor = (type: string) => {
     switch (type) {
       case 'revenue':
-        return 'border-green-200 bg-green-50/50 hover:bg-green-100/50';
+        return 'border-green-200 bg-success/5/50 hover:bg-success/10/50';
       case 'productivity':
-        return 'border-blue-200 bg-blue-50/50 hover:bg-blue-100/50';
+        return 'border-border bg-primary/5/50 hover:bg-primary/10/50';
       case 'team':
-        return 'border-purple-200 bg-purple-50/50 hover:bg-purple-100/50';
+        return 'border-purple-200 bg-secondary/5/50 hover:bg-secondary/10/50';
       case 'alert':
         return 'border-orange-200 bg-orange-50/50 hover:bg-orange-100/50';
       default:
-        return 'border-gray-200 bg-gray-50/50 hover:bg-gray-100/50';
+        return 'border-border bg-background/50 hover:bg-muted/50';
     }
   };
 
@@ -173,7 +173,7 @@ export const AIInsightsWidget: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Target className="w-5 h-5 text-blue-600" />
+          <Target className="w-5 h-5 text-primary" />
           Next Best Actions
         </CardTitle>
         <CardDescription>

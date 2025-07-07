@@ -349,7 +349,7 @@ const ClientIntelligencePage: React.FC = () => {
           Back
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+          <h1 className="text-3xl font-bold flex items-center gap-4">
             <Brain className="w-8 h-8 text-primary" />
             Client Intelligence Dashboard
           </h1>
@@ -442,7 +442,7 @@ const ClientIntelligencePage: React.FC = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {alerts.slice(0, 3).map((alert) => (
                     <Alert key={alert.id} className={`border-l-4 ${
                       alert.priority === 'critical' ? 'border-l-destructive' :
@@ -450,7 +450,7 @@ const ClientIntelligencePage: React.FC = () => {
                       'border-l-primary'
                     }`}>
                       <div className="flex items-start justify-between">
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-4">
                           {getAlertIcon(alert.alert_type)}
                           <div>
                             <h4 className="font-medium">{alert.title}</h4>
@@ -482,10 +482,10 @@ const ClientIntelligencePage: React.FC = () => {
               <CardTitle>Top Data Sources</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {analytics?.topSources?.map((source: any, index: number) => (
                   <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
                         <Activity className="w-4 h-4 text-primary" />
                       </div>
@@ -520,7 +520,7 @@ const ClientIntelligencePage: React.FC = () => {
               <select
                 value={filterBy}
                 onChange={(e) => setFilterBy(e.target.value as any)}
-                className="px-3 py-2 border rounded-md bg-background"
+                className="px-4 py-2 border rounded-md bg-background"
               >
                 <option value="all">All Clients</option>
                 <option value="high_value">High Value ($10K+)</option>
@@ -530,7 +530,7 @@ const ClientIntelligencePage: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-3 py-2 border rounded-md bg-background"
+                className="px-4 py-2 border rounded-md bg-background"
               >
                 <option value="engagement">Sort by Engagement</option>
                 <option value="value">Sort by Value</option>
@@ -555,7 +555,7 @@ const ClientIntelligencePage: React.FC = () => {
                       </div>
 
                       {/* Client Info */}
-                      <div className="flex-1 space-y-3">
+                      <div className="flex-1 space-y-4">
                         <div>
                           <h3 className="text-lg font-semibold">
                             {profile.profile_data.name || 'Unknown Client'}
@@ -665,7 +665,7 @@ const ClientIntelligencePage: React.FC = () => {
               <div className="space-y-4">
                 {interactions.map((interaction) => (
                   <div key={interaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       {getInteractionIcon(interaction.interaction_type)}
                       <div>
                         <h4 className="font-medium">{interaction.summary}</h4>
@@ -702,7 +702,7 @@ const ClientIntelligencePage: React.FC = () => {
                     'border-l-primary'
                   }`}>
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-4">
                         {getAlertIcon(alert.alert_type)}
                         <div>
                           <h3 className="font-semibold">{alert.title}</h3>

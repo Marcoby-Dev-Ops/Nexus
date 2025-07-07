@@ -140,6 +140,10 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+  
+  html {
+    background-color: hsl(var(--background));
+  }
 
   /* Z-Index Utility Classes */
   .z-base { z-index: 1; }

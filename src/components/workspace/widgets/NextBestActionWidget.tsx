@@ -39,9 +39,9 @@ export const NextBestActionWidget: React.FC = () => {
     }
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {actions.map((action) => (
-          <div key={action.id} className="flex items-center gap-3 p-3 rounded-md border bg-card hover:bg-muted/50">
+          <div key={action.id} className="flex items-center gap-4 p-4 rounded-md border bg-card hover:bg-muted/50">
             <div className="flex-1">
               <p className="text-sm font-medium">{action.message}</p>
             </div>

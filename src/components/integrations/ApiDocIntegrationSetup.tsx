@@ -564,9 +564,9 @@ ${analysisResult.patterns.map(pattern =>
                     </div>
                     <div>
                       <Label>Integration Patterns</Label>
-                      <div className="mt-1.5 space-y-3">
+                      <div className="mt-1.5 space-y-4">
                         {analysisResult.patterns.map((pattern, idx) => (
-                          <div key={idx} className="border rounded-md p-3">
+                          <div key={idx} className="border rounded-md p-4">
                             <div className="flex justify-between items-start">
                               <div>
                                 <p className="text-sm font-medium">{pattern.name}</p>
@@ -595,9 +595,9 @@ ${analysisResult.patterns.map(pattern =>
                     </div>
                     <div>
                       <Label>Authentication Configuration</Label>
-                      <div className="mt-1.5 space-y-3">
+                      <div className="mt-1.5 space-y-4">
                         {analysisResult.authMethods.includes('apiKey') && (
-                          <div className="border rounded-md p-3">
+                          <div className="border rounded-md p-4">
                             <div className="flex items-center space-x-2 mb-2">
                               <Key className="h-4 w-4 text-muted-foreground" />
                               <p className="text-sm font-medium">API Key Authentication</p>
@@ -617,7 +617,7 @@ ${analysisResult.patterns.map(pattern =>
                           </div>
                         )}
                         {analysisResult.authMethods.includes('oauth2') && (
-                          <div className="border rounded-md p-3">
+                          <div className="border rounded-md p-4">
                             <div className="flex items-center space-x-2 mb-2">
                               <Lock className="h-4 w-4 text-muted-foreground" />
                               <p className="text-sm font-medium">OAuth 2.0 Authentication</p>
@@ -661,7 +661,7 @@ ${analysisResult.patterns.map(pattern =>
                     </div>
                     <div>
                       <Label>Server Configuration</Label>
-                      <div className="mt-1.5 border rounded-md p-3">
+                      <div className="mt-1.5 border rounded-md p-4">
                         <div className="flex items-center space-x-2 mb-2">
                           <Globe className="h-4 w-4 text-muted-foreground" />
                           <p className="text-sm font-medium">API Server</p>
@@ -705,7 +705,7 @@ ${analysisResult.patterns.map(pattern =>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center py-6">
-                <div className="rounded-full bg-primary/10 p-3 mb-4">
+                <div className="rounded-full bg-primary/10 p-4 mb-4">
                   <Check className="h-6 w-6 text-primary" />
                 </div>
                 <h3 className="text-lg font-semibold mb-1">{integrationName} Integration Created</h3>
@@ -726,8 +726,8 @@ ${analysisResult.patterns.map(pattern =>
                   </div>
                 </div>
                 
-                <div className="w-full max-w-md mt-4 p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-md">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                <div className="w-full max-w-md mt-4 p-4 bg-primary/5 dark:bg-blue-950/20 border border-border dark:border-blue-800 rounded-md">
+                  <p className="text-sm text-primary dark:text-blue-300">
                     <strong>Next Steps:</strong> Go to the Integrations Dashboard to complete the authentication setup and start using your new {integrationName} integration.
                   </p>
                 </div>
@@ -778,7 +778,7 @@ ${analysisResult.patterns.map(pattern =>
               <div key={step} className="flex flex-col items-center relative z-10">
                 <div 
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-medium
-                    ${currentStep === step ? 'bg-primary text-white' : 
+                    ${currentStep === step ? 'bg-primary text-primary-foreground' : 
                       currentStep > step ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`
                   }
                 >

@@ -95,7 +95,7 @@ export const EABusinessObservationCard: React.FC<EABusinessObservationCardProps>
     <Card className={`${compact ? 'text-sm' : ''} hover:shadow-md transition-shadow`}>
       <CardHeader className={`pb-3 ${compact ? 'py-3' : ''}`}>
         <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3 flex-1">
+          <div className="flex items-start gap-4 flex-1">
             {getTypeIcon(observation.type)}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
@@ -197,7 +197,7 @@ export const EABusinessObservationCard: React.FC<EABusinessObservationCardProps>
 
           {/* Automation Potential */}
           {observation.automationPotential?.canAutomate && (
-            <div className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
+            <div className="mb-4 p-4 bg-primary/5 rounded-lg border border-primary/20">
               <div className="flex items-center gap-2 mb-2">
                 <Zap className="h-4 w-4 text-primary" />
                 <h4 className="text-sm font-medium text-primary">Automation Available</h4>

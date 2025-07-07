@@ -277,9 +277,9 @@ const IntegrationDataDashboard: React.FC = () => {
 
   const getInsightIcon = (type: string) => {
     switch (type) {
-      case 'optimization': return <TrendingUp className="w-4 h-4 text-blue-500" />;
+      case 'optimization': return <TrendingUp className="w-4 h-4 text-primary" />;
       case 'alert': return <AlertCircle className="w-4 h-4 text-destructive" />;
-      case 'trend': return <BarChart3 className="w-4 h-4 text-purple-500" />;
+      case 'trend': return <BarChart3 className="w-4 h-4 text-secondary" />;
       case 'opportunity': return <Activity className="w-4 h-4 text-success" />;
       default: return <Database className="w-4 h-4" />;
     }
@@ -405,7 +405,7 @@ const IntegrationDataDashboard: React.FC = () => {
                     <p className="text-sm text-muted-foreground">AI Insights</p>
                     <p className="text-2xl font-bold">{insights.length}</p>
                   </div>
-                  <Activity className="w-8 h-8 text-purple-500" />
+                  <Activity className="w-8 h-8 text-secondary" />
                 </div>
               </CardContent>
             </Card>
@@ -424,7 +424,7 @@ const IntegrationDataDashboard: React.FC = () => {
                     className={`p-4 border-l-4 rounded-r-lg ${getInsightColor(insight.impact)}`}
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3">
+                      <div className="flex items-start space-x-4">
                         {getInsightIcon(insight.type)}
                         <div className="flex-1">
                           <h4 className="font-medium">{insight.title}</h4>
@@ -509,7 +509,7 @@ const IntegrationDataDashboard: React.FC = () => {
 
                   {/* Error Messages */}
                   {integration.errors && integration.errors.length > 0 && (
-                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                       <div className="flex items-center space-x-2">
                         <AlertCircle className="w-4 h-4 text-destructive" />
                         <span className="text-sm font-medium text-destructive">Issues Detected</span>
@@ -524,15 +524,15 @@ const IntegrationDataDashboard: React.FC = () => {
 
                   {/* Data Points */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <div className="text-center p-4 bg-muted/30 rounded-lg">
                       <div className="text-lg font-bold">{integration.dataPoints.total.toLocaleString()}</div>
                       <div className="text-sm text-muted-foreground">Total Records</div>
                     </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <div className="text-center p-4 bg-muted/30 rounded-lg">
                       <div className="text-lg font-bold">{integration.dataPoints.thisWeek.toLocaleString()}</div>
                       <div className="text-sm text-muted-foreground">This Week</div>
                     </div>
-                    <div className="text-center p-3 bg-muted/30 rounded-lg">
+                    <div className="text-center p-4 bg-muted/30 rounded-lg">
                       <div className="text-lg font-bold">{integration.dataPoints.thisMonth.toLocaleString()}</div>
                       <div className="text-sm text-muted-foreground">This Month</div>
                     </div>
@@ -541,7 +541,7 @@ const IntegrationDataDashboard: React.FC = () => {
                   {/* Metrics */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {integration.metrics.map((metric, index) => (
-                      <div key={index} className="p-3 border rounded-lg">
+                      <div key={index} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-center">
                           <div>
                             <div className="text-sm text-muted-foreground">{metric.label}</div>
@@ -635,7 +635,7 @@ const IntegrationDataDashboard: React.FC = () => {
                 <CardContent className="p-6">
                   <div className={`border-l-4 pl-4 ${getInsightColor(insight.impact)}`}>
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3">
+                      <div className="flex items-start space-x-4">
                         {getInsightIcon(insight.type)}
                         <div className="flex-1">
                           <h3 className="font-semibold">{insight.title}</h3>

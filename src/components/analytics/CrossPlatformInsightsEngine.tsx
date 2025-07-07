@@ -371,7 +371,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           <Brain className="w-8 h-8 text-primary" />
           <div>
             <h2 className="text-2xl font-bold">Cross-Platform Intelligence</h2>
@@ -398,7 +398,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {correlations.map((correlation) => (
-              <div key={correlation.id} className="p-4 border rounded-lg space-y-3">
+              <div key={correlation.id} className="p-4 border rounded-lg space-y-4">
                 <div className="flex items-center justify-between">
                   <Badge variant="outline" className={getCorrelationStrengthColor(correlation.strength)}>
                     {correlation.strength} correlation
@@ -451,7 +451,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
         <CardContent>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {predictions.map((prediction) => (
-              <div key={prediction.id} className="p-4 border rounded-lg space-y-3">
+              <div key={prediction.id} className="p-4 border rounded-lg space-y-4">
                 <div className="flex items-center justify-between">
                   <Badge variant={prediction.type === 'anomaly' ? 'destructive' : 'default'}>
                     {prediction.type === 'anomaly' && <AlertTriangle className="h-4 w-4 mr-2" />}
@@ -531,7 +531,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
             {filteredIntelligence.map((intelligence) => (
               <div key={intelligence.id} className="p-6 border rounded-lg space-y-4">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-4">
                     {getCategoryIcon(intelligence.category)}
                     <div>
                       <h4 className="font-semibold text-lg">{intelligence.title}</h4>
@@ -550,7 +550,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div>
                     <h5 className="font-medium text-sm mb-1">Key Insight</h5>
                     <p className="text-sm text-muted-foreground">{intelligence.insight}</p>

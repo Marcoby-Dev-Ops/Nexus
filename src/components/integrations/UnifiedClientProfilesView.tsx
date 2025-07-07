@@ -349,7 +349,7 @@ const UnifiedClientProfilesView: React.FC = () => {
           <select
             value={filterBy}
             onChange={(e) => setFilterBy(e.target.value as any)}
-            className="px-3 py-2 border rounded-md bg-background"
+            className="px-4 py-2 border rounded-md bg-background"
           >
             <option value="all">All Clients</option>
             <option value="high_value">High Value ($10K+)</option>
@@ -359,7 +359,7 @@ const UnifiedClientProfilesView: React.FC = () => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="px-3 py-2 border rounded-md bg-background"
+            className="px-4 py-2 border rounded-md bg-background"
           >
             <option value="engagement">Sort by Engagement</option>
             <option value="value">Sort by Value</option>
@@ -379,7 +379,7 @@ const UnifiedClientProfilesView: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {alerts.slice(0, 5).map((alert) => (
                 <Alert key={alert.id} className={`border-l-4 ${
                   alert.priority === 'critical' ? 'border-l-destructive' :
@@ -387,7 +387,7 @@ const UnifiedClientProfilesView: React.FC = () => {
                   'border-l-primary'
                 }`}>
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-4">
                       {getAlertIcon(alert.alert_type)}
                       <div>
                         <h4 className="font-medium">{alert.title}</h4>
@@ -428,7 +428,7 @@ const UnifiedClientProfilesView: React.FC = () => {
                   </div>
 
                   {/* Client Info */}
-                  <div className="flex-1 space-y-3">
+                  <div className="flex-1 space-y-4">
                     <div>
                       <h3 className="text-lg font-semibold">
                         {profile.profile_data.name || 'Unknown Client'}

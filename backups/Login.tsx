@@ -57,72 +57,77 @@ export const Login = () => {
   }, [showMagicModal]);
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left Side - Branding & Info */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-secondary relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 -left-4 w-72 h-72 bg-card rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
-          <div className="absolute top-0 -right-4 w-72 h-72 bg-primary/30 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-1000"></div>
-          <div className="absolute -bottom-8 left-20 w-72 h-72 bg-secondary/30 rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
-        </div>
-        
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center p-8 text-primary-foreground">
+    <div className="min-h-screen flex bg-background">
+      {/* Left Side - Branding, Value, Visual */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-secondary relative overflow-hidden flex-col justify-center items-center p-12">
+        {/* Video Background */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          src="/3627320-uhd_4096_2160_25fps.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
+          aria-hidden="true"
+        />
+        {/* Overlay for readability */}
+        <div className="absolute inset-0 bg-background/70 z-10" />
+        <div className="relative z-20 flex flex-col items-center w-full max-w-lg">
+          <img
+            src="/Nexus/nexus-square-40x40-transparent.svg"
+            alt="NEXUS Logo"
+            className="w-16 h-16 mb-6 filter brightness-0 invert"
+          />
+          <h1 className="text-4xl font-extrabold mb-4 text-primary-foreground text-center">
+            Welcome to Nexus
+          </h1>
+          <p className="text-xl text-primary-foreground/80 mb-8 text-center">
+            The AI-powered business OS that unifies your tools, automates your work, and delivers insights that drive growth.
+          </p>
+          {/* Trust Badge */}
           <div className="mb-8">
-            <img
-              src="/Nexus/nexus-square-40x40-transparent.svg"
-              alt="NEXUS Logo"
-              className="w-16 h-16 mb-6 filter brightness-0 invert"
-            />
-            <h1 className="text-4xl font-bold mb-4">
-              Welcome back to Nexus
-            </h1>
-            <p className="text-xl text-primary-foreground/80 mb-6">
-              Your AI-powered business operating system that transforms how you work, analyze, and grow.
-            </p>
-            
-            {/* Magic Demo Button */}
-            <button
-              onClick={() => setShowMagicModal(true)}
-              className="inline-flex items-center px-6 py-3 bg-card/20 hover:bg-card/30 text-primary-foreground border border-card/30 rounded-lg font-medium transition-all duration-200 hover:scale-105"
-            >
+            <span className="inline-flex items-center px-4 py-2 bg-card/20 text-primary-foreground border border-card/30 rounded-full font-medium text-base shadow-sm">
               <Sparkles className="w-4 h-4 mr-2" />
-              ✨ See the Magic in Action
-            </button>
+              Trusted by 2,800+ businesses
+            </span>
           </div>
-          
-          {/* Feature highlights */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-card/20 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm8 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V8zm0 4a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <span className="text-primary-foreground/80">Unified dashboard for all business operations</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-card/20 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <span className="text-primary-foreground/80">AI-powered analytics and automation</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-card/20 rounded-lg flex items-center justify-center">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
-                </svg>
-              </div>
-              <span className="text-primary-foreground/80">Team collaboration and workflow management</span>
-            </div>
+          {/* Feature Highlights */}
+          <ul className="space-y-4 w-full mb-8">
+            <li className="flex items-center gap-3 text-primary-foreground/90">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" /></svg>
+              Unified dashboard for all business operations
+            </li>
+            <li className="flex items-center gap-3 text-primary-foreground/90">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              AI-powered analytics and automation
+            </li>
+            <li className="flex items-center gap-3 text-primary-foreground/90">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" /></svg>
+              Team collaboration and workflow management
+            </li>
+          </ul>
+          {/* Product Screenshot Placeholder */}
+          {/*
+            TODO: Replace this with a real product screenshot showing the Nexus dashboard with integrations, AI insights, and workflow automation visible.
+          */}
+          <div className="w-full aspect-video max-w-md bg-muted rounded-xl shadow-lg flex items-center justify-center border-2 border-dashed border-primary/30 mb-8">
+            <span className="text-muted-foreground text-center px-6">
+              [Product Screenshot Placeholder]<br />
+              <span className="text-xs">Show the Nexus dashboard with integrations, AI insights, and workflow automation visible.</span>
+            </span>
+          </div>
+          {/* Testimonial Placeholder */}
+          {/*
+            TODO: Replace with a real testimonial from an early adopter or user.
+          */}
+          <div className="w-full max-w-md bg-card/30 rounded-lg p-4 text-primary-foreground text-center shadow">
+            <span className="italic">“Nexus saved us hours every week—finally, a tool that works the way we do.”</span>
+            <div className="mt-2 text-sm text-primary-foreground/70">— Jamie, Early Adopter</div>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Login Form */}
+      {/* Right Side - Login/Register Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background dark:bg-background">
         <div className="max-w-md w-full">
           {/* Mobile Logo (visible only on small screens) */}
@@ -133,17 +138,13 @@ export const Login = () => {
               className="w-12 h-12 mx-auto mb-4"
             />
             <h1 className="text-2xl font-bold text-foreground dark:text-primary-foreground mb-4">
-              Welcome back
+              Welcome to Nexus
             </h1>
-            
-            {/* Mobile Magic Demo Button */}
-            <button
-              onClick={() => setShowMagicModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 rounded-lg font-medium transition-all duration-200 text-sm mb-6"
-            >
-              <Sparkles className="w-3 h-3 mr-2" />
-              ✨ See the Magic
-            </button>
+            {/* Trust Badge */}
+            <span className="inline-flex items-center px-4 py-2 bg-card/20 text-primary-foreground border border-card/30 rounded-full font-medium text-base shadow-sm mb-4">
+              <Sparkles className="w-4 h-4 mr-2" />
+              Trusted by 2,800+ businesses
+            </span>
           </div>
 
           {/* Auth Form */}
@@ -174,22 +175,21 @@ export const Login = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-modal"
               onClick={() => setShowMagicModal(false)}
             />
-            
             {/* Modal Content */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-0 z-50 flex items-center justify-center p-4"
+              className="fixed inset-0 z-modal flex items-center justify-center p-4"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="bg-background dark:bg-card rounded-2xl shadow-2xl border border-border max-w-2xl w-full max-h-[80vh] overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-border">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-4">
                     <Sparkles className="w-6 h-6 text-primary" />
                     <h2 className="text-xl font-bold text-foreground">See Nexus in Action</h2>
                   </div>
@@ -265,7 +265,7 @@ export const Login = () => {
                             emailInput?.focus();
                           }, 100);
                         }}
-                        className="px-6 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors"
+                        className="px-6 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium transition-colors"
                       >
                         Start Free Trial
                       </button>

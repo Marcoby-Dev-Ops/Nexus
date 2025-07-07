@@ -201,7 +201,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Initial Rating */}
       {!rating && (
         <div className="flex items-center gap-2">
@@ -210,7 +210,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => handleRatingClick('helpful')}
-            className="h-8 px-3"
+            className="h-8 px-4"
             disabled={isSubmitting}
           >
             <ThumbsUp className="h-4 w-4 mr-1" />
@@ -220,7 +220,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
             variant="ghost"
             size="sm"
             onClick={() => handleRatingClick('unhelpful')}
-            className="h-8 px-3"
+            className="h-8 px-4"
             disabled={isSubmitting}
           >
             <ThumbsDown className="h-4 w-4 mr-1" />

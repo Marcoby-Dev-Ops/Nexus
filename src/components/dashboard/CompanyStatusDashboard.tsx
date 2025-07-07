@@ -70,7 +70,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
       case 'excellent':
         return 'text-emerald-500 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800';
       case 'good':
-        return 'text-blue-500 bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
+        return 'text-primary bg-primary/5 border-border dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
       case 'warning':
         return 'text-amber-500 bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800';
       default:
@@ -96,7 +96,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
       case 'warning':
         return <AlertTriangle className="h-4 w-4 text-amber-500" />;
       default:
-        return <CheckCircle className="h-4 w-4 text-blue-500" />;
+        return <CheckCircle className="h-4 w-4 text-primary" />;
     }
   };
 
@@ -176,7 +176,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
                 Refresh
               </Button>
               <div className="text-right">
-                <div className={`text-5xl font-bold ${status.overallHealth.score >= 85 ? 'text-emerald-500' : status.overallHealth.score >= 70 ? 'text-blue-500' : status.overallHealth.score >= 50 ? 'text-amber-500' : 'text-destructive'}`}>
+                <div className={`text-5xl font-bold ${status.overallHealth.score >= 85 ? 'text-emerald-500' : status.overallHealth.score >= 70 ? 'text-primary' : status.overallHealth.score >= 50 ? 'text-amber-500' : 'text-destructive'}`}>
                   {status.overallHealth.score}%
                 </div>
                 <div className="flex items-center gap-2 mt-1">
@@ -245,9 +245,9 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
                 No active alerts - all systems healthy
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {status.alerts.map((alert) => (
-                  <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg border border-border/50">
+                  <div key={alert.id} className="flex items-start gap-4 p-4 rounded-lg border border-border/50">
                     {getAlertIcon(alert.type)}
                     <div className="flex-1">
                       <div className="font-medium">{alert.title}</div>
@@ -282,9 +282,9 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
                 No insights available at the moment
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {status.insights.map((insight) => (
-                  <div key={insight.id} className="p-3 rounded-lg border border-border/50">
+                  <div key={insight.id} className="p-4 rounded-lg border border-border/50">
                     <div className="flex items-center justify-between mb-2">
                       <div className="font-medium">{insight.title}</div>
                       <div className="flex items-center gap-2">
@@ -323,7 +323,7 @@ interface DimensionCardProps {
 const DimensionCard: React.FC<DimensionCardProps> = ({ dimension, data, icon }) => {
   const getScoreColor = (score: number) => {
     if (score >= 85) return 'text-emerald-500';
-    if (score >= 70) return 'text-blue-500';
+    if (score >= 70) return 'text-primary';
     if (score >= 50) return 'text-amber-500';
     return 'text-destructive';
   };
@@ -356,7 +356,7 @@ const DimensionCard: React.FC<DimensionCardProps> = ({ dimension, data, icon }) 
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
+        <div className="space-y-4">
           {/* Key Indicators */}
           <div>
             <h4 className="text-sm font-medium mb-2">Key Indicators</h4>

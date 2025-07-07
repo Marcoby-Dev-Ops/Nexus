@@ -160,7 +160,7 @@ export const UnifiedSettingsPage: React.FC<{ config: SettingsPageConfig }> = ({ 
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`w-full text-left p-3 rounded-lg transition-colors duration-200 ${
+                className={`w-full text-left p-4 rounded-lg transition-colors duration-200 ${
                   activeSection === section.id
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -338,7 +338,7 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
             <TabsTrigger value="practices" className="text-xs">Best Practices</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="recommendations" className="space-y-3 mt-4">
+          <TabsContent value="recommendations" className="space-y-4 mt-4">
             {insights.aiRecommendations.map((rec, index) => (
               <Alert key={index} className="border-success-subtle bg-success-subtle">
                 <Zap className="h-4 w-4 text-success" />
@@ -348,27 +348,27 @@ const AIInsightsPanel: React.FC<{ insights: BusinessInsight }> = ({ insights }) 
             ))}
           </TabsContent>
           
-          <TabsContent value="impact" className="space-y-3 mt-4">
+          <TabsContent value="impact" className="space-y-4 mt-4">
             {insights.crossDepartmentalImpact.map((impact, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+              <div key={index} className="flex items-start gap-4 p-4 bg-background rounded-lg border border-border">
                 <ArrowUpRight className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                 <p className="text-sm text-muted-foreground">{impact}</p>
               </div>
             ))}
           </TabsContent>
           
-          <TabsContent value="drivers" className="space-y-3 mt-4">
+          <TabsContent value="drivers" className="space-y-4 mt-4">
             {insights.keyBusinessDrivers.map((driver, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+              <div key={index} className="flex items-start gap-4 p-4 bg-background rounded-lg border border-border">
                 <Target className="w-4 h-4 text-secondary mt-1 flex-shrink-0" />
                 <p className="text-sm text-muted-foreground">{driver}</p>
               </div>
             ))}
           </TabsContent>
           
-          <TabsContent value="practices" className="space-y-3 mt-4">
+          <TabsContent value="practices" className="space-y-4 mt-4">
             {insights.bestPractices.map((practice, index) => (
-              <div key={index} className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border">
+              <div key={index} className="flex items-start gap-4 p-4 bg-background rounded-lg border border-border">
                 <Award className="w-4 h-4 text-warning mt-1 flex-shrink-0" />
                 <p className="text-sm text-muted-foreground">{practice}</p>
               </div>
@@ -462,7 +462,7 @@ const EnhancedActivityFeed: React.FC<{ activities: EnhancedActivity[] }> = ({ ac
       <CardContent>
         <div className="space-y-4">
           {activities.map((activity, index) => (
-            <div key={index} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
+            <div key={index} className="flex items-start gap-4 p-4 bg-muted/50 rounded-lg">
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">{activity.description}</p>
                 <div className="flex items-center gap-2 mt-1">

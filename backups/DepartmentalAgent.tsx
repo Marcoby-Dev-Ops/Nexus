@@ -5,14 +5,21 @@
  * Can switch between department head and specialists based on conversation needs
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, ArrowLeft, Users, ChevronDown, ChevronUp } from 'lucide-react';
-import { chatHistory } from '@/lib/supabase';
-import { useRealtimeChat } from '@/lib/useRealtimeChat';
-import { useAuth } from '@/lib/auth';
-import { getChildAgents, type Agent } from '@/lib/agentRegistry';
+import { chatHistory } from '../../lib/core/supabase';
+import { useRealtimeChat } from '@/lib/hooks/useRealtimeChat';
+import { useAuth } from '@/contexts/AuthContext';
+import { getChildAgents, type Agent } from '@/lib/ai/agentRegistry';
+import { supervisorAgent } from '@/lib/ai/assistant/supervisor';
+import { Button } from '@/components/ui/Button';
+import { ScrollArea } from '@/components/ui/ScrollArea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/Avatar';
+import { Badge } from '@/components/ui/Badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
 
 /**
  * @interface DepartmentalAgentProps
@@ -209,25 +216,44 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
         }
       });
 
-      // TODO: Replace with actual AI service call that can analyze intent and suggest specialist routing
-      setTimeout(async () => {
-        try {
-          const aiResponse = `As your ${activeAgent.name}, I understand you're asking about: "${textToSend}". Based on my expertise in ${activeAgent.specialties?.join(', ')}, I recommend...
+      // Call supervisor to see if we should route to a specialist
+      const routing = await supervisorAgent(textToSend, {
+        specialists,
+        department: agent.department,
+      });
 
-${specialists.length > 0 ? `\n💡 *If you need more specialized help, I can connect you with one of our ${agent.department} specialists: ${specialists.map(s => s.name).join(', ')}*` : ''}`;
-          
+      // If supervisor suggests a specialist with reasonable confidence, switch
+      if (routing.routeToAgentId) {
+        const target = specialists.find((s) => s.id === routing.routeToAgentId);
+        if (target && routing.confidence >= 0.5) {
+          // Add system message about switch then change active agent
           await chatHistory.addMessage(currentConversationId, {
             role: 'assistant',
-            content: aiResponse,
-            metadata: { agent_id: activeAgent.id }
+            content: routing.content,
+            metadata: { agent_id: activeAgent.id, agent_switch_suggestion: true },
           });
-        } catch (err) {
-          console.error('Failed to get AI response:', err);
-          setError('Failed to get response. Please try again.');
-        } finally {
+
+          setActiveAgent(target);
+
+          await chatHistory.addMessage(currentConversationId, {
+            role: 'assistant',
+            content: `Switching you to ${target.name} for deeper expertise.`,
+            metadata: { agent_id: target.id, agent_switch: true },
+          });
+
           setLoading(false);
+          return;
         }
-      }, 1000);
+      }
+
+      // Otherwise respond as current agent
+      await chatHistory.addMessage(currentConversationId, {
+        role: 'assistant',
+        content: routing.content,
+        metadata: { agent_id: activeAgent.id }
+      });
+
+      setLoading(false);
 
     } catch (err) {
       console.error('Error in handleSend:', err);

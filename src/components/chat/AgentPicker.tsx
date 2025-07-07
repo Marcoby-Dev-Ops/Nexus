@@ -24,6 +24,10 @@ const AgentPicker: React.FC<Props> = ({ value, onChange, className = '' }) => (
     <SelectContent>
       <SelectGroup>
         <SelectLabel>AI Agents</SelectLabel>
+        <SelectItem value="auto" className="flex items-center gap-2">
+          <span>🎯</span>
+          <span>Auto-Route (Supervisor)</span>
+        </SelectItem>
         {AGENTS.map((a) => (
           <SelectItem key={a.id} value={a.id} className="flex items-center gap-2">
             <span>{a.avatar ?? '🤖'}</span>

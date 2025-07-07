@@ -13,4 +13,8 @@ create table ops_action_queue (
 alter table ops_action_queue enable row level security;
 
 create policy "org-scope" on ops_action_queue
-  using ( org_id = (current_setting('request.jwt.claims',true)::jsonb)->>'org_id' ); 
+  using ( 
+    org_id = (current_setting('request.jwt.claims',true)::jsonb)->>'org_id'::uuid
+    AND (current_setting('request.jwt.claims',true)::jsonb)->>'org_id' IS NOT NULL
+    AND (current_setting('request.jwt.claims',true)::jsonb)->>'org_id' != 'null'
+  ); 

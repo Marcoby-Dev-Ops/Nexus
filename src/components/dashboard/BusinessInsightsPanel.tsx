@@ -134,41 +134,41 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
   const getInsightIcon = (type: BusinessInsight['type']) => {
     switch (type) {
       case 'achievement':
-        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
+        return <CheckCircle2 className="w-5 h-5 text-success" />;
       case 'opportunity':
-        return <Lightbulb className="w-5 h-5 text-blue-600" />;
+        return <Lightbulb className="w-5 h-5 text-primary" />;
       case 'alert':
-        return <AlertTriangle className="w-5 h-5 text-orange-600" />;
+        return <AlertTriangle className="w-5 h-5 text-warning" />;
       case 'trend':
-        return <TrendingUp className="w-5 h-5 text-purple-600" />;
+        return <TrendingUp className="w-5 h-5 text-secondary" />;
       default:
-        return <CheckCircle2 className="w-5 h-5 text-gray-600" />;
+        return <CheckCircle2 className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
   const getInsightColor = (type: BusinessInsight['type']) => {
     switch (type) {
       case 'achievement':
-        return 'border-green-200 bg-green-50 hover:bg-green-100';
+        return 'border-green-200 bg-success/5 hover:bg-success/10';
       case 'opportunity':
-        return 'border-blue-200 bg-blue-50 hover:bg-blue-100';
+        return 'border-border bg-primary/5 hover:bg-primary/10';
       case 'alert':
         return 'border-orange-200 bg-orange-50 hover:bg-orange-100';
       case 'trend':
-        return 'border-purple-200 bg-purple-50 hover:bg-purple-100';
+        return 'border-purple-200 bg-secondary/5 hover:bg-secondary/10';
       default:
-        return 'border-gray-200 bg-gray-50 hover:bg-gray-100';
+        return 'border-border bg-background hover:bg-muted';
     }
   };
 
   const getImpactBadge = (impact: BusinessInsight['impact']) => {
     switch (impact) {
       case 'high':
-        return <Badge variant="destructive" className="bg-red-100 text-red-800">High Impact</Badge>;
+        return <Badge variant="destructive" className="bg-destructive/10 text-destructive">High Impact</Badge>;
       case 'medium':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Medium Impact</Badge>;
+        return <Badge variant="secondary" className="bg-warning/10 text-yellow-800">Medium Impact</Badge>;
       case 'low':
-        return <Badge variant="outline" className="bg-gray-100 text-gray-800">Low Impact</Badge>;
+        return <Badge variant="outline" className="bg-muted text-foreground">Low Impact</Badge>;
     }
   };
 
@@ -212,7 +212,7 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="w-6 h-6 text-blue-600" />
+            <Lightbulb className="w-6 h-6 text-primary" />
             Business Insights
           </CardTitle>
           <CardDescription>

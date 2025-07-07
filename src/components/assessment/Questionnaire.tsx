@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
-import type { AssessmentQuestion, AssessmentCategory } from '@prisma/client';
+import type { AssessmentQuestion, AssessmentCategory } from '@/types/supabase';
 import AnswerInput from './AnswerInput';
 import { supabase } from '../../lib/core/supabase';
 import { Info } from 'lucide-react';

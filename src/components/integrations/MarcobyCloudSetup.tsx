@@ -215,9 +215,9 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
     <Card className="w-full max-w-4xl">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-500/10">
-              <Cloud className="w-6 h-6 text-blue-500" />
+          <div className="flex items-center gap-4">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Cloud className="w-6 h-6 text-primary" />
             </div>
             <div>
               <CardTitle className="text-xl">Connect Marcoby Cloud</CardTitle>
@@ -235,7 +235,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
         <div className="flex items-center gap-2 mb-6">
           {steps.map((step, index) => (
             <React.Fragment key={step.id}>
-              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 currentStep === step.id 
                   ? 'bg-primary/10 text-primary' 
                   : step.completed 
@@ -275,16 +275,16 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
               </p>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-lg space-y-3">
-              <h4 className="font-medium flex items-center gap-2 text-blue-800">
+            <div className="bg-primary/5 p-4 rounded-lg space-y-4">
+              <h4 className="font-medium flex items-center gap-2 text-primary">
                 <ExternalLink className="w-4 h-4" />
                 ResellersPanel Integration
               </h4>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-primary">
                 Marcoby Cloud uses ResellersPanel as its white-label backend. Enter your ResellersPanel API credentials to connect your hosting infrastructure.
               </p>
-              <ol className="text-sm space-y-1 ml-4 list-decimal text-blue-700">
-                <li>Log in to your <a href="https://cp.resellerspanel.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">ResellersPanel Control Panel</a></li>
+              <ol className="text-sm space-y-1 ml-4 list-decimal text-primary">
+                <li>Log in to your <a href="https://cp.resellerspanel.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">ResellersPanel Control Panel</a></li>
                 <li>Navigate to API Settings</li>
                 <li>Enable API access for your account</li>
                 <li>Use your ResellersPanel username and password</li>
@@ -377,7 +377,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
             </div>
 
             <div className="bg-success/10 p-4 rounded-lg">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <CheckCircle className="w-5 h-5 text-success" />
                 <div>
                   <h4 className="font-medium text-success">Connection Successful</h4>
@@ -420,8 +420,8 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Server className="w-8 h-8 text-blue-500" />
+                  <div className="flex items-center gap-4">
+                    <Server className="w-8 h-8 text-primary" />
                     <div>
                       <h4 className="font-medium">Infrastructure</h4>
                       <p className="text-2xl font-bold">
@@ -435,8 +435,8 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
 
               <Card>
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Activity className="w-8 h-8 text-green-500" />
+                  <div className="flex items-center gap-4">
+                    <Activity className="w-8 h-8 text-success" />
                     <div>
                       <h4 className="font-medium">Uptime</h4>
                       <p className="text-2xl font-bold">
@@ -450,7 +450,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
 
               <Card>
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <DollarSign className="w-8 h-8 text-amber-500" />
                     <div>
                       <h4 className="font-medium">Monthly Cost</h4>
@@ -465,7 +465,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <h4 className="font-medium text-success">✅ Performance Monitoring</h4>
                 <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                   <li>• CPU: {testResults.metrics.infrastructure.cpuUtilization}% utilization</li>
@@ -475,7 +475,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
                 </ul>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <h4 className="font-medium text-success">✅ Cost Optimization</h4>
                 <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                   <li>• Potential savings: ${testResults.metrics.costs.optimizationSavings}</li>
@@ -485,7 +485,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
                 </ul>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <h4 className="font-medium text-success">✅ Security & Compliance</h4>
                 <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                   <li>• Security score: {testResults.metrics.security.securityScore}%</li>
@@ -495,7 +495,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
                 </ul>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <h4 className="font-medium text-success">✅ Automation Insights</h4>
                 <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                   <li>• Automation coverage: {testResults.metrics.automation.automationCoverage}%</li>

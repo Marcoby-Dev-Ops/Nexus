@@ -2,6 +2,8 @@
 
 > **Update (2024-06-10):** Workspace, Admin UI, Theme Panel, AI Next Best Actions, UI/UX Consistency, and related critical path items are now complete.
 
+> **Update (2024-07-07):** Callback Configuration System migration is now complete. All callback/integration flows are config-driven and legacy files have been removed.
+
 ## How to Use This Document & The Prompt Library
 
 This document outlines the strategic vision and execution roadmap for Nexus. To ensure clarity and consistency in development, each major feature listed in the roadmap is accompanied by a **prompt**. These prompts, sourced from the `NEXUS_PROMPT_LIBRARY.md`, should be used to create detailed tickets or epics in our project management tool.
@@ -155,7 +157,7 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
     > - Analytics tracking for executive actions
     > - Dashboard personalization by user role/department
 
-- [x] **Department Modules:** Sales, Finance, Operations (each w/ KPIs, workflows, AI suggestions).
+- [x] **Department Modules:** Sales, Finance, Operations (scaffolded with unified architecture, needs real business data integration).
     > **Prompt:**  
     > Scaffold Sales, Finance, and Operations modules with:
     > - **THINK:** Analysis tab (KPI grid, workflow/task panel, AI summaries)
@@ -208,6 +210,20 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
     > - Includes sample inputs/outputs in docs  
     > - Tests/Storybook
 
+- [x] **Context Chips with 'Explain Source' Drawer:** AI response transparency with source attribution for enhanced trust and understanding.
+    > **Prompt:**  
+    > Implement context chips that display data sources used in AI responses with an expandable drawer for detailed source information. Include visual indicators for source types (user profile, business data, cloud documents, etc.), confidence scores, and comprehensive source explanations.
+    >
+    > **Acceptance Criteria:**  
+    > - Interactive chips showing data sources with color-coding by type
+    > - Confidence scores displayed on each chip
+    > - "Explain sources" dialog with detailed information
+    > - Source metadata including access level, verification status, and content previews
+    > - Integration with existing RAG system and contextual intelligence
+    > - Demo component showcasing functionality with sample data
+    > - Responsive design with compact mode for mobile
+    > - Tests and documentation for all context chip components
+
 - [x] **Onboarding & Help:** Guided onboarding, contextual help, user journey tracker.
     > **Prompt:**  
     > Implement progressive onboarding: checklist, contextual tips, user journey tracking. Add help panel with searchable guides and video links.
@@ -245,7 +261,7 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
     > - Analytics/event tracking where relevant  
     > - Documentation updated
 
-- [ ] **Callback Configuration System:** All callback/integration flows (OAuth, API, etc.) are being migrated to a config-driven architecture, with legacy callback files being removed.
+- [x] **Callback Configuration System:** All callback/integration flows (OAuth, API, etc.) are being migrated to a config-driven architecture, with legacy callback files being removed.
     > **Prompt:**  
     > Refactor all callback and integration routes to use a unified, config-driven system. Remove legacy callback files. Ensure all new and existing integrations (OAuth, API, etc.) are extensible via configuration, not hardcoded routes.
     > 
@@ -358,6 +374,21 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
   - **VARLeadDashboard:** Sales pipeline management and lead tracking
   - **ModelManagementDashboard:** AI model performance monitoring and cost optimization
 
+- [x] **Live Business Health System:** Data connectivity-based business health scoring with gamification and peer benchmarking.
+    > **Prompt:**  
+    > Implement a comprehensive business health system that scores companies based on their data connectivity to Nexus. Include data connectivity health service with 18 business data sources across 6 categories, verification multipliers, peer benchmarking, achievement tracking, and gamification elements to incentivize users to make Nexus their central business data hub.
+    >
+    > **Acceptance Criteria:**  
+    > - Data connectivity health service with point-based scoring system
+    > - 18 business data sources across 6 categories (Business Profile, Communications, Sales/CRM, Finance, Operations, Marketing)
+    > - Verification bonuses (40% higher scores for verified vs. self-reported data)
+    > - Living business assessment with peer comparisons and industry benchmarking
+    > - Achievement system with badges and milestones
+    > - Real-time updates and motivational messaging
+    > - Business profiles table for peer grouping and anonymous comparisons
+    > - Database schema for health history tracking and trend analysis
+    > - Integration with existing dashboard components
+
 - [x] **Centralized Apps System:** Unified business operating system with AI orchestration across all connected applications.
     > **Prompt:**  
     > Build a centralized apps orchestrator that manages all business applications through AI coordination. Include unified command execution, business function automation, cross-platform analytics, and real-time app status monitoring across 8+ major platforms (Salesforce, HubSpot, QuickBooks, Stripe, Microsoft 365, Slack, Mailchimp, Google Analytics).
@@ -373,9 +404,50 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
     > - CentralizedAppsHub UI component built and tested
 
 - [ ] Sales: Pipeline, deals, forecasting, lead follow-up, basic CRM, integrations.
+    > **Prompt:**
+    > Implement a real-time, event-driven Sales module with live pipeline management, deal tracking, forecasting, lead follow-up, and CRM integrations. Integrate with external sales platforms (e.g., Salesforce, HubSpot) for bi-directional sync and automation. Ensure all sales data, actions, and automations are audit-logged and support live updates to the UI.
+    >
+    > **Acceptance Criteria:**
+    > - Real-time pipeline and deal management with live UI updates
+    > - Bi-directional sync with external sales platforms (Salesforce, HubSpot, etc.)
+    > - Automated lead follow-up and workflow triggers
+    > - Forecasting and analytics widgets with live data
+    > - Error handling and retry mechanisms for all sync operations
+    > - Audit logging for all sales actions and data changes
+    > - Extensible integration framework for new sales tools
+    > - Role-based access and permission checks
+    > - Comprehensive tests and documentation
+
 - [ ] Finance: Expenses, invoicing, reports, QBO/Xero integration.
+    > **Prompt:**
+    > Build a real-time Finance module with live expense tracking, invoicing, financial reporting, and integrations with accounting platforms (QuickBooks Online, Xero, etc.). Support automated reconciliation, live data sync, and audit logging for all financial operations.
+    >
+    > **Acceptance Criteria:**
+    > - Real-time expense and invoice management with live UI updates
+    > - Bi-directional sync with accounting platforms (QBO, Xero, etc.)
+    > - Automated reconciliation and workflow triggers
+    > - Financial analytics and reporting widgets with live data
+    > - Error handling and retry mechanisms for all sync operations
+    > - Audit logging for all financial actions and data changes
+    > - Extensible integration framework for new finance tools
+    > - Role-based access and permission checks
+    > - Comprehensive tests and documentation
+
 - [ ] Operations: Tasks, automations, process workflows.
-- [ ] AI in Every Department: Role-specific suggestions, AI automations, trend alerts.
+    > **Prompt:**
+    > Create a real-time Operations module for live task management, process automation, and workflow orchestration. Integrate with external operations tools (e.g., Asana, Jira, Zapier) for live sync and automation. Ensure all operations data and automations are audit-logged and support live UI updates.
+    >
+    > **Acceptance Criteria:**
+    > - Real-time task and workflow management with live UI updates
+    > - Bi-directional sync with external operations tools (Asana, Jira, Zapier, etc.)
+    > - Automated process triggers and workflow orchestration
+    > - Operations analytics and reporting widgets with live data
+    > - Error handling and retry mechanisms for all sync operations
+    > - Audit logging for all operations actions and data changes
+    > - Extensible integration framework for new operations tools
+    > - Role-based access and permission checks
+    > - Comprehensive tests and documentation
+
 - [x] **Real-Time Provider Sync:** Backend service for webhooks from external providers with live updates to client.
     > **Prompt:**  
     > Implement a backend service to handle webhooks from external providers (Google, Microsoft 365) and push live updates to the client for features like Calendar and Email. Include real-time data synchronization, webhook processing, and push notification system.
@@ -392,6 +464,25 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 - [ ] Marketplace UI: App discovery, install/uninstall, licensing/billing.
 - [x] Integration Framework: n8n, Zapier, HubSpot, M365, Stripe, etc.
   - **CentralizedAppsHub:** UI component for this framework has been built and tested
+- [x] **Google Places Integration:** Smart address autocomplete and business intelligence integration.
+    > **Prompt:**  
+    > Implement Google Places API integration for intelligent address autocomplete and business information features. Include smart address suggestions, business establishment search, automatic form population, and geolocation services across all address input fields in the platform.
+    >
+    > **Acceptance Criteria:**  
+    > - Google Places API service with address autocomplete functionality
+    > - AddressAutocomplete component with real-time suggestions
+    > - Business vs. address search modes with country filtering
+    > - Structured address data parsing (street, city, postal code, country)
+    > - Auto-population of multiple form fields from single address selection
+    > - Current location detection with geolocation API
+    > - Keyboard navigation support (arrows, enter, escape)
+    > - Graceful degradation when API is unavailable
+    > - Performance optimization (debounced requests, caching)
+    > - Integration in Account Settings and other address forms
+    > - Cost optimization features (country restrictions, result limiting)
+    > - Comprehensive error handling and loading states
+    > - Documentation and setup instructions for API configuration
+    > - Tests and Storybook coverage for all components
 - [ ] Integration SDK: For 3rd-party and internal connectors.
 
 #### C. Customization

@@ -62,7 +62,7 @@ export const FeatureExplorer: React.FC = () => {
           name: 'AI Hub', 
           description: 'AI-powered insights and automation tools', 
           icon: <Zap className="h-5 w-5" />, 
-          path: '/ai-dashboard',
+          path: '/ai-hub',
           color: 'bg-secondary',
           new: true
         },
@@ -102,7 +102,7 @@ export const FeatureExplorer: React.FC = () => {
           description: 'Internal communication and team chat', 
           icon: <MessageSquare className="h-5 w-5" />, 
           path: '/messages',
-          color: 'bg-indigo-500'
+          color: 'bg-primary'
         },
         { 
           name: 'Documents', 
@@ -170,7 +170,7 @@ export const FeatureExplorer: React.FC = () => {
                 <div className={`h-1 ${feature.color}`}></div>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-4">
                       <div className={`p-2 rounded-md ${feature.color} bg-opacity-10`}>
                         {feature.icon}
                       </div>

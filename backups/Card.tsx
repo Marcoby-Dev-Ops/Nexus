@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { cn } from '../../lib/utils';
+import { cn } from '../../lib/utils/utils';
 
 /**
  * @interface CardProps
@@ -49,76 +49,70 @@ export const OriginalCard: React.FC<CardProps> = React.memo(({ header, footer, c
 OriginalCard.displayName = 'OriginalCard';
 
 // Modern shadcn-style Card components (used by Nexus Thoughts)
-export const Card = React.forwardRef<
+const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn(
-      "rounded-lg border bg-card text-card-foreground shadow-sm",
-      className
-    )}
+    className={`rounded-lg border bg-card text-card-foreground shadow-sm ${className || ''}`}
     {...props}
   />
 ));
 Card.displayName = "Card";
 
 // Shadcn-style Card components for compatibility
-export const CardHeader = React.forwardRef<
+const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={`flex flex-col space-y-1.5 p-6 ${className || ''}`}
     {...props}
   />
 ));
 CardHeader.displayName = "CardHeader";
 
-export const CardTitle = React.forwardRef<
+const CardTitle = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
-      className
-    )}
+    className={`text-lg font-semibold leading-none tracking-tight ${className || ''}`}
     {...props}
   />
 ));
 CardTitle.displayName = "CardTitle";
 
-export const CardDescription = React.forwardRef<
+const CardDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={`text-sm text-muted-foreground ${className || ''}`}
     {...props}
   />
 ));
 CardDescription.displayName = "CardDescription";
 
-export const CardContent = React.forwardRef<
+const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={`p-6${className ? ` ${className}` : ''}`} {...props} />
 ));
 CardContent.displayName = "CardContent";
 
-export const CardFooter = React.forwardRef<
+const CardFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={`flex items-center p-6${className ? ` ${className}` : ''}`}
     {...props}
   />
 ));
@@ -133,4 +127,7 @@ Card.propTypes = {
   ariaLabel: PropTypes.string,
 };
 
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+
+// Backward compatibility: allow default import
 export default Card; 

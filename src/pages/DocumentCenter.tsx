@@ -335,7 +335,7 @@ const DocumentCenter: React.FC = () => {
   const getFileIcon = (type: string) => {
     if (type.includes('image')) return <FileImage className="h-5 w-5" />;
     if (type.includes('video')) return <FileVideo className="h-5 w-5" />;
-    if (type.includes('pdf')) return <FileText className="h-5 w-5 text-red-500" />;
+    if (type.includes('pdf')) return <FileText className="h-5 w-5 text-destructive" />;
     return <File className="h-5 w-5" />;
   };
 
@@ -409,7 +409,7 @@ const DocumentCenter: React.FC = () => {
           
           <Card>
             <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
-              <Archive className="h-8 w-8 text-blue-500" />
+              <Archive className="h-8 w-8 text-primary" />
               <p className="text-sm text-muted-foreground">Storage Used</p>
               <p className="text-2xl font-bold">{formatFileSize(stats.total_size)}</p>
             </CardContent>
@@ -417,7 +417,7 @@ const DocumentCenter: React.FC = () => {
           
           <Card>
             <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
-              <Calendar className="h-8 w-8 text-green-500" />
+              <Calendar className="h-8 w-8 text-success" />
               <p className="text-sm text-muted-foreground">This Month</p>
               <p className="text-2xl font-bold">{stats.files_this_month}</p>
             </CardContent>
@@ -425,7 +425,7 @@ const DocumentCenter: React.FC = () => {
           
           <Card>
             <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
-              <Brain className="h-8 w-8 text-purple-500" />
+              <Brain className="h-8 w-8 text-secondary" />
               <p className="text-sm text-muted-foreground">AI Processed</p>
               <p className="text-2xl font-bold">{stats.ai_processed}</p>
             </CardContent>
@@ -441,7 +441,7 @@ const DocumentCenter: React.FC = () => {
           
           <Card>
             <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
-              <Star className="h-8 w-8 text-yellow-500" />
+              <Star className="h-8 w-8 text-warning" />
               <p className="text-sm text-muted-foreground">Starred</p>
               <p className="text-2xl font-bold">{stats.starred_files}</p>
             </CardContent>
@@ -484,7 +484,7 @@ const DocumentCenter: React.FC = () => {
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
-                className="px-3 py-2 border border-border rounded-md bg-background"
+                className="px-4 py-2 border border-border rounded-md bg-background"
               >
                 <option value="all">All Files</option>
                 <option value="documents">Documents</option>
@@ -529,7 +529,7 @@ const DocumentCenter: React.FC = () => {
                   onClick={() => setSelectedFolder(folder.id)}
                 >
                   <CardContent className="flex flex-col items-center justify-center gap-2 pt-6">
-                    <Folder className="h-8 w-8 text-blue-500" />
+                    <Folder className="h-8 w-8 text-primary" />
                     <p className="text-sm font-medium text-center">{folder.name}</p>
                     <p className="text-xs text-muted-foreground">
                       {folder.file_count} files
@@ -636,8 +636,8 @@ const DocumentCenter: React.FC = () => {
           ) : (
             <div className="space-y-2">
               {filteredDocuments.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/50">
-                  <div className="flex items-center gap-3">
+                <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center gap-4">
                     {getFileIcon(doc.type)}
                     <div>
                       <p className="font-medium">{doc.name}</p>
@@ -820,7 +820,7 @@ const DocumentCenter: React.FC = () => {
                 {selectedDocument.ai_analysis ? (
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 mb-4">
-                      <Brain className="h-5 w-5 text-purple-500" />
+                      <Brain className="h-5 w-5 text-secondary" />
                       <span className="font-semibold">AI Analysis Results</span>
                       <Badge variant="secondary">
                         {(selectedDocument.ai_analysis.confidence * 100).toFixed(1)}% confidence

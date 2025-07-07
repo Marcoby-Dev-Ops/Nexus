@@ -266,7 +266,7 @@ export const ModelManagementDashboard: React.FC = () => {
               {report?.suggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className="p-3 border rounded-lg flex items-start space-x-2"
+                  className="p-4 border rounded-lg flex items-start space-x-2"
                 >
                   {suggestion.includes('budget') ? (
                     <DollarSign className="w-4 h-4 mt-1 text-warning" />

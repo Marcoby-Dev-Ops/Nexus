@@ -180,21 +180,21 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
   const renderOverview = () => (
     <div className="space-y-6">
       <div className="text-center space-y-4">
-        <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-          <FileText className="w-8 h-8 text-blue-600" />
+        <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+          <FileText className="w-8 h-8 text-primary" />
         </div>
         <div>
           <h3 className="text-xl font-semibold">Cloud Storage RAG Integration</h3>
-          <p className="text-gray-600 mt-2">
+          <p className="text-muted-foreground mt-2">
             Connect your cloud storage to make documents searchable by Nexus AI.
             Your files become intelligent business context.
           </p>
         </div>
       </div>
 
-      <div className="bg-blue-50 p-4 rounded-lg">
+      <div className="bg-primary/5 p-4 rounded-lg">
         <h4 className="font-medium text-blue-900 mb-2">What This Enables:</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
+        <ul className="text-sm text-primary space-y-1">
           <li>• AI can reference your meeting notes, project docs, and spreadsheets</li>
           <li>• "Based on last week's board meeting..." type responses</li>
           <li>• Intelligent search across all your business documents</li>
@@ -212,7 +212,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
     <div className="space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-4">Select Storage Providers</h3>
-        <p className="text-gray-600 mb-6">
+        <p className="text-muted-foreground mb-6">
           Choose which cloud storage services to sync for AI document retrieval.
         </p>
       </div>
@@ -222,18 +222,18 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
           <Card key={provider.id} className="border">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   {provider.icon}
                   <div>
                     <div className="font-medium">{provider.name}</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-muted-foreground">
                       {provider.connected ? (
-                        <span className="flex items-center text-green-600">
+                        <span className="flex items-center text-success">
                           <CheckCircle className="w-4 h-4 mr-1" />
                           Connected • {provider.syncStatus.totalDocuments} documents
                         </span>
                       ) : (
-                        <span className="flex items-center text-orange-600">
+                        <span className="flex items-center text-warning">
                           <AlertCircle className="w-4 h-4 mr-1" />
                           Not connected
                         </span>
@@ -242,9 +242,9 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   {provider.syncStatus.lastSync && (
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       Last sync: {new Date(provider.syncStatus.lastSync).toLocaleDateString()}
                     </div>
                   )}
@@ -257,7 +257,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
               </div>
               
               {provider.syncStatus.errors.length > 0 && (
-                <div className="mt-3 p-2 bg-red-50 rounded text-sm text-red-700">
+                <div className="mt-3 p-2 bg-destructive/5 rounded text-sm text-destructive">
                   <strong>Sync Errors:</strong>
                   <ul className="mt-1 space-y-1">
                     {provider.syncStatus.errors.map((error, index) => (
@@ -273,7 +273,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
 
       <div className="bg-amber-50 p-4 rounded-lg">
         <div className="flex items-start space-x-2">
-          <Eye className="w-5 h-5 text-amber-600 mt-0.5" />
+          <Eye className="w-5 h-5 text-warning mt-0.5" />
           <div className="text-sm text-amber-800">
             <strong>Privacy Note:</strong> Documents are processed locally and stored securely. 
             Only text content is extracted for AI context - original files remain in your cloud storage.
@@ -281,7 +281,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
         </div>
       </div>
 
-      <div className="flex space-x-3">
+      <div className="flex space-x-4">
         <Button variant="outline" onClick={() => setStep('overview')} className="flex-1">
           Back
         </Button>
@@ -299,11 +299,11 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
   const renderSync = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          <RefreshCw className={`w-8 h-8 text-blue-600 ${isLoading ? 'animate-spin' : ''}`} />
+        <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+          <RefreshCw className={`w-8 h-8 text-primary ${isLoading ? 'animate-spin' : ''}`} />
         </div>
         <h3 className="text-lg font-semibold">Syncing Documents</h3>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Processing your documents for AI retrieval...
         </p>
       </div>
@@ -319,7 +319,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
 
         <div className="space-y-2">
           {providers.filter(p => p.enabled).map((provider) => (
-            <div key={provider.id} className="flex items-center justify-between p-3 bg-gray-50 rounded">
+            <div key={provider.id} className="flex items-center justify-between p-4 bg-background rounded">
               <div className="flex items-center space-x-2">
                 {provider.icon}
                 <span className="font-medium">{provider.name}</span>
@@ -335,17 +335,17 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
   const renderComplete = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <CheckCircle className="w-8 h-8 text-green-600" />
+        <div className="mx-auto w-16 h-16 bg-success/10 rounded-full flex items-center justify-center mb-4">
+          <CheckCircle className="w-8 h-8 text-success" />
         </div>
         <h3 className="text-lg font-semibold">Document Sync Complete!</h3>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Your documents are now available for AI-powered insights.
         </p>
       </div>
 
       {syncResults && (
-        <div className="space-y-3">
+        <div className="space-y-4">
           <h4 className="font-medium">Sync Results:</h4>
           {syncResults.map((result: any, index: number) => (
             <Card key={index} className="border">
@@ -353,7 +353,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium">{result.provider}</div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-muted-foreground">
                       {result.success ? (
                         `✅ Processed ${result.processed} documents`
                       ) : (
@@ -367,7 +367,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
                 </div>
                 
                 {result.errors && result.errors.length > 0 && (
-                  <div className="mt-2 text-sm text-red-600">
+                  <div className="mt-2 text-sm text-destructive">
                     <strong>Errors:</strong>
                     <ul className="mt-1 space-y-1">
                       {result.errors.map((error: string, i: number) => (
@@ -382,17 +382,17 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
         </div>
       )}
 
-      <div className="bg-green-50 p-4 rounded-lg">
+      <div className="bg-success/5 p-4 rounded-lg">
         <div className="flex items-start space-x-2">
-          <Zap className="w-5 h-5 text-green-600 mt-0.5" />
-          <div className="text-sm text-green-800">
+          <Zap className="w-5 h-5 text-success mt-0.5" />
+          <div className="text-sm text-success">
             <strong>What's Next:</strong> Your AI assistants can now reference your documents. 
             Try asking "What did we discuss in last week's meeting?" or "Show me our Q4 budget."
           </div>
         </div>
       </div>
 
-      <div className="flex space-x-3">
+      <div className="flex space-x-4">
         <Button variant="outline" onClick={onClose} className="flex-1">
           Close
         </Button>
@@ -421,9 +421,9 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
             return (
               <React.Fragment key={stepName}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                  isActive ? 'bg-blue-600 text-white' :
-                  isCompleted ? 'bg-green-600 text-white' :
-                  'bg-gray-200 text-gray-600'
+                  isActive ? 'bg-primary text-primary-foreground' :
+                  isCompleted ? 'bg-green-600 text-primary-foreground' :
+                  'bg-gray-200 text-muted-foreground'
                 }`}>
                   {isCompleted ? <CheckCircle className="w-4 h-4" /> : index + 1}
                 </div>

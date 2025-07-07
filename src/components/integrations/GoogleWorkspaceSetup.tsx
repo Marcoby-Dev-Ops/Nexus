@@ -209,10 +209,10 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
     <div className="space-y-6">
       <div className="text-center">
         <div className="flex justify-center items-center gap-2 mb-4">
-          <HardDrive className="w-8 h-8 text-blue-600" />
-          <Calendar className="w-8 h-8 text-green-600" />
-          <Mail className="w-8 h-8 text-red-600" />
-          <BarChart3 className="w-8 h-8 text-yellow-600" />
+          <HardDrive className="w-8 h-8 text-primary" />
+          <Calendar className="w-8 h-8 text-success" />
+          <Mail className="w-8 h-8 text-destructive" />
+          <BarChart3 className="w-8 h-8 text-warning" />
         </div>
         <h3 className="text-xl font-semibold mb-2">Connect Google Workspace</h3>
         <p className="text-muted-foreground">
@@ -229,27 +229,27 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
 
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div className="flex items-center gap-2">
-          <HardDrive className="w-4 h-4 text-blue-600" />
+          <HardDrive className="w-4 h-4 text-primary" />
           <span>Drive storage & files</span>
         </div>
         <div className="flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-green-600" />
+          <Calendar className="w-4 h-4 text-success" />
           <span>Calendar & meetings</span>
         </div>
         <div className="flex items-center gap-2">
-          <Mail className="w-4 h-4 text-red-600" />
+          <Mail className="w-4 h-4 text-destructive" />
           <span>Email analytics</span>
         </div>
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-yellow-600" />
+          <BarChart3 className="w-4 h-4 text-warning" />
           <span>Website analytics</span>
         </div>
         <div className="flex items-center gap-2">
-          <Search className="w-4 h-4 text-purple-600" />
+          <Search className="w-4 h-4 text-secondary" />
           <span>Search performance</span>
         </div>
         <div className="flex items-center gap-2">
-          <Building className="w-4 h-4 text-orange-600" />
+          <Building className="w-4 h-4 text-warning" />
           <span>Business profile</span>
         </div>
       </div>
@@ -285,23 +285,23 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
   const renderServicesStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+        <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
         <h3 className="text-xl font-semibold mb-2">Connected Services</h3>
         <p className="text-muted-foreground">
           Your Google Workspace services are now connected
         </p>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-4">
         {services.map((service) => (
           <Card key={service.name} className="p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 {service.icon}
                 <span className="font-medium">{service.name}</span>
               </div>
               {service.connected ? (
-                <Badge variant="default" className="bg-green-100 text-green-800">
+                <Badge variant="default" className="bg-success/10 text-success">
                   <CheckCircle className="w-3 h-3 mr-1" />
                   Connected
                 </Badge>
@@ -315,9 +315,9 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
         ))}
       </div>
 
-      <div className="bg-blue-50 p-4 rounded-lg">
+      <div className="bg-primary/5 p-4 rounded-lg">
         <h4 className="font-medium text-blue-900 mb-2">Business Insights Available:</h4>
-        <div className="grid grid-cols-2 gap-2 text-sm text-blue-800">
+        <div className="grid grid-cols-2 gap-2 text-sm text-primary">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4" />
             <span>Meeting analytics</span>
@@ -346,7 +346,7 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
   const renderTestStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <Video className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+        <Video className="w-16 h-16 text-primary mx-auto mb-4" />
         <h3 className="text-xl font-semibold mb-2">Test Connection</h3>
         <p className="text-muted-foreground">
           Let's verify your Google Workspace integration is working
@@ -408,16 +408,16 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
   const renderCompleteStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+        <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
         <h3 className="text-xl font-semibold mb-2">Integration Complete!</h3>
         <p className="text-muted-foreground">
           Your Google Workspace is now connected and providing business insights
         </p>
       </div>
 
-      <div className="bg-green-50 p-4 rounded-lg">
+      <div className="bg-success/5 p-4 rounded-lg">
         <h4 className="font-medium text-green-900 mb-2">What's Next:</h4>
-        <ul className="text-sm text-green-800 space-y-1">
+        <ul className="text-sm text-success space-y-1">
           <li>• Drive storage and collaboration metrics are being collected</li>
           <li>• Calendar meetings and productivity insights are available</li>
           <li>• Email analytics will appear in your dashboard</li>
@@ -456,8 +456,8 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <div className="flex gap-1">
-            <HardDrive className="w-5 h-5 text-blue-600" />
-            <Calendar className="w-5 h-5 text-green-600" />
+            <HardDrive className="w-5 h-5 text-primary" />
+            <Calendar className="w-5 h-5 text-success" />
           </div>
           Google Workspace Integration
         </CardTitle>

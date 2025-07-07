@@ -157,18 +157,18 @@ export const ActionCards: React.FC<ActionCardsProps> = ({
       case 'approval':
         return <AlertCircle className="h-5 w-5 text-orange-500" />;
       case 'notification':
-        return <CheckCircle className="h-5 w-5 text-blue-500" />;
+        return <CheckCircle className="h-5 w-5 text-primary" />;
       case 'action_required':
-        return <XCircle className="h-5 w-5 text-red-500" />;
+        return <XCircle className="h-5 w-5 text-destructive" />;
       default:
-        return <Clock className="h-5 w-5 text-gray-500" />;
+        return <Clock className="h-5 w-5 text-muted-foreground" />;
     }
   };
 
   const getConfidenceBadgeColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'bg-green-100 text-green-800';
-    if (confidence >= 0.6) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    if (confidence >= 0.8) return 'bg-success/10 text-success';
+    if (confidence >= 0.6) return 'bg-warning/10 text-yellow-800';
+    return 'bg-destructive/10 text-destructive';
   };
 
   if (loading) {

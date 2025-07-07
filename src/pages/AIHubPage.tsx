@@ -14,7 +14,13 @@ import {
   BarChart2,
   Cpu,
   Brain,
-  Lightbulb
+  Lightbulb,
+  Eye,
+  TrendingUp,
+  Code,
+  Network,
+  Settings,
+  CheckCircle
 } from 'lucide-react';
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card';
@@ -26,6 +32,16 @@ import { Separator } from '../components/ui/Separator';
 import { Avatar } from '../components/ui/Avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/Tabs';
 import { PageLayout } from '@/components/layout/PageLayout';
+
+interface AIFeature {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  status: 'available' | 'demo' | 'development';
+  usage: number;
+  potential: number;
+}
 
 /**
  * AIHubPage - Central hub for AI functionality
@@ -159,6 +175,64 @@ const AIHubPage: React.FC = () => {
     },
   ];
 
+  // Advanced AI Features (from AIDashboard)
+  const AI_FEATURES: AIFeature[] = [
+    {
+      id: 'system-evolution',
+      title: 'Self-Evolving System',
+      description: 'AI that continuously improves Nexus automatically',
+      icon: Brain,
+      status: 'demo',
+      usage: 5,
+      potential: 95
+    },
+    {
+      id: 'process-intelligence',
+      title: 'Process Intelligence',
+      description: 'Discovers and optimizes business processes',
+      icon: Settings,
+      status: 'demo',
+      usage: 10,
+      potential: 90
+    },
+    {
+      id: 'multi-modal',
+      title: 'Multi-Modal AI',
+      description: 'Processes documents, voice, and images',
+      icon: Eye,
+      status: 'demo',
+      usage: 15,
+      potential: 85
+    },
+    {
+      id: 'predictive',
+      title: 'Predictive Analytics',
+      description: 'Predicts and prevents business issues',
+      icon: TrendingUp,
+      status: 'demo',
+      usage: 20,
+      potential: 80
+    },
+    {
+      id: 'code-generation',
+      title: 'Code Generation',
+      description: 'Creates features from natural language',
+      icon: Code,
+      status: 'demo',
+      usage: 8,
+      potential: 92
+    },
+    {
+      id: 'smart-integration',
+      title: 'Smart Integration',
+      description: 'Auto-manages business tool connections',
+      icon: Network,
+      status: 'demo',
+      usage: 25,
+      potential: 75
+    }
+  ];
+
   return (
     <PageLayout 
       title="AI Hub"
@@ -252,7 +326,7 @@ const AIHubPage: React.FC = () => {
                   <CardContent className="p-4 flex items-start space-x-4">
                     <div className={`h-10 w-10 rounded-full ${
                       tool.primary 
-                        ? 'bg-brand-primary text-white' 
+                        ? 'bg-brand-primary text-primary-foreground' 
                         : 'bg-brand-primary/10 text-brand-primary'
                     } flex items-center justify-center`}>
                       {tool.icon}
@@ -291,7 +365,7 @@ const AIHubPage: React.FC = () => {
               {recentInteractions.map((interaction, i) => (
                 <div 
                   key={i}
-                  className="p-3 hover:bg-muted rounded-md cursor-pointer transition-colors"
+                  className="p-4 hover:bg-muted rounded-md cursor-pointer transition-colors"
                   onClick={() => navigate(interaction.path)}
                 >
                   <div className="flex items-center space-x-2 mb-1">
@@ -354,7 +428,7 @@ const AIHubPage: React.FC = () => {
                       </Badge>
                       <Badge 
                         variant="outline" 
-                        className={insight.confidence > 80 ? 'border-green-500 text-success' : 'border-amber-500 text-amber-500'}
+                        className={insight.confidence > 80 ? 'border-success text-success' : 'border-amber-500 text-amber-500'}
                       >
                         {insight.confidence}% confidence
                       </Badge>
@@ -385,7 +459,7 @@ const AIHubPage: React.FC = () => {
 
       {/* Navigation Tabs */}
       <div className="flex overflow-x-auto space-x-2 border-b border-border pb-4">
-        {['overview', 'assistants', 'capabilities', 'settings'].map((section) => (
+        {['overview', 'assistants', 'capabilities', 'advanced', 'settings'].map((section) => (
           <Button
             key={section}
             variant={activeSection === section ? 'default' : 'outline'}
@@ -524,29 +598,331 @@ const AIHubPage: React.FC = () => {
       {/* AI Capabilities Section */}
       {activeSection === 'capabilities' && (
         <div className="space-y-6">
-          <h2 className="text-xl font-semibold">AI Capabilities</h2>
-          <p className="text-muted-foreground">
-            Core AI technologies that power the Nexus platform
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {aiCapabilities.map((capability) => (
-              <Card key={capability.id}>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">AI Capabilities</h2>
+              <p className="text-muted-foreground">
+                Advanced AI technologies that power the Nexus platform
+              </p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-2xl font-bold text-primary">
+                  {AI_FEATURES.reduce((sum, feature) => sum + (feature.potential - feature.usage), 0).toFixed(0)}%
+                </div>
+                <div className="text-sm text-muted-foreground">Untapped Potential</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Enhanced AI Features Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {AI_FEATURES.map((feature) => (
+              <Card key={feature.id} className="overflow-hidden">
+                <div className={`h-1 ${
+                  feature.status === 'available' ? 'bg-success' : 
+                  feature.status === 'demo' ? 'bg-warning' : 'bg-muted'
+                }`}></div>
                 <CardHeader>
-                  <CardTitle className="flex items-center text-lg">
-                    <div className="p-2 rounded-md bg-primary/10 mr-3 text-primary">
-                      {capability.icon}
-                    </div>
-                    {capability.name}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center text-lg">
+                      <div className="p-2 rounded-md bg-primary/10 mr-3 text-primary">
+                        <feature.icon className="h-5 w-5" />
+                      </div>
+                      {feature.title}
+                    </CardTitle>
+                    <Badge variant={feature.status === 'available' ? 'default' : 'secondary'}>
+                      {feature.status === 'available' ? 'Available' : 
+                       feature.status === 'demo' ? 'Demo' : 'Development'}
+                    </Badge>
+                  </div>
+                  <CardDescription>{feature.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">
-                    {capability.description}
-                  </p>
+                  <div className="space-y-4">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Current Usage</span>
+                      <span className="font-medium">{feature.usage}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${feature.usage}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Potential</span>
+                      <span className="font-medium text-primary">{feature.potential}%</span>
+                    </div>
+                  </div>
                 </CardContent>
+                <CardFooter className="border-t border-border pt-4">
+                  <div className="flex space-x-2 w-full">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => console.log(`Learn more about ${feature.title}`)}
+                    >
+                      Learn More
+                    </Button>
+                    <Button 
+                      size="sm"
+                      className="flex-1"
+                      disabled={feature.status === 'development'}
+                      onClick={() => console.log(`Demo ${feature.title}`)}
+                    >
+                      {feature.status === 'development' ? 'Coming Soon' : 'Try Demo'}
+                    </Button>
+                  </div>
+                </CardFooter>
               </Card>
             ))}
           </div>
+
+          {/* Core AI Capabilities */}
+          <div className="mt-8">
+            <h3 className="text-lg font-semibold mb-4">Core Technologies</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {aiCapabilities.map((capability) => (
+                <Card key={capability.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg">
+                      <div className="p-2 rounded-md bg-primary/10 mr-3 text-primary">
+                        {capability.icon}
+                      </div>
+                      {capability.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">
+                      {capability.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Advanced Section */}
+      {activeSection === 'advanced' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Advanced AI Transformation</h2>
+              <p className="text-muted-foreground">
+                Next-generation AI capabilities that transform your business operations
+              </p>
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-2xl font-bold text-primary">600%</div>
+                <div className="text-sm text-muted-foreground">Max ROI</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-primary">75%</div>
+                <div className="text-sm text-muted-foreground">Time Savings</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-primary">10x</div>
+                <div className="text-sm text-muted-foreground">Faster Decisions</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Transformation Capabilities */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                title: 'Self-Evolving System Architecture',
+                description: 'AI that continuously analyzes usage patterns and automatically improves Nexus by generating new components and optimizing workflows.',
+                icon: <Brain className="h-6 w-6" />,
+                roi: '300-500%',
+                examples: [
+                  'Auto-generates optimized React components',
+                  'Self-healing code that fixes bugs automatically',
+                  'Adaptive UI that evolves with business needs',
+                  'Real-time feature synthesis from requirements'
+                ],
+                impact: 'Transformative'
+              },
+              {
+                title: 'Intelligent Business Process Mining',
+                description: 'Advanced AI that discovers inefficient processes by analyzing user interactions, then automatically optimizes workflows.',
+                icon: <Workflow className="h-6 w-6" />,
+                roi: '200-400%',
+                examples: [
+                  'Discovers hidden process bottlenecks',
+                  'Auto-optimizes workflows for efficiency',
+                  'Predicts process failures before impact',
+                  'Generates intelligent automation suggestions'
+                ],
+                impact: 'Transformative'
+              },
+              {
+                title: 'Multi-Modal Intelligence Hub',
+                description: 'Processes documents, images, voice, and data simultaneously for comprehensive business intelligence.',
+                icon: <Eye className="h-6 w-6" />,
+                roi: '150-250%',
+                examples: [
+                  'Intelligent document processing',
+                  'Voice-to-workflow conversion',
+                  'Chart and graph data extraction',
+                  'Cross-modal business insights'
+                ],
+                impact: 'High'
+              },
+              {
+                title: 'Autonomous Predictive Analytics',
+                description: 'Self-updating models that continuously learn from business data to predict outcomes and optimize operations.',
+                icon: <TrendingUp className="h-6 w-6" />,
+                roi: '200-350%',
+                examples: [
+                  'Predicts cash flow with 95%+ accuracy',
+                  'Real-time business anomaly detection',
+                  'Intelligent resource allocation',
+                  'Customer behavior prediction'
+                ],
+                impact: 'High'
+              },
+              {
+                title: 'Advanced Code Generation Engine',
+                description: 'Generates complete features, components, and APIs from natural language descriptions with comprehensive testing.',
+                icon: <Code className="h-6 w-6" />,
+                roi: '400-600%',
+                examples: [
+                  'Generates full React components',
+                  'Creates complete API endpoints',
+                  'Builds entire business workflows',
+                  'Auto-generates tests and documentation'
+                ],
+                impact: 'Transformative'
+              },
+              {
+                title: 'Intelligent API Orchestration',
+                description: 'Automatically discovers compatible business tools, creates connections, and maintains them with self-healing capabilities.',
+                icon: <Network className="h-6 w-6" />,
+                roi: '100-200%',
+                examples: [
+                  'Auto-discovers compatible tools',
+                  'Self-healing broken integrations',
+                  'Dynamic schema adaptation',
+                  'Cross-platform workflow synthesis'
+                ],
+                impact: 'High'
+              }
+            ].map((capability, index) => (
+              <Card key={index} className="overflow-hidden">
+                <div className="h-1 bg-gradient-to-r from-primary to-secondary"></div>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 rounded-md bg-primary/10 text-primary">
+                        {capability.icon}
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg">{capability.title}</CardTitle>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            ROI: {capability.roi}
+                          </Badge>
+                          <Badge variant={capability.impact === 'Transformative' ? 'default' : 'secondary'} className="text-xs">
+                            {capability.impact}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <CardDescription className="mt-2">
+                    {capability.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm">Key Capabilities:</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {capability.examples.map((example, i) => (
+                        <li key={i} className="flex items-start space-x-2">
+                          <span className="text-primary mt-1">•</span>
+                          <span>{example}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t border-border pt-4">
+                  <div className="flex space-x-2 w-full">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      Learn More
+                    </Button>
+                    <Button size="sm" className="flex-1">
+                      Request Demo
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {/* Implementation Roadmap */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Zap className="h-5 w-5 mr-2 text-primary" />
+                Implementation Roadmap
+              </CardTitle>
+              <CardDescription>
+                Strategic phases for AI transformation implementation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  {
+                    phase: 'Phase 1: Foundation',
+                    duration: '1-2 months',
+                    focus: 'Core AI capabilities and data integration',
+                    deliverables: ['AI assistant deployment', 'Data pipeline setup', 'Basic automation']
+                  },
+                  {
+                    phase: 'Phase 2: Enhancement',
+                    duration: '2-3 months',
+                    focus: 'Advanced features and process optimization',
+                    deliverables: ['Predictive analytics', 'Process mining', 'Multi-modal processing']
+                  },
+                  {
+                    phase: 'Phase 3: Transformation',
+                    duration: '3-4 months',
+                    focus: 'Self-evolving system and full automation',
+                    deliverables: ['Self-improving AI', 'Complete automation', 'Advanced integrations']
+                  }
+                ].map((phase, index) => (
+                  <div key={index} className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">{index + 1}</span>
+                      </div>
+                      <div>
+                        <h4 className="font-medium">{phase.phase}</h4>
+                        <p className="text-sm text-muted-foreground">{phase.duration}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{phase.focus}</p>
+                    <ul className="text-sm space-y-1">
+                      {phase.deliverables.map((item, i) => (
+                        <li key={i} className="flex items-center space-x-2">
+                          <CheckCircle className="h-3 w-3 text-primary" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 

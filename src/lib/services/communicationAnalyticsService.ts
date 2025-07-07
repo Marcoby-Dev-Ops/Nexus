@@ -424,9 +424,9 @@ class CommunicationAnalyticsService {
       },
       userBehavior: {
         platformSwitchers: Math.min(slackData?.overview.activeUsers || 0, teamsData?.overview.activeUsers || 0),
-        slackOnlyUsers: Math.max(0, slackData?.overview.activeUsers || 0 - teamsData?.overview.activeUsers || 0),
-        teamsOnlyUsers: Math.max(0, teamsData?.overview.activeUsers || 0 - slackData?.overview.activeUsers || 0),
-        averagePlatformsPerUser: (slackData?.overview.activeUsers || 0 > 0 && teamsData?.overview.activeUsers || 0 > 0) ? 1.5 : 1
+        slackOnlyUsers: Math.max(0, (slackData?.overview.activeUsers || 0) - (teamsData?.overview.activeUsers || 0)),
+        teamsOnlyUsers: Math.max(0, (teamsData?.overview.activeUsers || 0) - (slackData?.overview.activeUsers || 0)),
+        averagePlatformsPerUser: ((slackData?.overview.activeUsers || 0) > 0 && (teamsData?.overview.activeUsers || 0) > 0) ? 1.5 : 1
       },
       timePatterns: {
         slackPeakHours: slackData?.messageActivity.peakActivityHours || [],

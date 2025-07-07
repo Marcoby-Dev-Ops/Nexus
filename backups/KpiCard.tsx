@@ -1,58 +1,62 @@
-/**
- * @name KpiCard
- * @description KPI summary card for displaying a metric, with optional sparkline and color-coded delta.
- * @param {KpiCardProps} props
- * @returns {JSX.Element}
- */
-import PropTypes from 'prop-types';
 import React from 'react';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { Card } from '@/components/ui/Card';
+import type { KPI } from './types';
+import { useRunPlaybook } from './hooks/useRunPlaybook';
+import { Button } from '@/components/ui/Button';
 
-type KpiCardProps = {
-  title: string;
-  value: string | number;
-  delta?: string;
-  sparklineData?: number[];
-};
-
-export function KpiCard({ title, value, delta, sparklineData }: KpiCardProps) {
-  // Determine delta color
-  let deltaColor = 'text-muted-foreground';
-  if (delta) {
-    if (delta.startsWith('+')) deltaColor = 'text-success';
-    else if (delta.startsWith('-')) deltaColor = 'text-destructive';
-  }
-  return (
-    <div className="rounded-xl border p-4 shadow-sm flex flex-col gap-1">
-      <p className="text-muted-foreground mb-1 text-xs uppercase">{title}</p>
-      <div className="flex items-end justify-between gap-2">
-        <p className="text-3xl font-semibold">{value}</p>
-        {sparklineData && (
-          <svg width="64" height="18" viewBox="0 0 64 18" fill="none" className="text-primary/70">
-            <polyline
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              points={sparklineData
-                .map((d, i, arr) => {
-                  const max = Math.max(...arr);
-                  const min = Math.min(...arr);
-                  return `${(i / (arr.length - 1)) * 60},${16 - ((d - min) / (max - min || 1)) * 12}`;
-                })
-                .join(' ')}
-            />
-          </svg>
-        )}
-      </div>
-      {delta && <p className={`text-xs font-medium ${deltaColor}`}>{delta}</p>}
-    </div>
-  );
+interface Props {
+  kpi: KPI;
+  isFocus?: boolean; // if this KPI is the worst contributor
+  advice?: string | string[];
 }
 
-KpiCard.propTypes = {
-  title: PropTypes.string.isRequired,
-  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  delta: PropTypes.string,
-  sparklineData: PropTypes.arrayOf(PropTypes.number),
-}; 
+function formatDelta(delta?: number) {
+  if (delta === undefined) return '—';
+  const sign = delta > 0 ? '+' : '';
+  return `${sign}${delta.toFixed(1)}%`;
+}
+
+export const KpiCard: React.FC<Props> = ({ kpi, isFocus, advice }) => {
+  const deltaColor = kpi.delta && kpi.delta >= 0 ? 'text-success' : 'text-destructive';
+
+  const { mutate: runPlaybook, isPending } = useRunPlaybook();
+
+  return (
+    <Card className={isFocus ? 'border-2 border-destructive' : ''}>
+      <div className="p-4 space-y-2">
+        <div className="flex justify-between items-center">
+          <h4 className="font-medium text-sm">{kpi.label}</h4>
+          <span className={`text-xs ${deltaColor}`}>{formatDelta(kpi.delta)}</span>
+        </div>
+        <div className="text-2xl font-semibold">{kpi.value}</div>
+        {kpi.history && (
+          <div className="h-10 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={kpi.history.map((v, i) => ({ idx: i, v }))} margin={{ top: 2, bottom: 2, left: 0, right: 0 }}>
+                <Line type="monotone" dataKey="v" stroke="hsl(var(--info))" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        {isFocus && advice && (
+          <div className="pt-2 text-sm border-t border-border space-y-2">
+            <p className="font-medium">AI Recommendation</p>
+            <p>{advice}</p>
+            <Button
+              isLoading={isPending}
+              disabled={isPending}
+              onClick={() => runPlaybook(kpi.id)}
+              variant="outline"
+              size="sm"
+            >
+              {isPending ? 'Queuing…' : 'Run Playbook'}
+            </Button>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+export default KpiCard; 

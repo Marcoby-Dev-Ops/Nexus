@@ -234,7 +234,7 @@ export const SelectLabel: React.FC<SelectLabelProps> = ({
   className 
 }) => {
   return (
-    <div className={cn('px-2 py-1.5 text-sm font-semibold', className)}>
+    <div className={cn('px-2 py-2 text-sm font-semibold', className)}>
       {children}
     </div>
   );

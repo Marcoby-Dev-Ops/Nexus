@@ -5,10 +5,13 @@ import type {
     AssessmentSummary, 
     AssessmentCategoryScore, 
     AssessmentResponse, 
-    AssessmentQuestion, 
     Offer,
     AssessmentCategory
 } from '@prisma/client';
+import type { 
+  AssessmentQuestion, 
+  AssessmentCategory 
+} from '@/types/supabase';
 
 export interface AssessmentData {
   summary: AssessmentSummary | null;

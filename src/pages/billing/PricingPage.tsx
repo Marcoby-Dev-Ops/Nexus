@@ -254,7 +254,7 @@ export const PricingPage: React.FC = () => {
               >
                 {tier.badge && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge variant="default" className="px-3 py-1">
+                    <Badge variant="default" className="px-4 py-1">
                       <Crown className="h-3 w-3 mr-1" />
                       {tier.badge}
                     </Badge>
@@ -271,7 +271,7 @@ export const PricingPage: React.FC = () => {
                       /{billingCycle === 'year' ? 'month' : 'month'}
                     </span>
                     {billingCycle === 'year' && tier.price > 0 && (
-                      <div className="text-sm text-green-600 dark:text-green-400 mt-1">
+                      <div className="text-sm text-success dark:text-success mt-1">
                         ${annualPrice}/year (save ${calculateAnnualSavings(tier.price)})
                       </div>
                     )}
@@ -300,15 +300,15 @@ export const PricingPage: React.FC = () => {
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
 
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <h4 className="font-semibold flex items-center">
-                      <Check className="h-4 w-4 text-green-600 dark:text-green-400 mr-2" />
+                      <Check className="h-4 w-4 text-success dark:text-success mr-2" />
                       What's included:
                     </h4>
                     <ul className="space-y-2">
                       {tier.features.map((feature, index) => (
                         <li key={index} className="flex items-start">
-                          <Check className="h-4 w-4 text-green-600 dark:text-green-400 mr-2 mt-0.5 flex-shrink-0" />
+                          <Check className="h-4 w-4 text-success dark:text-success mr-2 mt-0.5 flex-shrink-0" />
                           <span className="text-sm text-muted-foreground">{feature}</span>
                         </li>
                       ))}
@@ -348,7 +348,7 @@ export const PricingPage: React.FC = () => {
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 text-yellow-500 fill-current" />
+                      <Star key={i} className="h-4 w-4 text-warning fill-current" />
                     ))}
                   </div>
                   <blockquote className="text-muted-foreground mb-4">

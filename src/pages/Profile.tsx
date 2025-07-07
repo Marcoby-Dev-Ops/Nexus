@@ -231,8 +231,16 @@ export const Profile: React.FC = () => {
         <div>
           <h1 className="text-4xl font-bold text-foreground">Profile</h1>
           <p className="text-lg text-muted-foreground mt-1">
-            Manage your personal and professional information
+            Your professional identity and public information
           </p>
+          <div className="flex items-center space-x-2 mt-2">
+            <Badge variant="outline" className="text-xs">
+              Public Profile
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Professional Information
+            </Badge>
+          </div>
         </div>
         <div className="flex items-center space-x-4">
           {isEditing ? (
@@ -278,6 +286,34 @@ export const Profile: React.FC = () => {
           <AlertDescription>{saveMessage}</AlertDescription>
         </Alert>
       )}
+
+      {/* Profile vs Settings Distinction */}
+      <Card className="bg-primary/5 border-border">
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-4">
+            <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full">
+              <User className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-900">Profile vs Account Settings</h3>
+              <p className="text-sm text-primary mt-1">
+                <strong>Profile:</strong> Your professional identity, bio, and public information visible to team members.
+              </p>
+              <p className="text-sm text-primary">
+                <strong>Account Settings:</strong> Private account details, security settings, and system preferences.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 border-border text-primary hover:bg-primary/10"
+                onClick={() => navigate('/settings')}
+              >
+                Go to Account Settings
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar - Profile Overview */}

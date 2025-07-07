@@ -272,7 +272,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
           </AlertDescription>
         </Alert>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {properties.map((property) => (
             <Card 
               key={property.id}
@@ -364,7 +364,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
         </Card>
       )}
 
-      <div className="flex gap-3">
+      <div className="flex gap-4">
         <Button onClick={onClose} variant="outline" className="flex-1">
           Close
         </Button>

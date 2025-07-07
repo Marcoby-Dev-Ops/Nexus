@@ -11,6 +11,10 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { ActionCard } from '../ActionCard';
 import { useActionCards } from '@/lib/hooks/useActionCards';
+import { ContextChips } from '@/components/ai/ContextChips';
+import ContextSourceService from '@/lib/services/contextSourceService';
+import { ContextCompletionSuggestions } from '@/components/ai/ContextCompletionSuggestions';
+import { useContextualDataCompletion } from '@/hooks/useContextualDataCompletion';
 
 /**
  * Modern Executive Assistant inspired by ChatGPT and Claude interfaces
@@ -128,6 +132,17 @@ const MessageBubble: React.FC<{ msg: MessageType; conversationId: string }> = Re
             )}
           </div>
           
+          {/* Context chips for AI responses */}
+          {!isUser && (
+            <div className="mt-3 w-full">
+              <ContextChips 
+                sources={ContextSourceService.createMockContextSources()} 
+                compact 
+                className="mb-2"
+              />
+            </div>
+          )}
+          
           {/* Message Feedback for AI responses */}
           {!isUser && (
             <div className="mt-2 w-full">
@@ -155,6 +170,11 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
   sessionId = '' 
 }) => {
   const { user } = useAuth();
+  const contextCompletion = useContextualDataCompletion({
+    autoAnalyze: true,
+    proactiveSuggestions: true,
+    trackInteractions: true
+  });
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState<string>('');
   const { sendMessage, loading, error, newConversation, setActiveConversation, loadOlderMessages, loadConversation } = useAIChatStore();
@@ -191,7 +211,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || !conversationId || !user?.id) return;
-    await sendMessage(conversationId, input, user.id, user.company_id || undefined);
+    await sendMessage(conversationId, input, user.id, user.company_id ? user.company_id : undefined);
     setInput('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -248,7 +268,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
       >
         {/* Action Cards at top */}
         {actionCards.length > 0 && (
-          <div className="mb-6 space-y-3">
+          <div className="mb-6 space-y-4">
             {actionCards.map(card => (
               <ActionCard key={card.id} card={card} className="max-w-md" />
             ))}

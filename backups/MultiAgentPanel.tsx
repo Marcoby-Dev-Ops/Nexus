@@ -56,7 +56,7 @@ const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = tru
 
   return (
     <aside
-      className={`fixed right-0 top-0 h-full w-full max-w-lg bg-background shadow-2xl z-[70] flex flex-col transition-transform duration-300 ${
+      className={`fixed right-0 top-0 h-full w-full max-w-lg bg-background shadow-2xl z-drawer flex flex-col transition-transform duration-300 ${
         open ? 'translate-x-0' : 'translate-x-full'
       }`}
       role="dialog"
@@ -74,8 +74,8 @@ const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = tru
             <Sparkles className="w-4 h-4 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-foreground">Nexus AI</h2>
-            <p className="text-xs text-muted-foreground">Your intelligent assistant</p>
+            <h2 className="text-lg font-semibold text-foreground">Nex</h2>
+            <p className="text-xs text-muted-foreground">Your business AI assistant</p>
           </div>
         </div>
         {onClose && (
@@ -90,7 +90,7 @@ const MultiAgentPanel: React.FC<MultiAgentPanelProps> = React.memo(({ open = tru
       </div>
       
       {/* Organizational Chat Content */}
-      <div className="flex-1 bg-background overflow-hidden">
+      <div className="flex-1 bg-background overflow-auto">
         <OrganizationalChatPanel onClose={onClose} />
       </div>
     </aside>

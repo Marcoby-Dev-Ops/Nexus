@@ -228,7 +228,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-primary" />
             </div>

@@ -18,30 +18,32 @@ interface ProtectedRouteProps {
  * - Extra logging for debugging
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
-  const { user, session, loading, error } = useAuth();
+  const { user, session, error, status, loading, timeoutWarning, initialized } = useAuth();
   const location = useLocation();
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
-
-  useEffect(() => {
-    if (!loading) return;
-    const timer = setTimeout(() => setLoadingTimeout(true), 10000); // 10s
-    return () => clearTimeout(timer);
-  }, [loading]);
 
   // Debug logging
   useEffect(() => {
     console.log('[ProtectedRoute] user:', user);
     console.log('[ProtectedRoute] session:', session);
-    console.log('[ProtectedRoute] loading:', loading);
     console.log('[ProtectedRoute] error:', error);
-  }, [user, session, loading, error]);
+    console.log('[ProtectedRoute] status:', status);
+  }, [user, session, error, status]);
 
-  // Error state
+  // 1. Show loader or timeout UI while loading or not yet initialized
+  if (loading || timeoutWarning || !initialized) {
+    if (timeoutWarning && loading) {
+      // ... your timeout warning block ...
+      // (already handled above if you want a custom UI)
+    }
+    return <PageLoader message="Loading your session..." />;
+  }
+
+  // 2. Show error state if authContext error
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-red-500 mb-4">
+          <div className="text-destructive mb-4">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -55,36 +57,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     );
   }
 
-  // Loading state
-  if (loading && !loadingTimeout) {
-    return <PageLoader message="Loading your session..." />;
-  }
-
-  // Timeout fallback
-  if (loading && loadingTimeout) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-yellow-500 mb-4">
-            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-semibold text-foreground mb-2">Loading Timeout</h2>
-          <p className="text-muted-foreground mb-6">Session is taking longer than expected. Please try refreshing or check your network.</p>
-          <Button onClick={() => window.location.reload()} className="mr-3">Retry</Button>
-          <Button variant="outline" onClick={() => window.location.href = '/login'}>Go to Login</Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Redirect to login if not authenticated
-  if (!loading && !user && !session) {
+  // 3. Redirect to login only if truly unauthenticated
+  if (!user && !session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Check for required role
+  // 4. Role check (already good)
   if (allowedRoles && user && !allowedRoles.includes(user.role || '')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -96,6 +74,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     );
   }
 
-  // Render protected content
+  // 5. Render protected content
   return <>{children}</>;
 }; 

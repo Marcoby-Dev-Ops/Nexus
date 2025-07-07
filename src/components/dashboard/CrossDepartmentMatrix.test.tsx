@@ -4,7 +4,7 @@ import CrossDepartmentMatrix from './CrossDepartmentMatrix';
 
 // Mock lucide-react icons to check for their presence by name
 jest.mock('lucide-react', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const React = require('react');
     const original = jest.requireActual('lucide-react');
     const iconMocks = new Proxy({}, {

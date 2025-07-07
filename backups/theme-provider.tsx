@@ -1,22 +1,35 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { safeGetLocalStorage, safeSetLocalStorage } from '../../lib/utils/storageUtils';
 
 type Theme = 'dark' | 'light' | 'system';
 
-interface ThemeProviderProps {
+type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: Theme;
-  storageKey?: string;
-}
+  defaultColor?: string;
+};
 
-interface ThemeProviderState {
+type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-}
+  primaryColor: string;
+  setPrimaryColor: (color: string) => void;
+};
 
 const initialState: ThemeProviderState = {
-  theme: 'light',
+  theme: 'system',
   setTheme: () => null,
+  primaryColor: 'blue',
+  setPrimaryColor: () => null,
 };
+
+export const COLORS = [
+  { name: 'blue', value: '221.2 83.2% 53.3%', foreground: '210 40% 98%' },
+  { name: 'green', value: '142.1 76.2% 36.3%', foreground: '210 40% 98%' },
+  { name: 'orange', value: '24.6 95% 53.1%', foreground: '210 40% 98%' },
+  { name: 'red', value: '0 84.2% 60.2%', foreground: '210 40% 98%' },
+  { name: 'purple', value: '262.1 83.3% 57.8%', foreground: '210 40% 98%' },
+];
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
@@ -28,12 +41,15 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
  */
 export function ThemeProvider({ 
   children, 
-  defaultTheme = 'light', 
-  storageKey = 'vite-ui-theme', 
+  defaultTheme = 'system', 
+  defaultColor = 'blue',
   ...props 
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
+    () => safeGetLocalStorage<Theme>('theme', defaultTheme)
+  );
+  const [primaryColor, setPrimaryColor] = useState<string>(
+    () => safeGetLocalStorage<string>('primaryColor', defaultColor)
   );
 
   useEffect(() => {
@@ -43,17 +59,30 @@ export function ThemeProvider({
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       root.classList.add(systemTheme);
-      return;
+    } else {
+      root.classList.add(theme);
     }
-
-    root.classList.add(theme);
   }, [theme]);
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    const color = COLORS.find(c => c.name === primaryColor);
+    if (color) {
+      root.style.setProperty('--primary', color.value);
+      root.style.setProperty('--primary-foreground', color.foreground);
+    }
+  }, [primaryColor]);
 
   const value = {
     theme,
-    setTheme: (newTheme: Theme) => {
-      localStorage.setItem(storageKey, newTheme);
-      setTheme(newTheme);
+    setTheme: (theme: Theme) => {
+      safeSetLocalStorage('theme', theme);
+      setTheme(theme);
+    },
+    primaryColor,
+    setPrimaryColor: (color: string) => {
+      safeSetLocalStorage('primaryColor', color);
+      setPrimaryColor(color);
     },
   };
 

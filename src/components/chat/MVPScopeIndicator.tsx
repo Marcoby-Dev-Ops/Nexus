@@ -24,9 +24,9 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
 
   if (compact) {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 dark:bg-amber-900/10 dark:border-amber-800">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 dark:bg-amber-900/10 dark:border-amber-800">
         <div className="flex items-center gap-2">
-          <Info className="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+          <Info className="w-4 h-4 text-warning dark:text-amber-400 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-xs text-amber-700 dark:text-amber-300">
               <strong>MVP:</strong> Specialized for {agentType} assistance
@@ -37,7 +37,7 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
               variant="ghost"
               size="sm"
               onClick={handleDismiss}
-              className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 p-1"
+              className="text-warning hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200 p-1"
             >
               <X className="w-3 h-3" />
             </Button>
@@ -49,8 +49,8 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
 
   return (
     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 dark:bg-amber-900/10 dark:border-amber-800">
-      <div className="flex items-start gap-3">
-        <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+      <div className="flex items-start gap-4">
+        <AlertTriangle className="w-5 h-5 text-warning dark:text-amber-400 mt-0.5 flex-shrink-0" />
         <div className="flex-1">
           <h4 className="font-semibold text-amber-800 dark:text-amber-200 mb-2">
             🚀 MVP Version - Limited Scope
@@ -60,7 +60,7 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
               <strong>Current Focus:</strong> This initial version specializes in <strong>{agentType}</strong> assistance.
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
               <div>
                 <p className="font-medium mb-1">✅ What's Working:</p>
                 <ul className="text-xs space-y-1">
@@ -92,7 +92,7 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
           variant="ghost"
           size="sm"
           onClick={handleDismiss}
-          className="text-amber-600 hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+          className="text-warning hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
         >
           <X className="w-4 h-4" />
         </Button>

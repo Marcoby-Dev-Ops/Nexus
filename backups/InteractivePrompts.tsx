@@ -27,6 +27,7 @@ import { Spinner } from '../ui/Spinner';
 import { Alert } from '../ui/Alert';
 import { thoughtsService } from '../../lib/services/thoughtsService';
 import type { InteractionMethod, ThoughtCategory } from '../../lib/types/thoughts';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface InteractivePromptsProps {
   onThoughtCreated?: (thoughtId: string) => void;
@@ -87,6 +88,7 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const { user } = useAuth();
 
   // ====== Voice Recording ======
   
@@ -207,21 +209,6 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
 
   // ====== Thought Creation ======
   
-  const categorizeContent = (content: string): ThoughtCategory => {
-    const lowerContent = content.toLowerCase();
-    
-    if (lowerContent.includes('task') || lowerContent.includes('todo') || lowerContent.includes('action')) {
-      return 'task';
-    }
-    if (lowerContent.includes('remind') || lowerContent.includes('remember') || lowerContent.includes('deadline')) {
-      return 'reminder';
-    }
-    if (lowerContent.includes('update') || lowerContent.includes('progress') || lowerContent.includes('status')) {
-      return 'update';
-    }
-    return 'idea';
-  };
-
   const submitThought = async () => {
     if (!inputState.content.trim()) return;
     
@@ -229,13 +216,13 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
     setError(null);
     
     try {
-      const category = categorizeContent(inputState.content);
-      
+      if (!user?.company_id) throw new Error('No company_id in user context');
       const thought = await thoughtsService.createThought({
         content: inputState.content,
-        category,
         interaction_method: inputState.method,
-        status: category === 'idea' ? 'concept' : 'not_started'
+        status: 'not_started',
+        company_id: user.company_id,
+        category: 'idea'
       });
       
       // Reset form

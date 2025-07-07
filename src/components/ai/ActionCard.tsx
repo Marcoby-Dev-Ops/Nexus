@@ -125,7 +125,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({
         {card.description && <p className="text-sm mb-4 whitespace-pre-wrap">{card.description}</p>}
 
         {card.actions && card.actions.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {card.actions.map((action) => (
               <Button
                 key={action.id}

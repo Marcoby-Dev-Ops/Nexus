@@ -31,11 +31,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-6 bg-red-50 border border-red-200 rounded text-red-700 text-center">
+        <div className="p-6 bg-destructive/5 border border-red-200 rounded text-destructive text-center">
           <h2 className="text-lg font-semibold mb-2">Something went wrong.</h2>
           <p className="mb-4">An unexpected error occurred. Please try again.</p>
           <button
-            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            className="px-4 py-2 bg-destructive text-primary-foreground rounded hover:bg-red-700"
             onClick={this.handleRetry}
           >
             Retry

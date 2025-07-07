@@ -54,10 +54,8 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   };
 
   // Derive display name and initials from auth user
-  const displayName = user?.name || user?.email?.split('@')[0] || 'User';
-  const initials = user?.name
-    ? user.name.split(' ').map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2)
-    : user?.email?.charAt(0).toUpperCase() || 'U';
+  const displayName = user?.name || user?.profile?.display_name || user?.email?.split('@')[0] || 'User';
+  const initials = displayName.split(' ').map(part => part.charAt(0).toUpperCase()).join('').slice(0, 2) || 'U';
 
   // Close menus on outside click
   React.useEffect(() => {
@@ -114,7 +112,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-background text-foreground">
+    <div className="flex h-screen text-foreground">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header onSidebarToggle={() => setSidebarOpen(true)} onThemePanelToggle={() => setIsThemePanelOpen(!isThemePanelOpen)} />

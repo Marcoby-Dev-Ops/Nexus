@@ -20,7 +20,7 @@ import { useToast } from '@/components/ui/Toast';
 import { microsoftTeamsService } from '@/lib/services/microsoftTeamsService';
 import { linkedinService } from '@/lib/services/linkedinService';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/Select';
-import type { Company } from '@prisma/client';
+import type { Company } from '@/types/supabase';
 import { InformationCircleIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 interface OrganizationData {
@@ -298,7 +298,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="name" className="block text-sm font-medium text-foreground/90">
               Company Name
             </label>
             <Input
@@ -311,7 +311,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
           </div>
 
           <div>
-            <label htmlFor="domain" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="domain" className="block text-sm font-medium text-foreground/90">
               Company Domain
             </label>
             <div className="mt-1 flex rounded-md shadow-sm">
@@ -333,15 +333,15 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
                 {enrichmentStatus.isEnriching ? 'Enriching...' : 'Enrich Data'}
               </Button>
             </div>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-muted-foreground">
               Enter your company's domain to automatically fetch additional information
             </p>
           </div>
 
           {/* Enrichment Status */}
           {enrichmentStatus.isEnriching && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600">Enriching company data...</p>
+            <div className="p-4 bg-background rounded-lg">
+              <p className="text-sm text-muted-foreground">Enriching company data...</p>
             </div>
           )}
 
@@ -349,7 +349,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
             <div className="p-4 bg-destructive/5 rounded-lg">
               <div className="flex">
                 <XCircleIcon className="h-5 w-5 text-red-400 mr-2" />
-                <p className="text-sm text-red-700">{enrichmentStatus.error}</p>
+                <p className="text-sm text-destructive">{enrichmentStatus.error}</p>
               </div>
                   </div>
           )}
@@ -359,7 +359,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
               <div className="flex">
                 <CheckCircleIcon className="h-5 w-5 text-success mr-2" />
                 <div>
-                  <p className="text-sm text-green-700">Successfully enriched company data</p>
+                  <p className="text-sm text-success">Successfully enriched company data</p>
                   <p className="text-xs text-success mt-1">
                     Enriched fields: {enrichmentStatus.enrichedFields.join(', ')}
                   </p>
@@ -369,7 +369,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
           )}
 
           <div>
-            <label htmlFor="industry" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="industry" className="block text-sm font-medium text-foreground/90">
               Industry
             </label>
             <Select
@@ -394,7 +394,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
           </div>
 
           <div>
-            <label htmlFor="size" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="size" className="block text-sm font-medium text-foreground/90">
               Company Size
             </label>
             <Select
@@ -419,7 +419,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
           {/* Tagline */}
           <div>
-            <label htmlFor="tagline" className="block text-sm font-medium text-gray-700">
+            <label htmlFor="tagline" className="block text-sm font-medium text-foreground/90">
               Company Tagline
             </label>
             <Input
@@ -435,43 +435,43 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
         {/* Data Preview */}
         {showPreview && (
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+          <div className="mt-6 p-4 bg-background rounded-lg">
             <h3 className="text-lg font-medium mb-4">Enriched Data Preview</h3>
             <div className="grid grid-cols-2 gap-4">
               {data.description && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <p className="mt-1 text-sm text-gray-600">{data.description}</p>
+                  <label className="block text-sm font-medium text-foreground/90">Description</label>
+                  <p className="mt-1 text-sm text-muted-foreground">{data.description}</p>
                 </div>
               )}
               {data.website && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Website</label>
-                  <p className="mt-1 text-sm text-gray-600">{data.website}</p>
+                  <label className="block text-sm font-medium text-foreground/90">Website</label>
+                  <p className="mt-1 text-sm text-muted-foreground">{data.website}</p>
                 </div>
               )}
               {data.headquarters && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Headquarters</label>
-                  <p className="mt-1 text-sm text-gray-600">{data.headquarters}</p>
+                  <label className="block text-sm font-medium text-foreground/90">Headquarters</label>
+                  <p className="mt-1 text-sm text-muted-foreground">{data.headquarters}</p>
                 </div>
               )}
               {data.founded && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Founded</label>
-                  <p className="mt-1 text-sm text-gray-600">{data.founded}</p>
+                  <label className="block text-sm font-medium text-foreground/90">Founded</label>
+                  <p className="mt-1 text-sm text-muted-foreground">{data.founded}</p>
                 </div>
               )}
               {data.specialties && data.specialties.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Specialties</label>
-                  <p className="mt-1 text-sm text-gray-600">{data.specialties.join(', ')}</p>
+                  <label className="block text-sm font-medium text-foreground/90">Specialties</label>
+                  <p className="mt-1 text-sm text-muted-foreground">{data.specialties.join(', ')}</p>
                 </div>
               )}
               {data.employee_count && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Employee Count</label>
-                  <p className="mt-1 text-sm text-gray-600">{data.employee_count}</p>
+                  <label className="block text-sm font-medium text-foreground/90">Employee Count</label>
+                  <p className="mt-1 text-sm text-muted-foreground">{data.employee_count}</p>
                 </div>
               )}
             </div>
@@ -482,7 +482,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-medium">Connect Accounts</h3>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Connect your Microsoft 365 and LinkedIn accounts to automatically fetch company information
               </p>
                   </div>

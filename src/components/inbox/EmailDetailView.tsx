@@ -81,7 +81,7 @@ const EmailDetailView: React.FC<EmailDetailViewProps> = ({ item, onClose, onActi
               Archive
             </Button>
              <Button variant="outline" size="sm" onClick={() => handleAction('toggle_important')}>
-              <Star className={`w-4 h-4 mr-2 ${item.is_important ? 'text-yellow-500 fill-current' : ''}`} />
+              <Star className={`w-4 h-4 mr-2 ${item.is_important ? 'text-warning fill-current' : ''}`} />
               Important
             </Button>
             <Button variant="destructive" size="sm" onClick={() => handleAction('delete')}>

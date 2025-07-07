@@ -10,12 +10,12 @@ import { Button } from '@/components/ui/Button';
 import type { PostgrestError } from '@supabase/supabase-js';
 
 const ICONS: Record<string, React.ReactNode> = {
-  document_view: <FileText className="h-5 w-5 text-blue-500" />,
-  dashboard_view: <BarChart2 className="h-5 w-5 text-purple-500" />,
-  meeting: <Calendar className="h-5 w-5 text-green-500" />,
+  document_view: <FileText className="h-5 w-5 text-primary" />,
+  dashboard_view: <BarChart2 className="h-5 w-5 text-secondary" />,
+  meeting: <Calendar className="h-5 w-5 text-success" />,
   contact: <Users className="h-5 w-5 text-orange-500" />,
-  search_query: <History className="h-5 w-5 text-yellow-500" />,
-  default: <History className="h-5 w-5 text-gray-500" />,
+  search_query: <History className="h-5 w-5 text-warning" />,
+  default: <History className="h-5 w-5 text-muted-foreground" />,
 };
 
 const getTimeAgo = (timestamp: string) => {
@@ -78,7 +78,7 @@ const ItemList: React.FC<{
 
   if (isError) {
     return (
-      <div className="text-red-500 flex items-center gap-2">
+      <div className="text-destructive flex items-center gap-2">
         <AlertCircle className="h-5 w-5" />
         <p>Error loading items.</p>
       </div>
@@ -90,11 +90,11 @@ const ItemList: React.FC<{
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {items.map((item) => (
         <div
           key={item.id}
-          className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50"
+          className="flex items-center gap-4 p-2 rounded-md hover:bg-muted/50"
         >
           {ICONS[(item as RecentItem).entity_type] || ICONS.default}
           <div className="flex-1">

@@ -53,15 +53,15 @@ export function Pins() {
   }
 
   if (error) {
-    return <div className="text-red-600 p-4">Error loading pins. Please try again.</div>;
+    return <div className="text-destructive p-4">Error loading pins. Please try again.</div>;
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500">
+      <div className="p-4 text-center text-muted-foreground">
         No pinned items.
         <button
-          className="ml-2 text-xs text-blue-600 underline"
+          className="ml-2 text-xs text-primary underline"
           onClick={() => logWidgetEvent(widgetId, "dismiss")}
         >
           Dismiss
@@ -76,12 +76,12 @@ export function Pins() {
         <li key={item.id} className="flex items-center justify-between py-2">
           <span>
             {item.entityType}: {item.entityId}
-            <span className="ml-2 text-xs text-gray-400">
+            <span className="ml-2 text-xs text-muted-foreground">
               Pinned {formatDistanceToNow(new Date(item.pinnedAt))} ago
             </span>
           </span>
           <button
-            className="ml-4 text-blue-600 hover:underline"
+            className="ml-4 text-primary hover:underline"
             onClick={() => logWidgetEvent(widgetId, "click", { itemId: item.id })}
           >
             Open

@@ -75,7 +75,7 @@ export default function ApiLearningPage() {
     <div className="container mx-auto py-8 space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
-        <div className="flex items-center justify-center space-x-3">
+        <div className="flex items-center justify-center space-x-4">
           <Zap className="h-10 w-10 text-primary" />
           <h1 className="text-4xl font-bold">API Learning System</h1>
           <Badge variant="outline" className="bg-primary/10 text-primary border-primary">
@@ -132,7 +132,7 @@ export default function ApiLearningPage() {
                   { step: 3, title: 'Pattern Recognition', description: 'Identifies how to best integrate your tool with Nexus' },
                   { step: 4, title: 'Nexus Integration', description: 'Generates connectors that work seamlessly with your workspace' }
                 ].map((item) => (
-                  <div key={item.step} className="text-center space-y-3">
+                  <div key={item.step} className="text-center space-y-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
                       <span className="text-primary font-bold">{item.step}</span>
                     </div>
@@ -185,7 +185,7 @@ export default function ApiLearningPage() {
               <Card key={index}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-4">
                       <div className="p-2 bg-primary/10 rounded-lg">
                         {feature.icon}
                       </div>
@@ -215,7 +215,7 @@ export default function ApiLearningPage() {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {supportedApis.map((api, index) => (
-                  <div key={index} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-accent transition-colors">
                     <span className="text-2xl">{api.logo}</span>
                     <div>
                       <p className="font-medium text-sm">{api.name}</p>

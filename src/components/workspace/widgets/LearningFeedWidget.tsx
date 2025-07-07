@@ -54,7 +54,7 @@ export const LearningFeedWidget: React.FC = () => {
               rel="noopener noreferrer"
               className="block p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
                 <div className="mt-1">
                     {typeIcons[material.type] || <BookOpen className="h-5 w-5 text-muted-foreground" />}
                 </div>

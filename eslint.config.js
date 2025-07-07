@@ -16,6 +16,7 @@ export default tseslint.config({
     'backups',
     'src/pages/**',
     'supabase/functions/**',
+    'coverage/**',
   ],
 }, {
   extends: [js.configs.recommended, ...tseslint.configs.recommended],

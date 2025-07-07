@@ -286,7 +286,7 @@ const FinancialOperationsPage: React.FC = () => {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-yellow-500" />
+              <Lightbulb className="w-5 h-5 text-warning" />
               AI Opportunities
             </CardTitle>
             <CardDescription>AI-generated insights and recommendations</CardDescription>
@@ -308,7 +308,7 @@ const FinancialOperationsPage: React.FC = () => {
                       {insight.type === 'opportunity' && <Zap className="w-4 h-4 text-success" />}
                       {insight.type === 'alert' && <AlertCircle className="w-4 h-4 text-destructive" />}
                       {insight.type === 'trend' && <TrendingUp className="w-4 h-4 text-primary" />}
-                      {insight.type === 'optimization' && <Lightbulb className="w-4 h-4 text-yellow-500" />}
+                      {insight.type === 'optimization' && <Lightbulb className="w-4 h-4 text-warning" />}
                       {insight.title}
                     </div>
                     <div className="text-xs text-muted-foreground mt-1">{insight.description}</div>
@@ -325,7 +325,7 @@ const FinancialOperationsPage: React.FC = () => {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-blue-500" />
+              <RefreshCw className="w-5 h-5 text-primary" />
               Integrations
             </CardTitle>
             <CardDescription>Status of connected services</CardDescription>
@@ -355,7 +355,7 @@ const FinancialOperationsPage: React.FC = () => {
         <Card className="flex flex-col">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-green-500" />
+              <Zap className="w-5 h-5 text-success" />
               Quick Actions
             </CardTitle>
             <CardDescription>Jump to key workflows</CardDescription>
@@ -578,7 +578,7 @@ const FinancialOperationsPage: React.FC = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       {report.status === 'finalized' ? (
-                        <Badge variant="outline" className="bg-success/10 text-success border-green-500">
+                        <Badge variant="outline" className="bg-success/10 text-success border-success">
                           <CheckCircle2 className="h-3 w-3 mr-1" />
                           Final
                         </Badge>

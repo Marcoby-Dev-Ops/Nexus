@@ -118,7 +118,7 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
 
           <div className="space-y-4">
             {integration.prerequisites?.map((prereq, index) => (
-              <div key={index} className="flex items-start space-x-3">
+              <div key={index} className="flex items-start space-x-4">
                 <CheckCircle2 className="w-5 h-5 text-primary mt-0.5" />
                 <div>
                   <div className="font-medium">{prereq}</div>
@@ -207,7 +207,7 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
 
           <div className="space-y-4">
             {integration.features.map((feature, index) => (
-              <div key={index} className="flex items-center space-x-3">
+              <div key={index} className="flex items-center space-x-4">
                 <input type="checkbox" className="rounded" />
                 <div>
                   <div className="font-medium">{feature}</div>

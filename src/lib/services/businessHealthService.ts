@@ -5,7 +5,7 @@ import {
   calculateOverallHealthScore,
   calculateCategoryScore,
   type KPI 
-} from '../businessHealthKPIs';
+} from '../business/analytics/businessHealthKPIs';
 import { logger } from '../security/logger';
 
 export interface BusinessHealthData {
@@ -15,6 +15,13 @@ export interface BusinessHealthData {
   lastUpdated: string;
   completionPercentage: number;
   missingKPIs: string[];
+  dataSources: string[];
+  liveDataDetails?: {
+    hubspot_data?: any;
+    apollo_data?: any;
+    marcoby_data?: any;
+    company_id?: string;
+  };
 }
 
 export interface KPIDataPoint {
@@ -37,20 +44,40 @@ export class BusinessHealthService {
     try {
       const { data: rpcData, error: rpcErr } = await supabase.rpc('get_business_health_score');
       if (!rpcErr && rpcData && rpcData.length > 0) {
-        const { score, breakdown } = rpcData[0] as { score: number; breakdown: any };
+        const { 
+          score, 
+          breakdown, 
+          last_updated, 
+          data_sources, 
+          completeness_percentage 
+        } = rpcData[0] as { 
+          score: number; 
+          breakdown: any;
+          last_updated: string;
+          data_sources: string[];
+          completeness_percentage: number;
+        };
 
-        // breakdown expected shape: { [categoryId]: number }
-        const categoryScores: Record<string, number> = breakdown ?? {};
+        // breakdown expected shape: { sales: number, marketing: number, etc. }
+        const categoryScores: Record<string, number> = {
+          sales: breakdown?.sales || 0,
+          marketing: breakdown?.marketing || 0,
+          finance: breakdown?.finance || 0,
+          operations: breakdown?.operations || 0,
+          support: breakdown?.support || 0,
+        };
 
         const result: BusinessHealthData = {
           kpiValues: {},
           categoryScores,
           overallScore: score,
-          lastUpdated: new Date().toISOString(),
-          completionPercentage: 0,
+          lastUpdated: last_updated || new Date().toISOString(),
+          completionPercentage: completeness_percentage || 0,
           missingKPIs: [],
+          dataSources: data_sources || [],
+          liveDataDetails: breakdown?.details || undefined,
         };
-        logger.info({ orgId, score }, 'Fetched business health via RPC');
+        logger.info({ orgId, score, dataSources: data_sources }, 'Fetched live business health via RPC');
         return result;
       }
     } catch (rpcCatch) {
@@ -116,7 +143,8 @@ export class BusinessHealthService {
         overallScore,
         lastUpdated: new Date().toISOString(),
         completionPercentage,
-        missingKPIs
+        missingKPIs,
+        dataSources: ['KPI Snapshots'] // Fallback data source
       };
       
       logger.info({ 

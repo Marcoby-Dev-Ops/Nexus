@@ -54,6 +54,12 @@ serve(async (req) => {
       const claims = JSON.parse(atob(jwt.split('.')[1]));
       orgId = claims.org_id as string | undefined;
       userId = claims.sub as string | undefined;
+      
+      // Filter out string "null" values which can cause UUID errors
+      if (orgId === 'null' || orgId === '') {
+        orgId = undefined;
+      }
+      
       console.log('[upsert_kpis] JWT claims:', { orgId: !!orgId, userId: !!userId });
     } catch (jwtError) {
       console.error('[upsert_kpis] JWT parsing error:', jwtError);

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -20,11 +21,17 @@ import {
   HelpCircle,
   ExternalLink,
   Globe,
-  Zap
+  Zap,
+  Megaphone,
+  LifeBuoy,
+  Gauge,
+  Settings,
+  AlertCircle
 } from 'lucide-react';
 import UnifiedAnalyticsDashboard from '@/components/analytics/UnifiedAnalyticsDashboard';
 import CrossPlatformInsightsEngine from '@/components/analytics/CrossPlatformInsightsEngine';
 import DigestibleMetricsDashboard from '@/components/analytics/DigestibleMetricsDashboard';
+import { useSystemContext } from '@/contexts/SystemContext';
 
 /**
  * @name UnifiedAnalyticsPage
@@ -43,7 +50,22 @@ interface AnalyticsOverview {
 }
 
 const UnifiedAnalyticsPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  
+  // Extract department from URL path or search params
+  const getDepartmentFromPath = () => {
+    const path = location.pathname;
+    if (path.includes('/marketing/analytics')) return 'marketing';
+    if (path.includes('/support/analytics')) return 'support';
+    if (path.includes('/maturity/analytics')) return 'maturity';
+    if (path.includes('/operations/analytics')) return 'operations';
+    return searchParams.get('department') || 'all';
+  };
+  
+  const department = getDepartmentFromPath();
   const [selectedView, setSelectedView] = useState<'overview' | 'digestible' | 'technical' | 'insights'>('digestible');
+  const { integrationStatus, businessHealth, aiInsights, loading, refresh } = useSystemContext();
 
   // Mock overview data - in real implementation, this would come from actual analytics
   const analyticsOverview: AnalyticsOverview = {
@@ -76,17 +98,82 @@ const UnifiedAnalyticsPage: React.FC = () => {
     }
   };
 
+  // Department-specific configurations
+  const departmentConfigs = {
+    marketing: {
+      icon: Megaphone,
+      title: 'Marketing Analytics',
+      description: 'Insights into campaign performance, reach and conversions',
+      color: 'text-pink-500',
+      quickActions: [
+        { label: 'View Campaigns', href: '/marketing/campaigns' },
+        { label: 'Campaign Performance', href: '/marketing/performance' },
+        { label: 'Ask AI for Marketing Insight', href: '/ai-hub' }
+      ]
+    },
+    support: {
+      icon: LifeBuoy,
+      title: 'Support Analytics',
+      description: 'Monitor resolution time, CSAT, and ticket trends',
+      color: 'text-primary',
+      quickActions: [
+        { label: 'View Tickets', href: '/support/tickets' },
+        { label: 'Resolution Metrics', href: '/support/metrics' },
+        { label: 'Ask AI for Support Insight', href: '/ai-hub' }
+      ]
+    },
+    maturity: {
+      icon: Gauge,
+      title: 'Maturity Analytics',
+      description: 'Assess process standardisation, documentation and organisational strength',
+      color: 'text-secondary',
+      quickActions: [
+        { label: 'View Processes', href: '/maturity/processes' },
+        { label: 'Maturity Assessment', href: '/maturity/assessment' },
+        { label: 'Ask AI for Maturity Insight', href: '/ai-hub' }
+      ]
+    },
+    operations: {
+      icon: Settings,
+      title: 'Operations Analytics',
+      description: 'Track performance, usage, and growth metrics',
+      color: 'text-success',
+      quickActions: [
+        { label: 'View Operations', href: '/operations' },
+        { label: 'Performance Metrics', href: '/operations/metrics' },
+        { label: 'Ask AI for Operations Insight', href: '/ai-hub' }
+      ]
+    },
+    all: {
+      icon: BarChart3,
+      title: 'Business Analytics',
+      description: 'Cross-platform insights from all your connected business tools',
+      color: 'text-primary',
+      quickActions: [
+        { label: 'View All Departments', href: '/departments' },
+        { label: 'Executive Dashboard', href: '/dashboard' },
+        { label: 'Ask AI for Business Insight', href: '/ai-hub' }
+      ]
+    }
+  };
+
+  const currentConfig = departmentConfigs[department as keyof typeof departmentConfigs] || departmentConfigs.all;
+  const IconComponent = currentConfig.icon;
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Business Analytics</h1>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <IconComponent className={`w-8 h-8 ${currentConfig.color}`} />
+            {currentConfig.title}
+          </h1>
           <p className="text-muted-foreground">
-            Cross-platform insights from all your connected business tools
+            {currentConfig.description}
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           <Button variant="outline" size="sm">
             <HelpCircle className="w-4 h-4 mr-2" />
             Analytics Guide
@@ -118,11 +205,11 @@ const UnifiedAnalyticsPage: React.FC = () => {
                 <strong>{analyticsOverview.actionableRecommendations}</strong> actionable recommendations
               </span>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Badge variant="outline" className={getFreshnessColor(analyticsOverview.dataFreshness)}>
                 {analyticsOverview.dataFreshness} data
               </Badge>
-              <div className={`px-3 py-1 rounded-lg ${getHealthScoreBg(analyticsOverview.overallHealthScore)}`}>
+              <div className={`px-4 py-1 rounded-lg ${getHealthScoreBg(analyticsOverview.overallHealthScore)}`}>
                 <span className={`font-bold ${getHealthScoreColor(analyticsOverview.overallHealthScore)}`}>
                   {analyticsOverview.overallHealthScore}% health
                 </span>
@@ -132,11 +219,140 @@ const UnifiedAnalyticsPage: React.FC = () => {
         </AlertDescription>
       </Alert>
 
+      {/* Department-Specific System Cards */}
+      {department !== 'all' && (
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
+          {/* System Health Card */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-primary" />
+                System Health
+              </CardTitle>
+              <CardDescription>Business health score and trend</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-between">
+              <div className="mb-4">
+                <div className="text-4xl font-bold flex items-center gap-2">
+                  {loading ? '...' : businessHealth.score}
+                  <span className={`text-base font-medium ${businessHealth.trend === 'up' ? 'text-success' : businessHealth.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}>({businessHealth.trend})</span>
+                </div>
+                <div className="text-sm text-muted-foreground mt-2">
+                  {businessHealth.summary}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+                <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* AI Opportunities Card */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-warning" />
+                AI Opportunities
+              </CardTitle>
+              <CardDescription>AI-generated insights and recommendations</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-between">
+              <div className="space-y-2 mb-4">
+                {loading ? (
+                  <div className="text-muted-foreground">Loading...</div>
+                ) : aiInsights.length === 0 ? (
+                  <div className="text-muted-foreground">No insights available</div>
+                ) : (
+                  aiInsights.slice(0, 3).map((insight) => (
+                    <div key={insight.id} className={`p-2 rounded border-l-4 ${
+                      insight.impact === 'high' ? 'border-destructive bg-destructive/5' :
+                      insight.impact === 'medium' ? 'border-warning bg-warning/5' :
+                      'border-muted bg-muted/5'
+                    }`}>
+                      <div className="font-semibold flex items-center gap-2">
+                        {insight.type === 'opportunity' && <Zap className="w-4 h-4 text-success" />}
+                        {insight.type === 'alert' && <AlertCircle className="w-4 h-4 text-destructive" />}
+                        {insight.type === 'trend' && <TrendingUp className="w-4 h-4 text-primary" />}
+                        {insight.type === 'optimization' && <Lightbulb className="w-4 h-4 text-warning" />}
+                        {insight.title}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">{insight.description}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/ai-hub'}>
+                <Brain className="w-4 h-4 mr-2" /> Explore AI Hub
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Integrations Status Card */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <RefreshCw className="w-5 h-5 text-primary" />
+                Integrations
+              </CardTitle>
+              <CardDescription>Status of connected services</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-between">
+              <div className="space-y-2 mb-4">
+                {loading ? (
+                  <div className="text-muted-foreground">Loading...</div>
+                ) : integrationStatus.length === 0 ? (
+                  <div className="text-muted-foreground">No integrations connected</div>
+                ) : (
+                  integrationStatus.slice(0, 3).map((integration) => (
+                    <div key={integration.id} className="flex items-center gap-2 p-2 rounded border border-border">
+                      <CheckCircle2 className="w-4 h-4 text-success" />
+                      <span className="font-medium">{integration.name}</span>
+                      <span className="text-xs ml-auto px-2 py-0.5 rounded bg-success/10 text-success border-success/20">
+                        {integration.status}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="outline" size="sm" onClick={() => window.location.href = '/integrations'}>
+                <RefreshCw className="w-4 h-4 mr-2" /> Manage Integrations
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions Card */}
+          <Card className="flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="w-5 h-5 text-success" />
+                Quick Actions
+              </CardTitle>
+              <CardDescription>Jump to key workflows</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 flex flex-col justify-between">
+              <div className="space-y-2 mb-4">
+                {currentConfig.quickActions.map((action, index) => (
+                  <Button 
+                    key={index}
+                    variant="secondary" 
+                    size="sm" 
+                    className="w-full" 
+                    onClick={() => window.location.href = action.href}
+                  >
+                    {action.label}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Key Benefits Banner */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="border-l-4 border-l-primary bg-primary/5">
           <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Brain className="w-8 h-8 text-primary" />
               <div>
                 <h3 className="font-semibold">AI-Powered Insights</h3>
@@ -148,7 +364,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
 
         <Card className="border-l-4 border-l-success bg-success/5">
           <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Target className="w-8 h-8 text-success" />
               <div>
                 <h3 className="font-semibold">Actionable Intelligence</h3>
@@ -160,7 +376,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
 
         <Card className="border-l-4 border-l-warning bg-warning/5">
           <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Globe className="w-8 h-8 text-warning" />
               <div>
                 <h3 className="font-semibold">Cross-Platform View</h3>
@@ -172,7 +388,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
 
         <Card className="border-l-4 border-l-secondary bg-secondary/5">
           <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-4">
               <Zap className="w-8 h-8 text-secondary" />
               <div>
                 <h3 className="font-semibold">Real-Time Updates</h3>
@@ -305,7 +521,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="text-3xl font-bold text-success">$127.4K</div>
                     <div className="flex items-center space-x-2">
                       <TrendingUp className="w-4 h-4 text-success" />
@@ -330,7 +546,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="text-3xl font-bold text-primary">89</div>
                     <div className="flex items-center space-x-2">
                       <TrendingUp className="w-4 h-4 text-success" />
@@ -355,7 +571,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <div className="text-3xl font-bold text-success">99.8%</div>
                     <div className="flex items-center space-x-2">
                       <TrendingUp className="w-4 h-4 text-success" />

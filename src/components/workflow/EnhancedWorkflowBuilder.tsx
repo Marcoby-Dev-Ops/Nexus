@@ -60,7 +60,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
 
   return (
     <div className={`bg-card border border-border rounded-lg p-6 ${className}`}>
-      <div className="flex items-center space-x-3 mb-6">
+      <div className="flex items-center space-x-4 mb-6">
         <Workflow className="h-6 w-6 text-primary" />
         <div>
           <h2 className="text-xl font-semibold text-foreground">Enhanced Workflow Builder</h2>
@@ -79,7 +79,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
               value={workflowName}
               onChange={(e) => setWorkflowName(e.target.value)}
               placeholder="Enter workflow name..."
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div>
@@ -89,7 +89,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
             <select
               value={triggerType}
               onChange={(e) => setTriggerType(e.target.value as any)}
-              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="webhook">Webhook</option>
               <option value="schedule">Schedule</option>
@@ -108,7 +108,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
             onChange={(e) => setWorkflowDescription(e.target.value)}
             placeholder="Describe what this workflow should do..."
             rows={4}
-            className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -127,7 +127,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
                       : [...prev, integration]
                   );
                 }}
-                className={`px-3 py-2 rounded-md transition-colors ${
+                className={`px-4 py-2 rounded-md transition-colors ${
                   integrations.includes(integration)
                     ? 'bg-primary text-primary-foreground'
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
@@ -159,7 +159,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
           </div>
         )}
 
-        <div className="flex justify-end space-x-3">
+        <div className="flex justify-end space-x-4">
           {onClose && (
             <button
               onClick={onClose}

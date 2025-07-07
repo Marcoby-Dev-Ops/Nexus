@@ -149,7 +149,7 @@ const EventsList: React.FC<{ selectedDate: Date }> = ({ selectedDate }) => {
   return (
     <div className="space-y-4">
       {displayEvents.map((event) => (
-        <div key={event.id} className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
+        <div key={event.id} className="flex items-start gap-4 p-2 rounded-lg hover:bg-muted/50 transition-colors">
           <div className={`h-full w-1.5 rounded-full ${event.source === 'google' ? 'bg-primary' : 'bg-secondary'}`} />
           <div className="flex-1 cursor-pointer" onClick={() => event.viewLink && window.open(event.viewLink, '_blank')}>
             <p className="font-semibold text-sm">{event.title}</p>

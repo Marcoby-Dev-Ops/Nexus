@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useEnhancedUser } from '@/contexts/EnhancedUserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/Separator';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Progress } from '@/components/ui/Progress';
 import { Spinner } from '@/components/ui/Spinner';
+import { logger } from '@/lib/security/logger';
 import { 
   User, 
   Mail, 
@@ -39,17 +40,109 @@ import {
   Clock,
   Briefcase,
   Home,
-  Coffee
+  Coffee,
+  Brain
 } from 'lucide-react';
 import type { UserProfile } from '@/lib/types/userProfile';
+import { UserKnowledgeViewer } from '@/components/ai/UserKnowledgeViewer';
+
+interface DatabaseProfile {
+  id?: string;
+  first_name?: string | null;
+  last_name?: string | null;
+  display_name?: string | null;
+  name?: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  mobile?: string | null;
+  work_phone?: string | null;
+  personal_email?: string | null;
+  role?: string | null;
+  department?: string | null;
+  job_title?: string | null;
+  employee_id?: string | null;
+  hire_date?: string | null;
+  manager_id?: string | null;
+  direct_reports?: string[] | null;
+  timezone?: string | null;
+  location?: string | null;
+  work_location?: string | null;
+  address?: any; // Json type from database
+  linkedin_url?: string | null;
+  github_url?: string | null;
+  twitter_url?: string | null;
+  skills?: string[] | null;
+  certifications?: string[] | null;
+  languages?: any; // Json type from database
+  emergency_contact?: any;
+  preferences?: Record<string, any> | null;
+  status?: string | null;
+  last_login?: string | null;
+  onboarding_completed?: boolean | null;
+  profile_completion_percentage?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  company_id?: string | null;
+}
 
 export const Profile: React.FC = () => {
-  const { user, updateProfile, loading } = useEnhancedUser();
+  const { user, updateProfile, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [formData, setFormData] = useState<Partial<UserProfile>>(user?.profile || {});
+
+  // Helper function to convert database profile to UserProfile format
+  const convertDbProfileToUserProfile = (dbProfile: DatabaseProfile | null | undefined): Partial<UserProfile> => {
+    if (!dbProfile) return {};
+    
+    return {
+      id: dbProfile.id || '',
+      first_name: dbProfile.first_name || undefined,
+      last_name: dbProfile.last_name || undefined,
+      display_name: dbProfile.display_name || dbProfile.name || undefined,
+      avatar_url: dbProfile.avatar_url || undefined,
+      bio: dbProfile.bio || undefined,
+      phone: dbProfile.phone || undefined,
+      mobile: dbProfile.mobile || undefined,
+      work_phone: dbProfile.work_phone || undefined,
+      personal_email: dbProfile.personal_email || undefined,
+      role: (dbProfile.role as 'owner' | 'admin' | 'manager' | 'user') || 'user',
+      department: dbProfile.department || undefined,
+      job_title: dbProfile.job_title || undefined,
+      employee_id: dbProfile.employee_id || undefined,
+      hire_date: dbProfile.hire_date || undefined,
+      manager_id: dbProfile.manager_id || undefined,
+      direct_reports: dbProfile.direct_reports || undefined,
+      timezone: dbProfile.timezone || 'UTC',
+      location: dbProfile.location || undefined,
+      work_location: (dbProfile.work_location as 'office' | 'remote' | 'hybrid') || undefined,
+      address: typeof dbProfile.address === 'object' && dbProfile.address !== null ? dbProfile.address : undefined,
+      linkedin_url: dbProfile.linkedin_url || undefined,
+      github_url: dbProfile.github_url || undefined,
+      twitter_url: dbProfile.twitter_url || undefined,
+      skills: dbProfile.skills || undefined,
+      certifications: dbProfile.certifications || undefined,
+      languages: dbProfile.languages?.map((lang: string) => ({ language: lang, proficiency: 'intermediate' as const })) || undefined,
+      emergency_contact: dbProfile.emergency_contact || undefined,
+      preferences: {
+        theme: 'light',
+        notifications: true,
+        language: 'en',
+        ...(typeof dbProfile.preferences === 'object' && dbProfile.preferences !== null ? dbProfile.preferences : {})
+      },
+      status: (dbProfile.status as 'active' | 'inactive' | 'pending' | 'suspended') || undefined,
+      last_login: dbProfile.last_login || undefined,
+      onboarding_completed: dbProfile.onboarding_completed || false,
+      profile_completion_percentage: dbProfile.profile_completion_percentage || undefined,
+      created_at: dbProfile.created_at || new Date().toISOString(),
+      updated_at: dbProfile.updated_at || new Date().toISOString(),
+      company_id: dbProfile.company_id || undefined
+    };
+  };
+
+  const [formData, setFormData] = useState<Partial<UserProfile>>(() => convertDbProfileToUserProfile(user?.profile as DatabaseProfile));
 
   // Calculate profile completion percentage
   const calculateCompletionPercentage = useCallback(() => {
@@ -61,22 +154,22 @@ export const Profile: React.FC = () => {
     ];
     
     const completedFields = fields.filter(field => {
-      const value = user.profile?.[field as keyof UserProfile];
+      const value = user.profile?.[field as keyof typeof user.profile];
       return value && value !== '';
     }).length;
     
     return Math.round((completedFields / fields.length) * 100);
   }, [user?.profile]);
 
-  const handleInputChange = (field: keyof UserProfile, value: any) => {
+  const handleInputChange = (field: keyof UserProfile, value: string | number | boolean | string[] | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNestedInputChange = (parentField: keyof UserProfile, nestedField: string, value: any) => {
+  const handleNestedInputChange = (parentField: keyof UserProfile, nestedField: string, value: string | number | boolean) => {
     setFormData(prev => ({
       ...prev,
       [parentField]: {
-        ...(prev[parentField] as any),
+        ...(prev[parentField] as Record<string, any>),
         [nestedField]: value
       }
     }));
@@ -92,7 +185,8 @@ export const Profile: React.FC = () => {
       setIsEditing(false);
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error({ err: error }, 'Error updating profile');
       setSaveMessage('Failed to update profile. Please try again.');
       setTimeout(() => setSaveMessage(null), 5000);
     } finally {
@@ -101,7 +195,7 @@ export const Profile: React.FC = () => {
   };
 
   const handleCancel = () => {
-    setFormData(user?.profile || {});
+    setFormData(convertDbProfileToUserProfile(user?.profile as DatabaseProfile));
     setIsEditing(false);
   };
 
@@ -137,8 +231,16 @@ export const Profile: React.FC = () => {
         <div>
           <h1 className="text-4xl font-bold text-foreground">Profile</h1>
           <p className="text-lg text-muted-foreground mt-1">
-            Manage your personal and professional information
+            Your professional identity and public information
           </p>
+          <div className="flex items-center space-x-2 mt-2">
+            <Badge variant="outline" className="text-xs">
+              Public Profile
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              Professional Information
+            </Badge>
+          </div>
         </div>
         <div className="flex items-center space-x-4">
           {isEditing ? (
@@ -185,6 +287,34 @@ export const Profile: React.FC = () => {
         </Alert>
       )}
 
+      {/* Profile vs Settings Distinction */}
+      <Card className="bg-blue-50 border-blue-200">
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded-full">
+              <User className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="font-medium text-blue-900">Profile vs Account Settings</h3>
+              <p className="text-sm text-blue-700 mt-1">
+                <strong>Profile:</strong> Your professional identity, bio, and public information visible to team members.
+              </p>
+              <p className="text-sm text-blue-700">
+                <strong>Account Settings:</strong> Private account details, security settings, and system preferences.
+              </p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 border-blue-300 text-blue-700 hover:bg-blue-100"
+                onClick={() => navigate('/settings')}
+              >
+                Go to Account Settings
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar - Profile Overview */}
         <div className="lg:col-span-1 space-y-6">
@@ -195,7 +325,7 @@ export const Profile: React.FC = () => {
                 {/* Avatar */}
                 <div className="relative">
                   <Avatar className="h-24 w-24 mx-auto">
-                    <AvatarImage src={profile?.avatar_url} />
+                    <AvatarImage src={profile?.avatar_url || undefined} />
                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
                       {user?.initials || 'U'}
                     </AvatarFallback>
@@ -332,11 +462,15 @@ export const Profile: React.FC = () => {
         {/* Main Content */}
         <div className="lg:col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="personal">Personal</TabsTrigger>
               <TabsTrigger value="professional">Professional</TabsTrigger>
               <TabsTrigger value="preferences">Preferences</TabsTrigger>
+              <TabsTrigger value="knowledge">
+                <Brain className="h-4 w-4 mr-2" />
+                Knowledge
+              </TabsTrigger>
             </TabsList>
 
             {/* Overview Tab */}
@@ -375,13 +509,14 @@ export const Profile: React.FC = () => {
 
               {/* Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {profile?.hire_date && (
+                {/* Employment Info */}
+                {(user?.profile as any)?.hire_date && (
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Calendar className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <p className="text-sm font-medium text-foreground">Joined</p>
                       <p className="text-lg font-bold text-primary">
-                        {new Date(profile.hire_date).toLocaleDateString()}
+                        {new Date((user?.profile as any).hire_date).toLocaleDateString()}
                       </p>
                     </CardContent>
                   </Card>
@@ -399,13 +534,14 @@ export const Profile: React.FC = () => {
                   </Card>
                 )}
 
-                {profile?.status && (
+                {/* Status Badge */}
+                {(user?.profile as any)?.status && (
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Shield className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <p className="text-sm font-medium text-foreground">Status</p>
-                      <Badge variant={profile.status === 'active' ? 'default' : 'secondary'} className="text-lg">
-                        {profile.status}
+                      <Badge variant={(user?.profile as any).status === 'active' ? 'default' : 'secondary'} className="text-lg">
+                        {(user?.profile as any).status}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -645,7 +781,12 @@ export const Profile: React.FC = () => {
                     <div className="space-y-2">
                       <Label htmlFor="language">Language</Label>
                       <Select
-                        value={isEditing ? (formData.preferences?.language || 'en') : (profile?.preferences?.language || 'en')}
+                        value={isEditing ? (formData.preferences?.language || 'en') : (
+                          typeof profile?.preferences === 'object' && 
+                          profile?.preferences !== null &&
+                          'language' in profile.preferences ? 
+                          (profile.preferences as Record<string, any>).language || 'en' : 'en'
+                        )}
                         onValueChange={(value) => handleNestedInputChange('preferences', 'language', value)}
                         disabled={!isEditing}
                       >
@@ -663,6 +804,11 @@ export const Profile: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* Knowledge Tab */}
+            <TabsContent value="knowledge" className="space-y-6">
+              <UserKnowledgeViewer />
             </TabsContent>
           </Tabs>
         </div>

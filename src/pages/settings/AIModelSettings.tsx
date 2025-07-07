@@ -209,7 +209,7 @@ const AIModelSettings = () => {
                 <h3 className="text-lg font-medium">Your API Keys</h3>
                 <ul className="mt-2 space-y-2 max-w-md">
                     {apiKeys.length > 0 ? apiKeys.map(key => (
-                        <li key={key.id} className="flex justify-between items-center p-3 border rounded-lg bg-secondary/50">
+                        <li key={key.id} className="flex justify-between items-center p-4 border rounded-lg bg-secondary/50">
                             <div>
                                 <span className="font-mono text-sm">{key.key_name}</span>
                                 <p className="text-xs text-muted-foreground">Created: {new Date(key.created_at).toLocaleDateString()}</p>

@@ -334,7 +334,7 @@ const SecuritySettings: React.FC = () => {
           </div>
           
           {twoFactorEnabled && (
-            <div className="p-3 bg-muted rounded-md text-sm">
+            <div className="p-4 bg-muted rounded-md text-sm">
               <p className="font-medium">Two-factor authentication is enabled</p>
               <p className="text-muted-foreground mt-1">
                 You will be asked for a verification code when signing in from an unrecognized device.
@@ -380,7 +380,7 @@ const SecuritySettings: React.FC = () => {
             {isLoadingHistory && <p>Loading history...</p>}
             {!isLoadingHistory && loginHistory?.map((activity: any, index: number) => (
               <div key={index} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-4">
                   {activity.action === 'login' ? <Fingerprint className="h-5 w-5 text-success" /> : <AlertTriangle className="h-5 w-5 text-destructive" />}
                   <div>
                     <p className="font-medium text-sm capitalize">{activity.action.replace('_', ' ')}</p>
@@ -389,7 +389,7 @@ const SecuritySettings: React.FC = () => {
                     </p>
                   </div>
                 </div>
-                <Badge variant={activity.action === 'login' ? 'outline' : 'destructive'} className={activity.action === 'login' ? 'text-green-500 border-green-500' : ''}>
+                <Badge variant={activity.action === 'login' ? 'outline' : 'destructive'} className={activity.action === 'login' ? 'text-success border-success' : ''}>
                   {activity.action === 'login' ? 'Success' : 'Failed'}
                 </Badge>
               </div>
@@ -425,7 +425,7 @@ const SecuritySettings: React.FC = () => {
               {passkeys.map((pk) => (
                 <div
                   key={pk.credential_id}
-                  className="flex items-center justify-between p-3 border border-border rounded-md"
+                  className="flex items-center justify-between p-4 border border-border rounded-md"
                 >
                   <div className="flex-1">
                     <p className="font-medium truncate max-w-[200px]" title={pk.credential_id}>

@@ -192,7 +192,7 @@ const MarketingLanding: React.FC = () => {
                     ))}
                   </div>
                   <p className="text-muted-foreground mb-6">"{testimonial.quote}"</p>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
                       {testimonial.avatar}
                     </div>
@@ -267,7 +267,7 @@ const MarketingLanding: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               We're preparing an interactive demo. In the meantime, start your free trial!
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button onClick={handleGetStarted} className="flex-1">
                 Start Free Trial
               </Button>

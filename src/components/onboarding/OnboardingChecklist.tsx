@@ -56,14 +56,14 @@ export const OnboardingChecklist: React.FC = () => {
               </p>
               <Progress value={progressPercentage} className="mt-3" />
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-4">
               {Object.entries(stepConfig).map(([stepKey, config]) => {
                 const isStepCompleted = steps[stepKey as StepKey];
                 return (
-                  <div key={stepKey} className={`flex items-start gap-3 p-3 rounded-lg transition-colors ${isStepCompleted ? 'bg-green-50 dark:bg-green-900/20' : 'bg-background hover:bg-muted/50'}`}>
+                  <div key={stepKey} className={`flex items-start gap-4 p-4 rounded-lg transition-colors ${isStepCompleted ? 'bg-success/5 dark:bg-success/20' : 'bg-background hover:bg-muted/50'}`}>
                     <div>
                       {isStepCompleted ? (
-                        <CheckCircle className="h-6 w-6 text-green-500" />
+                        <CheckCircle className="h-6 w-6 text-success" />
                       ) : (
                         <Circle className="h-6 w-6 text-muted-foreground/50" />
                       )}

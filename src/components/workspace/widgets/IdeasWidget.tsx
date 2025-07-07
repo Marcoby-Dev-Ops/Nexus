@@ -46,17 +46,17 @@ const mockEnhancedIdeas = [
 ];
 
 const categoryIcons = {
-  automation: <Zap className="h-4 w-4 text-blue-600" />,
-  growth: <TrendingUp className="h-4 w-4 text-green-600" />,
-  team: <Target className="h-4 w-4 text-purple-600" />,
-  innovation: <Star className="h-4 w-4 text-orange-600" />,
-  default: <Lightbulb className="h-4 w-4 text-gray-600" />
+  automation: <Zap className="h-4 w-4 text-primary" />,
+  growth: <TrendingUp className="h-4 w-4 text-success" />,
+  team: <Target className="h-4 w-4 text-secondary" />,
+  innovation: <Star className="h-4 w-4 text-warning" />,
+  default: <Lightbulb className="h-4 w-4 text-muted-foreground" />
 };
 
 const priorityColors = {
-  high: 'bg-red-100 text-red-800 border-red-200',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  low: 'bg-gray-100 text-gray-800 border-gray-200'
+  high: 'bg-destructive/10 text-destructive border-red-200',
+  medium: 'bg-warning/10 text-yellow-800 border-yellow-200',
+  low: 'bg-muted text-foreground border-border'
 };
 
 export const IdeasWidget: React.FC = () => {
@@ -101,7 +101,7 @@ export const IdeasWidget: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Lightbulb className="w-5 h-5 text-orange-600" />
+          <Lightbulb className="w-5 h-5 text-warning" />
           Ideas & Innovation
         </CardTitle>
         <CardDescription>
@@ -133,9 +133,9 @@ export const IdeasWidget: React.FC = () => {
         </div>
         
         {isLoading && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="p-3 border rounded-lg animate-pulse">
+              <div key={index} className="p-4 border rounded-lg animate-pulse">
                 <div className="flex items-start justify-between mb-2">
                   <div className="h-4 w-4 bg-muted rounded"></div>
                   <div className="h-5 w-16 bg-muted rounded"></div>
@@ -155,11 +155,11 @@ export const IdeasWidget: React.FC = () => {
           </Alert>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {ideas?.map((idea) => (
             <div 
               key={idea.id} 
-              className="p-3 rounded-lg border-2 border-transparent hover:border-border/50 bg-muted/30 hover:bg-muted/50 transition-all duration-200 cursor-pointer"
+              className="p-4 rounded-lg border-2 border-transparent hover:border-border/50 bg-muted/30 hover:bg-muted/50 transition-all duration-200 cursor-pointer"
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -178,7 +178,7 @@ export const IdeasWidget: React.FC = () => {
               <div className="flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">{idea.date}</p>
                 {idea.estimatedImpact && (
-                  <span className="text-xs text-blue-600 font-medium">
+                  <span className="text-xs text-primary font-medium">
                     {idea.estimatedImpact}
                   </span>
                 )}

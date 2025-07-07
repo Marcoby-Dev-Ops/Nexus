@@ -181,7 +181,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 mx-auto bg-orange-100 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-orange-600" />
+                <Users className="w-8 h-8 text-warning" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">Connect to HubSpot CRM</h3>
@@ -191,7 +191,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
               </div>
             </div>
 
-            <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
               <h4 className="font-medium flex items-center gap-2">
                 <ExternalLink className="w-4 h-4" />
                 What you'll get:
@@ -206,15 +206,15 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
               </ul>
             </div>
 
-            <div className="bg-blue-50 p-4 rounded-lg">
+            <div className="bg-primary/5 p-4 rounded-lg">
               <h4 className="font-medium text-blue-900 mb-2">🔐 Security & Privacy</h4>
-              <p className="text-sm text-blue-800">
+              <p className="text-sm text-primary">
                 Your HubSpot data is encrypted and only used to provide business insights. 
                 We follow industry-standard security practices and never share your data.
               </p>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button 
                 onClick={initiateOAuth} 
                 disabled={loading}
@@ -243,8 +243,8 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
         return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-primary" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">Test HubSpot Connection</h3>
@@ -255,24 +255,24 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
             </div>
 
             {connectionResult && (
-              <div className={`p-4 rounded-lg ${connectionResult.success ? 'bg-green-50' : 'bg-red-50'}`}>
+              <div className={`p-4 rounded-lg ${connectionResult.success ? 'bg-success/5' : 'bg-destructive/5'}`}>
                 <div className="flex items-center gap-2">
                   {connectionResult.success ? (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <CheckCircle className="w-5 h-5 text-success" />
                   ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    <AlertCircle className="w-5 h-5 text-destructive" />
                   )}
                   <span className={`font-medium ${connectionResult.success ? 'text-green-900' : 'text-red-900'}`}>
                     {connectionResult.success ? 'Connection Successful!' : 'Connection Failed'}
                   </span>
                 </div>
-                <p className={`text-sm mt-1 ${connectionResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                <p className={`text-sm mt-1 ${connectionResult.success ? 'text-success' : 'text-destructive'}`}>
                   {connectionResult.message}
                 </p>
               </div>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button 
                 onClick={testConnection} 
                 disabled={loading}
@@ -298,8 +298,8 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
         return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 mx-auto bg-success/10 rounded-full flex items-center justify-center">
+                <TrendingUp className="w-8 h-8 text-success" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold">HubSpot Integration Ready</h3>
@@ -312,15 +312,15 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
             {metrics && metrics.length > 0 && (
               <div className="grid grid-cols-2 gap-4">
                 {metrics.slice(0, 4).map((metric: any, index: number) => (
-                  <Card key={index} className="p-3">
+                  <Card key={index} className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm text-muted-foreground">{metric.name}</p>
                         <p className="text-lg font-semibold">{metric.value}</p>
                       </div>
                       <div className={`w-2 h-2 rounded-full ${
-                        metric.trend === 'up' ? 'bg-green-500' : 
-                        metric.trend === 'down' ? 'bg-red-500' : 'bg-gray-400'
+                        metric.trend === 'up' ? 'bg-success' : 
+                        metric.trend === 'down' ? 'bg-destructive' : 'bg-gray-400'
                       }`} />
                     </div>
                   </Card>
@@ -328,7 +328,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
               </div>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <h4 className="font-medium">📊 Business Health KPIs Updated:</h4>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <Badge variant="secondary">Customer Acquisition Cost</Badge>
@@ -340,9 +340,9 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
               </div>
             </div>
 
-            <div className="bg-green-50 p-4 rounded-lg">
+            <div className="bg-success/5 p-4 rounded-lg">
               <h4 className="font-medium text-green-900 mb-2">✅ Integration Benefits</h4>
-              <ul className="text-sm text-green-800 space-y-1">
+              <ul className="text-sm text-success space-y-1">
                 <li>• Automated CRM data synchronization</li>
                 <li>• Real-time sales pipeline tracking</li>
                 <li>• Marketing campaign performance insights</li>
@@ -351,7 +351,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
               </ul>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <Button 
                 onClick={completeSetup} 
                 disabled={loading}
@@ -376,8 +376,8 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       case 4:
         return (
           <div className="text-center space-y-6">
-            <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="w-16 h-16 mx-auto bg-success/10 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-8 h-8 text-success" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-green-900">HubSpot Integration Complete!</h3>
@@ -385,7 +385,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
                 Your CRM data is now being synced and analyzed automatically
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 text-sm text-green-700">
+            <div className="flex items-center justify-center gap-2 text-sm text-success">
               <Mail className="w-4 h-4" />
               <span>Business health metrics will update every hour</span>
             </div>
@@ -401,7 +401,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-orange-600" />
+          <Users className="w-5 h-5 text-warning" />
           HubSpot CRM Integration
         </CardTitle>
         <CardDescription>
@@ -434,12 +434,12 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 text-red-800">
+          <div className="bg-destructive/5 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 text-destructive">
               <AlertCircle className="w-4 h-4" />
               <span className="font-medium">Setup Error</span>
             </div>
-            <p className="text-sm text-red-700 mt-1">{error}</p>
+            <p className="text-sm text-destructive mt-1">{error}</p>
           </div>
         )}
 

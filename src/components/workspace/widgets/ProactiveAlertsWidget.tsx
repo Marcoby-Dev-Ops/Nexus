@@ -45,22 +45,22 @@ const mockBusinessAlerts: AIInsight[] = [
 
 const alertConfig = {
     critical: {
-        icon: <AlertCircle className="h-5 w-5 text-red-600" />,
-        className: "bg-red-50 border-red-200 hover:bg-red-100",
+        icon: <AlertCircle className="h-5 w-5 text-destructive" />,
+        className: "bg-destructive/5 border-red-200 hover:bg-destructive/10",
         buttonVariant: "destructive" as const,
-        badgeClass: "bg-red-100 text-red-800"
+        badgeClass: "bg-destructive/10 text-destructive"
     },
     warning: {
-        icon: <AlertTriangle className="h-5 w-5 text-yellow-600" />,
-        className: "bg-yellow-50 border-yellow-200 hover:bg-yellow-100",
+        icon: <AlertTriangle className="h-5 w-5 text-warning" />,
+        className: "bg-warning/5 border-yellow-200 hover:bg-warning/10",
         buttonVariant: "secondary" as const,
-        badgeClass: "bg-yellow-100 text-yellow-800"
+        badgeClass: "bg-warning/10 text-yellow-800"
     },
     info: {
-        icon: <Info className="h-5 w-5 text-blue-600" />,
-        className: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+        icon: <Info className="h-5 w-5 text-primary" />,
+        className: "bg-primary/5 border-border hover:bg-primary/10",
         buttonVariant: "default" as const,
-        badgeClass: "bg-blue-100 text-blue-800"
+        badgeClass: "bg-primary/10 text-primary"
     },
 }
 
@@ -99,7 +99,7 @@ export const ProactiveAlertsWidget: React.FC = () => {
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {Array.from({ length: 2 }).map((_, index) => (
             <div key={index} className="p-4 border rounded-lg animate-pulse">
               <div className="flex items-start justify-between mb-3">
@@ -128,8 +128,8 @@ export const ProactiveAlertsWidget: React.FC = () => {
     if (!insights || insights.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center h-full text-center p-6">
-          <Shield className="w-12 h-12 text-green-500 mb-4" />
-          <h3 className="text-lg font-semibold text-green-700">All Clear!</h3>
+          <Shield className="w-12 h-12 text-success mb-4" />
+          <h3 className="text-lg font-semibold text-success">All Clear!</h3>
           <p className="text-sm text-muted-foreground">
             No critical issues detected. Your business is running smoothly.
           </p>
@@ -138,7 +138,7 @@ export const ProactiveAlertsWidget: React.FC = () => {
     }
 
     return (
-      <div className="space-y-3">
+      <div className="space-y-4">
         {insights.map((alert) => {
           const config = alertConfig[alert.severity || 'info'];
           const categoryIcon = categoryIcons[alert.category as keyof typeof categoryIcons];
@@ -188,7 +188,7 @@ export const ProactiveAlertsWidget: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-orange-600" />
+          <Bell className="w-5 h-5 text-warning" />
           Business Alerts
         </CardTitle>
         <CardDescription>

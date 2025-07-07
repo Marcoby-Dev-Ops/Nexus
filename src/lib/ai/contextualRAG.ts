@@ -6,8 +6,8 @@
  * the "Nexus gets me" experience across all AI interactions.
  */
 
-import { supabase } from './core/supabase';
-import type { EABusinessObservation } from './services/businessObservationService';
+import { supabase } from '../supabase';
+import type { EABusinessObservation } from '../services/businessObservationService';
 
 interface UserActivityRow {
   page: string;
@@ -659,7 +659,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
     // Add EA business observations
     try {
       const { businessObservationService } = await import(
-        './services/businessObservationService'
+        '../services/businessObservationService'
       );
 
       const observations =

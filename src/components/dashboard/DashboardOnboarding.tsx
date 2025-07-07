@@ -14,12 +14,12 @@ export const DashboardOnboarding: React.FC<DashboardOnboardingProps> = ({ onComp
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-background dark:to-indigo-900/20 p-8 rounded-2xl border border-border/50 shadow-lg text-center"
+      className="bg-gradient-to-br from-background via-muted/30 to-primary/5 p-8 rounded-2xl border border-border/50 shadow-lg text-center"
     >
       <div className="inline-block p-4 bg-primary/10 rounded-full mb-4">
         <Rocket className="w-8 h-8 text-primary" />
       </div>
-      <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
+      <h2 className="text-2xl md:text-3xl font-bold text-foreground">
         Welcome to Your Nexus Command Center{userName ? `, ${userName}` : ''}!
       </h2>
       <p className="mt-3 text-base text-muted-foreground max-w-2xl mx-auto">

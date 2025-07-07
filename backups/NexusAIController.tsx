@@ -34,9 +34,11 @@ import {
   Users,
   Target
 } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
-import { Badge } from '../ui/Badge';
+import { 
+  Button,
+  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Badge,
+} from '@/components/ui';
 import { nexusAIOrchestrator } from '../../lib/nexusAIOrchestrator';
 
 interface AICapabilityStatus {
@@ -479,7 +481,7 @@ export const NexusAIController: React.FC = () => {
           <Button 
             onClick={toggleOrchestrator}
             size="lg"
-            variant={orchestratorStatus === 'running' ? 'destructive' : 'primary'}
+            variant={orchestratorStatus === 'running' ? 'destructive' : 'default'}
             className="flex items-center space-x-2"
           >
             {orchestratorStatus === 'running' ? (
@@ -760,13 +762,13 @@ export const NexusAIController: React.FC = () => {
                     <div className="flex items-center space-x-2">
                       <div className={`w-3 h-3 rounded-full ${getImpactColor(insight.impact)}`}></div>
                       <h4 className="font-medium">{insight.title}</h4>
-                      <Badge variant="secondary" size="xs">
+                      <Badge variant="secondary">
                         {(insight.confidence * 100).toFixed(0)}% confidence
                       </Badge>
                     </div>
                     <div className="flex items-center space-x-2">
                       {insight.actionable && (
-                        <Badge variant="default" size="xs">Actionable</Badge>
+                        <Badge variant="default">Actionable</Badge>
                       )}
                       <div className="text-sm font-bold text-success">
                         ${insight.estimatedValue.toLocaleString()}
@@ -774,6 +776,32 @@ export const NexusAIController: React.FC = () => {
                     </div>
                   </div>
                   <p className="text-sm text-muted-foreground">{insight.description}</p>
+                  <div className="mt-4 flex space-x-2">
+                    <Button size="sm" variant="outline">
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </Button>
+                    <Button size="sm">
+                      <Zap className="h-4 w-4 mr-2" />
+                      Take Action
+                    </Button>
+                    <div className="flex items-center space-x-2 ml-auto">
+                      {insight.actionable && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-semibold">
+                            <Badge variant="default">Actionable</Badge>
+                          </span>
+                        </div>
+                      )}
+                      {!insight.actionable && (
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-semibold">
+                            <Badge variant="secondary">Not Actionable</Badge>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))
             )}

@@ -17,11 +17,10 @@ import {
   executiveAgent,
   departmentalAgents,
   type Agent 
-} from '@/lib/agentRegistry';
+} from '@/lib/ai/agentRegistry';
 import { ModernExecutiveAssistant } from './enhanced/ModernExecutiveAssistant';
 import { DepartmentalAgent } from './DepartmentalAgent';
-import { ChatContextBuilder } from '@/lib/chatContext';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '@/contexts/AuthContext';
 
 /**
  * @interface OrganizationalChatPanelProps
@@ -160,11 +159,22 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
 
   // Initialize session ID for comprehensive tracking
   useEffect(() => {
-    if (user?.id) {
-      const newSessionId = ChatContextBuilder.generateSessionId(user.id);
-      setSessionId(newSessionId);
-      console.log('Chat session initialized:', newSessionId);
-    }
+    (async () => {
+      if (user?.id) {
+        try {
+          const { chatHistory } = await import('@/lib/core/supabase');
+          const { executiveAgent } = await import('@/lib/ai/agentRegistry');
+          const conv = await chatHistory.createConversation(
+            'Organizational Chat',
+            executiveAgent.id,
+            { source: 'org-chat', user_id: user.id }
+          );
+          setSessionId(conv.id);
+        } catch (err) {
+          console.error('Failed to create organizational conversation', err);
+        }
+      }
+    })();
   }, [user?.id]);
 
   const handleShowDepartments = () => {

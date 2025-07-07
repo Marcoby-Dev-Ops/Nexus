@@ -44,7 +44,7 @@ export const WorkspaceQuickActions: React.FC = () => {
           ideaInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       },
-      color: 'bg-yellow-50 border-yellow-200 hover:bg-yellow-100'
+      color: 'bg-warning/5 border-yellow-200 hover:bg-warning/10'
     },
     {
       id: 'add-task',
@@ -59,7 +59,7 @@ export const WorkspaceQuickActions: React.FC = () => {
           taskInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       },
-      color: 'bg-green-50 border-green-200 hover:bg-green-100'
+      color: 'bg-success/5 border-green-200 hover:bg-success/10'
     },
     {
       id: 'focus-timer',
@@ -72,7 +72,7 @@ export const WorkspaceQuickActions: React.FC = () => {
         const endTime = new Date(startTime.getTime() + 25 * 60 * 1000);
         alert(`🍅 Focus session started! Work until ${endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
       },
-      color: 'bg-red-50 border-red-200 hover:bg-red-100'
+      color: 'bg-destructive/5 border-red-200 hover:bg-destructive/10'
     },
     {
       id: 'deep-work',
@@ -83,7 +83,7 @@ export const WorkspaceQuickActions: React.FC = () => {
         // This could integrate with focus/do-not-disturb mode
         alert('🎯 Deep work mode activated! All notifications muted for 2 hours.');
       },
-      color: 'bg-purple-50 border-purple-200 hover:bg-purple-100'
+      color: 'bg-secondary/5 border-purple-200 hover:bg-secondary/10'
     },
     {
       id: 'quick-note',
@@ -104,7 +104,7 @@ export const WorkspaceQuickActions: React.FC = () => {
           alert('📝 Note saved to your quick notes!');
         }
       },
-      color: 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+      color: 'bg-background border-border hover:bg-muted'
     },
     {
       id: 'break-reminder',
@@ -133,7 +133,7 @@ export const WorkspaceQuickActions: React.FC = () => {
         const randomTopic = learningTopics[Math.floor(Math.random() * learningTopics.length)];
         window.open(randomTopic, '_blank');
       },
-      color: 'bg-blue-50 border-blue-200 hover:bg-blue-100'
+      color: 'bg-primary/5 border-border hover:bg-primary/10'
     },
     {
       id: 'mindfulness',
@@ -144,7 +144,7 @@ export const WorkspaceQuickActions: React.FC = () => {
         // Start a mindfulness session
         alert('🧘‍♀️ Take a moment to breathe. Inhale for 4 counts, hold for 4, exhale for 4. Repeat 5 times.');
       },
-      color: 'bg-indigo-50 border-indigo-200 hover:bg-indigo-100'
+      color: 'bg-primary/5 border-indigo-200 hover:bg-indigo-100'
     }
   ];
 
@@ -152,7 +152,7 @@ export const WorkspaceQuickActions: React.FC = () => {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-indigo-600" />
+          <Zap className="w-5 h-5 text-primary" />
           Personal Quick Actions
         </CardTitle>
         <CardDescription>
@@ -160,12 +160,12 @@ export const WorkspaceQuickActions: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-4">
           {quickActions.map((action) => (
             <Button
               key={action.id}
               variant="outline"
-              className={`h-auto p-3 flex flex-col items-center gap-2 text-center border-2 transition-all duration-200 ${action.color}`}
+              className={`h-auto p-4 flex flex-col items-center gap-2 text-center border-2 transition-all duration-200 ${action.color}`}
               onClick={action.action}
             >
               <div className="text-muted-foreground">

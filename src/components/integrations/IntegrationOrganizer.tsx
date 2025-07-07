@@ -256,7 +256,7 @@ export const IntegrationOrganizer: React.FC = () => {
         <select
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
-          className="px-3 py-2 border rounded"
+          className="px-4 py-2 border rounded"
         >
           <option value="all">All Categories</option>
           <option value="crm">CRM</option>
