@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { aiUsageBillingService } from '@/lib/billing/aiUsageBillingService';
 import { continuousImprovementService } from '@/lib/ai/continuousImprovementService';
+import { LoadingSpinner } from '@/components/patterns/LoadingStates';
 
 interface AIPerformanceWidgetProps {
   className?: string;
@@ -104,7 +105,7 @@ export const AIPerformanceWidget: React.FC<AIPerformanceWidgetProps> = ({ classN
       <Card className={className}>
         <CardContent className="p-6">
           <div className="flex items-center justify-center h-32">
-            <LoadingStates.Spinner /></div>
+            <LoadingSpinner />
           </div>
         </CardContent>
       </Card>

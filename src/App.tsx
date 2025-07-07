@@ -87,7 +87,6 @@ import { AdminPage } from './pages/admin/AdminPage';
 import { UserManagementPage } from './pages/admin/UserManagementPage';
 
 // Import at the top of the file
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 import UnifiedAnalyticsPage from '@/pages/analytics/UnifiedAnalyticsPage';
 import { SeePage } from '@/pages/SeePage';
@@ -389,74 +388,72 @@ function App() {
                   <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
                     <Routes>
                       {/* All protected routes go here, copy from previous implementation */}
-                      <Route path="/dashboard" element={<ProtectedRoute><UnifiedLayout><EnhancedDashboard /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/dashboard" element={<UnifiedLayout><EnhancedDashboard /></UnifiedLayout>} />
                       <Route
                         path="/workspace"
                         element={
-                          <ProtectedRoute>
-                            <UnifiedLayout>
-                              <WorkspacePage />
-                            </UnifiedLayout>
-                          </ProtectedRoute>
+                          <UnifiedLayout>
+                            <WorkspacePage />
+                          </UnifiedLayout>
                         }
                       >
-                        <Route path="builder" element={<ProtectedRoute><WorkspaceBuilder /></ProtectedRoute>} />
-                        <Route path="marketplace" element={<ProtectedRoute><WorkspaceMarketplace /></ProtectedRoute>} />
+                        <Route path="builder" element={<UnifiedLayout><WorkspaceBuilder /></UnifiedLayout>} />
+                        <Route path="marketplace" element={<UnifiedLayout><WorkspaceMarketplace /></UnifiedLayout>} />
                       </Route>
-                      <Route path="/ai-hub" element={<ProtectedRoute><UnifiedLayout><AIHubPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/chat" element={<ProtectedRoute><UnifiedLayout><ChatPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/ai-performance" element={<ProtectedRoute><UnifiedLayout><AIPerformancePage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/ai-hub" element={<UnifiedLayout><AIHubPage /></UnifiedLayout>} />
+                      <Route path="/chat" element={<UnifiedLayout><ChatPage /></UnifiedLayout>} />
+                      <Route path="/ai-performance" element={<UnifiedLayout><AIPerformancePage /></UnifiedLayout>} />
                       
                       {/* Business Intelligence - Protected */}
-                      <Route path="/business-setup" element={<ProtectedRoute><UnifiedLayout><QuickBusinessSetup /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/business-chat" element={<ProtectedRoute><UnifiedLayout><BusinessIntelligentChat /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/business-setup" element={<UnifiedLayout><QuickBusinessSetup /></UnifiedLayout>} />
+                      <Route path="/business-chat" element={<UnifiedLayout><BusinessIntelligentChat /></UnifiedLayout>} />
                       
                       {/* Analytics & Data - Protected */}
-                      <Route path="/analytics" element={<ProtectedRoute><UnifiedLayout><UnifiedAnalyticsPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/data-warehouse" element={<ProtectedRoute><UnifiedLayout><DataWarehouseHome /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/assessment" element={<ProtectedRoute><UnifiedLayout><AssessmentPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/company-status" element={<ProtectedRoute><UnifiedLayout><CompanyStatusPage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/analytics" element={<UnifiedLayout><UnifiedAnalyticsPage /></UnifiedLayout>} />
+                      <Route path="/data-warehouse" element={<UnifiedLayout><DataWarehouseHome /></UnifiedLayout>} />
+                      <Route path="/assessment" element={<UnifiedLayout><AssessmentPage /></UnifiedLayout>} />
+                      <Route path="/company-status" element={<UnifiedLayout><CompanyStatusPage /></UnifiedLayout>} />
                       
                       {/* Trinity Framework - Protected */}
-                      <Route path="/think" element={<ProtectedRoute><UnifiedLayout><ThinkPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/see" element={<ProtectedRoute><UnifiedLayout><SeePage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/act" element={<ProtectedRoute><UnifiedLayout><ActPage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/think" element={<UnifiedLayout><ThinkPage /></UnifiedLayout>} />
+                      <Route path="/see" element={<UnifiedLayout><SeePage /></UnifiedLayout>} />
+                      <Route path="/act" element={<UnifiedLayout><ActPage /></UnifiedLayout>} />
                       
                       {/* Department Pages - Protected */}
-                      <Route path="/sales" element={<ProtectedRoute><UnifiedLayout><SalesPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/finance" element={<ProtectedRoute><UnifiedLayout><FinancePage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/marketing" element={<ProtectedRoute><UnifiedLayout><MarketingPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/operations" element={<ProtectedRoute><UnifiedLayout><OperationsPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/support" element={<ProtectedRoute><UnifiedLayout><SupportPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/hr" element={<ProtectedRoute><UnifiedLayout><HRPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/it" element={<ProtectedRoute><UnifiedLayout><ITPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/product" element={<ProtectedRoute><UnifiedLayout><ProductPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/customer-success" element={<ProtectedRoute><UnifiedLayout><CustomerSuccessPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/legal" element={<ProtectedRoute><UnifiedLayout><LegalPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/maturity" element={<ProtectedRoute><UnifiedLayout><MaturityPage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/sales" element={<UnifiedLayout><SalesPage /></UnifiedLayout>} />
+                      <Route path="/finance" element={<UnifiedLayout><FinancePage /></UnifiedLayout>} />
+                      <Route path="/marketing" element={<UnifiedLayout><MarketingPage /></UnifiedLayout>} />
+                      <Route path="/operations" element={<UnifiedLayout><OperationsPage /></UnifiedLayout>} />
+                      <Route path="/support" element={<UnifiedLayout><SupportPage /></UnifiedLayout>} />
+                      <Route path="/hr" element={<UnifiedLayout><HRPage /></UnifiedLayout>} />
+                      <Route path="/it" element={<UnifiedLayout><ITPage /></UnifiedLayout>} />
+                      <Route path="/product" element={<UnifiedLayout><ProductPage /></UnifiedLayout>} />
+                      <Route path="/customer-success" element={<UnifiedLayout><CustomerSuccessPage /></UnifiedLayout>} />
+                      <Route path="/legal" element={<UnifiedLayout><LegalPage /></UnifiedLayout>} />
+                      <Route path="/maturity" element={<UnifiedLayout><MaturityPage /></UnifiedLayout>} />
                       
                       {/* Department Performance Pages - Protected */}
-                      <Route path="/sales-performance" element={<ProtectedRoute><UnifiedLayout><SalesPerformancePage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/financial-operations" element={<ProtectedRoute><UnifiedLayout><FinancialOperationsPage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/sales-performance" element={<UnifiedLayout><SalesPerformancePage /></UnifiedLayout>} />
+                      <Route path="/financial-operations" element={<UnifiedLayout><FinancialOperationsPage /></UnifiedLayout>} />
                       
                       {/* Integrations - Protected */}
-                      <Route path="/integrations" element={<ProtectedRoute><UnifiedLayout><IntegrationTrackingPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/integrations/api-learning" element={<ProtectedRoute><UnifiedLayout><ApiLearningPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/integrations/client-intelligence" element={<ProtectedRoute><UnifiedLayout><ClientIntelligencePage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/integrations" element={<UnifiedLayout><IntegrationTrackingPage /></UnifiedLayout>} />
+                      <Route path="/integrations/api-learning" element={<UnifiedLayout><ApiLearningPage /></UnifiedLayout>} />
+                      <Route path="/integrations/client-intelligence" element={<UnifiedLayout><ClientIntelligencePage /></UnifiedLayout>} />
                       
                       {/* Settings - Protected */}
-                      <Route path="/settings" element={<ProtectedRoute><UnifiedLayout><SettingsPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/settings/profile" element={<ProtectedRoute><UnifiedLayout><ProfileSettings /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/settings/security" element={<ProtectedRoute><UnifiedLayout><SecuritySettings /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/settings/team" element={<ProtectedRoute><UnifiedLayout><TeamSettings /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/settings/billing" element={<ProtectedRoute><UnifiedLayout><BillingSettings /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/settings" element={<UnifiedLayout><SettingsPage /></UnifiedLayout>} />
+                      <Route path="/settings/profile" element={<UnifiedLayout><ProfileSettings /></UnifiedLayout>} />
+                      <Route path="/settings/security" element={<UnifiedLayout><SecuritySettings /></UnifiedLayout>} />
+                      <Route path="/settings/team" element={<UnifiedLayout><TeamSettings /></UnifiedLayout>} />
+                      <Route path="/settings/billing" element={<UnifiedLayout><BillingSettings /></UnifiedLayout>} />
                       
                       {/* Profile & Account - Protected */}
-                      <Route path="/profile" element={<ProtectedRoute><UnifiedLayout><React.Suspense fallback={<div>Loading...</div>}><ProfilePage /></React.Suspense></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/onboarding/company-profile" element={<ProtectedRoute><UnifiedLayout><CompanyProfilePage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/profile" element={<UnifiedLayout><React.Suspense fallback={<div>Loading...</div>}><ProfilePage /></React.Suspense></UnifiedLayout>} />
+                      <Route path="/onboarding/company-profile" element={<UnifiedLayout><CompanyProfilePage /></UnifiedLayout>} />
                       
                       {/* Documents - Protected */}
-                      <Route path="/documents" element={<ProtectedRoute><UnifiedLayout><DocumentCenter /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/documents" element={<UnifiedLayout><DocumentCenter /></UnifiedLayout>} />
                       
                       {/* Authentication - Simple Layout */}
                       <Route path="/login" element={<LoginPage />} />
@@ -481,14 +478,14 @@ function App() {
                       </Route>
                       
                       {/* Admin - Protected */}
-                      <Route path="/admin" element={<ProtectedRoute><UnifiedLayout><AdminPage /></UnifiedLayout></ProtectedRoute>} />
-                      <Route path="/admin/users" element={<ProtectedRoute><UnifiedLayout><UserManagementPage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/admin" element={<UnifiedLayout><AdminPage /></UnifiedLayout>} />
+                      <Route path="/admin/users" element={<UnifiedLayout><UserManagementPage /></UnifiedLayout>} />
                       
                       {/* Marketing */}
                       <Route path="/marketing-landing" element={<MarketingLanding />} />
                       
                       {/* Component Details - Protected */}
-                      <Route path="/component/:id" element={<ProtectedRoute><UnifiedLayout><ComponentDetailPage /></UnifiedLayout></ProtectedRoute>} />
+                      <Route path="/component/:id" element={<UnifiedLayout><ComponentDetailPage /></UnifiedLayout>} />
                       
                       {/* 404 */}
                       <Route path="*" element={<NotFoundPage />} />

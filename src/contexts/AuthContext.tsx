@@ -525,7 +525,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       integrations,
       name: displayName,
       full_name: displayName,
-      initials: displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || '?',
+      initials: displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() || '?',
       avatar_url: profile?.avatar_url || null,
     };
   }, [supabaseUser, profile, company, integrations, loading, timeoutWarning, authStatus]);

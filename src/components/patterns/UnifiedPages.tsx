@@ -42,7 +42,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 interface QuickAction {
   label: string;
-  icon: LucideIcon;
+  icon: React.ComponentType<any>;
   onClick: () => void;
 }
 
@@ -92,11 +92,7 @@ interface DepartmentConfig {
   title: string;
   subtitle: string;
   kpis: EnhancedKPI[];
-  quickActions: Array<{
-    label: string;
-    icon: React.ComponentType<any>;
-    onClick: () => void;
-  }>;
+  quickActions: QuickAction[];
   charts: {
     primary: {
       title: string;
@@ -147,37 +143,29 @@ export const UnifiedSettingsPage: React.FC<{ config: SettingsPageConfig }> = ({ 
   const CurrentComponent = currentSection?.component;
 
   return (
-    <div className="max-w-6xl mx-auto p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">{config.title}</h1>
-        <p className="text-lg text-muted-foreground">{config.description}</p>
+    <div className="flex w-full h-full">
+      <div className="w-72 min-w-[16rem] max-w-xs border-r bg-background p-6">
+        <nav className="space-y-2">
+          {config.sections.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`w-full text-left p-4 rounded-lg transition-colors duration-200 ${
+                activeSection === section.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <div className="font-medium">{section.title}</div>
+              <div className="text-sm opacity-80">{section.description}</div>
+            </button>
+          ))}
+        </nav>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-1">
-          <nav className="space-y-2">
-            {config.sections.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`w-full text-left p-4 rounded-lg transition-colors duration-200 ${
-                  activeSection === section.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <div className="font-medium">{section.title}</div>
-                <div className="text-sm opacity-80">{section.description}</div>
-              </button>
-            ))}
-          </nav>
-        </div>
-
-        <div className="lg:col-span-3">
-          <ContentSection title="" className="mb-8">
-            {CurrentComponent && <CurrentComponent />}
-          </ContentSection>
-        </div>
+      <div className="flex-1 min-w-0 p-8">
+        <ContentSection title="" className="mb-8">
+          {CurrentComponent && <CurrentComponent />}
+        </ContentSection>
       </div>
     </div>
   );
