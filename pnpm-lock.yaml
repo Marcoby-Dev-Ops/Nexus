@@ -83,6 +83,9 @@ importers:
       axios:
         specifier: ^1.10.0
         version: 1.10.0
+      brace-expansion:
+        specifier: ^2.0.2
+        version: 2.0.2
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
