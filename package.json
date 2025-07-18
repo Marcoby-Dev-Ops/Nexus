@@ -27,7 +27,26 @@
     "fix:colors:dry": "node scripts/fix-hardcoded-colors.cjs --dry-run",
     "cleanup:deps": "npm uninstall @jridgewell/gen-mapping @kernel.salacoste/n8n-workflow-builder @radix-ui/react-progress @radix-ui/react-slot pino-pretty shadcn shadcn-ui && npm uninstall --save-dev @testing-library/user-event @types/jest autoprefixer jest-environment-jsdom supabase tw-animate-css",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "generate-sitemap": "node scripts/generate-sitemap.cjs",
+    "generate-robots": "node scripts/generate-robots.cjs",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "supabase:start": "supabase start",
+    "supabase:stop": "supabase stop",
+    "supabase:status": "supabase status",
+    "supabase:db:reset": "supabase db reset",
+    "supabase:db:push": "supabase db push",
+    "supabase:db:pull": "supabase db pull",
+    "supabase:db:diff": "supabase db diff",
+    "supabase:db:dump": "supabase db dump",
+    "supabase:functions:deploy": "supabase functions deploy",
+    "supabase:functions:list": "supabase functions list",
+    "supabase:edge:deploy": "supabase edge deploy",
+    "supabase:edge:list": "supabase edge list",
+    "db:reset": "psql \"$DATABASE_URL\" -f reset_database.sql",
+    "db:setup": "psql \"$DATABASE_URL\" -f schema_cleanup_migration.sql",
+    "dev:setup": "pnpm supabase:status && pnpm db:setup",
+    "dev:reset": "pnpm db:reset && pnpm db:setup"
   },
   "pnpm": {
     "allowed-build-scripts": [
@@ -36,7 +55,8 @@
     "onlyBuiltDependencies": [
       "@azure/msal-browser",
       "cypress",
-      "esbuild"
+      "esbuild",
+      "msw"
     ]
   },
   "dependencies": {
@@ -44,6 +64,7 @@
     "@dnd-kit/core": "^6.1.0",
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.10.0",
     "@microsoft/mgt-components": "^4.6.0",
     "@microsoft/mgt-element": "^4.3.0",
@@ -66,10 +87,12 @@
     "@tanstack/react-query": "^5.62.7",
     "axios": "^1.10.0",
     "brace-expansion": "^2.0.2",
+    "chalk": "^5.4.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^11.16.1",
+    "fs-extra": "^11.3.0",
     "glob": "^11.0.3",
     "i18next": "^25.3.1",
     "i18next-browser-languagedetector": "^8.2.0",
@@ -85,6 +108,7 @@
     "react-day-picker": "^9.7.0",
     "react-dom": "^19.1.0",
     "react-error-boundary": "^6.0.0",
+    "react-helmet-async": "^2.0.5",
     "react-hook-form": "^7.54.2",
     "react-hot-toast": "^2.5.2",
     "react-i18next": "^15.6.0",
@@ -100,8 +124,10 @@
     "sonner": "^1.7.3",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
+    "ts-morph": "^26.0.0",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
+    "yargs": "^18.0.0",
     "zod": "^3.24.1",
     "zustand": "^5.0.2"
   },
@@ -138,7 +164,11 @@
     "jest-axe": "^10.0.0",
     "jest-environment-jsdom": "^30.0.2",
     "jest-junit": "^16.0.0",
+    "madge": "^8.0.0",
+    "msw": "^2.10.3",
+    "openapi-typescript": "^7.8.0",
     "postcss": "^8.5.0",
+    "rollup-plugin-visualizer": "^6.0.3",
     "storybook": "^9.0.15",
     "tailwindcss": "^3.4.17",
     "ts-jest": "^29.4.0",
@@ -147,6 +177,5 @@
     "typescript": "~5.8.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.3.5"
-  },
-  "readme": "This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app)."
+  }
 }

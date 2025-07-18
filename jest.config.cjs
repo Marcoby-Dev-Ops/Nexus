@@ -83,7 +83,7 @@ module.exports = {
     '!src/**/*.stories.{ts,tsx}',
     '!src/**/*.test.{ts,tsx}',
     '!src/**/index.{ts,tsx}',
-    '!src/main.tsx',
+    '!src/app/main.tsx',
     '!src/vite-env.d.ts',
   ],
   coverageDirectory: 'coverage',

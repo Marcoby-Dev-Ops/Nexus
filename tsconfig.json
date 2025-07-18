@@ -2,7 +2,28 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@app/*":           ["src/app/*"],
+      "@core/*":          ["src/core/*"],
+      "@shared/*":        ["src/shared/*"],
+
+      "@dashboard/*":     ["src/domains/dashboard/*"],
+      "@workspace/*":     ["src/domains/workspace/*"],
+      "@marketplace/*":   ["src/domains/marketplace/*"],
+      "@inbox/*":         ["src/domains/inbox/*"],
+      "@admin/*":         ["src/domains/admin/*"],
+      "@user/*":          ["src/domains/user/*"],
+      "@ai/*":            ["src/domains/ai/*"],
+      "@analytics/*":     ["src/domains/analytics/*"],
+      "@assessment/*":    ["src/domains/assessment/*"],
+      "@automation/*":    ["src/domains/automation/*"],
+      "@integrations/*":  ["src/domains/integrations/*"],
+      "@help-center/*":   ["src/domains/help-center/*"],
+      "@knowledge/*":     ["src/domains/knowledge/*"],
+      "@org/*":           ["src/domains/org/*"],
+      "@sales/*":         ["src/domains/departments/sales/*"],
+      "@finance/*":       ["src/domains/departments/finance/*"],
+      "@operations/*":    ["src/domains/departments/operations/*"],
+      "@domains/*":      ["src/domains/*"]
     },
     "esModuleInterop": true,
     "jsx": "react-jsx",

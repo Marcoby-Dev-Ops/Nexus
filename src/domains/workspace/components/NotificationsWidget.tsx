@@ -1,0 +1,1 @@
+export { default, NotificationsWidget } from '@shared/shared/components/widgets/NotificationsWidget'; 

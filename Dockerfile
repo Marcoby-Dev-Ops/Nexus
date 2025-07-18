@@ -20,15 +20,17 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL \
 
 # Copy package files
 COPY package*.json ./
+COPY pnpm-lock.yaml ./
+RUN npm install -g pnpm
 
 # Install dependencies
-RUN npm install --legacy-peer-deps
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN pnpm run build
 
 # Production stage
 FROM nginx:1.27.0-alpine AS production

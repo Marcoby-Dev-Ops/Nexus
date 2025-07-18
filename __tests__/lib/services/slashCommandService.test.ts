@@ -4,7 +4,7 @@ import {
   filterSlashCommands, 
   clearSlashCommandsCache,
   type SlashCommand 
-} from '@/lib/services/slashCommandService';
+} from '@/features/services/slashCommandService';
 import { supabase } from '@/lib/core/supabase';
 
 // Mock Supabase

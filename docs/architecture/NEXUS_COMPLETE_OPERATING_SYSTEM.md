@@ -3,119 +3,91 @@
 ## 🎯 Vision Statement
 Nexus is the world's first complete organizational operating system that combines **creative intelligence** (brainstorming), **business intelligence** (analytics), and **operational intelligence** (automation) into a unified platform where individual thoughts become organizational action.
 
-## 🔥 The Revolutionary Trinity
+---
 
-### 🧠 PILLAR 1: THINK (Brainstorming & Collaboration Engine)
-**Where ideas are born, developed, and connected to business reality**
+## 🏗️ Target Architecture Overview (2025)
 
-#### Collaborative Intelligence Features:
-- **Personal Thought Capture** → Individual creativity within business context
-- **Team Brainstorming Spaces** → Collective ideation with real-time collaboration
-- **Cross-Department Innovation** → Ideas flow between Sales, Finance, Operations
-- **AI-Enhanced Creativity** → Suggestions based on business data and personal history
-- **Idea Evolution Tracking** → Watch concepts develop from thought to execution
+### Trinity Architecture: THINK / SEE / ACT
 
-#### Revolutionary Capabilities:
-```typescript
-interface BrainstormingEngine {
-  personalIdeation: {
-    thoughtCapture: PersonalThought[];
-    contextualSuggestions: AIIdea[];
-    businessRelevanceScoring: RelevanceScore;
-    connectionToGoals: GoalAlignment[];
-  };
-  
-  teamCollaboration: {
-    realTimeWhiteboarding: CollaborationSpace;
-    ideaMerging: IdeaFusion;
-    diversePerspectives: TeamInsight[];
-    consensusBuilding: DecisionSupport;
-  };
-  
-  organizationalInnovation: {
-    crossDepartmentInsights: DepartmentIdea[];
-    strategicAlignment: StrategyConnection;
-    implementationPlanning: ExecutionPlan;
-    impactPrediction: BusinessImpact;
-  };
-}
-```
+- **THINK:** Brainstorm, collaborate, and capture ideas (Personal/Team/Org memory, AI-powered prompts)
+- **SEE:** Analyze, understand, and get real-time insights (Dashboards, analytics, AI agents)
+- **ACT:** Automate, execute, and optimize (Workflows, automations, integrations)
+- **Continuous Learning:** Every action and insight feeds back into the system, making Nexus smarter for all users (data flywheel)
 
-### 👁️ PILLAR 2: SEE (Dashboard & Analytics Engine)
-**Where all business data becomes actionable intelligence**
+#### ![Architecture Diagram](../ARCHITECTURE_DIAGRAM.md)
 
-#### Unified Business Intelligence:
-- **360° Data Aggregation** → All third-party tools in one view
-- **Real-Time Analytics** → Live business performance tracking
-- **Predictive Insights** → AI-powered forecasting and trend analysis
-- **Personal Dashboards** → Individual metrics aligned with team goals
-- **Organizational Intelligence** → Complete business health monitoring
+---
 
-#### Data Integration Powerhouse:
-```typescript
-interface AnalyticsEngine {
-  dataAggregation: {
-    crmIntegration: CRMData;           // HubSpot, Salesforce
-    financialData: FinancialMetrics;   // QuickBooks, Xero
-    productivityMetrics: WorkData;     // Microsoft 365, Asana
-    marketIntelligence: MarketData;    // Google Analytics, SEMrush
-    customIntegrations: CustomData[];   // Any API
-  };
-  
-  intelligentAnalysis: {
-    realTimeAlerts: Alert[];
-    trendAnalysis: TrendPrediction[];
-    anomalyDetection: AnomalyAlert[];
-    performancePrediction: ForecastData;
-    competitiveIntelligence: CompetitorInsight[];
-  };
-  
-  actionableInsights: {
-    personalRecommendations: PersonalAction[];
-    teamOptimizations: TeamAction[];
-    organizationalStrategy: StrategicInsight[];
-    riskMitigation: RiskAlert[];
-  };
-}
-```
+### Modular Boundaries & Structure
 
-### ⚡ PILLAR 3: ACT (Automation & Workflow Engine)
-**Where insights become automated action**
+- **Domain-Driven:** Each top-level directory in `src/` is a business domain (e.g., `ai/`, `analytics/`, `user/`, `workspace/`, etc.)
+- **Subdomains:** Each domain contains its own `components/`, `features/`, `hooks/`, `lib/`, and `pages/` subdirectories
+- **Shared Code:** Centralized in `src/shared/` for UI, utilities, and logic (no domain-specific logic here)
+- **Strict Import Boundaries:** Domains should not import from each other except via shared interfaces/services
+- **State Management:** Zustand for UI state, React Query for server state
+- **Testing:** Jest, Testing Library, Cypress (E2E)
+- **CI/CD:** GitHub Actions, Codecov
+- **Backend:** Supabase (PostgreSQL, Auth, Edge Functions)
 
-#### Intelligent Automation Features:
-- **Workflow Orchestration** → Multi-step business processes automated
-- **Trigger-Based Actions** → Smart responses to business events
-- **Cross-Platform Integration** → Automated actions across all tools
-- **AI-Powered Decision Making** → Automated choices based on business rules
-- **Continuous Optimization** → Self-improving automation based on results
+---
 
-#### Automation Capabilities:
-```typescript
-interface AutomationEngine {
-  workflowOrchestration: {
-    processDesign: WorkflowBuilder;
-    triggerManagement: TriggerSystem;
-    conditionalLogic: BusinessRules;
-    errorHandling: FailureRecovery;
-    performanceOptimization: ProcessOptimizer;
-  };
-  
-  intelligentActions: {
-    customerOutreach: CRMAutomation;
-    financialProcessing: FinanceAutomation;
-    projectManagement: PMAutomation;
-    documentGeneration: DocumentAI;
-    reportCreation: ReportAutomation;
-  };
-  
-  adaptiveExecution: {
-    learningFromResults: OutcomeAnalysis;
-    processImprovement: WorkflowOptimization;
-    predictiveExecution: ProactiveActions;
-    customizationEngine: PersonalizationAI;
-  };
-}
-```
+### Technology Stack
+
+- **Frontend:** React 19, TypeScript, Tailwind CSS, shadcn/ui, React Router
+- **State:** Zustand, React Query
+- **Backend:** Supabase (PostgreSQL, Auth, Edge Functions)
+- **Testing:** Jest, Testing Library, Cypress
+- **Build:** Vite, ESLint, TypeScript
+- **CI/CD:** GitHub Actions, Codecov
+
+---
+
+### Best Practices
+
+- **Modular, maintainable, and scalable codebase**
+- **Strict type safety with TypeScript**
+- **Responsive, accessible, and mobile-first UI**
+- **Error boundaries and logging for all major features**
+- **Automated tests and code quality gates**
+- **Documentation for all modules and APIs**
+
+---
+
+## 🔄 How The Trinity Works Together
+
+### The Complete Intelligence Cycle:
+
+- 💬 Individual Thought (THINK)
+    ↓ Enhanced by business context
+- 📈 Data-Informed Insight (SEE)
+    ↓ Validated by real-time analytics
+- ⚡ Automated Action (ACT)
+    ↓ Executed across business systems
+- 📊 Business Outcome
+    ↓ Feeds back into intelligence cycle
+- 🧠 Organizational Learning
+
+---
+
+## 🛠️ Implementation Roadmap
+
+- **Phase 1:** Enhanced THINK (Personal memory, collaborative brainstorming)
+- **Phase 2:** Powerful SEE (Integrate data sources, analytics, real-time BI)
+- **Phase 3:** Intelligent ACT (Automation workflows, trigger-based actions)
+- **Phase 4:** Complete Trinity (Full integration, self-optimizing workflows)
+
+---
+
+## 📚 Related Documentation
+- [Project Overview](../PROJECT_OVERVIEW.md)
+- [Architecture Analysis](ARCHITECTURE_ANALYSIS.md)
+- [Unified Architecture](../UNIFIED_ARCHITECTURE.md)
+- [Component Architecture](COMPONENT_ARCHITECTURE.md)
+- [Organizational Mind Architecture](ORGANIZATIONAL_MIND_ARCHITECTURE.md)
+- [RAG System Architecture](RAG_SYSTEM_ARCHITECTURE.md)
+- [Vision & Execution Plan](../NEXUS_VISION_EXECUTION_PLAN.md)
+
+---
 
 ## 🌟 How The Trinity Works Together
 

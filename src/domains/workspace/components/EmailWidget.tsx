@@ -1,0 +1,1 @@
+export { default, EmailWidget } from '@shared/shared/components/widgets/EmailWidget'; 

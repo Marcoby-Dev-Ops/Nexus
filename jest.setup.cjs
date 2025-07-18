@@ -114,7 +114,7 @@ process.env.SUPABASE_URL = 'https://test.supabase.co';
 process.env.SUPABASE_ANON_KEY = 'test-anon-key';
 
 // Mock Supabase client for tests
-jest.mock('@/lib/core/supabase', () => ({
+jest.mock('@/core/supabase', () => ({
   supabase: {
     from: jest.fn(() => ({
       select: jest.fn(() => Promise.resolve({ data: [], error: null })),

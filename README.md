@@ -33,28 +33,68 @@ Nexus is the unified, AI-powered operating system for modern business—uniting 
 
 ```
 Nexus/
-├── src/                 # React application source
-├── public/              # Static assets
-├── supabase/           # Database migrations & functions
-├── docs/               # 📚 All project documentation
-├── .github/workflows/  # CI/CD automation
-└── [config files]     # TypeScript, Vite, Jest, etc.
+├── src/                 # App source code, organized by domain (see below)
+├── public/              # Static assets (images, favicon, etc.)
+├── supabase/            # Supabase config, migrations, and edge functions
+├── docs/                # 📚 All project documentation
+├── scripts/             # Utility and automation scripts (setup, migrations, etc.)
+├── archive/             # Archived/legacy code and resources
+├── __tests__/           # Unit and integration tests
+├── dist/                # Build output (production-ready files)
+├── node_modules/        # Installed npm dependencies
+├── backups/             # Database or project backups
+├── .github/             # GitHub workflows, issue templates, etc.
+├── .env                 # Environment variables
+└── ...                  # Config files (tsconfig.json, vite.config.ts, etc.)
 ```
+
+### Domain-Driven Structure
+
+- Each top-level directory in `src/` represents a business domain (e.g., `ai/`, `analytics/`, `user/`, `workspace/`, etc.).
+- Each domain contains its own `components/`, `features/`, `hooks/`, `lib/`, and `pages/` subdirectories as needed.
+- Shared, reusable UI and logic live in `src/shared/` (e.g., `src/shared/components/ui/`).
+- App shell, config, and global types are in `src/app/`, `src/config/`, `src/constants/`, etc.
+
+#### Example:
+```
+src/
+  ai/
+    components/
+    features/
+    hooks/
+    lib/
+    pages/
+  user/
+    components/
+    ...
+  shared/
+    components/
+      ui/
+    lib/
+    ...
+  ...
+```
+
+### Migration Rationale
+
+- **Why:** To improve maintainability, scalability, and clarity as the codebase grows.
+- **How:** All business logic, UI, and features are grouped by domain. Shared code is centralized. Legacy folders like `features/`, `services/`, etc. have been migrated or removed.
+- **Result:** Faster onboarding, easier refactoring, and clear ownership of code.
 
 ## Quick Start
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
 # Start development server
-npm run dev
+pnpm run dev
 
 # Run tests
-npm test
+pnpm test
 
 # Build for production
-npm run build
+pnpm run build
 ```
 
 ## Documentation
@@ -100,42 +140,24 @@ npm run build
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm test` | Run tests |
-| `npm run test:coverage` | Run tests with coverage |
-| `npm run lint` | Check code quality |
-| `npm run type-check` | TypeScript validation |
+| `pnpm run dev` | Start development server |
+| `pnpm run build` | Build for production |
+| `pnpm run preview` | Preview production build |
+| `pnpm test` | Run tests |
+| `pnpm run test:coverage` | Run tests with coverage |
+| `pnpm run lint` | Check code quality |
+| `pnpm run type-check` | TypeScript validation |
 
 ## 🤝 **Contributing**
 
 1. Create a feature branch
 2. Make your changes
-3. Run tests: `npm test`
-4. Check linting: `npm run lint`
+3. Run tests: `pnpm test`
+4. Check linting: `pnpm run lint`
 5. Submit a pull request
 
 All PRs automatically run through our CI/CD pipeline with tests, linting, and security checks.
 
 ## 📄 **License**
 
-See [LICENSE](docs/LICENSE) for details.
-
-Yes, the database is fully set up to handle assessment responses and scoring.
-
-Here's a summary of what's in place:
-
-1.  **Storage Tables**:
-    *   `AssessmentQuestion`: Stores the questions, their types (`multiple-choice`, `text`, etc.), and what category they belong to.
-    *   `AssessmentCategory`: Defines the categories for the questions and includes a `weight` for calculating weighted scores.
-    *   `AssessmentResponse`: This is where each response from a user is stored. Crucially, it has a `value` field for the answer itself and a `score` field to hold the calculated score for that specific answer.
-
-2.  **Scoring and Summary Tables**:
-    *   `AssessmentCategoryScore`: This table holds the aggregated score for each category, for each company.
-    *   `AssessmentSummary`: This table stores the final, overall assessment score for a company.
-
-3.  **Automatic Scoring Logic**:
-    *   There's a database function that automatically recalculates the category and overall scores every time an assessment response is added, updated, or deleted. This ensures the scores are always up-to-date.
-
-So, when a user submits an assessment, the responses are saved, immediately scored, and the overall and category-specific scores are updated automatically. 
+See [LICENSE](docs/LICENSE) for details. 

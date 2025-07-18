@@ -1,0 +1,1 @@
+export { default, NextBestActionWidget } from '@shared/shared/components/widgets/NextBestActionWidget'; 

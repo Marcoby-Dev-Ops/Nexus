@@ -41,15 +41,38 @@ Nexus is built to:
 **Nexus OS** is Marcoby's in-house, AI-powered "business operating system."
 Think of it as a modular workspace that pulls your core operations—sales, finance, ops, and Pulse marketplace—into a single, self-hosted platform and layers intelligent assistants on top.
 
-| Layer                       | What it does                                                                                                                        | Tech choices                                         |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| **UI Shell**                | Responsive React front-end with sidebar, dark-mode, shadcn/ui components.                                                           | React 18 + TypeScript + Vite + Tailwind              |
-| **Domain Modules**          | Feature-sliced dashboards for **Sales**, **Finance**, **Operations**, plus **Pulse** (marketplace / add-ons).                       | DDD folder structure; lazy-loaded routes             |
-| **AI Assistants**           | Context-aware agents (chat panel, task routing) that leverage OpenRouter/GPT models, vector search, and n8n for workflow execution. | Node/Express endpoints, Supabase & Qdrant for memory |
-| **Realtime Core**           | WebSocket event bus for metrics streaming, workflow sync, toast notifications.                                                      | Custom WS provider, Zustand stores                   |
-| **Automation Fabric**       | n8n subflows trigger actions (e.g., create invoice, post blog) directly from agent output.                                          | n8n + custom tool routers                            |
-| **Security & Multi-Tenant** | RBAC guards, tenant isolation, AES-256-GCM credential vault.                                                                        | Prisma, Authentik, Zod validation                    |
-| **Dev-XP**                  | ESLint 9 flat config, Jest/Playwright tests, Storybook, Husky pre-commit compliance checks.                                         | PNPM mono-repo ready                                 |
+## Codebase Structure
+
+The Nexus codebase is organized by **domain**. Each top-level directory in `src/` represents a business domain (e.g., `ai/`, `analytics/`, `user/`, `workspace/`, etc.).
+
+Each domain contains its own `components/`, `features/`, `hooks/`, `lib/`, and `pages/` subdirectories as needed. Shared, reusable UI and logic live in `src/shared/` (e.g., `src/shared/components/ui/`).
+
+### Example Structure
+
+```
+src/
+  ai/
+    components/
+    features/
+    hooks/
+    lib/
+    pages/
+  user/
+    components/
+    ...
+  shared/
+    components/
+      ui/
+    lib/
+    ...
+  ...
+```
+
+### Migration Rationale
+
+- **Why:** To improve maintainability, scalability, and clarity as the codebase grows.
+- **How:** All business logic, UI, and features are grouped by domain. Shared code is centralized. Legacy folders like `features/`, `services/`, etc. have been migrated or removed.
+- **Result:** Faster onboarding, easier refactoring, and clear ownership of code.
 
 ### Why Nexus matters
 

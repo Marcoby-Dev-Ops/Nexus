@@ -1,0 +1,1 @@
+export { default, IdeasWidget } from '@shared/shared/components/widgets/IdeasWidget'; 

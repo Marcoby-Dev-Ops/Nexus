@@ -120,6 +120,30 @@ To ensure Nexus is enterprise-ready and secure for all OAuth and API key integra
 
 This approach ensures Nexus is secure, compliant, and ready for enterprise integrations at scale.
 
+## IIc. Migration Hygiene & Applied Migration Archiving (Best Practice)
+
+To ensure smooth database migrations and avoid duplicate key errors or migration conflicts, Nexus follows a strict migration hygiene process:
+
+- **Archive Already-Applied Migrations:**
+  - After a migration has been successfully applied and is recorded in the `schema_migrations` table, move the corresponding migration file out of the `supabase/migrations/` directory into an archive folder (e.g., `supabase/migrations_applied/`).
+  - This prevents the Supabase CLI from attempting to re-apply migrations, which can cause duplicate key errors.
+
+- **Keep Only New/Unapplied Migrations:**
+  - Only keep migration files that have not yet been applied in the `supabase/migrations/` directory.
+
+- **Automate the Process:**
+  - Use a shell script to move all migration files with `.applied` or known-applied timestamps to the archive folder:
+    ```sh
+    mkdir -p supabase/migrations_applied && mv supabase/migrations/*applied* supabase/migrations_applied/ 2>/dev/null
+    ```
+  - For more advanced automation, check the `schema_migrations` table and move only those migrations that are already present.
+
+- **Version Control:**
+  - Keep the `migrations_applied` folder in version control for historical reference and auditability.
+
+- **Summary:**
+  - This process ensures that only new migrations are applied, prevents migration errors, and keeps the migration history clean and reproducible.
+
 ---
 
 ## III. Phased Execution Roadmap
@@ -209,6 +233,29 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
     > - **Natural language business query**: Users can ask the assistant any business question and receive actionable, accurate answers.  
     > - Includes sample inputs/outputs in docs  
     > - Tests/Storybook
+
+- [x] **Executive Assistant & Hierarchical AI Agent Architecture:**
+    > **Prompt:**
+    > Implement a hierarchical AI agent system with an Executive Assistant as the default, free-to-use AI chat interface for all users. The Executive Assistant can answer general business, productivity, and workflow questions using Retrieval-Augmented Generation (RAG) and contextual business data. For advanced or department-specific queries, the system can route to specialized departmental agents (e.g., Sales, Finance, Operations) with deeper expertise and enhanced features (potentially as premium/paid add-ons).
+    >
+    > **Key Features:**
+    > - **Free Executive Assistant AI Chat:** Every user gets access to the Executive Assistant—a powerful, always-available AI chat for business, productivity, and workflow questions. This feature is free for all users and is designed to maximize onboarding, engagement, and product-led growth while keeping costs sustainable.
+    > - **Upgrade Path to Specialist Agents:** As users’ needs grow, they can upgrade to unlock specialist agents (Sales, Finance, Operations, etc.), advanced analytics, automations, and premium features. Specialist agents provide deeper, domain-specific expertise and enhanced capabilities, available as premium/paid add-ons.
+    > - Modular agent registry and routing logic
+    > - RAG-based retrieval and reasoning for all agents
+    > - Orchestration: Executive Assistant routes queries to the right agent and aggregates responses
+    > - Contextual business data and real-time integration
+    > - Seamless escalation from general to specialist agents
+    > - Clear upgrade path for premium/advanced agent access
+    > - Designed for sustainable cost structure and high user value
+    >
+    > **Acceptance Criteria:**
+    > - Executive Assistant chat available on every page (MVP)
+    > - Users can ask general business and workflow questions and receive accurate, actionable answers
+    > - Departmental agent routing and enhanced features available for advanced/premium users
+    > - Modular agent registry and orchestration logic implemented
+    > - RAG context and source transparency for all agent responses
+    > - Documentation and sample use cases for both free and enhanced agent features
 
 - [x] **Context Chips with 'Explain Source' Drawer:** AI response transparency with source attribution for enhanced trust and understanding.
     > **Prompt:**  
@@ -407,20 +454,26 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
     > **Prompt:**
     > Implement a real-time, event-driven Sales module with live pipeline management, deal tracking, forecasting, lead follow-up, and CRM integrations. Integrate with external sales platforms (e.g., Salesforce, HubSpot) for bi-directional sync and automation. Ensure all sales data, actions, and automations are audit-logged and support live updates to the UI.
     >
+    > **AI Agent Compatibility:**
+    > This module is RAG-ready and exposes APIs and data structures compatible with the platform’s modular AI agent architecture (see Executive Assistant / AI Chat section).
+    >
     > **Acceptance Criteria:**
-    > - Real-time pipeline and deal management with live UI updates
-    > - Bi-directional sync with external sales platforms (Salesforce, HubSpot, etc.)
-    > - Automated lead follow-up and workflow triggers
-    > - Forecasting and analytics widgets with live data
-    > - Error handling and retry mechanisms for all sync operations
-    > - Audit logging for all sales actions and data changes
-    > - Extensible integration framework for new sales tools
-    > - Role-based access and permission checks
-    > - Comprehensive tests and documentation
+    > - [IN PROGRESS] Real-time pipeline and deal management with live UI updates
+    > - [IN PROGRESS] Bi-directional sync with external sales platforms (Salesforce, HubSpot, etc.)
+    > - [TODO] Automated lead follow-up and workflow triggers
+    > - [IN PROGRESS] Forecasting and analytics widgets with live data
+    > - [IN PROGRESS] Error handling and retry mechanisms for all sync operations
+    > - [IN PROGRESS] Audit logging for all sales actions and data changes
+    > - [IN PROGRESS] Extensible integration framework for new sales tools
+    > - [IN PROGRESS] Role-based access and permission checks
+    > - [TODO] Comprehensive tests and documentation
 
 - [ ] Finance: Expenses, invoicing, reports, QBO/Xero integration.
     > **Prompt:**
     > Build a real-time Finance module with live expense tracking, invoicing, financial reporting, and integrations with accounting platforms (QuickBooks Online, Xero, etc.). Support automated reconciliation, live data sync, and audit logging for all financial operations.
+    >
+    > **AI Agent Compatibility:**
+    > This module is RAG-ready and exposes APIs and data structures compatible with the platform’s modular AI agent architecture (see Executive Assistant / AI Chat section).
     >
     > **Acceptance Criteria:**
     > - Real-time expense and invoice management with live UI updates
@@ -436,6 +489,9 @@ This approach ensures Nexus is secure, compliant, and ready for enterprise integ
 - [ ] Operations: Tasks, automations, process workflows.
     > **Prompt:**
     > Create a real-time Operations module for live task management, process automation, and workflow orchestration. Integrate with external operations tools (e.g., Asana, Jira, Zapier) for live sync and automation. Ensure all operations data and automations are audit-logged and support live UI updates.
+    >
+    > **AI Agent Compatibility:**
+    > This module is RAG-ready and exposes APIs and data structures compatible with the platform’s modular AI agent architecture (see Executive Assistant / AI Chat section).
     >
     > **Acceptance Criteria:**
     > - Real-time task and workflow management with live UI updates
@@ -721,4 +777,151 @@ This structure ensures:
 
 ---
 
-// ... keep the rest of the vision plan as is, but update any department module or UI/UX requirements to explicitly require the THINK/SEE/ACT structure. 
+### Unified Inbox: Free vs. Paid (AI-Enhanced) Strategy
+
+**Vision:**
+- Deliver a world-class multi-account, multi-provider inbox experience for all users.
+- Offer advanced AI/Nexus Brain features as a paid upgrade (Pro tier), with clear boundaries and upgrade prompts.
+
+**Free Tier:**
+- Connect and manage multiple mailboxes (Google, Microsoft 365, IMAP, etc.)
+- Unified timeline: See all emails from all accounts in a single view, with account/provider filter and search
+- Threaded conversations, basic actions (read/unread, archive, delete, reply)
+- Modern, responsive UI
+
+**Paid (Pro/AI) Tier:**
+- AI prioritization (urgent/important detection)
+- AI-powered summaries and action item extraction
+- Suggested replies and smart compose
+- Auto-categorization and smart folders
+- Insights, analytics, and trends
+- Advanced automation (e.g., auto-snooze, follow-up reminders)
+
+**Implementation:**
+- Use a centralized feature access hook (e.g., `useSubscription`) to check user tier and gate features.
+- Show "Upgrade to Pro" prompts/tooltips for premium features if the user is on the free tier.
+- Integrate with a billing/subscription provider (Stripe, Paddle, etc.) to manage upgrades and unlock paid features.
+- Keep the core inbox experience robust and delightful for all users, with clear value-add for upgrading.
+
+**Upgrade Flow:**
+1. Free users see upgrade prompts when accessing AI features.
+2. Clicking "Upgrade" opens the billing portal/checkout.
+3. On success, the backend updates the user's subscription, and the frontend unlocks paid features.
+
+**Goal:**
+- Maximize value for all users while driving upgrades to the Pro/AI tier through clear, ethical, and user-friendly boundaries.
+
+### Free vs. Paid (Pro/AI) Features: At-a-Glance
+
+| Feature/Tool         | Free Tier                                              | Paid (Pro/AI) Tier                                                      |
+|----------------------|-------------------------------------------------------|-------------------------------------------------------------------------|
+| Unified Inbox        | Multi-account, timeline, search, basic actions        | AI prioritization, summaries, smart replies, auto-categorization, analytics, automation |
+| Unified Calendar     | Multi-account, unified view, add/view events          | AI scheduling, smart suggestions, analytics, automation                 |
+| Tasks/Ideas/Learning | ✔️                                                    | (AI enhancements in future)                                             |
+| AI Assistant         | Basic chat/help/suggestions                           | Advanced automations, insights                                          |
+| Integrations         | Connect/manage accounts                               | (Advanced integrations in future)                                       |
+| Personalization      | ✔️                                                    | (Branding/white-label in future)                                        |
+| Onboarding/Help      | ✔️                                                    |                                                                         |
+
+**Summary:**
+- All users get a robust, modern productivity suite for free.
+- Paid (Pro/AI) users unlock advanced AI, automation, and analytics features.
+- Upgrade prompts and billing integration are built-in for seamless conversion.
+
+---
+
+## XI. Strategic Enhancements for Nexus (2024–2025)
+
+To leapfrog the competition and achieve our goal of the best business operating system, Nexus will implement the following next-generation features. Each enhancement includes detailed, measurable completion criteria.
+
+### 1. Real Business Data Integration
+**Rationale:** Ensure all analytics, automations, and dashboards use live, production business data from real systems (CRM, ERP, accounting, HR, etc.).
+**Completion Criteria:**
+- All department modules (Sales, Finance, Operations, etc.) display live data from at least two real business systems (e.g., Salesforce, QuickBooks, HubSpot).
+- Data sync is bi-directional and real-time (≤5 min latency).
+- All analytics widgets and automations use production data, not mock data.
+- Automated tests verify data freshness and accuracy.
+
+### 2. Mobile-First & PWA Experience
+**Rationale:** Deliver a seamless, touch-friendly, and offline-capable experience on all devices.
+**Completion Criteria:**
+- 100% of core flows pass mobile usability and accessibility tests.
+- PWA installable on iOS/Android, with offline support for personal productivity features.
+- Push notifications for key events (tasks, approvals, alerts).
+- Native/hybrid app available in app stores (optional, stretch goal).
+
+### 3. Advanced Predictive & Prescriptive Analytics
+**Rationale:** Move from descriptive to predictive and prescriptive business intelligence.
+**Completion Criteria:**
+- Forecasting widgets for revenue, churn, and key business metrics in all dashboards.
+- Anomaly detection and scenario modeling available for at least 3 business domains.
+- Prescriptive recommendations ("what to do next") generated by AI for all major workflows.
+- User feedback loop to rate and improve recommendations.
+
+### 4. Autonomous Operations & Self-Optimizing Workflows
+**Rationale:** Enable Nexus to propose, simulate, and (with approval) execute optimizations across departments.
+**Completion Criteria:**
+- AI Copilot can propose and simulate at least 5 types of business optimizations (e.g., resource rebalancing, campaign launches, bottleneck resolution).
+- Human-in-the-loop approval for all autonomous actions.
+- Self-improving workflows that adapt based on outcome data and user feedback.
+- Audit logs and rollback for all autonomous changes.
+
+### 5. Community & Ecosystem Features
+**Rationale:** Harness collective intelligence and foster a thriving ecosystem.
+**Completion Criteria:**
+- Community Hub for sharing, rating, and installing workflows, dashboards, and automations.
+- Users can contribute and install at least 20 community templates.
+- Moderation and curation tools for quality control.
+- Analytics on community adoption and impact.
+
+### 6. Gamification, Nudges, and Behavioral Science
+**Rationale:** Drive engagement, learning, and best practices through behavioral design.
+**Completion Criteria:**
+- Streaks, badges, and leaderboards for key actions and learning milestones.
+- Personalized nudges and reminders based on user behavior and goals.
+- Behavioral analytics dashboard for admins.
+- A/B testing of engagement strategies.
+
+### 7. Voice, Natural Language, and Multimodal Interfaces
+**Rationale:** Make business intelligence accessible via voice, text, and visual interfaces.
+**Completion Criteria:**
+- Voice command support for at least 10 core actions (e.g., "Show sales dashboard", "Add a task").
+- Natural language query builder for analytics and reporting.
+- Visual query builder for business data.
+- Multimodal (voice, text, visual) support in at least 2 major workflows.
+
+### 8. Globalization & Regional Compliance
+**Rationale:** Serve global customers with full language and compliance support.
+**Completion Criteria:**
+- Full multi-language UI (at least 5 languages) with region-specific content.
+- Regional compliance modules (GDPR, CCPA, etc.) and data residency controls.
+- Automated compliance checks and reporting.
+- User-selectable data residency at onboarding.
+
+### 9. Ecosystem & Marketplace Expansion
+**Rationale:** Build a robust app marketplace and partner ecosystem.
+**Completion Criteria:**
+- App marketplace live with at least 10 third-party apps and billing integration.
+- Developer APIs and documentation published.
+- Partner management and revenue sharing system operational.
+- Analytics on marketplace usage and revenue.
+
+### 10. AI-Driven Knowledge Management
+**Rationale:** Automatically capture, summarize, and organize business knowledge.
+**Completion Criteria:**
+- Meeting and decision summaries auto-generated and searchable.
+- AI-driven knowledge base with semantic search and auto-tagging.
+- Knowledge extraction from business communications (email, chat, docs).
+- User feedback loop for knowledge accuracy and relevance.
+
+### 11. Proactive Risk & Opportunity Engine
+**Rationale:** Alert users to risks and opportunities before they become critical.
+**Completion Criteria:**
+- AI engine continuously scans all business data for risks and opportunities.
+- Real-time alerts and recommendations for at least 5 risk/opportunity types.
+- User-configurable thresholds and alert preferences.
+- Analytics on risk mitigation and opportunity capture rates.
+
+---
+
+**These enhancements will be tracked as strategic epics, each with clear, measurable criteria and regular progress reviews.**

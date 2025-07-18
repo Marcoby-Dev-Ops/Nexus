@@ -1,390 +1,29 @@
 # UX/UI Consistency Report 📊
 
-> **Generated on:** 2025-07-07T10:11:47.677Z
+> **Generated on:** 2025-07-07T17:12:50.148Z
 
 ## Summary
 
-- **Files Analyzed:** 519
-- **Total Issues:** 279
+- **Files Analyzed:** 518
+- **Total Issues:** 257
 - **Consistency Score:** 7/10
 
 ## Score Breakdown
 
-- **Color Usage:** 1/10 (79 issues)
 - **Spacing:** 1/10 (116 issues)
+- **Color Usage:** 1/10 (59 issues)
 - **Loading States:** 1/10 (65 issues)
 - **Data Display:** 9/10 (2 issues)
-- **Error Handling:** 2/10 (17 issues)
+- **Error Handling:** 3/10 (15 issues)
 
 ## Issues by Category
-
-### Color Usage
-
-#### `src/App.tsx`
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 768, 788
-
-#### `src/stories/SupervisorAgentRouting.stories.tsx`
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 92, 214
-
-#### `src/pages/Profile.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 298
-
-#### `src/pages/MarketingLanding.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 191
-
-#### `src/pages/DocumentCenter.tsx`
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 606, 662, 768
-
-#### `src/pages/ComponentDetailPage.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 216
-
-#### `src/pages/departments/sales/SalesPerformancePage.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 143, 145
-
-#### `src/pages/ai-performance/AIPerformancePage.tsx`
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 289, 301
-
-#### `src/components/workspace/widgets/TasksWidget.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 22
-
-#### `src/components/workspace/widgets/ProactiveAlertsWidget.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 57
-
-#### `src/components/workspace/widgets/IdeasWidget.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 58
-
-#### `src/components/waitlist/WaitlistManager.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 119
-
-#### `src/components/thoughts/ActionCards.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 227
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 170
-
-#### `src/components/profile/ProfileCompletionBanner.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 69
-
-#### `src/components/patterns/UnifiedComponents.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 325
-
-#### `src/components/onboarding/OrganizationSetupStep.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 351
-
-#### `src/components/interface/NaturalLanguageInterface.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 725
-
-#### `src/components/integrations/TrustBasedIntegrationSetup.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 303, 309
-
-#### `src/components/integrations/StandardIntegrationSetup.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 109
-
-🟢 **LOW:** Found 17 hardcoded text color(s). Use design tokens instead.
-   - Lines: 144, 145, 152, 236, 345, 408, 530, 539, 548
-
-#### `src/components/integrations/IntegrationSetupModal.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 445, 451
-
-🟢 **LOW:** Found 10 hardcoded text color(s). Use design tokens instead.
-   - Lines: 227, 298, 375, 384, 393
-
-#### `src/components/integrations/HubSpotSetup.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 323
-
-🟢 **LOW:** Found 5 hardcoded text color(s). Use design tokens instead.
-   - Lines: 210, 265, 344, 383
-
-#### `src/components/integrations/GoogleWorkspaceSetup.tsx`
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 319, 419
-
-#### `src/components/integrations/EnhancedIntegrationSetup.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 302
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 545, 606, 638
-
-#### `src/components/integrations/CloudStorageSetup.tsx`
-
-🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
-   - Lines: 425, 432
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 196
-
-#### `src/components/integrations/ApiDocIntegrationSetup.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 729
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 730
-
-#### `src/components/hype/HypeBuilder.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 84
-
-#### `src/components/help/UserGuideSystem.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 382, 384
-
-🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
-   - Lines: 382, 384
-
-#### `src/components/help/AIPerformanceGuide.tsx`
-
-🟢 **LOW:** Found 5 hardcoded text color(s). Use design tokens instead.
-   - Lines: 235, 240, 250, 260, 270
-
-#### `src/components/features/FeatureExplorer.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 131
-
-#### `src/components/entrepreneur/VisualBusinessBuilder.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 97, 205, 223
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 351
-
-#### `src/components/development/ProjectProgressDashboard.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 247
-
-#### `src/components/demo/UnifiedBrainDemo.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 167
-
-#### `src/components/demo/TrinityBrainDemo.tsx`
-
-🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
-   - Lines: 131, 155, 181
-
-#### `src/components/demo/RealTimeSyncDemo.tsx`
-
-🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
-   - Lines: 112, 122, 376, 384
-
-#### `src/components/demo/NexusOperatingSystemDemo.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 467
-
-#### `src/components/demo/CrossDepartmentalIntelligenceDemo.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 136, 160
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 264, 296
-
-#### `src/components/demo/AutomationTemplateMarketplaceDemo.tsx`
-
-🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
-   - Lines: 239, 249, 251
-
-🟢 **LOW:** Found 6 hardcoded text color(s). Use design tokens instead.
-   - Lines: 239, 249, 251, 350
-
-#### `src/components/demo/AutomatedWorkflowDemo.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 274, 393
-
-🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
-   - Lines: 290, 298, 366, 438
-
-#### `src/components/dashboard/VARLeadDashboard.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 349
-
-#### `src/components/dashboard/UnifiedBrainMetricsDashboard.tsx`
-
-🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
-   - Lines: 487, 489, 500, 542
-
-#### `src/components/dashboard/TrinityInsightsEngine.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 135
-
-#### `src/components/dashboard/Recents.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 49
-
-#### `src/components/dashboard/Pins.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 49
-
-#### `src/components/dashboard/OrganizationalHealthScore.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 102
-
-#### `src/components/dashboard/LivingBusinessAssessment.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 326, 431
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 432, 435
-
-#### `src/components/dashboard/DataSourceConnections.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 224
-
-🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
-   - Lines: 225, 228
-
-#### `src/components/dashboard/CrossDepartmentMatrix.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 146, 150
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 163
-
-#### `src/components/dashboard/CompanyStatusDashboard.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 73
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 73, 77
-
-#### `src/components/dashboard/BusinessInsightsPanel.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 169
-
-#### `src/components/dashboard/AIPerformanceWidget.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 196
-
-#### `src/components/common/ErrorBoundary.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 38
-
-#### `src/components/chat/StreamingComposer.tsx`
-
-🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
-   - Lines: 260, 481
-
-#### `src/components/chat/DomainAgentIndicator.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 41
-
-#### `src/components/billing/BillingDashboard.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 119, 121
-
-#### `src/components/automation/TemplateMarketplace.tsx`
-
-🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
-   - Lines: 251, 253, 260
-
-🟢 **LOW:** Found 6 hardcoded text color(s). Use design tokens instead.
-   - Lines: 251, 253, 260, 445
-
-#### `src/components/automation/AutomationRecipeDemo.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 316
-
-#### `src/components/automation/AutomationRecipeBrowser.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 95
-
-#### `src/components/ai/CrossPlatformIntelligenceDemo.tsx`
-
-🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
-   - Lines: 152
-
-#### `src/components/ai/ContextCompletionSuggestions.tsx`
-
-🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
-   - Lines: 119, 175
-
-#### `src/components/ai/ContextChips.tsx`
-
-🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
-   - Lines: 114, 127, 129
-
-#### `src/components/ai/AssistantUpgradeStatus.tsx`
-
-🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
-   - Lines: 14
-
-🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
-   - Lines: 97, 112, 122, 132
 
 ### Spacing
 
 #### `src/App.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 695
+   - Lines: 692
 
 #### `src/stories/SupervisorAgentRouting.stories.tsx`
 
@@ -819,7 +458,7 @@
 #### `src/components/dashboard/AIPerformanceWidget.tsx`
 
 🟢 **LOW:** Found 1 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
-   - Lines: 169
+   - Lines: 170
 
 #### `src/components/chat/SuccessOutcomeTracker.tsx`
 
@@ -961,6 +600,273 @@
 🟢 **LOW:** Found 4 non-standard spacing value(s). Prefer p-4, p-6, p-8 for consistency.
    - Lines: 280, 365, 417, 462
 
+### Color Usage
+
+#### `src/stories/SupervisorAgentRouting.stories.tsx`
+
+🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
+   - Lines: 92, 214
+
+#### `src/pages/ComponentDetailPage.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 216
+
+#### `src/components/onboarding/OrganizationSetupStep.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 351
+
+#### `src/components/interface/NaturalLanguageInterface.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 725
+
+#### `src/components/integrations/IntegrationSetupModal.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 445, 451
+
+🟢 **LOW:** Found 10 hardcoded text color(s). Use design tokens instead.
+   - Lines: 227, 298, 375, 384, 393
+
+#### `src/components/integrations/EnhancedIntegrationSetup.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 302
+
+🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
+   - Lines: 545, 606, 638
+
+#### `src/components/integrations/CloudStorageSetup.tsx`
+
+🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
+   - Lines: 425, 432
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 196
+
+#### `src/components/integrations/ApiDocIntegrationSetup.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 729
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 730
+
+#### `src/components/hype/HypeBuilder.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 84
+
+#### `src/components/help/UserGuideSystem.tsx`
+
+🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
+   - Lines: 382, 384
+
+🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
+   - Lines: 382, 384
+
+#### `src/components/help/AIPerformanceGuide.tsx`
+
+🟢 **LOW:** Found 5 hardcoded text color(s). Use design tokens instead.
+   - Lines: 235, 240, 250, 260, 270
+
+#### `src/components/features/FeatureExplorer.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 131
+
+#### `src/components/entrepreneur/VisualBusinessBuilder.tsx`
+
+🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
+   - Lines: 97, 205, 223
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 351
+
+#### `src/components/development/ProjectProgressDashboard.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 247
+
+#### `src/components/demo/UnifiedBrainDemo.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 167
+
+#### `src/components/demo/TrinityBrainDemo.tsx`
+
+🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
+   - Lines: 131, 155, 181
+
+#### `src/components/demo/RealTimeSyncDemo.tsx`
+
+🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
+   - Lines: 112, 122, 376, 384
+
+#### `src/components/demo/NexusOperatingSystemDemo.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 467
+
+#### `src/components/demo/CrossDepartmentalIntelligenceDemo.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 136, 160
+
+🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
+   - Lines: 264, 296
+
+#### `src/components/demo/AutomationTemplateMarketplaceDemo.tsx`
+
+🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
+   - Lines: 239, 249, 251
+
+🟢 **LOW:** Found 6 hardcoded text color(s). Use design tokens instead.
+   - Lines: 239, 249, 251, 350
+
+#### `src/components/demo/AutomatedWorkflowDemo.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 274, 393
+
+🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
+   - Lines: 290, 298, 366, 438
+
+#### `src/components/dashboard/VARLeadDashboard.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 349
+
+#### `src/components/dashboard/UnifiedBrainMetricsDashboard.tsx`
+
+🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
+   - Lines: 487, 489, 500, 542
+
+#### `src/components/dashboard/TrinityInsightsEngine.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 135
+
+#### `src/components/dashboard/Recents.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 49
+
+#### `src/components/dashboard/Pins.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 49
+
+#### `src/components/dashboard/OrganizationalHealthScore.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 102
+
+#### `src/components/dashboard/LivingBusinessAssessment.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 326, 431
+
+🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
+   - Lines: 432, 435
+
+#### `src/components/dashboard/DataSourceConnections.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 224
+
+🟢 **LOW:** Found 3 hardcoded text color(s). Use design tokens instead.
+   - Lines: 225, 228
+
+#### `src/components/dashboard/CrossDepartmentMatrix.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 146, 150
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 163
+
+#### `src/components/dashboard/CompanyStatusDashboard.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 73
+
+🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
+   - Lines: 73, 77
+
+#### `src/components/dashboard/BusinessInsightsPanel.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 169
+
+#### `src/components/dashboard/AIPerformanceWidget.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 197
+
+#### `src/components/common/ErrorBoundary.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 38
+
+#### `src/components/chat/StreamingComposer.tsx`
+
+🟡 **MEDIUM:** Found 2 hardcoded background color(s). Use design tokens instead.
+   - Lines: 260, 481
+
+#### `src/components/chat/DomainAgentIndicator.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 41
+
+#### `src/components/billing/BillingDashboard.tsx`
+
+🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
+   - Lines: 119, 121
+
+#### `src/components/automation/TemplateMarketplace.tsx`
+
+🟡 **MEDIUM:** Found 4 hardcoded background color(s). Use design tokens instead.
+   - Lines: 251, 253, 260
+
+🟢 **LOW:** Found 6 hardcoded text color(s). Use design tokens instead.
+   - Lines: 251, 253, 260, 445
+
+#### `src/components/automation/AutomationRecipeDemo.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 316
+
+#### `src/components/automation/AutomationRecipeBrowser.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 95
+
+#### `src/components/ai/CrossPlatformIntelligenceDemo.tsx`
+
+🟢 **LOW:** Found 1 hardcoded text color(s). Use design tokens instead.
+   - Lines: 152
+
+#### `src/components/ai/ContextCompletionSuggestions.tsx`
+
+🟢 **LOW:** Found 2 hardcoded text color(s). Use design tokens instead.
+   - Lines: 119, 175
+
+#### `src/components/ai/ContextChips.tsx`
+
+🟡 **MEDIUM:** Found 3 hardcoded background color(s). Use design tokens instead.
+   - Lines: 114, 127, 129
+
+#### `src/components/ai/AssistantUpgradeStatus.tsx`
+
+🟡 **MEDIUM:** Found 1 hardcoded background color(s). Use design tokens instead.
+   - Lines: 14
+
+🟢 **LOW:** Found 4 hardcoded text color(s). Use design tokens instead.
+   - Lines: 97, 112, 122, 132
+
 ### Loading States
 
 #### `src/pages/UnifiedCallbackPage.tsx`
@@ -1069,7 +975,7 @@
 #### `src/components/patterns/UnifiedPages.tsx`
 
 🟡 **MEDIUM:** Found 1 custom spinner(s). Consider using <Spinner> component.
-   - Lines: 273
+   - Lines: 261
 
 #### `src/components/onboarding/FounderOnboarding.tsx`
 
@@ -1298,16 +1204,6 @@
 
 🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
    - Lines: 351
-
-#### `src/components/integrations/StandardIntegrationSetup.tsx`
-
-🟢 **LOW:** Found 3 inline error color(s). Consider using design tokens.
-   - Lines: 144, 152
-
-#### `src/components/integrations/HubSpotSetup.tsx`
-
-🟢 **LOW:** Found 1 inline error color(s). Consider using design tokens.
-   - Lines: 265
 
 #### `src/components/integrations/EnhancedIntegrationSetup.tsx`
 

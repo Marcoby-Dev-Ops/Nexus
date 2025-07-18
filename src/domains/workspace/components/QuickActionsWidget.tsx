@@ -1,0 +1,1 @@
+export { default, QuickActionsWidget } from '@shared/shared/components/widgets/QuickActionsWidget'; 

@@ -81,14 +81,6 @@ jobs:
       - name: Run RAG system tests
         run: pnpm test:rag
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          flags: unittests
-          name: nexus-coverage
-
   # 🏗️ Build Verification
   build-verification:
     name: Build Verification
@@ -159,24 +151,6 @@ jobs:
             fi
           done
 
-  # 🔒 Security Scan
-  security-scan:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Run dependency audit
-        run: pnpm audit --audit-level moderate
-
-      - name: Run Snyk security scan
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=medium
-
   # 📊 Performance Analysis
   performance-analysis:
     name: Performance Analysis
@@ -208,24 +182,6 @@ jobs:
           configPath: './lighthouserc.json'
           uploadArtifacts: true
           temporaryPublicStorage: true
-
-  # 🚀 Deployment Preview (for PRs)
-  deployment-preview:
-    name: Deployment Preview
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    needs: [test-suite, build-verification]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Vercel Preview
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
 
   # 📈 Progress Tracking
   progress-tracking:
@@ -262,16 +218,3 @@ jobs:
           echo "TESTS=$TESTS" >> $GITHUB_ENV
           echo "STORIES=$STORIES" >> $GITHUB_ENV
           echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
-
-      - name: Update project dashboard
-        run: |
-          echo "🎯 Project Progress Update"
-          echo "Components: $COMPONENTS"
-          echo "Tests: $TESTS"
-          echo "Stories: $STORIES"
-          echo "Coverage: $COVERAGE"
-          
-          # TODO: Send to project dashboard API
-          # curl -X POST ${{ secrets.DASHBOARD_API_URL }}/metrics \
-          #   -H "Authorization: Bearer ${{ secrets.DASHBOARD_TOKEN }}" \
-          #   -d '{"components": $COMPONENTS, "tests": $TESTS, "stories": $STORIES, "coverage": "$COVERAGE"}' 

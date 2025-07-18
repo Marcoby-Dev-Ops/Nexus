@@ -3,7 +3,7 @@ import {
   getFeaturesByCategory, 
   searchFeatures, 
   getFeatureById 
-} from '../../src/lib/featureRegistry';
+} from '../../src/shared/components/ui/featureRegistry';
 
 describe('Feature Registry - Core Platform Features', () => {
   describe('Feature Discovery', () => {

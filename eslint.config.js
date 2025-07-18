@@ -1,61 +1,79 @@
-// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
-import storybook from "eslint-plugin-storybook";
-
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config({
-  // Ignore generated or high-churn paths that are not part of the critical
-  // production bundle for linting so that CI remains green while we work on
-  // gradual remediation.
-  ignores: [
-    'dist',
-    'backups',
-    'src/pages/**',
-    'supabase/functions/**',
-    'coverage/**',
-  ],
-}, {
-  extends: [js.configs.recommended, ...tseslint.configs.recommended],
-  files: ['**/*.{ts,tsx}'],
-  languageOptions: {
-    ecmaVersion: 2020,
-    globals: globals.browser,
-  },
-  plugins: {
-    'react-hooks': reactHooks,
-    'react-refresh': reactRefresh,
-  },
-  rules: {
-    ...reactHooks.configs.recommended.rules,
-    'react-refresh/only-export-components': [
-      'warn',
-      { allowConstantExport: true },
-    ],
-    // Consistency rules to prevent regression
-    'no-restricted-syntax': [
-      'warn',
-      {
-        selector: 'Literal[value=/bg-(blue|red|green|yellow|purple|indigo|gray)-\\d+/]',
-        message: 'Use design tokens instead of hardcoded colors (e.g., bg-primary, bg-secondary)'
+export default tseslint.config(
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+        ...globals.node,
       },
-      {
-        selector: 'Literal[value=/text-(blue|red|green|yellow|purple|indigo|gray)-\\d+/]',
-        message: 'Use design tokens instead of hardcoded text colors (e.g., text-foreground, text-muted-foreground)'
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
       },
-      {
-        selector: 'Literal[value=/border-2 border-current border-t-transparent rounded-full animate-spin/]',
-        message: 'Use the standardized <Spinner> component instead of custom spinner styles'
-      }
-    ],
-    // TypeScript specific rules
-    '@typescript-eslint/no-unused-vars': 'warn',
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-empty-interface': 'off',
-    '@typescript-eslint/no-empty-object-type': 'off',
-    'no-case-declarations': 'off',
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'prefer-const': 'error',
+      '@typescript-eslint/no-var-requires': 'error',
+      'no-var': 'error',
+      'no-console': 'warn',
+      'no-debugger': 'error',
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
   },
-}, storybook.configs["flat/recommended"]); 
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      'build/**',
+      '.vite/**',
+      'coverage/**',
+      'cypress/videos/**',
+      'cypress/screenshots/**',
+      '*.config.js',
+      '*.config.ts',
+      'vite.config.ts',
+      'tailwind.config.ts',
+      'postcss.config.cjs',
+      'jest.config.cjs',
+      'jest.setup.cjs',
+      'jest.transformer.cjs',
+      'scripts/**',
+      'supabase/**',
+      'docs/**',
+      'archive/**',
+      'backups/**',
+      'public/**',
+      '__tests__/**',
+      '*.test.ts',
+      '*.test.tsx',
+      '*.spec.ts',
+      '*.spec.tsx',
+    ],
+  }
+); 
