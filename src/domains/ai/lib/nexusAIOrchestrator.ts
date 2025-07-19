@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../core/supabase';
-import { n8nService } from '../automation/n8n/n8nService';
+import { n8nService } from '../automation/n8nService';
 
 // Core AI Capability Interfaces
 interface SystemEvolution {

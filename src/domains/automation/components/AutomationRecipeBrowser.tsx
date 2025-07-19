@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Input } from '@/shared/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/Dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/components/ui/Dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Label } from '@/shared/components/ui/Label';
 import { Checkbox } from '@/shared/components/ui/Checkbox';
-import { Separator } from '@/shared/components/ui/Separator';
-import { toast } from '@/shared/components/ui/Toast';
-import { Search, Filter, Clock, Users, Star, Play, Settings, CheckCircle, AlertCircle } from 'lucide-react';
-import { automationRecipeEngine, AutomationRecipe } from '@/shared/lib/automation/recipes/automationRecipeEngine';
-import { useAuth } from '@/domains/hooks/useAuth';
+import { toast } from 'sonner';
+import { Search, Clock, Users, Star, Play, CheckCircle, AlertCircle } from 'lucide-react';
+import { automationRecipeEngine } from '@/domains/automation/automationRecipeEngine';
+import type { AutomationRecipe } from '@/domains/automation/automationRecipeEngine';
+import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
 
 export interface AutomationRecipeBrowserProps {
   onRecipeDeployed?: (recipeId: string, deploymentId: string) => void;
@@ -23,7 +23,7 @@ export interface AutomationRecipeBrowserProps {
 
 export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = ({
   onRecipeDeployed,
-  showDeployedOnly = false,
+  showDeployedOnly: _showDeployedOnly = false,
   category,
   className = ''
 }) => {
@@ -39,32 +39,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
   const [customizations, setCustomizations] = useState<Record<string, unknown>>({});
   const [deploying, setDeploying] = useState(false);
 
-  useEffect(() => {
-    loadRecipes();
-  }, []);
-
-  useEffect(() => {
-    filterRecipes();
-  }, [recipes, searchTerm, selectedCategory, selectedDifficulty]);
-
-  const loadRecipes = async () => {
-    try {
-      setLoading(true);
-      const loadedRecipes = await automationRecipeEngine.getAvailableRecipes();
-      setRecipes(loadedRecipes);
-    } catch (error) {
-      console.error('Failed to load recipes:', error);
-      toast({
-        title: 'Error Loading Recipes',
-        description: 'Failed to load automation recipes. Please try again.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterRecipes = () => {
+  const filterRecipes = useCallback(() => {
     let filtered = [...recipes];
 
     // Search filter
@@ -72,7 +47,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
       filtered = filtered.filter(recipe =>
         recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         recipe.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        recipe.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -87,7 +62,54 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
     }
 
     setFilteredRecipes(filtered);
+  }, [recipes, searchTerm, selectedCategory, selectedDifficulty]);
+
+  useEffect(() => {
+    loadRecipes();
+  }, []);
+
+  useEffect(() => {
+    filterRecipes();
+  }, [filterRecipes]);
+
+  const loadRecipes = async () => {
+    try {
+      setLoading(true);
+      const loadedRecipes = await automationRecipeEngine.getAvailableRecipes();
+      setRecipes(loadedRecipes);
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Failed to load recipes:', error);
+      toast.error('Failed to load automation recipes. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const filterRecipes = useCallback(() => {
+    let filtered = [...recipes];
+
+    // Search filter
+    if (searchTerm) {
+      filtered = filtered.filter(recipe =>
+        recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipe.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        recipe.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(recipe => recipe.category === selectedCategory);
+    }
+
+    // Difficulty filter
+    if (selectedDifficulty !== 'all') {
+      filtered = filtered.filter(recipe => recipe.difficulty === selectedDifficulty);
+    }
+
+    setFilteredRecipes(filtered);
+  }, [recipes, searchTerm, selectedCategory, selectedDifficulty]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -111,11 +133,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
 
   const handleDeployRecipe = async (recipe: AutomationRecipe) => {
     if (!user) {
-      toast({
-        title: 'Authentication Required',
-        description: 'Please log in to deploy automation recipes.',
-        variant: 'destructive'
-      });
+      toast.error('Please log in to deploy automation recipes.');
       return;
     }
 
@@ -123,7 +141,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
     
     // Initialize customizations with default values
     const defaultCustomizations: Record<string, unknown> = {};
-    recipe.customizationOptions.forEach(option => {
+    recipe.customizationOptions.forEach((option: { id: string; defaultValue?: unknown }) => {
       if (option.defaultValue !== undefined) {
         defaultCustomizations[option.id] = option.defaultValue;
       }
@@ -145,30 +163,19 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
       );
 
       if (result.success) {
-        toast({
-          title: 'Recipe Deployed Successfully',
-          description: `${selectedRecipe.name} has been deployed and is now active.`,
-          variant: 'default'
-        });
+        toast.success(`${selectedRecipe.name} has been deployed and is now active.`);
 
         onRecipeDeployed?.(selectedRecipe.id, result.deploymentId!);
         setDeploymentDialog(false);
         setSelectedRecipe(null);
         setCustomizations({});
       } else {
-        toast({
-          title: 'Deployment Failed',
-          description: result.error || 'Failed to deploy recipe.',
-          variant: 'destructive'
-        });
+        toast.error(result.error || 'Failed to deploy recipe.');
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Deployment error:', error);
-      toast({
-        title: 'Deployment Error',
-        description: 'An unexpected error occurred during deployment.',
-        variant: 'destructive'
-      });
+      toast.error('An unexpected error occurred during deployment.');
     } finally {
       setDeploying(false);
     }
@@ -181,7 +188,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
     }));
   };
 
-  const renderCustomizationField = (option: any) => {
+  const renderCustomizationField = (option: { id: string; type: string; name: string; placeholder?: string; required?: boolean; options?: string[] }) => {
     const value = customizations[option.id];
 
     switch (option.type) {
@@ -349,7 +356,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
                 </div>
                 
                 <div className="flex flex-wrap gap-1">
-                  {recipe.tags.slice(0, 3).map((tag) => (
+                  {recipe.tags.slice(0, 3).map((tag: string) => (
                     <Badge key={tag} variant="outline" className="text-xs">
                       {tag}
                     </Badge>
@@ -408,7 +415,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
                   <div>
                     <h4 className="font-semibold mb-2">Benefits</h4>
                     <ul className="space-y-1">
-                      {selectedRecipe.benefits.map((benefit, index) => (
+                      {selectedRecipe.benefits.map((benefit: string, index: number) => (
                         <li key={index} className="flex items-center space-x-2 text-sm">
                           <CheckCircle className="h-4 w-4 text-success" />
                           <span>{benefit}</span>
@@ -420,7 +427,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
                   <div>
                     <h4 className="font-semibold mb-2">Prerequisites</h4>
                     <ul className="space-y-1">
-                      {selectedRecipe.prerequisites.map((prerequisite, index) => (
+                      {selectedRecipe.prerequisites.map((prerequisite: string, index: number) => (
                         <li key={index} className="flex items-center space-x-2 text-sm">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
                           <span>{prerequisite}</span>
@@ -432,7 +439,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
                   <div>
                     <h4 className="font-semibold mb-2">Success Metrics</h4>
                     <ul className="space-y-1">
-                      {selectedRecipe.successMetrics.map((metric, index) => (
+                      {selectedRecipe.successMetrics.map((metric: string, index: number) => (
                         <li key={index} className="flex items-center space-x-2 text-sm">
                           <Star className="h-4 w-4 text-warning" />
                           <span>{metric}</span>
@@ -449,7 +456,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
                     <h4 className="font-semibold mb-3">Customization Options</h4>
                     {selectedRecipe.customizationOptions.length > 0 ? (
                       <div className="space-y-4">
-                        {selectedRecipe.customizationOptions.map((option) => (
+                        {selectedRecipe.customizationOptions.map((option: { id: string; type: string; name: string; placeholder?: string; required?: boolean; options?: string[]; description?: string }) => (
                           <div key={option.id} className="space-y-2">
                             <Label htmlFor={option.id} className="text-sm font-medium">
                               {option.name}

@@ -5,6 +5,7 @@ import { useTheme } from '@/shared/components/ui/theme-provider';
 import { useNotifications } from '@/core/hooks/NotificationContext';
 import { CommandPalette } from '@/shared/components/layout/CommandPalette';
 import { QuickChatTrigger } from '@/domains/ai/components/QuickChatTrigger';
+import { FireCycleOverlay } from '@/core/fire-cycle/FireCycleOverlay';
 import { Menu, Bell, Sun, Moon, User, Settings, Search, Palette, Mail, Calendar as CalendarIcon, MessageSquare, Lightbulb, Home } from 'lucide-react';
 import { navItems } from '@/shared/components/layout/navConfig';
 import { features as featureRegistry } from '@/shared/components/ui/featureRegistry';
@@ -99,6 +100,12 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
           </Link>
         </nav>
         {/* End Workspace Shortcuts */}
+        
+        {/* FIRE CYCLE Overlay */}
+        <div className="hidden lg:block">
+          <FireCycleOverlay variant="compact" />
+        </div>
+        
         <div className="flex items-center space-x-2 sm:space-x-4">
           <button
             aria-label="Open command palette"

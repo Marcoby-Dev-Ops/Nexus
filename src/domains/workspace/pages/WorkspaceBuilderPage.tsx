@@ -1,106 +1,108 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { 
   Layout, 
-  Palette, 
-  Zap, 
-  Users, 
-  Sparkles, 
+  Eye, 
   ArrowRight, 
-  CheckCircle,
-  Star,
-  Download,
-  Share,
-  Grid,
-  Plus,
-  Eye,
-  Settings,
-  Target,
-  Lightbulb,
-  Briefcase,
-  Code,
-  PieChart,
-  MessageSquare,
-  Shield
+  Download, 
+  Star, 
+  CheckCircle, 
+  Lightbulb, 
+  Grid, 
+  MessageSquare, 
+  PieChart, 
+  Shield, 
+  Zap, 
+  Plus, 
+  Sparkles, 
+  Target, 
+  Users 
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const WorkspaceBuilderPage: React.FC = () => {
+  const navigate = useNavigate();
+
   const features = [
     {
-      icon: <Layout className="w-6 h-6 text-primary" />,
-      title: 'Drag & Drop Builder',
-      description: 'Intuitive interface to arrange components exactly how you want them'
+      title: 'Drag & Drop Interface',
+      description: 'Intuitive drag-and-drop interface for building workspaces without coding.',
+      icon: <Layout className="w-6 h-6 text-primary" />
     },
     {
-      icon: <Palette className="w-6 h-6 text-secondary" />,
-      title: 'Rich Component Library',
-      description: '15+ pre-built components for productivity, analytics, and business intelligence'
+      title: 'Component Library',
+      description: 'Rich library of pre-built components for common business needs.',
+      icon: <Grid className="w-6 h-6 text-primary" />
     },
     {
-      icon: <Users className="w-6 h-6 text-success" />,
-      title: 'Role-Based Templates',
-      description: 'Pre-designed workspaces for executives, sales, marketing, developers, and more'
+      title: 'Real-time Collaboration',
+      description: 'Share and collaborate on workspace layouts with your team.',
+      icon: <Users className="w-6 h-6 text-primary" />
     },
     {
-      icon: <Share className="w-6 h-6 text-orange-500" />,
-      title: 'Share & Import',
-      description: 'Share your custom workspaces with team members or import from the marketplace'
+      title: 'Custom Components',
+      description: 'Create and share custom components for your specific workflows.',
+      icon: <Plus className="w-6 h-6 text-primary" />
     },
     {
-      icon: <Zap className="w-6 h-6 text-warning" />,
-      title: 'Real-time Updates',
-      description: 'All components update in real-time with live data from your business systems'
+      title: 'Analytics Integration',
+      description: 'Built-in analytics to track workspace usage and effectiveness.',
+      icon: <PieChart className="w-6 h-6 text-primary" />
     },
     {
-      icon: <Settings className="w-6 h-6 text-muted-foreground" />,
-      title: 'Full Customization',
-      description: 'Configure each component with custom settings, filters, and display options'
+      title: 'Template Marketplace',
+      description: 'Browse and install workspace templates from the community.',
+      icon: <Eye className="w-6 h-6 text-primary" />
     }
   ];
 
   const templates = [
     {
       name: 'Executive Dashboard',
-      description: 'High-level business metrics and strategic insights',
-      category: 'Business',
-      icon: <Briefcase className="w-5 h-5" />,
-      components: 7,
-      downloads: 1247,
-      rating: 4.8
+      description: 'Complete executive overview with KPIs and strategic insights',
+      category: 'Leadership',
+      rating: 4.8,
+      reviews: 127,
+      downloads: 2340,
+      components: 12,
+      icon: <Target className="w-5 h-5 text-primary" />
     },
     {
-      name: 'Sales Workspace',
-      description: 'CRM integration, pipeline management, and sales performance',
+      name: 'Sales Operations',
+      description: 'Comprehensive sales pipeline and performance tracking',
       category: 'Sales',
-      icon: <Target className="w-5 h-5" />,
-      components: 7,
-      downloads: 892,
-      rating: 4.6
+      rating: 4.6,
+      reviews: 89,
+      downloads: 1567,
+      components: 8,
+      icon: <MessageSquare className="w-5 h-5 text-primary" />
+    },
+    {
+      name: 'Product Development',
+      description: 'Product roadmap, feature tracking, and development metrics',
+      category: 'Product',
+      rating: 4.7,
+      reviews: 203,
+      downloads: 3120,
+      components: 15,
+      icon: <Lightbulb className="w-5 h-5 text-primary" />
     },
     {
       name: 'Marketing Hub',
-      description: 'Campaign management, analytics, and content creation',
+      description: 'Campaign management, analytics, and content planning',
       category: 'Marketing',
-      icon: <Sparkles className="w-5 h-5" />,
-      components: 6,
-      downloads: 634,
-      rating: 4.7
-    },
-    {
-      name: 'Developer Console',
-      description: 'Development tools, system monitoring, and technical metrics',
-      category: 'Development',
-      icon: <Code className="w-5 h-5" />,
-      components: 6,
-      downloads: 445,
-      rating: 4.9
+      rating: 4.5,
+      reviews: 156,
+      downloads: 1890,
+      components: 10,
+      icon: <Zap className="w-5 h-5 text-primary" />
     }
   ];
 
   const availableComponents = [
+    { name: 'Analytics Widget', category: 'Analytics', icon: <PieChart className="w-4 h-4" /> },
     { name: 'Tasks Widget', category: 'Productivity', icon: <CheckCircle className="w-4 h-4" /> },
     { name: 'Ideas & Innovation', category: 'Productivity', icon: <Lightbulb className="w-4 h-4" /> },
     { name: 'Calendar', category: 'Productivity', icon: <Grid className="w-4 h-4" /> },
@@ -124,17 +126,13 @@ const WorkspaceBuilderPage: React.FC = () => {
           Build exactly what you need for maximum productivity and insight.
         </p>
         <div className="flex items-center justify-center space-x-4 pt-4">
-          <Button asChild size="lg">
-            <Link to="/workspace-builder">
-              <Layout className="w-5 h-5 mr-2" />
-              Start Building
-            </Link>
+          <Button size="lg" onClick={() => navigate('/workspace-builder')}>
+            <Layout className="w-5 h-5 mr-2" />
+            Start Building
           </Button>
-          <Button variant="outline" size="lg" asChild>
-            <Link to="/workspace-marketplace">
-              <Eye className="w-5 h-5 mr-2" />
-              Browse Templates
-            </Link>
+          <Button variant="outline" size="lg" onClick={() => navigate('/workspace-marketplace')}>
+            <Eye className="w-5 h-5 mr-2" />
+            Browse Templates
           </Button>
         </div>
       </div>
@@ -163,11 +161,9 @@ const WorkspaceBuilderPage: React.FC = () => {
             <h2 className="text-2xl font-bold">Popular Templates</h2>
             <p className="text-muted-foreground">Get started quickly with pre-built workspaces</p>
           </div>
-          <Button variant="outline" asChild>
-            <Link to="/workspace-marketplace">
-              View All Templates
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Link>
+          <Button variant="outline" onClick={() => navigate('/workspace-marketplace')}>
+            View All Templates
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
 
@@ -196,11 +192,9 @@ const WorkspaceBuilderPage: React.FC = () => {
                     <span>{template.downloads.toLocaleString()}</span>
                   </div>
                 </div>
-                <Button size="sm" className="w-full" asChild>
-                  <Link to="/workspace-marketplace">
-                    <Download className="w-4 h-4 mr-2" />
-                    Use Template
-                  </Link>
+                <Button size="sm" className="w-full" onClick={() => navigate('/workspace-marketplace')}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Use Template
                 </Button>
               </CardContent>
             </Card>
@@ -245,17 +239,13 @@ const WorkspaceBuilderPage: React.FC = () => {
             Building your first workspace takes just a few minutes. Choose from our templates or start from scratch.
           </p>
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-            <Button asChild>
-              <Link to="/workspace-builder">
-                <Layout className="w-4 h-4 mr-2" />
-                Create Custom Workspace
-              </Link>
+            <Button onClick={() => navigate('/workspace-builder')}>
+              <Layout className="w-4 h-4 mr-2" />
+              Create Custom Workspace
             </Button>
-            <Button variant="outline" asChild>
-              <Link to="/workspace-marketplace">
-                <Download className="w-4 h-4 mr-2" />
-                Browse Marketplace
-              </Link>
+            <Button variant="outline" onClick={() => navigate('/workspace-marketplace')}>
+              <Download className="w-4 h-4 mr-2" />
+              Browse Marketplace
             </Button>
           </div>
         </CardContent>

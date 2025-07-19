@@ -246,7 +246,6 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
           )}
           <Button 
             onClick={handleSubmit}
-            disabled={!contextData.role || contextData.biggest_challenge.length < 10}
             className="px-8"
           >
             Continue

@@ -34,6 +34,10 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', disallowTypeAnnotations: false }
+      ],
       'prefer-const': 'error',
       '@typescript-eslint/no-var-requires': 'error',
       'no-var': 'error',

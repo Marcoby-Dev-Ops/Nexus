@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
 import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from '@/core/supabase';
 import { useToast } from '@/shared/components/ui/Toast';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/Dialog';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/shared/components/ui/Select';
-import { InformationCircleIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon, CheckCircleIcon, XCircleIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
+import { ArrowLeft, ArrowRight, Loader2, UsersIcon } from 'lucide-react';
 
 interface OrganizationData {
   name: string;
@@ -31,7 +34,6 @@ interface OrganizationData {
   microsoft_365?: {
     tenant_id?: string;
     organization_name?: string;
-    verified_domain?: boolean;
     subscription_type?: string;
     user_count?: number;
   };
@@ -42,6 +44,17 @@ interface EnrichmentStatus {
   success: boolean;
   error?: string;
   enrichedFields: string[];
+}
+
+interface ExistingCompany {
+  id: string;
+  name: string;
+  domain?: string | null;
+  industry?: string | null;
+  size?: string | null;
+  description?: string | null;
+  website?: string | null;
+  created_at: string;
 }
 
 interface OrganizationSetupStepProps {
@@ -60,6 +73,12 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
     success: false,
     enrichedFields: [],
   });
+  
+  // New state for existing company handling
+  const [existingCompany, setExistingCompany] = useState<ExistingCompany | null>(null);
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
+  const [joiningCompany, setJoiningCompany] = useState(false);
+  
   const [data, setData] = useState<OrganizationData>({
     name: company?.name || getPendingCompanyName(),
     domain: company?.domain || '',
@@ -71,22 +90,6 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
     vision_statement: '',
     about_md: '',
   });
-  const [companyExists, setCompanyExists] = useState<null | { id: string; name: string; owner_id: string }>(null);
-
-  // --- Domain Verification State ---
-  const [verificationStatus, setVerificationStatus] = useState<'unverified' | 'pending' | 'verified'>('unverified');
-  const [verificationCode] = useState<string>(() => {
-    // Generate a code on mount (in real app, get from backend)
-    if (typeof window !== 'undefined') {
-      const existing = localStorage.getItem('pending_verification_code');
-      if (existing) return existing;
-      const code = 'nexus-' + Math.random().toString(36).slice(2, 10);
-      localStorage.setItem('pending_verification_code', code);
-      return code;
-    }
-    return '';
-  });
-  const [verifying, setVerifying] = useState(false);
 
   // Validation helpers
   function isValidDomain(domain: string): boolean {
@@ -103,6 +106,92 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
   const [domainError, setDomainError] = useState<string | null>(null);
   const [websiteError, setWebsiteError] = useState<string | null>(null);
+
+  // Check if company already exists
+  const checkExistingCompany = async (companyName: string, domain?: string): Promise<ExistingCompany | null> => {
+    try {
+      if (domain) {
+        // First try to find by exact domain match
+        const { data: domainMatch, error: domainError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('domain', domain)
+          .single();
+
+        if (domainMatch && !domainError) {
+          return domainMatch as ExistingCompany;
+        }
+      }
+
+      // Then try to find by name similarity
+      const { data: nameMatch, error: nameError } = await supabase
+        .from('companies')
+        .select('*')
+        .ilike('name', `%${companyName}%`)
+        .limit(1)
+        .single();
+
+      if (nameMatch && !nameError) {
+        return nameMatch as ExistingCompany;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error checking existing company:', error);
+      return null;
+    }
+  };
+
+  // Handle joining existing company
+  const handleJoinExistingCompany = async () => {
+    if (!existingCompany || !user) return;
+    
+    setJoiningCompany(true);
+    try {
+      // Update user profile to link to existing company
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .upsert({
+          id: user.id,
+          company_id: existingCompany.id,
+          role: 'user', // Default role when joining existing company
+          updated_at: new Date().toISOString(),
+        });
+
+      if (profileError) throw profileError;
+
+      toast({
+        title: 'Success',
+        description: `You've joined ${existingCompany.name}!`,
+        variant: 'default',
+      });
+
+      // Remove pending company name from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('pending_company_name');
+      }
+
+      setShowJoinDialog(false);
+      onNext({ enriched_data: data });
+    } catch (error) {
+      console.error('Error joining company:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to join company. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setJoiningCompany(false);
+    }
+  };
+
+  // Handle creating new company
+  const handleCreateNewCompany = () => {
+    setShowJoinDialog(false);
+    setExistingCompany(null);
+    // Continue with the existing flow
+    handleSubmit(new Event('submit') as any);
+  };
 
   // Note: OAuth connections are now handled in a separate IntegrationsSetupStep
   // This component focuses only on company profile data
@@ -168,7 +257,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
       toast({
         title: 'Success',
-        description: `Successfully enriched ${enrichedFields.length} fields`,
+        description: `Found ${enrichedFields.length} fields from public data`,
         variant: 'default',
       });
 
@@ -189,143 +278,139 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
     }
   };
 
-  // Check for existing company by name on mount or when name changes
-  useEffect(() => {
-    const checkCompany = async () => {
-      if (!data.name.trim()) {
-        setCompanyExists(null);
-        return;
-      }
-      const { data: found, error } = await supabase
-        .from('companies')
-        .select('id, name')
-        .ilike('name', data.name.trim());
-      if (!error && found && found.length > 0) {
-        // Since there's no owner_id field, we'll just use the first match
-        setCompanyExists({ id: found[0].id, name: found[0].name, owner_id: 'unknown' });
-      } else {
-        setCompanyExists(null);
-      }
-    };
-    checkCompany();
-  }, [data.name]);
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log('=== FORM SUBMITTED ===');
+    console.log('Form submitted, data:', data);
 
-    if (!isValidDomain(data.domain)) {
+    // Make domain optional - only validate if provided
+    if (data.domain && !isValidDomain(data.domain)) {
       setDomainError("Enter a valid domain (e.g. marcoby.com)");
+      console.log('Domain validation failed');
       return;
     }
-    if (!isValidUrl(safeString(data.website))) {
+    // Make website optional - only validate if provided
+    if (data.website && !isValidUrl(safeString(data.website))) {
       setWebsiteError("Enter a valid URL (e.g. https://marcoby.com)");
+      console.log('Website validation failed');
       return;
     }
+    
+    console.log('Validation passed, checking for existing company');
     setLoading(true);
 
     try {
-      if (companyExists) {
-        // Company exists, offer to join (pending approval)
-        // Prevent claiming if not owner
-        if (companyExists.owner_id === user?.id) {
-          toast({
-            title: 'You are the owner of this company.',
-            description: 'You can update the company profile.',
-            variant: 'default',
-          });
-        } else {
-          // Request to join (could be implemented as a pending request in DB)
-          toast({
-            title: 'Join Request Sent',
-            description: 'Your request to join this company is pending approval by the owner.',
-            variant: 'default',
-          });
-          // TODO: Implement backend logic for join requests
-          setLoading(false);
-          return;
-        }
-      } else {
-        // Create new company and assign user as owner
-        const { data: newCompany, error: createError } = await supabase
-          .from('companies')
-          .insert({
-            name: data.name,
-            domain: data.domain,
-            industry: data.industry,
-            size: data.size,
-            description: data.description,
-            logo: data.logo,
-            website: data.website,
-            social_profiles: data.social_profiles,
-            founded: data.founded,
-            headquarters: data.headquarters,
-            specialties: data.specialties,
-            employee_count: data.employee_count,
-            followers_count: data.followers_count,
-            microsoft_365: data.microsoft_365,
-            owner_id: user?.id,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-        if (createError) throw createError;
-
-        // Update user profile with new company info
-        if (!user) throw new Error('No authenticated user');
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .upsert({
-            id: user.id,
-            company_id: newCompany.id,
-            role: 'owner',
-            department: data.industry,
-            job_title: data.size,
-            updated_at: new Date().toISOString(),
-          });
-        if (profileError) throw profileError;
-
-        // Upsert AI company profile details
-        await supabase
-          .from('ai_company_profiles')
-          .upsert({
-            company_id: newCompany.id,
-            user_id: user.id,
-            profile_data: {
-              tagline: data.tagline,
-              motto: data.motto,
-              mission_statement: data.mission_statement,
-              vision_statement: data.vision_statement,
-              about_md: data.about_md,
-            },
-          });
-
-        // Trigger embedding generation (fire & forget)
-        try {
-          await supabase.functions.invoke('ai_embed_company_profile', {
-            body: { company_id: newCompany.id },
-          });
-        } catch {
-          // Embedding failed but not critical
-        }
-
-        toast({
-          title: 'Success',
-          description: 'Organization created and you are the owner.',
-          variant: 'default',
-        });
-
-        // Remove pending company name from localStorage
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('pending_company_name');
-        }
-
-        onNext({ enriched_data: data });
+      // Check if company already exists
+      const existing = await checkExistingCompany(data.name, data.domain);
+      
+      if (existing) {
+        setExistingCompany(existing);
+        setShowJoinDialog(true);
+        setLoading(false);
+        return;
       }
-    } catch {
+
+      // No existing company found, proceed with creation
+      await createNewCompany();
+    } catch (error) {
+      console.error('Error in handleSubmit:', error);
       toast({
         title: 'Error',
         description: 'Failed to update organization information',
+        variant: 'destructive',
+      });
+      setLoading(false);
+    }
+  };
+
+  const createNewCompany = async () => {
+    try {
+      // Create new company and assign user as owner
+      const { data: newCompany, error: createError } = await supabase
+        .from('companies')
+        .insert({
+          name: data.name,
+          domain: data.domain || null, // Allow null domain
+          industry: data.industry || null, // Allow null industry
+          size: data.size || null, // Allow null size
+          description: data.description,
+          logo: data.logo,
+          website: data.website || null, // Allow null website
+          social_profiles: data.social_profiles,
+          founded: data.founded,
+          headquarters: data.headquarters,
+          specialties: data.specialties,
+          employee_count: data.employee_count,
+          followers_count: data.followers_count,
+          microsoft_365: data.microsoft_365,
+          owner_id: user?.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+      if (createError) throw createError;
+
+      console.log('Company created:', newCompany);
+
+      // Update user profile with new company info
+      if (!user) throw new Error('No authenticated user');
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .upsert({
+          id: user.id,
+          company_id: newCompany.id,
+          role: 'owner',
+          department: data.industry || null,
+          job_title: data.size || null,
+          updated_at: new Date().toISOString(),
+        });
+      if (profileError) throw profileError;
+
+      console.log('User profile updated');
+
+      // Upsert AI company profile details
+      await supabase
+        .from('ai_company_profiles')
+        .upsert({
+          company_id: newCompany.id,
+          user_id: user.id,
+          profile_data: {
+            tagline: data.tagline,
+            motto: data.motto,
+            mission_statement: data.mission_statement,
+            vision_statement: data.vision_statement,
+            about_md: data.about_md,
+          },
+        });
+
+      // Trigger embedding generation (fire & forget)
+      try {
+        await supabase.functions.invoke('ai_embed_company_profile', {
+          body: { company_id: newCompany.id },
+        });
+      } catch {
+        // Embedding failed but not critical
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Organization created and you are the owner.',
+        variant: 'default',
+      });
+
+      // Remove pending company name from localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('pending_company_name');
+      }
+
+      console.log('Calling onNext with data:', { enriched_data: data });
+      onNext({ enriched_data: data });
+    } catch (error) {
+      console.error('Error creating company:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create organization',
         variant: 'destructive',
       });
     } finally {
@@ -347,283 +432,345 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto p-6">
-      <h2 className="text-2xl font-bold mb-6">Organization Setup</h2>
-      
-      {/* Privacy Notice */}
-      <div className="mb-6 p-4 bg-primary/5 rounded-lg">
-        <div className="flex">
-          <InformationCircleIcon className="h-5 w-5 text-primary mr-2" />
-          <div>
-            <h3 className="text-sm font-medium text-primary/80">Data Privacy Notice</h3>
-            <p className="text-sm text-primary/90 mt-1">
-              We collect and process your company information to provide personalized services.
-              Your data is encrypted and stored securely. We only use this information to improve
-              your experience and provide relevant insights.
-            </p>
+    <>
+      <Card className="w-full max-w-2xl mx-auto p-6">
+        {/* Progress Indicator */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+              2
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Organization Setup</h2>
+              <p className="text-sm text-muted-foreground">Step 2 of 6</p>
+            </div>
           </div>
         </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-foreground/90">
-              Company Name
-            </label>
-            <Input
-              id="name"
-              value={safeString(data.name)}
-              onChange={(e) => setData({ ...data, name: e.target.value })}
-              required
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="domain" className="block text-sm font-medium text-foreground/90">
-              Company Domain
-            </label>
-            <div className="mt-1 flex rounded-md shadow-sm">
-              <Input
-                id="domain"
-                type="text"
-                value={safeString(data.domain) || ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setData({ ...data, domain: value });
-                  setDomainError(isValidDomain(value) ? null : "Enter a valid domain (e.g. marcoby.com)");
-                  setVerificationStatus('unverified');
-                }}
-                required
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                onClick={handleEnrichment}
-                disabled={!data.domain || enrichmentStatus.isEnriching}
-                className="ml-3"
-              >
-                {enrichmentStatus.isEnriching ? 'Enriching...' : 'Enrich Data'}
-              </Button>
+        
+        {/* Privacy Notice */}
+        <div className="mb-6 p-4 bg-primary/5 rounded-lg">
+          <div className="flex">
+            <InformationCircleIcon className="h-5 w-5 text-primary mr-2" />
+            <div>
+              <h3 className="text-sm font-medium text-primary/80">Data Privacy Notice</h3>
+              <p className="text-sm text-primary/90 mt-1">
+                We collect and process your company information to provide personalized services.
+                Your data is encrypted and stored securely. We only use this information to improve
+                your experience and provide relevant insights.
+              </p>
             </div>
-            {domainError && <p className="text-xs text-destructive mt-1">{domainError}</p>}
-            <p className="mt-1 text-sm text-muted-foreground">
-              Enter your company's domain to automatically fetch additional information
-            </p>
-            {/* --- Domain Verification UI --- */}
-            {data.domain && (
-              <div className="mt-4 p-4 bg-primary/5 rounded">
-                <h4 className="font-semibold mb-2">Verify Domain Ownership</h4>
-                <p>
-                  Add the following TXT record to your DNS for <b>{data.domain}</b>:
-                </p>
-                <pre className="bg-background p-2 rounded mt-2 select-all">
-                  nexus-verification={verificationCode}
-                </pre>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-foreground/90">
+                Company Name
+              </label>
+              <Input
+                id="name"
+                value={safeString(data.name)}
+                onChange={(e) => setData({ ...data, name: e.target.value })}
+                required
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="domain" className="block text-sm font-medium text-foreground/90">
+                Company Domain (Optional)
+              </label>
+              <div className="mt-1 flex rounded-md shadow-sm">
+                <Input
+                  id="domain"
+                  type="text"
+                  value={safeString(data.domain) || ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setData({ ...data, domain: value });
+                    setDomainError(isValidDomain(value) ? null : "Enter a valid domain (e.g. marcoby.com)");
+                  }}
+                  placeholder="e.g., marcoby.com"
+                  className="flex-1"
+                />
                 <Button
                   type="button"
-                  onClick={async () => {
-                    setVerifying(true);
-                    // TODO: Call backend to check DNS TXT record
-                    setTimeout(() => {
-                      // Simulate result for now
-                      setVerificationStatus('pending');
-                      setVerifying(false);
-                    }, 1200);
-                  }}
-                  disabled={verifying}
-                  className="mt-2"
+                  onClick={handleEnrichment}
+                  disabled={!data.domain || enrichmentStatus.isEnriching}
+                  className="ml-3"
                 >
-                  {verifying ? 'Verifying...' : 'Verify Now'}
+                  {enrichmentStatus.isEnriching ? 'Looking up...' : 'Lookup Public Data'}
                 </Button>
-                {verificationStatus === 'pending' && (
-                  <p className="text-warning mt-2">Verification not found. Please try again after DNS propagation.</p>
-                )}
-                {verificationStatus === 'verified' && (
-                  <p className="text-success mt-2">Domain verified!</p>
-                )}
+              </div>
+              {domainError && <p className="text-xs text-destructive mt-1">{domainError}</p>}
+              <p className="mt-1 text-sm text-muted-foreground">
+                Enter your company's domain to automatically lookup publicly available information (optional)
+              </p>
+            </div>
+
+            {/* Enrichment Status */}
+            {enrichmentStatus.isEnriching && (
+              <div className="p-4 bg-background rounded-lg">
+                <p className="text-sm text-muted-foreground">Enriching company data...</p>
               </div>
             )}
-            {!data.domain && (
-              <div className="mt-4 p-4 bg-warning/5 rounded">
-                <h4 className="font-semibold mb-2">No Domain Provided</h4>
-                <p>
-                  You can create your company now, but will need to verify ownership later to unlock all features.
-                </p>
+
+            {enrichmentStatus.error && (
+              <div className="p-4 bg-destructive/5 rounded-lg">
+                <div className="flex">
+                  <XCircleIcon className="h-5 w-5 text-red-400 mr-2" />
+                  <p className="text-sm text-destructive">{enrichmentStatus.error}</p>
+                </div>
               </div>
             )}
+
+            {enrichmentStatus.success && (
+              <div className="p-4 bg-success/5 rounded-lg">
+                <div className="flex">
+                  <CheckCircleIcon className="h-5 w-5 text-success mr-2" />
+                  <div>
+                    <p className="text-sm text-success">Found company data from public sources</p>
+                    <p className="text-xs text-success mt-1">
+                      Found fields: {enrichmentStatus.enrichedFields.join(', ')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="industry" className="block text-sm font-medium text-foreground/90">
+                Industry (Optional)
+              </label>
+              <Select
+                value={typeof data.industry === 'string' ? data.industry : ''}
+                onValueChange={(value) => setData({ ...data, industry: value })}
+                disabled={false}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select an industry (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Select an industry (optional)</SelectItem>
+                  <SelectItem value="technology">Technology</SelectItem>
+                  <SelectItem value="healthcare">Healthcare</SelectItem>
+                  <SelectItem value="finance">Finance</SelectItem>
+                  <SelectItem value="retail">Retail</SelectItem>
+                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                  <SelectItem value="education">Education</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label htmlFor="size" className="block text-sm font-medium text-foreground/90">
+                Company Size (Optional)
+              </label>
+              <Select
+                value={typeof data.size === 'string' ? data.size : ''}
+                onValueChange={(value) => setData({ ...data, size: value })}
+                disabled={false}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select company size (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Select company size (optional)</SelectItem>
+                  <SelectItem value="startup">Startup (1-50 employees)</SelectItem>
+                  <SelectItem value="small">Small (51-200 employees)</SelectItem>
+                  <SelectItem value="medium">Medium (201-1000 employees)</SelectItem>
+                  <SelectItem value="large">Large (1001-5000 employees)</SelectItem>
+                  <SelectItem value="enterprise">Enterprise (5000+ employees)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tagline */}
+            <div>
+              <label htmlFor="tagline" className="block text-sm font-medium text-foreground/90">
+                Company Tagline
+              </label>
+              <Input
+                id="tagline"
+                type="text"
+                value={data.tagline || ''}
+                onChange={(e) => setData({ ...data, tagline: e.target.value })}
+                placeholder="e.g., Automate the 20% that eats 80% of your day"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="website" className="block text-sm font-medium text-foreground/90">
+                Company Website (Optional)
+              </label>
+              <Input
+                id="website"
+                type="text"
+                value={safeString(data.website)}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setData({ ...data, website: value });
+                  setWebsiteError(isValidUrl(safeString(value)) ? null : "Enter a valid URL (e.g. https://marcoby.com)");
+                }}
+                placeholder="e.g., https://marcoby.com"
+                className="flex-1"
+              />
+              {websiteError && <p className="text-xs text-destructive mt-1">{websiteError}</p>}
+            </div>
           </div>
 
-          {/* Enrichment Status */}
-          {enrichmentStatus.isEnriching && (
-            <div className="p-4 bg-background rounded-lg">
-              <p className="text-sm text-muted-foreground">Enriching company data...</p>
-            </div>
-          )}
-
-          {enrichmentStatus.error && (
-            <div className="p-4 bg-destructive/5 rounded-lg">
-              <div className="flex">
-                <XCircleIcon className="h-5 w-5 text-red-400 mr-2" />
-                <p className="text-sm text-destructive">{enrichmentStatus.error}</p>
+          {/* Data Preview */}
+          {showPreview && (
+            <div className="mt-6 p-4 bg-background rounded-lg">
+              <h3 className="text-lg font-medium mb-4">Enriched Data Preview</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {data.description && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/90">Description</label>
+                    <p className="mt-1 text-sm text-muted-foreground">{data.description}</p>
+                  </div>
+                )}
+                {data.website && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/90">Website</label>
+                    <p className="mt-1 text-sm text-muted-foreground">{data.website}</p>
+                  </div>
+                )}
+                {data.headquarters && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/90">Headquarters</label>
+                    <p className="mt-1 text-sm text-muted-foreground">{data.headquarters}</p>
+                  </div>
+                )}
+                {data.founded && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/90">Founded</label>
+                    <p className="mt-1 text-sm text-muted-foreground">{data.founded}</p>
+                  </div>
+                )}
+                {data.specialties && data.specialties.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/90">Specialties</label>
+                    <p className="mt-1 text-sm text-muted-foreground">{data.specialties.join(', ')}</p>
+                  </div>
+                )}
+                {data.employee_count && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/90">Employee Count</label>
+                    <p className="mt-1 text-sm text-muted-foreground">{data.employee_count}</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {enrichmentStatus.success && (
-            <div className="p-4 bg-success/5 rounded-lg">
-              <div className="flex">
-                <CheckCircleIcon className="h-5 w-5 text-success mr-2" />
-                <div>
-                  <p className="text-sm text-success">Successfully enriched company data</p>
-                  <p className="text-xs text-success mt-1">
-                    Enriched fields: {enrichmentStatus.enrichedFields.join(', ')}
-                  </p>
-                </div>
+          {/* OAuth connections moved to separate IntegrationsSetupStep */}
+
+          <div className="flex justify-between items-center pt-6 border-t border-border">
+            <Button type="button" variant="outline" onClick={onBack}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            
+            <div className="flex items-center space-x-3">
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="min-w-[120px] bg-primary hover:bg-primary/90"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Card>
+
+      {/* Join Existing Company Dialog */}
+      <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BuildingOfficeIcon className="h-5 w-5" />
+              Company Already Exists
+            </DialogTitle>
+            <DialogDescription>
+              We found an existing company that matches your information. Would you like to join this company or create a new one?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {existingCompany && (
+            <div className="space-y-4">
+              <Alert>
+                <BuildingOfficeIcon className="h-4 w-4" />
+                <AlertDescription>
+                  <strong>{existingCompany.name}</strong>
+                  {existingCompany.domain && (
+                    <span className="block text-sm text-muted-foreground">
+                      Domain: {existingCompany.domain}
+                    </span>
+                  )}
+                  {existingCompany.industry && (
+                    <span className="block text-sm text-muted-foreground">
+                      Industry: {existingCompany.industry}
+                    </span>
+                  )}
+                  {existingCompany.description && (
+                    <span className="block text-sm text-muted-foreground mt-2">
+                      {existingCompany.description}
+                    </span>
+                  )}
+                </AlertDescription>
+              </Alert>
+              
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <UsersIcon className="h-4 w-4" />
+                <span>You'll join as a team member</span>
               </div>
             </div>
           )}
-
-          <div>
-            <label htmlFor="industry" className="block text-sm font-medium text-foreground/90">
-              Industry
-            </label>
-            <Select
-              value={typeof data.industry === 'string' ? data.industry : ''}
-              onValueChange={(value) => setData({ ...data, industry: value })}
-              disabled={false}
+          
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCreateNewCompany}
+              disabled={joiningCompany}
+              className="w-full sm:w-auto"
             >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select an industry" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Select an industry</SelectItem>
-                <SelectItem value="technology">Technology</SelectItem>
-                <SelectItem value="healthcare">Healthcare</SelectItem>
-                <SelectItem value="finance">Finance</SelectItem>
-                <SelectItem value="retail">Retail</SelectItem>
-                <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                <SelectItem value="education">Education</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label htmlFor="size" className="block text-sm font-medium text-foreground/90">
-              Company Size
-            </label>
-            <Select
-              value={typeof data.size === 'string' ? data.size : ''}
-              onValueChange={(value) => setData({ ...data, size: value })}
-              disabled={false}
+              Create New Company
+            </Button>
+            <Button
+              onClick={handleJoinExistingCompany}
+              disabled={joiningCompany}
+              className="w-full sm:w-auto"
             >
-              <SelectTrigger className="mt-1">
-                <SelectValue placeholder="Select company size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Select company size</SelectItem>
-                <SelectItem value="startup">Startup (1-50 employees)</SelectItem>
-                <SelectItem value="small">Small (51-200 employees)</SelectItem>
-                <SelectItem value="medium">Medium (201-1000 employees)</SelectItem>
-                <SelectItem value="large">Large (1001-5000 employees)</SelectItem>
-                <SelectItem value="enterprise">Enterprise (5000+ employees)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Tagline */}
-          <div>
-            <label htmlFor="tagline" className="block text-sm font-medium text-foreground/90">
-              Company Tagline
-            </label>
-            <Input
-              id="tagline"
-              type="text"
-              value={data.tagline || ''}
-              onChange={(e) => setData({ ...data, tagline: e.target.value })}
-              placeholder="e.g., Automate the 20% that eats 80% of your day"
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="website" className="block text-sm font-medium text-foreground/90">
-              Company Website
-            </label>
-            <Input
-              id="website"
-              type="text"
-              value={safeString(data.website)}
-              onChange={(e) => {
-                const value = e.target.value;
-                setData({ ...data, website: value });
-                setWebsiteError(isValidUrl(safeString(value)) ? null : "Enter a valid URL (e.g. https://marcoby.com)");
-              }}
-              required
-              className="flex-1"
-            />
-            {websiteError && <p className="text-xs text-destructive mt-1">{websiteError}</p>}
-          </div>
-        </div>
-
-        {/* Data Preview */}
-        {showPreview && (
-          <div className="mt-6 p-4 bg-background rounded-lg">
-            <h3 className="text-lg font-medium mb-4">Enriched Data Preview</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {data.description && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground/90">Description</label>
-                  <p className="mt-1 text-sm text-muted-foreground">{data.description}</p>
-                </div>
+              {joiningCompany ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Joining...
+                </>
+              ) : (
+                <>
+                  <UsersIcon className="h-4 w-4 mr-2" />
+                  Join Company
+                </>
               )}
-              {data.website && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground/90">Website</label>
-                  <p className="mt-1 text-sm text-muted-foreground">{data.website}</p>
-                </div>
-              )}
-              {data.headquarters && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground/90">Headquarters</label>
-                  <p className="mt-1 text-sm text-muted-foreground">{data.headquarters}</p>
-                </div>
-              )}
-              {data.founded && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground/90">Founded</label>
-                  <p className="mt-1 text-sm text-muted-foreground">{data.founded}</p>
-                </div>
-              )}
-              {data.specialties && data.specialties.length > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground/90">Specialties</label>
-                  <p className="mt-1 text-sm text-muted-foreground">{data.specialties.join(', ')}</p>
-                </div>
-              )}
-              {data.employee_count && (
-                <div>
-                  <label className="block text-sm font-medium text-foreground/90">Employee Count</label>
-                  <p className="mt-1 text-sm text-muted-foreground">{data.employee_count}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* OAuth connections moved to separate IntegrationsSetupStep */}
-
-        <div className="flex justify-end space-x-4">
-          <Button type="button" variant="outline" onClick={onBack}>
-            Back
-          </Button>
-          <Button type="submit" isLoading={loading}>
-            Continue
-          </Button>
-        </div>
-      </form>
-    </Card>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }; 

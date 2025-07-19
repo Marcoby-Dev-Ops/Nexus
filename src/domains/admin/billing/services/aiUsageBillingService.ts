@@ -118,7 +118,16 @@ export class AIUsageBillingService {
   private planCache = new Map<string, BillingPlan>();
 
   constructor() {
-    this.loadBillingPlans();
+    // Only load billing plans if we're in a browser environment and not on a public page
+    if (typeof window !== 'undefined' && !this.isPublicPage()) {
+      this.loadBillingPlans();
+    }
+  }
+
+  private isPublicPage(): boolean {
+    if (typeof window === 'undefined') return false;
+    const publicRoutes = ['/', '/login', '/signup', '/reset-password', '/waitlist', '/marketing'];
+    return publicRoutes.some(route => window.location.pathname.startsWith(route));
   }
 
   /**

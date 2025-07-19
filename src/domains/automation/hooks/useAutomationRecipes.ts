@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { automationRecipeEngine } from '@/shared/lib/automation/recipes/automationRecipeEngine';
-import type { AutomationRecipe, RecipeDeployment, RecipeExecutionResult } from '@/shared/lib/automation/recipes/automationRecipeEngine';
+import { automationRecipeEngine } from '@/domains/automation/automationRecipeEngine';
+import type { AutomationRecipe, RecipeDeployment, RecipeExecutionResult } from '@/domains/automation/automationRecipeEngine';
 import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
 import { toast } from 'sonner';
 

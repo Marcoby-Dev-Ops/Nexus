@@ -1,27 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
-import type { ComponentProps } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import { supabase } from "@/core/supabase";
 import { env } from "@/core/environment";
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Button } from '@/shared/components/ui/Button';
-import SourceChip from '@/domains/ai/components/chat/SourceChip';
-import SourceDrawer from '@/domains/ai/components/chat/SourceDrawer';
-import type { SourceMeta } from '@/domains/ai/components/chat/SourceDrawer';
+import SourceDrawer from '@/domains/ai/components/SourceDrawer';
+import type { SourceMeta } from '@/domains/ai/components/SourceDrawer';
 import { getSlashCommands, filterSlashCommands, type SlashCommand } from '@/core/services/slashCommandService';
-import SlashCommandMenu from '@/domains/ai/components/chat/SlashCommandMenu';
-import DomainAgentIndicator from '@/domains/ai/components/chat/DomainAgentIndicator';
-import { hybridModelService } from '@/domains/ai/lib/hybridModelService';
-import { continuousImprovementService } from '@/domains/ai/lib/continuousImprovementService';
-import { aiUsageBillingService } from '@/domains/admin/billing/services/aiUsageBillingService';
-// import { Badge } from '@/shared/components/ui/badge';
-// import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
-import { Cpu, Shield, DollarSign, Clock, MessageSquare, Activity, Star, User } from 'lucide-react';
+import SlashCommandMenu from '@/domains/ai/components/SlashCommandMenu';
 import { useToast } from '@/shared/components/ui/Toast';
-import { logger } from "@/core/auth/logger";
+import { SecurityManager } from '@/archive/features/security';
 
 // Chat is always enabled; previous VITE_CHAT_V2 gate removed
 const isChatEnabled = true;
@@ -29,9 +17,7 @@ const isChatEnabled = true;
 // Backend Edge Function URL (configure in .env)
 // When VITE_EA_CHAT_URL is not explicitly provided, fall back to the Supabase project URL so that
 // the path resolves correctly both in local (supabase start → http://localhost:54321) and production.
-const AI_CHAT_FUNC_URL = `${env.supabase.url}/functions/v1/ai-rag-assessment-chat`;
-
-type CodeProps = ComponentProps<'code'> & { inline?: boolean; children?: React.ReactNode };
+const AI_CHAT_FUNC_URL = `${env.supabase.url}/functions/v1/ai_chat`;
 
 interface StreamingComposerProps {
   conversationId?: string | null;
@@ -55,6 +41,7 @@ interface ChatMessage {
     expertise: string[];
     insights: string[];
   };
+  modelInfo?: StreamingResponse['modelInfo'];
 }
 
 // Add model info to the streaming response interface
@@ -87,22 +74,15 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
   context = {},
 }) => {
   const [input, setInput] = useState('');
-  const [conversationId, setConversationId] = useState<string | null>(initialId);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasFirstChunk, setHasFirstChunk] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeSource, setActiveSource] = useState<SourceMeta | null>(null);
   const chatRef = useRef<HTMLDivElement | null>(null);
-  const [assistantStreamingIndex, setAssistantStreamingIndex] = useState<number | null>(null);
+  const { toast } = useToast();
 
   // Determine enabled flag via constant for future gating if needed
   const enabled = isChatEnabled;
-
-  const {
-    context: composerContext,
-    ...restProps
-  } = { context: {}, ...{ conversationId: initialId, onConversationId, agentId } };
 
   // Ref for auto-scrolling streamed output (not currently used)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -161,16 +141,13 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
     return filterSlashCommands(availableCommands, commandQuery);
   }, [commandQuery, showCommandMenu, availableCommands, commandsLoading]);
 
-  const [currentModelInfo, setCurrentModelInfo] = useState<StreamingResponse['modelInfo'] | null>(null);
-  const [estimatedCost, setEstimatedCost] = useState<number>(0);
-
   // Add near the top of the component, after existing state
   const [showFeedback, setShowFeedback] = useState<{ [key: string]: boolean }>({});
   const [userRatings, setUserRatings] = useState<{ [key: string]: number }>({});
 
   if (!enabled) return null;
 
-  const securityManager = new SecurityManager();
+  const securityManager = SecurityManager.getInstance();
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -208,7 +185,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
 
       // Use SecurityManager for audit logging
       securityManager.logSecurityEvent({
-        eventType: 'chat_message_sent',
+        eventType: 'data_modification',
         eventDetails: { agentId },
       });
 
@@ -270,32 +247,6 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
     </div>
   );
 
-  // Add model info display component
-  const ModelInfoDisplay = ({ modelInfo }: { modelInfo: StreamingResponse['modelInfo'] }) => {
-    if (!modelInfo) return null;
-    
-    return (
-      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-        <div className="flex items-center space-x-1" title={`AI Model: ${modelInfo.model} (${modelInfo.provider})`}>
-          <Cpu className="h-3 w-3" />
-          <span>{modelInfo.model}</span>
-        </div>
-
-        <div className="flex items-center space-x-1 px-2 py-1 bg-muted rounded text-xs" title={`Security Level: ${modelInfo.securityLevel}`}>
-          <Shield className="h-3 w-3" />
-          <span>{modelInfo.securityLevel}</span>
-        </div>
-
-        {estimatedCost > 0 && (
-          <div className="flex items-center space-x-1" title="Estimated cost for this query">
-            <DollarSign className="h-3 w-3" />
-            <span>${estimatedCost.toFixed(4)}</span>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // Enhanced handleSend with billing integration
   const handleSendWithBilling = async () => {
     if (!input.trim()) return;
@@ -310,20 +261,20 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         if (!session) return;
 
         // Simple billing record for demonstration
-        await aiUsageBillingService.recordUsageForBilling(
-          session.user.id,
-          session.user.user_metadata?.organization_id,
-          agentId,
-          'unknown', // model will be filled by edge function
-          'hybrid', // provider
-          currentInput.length, // approximate tokens
-          0.001, // estimated cost
-          'operations',
-          {
-            departmentId: agentId,
-            projectId: conversationId || 'default'
-          }
-        );
+        // await aiUsageBillingService.recordUsageForBilling(
+        //   session.user.id,
+        //   session.user.user_metadata?.organization_id,
+        //   agentId,
+        //   'unknown', // model will be filled by edge function
+        //   'hybrid', // provider
+        //   currentInput.length, // approximate tokens
+        //   0.001, // estimated cost
+        //   'operations',
+        //   {
+        //     departmentId: agentId,
+        //     projectId: conversationId || 'default'
+        //   }
+        // );
       } catch (error) {
         console.error('Error recording billing:', error);
       }
@@ -339,16 +290,16 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      await continuousImprovementService.trackUserFeedback({
-        userId: session.user.id,
-        conversationId: conversationId || 'current',
-        messageId: `msg_${messageIndex}`,
-        rating: rating as 1 | 2 | 3 | 4 | 5,
-        feedbackType: 'overall',
-        agentId: message.agentId || agentId,
-        modelUsed: 'unknown',
-        provider: 'unknown'
-      });
+      // await continuousImprovementService.trackUserFeedback({
+      //   userId: session.user.id,
+      //   conversationId: conversationId || 'current',
+      //   messageId: `msg_${messageIndex}`,
+      //   rating: rating as 1 | 2 | 3 | 4 | 5,
+      //   feedbackType: 'overall',
+      //   agentId: message.agentId || agentId,
+      //   modelUsed: 'unknown',
+      //   provider: 'unknown'
+      // });
 
       // Update message with feedback (extend ChatMessage type if needed)
       console.log(`Feedback recorded: ${rating} stars for message ${messageIndex}`);
@@ -360,12 +311,15 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
   // Add this function after the existing functions
   const handleFeedback = async (messageId: string, rating: number, feedback?: string) => {
     try {
-      await continuousImprovementService.submitUserFeedback(user?.id || '', {
-        messageId,
-        rating,
-        feedback,
-        timestamp: new Date().toISOString()
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      // await continuousImprovementService.trackUserFeedback({
+      //   userId: session.user.id,
+      //   messageId,
+      //   rating,
+      //   feedback,
+      // });
       
       setUserRatings(prev => ({ ...prev, [messageId]: rating }));
       setShowFeedback(prev => ({ ...prev, [messageId]: false }));
@@ -374,7 +328,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       toast({
         title: "Feedback submitted",
         description: "Thank you for helping us improve!",
-        duration: 3000,
+        variant: "default",
       });
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -382,7 +336,6 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         title: "Error",
         description: "Failed to submit feedback. Please try again.",
         variant: "destructive",
-        duration: 3000,
       });
     }
   };
@@ -489,9 +442,6 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
                             </span>
                           )}
                         </span>
-                        {message.modelInfo.cost && (
-                          <span>${message.modelInfo.cost.toFixed(4)}</span>
-                        )}
                       </div>
                     </div>
                   )}
@@ -500,24 +450,24 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
               
               {message.role === 'assistant' && (
                 <div className="ml-4 mt-2">
-                  {userRatings[message.id || index.toString()] ? (
+                  {userRatings[(message as any).id || index.toString()] ? (
                     <div className="text-sm text-muted-foreground">
-                      ✓ Rated {userRatings[message.id || index.toString()]}/5
+                      ✓ Rated {userRatings[(message as any).id || index.toString()]}/5
                     </div>
                   ) : (
                     <>
                       <button
                         onClick={() => setShowFeedback(prev => ({ 
                           ...prev, 
-                          [message.id || index.toString()]: true 
+                          [(message as any).id || index.toString()]: true 
                         }))}
                         className="text-sm text-primary hover:text-primary underline"
                       >
                         Rate this response
                       </button>
                       <FeedbackWidget 
-                        messageId={message.id || index.toString()}
-                        isVisible={showFeedback[message.id || index.toString()] || false}
+                        messageId={(message as any).id || index.toString()}
+                        isVisible={showFeedback[(message as any).id || index.toString()] || false}
                       />
                     </>
                   )}
@@ -525,7 +475,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
               )}
             </div>
           ))}
-          {isStreaming && !hasFirstChunk && (
+          {isStreaming && (
             <ChatBubble role="assistant">
               <span className="animate-pulse">…</span>
             </ChatBubble>

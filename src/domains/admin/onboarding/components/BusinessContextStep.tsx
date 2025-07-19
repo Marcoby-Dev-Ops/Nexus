@@ -369,7 +369,6 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
         </Button>
         <Button 
           onClick={handleSubmit}
-          disabled={!businessData.business_model || businessData.primary_departments.length === 0}
         >
           Continue
         </Button>

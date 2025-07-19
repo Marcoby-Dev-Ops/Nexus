@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Core services initialization
 import { logger } from '@/core/auth/logger';
 import { validateEnvironment } from '@/core/environment';
+import { initializePersistentAuth } from '@/shared/services/persistentAuthService';
 
 // Callback system
 import { initializeCallbackSystem } from '@/shared/callbacks';
@@ -32,7 +33,30 @@ try {
   // Continue with app initialization even if validation fails
 }
 
+// Initialize core services in proper order
+const initializeCoreServices = async () => {
+  try {
+    // Step 1: Initialize persistent authentication first
+    await initializePersistentAuth();
+    logger.info('Persistent authentication initialized successfully');
+    
+    // Step 2: Initialize callback system
+    await initializeCallbackSystem();
+    
+    // Step 3: Initialize module registry
+    initializeModuleRegistry();
+    
+    logger.info('All app services initialized successfully');
+  } catch (error) {
+    logger.error({ error }, 'Failed to initialize some app services');
+    // Continue with app startup even if some services fail
+  }
+};
 
+// Initialize services
+initializeCoreServices().catch(error => {
+  logger.error({ error }, 'Failed to initialize app services');
+});
 
 // Initialize core services
 const queryClient = new QueryClient({
@@ -104,27 +128,6 @@ window.addEventListener('unhandledrejection', (event) => {
     event.preventDefault(); // Prevent the error from showing in console
     return;
   }
-});
-
-// Initialize services on app startup
-const initializeAppServices = async () => {
-  try {
-    // Initialize callback system
-    await initializeCallbackSystem();
-    
-    // Initialize module registry
-    initializeModuleRegistry();
-    
-    logger.info('All app services initialized successfully');
-  } catch (error) {
-    logger.error({ error }, 'Failed to initialize some app services');
-    // Continue with app startup even if some services fail
-  }
-};
-
-// Initialize services
-initializeAppServices().catch(error => {
-  logger.error({ error }, 'Failed to initialize app services');
 });
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

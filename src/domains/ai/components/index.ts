@@ -15,6 +15,9 @@ export { default as SourceDrawer } from './SourceDrawer';
 export { MVPScopeIndicator } from './MVPScopeIndicator';
 export { QuickChatTrigger } from './QuickChatTrigger';
 
+// Executive Assistant Components
+export { ExecutiveAssistant } from './ExecutiveAssistant';
+
 // Advanced AI Components
 export { AdvancedAICapabilitiesDemo } from '../features/components/AdvancedAICapabilitiesDemo';
 

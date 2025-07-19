@@ -150,8 +150,19 @@ export const SystemContextProvider = ({ children }: { children: ReactNode }) => 
   }, []);
 
   useEffect(() => {
-    refresh();
+    // Only fetch data if we're not on a public page
+    if (typeof window !== 'undefined' && !isPublicPage()) {
+      refresh();
+    } else {
+      setLoading(false);
+    }
   }, [refresh]);
+
+  const isPublicPage = (): boolean => {
+    if (typeof window === 'undefined') return false;
+    const publicRoutes = ['/', '/login', '/signup', '/reset-password', '/waitlist', '/marketing'];
+    return publicRoutes.some(route => window.location.pathname.startsWith(route));
+  };
 
   const value: SystemContextValue = {
     integrationStatus,

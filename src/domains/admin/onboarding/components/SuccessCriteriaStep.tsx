@@ -463,7 +463,6 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
         </Button>
         <Button 
           onClick={handleSubmit}
-          disabled={!criteriaData.primary_success_metric || criteriaData.success_scenarios.length === 0}
         >
           Continue
         </Button>

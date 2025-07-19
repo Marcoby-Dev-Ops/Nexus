@@ -3,31 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Input } from '@/shared/components/ui/Input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/shared/components/ui/Dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
-import { useNotifications } from '@/shared/core/hooks/NotificationContext';
-import { automationTemplateImporter, type AutomationTemplate } from '@/shared/lib/automation/templateImporter';
+import { useNotifications } from '@/shared/components/ui/NotificationContext';
+import { automationTemplateImporter, type AutomationTemplate } from '@/domains/automation/templateImporter';
 import {
   Search,
-  Filter,
   Download,
   Star,
   Clock,
   Zap,
-  ExternalLink,
   Upload,
-  FileText,
-  CheckCircle2,
   AlertCircle,
   TrendingUp,
   Users,
   Sparkles,
-  Code,
-  GitBranch,
   Play,
   Settings,
   Eye,

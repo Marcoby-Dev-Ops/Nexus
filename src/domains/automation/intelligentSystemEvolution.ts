@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '../core/supabase';
-import { n8nService } from '@/shared/automation/n8n/n8nService';
+import { n8nService } from '@/domains/automation/n8nService';
 
 interface UsagePattern {
   id: string;

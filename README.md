@@ -134,6 +134,17 @@ pnpm run build
 
 ---
 
+## FIRE CYCLE as the Operating Rhythm
+
+- The **FIRE CYCLE** (Focus, Insight, Roadmap, Execute) is globally available across Nexus.
+- Every domain, agent, and workflow can access and update the current FIRE phase using our centralized context.
+- The UI persistently surfaces the user’s phase and next action, making progress and accountability visible at all times.
+- All major features, prompts, and agent advice are “FIRE-aware,” so users never lose sight of what matters and what’s next.
+- The FIRE CYCLE is not a feature or module—it is the *operating rhythm* and workflow engine that powers every part of Nexus, from onboarding to analytics, thought capture, project management, and daily/weekly rituals.
+- Users experience the FIRE CYCLE as a visible, actionable, and repeatable process that turns ideas and data into real results, everywhere in the platform.
+
+---
+
 **Ready to build the future of business? Start with the [Nexus Vision & Execution Plan](docs/NEXUS_VISION_EXECUTION_PLAN.md).**
 
 ## 🛠️ **Development**

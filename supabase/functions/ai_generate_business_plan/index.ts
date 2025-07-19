@@ -2,68 +2,254 @@
  * ai_generate_business_plan
  * Creates or refines a business plan markdown for the given company using OpenAI.
  */
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.5";
-import "https://deno.land/std@0.177.0/dotenv/load.ts";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.10';
+import { corsHeaders } from '../_shared/cors.ts';
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY")!;
+interface BusinessPlanRequest {
+  companyName: string;
+  industry: string;
+  businessModel: string;
+  targetMarket: string;
+  competitiveAdvantage: string;
+  financialProjections?: {
+    revenue: number;
+    expenses: number;
+    timeline: number; // months
+  };
+  userId: string;
+  companyId?: string;
+}
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+interface BusinessPlanSection {
+  title: string;
+  content: string;
+  keyPoints: string[];
+}
+
+interface BusinessPlanResponse {
+  success: boolean;
+  planId?: string;
+  sections: BusinessPlanSection[];
+  summary: string;
+  generatedAt: string;
+}
 
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405 });
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+
+    if (!supabaseUrl || !supabaseServiceKey || !openaiApiKey) {
+      throw new Error('Missing required environment variables');
     }
 
-    const { company_id, focus_area } = await req.json();
-    if (!company_id) {
-      return new Response(JSON.stringify({ error: "company_id required" }), { status: 400 });
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authenticate user
+    const authHeader = req.headers.get('authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
 
-    // Fetch company and profile
-    const { data: company } = await supabase.from("companies").select("name, industry, size").eq("id", company_id).single();
-    const { data: profile } = await supabase
-      .from("ai_company_profiles")
-      .select("tagline, motto, mission_statement, vision_statement, about_md")
-      .eq("company_id", company_id)
+    const jwt = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+    
+    if (authError || !user?.id) {
+      return new Response(JSON.stringify({ error: 'Invalid token' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
+
+    const requestData = await req.json() as BusinessPlanRequest;
+
+    if (!requestData.companyName || !requestData.industry || !requestData.businessModel) {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+      });
+    }
+
+    // Generate business plan using AI
+    const planSections = await generateBusinessPlanSections(requestData, openaiApiKey);
+    
+    // Create summary
+    const summary = await generatePlanSummary(planSections, openaiApiKey);
+
+    // Store business plan in database
+    const { data: planData, error: planError } = await supabase
+      .from('business_plans')
+      .insert({
+        company_name: requestData.companyName,
+        industry: requestData.industry,
+        business_model: requestData.businessModel,
+        target_market: requestData.targetMarket,
+        competitive_advantage: requestData.competitiveAdvantage,
+        financial_projections: requestData.financialProjections,
+        sections: planSections,
+        summary,
+        user_id: requestData.userId,
+        company_id: requestData.companyId,
+        generated_at: new Date().toISOString(),
+      })
+      .select()
       .single();
 
-    // Compose prompt
-    const basePrompt = `Act as a seasoned startup advisor. Create a concise but comprehensive business plan (markdown) for the company described below. Include Executive Summary, Mission, Vision, Value Proposition, Target Market, Competitive Advantage, Goals & Metrics, and Tagline suggestions. Incorporate existing details where available. If focus_area is provided, only generate that section.\n\nCompany details:\nName: ${company?.name}\nIndustry: ${company?.industry}\nSize: ${company?.size}\nTagline: ${profile?.tagline || 'N/A'}\nMotto: ${profile?.motto || 'N/A'}\nMission: ${profile?.mission_statement || 'N/A'}\nVision: ${profile?.vision_statement || 'N/A'}\nAbout: ${profile?.about_md?.slice(0, 500) || 'N/A'}\nFocus area: ${focus_area || 'full plan'}\n`;
+    if (planError) {
+      console.error('Failed to store business plan:', planError);
+      throw new Error('Failed to store business plan');
+    }
 
-    const aiRes = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
+    const response: BusinessPlanResponse = {
+      success: true,
+      planId: planData.id,
+      sections: planSections,
+      summary,
+      generatedAt: new Date().toISOString(),
+    };
+
+    return new Response(JSON.stringify(response), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200,
+    });
+
+  } catch (error) {
+    console.error('ai_generate_business_plan error:', error);
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : 'Unknown error',
+      success: false,
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500,
+    });
+  }
+});
+
+async function generateBusinessPlanSections(request: BusinessPlanRequest, apiKey: string): Promise<BusinessPlanSection[]> {
+  const sections = [
+    'Executive Summary',
+    'Company Description',
+    'Market Analysis',
+    'Organization & Management',
+    'Service or Product Line',
+    'Marketing & Sales Strategy',
+    'Funding Requirements',
+    'Financial Projections',
+    'Risk Analysis',
+    'Implementation Timeline'
+  ];
+
+  const planSections: BusinessPlanSection[] = [];
+
+  for (const sectionTitle of sections) {
+    const prompt = `Generate a comprehensive ${sectionTitle.toLowerCase()} section for a business plan with the following details:
+
+Company: ${request.companyName}
+Industry: ${request.industry}
+Business Model: ${request.businessModel}
+Target Market: ${request.targetMarket}
+Competitive Advantage: ${request.competitiveAdvantage}
+${request.financialProjections ? `Financial Projections: Revenue $${request.financialProjections.revenue}, Expenses $${request.financialProjections.expenses}, Timeline ${request.financialProjections.timeline} months` : ''}
+
+Please provide:
+1. A detailed section content
+2. 3-5 key points or takeaways
+3. Make it professional and actionable
+
+Format the response as JSON with "content" and "keyPoints" fields.`;
+
+    try {
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content || '';
+
+      // Try to parse JSON response, fallback to plain text
+      let parsedContent;
+      try {
+        parsedContent = JSON.parse(content);
+      } catch {
+        parsedContent = { content, keyPoints: [] };
+      }
+
+      planSections.push({
+        title: sectionTitle,
+        content: parsedContent.content || content,
+        keyPoints: parsedContent.keyPoints || [],
+      });
+
+    } catch (error) {
+      console.error(`Error generating ${sectionTitle}:`, error);
+      // Add fallback content
+      planSections.push({
+        title: sectionTitle,
+        content: `[${sectionTitle} content generation failed]`,
+        keyPoints: [],
+      });
+    }
+  }
+
+  return planSections;
+}
+
+async function generatePlanSummary(sections: BusinessPlanSection[], apiKey: string): Promise<string> {
+  const sectionsText = sections.map(s => `${s.title}:\n${s.content}`).join('\n\n');
+
+  const prompt = `Create a concise executive summary (2-3 paragraphs) for this business plan:
+
+${sectionsText}
+
+Focus on the most important points and make it compelling for stakeholders.`;
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [{ role: "system", content: basePrompt }],
-        temperature: 0.7,
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.5,
+        max_tokens: 500,
       }),
     });
 
-    if (!aiRes.ok) {
-      const errText = await aiRes.text();
-      return new Response(JSON.stringify({ error: "OpenAI error", details: errText }), { status: 500 });
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
-    const completion = await aiRes.json();
-    const planMd = completion.choices?.[0]?.message?.content as string;
+    const data = await response.json();
+    return data.choices[0]?.message?.content || 'Executive summary generation failed.';
 
-    // Store in profile (about_md) and return
-    await supabase
-      .from("ai_company_profiles")
-      .update({ about_md: planMd })
-      .eq("company_id", company_id);
-
-    return new Response(JSON.stringify({ success: true, business_plan_md: planMd }), { status: 200 });
-  } catch (err) {
-    console.error("bp error", err);
-    return new Response(JSON.stringify({ error: "Unhandled" }), { status: 500 });
+  } catch (error) {
+    console.error('Error generating summary:', error);
+    return 'Executive summary generation failed.';
   }
-}); 
+} 

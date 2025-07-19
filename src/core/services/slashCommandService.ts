@@ -37,7 +37,16 @@ class SlashCommandService {
   private lastCacheUpdate = 0;
 
   private constructor() {
-    this.initializeCache();
+    // Only initialize cache if we're not on a public page
+    if (typeof window !== 'undefined' && !this.isPublicPage()) {
+      this.initializeCache();
+    }
+  }
+
+  private isPublicPage(): boolean {
+    if (typeof window === 'undefined') return false;
+    const publicRoutes = ['/', '/login', '/signup', '/reset-password', '/waitlist', '/marketing'];
+    return publicRoutes.some(route => window.location.pathname.startsWith(route));
   }
 
   /**

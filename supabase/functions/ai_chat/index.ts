@@ -112,9 +112,10 @@ serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders, status: 200 });
   }
+  
   // Public health check: allow unauthenticated GET
   if (req.method === 'GET' && !req.headers.get('Authorization')) {
-    return new Response(JSON.stringify({ status: 'ok' }), {
+    return new Response(JSON.stringify({ status: 'ok', service: 'ai_chat' }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
@@ -153,12 +154,25 @@ serve(async (req: Request) => {
     if (req.method === 'GET') {
       const url = new URL(req.url);
       // Example URL: /.../ai_chat/123e4567-e89b-12d3-a456-426614174000
-      const conversationId = url.pathname.split('/').pop();
+      const pathParts = url.pathname.split('/');
+      const conversationId = pathParts[pathParts.length - 1];
 
+      // If no conversation ID provided, return available conversations
       if (!conversationId || conversationId === 'ai_chat') {
-        return new Response(JSON.stringify({ error: 'Missing or invalid conversationId' }), {
+        const { data: conversations, error: convErr } = await supabaseClient
+          .from('ai_conversations')
+          .select('id, title, created_at, updated_at')
+          .eq('user_id', userId)
+          .order('updated_at', { ascending: false })
+          .limit(10);
+
+        if (convErr) {
+          throw convErr;
+        }
+
+        return new Response(JSON.stringify({ conversations: conversations || [] }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
+          status: 200,
         });
       }
 

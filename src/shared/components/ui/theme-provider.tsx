@@ -19,7 +19,7 @@ type ThemeProviderState = {
 const initialState: ThemeProviderState = {
   theme: 'system',
   setTheme: () => null,
-  primaryColor: 'blue',
+  primaryColor: 'green',
   setPrimaryColor: () => null,
 };
 
@@ -42,7 +42,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 export function ThemeProvider({ 
   children, 
   defaultTheme = 'system', 
-  defaultColor = 'blue',
+  defaultColor = 'green',
   ...props 
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(

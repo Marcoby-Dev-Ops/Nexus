@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 // import { PageLayout } from '@/shared/components/layout/PageLayout';
-import { Brain, CheckCircle, Clock, Target, TrendingUp, Users, Calendar, FileText, Zap, Focus, BookOpen, Coffee } from 'lucide-react';
+import { Brain, CheckCircle, Clock, Target, Calendar, Focus, BookOpen, Coffee } from 'lucide-react';
 import { AIInsightsWidget } from '@/shared/features/widgets/AIInsightsWidget';
 import { CalendarWidget } from '@/shared/features/widgets/CalendarWidget';
-import { TasksWidget } from '@/domains/workspace/components/widgets/TasksWidget';
-import { IdeasWidget } from '@/domains/workspace/components/widgets/IdeasWidget';
-import { RecentsWidget } from '@/domains/workspace/components/widgets/RecentsWidget';
-import { QuickActionsWidget } from '@/domains/workspace/components/widgets/QuickActionsWidget';
-import { EmailWidget } from '@/domains/workspace/components/widgets/EmailWidget';
-import { ProactiveAlertsWidget } from '@/domains/workspace/components/widgets/ProactiveAlertsWidget';
-import { NotificationsWidget } from '@/domains/workspace/components/widgets/NotificationsWidget';
-import { LearningFeedWidget } from '@/domains/workspace/components/widgets/LearningFeedWidget';
-import { CelebrationWidget } from '@/domains/workspace/components/widgets/CelebrationWidget';
-import { NextBestActionWidget } from '@/domains/workspace/components/widgets/NextBestActionWidget';
+import { TasksWidget } from '@/domains/workspace/components/TasksWidget';
+import { IdeasWidget } from '@/domains/workspace/components/IdeasWidget';
+import { RecentsWidget } from '@/domains/workspace/components/RecentsWidget';
+import { EmailWidget } from '@/domains/workspace/components/EmailWidget';
+import { ProactiveAlertsWidget } from '@/domains/workspace/components/ProactiveAlertsWidget';
+import { NotificationsWidget } from '@/domains/workspace/components/NotificationsWidget';
+import { LearningFeedWidget } from '@/domains/workspace/components/LearningFeedWidget';
+import { CelebrationWidget } from '@/domains/workspace/components/CelebrationWidget';
+import { NextBestActionWidget } from '@/domains/workspace/components/NextBestActionWidget';
 import { WorkspaceQuickActions } from '@/domains/workspace/components/WorkspaceQuickActions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
 import { Outlet, useMatch } from 'react-router-dom';
 
@@ -32,10 +29,6 @@ const WorkspacePage: React.FC = () => {
 
   const handleCelebrationComplete = () => {
     setIsCelebrating(false);
-  };
-
-  const triggerCelebration = () => {
-    setIsCelebrating(true);
   };
 
   // Personal productivity stats

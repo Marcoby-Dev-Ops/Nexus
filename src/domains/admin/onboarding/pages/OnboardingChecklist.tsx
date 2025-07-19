@@ -72,13 +72,32 @@ function useUserProfile() {
 
         if (fetchError) {
           console.error('Error fetching profile:', fetchError);
-          setError(fetchError.message);
+          // Don't treat this as a fatal error - just log it and continue
+          // Set a basic profile with user info
+          setProfile({
+            id: user.id,
+            user_id: user.id,
+            email: user.email,
+            full_name: user.email?.split('@')[0] || 'User',
+            created_at: user.created_at
+          });
         } else {
           setProfile(data);
         }
       } catch (err) {
         console.error('Error in useUserProfile:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        // Don't treat this as a fatal error - just log it and continue
+        // Set a basic profile with user info
+        const user = await authUtils.getCurrentUser();
+        if (user) {
+          setProfile({
+            id: user.id,
+            user_id: user.id,
+            email: user.email,
+            full_name: user.email?.split('@')[0] || 'User',
+            created_at: user.created_at
+          });
+        }
       } finally {
         setLoading(false);
       }
@@ -106,24 +125,23 @@ function useUserIntegrations() {
           return;
         }
 
-        // For now, we'll check if there are any integrations in the system
-        // You can replace this with actual integration data when available
+        // Check for user integrations in the proper table
         const { data, error: fetchError } = await supabase
-          .from('debug_logs')
+          .from('user_integrations')
           .select('*')
-          .limit(1);
+          .eq('user_id', user.id);
 
         if (fetchError) {
           console.error('Error fetching integrations:', fetchError);
-          setError(fetchError.message);
+          // Don't treat this as a fatal error - just log it and continue
+          setIntegrations([]);
         } else {
-          // For demo purposes, we'll consider having any data as having integrations
-          // Replace this with actual integration logic
-          setIntegrations(data && data.length > 0 ? [{ id: 'demo', name: 'Demo Integration' }] : []);
+          setIntegrations(data || []);
         }
       } catch (err) {
         console.error('Error in useUserIntegrations:', err);
-        setError(err instanceof Error ? err.message : 'Unknown error');
+        // Don't treat this as a fatal error - just log it and continue
+        setIntegrations([]);
       } finally {
         setLoading(false);
       }
@@ -187,19 +205,23 @@ export const OnboardingChecklist: React.FC = () => {
 
   // Show error state
   if (profileError || integrationsError) {
-    return (
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Welcome!</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8 text-red-600">
-            <XCircle className="h-6 w-6 mr-2" />
-            <span>Unable to load onboarding data. Please refresh the page.</span>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    // Only show error if we don't have any profile data at all
+    if (!profile) {
+      return (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Welcome!</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-8 text-red-600">
+              <XCircle className="h-6 w-6 mr-2" />
+              <span>Unable to load onboarding data. Please refresh the page.</span>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    // If we have profile data, continue with the onboarding flow
   }
 
   if (allDone) {

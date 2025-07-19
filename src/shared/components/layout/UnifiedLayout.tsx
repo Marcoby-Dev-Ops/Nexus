@@ -15,6 +15,7 @@ import { Header } from '@/shared/components/layout/Header';
 import { Sidebar } from '@/shared/components/layout/Sidebar';
 import { OnboardingChecklist } from '@/domains/admin/onboarding/pages/OnboardingChecklist';
 import { ThemePanel } from '@/shared/components/theme/ThemePanel';
+import { FireCycleFloatingWidget } from '@/core/fire-cycle/FireCycleFloatingWidget';
 type NavItem = import("./navConfig").NavItem;
 
 interface UnifiedLayoutProps {
@@ -122,6 +123,11 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
       </div>
       <OnboardingChecklist />
       {isThemePanelOpen && <ThemePanel />}
+      
+      {/* Mobile FIRE CYCLE Floating Widget */}
+      <div className="lg:hidden">
+        <FireCycleFloatingWidget position="bottom-right" />
+      </div>
     </div>
   );
 }; 

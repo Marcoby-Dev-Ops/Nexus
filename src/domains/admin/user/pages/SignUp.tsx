@@ -1,13 +1,19 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { AuthForm } from '@/shared/components/ui/AuthForm';
 
 export const SignUp = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+  
+  // Get redirect URL from query parameters or state
+  const searchParams = new URLSearchParams(location.search);
+  const redirectUrl = searchParams.get('redirect') || 
+                     (location.state as { from?: { pathname: string } })?.from?.pathname || 
+                     '/home';
 
   const handleSuccess = () => {
-    navigate(from);
+    // Navigate to the intended destination after successful authentication
+    navigate(redirectUrl, { replace: true });
   };
 
   return (
@@ -142,13 +148,13 @@ export const SignUp = () => {
 
           {/* Footer Links */}
           <div className="mt-8 text-center">
-            <div className="text-sm text-muted-foreground dark:text-muted-foreground space-x-4">
-              <a href="#" className="hover:text-primary transition-colors">Privacy Policy</a>
-              <span>•</span>
-              <a href="#" className="hover:text-primary transition-colors">Terms of Service</a>
-              <span>•</span>
-              <a href="#" className="hover:text-primary transition-colors">Help Center</a>
-            </div>
+                          <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
+                <Link to="/legal/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+                <span>•</span>
+                <Link to="/legal/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
+                <span>•</span>
+                <Link to="/help" className="hover:text-primary transition-colors">Help Center</Link>
+              </div>
           </div>
         </div>
       </div>

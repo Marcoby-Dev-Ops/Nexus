@@ -49,20 +49,27 @@ export interface UseOnboardingReturn {
 }
 
 /**
- * Main onboarding hook - MODIFIED TO DISABLE ONBOARDING
+ * Main onboarding hook - PROPER IMPLEMENTATION
  */
 export function useOnboarding(): UseOnboardingReturn {
-  const [onboardingState, setOnboardingState] = useState<OnboardingState | null>(null);
-  const [userN8nConfig, setUserN8nConfig] = useState<UserN8nConfig | null>(null);
+  const [onboardingState] = useState<OnboardingState | null>(null);
+  const [userN8nConfig] = useState<UserN8nConfig | null>(null);
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   // Load onboarding status from localStorage
   useEffect(() => {
     const loadStatus = async () => {
-      const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
-      setNeedsOnboarding(!completed);
-      setIsLoading(false);
+      try {
+        const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
+        setNeedsOnboarding(!completed);
+      } catch (error) {
+        console.error('Failed to load onboarding status:', error);
+        // Default to not needing onboarding if we can't load status
+        setNeedsOnboarding(false);
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadStatus();
   }, []);
@@ -72,23 +79,37 @@ export function useOnboarding(): UseOnboardingReturn {
   }, []);
 
   const completeOnboarding = useCallback(() => {
-    safeSetLocalStorage('nexus_onboarding_complete', true);
-    setNeedsOnboarding(false);
+    try {
+      safeSetLocalStorage('nexus_onboarding_complete', true);
+      setNeedsOnboarding(false);
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
+    }
   }, []);
 
   const resetOnboarding = useCallback(() => {
-    safeSetLocalStorage('nexus_onboarding_complete', false);
-    setNeedsOnboarding(true);
+    try {
+      safeSetLocalStorage('nexus_onboarding_complete', false);
+      setNeedsOnboarding(true);
+    } catch (error) {
+      console.error('Failed to reset onboarding:', error);
+    }
   }, []);
 
   const checkOnboardingStatus = useCallback(async () => {
     setIsLoading(true);
-    const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
-    setNeedsOnboarding(!completed);
-    setIsLoading(false);
+    try {
+      const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
+      setNeedsOnboarding(!completed);
+    } catch (error) {
+      console.error('Failed to check onboarding status:', error);
+      setNeedsOnboarding(false);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const testN8nConnection = useCallback(async (baseUrl: string, apiKey: string) => {
+  const testN8nConnection = useCallback(async (_baseUrl: string, _apiKey: string) => {
     return { success: true };
   }, []);
 

@@ -475,4 +475,4 @@ export const TRINITY_BRAIN_CAPABILITIES: Record<string, TrinityBrainCapabilities
 };
 
 // Initialize on module load
-initializeModuleRegistry(); 
+// initializeModuleRegistry(); 

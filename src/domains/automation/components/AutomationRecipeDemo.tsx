@@ -22,9 +22,9 @@ import {
   Bot,
   Workflow
 } from 'lucide-react';
-import { AutomationRecipeBrowser } from '@/shared/features/automation/components/AutomationRecipeBrowser';
-import { useAutomationRecipes } from '@/shared/features/automation/hooks/useAutomationRecipes';
-import type { AutomationRecipe } from '@/shared/lib/automation/recipes/automationRecipeEngine';
+import { AutomationRecipeBrowser } from '@/domains/automation/components/AutomationRecipeBrowser';
+import { useAutomationRecipes } from '@/domains/automation/hooks/useAutomationRecipes';
+import type { AutomationRecipe } from '@/domains/automation/automationRecipeEngine';
 
 export interface AutomationRecipeDemoProps {
   className?: string;

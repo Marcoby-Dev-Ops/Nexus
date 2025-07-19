@@ -1,6 +1,6 @@
 import { supabase } from '@/shared/lib/supabase/supabaseClient';
-import { N8nWorkflowBuilder, N8nWorkflowDefinition } from './n8n/n8nWorkflowBuilder';
-import { n8nService } from '@/shared/automation/n8n/n8nService';
+import { N8nWorkflowBuilder, N8nWorkflowDefinition } from './n8nWorkflowBuilder';
+import { n8nService } from '@/domains/automation/n8nService';
 
 export interface AutomationTemplate {
   id: string;

@@ -46,7 +46,18 @@
     "db:reset": "psql \"$DATABASE_URL\" -f reset_database.sql",
     "db:setup": "psql \"$DATABASE_URL\" -f schema_cleanup_migration.sql",
     "dev:setup": "pnpm supabase:status && pnpm db:setup",
-    "dev:reset": "pnpm db:reset && pnpm db:setup"
+    "dev:reset": "pnpm db:reset && pnpm db:setup",
+    "db:sync:from-remote": "./scripts/sync-database.sh sync-from-remote",
+    "db:sync:to-remote": "./scripts/sync-database.sh sync-to-remote",
+    "db:sync:create-migration": "./scripts/sync-database.sh create-migration",
+    "db:sync:status": "./scripts/sync-database.sh check-status",
+    "db:sync:help": "./scripts/sync-database.sh help",
+    "db:repair-migrations": "./scripts/repair-migrations.sh",
+    "db:quick-repair": "./scripts/quick-repair.sh",
+    "db:wsl-repair": "./scripts/wsl-repair.sh",
+    "sync:to-remote": "./scripts/sync-to-remote.sh",
+    "sync:from-remote": "./scripts/pull-from-remote.sh",
+    "sync:status": "pnpm supabase migration list --linked"
   },
   "pnpm": {
     "allowed-build-scripts": [

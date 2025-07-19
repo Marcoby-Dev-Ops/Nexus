@@ -31,7 +31,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
 
     try {
       switch (mode) {
-        case 'login':
+        case 'login': {
           const { error: signInError } = await supabase.auth.signInWithPassword({
             email,
             password,
@@ -39,8 +39,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
           if (signInError) throw signInError;
           onSuccess?.();
           break;
+        }
 
-        case 'signup':
+        case 'signup': {
           const { error: signUpError } = await supabase.auth.signUp({
             email,
             password,
@@ -51,14 +52,16 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
           if (signUpError) throw signUpError;
           setMessage('Check your email for the confirmation link.');
           break;
+        }
 
-        case 'reset':
+        case 'reset': {
           const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
             redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
           });
           if (resetError) throw resetError;
           setMessage('Check your email for the password reset link.');
           break;
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
@@ -95,6 +98,41 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
       setError(err instanceof Error ? err.message : 'Passkey sign-in failed');
     } finally {
       setPasskeyLoading(false);
+    }
+  };
+
+  // -------------------------------------------------------------
+  // Magic Link Sign-in
+  // -------------------------------------------------------------
+  const handleMagicLinkSignIn = async () => {
+    try {
+      if (!email) {
+        setError('Please enter your email address');
+        return;
+      }
+      
+      setError(null);
+      setLoading(true);
+
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setMessage('Check your email for the magic link to sign in.');
+      
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Magic link sign-in failed';
+      setError(errorMessage);
+      onError?.(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -187,6 +225,18 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
           data-testid="passkey-signin-button"
         >
           Sign in with Passkey
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12 text-base font-medium"
+          isLoading={loading}
+          disabled={loading || !email}
+          onClick={handleMagicLinkSignIn}
+          data-testid="magic-link-signin-button"
+        >
+          Sign in with Magic Link
         </Button>
 
         <div className="text-center space-y-4">

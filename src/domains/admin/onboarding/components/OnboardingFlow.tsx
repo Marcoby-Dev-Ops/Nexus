@@ -1,547 +1,315 @@
 /**
  * OnboardingFlow.tsx
- * Complete onboarding flow for new Nexus users
- * Includes n8n connection setup and configuration
+ * Main onboarding flow component with brain integration
+ * Now includes progressive intelligence and user personalization
  */
+
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, ArrowRight, ArrowLeft, Zap, Settings, Sparkles, Users } from 'lucide-react';
-import { N8nConnectionSetup } from '@/domains/admin/onboarding/components/N8nConnectionSetup';
-import { OrganizationSetupStep } from '@/domains/admin/onboarding/components/OrganizationSetupStep';
-import { IntegrationsSetupStep } from '@/domains/admin/onboarding/components/IntegrationsSetupStep';
-import { UserContextStep } from '@/domains/admin/onboarding/components/UserContextStep';
-import { BusinessContextStep } from '@/domains/admin/onboarding/components/BusinessContextStep';
-import { SuccessCriteriaStep } from '@/domains/admin/onboarding/components/SuccessCriteriaStep';
-import { BusinessSnapshotStep } from '@/domains/admin/onboarding/components/BusinessSnapshotStep';
-import { SetupLoader } from '@/shared/components/patterns/LoadingStates';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Brain, 
+  User, 
+  Sparkles, 
+  TrendingUp,
+  CheckCircle,
+  Target
+} from 'lucide-react';
+
 import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
-import { OnboardingChatAI } from '@/domains/admin/onboarding/components/OnboardingChatAI';
-import Confetti from 'react-confetti';
-import type { OnboardingState, OnboardingStep, UserN8nConfig } from '../types/onboarding';
-import { onboardingManager } from '../services/onboardingManager';
+import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
+
+// Brain Integration Components
+import { UnifiedBrainOnboarding } from './UnifiedBrainOnboarding';
 
 interface OnboardingFlowProps {
   onComplete: () => void;
   className?: string;
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
-  onComplete,
-  className = ''
+interface BrainInsight {
+  id: string;
+  type: 'opportunity' | 'risk' | 'optimization' | 'strategy';
+  title: string;
+  description: string;
+  confidence: number;
+  impact: 'high' | 'medium' | 'low';
+  category: string;
+  timestamp: Date;
+}
+
+interface ExpertKnowledge {
+  id: string;
+  domain: string;
+  principle: string;
+  description: string;
+  application: string;
+  confidence: number;
+  relevance: number;
+  source: string;
+  timestamp: Date;
+}
+
+interface SystemIntelligence {
+  understandingLevel: number;
+  personalizedInsights: number;
+  contextAccuracy: number;
+  recommendationRelevance: number;
+  learningProgress: number;
+  lastUpdated: Date;
+}
+
+export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ 
+  onComplete, 
+  className = '' 
 }) => {
-  const [onboardingState, setOnboardingState] = useState<OnboardingState | null>(null);
-  const [currentStepId, setCurrentStepId] = useState<string>('welcome');
-  const [isLoading, setIsLoading] = useState(true);
-  const [onboardingData, setOnboardingData] = useState<Record<string, any>>({});
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(false);
+  const { user } = useAuth();
+  const [currentFlow] = useState<'unified-brain' | 'traditional' | 'ai-chat' | 'founder' | 'checklist'>('unified-brain');
+  const [brainInsights] = useState<BrainInsight[]>([]);
+  const [expertKnowledge] = useState<ExpertKnowledge[]>([]);
+  const [systemIntelligence, setSystemIntelligence] = useState<SystemIntelligence>({
+    understandingLevel: 0,
+    personalizedInsights: 0,
+    contextAccuracy: 0,
+    recommendationRelevance: 0,
+    learningProgress: 0,
+    lastUpdated: new Date()
+  });
 
-  // Load onboarding state
-  useEffect(() => {
-    const loadState = async () => {
-      await onboardingManager.initialize();
-      const state = await onboardingManager.getOnboardingState();
-      setOnboardingState(state);
-      
-      // Set current step to first incomplete step
-      const currentStep = state.steps.find((s: OnboardingStep) => !s.completed);
-      if (currentStep) {
-        setCurrentStepId(currentStep.id);
-      }
-      
-      setIsLoading(false);
+  const getUserDisplayName = () => {
+    if (user?.profile?.first_name) return user.profile.first_name;
+    if (user?.email) return user.email.split('@')[0];
+    return 'User';
+  };
+
+  const handleFlowComplete = () => {
+    // Final intelligence assessment
+    const finalIntelligence = {
+      ...systemIntelligence,
+      understandingLevel: Math.min(100, systemIntelligence.understandingLevel + 20),
+      learningProgress: Math.min(100, systemIntelligence.learningProgress + 30)
     };
+    
+    setSystemIntelligence(finalIntelligence);
+    
+    // Log completion with intelligence metrics
+    console.log('Onboarding Complete - Final Intelligence:', finalIntelligence);
+    console.log('Brain Insights Generated:', brainInsights.length);
+    console.log('Expert Knowledge Applied:', expertKnowledge.length);
+    
+    onComplete();
+  };
 
-    loadState();
+  // Progressive intelligence updates
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSystemIntelligence(prev => ({
+        ...prev,
+        learningProgress: Math.min(100, prev.learningProgress + 1),
+        lastUpdated: new Date()
+      }));
+    }, 5000); // Update every 5 seconds
 
-    // Subscribe to state changes
-    const unsubscribe = onboardingManager.subscribe((state: OnboardingState) => {
-      setOnboardingState(state);
-    });
-
-    return unsubscribe;
+    return () => clearInterval(interval);
   }, []);
 
-  const handleStepComplete = async (stepId: string, data?: Record<string, unknown>): Promise<void> => {
-    if (data) {
-      setOnboardingData(prev => ({ ...prev, ...data }));
-    }
-
-    await onboardingManager.completeStep(stepId);
-    
-    // Move to next step
-    if (onboardingState) {
-      const currentIndex = onboardingState.steps.findIndex(s => s.id === stepId);
-      const nextStep = onboardingState.steps[currentIndex + 1];
-      if (nextStep) {
-        setCurrentStepId(nextStep.id);
-      } else {
-        // Onboarding complete
-        onComplete();
-      }
-    }
-  };
-
-  const handleN8nComplete = async (config: UserN8nConfig) => {
-    const success = await onboardingManager.completeN8nConfiguration(config);
-    if (success) {
-      handleStepComplete('n8n-connection');
-    }
-  };
-
-  const handleN8nSkip = async () => {
-    await onboardingManager.skipN8nConfiguration();
-    handleStepComplete('n8n-connection');
-  };
-
-  const goToStep = (stepId: string) => {
-    setCurrentStepId(stepId);
-  };
-
-  const handleOnboardingFinish = () => {
-    setShowCelebration(true);
-    setTimeout(() => {
-      setShowCelebration(false);
-      setShowAIChat(true);
-    }, 3000); // Show confetti for 3 seconds, then AI chat
-  };
-
-  if (isLoading || !onboardingState) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <SetupLoader
-          title="Setting up your onboarding..."
-          subtitle="Preparing your personalized experience"
-        />
-      </div>
-    );
-  }
-
-  if (showCelebration) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background relative">
-        <Confetti width={window.innerWidth} height={window.innerHeight} numberOfPieces={400} recycle={false} />
-        <div className="z-10 text-center">
-          <div className="text-5xl mb-6">🎉</div>
-          <h2 className="text-3xl font-bold mb-4">Welcome to Nexus!</h2>
-          <p className="text-lg mb-8">Your workspace is ready. Let's get started!</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (showAIChat) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-        <OnboardingChatAI />
-        <button
-          className="mt-8 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-bold text-lg shadow-lg hover:bg-primary/90 transition-all"
-          onClick={onComplete}
-        >
-          Go to Dashboard
-        </button>
-      </div>
-    );
-  }
-
-  const currentStepIndex = onboardingState.steps.findIndex((s: OnboardingStep) => s.id === currentStepId);
-
   return (
-    <div className={`min-h-screen bg-background ${className}`}>
-      {/* Full Page Onboarding Container */}
-      <div className="w-full max-w-7xl mx-auto">
-        {/* Content Container */}
-        <div className="px-4 py-6 lg:px-8 lg:py-8">
-          {/* Progress Header */}
-          <div className="mb-8">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground dark:text-primary-foreground mb-2">
-                Welcome to Nexus OS
-              </h1>
-              <p className="text-base lg:text-lg text-muted-foreground dark:text-muted-foreground">
-                Let's set up your AI-powered business operating system
-              </p>
+    <div className={`min-h-screen bg-gradient-to-br from-background via-muted/30 to-primary/5 ${className}`}>
+      {/* Header with User Context and Intelligence Status */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Brain className="w-8 h-8 text-primary" />
+                <h1 className="text-xl font-bold">Nexus Business Brain</h1>
+              </div>
+              <Badge variant="secondary" className="ml-2">
+                {currentFlow === 'unified-brain' ? 'Unified Brain Flow' : 'Traditional Flow'}
+              </Badge>
             </div>
-
-            {/* Step Progress - Responsive */}
-                          <div className="hidden md:flex items-center justify-between mb-8">
-                {onboardingState.steps.map((step: OnboardingStep, index: number) => (
-                <div key={step.id} className="flex items-center">
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 lg:w-10 lg:h-10 rounded-full border-2 transition-colors ${
-                      step.completed
-                        ? 'bg-success border-success text-primary-foreground'
-                        : step.id === currentStepId
-                        ? 'border-primary text-primary bg-card dark:bg-background'
-                        : 'border-border text-muted-foreground/60 bg-card dark:bg-background'
-                    }`}
-                  >
-                    {step.completed ? (
-                      <CheckCircle className="h-4 w-4 lg:h-5 lg:w-5" />
-                    ) : (
-                      <span className="text-sm font-medium">{index + 1}</span>
-                    )}
-                  </div>
-                  {index < onboardingState.steps.length - 1 && (
-                    <div
-                      className={`w-12 lg:w-16 h-1 mx-3 lg:mx-4 transition-colors ${
-                        step.completed ? 'bg-success' : 'bg-muted'
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Mobile Progress Indicator */}
-            <div className="md:hidden mb-6">
-              <div className="flex items-center justify-between mb-3">
+            
+            <div className="flex items-center space-x-4">
+              {/* User Context */}
+              <div className="flex items-center space-x-2">
+                <User className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  Step {currentStepIndex + 1} of {onboardingState.steps.length}
-                </span>
-                <span className="text-sm font-medium text-primary">
-                  {Math.round(((currentStepIndex + 1) / onboardingState.steps.length) * 100)}%
+                  {getUserDisplayName()}
                 </span>
               </div>
-              <div className="w-full bg-muted h-2 rounded-full">
-                <div 
-                  className="bg-success h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentStepIndex + 1) / onboardingState.steps.length) * 100}%` }}
-                />
+
+              {/* System Intelligence Indicator */}
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {Math.round(systemIntelligence.understandingLevel)}% Understanding
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {brainInsights.length} Insights
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <Target className="w-4 h-4 text-primary" />
+                <span className="text-sm text-muted-foreground">
+                  {expertKnowledge.length} Principles
+                </span>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Step Content */}
-          <div className="mb-8">
-            {currentStepId === 'welcome' && (
-              <div className="max-w-4xl mx-auto">
-                <WelcomeStep onComplete={() => handleStepComplete('welcome')} />
-              </div>
-            )}
+      {/* System Intelligence Progress Bar */}
+      <div className="bg-muted/50 border-b">
+        <div className="max-w-7xl mx-auto px-4 py-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>System Intelligence</span>
+            <span>{Math.round(systemIntelligence.understandingLevel)}%</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-1 mt-1">
+            <div
+              className="bg-gradient-to-r from-primary to-primary/60 h-1 rounded-full transition-all duration-500"
+              style={{ width: `${systemIntelligence.understandingLevel}%` }}
+            />
+          </div>
+        </div>
+      </div>
 
-            {currentStepId === 'organization-setup' && (
-              <div className="max-w-4xl mx-auto">
-                <OrganizationSetupStep 
-                  onNext={(data) => { void handleStepComplete('organization-setup', { enriched: data.enriched_data }); }}
-                  onBack={() => goToStep('welcome')}
-                />
-              </div>
-            )}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <AnimatePresence mode="wait">
+          {currentFlow === 'unified-brain' ? (
+            <motion.div
+              key="unified-brain"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <UnifiedBrainOnboarding 
+                onComplete={handleFlowComplete}
+                className=""
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="traditional"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <TraditionalOnboarding 
+                onComplete={handleFlowComplete}
+                user={user}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-            {currentStepId === 'integrations-setup' && (
-              <div className="max-w-4xl mx-auto">
-                <IntegrationsSetupStep 
-                  onNext={(data) => { void handleStepComplete('integrations-setup', { connectedIntegrations: data.connectedIntegrations }); }}
-                  onBack={() => goToStep('organization-setup')}
-                  onSkip={() => { void handleStepComplete('integrations-setup', { connectedIntegrations: [] }); }}
-                />
-              </div>
-            )}
-
-            {currentStepId === 'user-context' && (
-              <div className="max-w-4xl mx-auto">
-                <UserContextStep 
-                  onNext={() => handleStepComplete('user-context')}
-                  onBack={() => goToStep('integrations-setup')}
-                />
-              </div>
-            )}
-
-            {currentStepId === 'business-context' && (
-              <div className="max-w-4xl mx-auto">
-                <BusinessContextStep 
-                  onNext={(data) => handleStepComplete('business-context', data as any)}
-                  onBack={() => goToStep('user-context')}
-                  enrichedData={onboardingData.enriched}
-                />
-              </div>
-            )}
-
-            {currentStepId === 'business-snapshot' && (
-              <div className="max-w-4xl mx-auto">
-                <BusinessSnapshotStep
-                  onNext={(data) => handleStepComplete('business-snapshot', { baseline: data })}
-                  onBack={() => goToStep('business-context')}
-                />
-              </div>
-            )}
-
-            {currentStepId === 'success-criteria' && (
-              <div className="max-w-4xl mx-auto">
-                <SuccessCriteriaStep 
-                  onNext={() => handleStepComplete('success-criteria')}
-                  onBack={() => goToStep('business-context')}
-                />
-              </div>
-            )}
-
-            {currentStepId === 'n8n-connection' && (
-              <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-8">
-                  <Zap className="h-12 w-12 lg:h-16 lg:w-16 text-primary mx-auto mb-6" />
-                  <h2 className="text-2xl lg:text-3xl font-bold text-foreground dark:text-primary-foreground mb-3">
-                    Connect Your n8n Instance
-                  </h2>
-                  <p className="text-base lg:text-lg text-muted-foreground dark:text-muted-foreground">
-                    Optional: Connect your n8n automation platform for advanced workflows
-                  </p>
+      {/* Brain Intelligence Dashboard (Floating) */}
+      {(brainInsights.length > 0 || expertKnowledge.length > 0) && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Card className="w-80 shadow-lg border-primary/20">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-sm">
+                <Brain className="w-4 h-4 text-primary" />
+                <span>Brain Intelligence</span>
+                <Badge variant="secondary" className="ml-auto text-xs">
+                  Live
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="text-center p-2 bg-primary/5 rounded">
+                  <div className="text-lg font-bold text-primary">{brainInsights.length}</div>
+                  <div className="text-muted-foreground">Insights</div>
                 </div>
-                <N8nConnectionSetup
-                  onComplete={(config) => handleN8nComplete({ 
-                    ...config, 
-                    userId: 'current-user',
-                    instanceName: config.instanceName || 'My n8n Instance'
-                  })}
-                  onSkip={handleN8nSkip}
-                />
+                <div className="text-center p-2 bg-primary/5 rounded">
+                  <div className="text-lg font-bold text-primary">{expertKnowledge.length}</div>
+                  <div className="text-muted-foreground">Principles</div>
+                </div>
               </div>
-            )}
-
-            {currentStepId === 'department-setup' && (
-              <div className="max-w-4xl mx-auto">
-                <DepartmentSetupStep onComplete={() => handleStepComplete('department-setup')} />
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span>Understanding</span>
+                  <span className="font-medium">{Math.round(systemIntelligence.understandingLevel)}%</span>
+                </div>
+                <Progress value={systemIntelligence.understandingLevel} className="h-1" />
+                
+                <div className="flex items-center justify-between text-xs">
+                  <span>Learning</span>
+                  <span className="font-medium">{Math.round(systemIntelligence.learningProgress)}%</span>
+                </div>
+                <Progress value={systemIntelligence.learningProgress} className="h-1" />
               </div>
-            )}
 
-            {currentStepId === 'complete' && (
-              <div className="max-w-4xl mx-auto">
-                <CompleteStep onFinish={handleOnboardingFinish} />
+              <div className="text-xs text-muted-foreground">
+                Last updated: {systemIntelligence.lastUpdated.toLocaleTimeString()}
               </div>
-            )}
-          </div>
-
-          {/* Navigation */}
-          <div className="flex justify-between items-center border-t border-border pt-6 max-w-4xl mx-auto">
-            <button
-              onClick={() => {
-                const prevIndex = Math.max(0, currentStepIndex - 1);
-                const prevStep = onboardingState.steps[prevIndex];
-                if (prevStep) goToStep(prevStep.id);
-              }}
-              disabled={currentStepIndex === 0}
-              className="flex items-center space-x-2 px-6 py-3 text-base text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-muted/50"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Previous</span>
-            </button>
-
-            <div className="text-sm text-muted-foreground dark:text-muted-foreground">
-              Step {currentStepIndex + 1} of {onboardingState.totalSteps}
-            </div>
-
-            <button
-              onClick={() => {
-                const nextIndex = Math.min(onboardingState.steps.length - 1, currentStepIndex + 1);
-                const nextStep = onboardingState.steps[nextIndex];
-                if (nextStep) goToStep(nextStep.id);
-              }}
-              disabled={currentStepIndex === onboardingState.steps.length - 1}
-              className="flex items-center space-x-2 px-6 py-3 text-base text-muted-foreground hover:text-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-colors rounded-lg hover:bg-muted/50"
-            >
-              <span>Next</span>
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      )}
     </div>
   );
 };
 
-// Welcome Step Component - Simplified
-const WelcomeStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
-  const { user } = useAuth();
-
-  // Get user's first name or fallback to a generic greeting
-  const getPersonalizedGreeting = () => {
-    const firstName = user?.profile?.first_name;
-    if (firstName) {
-      return `Hi ${firstName}! Let's Build Your AI-Powered Business`;
-    }
-    return "Let's Build Your AI-Powered Business";
-  };
-
-  const getPersonalizedSubtitle = () => {
-    const firstName = user?.profile?.first_name;
-    if (firstName) {
-      return `${firstName}, you've just unlocked the most powerful business operating system. We'll customize it specifically for your needs and goals.`;
-    }
-    return "You've just unlocked the most powerful business operating system. We'll customize it specifically for your needs and goals.";
+// Traditional onboarding fallback
+const TraditionalOnboarding: React.FC<{
+  onComplete: () => void;
+  user: any;
+}> = ({ onComplete, user }) => {
+  const getUserFirstName = () => {
+    if (user?.profile?.first_name) return user.profile.first_name;
+    if (user?.email) return user.email.split('@')[0];
+    return 'there';
   };
 
   return (
-    <div className="text-center">
-      <div className="relative">
-        <Sparkles className="h-10 w-10 lg:h-12 lg:w-12 text-primary mx-auto mb-3" />
-        <h2 className="text-xl lg:text-2xl font-bold text-foreground dark:text-primary-foreground mb-2">
-          {getPersonalizedGreeting()}
-        </h2>
-        <p className="text-sm lg:text-base text-muted-foreground dark:text-muted-foreground mb-4 max-w-xl mx-auto">
-          {getPersonalizedSubtitle()}
-        </p>
-
-        {/* Setup Promise - Focused on onboarding */}
-        <div className="mb-6 p-4 bg-primary/5 dark:bg-primary/20/20 rounded-lg border border-border dark:border-primary/70/50">
-          <div className="text-primary dark:text-primary font-semibold text-sm lg:text-base mb-2">
-            🚀 Quick Setup Process (5 minutes)
-          </div>
-          <div className="text-primary dark:text-primary text-xs space-y-1">
-            <div>✅ Tell us about your role and goals</div>
-            <div>✅ Configure your business context</div>
-            <div>✅ Define success metrics</div>
-            <div>✅ Connect integrations (optional)</div>
-          </div>
-        </div>
-
-        {/* Single action button - focused on getting started */}
-        <div className="mb-6">
-          <button
-            onClick={onComplete}
-            className="px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium text-base transition-colors flex items-center justify-center mx-auto"
-          >
-            Start Setup <ArrowRight className="ml-2 h-4 w-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Simplified feature highlights - Focus on what's coming */}
-      <div className="grid grid-cols-3 gap-2 lg:gap-4 mb-4">
-        <div className="p-2">
-          <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Zap className="h-4 w-4 text-primary" />
-          </div>
-          <h3 className="font-semibold text-xs lg:text-sm text-foreground dark:text-primary-foreground mb-1">AI Assistant</h3>
-          <p className="text-xs text-muted-foreground dark:text-muted-foreground">
-            Personalized for your role
-          </p>
-        </div>
-        
-        <div className="p-2">
-          <div className="h-8 w-8 bg-success/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Settings className="h-4 w-4 text-success" />
-          </div>
-          <h3 className="font-semibold text-xs lg:text-sm text-foreground dark:text-primary-foreground mb-1">Smart Setup</h3>
-          <p className="text-xs text-muted-foreground dark:text-muted-foreground">
-            Auto-configured workflows
-          </p>
-        </div>
-        
-        <div className="p-2">
-          <div className="h-8 w-8 bg-warning/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Users className="h-4 w-4 text-warning" />
-          </div>
-          <h3 className="font-semibold text-xs lg:text-sm text-foreground dark:text-primary-foreground mb-1">Team Ready</h3>
-          <p className="text-xs text-muted-foreground dark:text-muted-foreground">
-            Invite team later
-          </p>
-        </div>
-      </div>
-
-      {/* Simple progress indicator */}
-      <div className="border-t pt-3">
-        <div className="text-xs text-muted-foreground">
-          We'll have you up and running in just a few minutes
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Department Setup Step Component
-const DepartmentSetupStep: React.FC<{ onComplete: () => void }> = ({ onComplete }) => (
-  <div className="text-center">
-    <div className="mb-6">
-      <Settings className="h-8 w-8 lg:h-12 lg:w-12 text-secondary mx-auto mb-4" />
-      <h2 className="text-xl lg:text-2xl font-bold text-foreground dark:text-primary-foreground mb-2">
-        Configure Your Departments
-      </h2>
-      <p className="text-sm lg:text-base text-muted-foreground dark:text-muted-foreground">
-        Set up the departments that matter to your business
-      </p>
-    </div>
-    
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-      {['Sales', 'Finance', 'Operations', 'Marketing'].map((dept) => (
-        <div key={dept} className="flex items-center p-4 border border-border dark:border-border rounded-lg">
-          <CheckCircle className="h-5 w-5 text-success mr-3" />
-          <span className="text-foreground dark:text-primary-foreground font-medium">{dept}</span>
-        </div>
-      ))}
-    </div>
-    
-    <div className="text-center">
-      <button
-        onClick={onComplete}
-        className="px-8 py-4 bg-secondary hover:bg-secondary/90 text-primary-foreground font-medium rounded-lg transition-colors"
-      >
-        Continue
-      </button>
-    </div>
-  </div>
-);
-
-// Complete Step Component - Enhanced with success metrics
-const CompleteStep: React.FC<{ onFinish: () => void }> = ({ onFinish }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="text-center"
-    >
-      <motion.div
-        animate={{ rotate: [0, 10, -10, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
-        className="text-4xl lg:text-6xl mb-6"
-      >
-        🚀
-      </motion.div>
-
-      <h2 className="text-2xl lg:text-3xl font-bold text-foreground dark:text-primary-foreground mb-4">
-        You're Ready to Transform Your Business!
-      </h2>
-
-      <div className="mb-8 p-4 lg:p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-xl">
-        <div className="text-base lg:text-lg font-semibold text-foreground mb-4">
-          Your AI Assistant is already working:
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div className="text-left">
-            <div className="font-medium text-success dark:text-success mb-2">✅ Immediate Actions:</div>
-            <ul className="space-y-1 text-muted-foreground">
-              <li>• Analyzing your business patterns</li>
-              <li>• Setting up automated workflows</li>
-              <li>• Preparing your first insights</li>
-              <li>• Optimizing your processes</li>
-            </ul>
-          </div>
-          <div className="text-left">
-            <div className="font-medium text-primary dark:text-primary mb-2">Next Steps:</div>
-            <ul className="space-y-1 text-muted-foreground">
-              <li>• View your personalized dashboard</li>
-              <li>• Connect your business tools</li>
-              <li>• Review initial insights</li>
-              <li>• Start your first automation</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <button
-          onClick={onFinish}
-          className="px-6 lg:px-8 py-3 lg:py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-primary-foreground rounded-lg font-bold text-base lg:text-lg shadow-lg hover:shadow-xl transition-all duration-200"
+    <div className="space-y-8">
+      <div className="text-center space-y-4">
+        <motion.div
+          initial={{ scale: 0.8 }}
+          animate={{ scale: 1 }}
+          className="inline-block p-4 bg-primary/10 rounded-full"
         >
-          Launch Your Dashboard →
-        </button>
+          <Brain className="w-12 h-12 text-primary" />
+        </motion.div>
+        <h2 className="text-3xl font-bold">Welcome, {getUserFirstName()}!</h2>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Let's get you set up with Nexus. This traditional onboarding will guide you through the basics.
+        </p>
       </div>
 
-      <div className="text-sm text-muted-foreground">
-        💡 <strong>Pro Tip:</strong> Your first insights will be ready in 5 minutes
-      </div>
-    </motion.div>
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Traditional Onboarding</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-muted-foreground">
+            This is a fallback onboarding flow. For the full brain-powered experience, 
+            please use the Unified Brain Onboarding.
+          </p>
+          
+          <div className="flex justify-center">
+            <Button onClick={onComplete}>
+              Complete Traditional Onboarding
+              <CheckCircle className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
-};
-
-export default OnboardingFlow; 
+}; 

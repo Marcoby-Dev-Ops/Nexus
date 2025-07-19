@@ -16,6 +16,8 @@ export function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const { signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -29,15 +31,16 @@ export function SignUpPage() {
       setError('Please enter your company name.');
       return;
     }
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please enter your first and last name.');
+      return;
+    }
     setError(null);
     setLoading(true);
-    // Pass companyName to onboarding/company creation logic (to be handled in onboarding step)
-    // Optionally, you could pass it to signUp and store in user_metadata
-    const { error } = await signUp(email, password);
+    const { error } = await signUp(email, password, { first_name: firstName, last_name: lastName });
     if (error) {
       setError(error.message);
     } else {
-      // Store companyName in localStorage or context for onboarding
       localStorage.setItem('pending_company_name', companyName);
       setMessage('Check your email for the confirmation link.');
     }
@@ -80,6 +83,30 @@ export function SignUpPage() {
                   required
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="first-name">First Name</Label>
+                <Input
+                  id="first-name"
+                  type="text"
+                  placeholder="Enter your First Name"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  disabled={loading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="last-name">Last Name</Label>
+                <Input
+                  id="last-name"
+                  type="text"
+                  placeholder="Enter your Last Name"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
                   disabled={loading}
                 />
               </div>
