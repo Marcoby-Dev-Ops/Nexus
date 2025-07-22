@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { useToast } from '@/shared/components/ui/Toast';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useToast } from '@/shared/ui/components/Toast';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useIntegrations } from '@/domains/hooks/useIntegrations';
-import { supabase } from '../../lib/core/supabase';
+import { supabase } from '@/core/supabase';
 import type { Database } from '@/shared/types/database.types';
 import {
   Clock,
@@ -66,7 +66,7 @@ interface IntegrationData {
 // type DatabaseIntegration = Database['public']['Tables']['integrations']['Row'];
 
 export const IntegrationOrganizer: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { showToast } = useToast();
   const { 
     integrations, 

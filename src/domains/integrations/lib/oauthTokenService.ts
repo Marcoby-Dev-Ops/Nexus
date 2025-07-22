@@ -1,4 +1,5 @@
-import { supabase } from '../core/supabase';
+import { supabase } from '@/core/supabase';
+import { sessionUtils } from '@/core/supabase';
 
 export interface OAuthToken {
   id: string;
@@ -23,127 +24,89 @@ export interface TokenResponse {
 
 export class OAuthTokenService {
   /**
-   * Store OAuth tokens securely in Supabase
+   * Get stored tokens for an integration using service client with user validation
+   */
+  static async getTokens(integrationSlug: string): Promise<OAuthToken | null> {
+    try {
+      // Get the current session
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session) {
+        console.error('No active session found');
+        return null;
+      }
+
+      console.log('OAuthTokenService: Session found, user ID:', session.user.id);
+      console.log('OAuthTokenService: Session access token present:', !!session.access_token);
+
+      // Use service client with user validation
+      console.log('OAuthTokenService: Using service client with user validation...');
+      const { data: tokens, error: tokenError } = await supabase
+        .from('oauth_tokens')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .eq('integration_slug', integrationSlug)
+        .single();
+
+      console.log('OAuthTokenService: Service client result:', { 
+        hasData: !!tokens, 
+        error: tokenError?.message,
+        code: tokenError?.code 
+      });
+
+      if (tokenError || !tokens) {
+        console.log('OAuthTokenService: No tokens found:', tokenError?.message);
+        return null;
+      }
+
+      console.log('OAuthTokenService: Successfully retrieved tokens');
+      return tokens as OAuthToken;
+    } catch (error) {
+      console.error('Error in getTokens:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Store OAuth tokens for an integration
    */
   static async storeTokens(
     integrationSlug: string,
     tokenResponse: TokenResponse
   ): Promise<OAuthToken | null> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
+      const userId = await this.ensureAuth();
 
-      // Calculate expiration time
-      const expiresAt = tokenResponse.expires_in 
+      const expiresAt = tokenResponse.expires_in
         ? new Date(Date.now() + tokenResponse.expires_in * 1000).toISOString()
         : null;
 
+      const tokenData = {
+        user_id: userId,
+        integration_slug: integrationSlug,
+        access_token: tokenResponse.access_token,
+        refresh_token: tokenResponse.refresh_token || null,
+        expires_at: expiresAt,
+        scope: tokenResponse.scope || '',
+        token_type: tokenResponse.token_type || 'Bearer',
+      };
+
+      // Try to insert first, if it fails due to unique constraint, update
       const { data, error } = await supabase
         .from('oauth_tokens')
-        .upsert({
-          user_id: user.id,
-          integration_slug: integrationSlug,
-          access_token: tokenResponse.access_token,
-          refresh_token: tokenResponse.refresh_token,
-          expires_at: expiresAt,
-          scope: tokenResponse.scope,
-          token_type: tokenResponse.token_type || 'Bearer',
+        .upsert(tokenData, {
+          onConflict: 'user_id,integration_slug'
         })
         .select()
         .single();
 
       if (error) {
-        console.error('Error storing OAuth tokens:', error);
+        console.error('Error storing tokens:', error);
         return null;
       }
 
-      return data;
+      return data as OAuthToken;
     } catch (error) {
       console.error('Error in storeTokens:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Get stored tokens for an integration
-   * Checks multiple tables for backward compatibility
-   */
-  static async getTokens(integrationSlug: string): Promise<OAuthToken | null> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return null;
-      }
-
-      // First, try the new oauth_tokens table
-      const { data, error } = await supabase
-        .from('oauth_tokens')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('integration_slug', integrationSlug)
-        .single();
-
-      if (!error && data) {
-        return data;
-      }
-
-      // If not found, check the existing ai_integrations_oauth table
-      if (integrationSlug === 'microsoft') {
-        const { data: existingData, error: existingError } = await supabase
-          .from('ai_integrations_oauth')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('provider', 'microsoft_graph')
-          .single();
-
-        if (!existingError && existingData) {
-          // Convert to OAuthToken format
-          return {
-            id: existingData.id,
-            user_id: existingData.user_id || user.id,
-            integration_slug: 'microsoft',
-            access_token: existingData.access_token || '',
-            refresh_token: existingData.refresh_token,
-            expires_at: existingData.expires_at,
-            scope: existingData.scopes?.join(' ') || '',
-            token_type: 'Bearer',
-            created_at: existingData.created_at,
-            updated_at: existingData.updated_at,
-          };
-        }
-      }
-
-      // If not found, check ai_email_accounts for email-specific tokens
-      if (integrationSlug === 'microsoft') {
-        const { data: emailData, error: emailError } = await supabase
-          .from('ai_email_accounts')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('provider', 'outlook')
-          .single();
-
-        if (!emailError && emailData && emailData.access_token) {
-          // Convert to OAuthToken format
-          return {
-            id: emailData.id,
-            user_id: emailData.user_id,
-            integration_slug: 'microsoft',
-            access_token: emailData.access_token,
-            refresh_token: emailData.refresh_token,
-            expires_at: emailData.token_expires_at,
-            scope: 'User.Read Mail.Read offline_access',
-            token_type: 'Bearer',
-            created_at: emailData.created_at,
-            updated_at: emailData.updated_at,
-          };
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error('Error in getTokens:', error);
       return null;
     }
   }
@@ -190,15 +153,12 @@ export class OAuthTokenService {
    */
   static async deleteTokens(integrationSlug: string): Promise<boolean> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return false;
-      }
+      const userId = await this.ensureAuth();
 
       const { error } = await supabase
         .from('oauth_tokens')
         .delete()
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .eq('integration_slug', integrationSlug);
 
       if (error) {
@@ -218,15 +178,12 @@ export class OAuthTokenService {
    */
   static async getUserIntegrations(): Promise<string[]> {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        return [];
-      }
+      const userId = await this.ensureAuth();
 
       const { data, error } = await supabase
         .from('oauth_tokens')
         .select('integration_slug')
-        .eq('user_id', user.id);
+        .eq('user_id', userId);
 
       if (error) {
         console.error('Error retrieving user integrations:', error);
@@ -270,5 +227,21 @@ export class OAuthTokenService {
       console.error('Error getting access token:', error);
       return null;
     }
+  }
+
+  /**
+   * Ensure user is authenticated before making database queries
+   */
+  private static async ensureAuth(): Promise<string> {
+    // Get authenticated client
+    await sessionUtils.getAuthenticatedClient();
+
+    // Get the user ID
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    return user.id;
   }
 } 

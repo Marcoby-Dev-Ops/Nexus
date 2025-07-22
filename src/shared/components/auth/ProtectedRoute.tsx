@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -22,7 +22,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = '/login',
   requireAuth = true
 }) => {
-  const { user, session, loading, initialized } = useAuth();
+  const { user, session, loading, initialized } = useAuthContext();
   const location = useLocation();
 
   // Show loading state while authentication is initializing
@@ -66,7 +66,7 @@ export const PublicRoute: React.FC<ProtectedRouteProps> = ({
   fallback,
   redirectTo = '/home'
 }) => {
-  const { user, session, loading, initialized } = useAuth();
+  const { user, session, loading, initialized } = useAuthContext();
 
   // Show loading state while authentication is initializing
   if (!initialized || loading) {
@@ -108,7 +108,7 @@ export const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
   fallback,
   ...props
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   // First check if user is authenticated
   if (!user) {

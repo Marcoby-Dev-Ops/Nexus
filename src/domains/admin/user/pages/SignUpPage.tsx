@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
@@ -18,7 +18,7 @@ export function SignUpPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const { signUp } = useAuth();
+  const { signUp } = useAuthContext();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,6 +120,7 @@ export function SignUpPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}
+                  autoComplete="email"
                 />
               </div>
               <div className="grid gap-2">
@@ -131,6 +132,7 @@ export function SignUpPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={loading}
+                  autoComplete="new-password"
                 />
               </div>
               <div className="grid gap-2">
@@ -142,6 +144,7 @@ export function SignUpPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   disabled={loading}
+                  autoComplete="new-password"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>

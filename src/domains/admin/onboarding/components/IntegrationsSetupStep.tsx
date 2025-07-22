@@ -163,8 +163,8 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
       microsoft: {
         name: 'Microsoft',
         icon: Building2,
-        description: 'Connect your Microsoft account for Teams, Outlook, and OneDrive integration',
-        benefits: ['Email synchronization', 'Teams analytics', 'OneDrive file access', 'Calendar integration']
+        description: 'Connect your Microsoft 365 account for Teams, Outlook, OneDrive, and SharePoint integration',
+        benefits: ['Email synchronization', 'Teams analytics', 'OneDrive & SharePoint file access', 'Calendar integration']
       },
       linkedin: {
         name: 'LinkedIn',

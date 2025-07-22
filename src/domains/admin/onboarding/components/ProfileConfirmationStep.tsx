@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, CheckCircle, ArrowRight } from 'lucide-react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
@@ -29,7 +29,7 @@ export const ProfileConfirmationStep: React.FC<ProfileConfirmationStepProps> = (
   onBack: _onBack, 
   user: _user 
 }) => {
-  const { user, updateProfile, loading: authLoading } = useAuth();
+  const { user, updateProfile, loading: authLoading } = useAuthContext();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',

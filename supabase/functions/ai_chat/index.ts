@@ -458,9 +458,9 @@ serve(async (req: Request) => {
 
           try {
             const aiResponseContent = await getAIResponse(
-              llmUrl,
-              llmApiKey,
-              llmModel,
+              llmUrl!,
+              llmApiKey!,
+              llmModel!,
               systemMessage,
               history,
               onProgress,
@@ -487,9 +487,9 @@ serve(async (req: Request) => {
       // Handle non-streaming request
       try {
         const aiResponseContent = await getAIResponse(
-          llmUrl,
-          llmApiKey,
-          llmModel,
+          llmUrl!,
+          llmApiKey!,
+          llmModel!,
           systemMessage,
           history,
           () => {}, // no-op for progress

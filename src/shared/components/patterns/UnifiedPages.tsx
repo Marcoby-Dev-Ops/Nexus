@@ -24,7 +24,7 @@ import {
   CheckCircle, 
   Globe 
 } from 'lucide-react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 // Type definitions
 interface UnifiedMetricCardProps {
@@ -466,7 +466,7 @@ const EnhancedActivityFeed: React.FC<{ activities: EnhancedActivity[] }> = ({ ac
 
 // Main Component
 export const UnifiedDepartmentPage: React.FC<{ config: DepartmentConfig }> = ({ config }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   useEffect(() => {
     if (user) {

@@ -24,7 +24,9 @@ import {
   Loader2,
   TrendingUp,
   BarChart3,
-  Target
+  Mail,
+  FileText,
+  FolderOpen
 } from 'lucide-react';
 import { microsoftTeamsService } from '@/domains/services/microsoftTeamsService';
 
@@ -71,29 +73,29 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
   const setupSteps: SetupStep[] = [
     {
       id: 'authenticate',
-      title: 'Connect to Microsoft Teams',
-      description: 'Authenticate with your Microsoft 365 account to access Teams data',
+      title: 'Connect to Microsoft 365',
+      description: 'Authenticate with your Microsoft 365 account to access Teams, OneDrive, SharePoint, and Outlook',
       completed: connectionStatus === 'connected',
       current: currentStep === 0
     },
     {
       id: 'permissions',
       title: 'Configure Permissions',
-      description: 'Review and approve the permissions needed for Teams integration',
+      description: 'Review and approve the permissions needed for comprehensive Microsoft 365 integration',
       completed: false,
       current: currentStep === 1
     },
     {
       id: 'sync',
       title: 'Initial Data Sync',
-      description: 'Import your Teams data including channels, messages, and meetings',
+      description: 'Import your Teams, OneDrive, SharePoint, and Outlook data',
       completed: false,
       current: currentStep === 2
     },
     {
       id: 'analytics',
       title: 'Enable Analytics',
-      description: 'Set up communication analytics and insights generation',
+      description: 'Set up comprehensive analytics for all Microsoft 365 services',
       completed: false,
       current: currentStep === 3
     }
@@ -102,66 +104,84 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
   const requiredPermissions = [
     {
       scope: 'Team.ReadBasic.All',
-      description: 'Read basic team information',
+      description: 'Read Teams information and structure',
       icon: Users,
       required: true
     },
     {
       scope: 'Channel.ReadBasic.All', 
-      description: 'Read channel information and structure',
+      description: 'Read Teams channels and messages',
       icon: MessageSquare,
       required: true
     },
     {
       scope: 'ChannelMessage.Read.All',
-      description: 'Read messages in channels for analytics',
+      description: 'Read Teams messages for analytics',
       icon: MessageSquare,
       required: true
     },
     {
       scope: 'Chat.Read',
-      description: 'Read chat messages and conversations',
+      description: 'Read Teams chat conversations',
       icon: MessageSquare,
       required: true
     },
     {
+      scope: 'Mail.Read',
+      description: 'Read Outlook emails and messages',
+      icon: Mail,
+      required: true
+    },
+    {
       scope: 'Calendars.Read',
-      description: 'Read meeting information and schedules',
+      description: 'Read Outlook calendar and meetings',
       icon: Calendar,
       required: true
     },
     {
-      scope: 'User.Read.All',
-      description: 'Read user profiles and information',
+      scope: 'Files.Read.All',
+      description: 'Read OneDrive and SharePoint documents',
+      icon: FileText,
+      required: true
+    },
+    {
+      scope: 'Sites.Read.All',
+      description: 'Read SharePoint sites and libraries',
+      icon: FolderOpen,
+      required: true
+    },
+    {
+      scope: 'User.Read',
+      description: 'Read user profile information',
       icon: Users,
-      required: false
+      required: true
     }
   ];
 
   const expectedInsights = [
     {
-      title: 'Communication Patterns',
-      description: 'Understand when and how your team communicates most effectively',
+      title: 'Communication Intelligence',
+      description: 'Comprehensive analysis of Teams, Outlook, and collaboration patterns',
       icon: TrendingUp,
-      metrics: ['Peak activity hours', 'Response time analysis', 'Channel activity levels']
+      metrics: ['Peak activity hours', 'Response time analysis', 'Cross-platform usage']
     },
     {
-      title: 'Meeting Analytics',
-      description: 'Optimize meeting efficiency and attendance patterns',
+      title: 'Document & Content Analytics',
+      description: 'Insights into OneDrive and SharePoint usage patterns',
+      icon: FileText,
+      metrics: ['Document collaboration', 'File sharing patterns', 'Content engagement']
+    },
+    {
+      title: 'Meeting & Calendar Optimization',
+      description: 'Optimize meeting efficiency and calendar management',
       icon: Video,
-      metrics: ['Meeting frequency', 'Duration analysis', 'Attendance rates']
+      metrics: ['Meeting frequency', 'Duration analysis', 'Calendar conflicts']
     },
     {
-      title: 'Cross-Platform Intelligence',
-      description: 'Compare Teams vs Slack usage for optimization recommendations',
+      title: 'Unified Productivity Insights',
+      description: 'Cross-service analytics for comprehensive productivity optimization',
       icon: BarChart3,
-      metrics: ['Platform preferences', 'Tool efficiency', 'Communication gaps']
-    },
-    {
-      title: 'Team Collaboration Health',
-      description: 'Monitor team engagement and collaboration effectiveness',
-      icon: Target,
-      metrics: ['Response rates', 'Collaboration frequency', 'Engagement scores']
+      metrics: ['Tool efficiency', 'Workflow optimization', 'Collaboration health']
     }
   ];
 
@@ -244,7 +264,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
   const handleAnalyticsSetup = () => {
     // Complete setup
     onComplete?.({
-      platform: 'microsoft-teams',
+      platform: 'microsoft-365',
       status: 'connected',
       config: {
         tenantId,
@@ -267,9 +287,9 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
                 </div>
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Connect Microsoft Teams</h3>
+                <h3 className="text-lg font-semibold">Connect Microsoft 365</h3>
                 <p className="text-muted-foreground">
-                  Securely connect your Microsoft 365 account to start analyzing your Teams communication data
+                  Securely connect your Microsoft 365 account to access Teams, OneDrive, SharePoint, and Outlook for comprehensive productivity insights
                 </p>
               </div>
             </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { automationRecipeEngine } from '@/domains/automation/automationRecipeEngine';
 import type { AutomationRecipe, RecipeDeployment, RecipeExecutionResult } from '@/domains/automation/automationRecipeEngine';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { toast } from 'sonner';
 
 export interface UseAutomationRecipesOptions {
@@ -30,7 +30,7 @@ export interface UseAutomationRecipesReturn {
 }
 
 export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}): UseAutomationRecipesReturn {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { category, autoLoad = true } = options;
   
   const [recipes, setRecipes] = useState<AutomationRecipe[]>([]);

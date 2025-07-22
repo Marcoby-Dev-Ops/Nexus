@@ -1,112 +1,194 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'npm:@supabase/supabase-js';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.5';
 import { encrypt, decrypt } from './crypto.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
-// Supabase client, configured to use the service_role key for admin access.
-const supabaseAdmin = createClient(
-  Deno.env.get('SUPABASE_URL') ?? '',
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-);
+// Environment validation
+const validateEnvironment = () => {
+  const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+  const missing = required.filter(key => !Deno.env.get(key));
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
+  }
+};
 
-serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+// Error response helper
+const createErrorResponse = (message: string, status: number = 400) => {
+  return new Response(JSON.stringify({ 
+    error: message, 
+    timestamp: new Date().toISOString(),
+    status 
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+};
+
+// Success response helper
+const createSuccessResponse = (data: any, status: number = 200) => {
+  return new Response(JSON.stringify({ 
+    data, 
+    timestamp: new Date().toISOString(),
+    status 
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+};
+
+// Authentication helper
+const authenticateRequest = async (req: Request) => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { user: null, supabase: supabaseAdmin, error: 'No authorization header' };
+  }
+  
+  const jwt = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabaseAdmin.auth.getUser(jwt);
+  
+  if (error || !user) {
+    return { user: null, supabase: supabaseAdmin, error: 'Invalid token' };
+  }
+  
+  return { user, supabase: supabaseAdmin };
+};
+
+// Main handler
+const handleRequest = async (req: Request, auth: { user: any; supabase: any }) => {
+  const { user, supabase } = auth;
+  
+  const url = new URL(req.url);
+  const integrationName = url.pathname.split('/').pop();
+  
+  if (!integrationName) {
+    return createErrorResponse('Integration name is required', 400);
   }
 
+  switch (req.method) {
+    case 'POST':
+      return await handlePost(req, user, integrationName, supabase);
+    case 'GET':
+      return await handleGet(req, user, integrationName, supabase);
+    case 'DELETE':
+      return await handleDelete(req, user, integrationName, supabase);
+    default:
+      return createErrorResponse('Method not allowed', 405);
+  }
+};
+
+async function handlePost(req: Request, user: any, integrationName: string, supabase: any) {
   try {
-    const url = new URL(req.url);
-    const integrationName = url.pathname.split('/').pop();
-    const { user } = await supabaseAdmin.auth.getUser();
-
-    if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const { token, organization_id } = await req.json();
+    
+    if (!token) {
+      return createErrorResponse('Token is required', 400);
     }
 
-    if (!integrationName) {
-      return new Response(JSON.stringify({ error: 'Integration name is required' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+    const { ciphertext, iv, authTag } = await encrypt(JSON.stringify(token));
+
+    const { error } = await supabase.from('encrypted_credentials').upsert({
+      user_id: user.id,
+      organization_id,
+      integration_name: integrationName,
+      encrypted_token: ciphertext,
+      iv,
+      auth_tag: authTag,
+    }, { onConflict: organization_id ? 'organization_id,integration_name' : 'user_id,integration_name' });
+
+    if (error) {
+      console.error('Credential save error:', error);
+      return createErrorResponse(`Failed to save credential: ${error.message}`, 500);
     }
 
-    switch (req.method) {
-      case 'POST':
-        return handlePost(req, user, integrationName);
-      case 'GET':
-        return handleGet(req, user, integrationName);
-      case 'DELETE':
-        return handleDelete(req, user, integrationName);
-      default:
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-          status: 405,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-    }
+    return createSuccessResponse({ success: true });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Credential save error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to save credential',
+      500
+    );
   }
-});
-
-async function handlePost(req: Request, user, integrationName: string) {
-  const { token, organization_id } = await req.json();
-  if (!token) {
-    return new Response(JSON.stringify({ error: 'Token is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-  }
-
-  const { ciphertext, iv, authTag } = await encrypt(JSON.stringify(token));
-
-  const { error } = await supabaseAdmin.from('encrypted_credentials').upsert({
-    user_id: user.id,
-    organization_id,
-    integration_name: integrationName,
-    encrypted_token: ciphertext,
-    iv,
-    auth_tag: authTag,
-  }, { onConflict: organization_id ? 'organization_id,integration_name' : 'user_id,integration_name' });
-
-  if (error) throw error;
-
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
 }
 
-async function handleGet(req: Request, user, integrationName: string) {
-  const { data, error } = await supabaseAdmin
-    .from('encrypted_credentials')
-    .select('encrypted_token, iv, auth_tag')
-    .eq('user_id', user.id)
-    .eq('integration_name', integrationName)
-    .single();
+async function handleGet(req: Request, user: any, integrationName: string, supabase: any) {
+  try {
+    const { data, error } = await supabase
+      .from('encrypted_credentials')
+      .select('encrypted_token, iv, auth_tag')
+      .eq('user_id', user.id)
+      .eq('integration_name', integrationName)
+      .single();
 
-  if (error || !data) {
-    return new Response(JSON.stringify({ error: 'Credential not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    if (error || !data) {
+      return createErrorResponse('Credential not found', 404);
+    }
+
+    const decryptedToken = await decrypt(data.encrypted_token, data.iv, data.auth_tag);
+
+    return createSuccessResponse({ token: decryptedToken });
+  } catch (error) {
+    console.error('Credential retrieval error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to retrieve credential',
+      500
+    );
   }
-
-  const decryptedToken = await decrypt(data.encrypted_token, data.iv, data.auth_tag);
-
-  return new Response(decryptedToken, {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
 }
 
-async function handleDelete(req: Request, user, integrationName: string) {
-    const { error } = await supabaseAdmin
+async function handleDelete(req: Request, user: any, integrationName: string, supabase: any) {
+  try {
+    const { error } = await supabase
       .from('encrypted_credentials')
       .delete()
       .eq('user_id', user.id)
       .eq('integration_name', integrationName);
 
-    if (error) throw error;
+    if (error) {
+      console.error('Credential deletion error:', error);
+      return createErrorResponse(`Failed to delete credential: ${error.message}`, 500);
+    }
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-} 
+    return createSuccessResponse({ success: true });
+  } catch (error) {
+    console.error('Credential deletion error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to delete credential',
+      500
+    );
+  }
+}
+
+// Main serve function
+serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+  
+  try {
+    // Validate environment
+    validateEnvironment();
+    
+    // Authenticate request
+    const auth = await authenticateRequest(req);
+    if (auth.error) {
+      return createErrorResponse(auth.error, 401);
+    }
+    
+    // Call handler
+    return await handleRequest(req, auth);
+    
+  } catch (error) {
+    console.error('Credential manager error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Internal server error',
+      500
+    );
+  }
+}); 

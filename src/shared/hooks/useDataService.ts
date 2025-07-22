@@ -4,8 +4,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { dataService } from '@/core/services/dataService';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { dataService } from '@/shared/services/dataService';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { logger } from '@/core/auth/logger';
 
 export interface UseDataServiceOptions {
@@ -26,7 +26,7 @@ export function useDataService<T>(
   fetchFn: () => Promise<T>,
   options: UseDataServiceOptions = {}
 ): UseDataServiceReturn<T> {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -125,7 +125,7 @@ export function useDataService<T>(
 // Specific hooks for common data fetching patterns
 
 export function useUserProfile() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useDataService(
     () => dataService.fetchUserProfile(user!.id),
@@ -134,7 +134,7 @@ export function useUserProfile() {
 }
 
 export function useUserIntegrations() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useDataService(
     () => dataService.fetchUserIntegrations(user!.id),
@@ -143,7 +143,7 @@ export function useUserIntegrations() {
 }
 
 export function useNotifications(limit = 10) {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useDataService(
     () => dataService.fetchNotifications(user!.id, limit),
@@ -155,7 +155,7 @@ export function useNotifications(limit = 10) {
 }
 
 export function useInboxItems(filters: any = {}, limit = 50, offset = 0) {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useDataService(
     () => dataService.fetchInboxItems(user!.id, filters, limit, offset),
@@ -164,7 +164,7 @@ export function useInboxItems(filters: any = {}, limit = 50, offset = 0) {
 }
 
 export function useDashboardMetrics() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useDataService(
     () => dataService.fetchDashboardMetrics(user!.id),
@@ -176,7 +176,7 @@ export function useDashboardMetrics() {
 }
 
 export function useRecentActivities(limit = 20) {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useDataService(
     () => dataService.fetchRecentActivities(user!.id, limit),

@@ -8,8 +8,8 @@ import { Button } from '@/shared/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui';
 import { Alert, AlertDescription } from '@/shared/components/ui';
 import { Badge } from '@/shared/components/ui';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
-import { useNotifications } from '@/shared/core/hooks/NotificationContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useNotifications } from '@/core/hooks/NotificationContext';
 import { googleWorkspaceService } from '@/domains/analytics/lib/googleWorkspaceService';
 import { 
   Loader2, 
@@ -49,7 +49,7 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
   onComplete, 
   onClose 
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   const [currentStep, setCurrentStep] = useState<'oauth' | 'services' | 'complete'>('oauth');
   const [isConnecting, setIsConnecting] = useState(false);

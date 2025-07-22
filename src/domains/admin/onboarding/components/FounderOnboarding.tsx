@@ -10,7 +10,7 @@ import {
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 interface FounderOnboardingProps {
   onComplete: () => void;
@@ -67,7 +67,7 @@ const INDUSTRY_SPECIFICS = {
 };
 
 export const FounderOnboarding: React.FC<FounderOnboardingProps> = ({ onComplete }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<FounderProfile>({
     industry: '',

@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink, Shield, Monitor } from 'lucide-react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 import { NinjaRmmService } from '@/domains/services/ninjaRmmService';
 
@@ -13,7 +13,7 @@ interface NinjaRmmSetupProps {
 }
 
 export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   
   const [isConnected, setIsConnected] = useState(false);

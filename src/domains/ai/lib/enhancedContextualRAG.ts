@@ -6,7 +6,8 @@
  */
 
 import { ContextualRAG, EnhancedUserContext } from '@/domains/ai/lib/contextualRAG';
-import { crossDepartmentalContext, CrossDepartmentalInsight, DepartmentImpactAnalysis } from '@/domains/ai/lib/crossDepartmentalContext';
+import type { CrossDepartmentalInsight, DepartmentImpactAnalysis } from '@/domains/ai/lib/crossDepartmentalContext';
+import { crossDepartmentalContext } from '@/domains/ai/lib/crossDepartmentalContext';
 
 export interface EnhancedContextualResponse {
   primaryResponse: string;

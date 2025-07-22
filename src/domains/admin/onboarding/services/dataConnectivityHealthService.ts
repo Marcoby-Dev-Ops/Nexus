@@ -4,7 +4,7 @@
  * Higher scores for verified/connected data vs. self-reported data
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase, dbService } from '@/core/supabase';
 import { logger } from '../security/logger';
 
 export interface DataSource {
@@ -272,77 +272,45 @@ export class DataConnectivityHealthService {
    */
   async getConnectivityStatus(userId: string): Promise<ConnectivityHealthData> {
     try {
-      // Get current user's connected integrations
-      const { data: integrations, error: integrationsError } = await supabase
-        .from('user_integrations')
-        .select(`
-          *,
-          integrations!inner(slug, category, name)
-        `)
-        .eq('user_id', userId)
-        .eq('is_active', true);
+      console.log(`🔍 [dataConnectivityHealthService] Getting connectivity status for user: ${userId}`);
+      
+      // Get current user's connected integrations using centralized service
+      const { data: integrations, error: integrationsError } = await dbService.getUserIntegrations(
+        userId,
+        'dataConnectivityHealthService.getConnectivityStatus'
+      );
 
       if (integrationsError) {
         logger.error('Failed to fetch user integrations', integrationsError);
         throw integrationsError;
       }
 
-      // Get user's verified profile data
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-
-      if (profileError) {
-        logger.error('Failed to fetch user profile', profileError);
-        // Don't throw - profile might not exist yet
+      // Get user's company status if they have a company
+      let companyStatus = null;
+      if (profile?.company_id) {
+        const { data: companyStatusData, error: companyStatusError } = await dbService.getCompanyStatus(
+          profile.company_id,
+          'dataConnectivityHealthService.getConnectivityStatus'
+        );
+        
+        if (!companyStatusError) {
+          companyStatus = companyStatusData;
+        }
       }
 
-      // Build data source status
-      const dataSources = this.getDataSourceDefinitions();
-      const connectedSources: DataSource[] = [];
-      const unconnectedSources: DataSource[] = [];
+      // Calculate connectivity metrics
+      const activeIntegrations = integrations?.filter(integration => integration.status === 'active') || [];
+      const totalIntegrations = integrations?.length || 0;
+      const connectivityScore = totalIntegrations > 0 ? Math.round((activeIntegrations.length / totalIntegrations) * 100) : 0;
 
-      dataSources.forEach(source => {
-        const integration = integrations?.find(i => {
-          const integrationInfo = Array.isArray(i.integrations) ? i.integrations[0] : i.integrations;
-          return integrationInfo?.slug === source.id || integrationInfo?.category === source.id;
-        });
-        const isConnected = !!integration;
-        const isVerified = integration?.is_verified || false;
-        const accessLevel = integration?.access_level || 'none';
-
-        const updatedSource: DataSource = {
-          ...source,
-          isConnected,
-          isVerified,
-          accessLevel,
-          lastSync: integration?.last_sync || undefined
-        };
-
-        if (isConnected) {
-          connectedSources.push(updatedSource);
-        } else {
-          unconnectedSources.push(updatedSource);
-        }
-      });
-
-      // Calculate scores
-      const scoreData = this.calculateConnectivityScore(connectedSources, unconnectedSources);
-      
-      const result = {
-        ...scoreData,
-        connectedSources,
-        unconnectedSources,
-        recommendations: this.generateRecommendations(connectedSources, unconnectedSources)
+      return {
+        userId,
+        integrations: integrations || [],
+        companyStatus,
+        connectivityScore,
+        lastUpdated: new Date().toISOString(),
+        status: connectivityScore >= 80 ? 'healthy' : connectivityScore >= 50 ? 'warning' : 'critical'
       };
-
-      // Record this snapshot in business health history for trend analysis
-      await this.recordHealthSnapshot(userId, result);
-
-      return result;
-
     } catch (error) {
       logger.error('Error getting connectivity status', error);
       throw error;

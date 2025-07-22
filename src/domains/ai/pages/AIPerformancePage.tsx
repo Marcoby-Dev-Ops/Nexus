@@ -20,7 +20,7 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
-import { ModelPerformanceMonitor } from '@/domains/ai/features/components/ModelPerformanceMonitor';
+import { ModelPerformanceMonitor } from '@/domains/ai/components/ModelPerformanceMonitor';
 
 interface PerformanceMetrics {
   responseTime: {

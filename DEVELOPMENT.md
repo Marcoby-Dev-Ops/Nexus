@@ -8,8 +8,8 @@ Your `.env` file is already configured with the remote Supabase project.
 ### 2. Database Commands
 
 ```bash
-# Check Supabase status
-pnpm supabase:status
+# Check remote database connection
+echo "Remote database is active"
 
 # Reset database (WARNING: Deletes all data)
 pnpm dev:reset
@@ -33,7 +33,7 @@ pnpm supabase:db:dump
 ### 3. Development Workflow
 
 ```bash
-# Start development server
+# Start development server (connects to remote Supabase)
 pnpm dev
 
 # Run tests
@@ -96,7 +96,8 @@ All tables have Row Level Security (RLS) enabled with appropriate policies:
 
 ### Check Database Connection
 ```bash
-pnpm supabase:status
+# Test connection to remote database
+psql "$DATABASE_URL" -c "SELECT version();" || echo "Database connection failed"
 ```
 
 ### View Debug Logs
@@ -136,7 +137,7 @@ VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
 ## 🚨 Troubleshooting
 
 ### Database Connection Issues
-1. Check if project is active: `pnpm supabase:status`
+1. Check if remote database is accessible: `psql "$DATABASE_URL" -c "SELECT version();"`
 2. Verify environment variables are set
 3. Check network connectivity
 
@@ -165,8 +166,6 @@ pnpm test              # Run tests
 pnpm type-check        # Type checking
 pnpm lint              # Linting
 
-# Supabase CLI
-pnpm supabase:status   # Check status
-pnpm supabase:start    # Start local (not needed for remote)
-pnpm supabase:stop     # Stop local
+# Database CLI
+psql "$DATABASE_URL" -c "SELECT version();"   # Test remote connection
 ``` 

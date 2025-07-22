@@ -7,10 +7,11 @@ import type {
   CallbackConfig,
   CallbackRegistry,
   ValidationResult,
-  CallbackTemplate,
-  CallbackType,
-  CallbackMethod
-} from '@/shared/types/callbacks';
+  CallbackTemplate
+} from '@/core/types/callbacks';
+
+// Global initialization guard to prevent multiple initializations in React StrictMode
+let globalInitializationGuard = false;
 
 /**
  * Implementation of the callback registry
@@ -27,7 +28,21 @@ export class CallbackRegistryImpl implements CallbackRegistry {
    * Initialize the registry with built-in configurations
    */
   public async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+    // Global guard to prevent multiple initializations
+    if (globalInitializationGuard) {
+      console.log('✅ Callback registry already initialized globally, skipping...');
+      return;
+    }
+    
+    if (this.isInitialized) {
+      console.log('✅ Callback registry already initialized, skipping...');
+      return;
+    }
+    
+    console.log('🔄 Initializing callback registry...');
+    
+    // Set global guard
+    globalInitializationGuard = true;
     
     // Load built-in templates
     await this.loadBuiltInTemplates();
@@ -36,6 +51,7 @@ export class CallbackRegistryImpl implements CallbackRegistry {
     await this.loadExistingCallbacks();
     
     this.isInitialized = true;
+    console.log('✅ Callback registry initialized successfully');
   }
 
   /**
@@ -395,9 +411,14 @@ export class CallbackRegistryImpl implements CallbackRegistry {
    * Load existing callback configurations (from database/storage)
    */
   private async loadExistingCallbacks(): Promise<void> {
-    // This would typically load from a database or configuration file
-    // For now, we'll leave this empty as it would be implementation-specific
-    console.log('Loading existing callback configurations...');
+    // Load built-in callback configurations
+    try {
+      const { registerAllCallbacks } = await import('./configs/integrationCallbacks');
+      await registerAllCallbacks();
+      console.log('✅ Loaded all callback configurations');
+    } catch (error) {
+      console.error('❌ Failed to load callback configurations:', error);
+    }
   }
 
   /**

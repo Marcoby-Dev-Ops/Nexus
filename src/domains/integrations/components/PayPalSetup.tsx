@@ -13,8 +13,8 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
-import { supabase } from '../../lib/core/supabase';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { supabase } from '@/core/supabase';
 
 interface PayPalSetupProps {
   onComplete?: () => void;
@@ -30,7 +30,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
   const [paypalIntegration, setPaypalIntegration] = useState<any>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connected' | 'error'>('disconnected');
   const { addNotification } = useNotifications();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   useEffect(() => {
     checkExistingIntegration();

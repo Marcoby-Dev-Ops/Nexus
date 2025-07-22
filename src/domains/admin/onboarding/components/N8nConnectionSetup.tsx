@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, AlertCircle, ExternalLink, Info, Eye, EyeOff } from 'lucide-react';
 import { Spinner } from '@/shared/components/ui/Spinner';
 import { supabase } from '@/core/supabase';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 interface N8nConnectionConfig {
   baseUrl: string;
@@ -27,7 +27,7 @@ export const N8nConnectionSetup: React.FC<N8nConnectionSetupProps> = ({
   onSkip,
   className = ''
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [config, setConfig] = useState<N8nConnectionConfig>({
     baseUrl: '',
     apiKey: '',

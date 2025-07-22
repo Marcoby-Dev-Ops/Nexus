@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useOnboarding } from '@/domains/admin/onboarding/hooks/useOnboarding';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
@@ -27,7 +27,7 @@ const industryOptions = ["Technology", "Healthcare", "Finance", "Retail", "Manuf
 const sizeOptions = ["1-10 employees", "11-50 employees", "51-200 employees", "201-500 employees", "501-1000 employees", "1000+ employees"];
 
 export function CompanyProfilePage() {
-  const { user, updateCompany } = useAuth();
+  const { user, updateCompany } = useAuthContext();
   const { completeStep } = useOnboarding();
   const { toast } = useToast();
   const navigate = useNavigate();

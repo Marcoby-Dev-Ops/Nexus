@@ -1,282 +1,502 @@
-import { supabase } from '@/core/supabase';
 import { logger } from '@/core/auth/logger';
+import { useAuthStore } from '@/shared/stores/authStore';
+import { performSignOut } from '@/shared/utils/signOut';
+import type { Session, User } from '@supabase/supabase-js';
+import type { Database } from '@/core/types/database.types';
 
-export interface AuthRedirectOptions {
-  redirectTo?: string;
-  replace?: boolean;
-}
+// Global initialization guard to prevent multiple initializations in React StrictMode
+let globalAuthServiceGuard = false;
 
-export interface AuthCheckResult {
-  isAuthenticated: boolean;
-  user: any;
-  session: any;
-  error?: string;
-}
+// Extract the correct types from the Database type
+type UserProfileRow = Database['public']['Tables']['user_profiles']['Row'];
+type CompanyRow = Database['public']['Tables']['companies']['Row'];
+type UserIntegrationRow = Database['public']['Tables']['user_integrations']['Row'];
+
+const logAuth = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  logger[level](`[AuthService:${timestamp}] ${message}`, data);
+};
 
 /**
- * Authentication Service
+ * Comprehensive Authentication Service
  * 
- * Provides utility functions for authentication management,
- * session handling, and redirect logic.
+ * Provides a clean interface for all authentication operations with:
+ * - Automatic session management
+ * - Error handling and retry logic
+ * - Session health monitoring
+ * - Data persistence
  */
 export class AuthService {
+  private static instance: AuthService;
+  private sessionCheckInterval: NodeJS.Timeout | null = null;
+  private isInitialized = false;
+
+  private constructor() {}
+
+  static getInstance(): AuthService {
+    if (!AuthService.instance) {
+      AuthService.instance = new AuthService();
+    }
+    return AuthService.instance;
+  }
+
   /**
-   * Check if user is currently authenticated
+   * Initialize the authentication service
    */
-  static async isAuthenticated(): Promise<boolean> {
+  async initialize(): Promise<void> {
+    // Global guard to prevent multiple initializations
+    if (globalAuthServiceGuard) {
+      logAuth('info', 'Auth service already initialized globally');
+      return;
+    }
+    
+    if (this.isInitialized) {
+      logAuth('info', 'Auth service already initialized');
+      return;
+    }
+
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) {
-        logger.error({ error }, 'Failed to check authentication status');
-        return false;
-      }
-      return !!session;
+      logAuth('info', 'Initializing authentication service');
+      
+      // Set global guard
+      globalAuthServiceGuard = true;
+      
+      // Initialize the Zustand store
+      const { initializeAuth } = await import('@/shared/stores/authStore');
+      initializeAuth();
+      
+      // Set up session monitoring
+      this.startSessionMonitoring();
+      
+      this.isInitialized = true;
+      logAuth('info', 'Authentication service initialized successfully');
     } catch (error) {
-      logger.error({ error }, 'Error checking authentication status');
+      logAuth('error', 'Failed to initialize authentication service', { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  /**
+   * Sign in with email and password
+   */
+  async signIn(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      logAuth('info', 'Signing in user', { email });
+      
+      const store = useAuthStore.getState();
+      const result = await store.signIn(email, password);
+      
+      if (result.success) {
+        logAuth('info', 'Sign in successful');
+      } else {
+        logAuth('error', 'Sign in failed', { error: result.error });
+      }
+      
+      return result;
+    } catch (error) {
+      logAuth('error', 'Sign in exception', { error: (error as Error).message });
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Sign up with email and password
+   */
+  async signUp(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      logAuth('info', 'Signing up user', { email });
+      
+      const store = useAuthStore.getState();
+      const result = await store.signUp(email, password);
+      
+      if (result.success) {
+        logAuth('info', 'Sign up successful');
+      } else {
+        logAuth('error', 'Sign up failed', { error: result.error });
+      }
+      
+      return result;
+    } catch (error) {
+      logAuth('error', 'Sign up exception', { error: (error as Error).message });
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Sign out the current user with comprehensive cleanup
+   */
+  async signOut(): Promise<{ success: boolean; error?: string }> {
+    try {
+      logAuth('info', 'Signing out user with comprehensive cleanup');
+      
+      // Stop session monitoring
+      this.stopSessionMonitoring();
+      
+      // Use the comprehensive sign out utility
+      await performSignOut();
+      
+      logAuth('info', 'Sign out completed successfully');
+      return { success: true };
+    } catch (error) {
+      logAuth('error', 'Sign out exception', { error: (error as Error).message });
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Reset password for email
+   */
+  async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      logAuth('info', 'Resetting password', { email });
+      
+      const store = useAuthStore.getState();
+      const result = await store.resetPassword(email);
+      
+      if (result.success) {
+        logAuth('info', 'Password reset email sent');
+      } else {
+        logAuth('error', 'Password reset failed', { error: result.error });
+      }
+      
+      return result;
+    } catch (error) {
+      logAuth('error', 'Password reset exception', { error: (error as Error).message });
+      return { success: false, error: (error as Error).message };
+    }
+  }
+
+  /**
+   * Get current authentication state
+   */
+  getAuthState() {
+    const store = useAuthStore.getState();
+    return {
+      session: store.session,
+      user: store.user,
+      profile: store.profile,
+      company: store.company,
+      integrations: store.integrations,
+      loading: store.loading,
+      error: store.error,
+      initialized: store.initialized,
+      status: store.status,
+      isAuthenticated: store.isAuthenticated,
+      isSessionValid: store.isSessionValid,
+      isSessionExpiring: store.isSessionExpiring,
+      lastActivity: store.lastActivity,
+      sessionExpiry: store.sessionExpiry,
+      refreshAttempts: store.refreshAttempts
+    };
+  }
+
+  /**
+   * Check if user is authenticated
+   */
+  isAuthenticated(): boolean {
+    const store = useAuthStore.getState();
+    return store.isAuthenticated;
+  }
+
+  /**
+   * Check if session is valid
+   */
+  isSessionValid(): boolean {
+    const store = useAuthStore.getState();
+    return store.isSessionValid;
+  }
+
+  /**
+   * Check if session is expiring soon
+   */
+  isSessionExpiring(): boolean {
+    const store = useAuthStore.getState();
+    return store.isSessionExpiring;
+  }
+
+  /**
+   * Get current user
+   */
+  getCurrentUser(): User | null {
+    const store = useAuthStore.getState();
+    return store.user;
+  }
+
+  /**
+   * Get current session
+   */
+  getCurrentSession(): Session | null {
+    const store = useAuthStore.getState();
+    return store.session;
+  }
+
+  /**
+   * Get user profile
+   */
+  getUserProfile(): UserProfileRow | null {
+    const store = useAuthStore.getState();
+    return store.profile;
+  }
+
+  /**
+   * Get user company
+   */
+  getUserCompany(): CompanyRow | null {
+    const store = useAuthStore.getState();
+    return store.company;
+  }
+
+  /**
+   * Get user integrations
+   */
+  getUserIntegrations(): UserIntegrationRow[] {
+    const store = useAuthStore.getState();
+    return store.integrations;
+  }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(updates: Partial<UserProfileRow>): Promise<void> {
+    try {
+      logAuth('info', 'Updating user profile', { updates });
+      
+      const store = useAuthStore.getState();
+      await store.updateProfile(updates);
+      
+      logAuth('info', 'Profile updated successfully');
+    } catch (error) {
+      logAuth('error', 'Profile update failed', { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  /**
+   * Update user company
+   */
+  async updateCompany(updates: Partial<CompanyRow>): Promise<void> {
+    try {
+      logAuth('info', 'Updating user company', { updates });
+      
+      const store = useAuthStore.getState();
+      await store.updateCompany(updates);
+      
+      logAuth('info', 'Company updated successfully');
+    } catch (error) {
+      logAuth('error', 'Company update failed', { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  /**
+   * Refresh user data (profile, integrations, company)
+   */
+  async refreshUserData(): Promise<void> {
+    try {
+      const store = useAuthStore.getState();
+      const user = store.user;
+      
+      if (!user?.id) {
+        logAuth('warn', 'No user ID available for data refresh');
+        return;
+      }
+      
+      logAuth('info', 'Refreshing user data', { userId: user.id });
+      
+      // Fetch all user data in parallel
+      await Promise.all([
+        store.fetchProfile(user.id),
+        store.fetchIntegrations(user.id)
+      ]);
+      
+      // Fetch company if user has one
+      const profile = store.profile;
+      if (profile?.company_id) {
+        await store.fetchCompany(profile.company_id);
+      }
+      
+      logAuth('info', 'User data refreshed successfully');
+    } catch (error) {
+      logAuth('error', 'Failed to refresh user data', { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  /**
+   * Refresh session
+   */
+  async refreshSession(): Promise<void> {
+    try {
+      logAuth('info', 'Refreshing session');
+      
+      const store = useAuthStore.getState();
+      await store.refreshSession();
+      
+      logAuth('info', 'Session refreshed successfully');
+    } catch (error) {
+      logAuth('error', 'Session refresh failed', { error: (error as Error).message });
+      throw error;
+    }
+  }
+
+  /**
+   * Validate current session
+   */
+  async validateSession(): Promise<boolean> {
+    try {
+      const store = useAuthStore.getState();
+      const isValid = await store.validateSession();
+      
+      logAuth('info', 'Session validation result', { isValid });
+      return isValid;
+    } catch (error) {
+      logAuth('error', 'Session validation failed', { error: (error as Error).message });
       return false;
     }
   }
 
   /**
-   * Get current user and session
+   * Check session health
    */
-  static async getCurrentAuth(): Promise<AuthCheckResult> {
-    try {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (error) {
-        logger.error({ error }, 'Failed to get current user');
-        return {
-          isAuthenticated: false,
-          user: null,
-          session: null,
-          error: error.message
-        };
-      }
-
-      return {
-        isAuthenticated: !!(user && session),
-        user,
-        session
-      };
-    } catch (error) {
-      logger.error({ error }, 'Error getting current auth');
-      return {
-        isAuthenticated: false,
-        user: null,
-        session: null,
-        error: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  /**
-   * Sign out user and redirect
-   */
-  static async signOut(redirectTo: string = '/login'): Promise<void> {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        logger.error({ error }, 'Sign out error');
-      }
-      
-      // Clear any cached data
-      localStorage.removeItem('supabase.auth.token');
-      
-      // Redirect to login
-      window.location.href = redirectTo;
-    } catch (error) {
-      logger.error({ error }, 'Unexpected sign out error');
-      // Force redirect even on error
-      window.location.href = redirectTo;
-    }
-  }
-
-  /**
-   * Redirect to login with return URL
-   */
-  static redirectToLogin(currentPath: string, options: AuthRedirectOptions = {}): void {
-    const { redirectTo = '/login', replace = true } = options;
-    
-    const searchParams = new URLSearchParams();
-    searchParams.set('redirect', currentPath);
-    
-    const loginUrl = `${redirectTo}?${searchParams.toString()}`;
-    
-    if (replace) {
-      window.location.replace(loginUrl);
-    } else {
-      window.location.href = loginUrl;
-    }
-  }
-
-  /**
-   * Redirect to home or specified URL after login
-   */
-  static redirectAfterLogin(redirectTo: string = '/home'): void {
-    window.location.replace(redirectTo);
-  }
-
-  /**
-   * Check if current route requires authentication
-   */
-  static isProtectedRoute(pathname: string): boolean {
-    const protectedPrefixes = [
-      '/dashboard', '/workspace', '/ai-hub', '/chat', '/ai-performance', 
-      '/business-setup', '/business-chat', '/analytics', '/data-warehouse', 
-      '/assessment', '/company-status', '/think', '/see', '/act', '/sales', 
-      '/finance', '/marketing', '/operations', '/support', '/hr', '/it', 
-      '/product', '/customer-success', '/legal', '/maturity', '/sales-performance', 
-      '/financial-operations', '/integrations', '/settings', '/profile', 
-      '/onboarding/company-profile', '/documents', '/admin', '/component/',
-      '/home', '/knowledge'
-    ];
-
-    return protectedPrefixes.some(prefix => pathname.startsWith(prefix));
-  }
-
-  /**
-   * Check if current route is public (no auth required)
-   */
-  static isPublicRoute(pathname: string): boolean {
-    const publicRoutes = [
-      '/', '/login', '/signup', '/reset-password', '/waitlist', 
-      '/marketing', '/pricing', '/help', '/auth/callback'
-    ];
-
-    return publicRoutes.some(route => pathname.startsWith(route));
-  }
-
-  /**
-   * Get the appropriate redirect URL based on authentication status
-   */
-  static getRedirectUrl(isAuthenticated: boolean, currentPath: string): string {
-    if (isAuthenticated) {
-      // If user is authenticated and trying to access public routes, redirect to home
-      if (this.isPublicRoute(currentPath) && currentPath !== '/') {
-        return '/home';
-      }
-      return currentPath;
-    } else {
-      // If user is not authenticated and trying to access protected routes, redirect to login
-      if (this.isProtectedRoute(currentPath)) {
-        return '/login';
-      }
-      return currentPath;
-    }
-  }
-
-  /**
-   * Validate session and refresh if needed
-   */
-  static async validateSession(): Promise<boolean> {
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        logger.error({ error }, 'Session validation failed');
-        return false;
-      }
-
-      if (!session) {
-        return false;
-      }
-
-      // Check if session is expired
-      const now = Math.floor(Date.now() / 1000);
-      if (session.expires_at && session.expires_at < now) {
-        logger.warn('Session expired, attempting refresh');
-        
-        const { data: { session: newSession }, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (refreshError || !newSession) {
-          logger.error({ refreshError }, 'Session refresh failed');
-          return false;
-        }
-      }
-
-      return true;
-    } catch (error) {
-      logger.error({ error }, 'Error validating session');
-      return false;
-    }
-  }
-
-  /**
-   * Get user permissions and roles
-   */
-  static async getUserPermissions(userId: string): Promise<{
-    roles: string[];
-    permissions: string[];
+  async checkSessionHealth(): Promise<{
+    isValid: boolean;
+    isExpiring: boolean;
+    timeUntilExpiry: number;
+    needsRefresh: boolean;
   }> {
     try {
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('role, department')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        logger.error({ error }, 'Failed to get user permissions');
-        return { roles: [], permissions: [] };
-      }
-
-      return {
-        roles: profile.role ? [profile.role] : [],
-        permissions: [] // permissions column doesn't exist in current schema
-      };
+      const store = useAuthStore.getState();
+      const health = await store.checkSessionHealth();
+      
+      logAuth('info', 'Session health check', health);
+      return health;
     } catch (error) {
-      logger.error({ error }, 'Error getting user permissions');
-      return { roles: [], permissions: [] };
+      logAuth('error', 'Session health check failed', { error: (error as Error).message });
+      return {
+        isValid: false,
+        isExpiring: false,
+        timeUntilExpiry: 0,
+        needsRefresh: false
+      };
     }
   }
 
   /**
-   * Check if user has required permissions
+   * Retry session fetch
    */
-  static async hasPermission(
-    userId: string, 
-    requiredPermissions: string[] = [], 
-    requiredRoles: string[] = []
-  ): Promise<boolean> {
+  async retrySessionFetch(): Promise<void> {
     try {
-      const { roles, permissions } = await this.getUserPermissions(userId);
-
-      // Check roles
-      if (requiredRoles.length > 0) {
-        const hasRequiredRole = requiredRoles.some(role => roles.includes(role));
-        if (!hasRequiredRole) {
-          return false;
-        }
-      }
-
-      // Check permissions
-      if (requiredPermissions.length > 0) {
-        const hasRequiredPermission = requiredPermissions.some(permission => 
-          permissions.includes(permission)
-        );
-        if (!hasRequiredPermission) {
-          return false;
-        }
-      }
-
-      return true;
+      logAuth('info', 'Retrying session fetch');
+      
+      const store = useAuthStore.getState();
+      await store.retrySessionFetch();
+      
+      logAuth('info', 'Session fetch retry completed');
     } catch (error) {
-      logger.error({ error }, 'Error checking user permissions');
-      return false;
+      logAuth('error', 'Session fetch retry failed', { error: (error as Error).message });
+      throw error;
     }
+  }
+
+  /**
+   * Start session monitoring
+   */
+  private startSessionMonitoring(): void {
+    // Clear any existing interval
+    if (this.sessionCheckInterval) {
+      clearInterval(this.sessionCheckInterval);
+    }
+
+    // Check session health every 10 minutes (reduced from 5 minutes)
+    this.sessionCheckInterval = setInterval(async () => {
+      try {
+        const health = await this.checkSessionHealth();
+        
+        if (health.needsRefresh) {
+          logAuth('info', 'Session needs refresh, attempting refresh');
+          await this.refreshSession();
+        }
+      } catch (error) {
+        logAuth('error', 'Session monitoring error', { error: (error as Error).message });
+      }
+    }, 10 * 60 * 1000); // 10 minutes (reduced from 5 minutes)
+  }
+
+  /**
+   * Stop session monitoring
+   */
+  stopSessionMonitoring(): void {
+    if (this.sessionCheckInterval) {
+      clearInterval(this.sessionCheckInterval);
+      this.sessionCheckInterval = null;
+      logAuth('info', 'Session monitoring stopped');
+    }
+  }
+
+  /**
+   * Clear authentication state
+   */
+  clearAuth(): void {
+    const store = useAuthStore.getState();
+    store.clearAuth();
+    logAuth('info', 'Authentication state cleared');
+  }
+
+  /**
+   * Get session expiry information
+   */
+  getSessionExpiryInfo(): { expiresAt: Date | null; timeUntilExpiry: number | null } {
+    const store = useAuthStore.getState();
+    const session = store.session;
+    
+    if (!session?.expires_at) {
+      return { expiresAt: null, timeUntilExpiry: null };
+    }
+    
+    const expiresAt = new Date(session.expires_at);
+    const timeUntilExpiry = expiresAt.getTime() - Date.now();
+    
+    return {
+      expiresAt,
+      timeUntilExpiry: timeUntilExpiry > 0 ? timeUntilExpiry : null
+    };
+  }
+
+  /**
+   * Destroy the service
+   */
+  destroy(): void {
+    this.stopSessionMonitoring();
+    this.isInitialized = false;
+    logAuth('info', 'Authentication service destroyed');
   }
 }
 
+// Export singleton instance
+export const authService = AuthService.getInstance();
+
 // Export convenience functions
-export const isAuthenticated = AuthService.isAuthenticated;
-export const getCurrentAuth = AuthService.getCurrentAuth;
-export const signOut = AuthService.signOut;
-export const redirectToLogin = AuthService.redirectToLogin;
-export const redirectAfterLogin = AuthService.redirectAfterLogin;
-export const isProtectedRoute = AuthService.isProtectedRoute;
-export const isPublicRoute = AuthService.isPublicRoute;
-export const getRedirectUrl = AuthService.getRedirectUrl;
-export const validateSession = AuthService.validateSession;
-export const hasPermission = AuthService.hasPermission; 
+export const initializeAuth = () => authService.initialize();
+export const signIn = (email: string, password: string) => authService.signIn(email, password);
+export const signUp = (email: string, password: string) => authService.signUp(email, password);
+export const signOut = () => authService.signOut();
+export const resetPassword = (email: string) => authService.resetPassword(email);
+export const getAuthState = () => authService.getAuthState();
+export const isAuthenticated = () => authService.isAuthenticated();
+export const isSessionValid = () => authService.isSessionValid();
+export const isSessionExpiring = () => authService.isSessionExpiring();
+export const getCurrentUser = () => authService.getCurrentUser();
+export const getCurrentSession = () => authService.getCurrentSession();
+export const getUserProfile = () => authService.getUserProfile();
+export const getUserCompany = () => authService.getUserCompany();
+export const getUserIntegrations = () => authService.getUserIntegrations();
+export const updateProfile = (updates: Partial<UserProfileRow>) => authService.updateProfile(updates);
+export const updateCompany = (updates: Partial<CompanyRow>) => authService.updateCompany(updates);
+export const refreshUserData = () => authService.refreshUserData();
+export const refreshSession = () => authService.refreshSession();
+export const validateSession = () => authService.validateSession();
+export const checkSessionHealth = () => authService.checkSessionHealth();
+export const retrySessionFetch = () => authService.retrySessionFetch();
+export const clearAuth = () => authService.clearAuth();
+export const getSessionExpiryInfo = () => authService.getSessionExpiryInfo();
+export const destroyAuth = () => authService.destroy(); 

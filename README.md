@@ -1,174 +1,117 @@
-# Nexus
+# Nexus - Business Intelligence Platform
 
-> **The AI-First Business Operating System**
+**Nexus** is a comprehensive business intelligence platform designed to enable innovators, thinkers, and self-starters to start, standardize, operate, and grow businesses without requiring formal business education.
 
-Nexus is the unified, AI-powered operating system for modern business—uniting every department, workflow, and insight in a single, intuitive platform. It empowers startups and enterprises alike to operate smarter, automate more, and grow faster—with daily value, actionable intelligence, and scalable workflows.
+## 🚀 Recent Updates
 
----
+### Microsoft 365 Integration Consolidation
+- **Unified Integration**: OneDrive, SharePoint, Teams, and Outlook now integrated under single Microsoft 365 connection
+- **Enhanced Permissions**: Comprehensive OAuth flow grants access to all Microsoft 365 services
+- **Improved UX**: Simplified setup process with unified analytics across all Microsoft services
+- **Better Organization**: Logical grouping of all Microsoft 365 capabilities
 
-## 🚀 North Star Vision
+### Integration Marketplace Improvements
+- **Enhanced Contrast**: Fixed accessibility issues with filter colors and badges
+- **Better Visual Hierarchy**: Improved badge styling for connection status, difficulty levels, and popular integrations
+- **Responsive Design**: Optimized layout for mobile and desktop viewing
 
-- **Unified Experience:** Every function, one platform, no silos.
-- **AI-First:** Embedded intelligence and automations in every workflow.
-- **Modular/Extensible:** Add/remove features, customize, and scale.
-- **Enterprise-Ready:** Security, compliance, and reliability from day one.
-- **Startup-Friendly:** Easy onboarding, fast value, fair pricing.
-- **Continuous Improvement:** Learns and gets better with every user (data flywheel).
-- **Trinity Architecture:** THINK (brainstorm/collaborate), SEE (analyze/understand), ACT (automate/execute).
+### Codebase Cleanup
+- **Removed Outdated Functions**: Cleaned up unused Edge Functions and temporary files
+- **Simplified Architecture**: Consolidated OneDrive/SharePoint into Microsoft 365 integration
+- **Updated Documentation**: Refreshed integration descriptions and user guides
 
-**Read the full vision and execution plan:** [docs/NEXUS_VISION_EXECUTION_PLAN.md](./docs/NEXUS_VISION_EXECUTION_PLAN.md)
+## 🎯 Core Features
 
----
+### **Unified Workspace**
+- **Inbox Management**: Centralized email, calendar, and communication management
+- **Task & Project Tracking**: Integrated task management with AI-powered prioritization
+- **Document Intelligence**: AI-powered document analysis and RAG capabilities
+- **Team Collaboration**: Real-time collaboration tools and analytics
 
-## 🗺️ Phased Roadmap (2025 Edition)
+### **AI-Powered Intelligence**
+- **Conversational AI**: Natural language interaction for business tasks
+- **Predictive Analytics**: AI-driven insights and recommendations
+- **Automated Workflows**: Intelligent process automation
+- **Knowledge Management**: Smart document processing and retrieval
 
-1. **Foundation & MVP:** Unified navigation, dashboard, department modules, AI assistant, onboarding, secure multi-tenant backend.
-2. **Feature Depth & Extensibility:** Deepen department features, launch marketplace, expand integrations, add customization and advanced security.
-3. **Enterprise & Scale:** Horizontal scaling, advanced analytics, app store, global support, certifications.
-4. **Continuous Learning:** Progressive AI, community templates, global expansion, and retention features.
+### **Comprehensive Integrations**
+- **Microsoft 365**: Teams, Outlook, OneDrive, SharePoint with unified analytics
+- **Google Workspace**: Gmail, Drive, Calendar, and productivity tools
+- **CRM Systems**: HubSpot, Salesforce, and custom CRM integrations
+- **Communication**: Slack, Microsoft Teams, and messaging platforms
+- **Financial**: Stripe, PayPal, and payment processing
+- **Analytics**: Google Analytics, Search Console, and business intelligence tools
 
----
+## 🛠 Technology Stack
 
-## Project Structure
+- **Frontend**: React 18, TypeScript, Vite
+- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
+- **AI/ML**: OpenAI GPT-4, Claude, Custom RAG Systems
+- **Styling**: Tailwind CSS, Radix UI Components
+- **State Management**: React Context, Custom Hooks
+- **Package Manager**: pnpm
 
-```
-Nexus/
-├── src/                 # App source code, organized by domain (see below)
-├── public/              # Static assets (images, favicon, etc.)
-├── supabase/            # Supabase config, migrations, and edge functions
-├── docs/                # 📚 All project documentation
-├── scripts/             # Utility and automation scripts (setup, migrations, etc.)
-├── archive/             # Archived/legacy code and resources
-├── __tests__/           # Unit and integration tests
-├── dist/                # Build output (production-ready files)
-├── node_modules/        # Installed npm dependencies
-├── backups/             # Database or project backups
-├── .github/             # GitHub workflows, issue templates, etc.
-├── .env                 # Environment variables
-└── ...                  # Config files (tsconfig.json, vite.config.ts, etc.)
-```
+## 🚀 Getting Started
 
-### Domain-Driven Structure
+### Prerequisites
+- Node.js 18+ 
+- pnpm
+- Supabase CLI
 
-- Each top-level directory in `src/` represents a business domain (e.g., `ai/`, `analytics/`, `user/`, `workspace/`, etc.).
-- Each domain contains its own `components/`, `features/`, `hooks/`, `lib/`, and `pages/` subdirectories as needed.
-- Shared, reusable UI and logic live in `src/shared/` (e.g., `src/shared/components/ui/`).
-- App shell, config, and global types are in `src/app/`, `src/config/`, `src/constants/`, etc.
-
-#### Example:
-```
-src/
-  ai/
-    components/
-    features/
-    hooks/
-    lib/
-    pages/
-  user/
-    components/
-    ...
-  shared/
-    components/
-      ui/
-    lib/
-    ...
-  ...
-```
-
-### Migration Rationale
-
-- **Why:** To improve maintainability, scalability, and clarity as the codebase grows.
-- **How:** All business logic, UI, and features are grouped by domain. Shared code is centralized. Legacy folders like `features/`, `services/`, etc. have been migrated or removed.
-- **Result:** Faster onboarding, easier refactoring, and clear ownership of code.
-
-## Quick Start
-
+### Installation
 ```bash
+# Clone the repository
+git clone https://github.com/your-org/nexus.git
+cd nexus
+
 # Install dependencies
 pnpm install
 
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your configuration
+
 # Start development server
-pnpm run dev
-
-# Run tests
-pnpm test
-
-# Build for production
-pnpm run build
+pnpm dev
 ```
 
-## Documentation
+### Environment Variables
+```bash
+# Supabase
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-- **[Nexus Vision & Execution Plan](docs/NEXUS_VISION_EXECUTION_PLAN.md)** - North Star, roadmap, and execution strategy
-- **[Project Overview](docs/PROJECT_OVERVIEW.md)** - High-level architecture and goals
-- **[Testing Guide](docs/testing/TESTING_CHECKLIST.md)** - Comprehensive testing system
-- **[Deployment](docs/deployment/DEPLOYMENT.md)** - Production deployment instructions
-- **[API Documentation](docs/api.md)** - Backend API reference
+# AI Services
+VITE_OPENROUTER_API_KEY=your_openrouter_key
+VITE_BRAVE_API_KEY=your_brave_key
 
-## Tech Stack
+# Integrations
+VITE_MICROSOFT_CLIENT_ID=your_microsoft_client_id
+VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_HUBSPOT_CLIENT_ID=your_hubspot_client_id
+```
 
-- **Frontend**: React 19, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: Supabase (PostgreSQL, Auth, Functions)
-- **Testing**: Jest, Testing Library, Cypress (E2E)
-- **Build**: Vite, ESLint, TypeScript
-- **CI/CD**: GitHub Actions, Codecov
+## 📚 Documentation
 
----
+- [User Guide](./docs/USER_GUIDE.md) - Complete user documentation
+- [Developer Guide](./docs/DEVELOPER_GUIDE.md) - Technical implementation details
+- [API Reference](./docs/API_REFERENCE.md) - Integration and API documentation
+- [Deployment Guide](./docs/DEPLOYMENT.md) - Production deployment instructions
 
-## Why Nexus?
+## 🤝 Contributing
 
-- **Single Source of Truth** – All key data and workflows in one pane
-- **AI on Tap** – Each department gets a purpose-built assistant
-- **Pluggable Marketplace** – Add integrations and features instantly
-- **Self-Hosted & Brandable** – Runs on your infrastructure; white-label potential
-- **Scales with You** – Feature-sliced codebase, multi-tenant by design, automated tests/CI
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
 
----
+## 📄 License
 
-## The Trinity: THINK / SEE / ACT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
-- **THINK:** Brainstorm, collaborate, capture ideas (Personal/Team/Org memory)
-- **SEE:** Analyze, understand, get real-time insights (Dashboards, analytics, AI)
-- **ACT:** Automate, execute, optimize (Workflows, automations, integrations)
-- **Continuous Learning:** Every action and insight feeds back into the system, making Nexus smarter for all users (data flywheel).
+## 🆘 Support
 
----
-
-## FIRE CYCLE as the Operating Rhythm
-
-- The **FIRE CYCLE** (Focus, Insight, Roadmap, Execute) is globally available across Nexus.
-- Every domain, agent, and workflow can access and update the current FIRE phase using our centralized context.
-- The UI persistently surfaces the user’s phase and next action, making progress and accountability visible at all times.
-- All major features, prompts, and agent advice are “FIRE-aware,” so users never lose sight of what matters and what’s next.
-- The FIRE CYCLE is not a feature or module—it is the *operating rhythm* and workflow engine that powers every part of Nexus, from onboarding to analytics, thought capture, project management, and daily/weekly rituals.
-- Users experience the FIRE CYCLE as a visible, actionable, and repeatable process that turns ideas and data into real results, everywhere in the platform.
+- **Documentation**: [docs.nexus.com](https://docs.nexus.com)
+- **Community**: [Discord](https://discord.gg/nexus)
+- **Issues**: [GitHub Issues](https://github.com/your-org/nexus/issues)
 
 ---
 
-**Ready to build the future of business? Start with the [Nexus Vision & Execution Plan](docs/NEXUS_VISION_EXECUTION_PLAN.md).**
-
-## 🛠️ **Development**
-
-| Command | Description |
-|---------|-------------|
-| `pnpm run dev` | Start development server |
-| `pnpm run build` | Build for production |
-| `pnpm run preview` | Preview production build |
-| `pnpm test` | Run tests |
-| `pnpm run test:coverage` | Run tests with coverage |
-| `pnpm run lint` | Check code quality |
-| `pnpm run type-check` | TypeScript validation |
-
-## 🤝 **Contributing**
-
-1. Create a feature branch
-2. Make your changes
-3. Run tests: `pnpm test`
-4. Check linting: `pnpm run lint`
-5. Submit a pull request
-
-All PRs automatically run through our CI/CD pipeline with tests, linting, and security checks.
-
-## 📄 **License**
-
-See [LICENSE](docs/LICENSE) for details. 
+**Nexus** - Empowering entrepreneurs with intelligent business tools. No degree required. 

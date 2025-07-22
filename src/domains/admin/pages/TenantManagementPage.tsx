@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from "@/core/supabase";
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/Table';

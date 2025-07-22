@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 interface UseAuthGuardOptions {
   requireAuth?: boolean;
@@ -23,7 +23,7 @@ export const useAuthGuard = (options: UseAuthGuardOptions = {}) => {
     onAuthorized
   } = options;
 
-  const { user, session, loading, initialized } = useAuth();
+  const { user, session, loading, initialized } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -93,7 +93,7 @@ export const useRequireGuest = (redirectTo?: string) => {
  * Useful for components that need to know auth state but don't require it.
  */
 export const useOptionalAuth = () => {
-  const { user, session, loading, initialized } = useAuth();
+  const { user, session, loading, initialized } = useAuthContext();
   
   return {
     isAuthenticated: !!(user && session),

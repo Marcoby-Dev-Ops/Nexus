@@ -19,6 +19,7 @@ export default defineConfig({
       '@/domains/dashboard': resolve(__dirname, 'src/domains/dashboard'),
       '@/domains/workspace': resolve(__dirname, 'src/domains/workspace'),
       '@/domains/marketplace': resolve(__dirname, 'src/domains/marketplace'),
+      '@/domains/business': resolve(__dirname, 'src/domains/business'),
       '@/domains/admin': resolve(__dirname, 'src/domains/admin'),
       '@/domains/ai': resolve(__dirname, 'src/domains/ai'),
       '@/domains/analytics': resolve(__dirname, 'src/domains/analytics'),
@@ -26,7 +27,13 @@ export default defineConfig({
       '@/domains/integrations': resolve(__dirname, 'src/domains/integrations'),
       '@/domains/help-center': resolve(__dirname, 'src/domains/help-center'),
       '@/domains/knowledge': resolve(__dirname, 'src/domains/knowledge'),
+      '@/domains/fire-cycle': resolve(__dirname, 'src/domains/fire-cycle'),
+      '@/domains/waitlist': resolve(__dirname, 'src/domains/waitlist'),
+      '@/domains/hype': resolve(__dirname, 'src/domains/hype'),
+      '@/domains/entrepreneur': resolve(__dirname, 'src/domains/entrepreneur'),
+      '@/domains/development': resolve(__dirname, 'src/domains/development'),
       '@/domains/departments': resolve(__dirname, 'src/domains/departments'),
+      '@/archive': resolve(__dirname, 'src/archive'),
     },
   },
   define: {
@@ -54,12 +61,12 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    // Include Microsoft Graph Toolkit dependencies for proper bundling
+    // Optimize dependencies for better performance
     include: [
-      '@microsoft/mgt-element',
-      '@microsoft/mgt-react',
-      '@microsoft/mgt-msal2-provider',
-      '@microsoft/mgt-components'
+      '@supabase/supabase-js',
+      'react',
+      'react-dom',
+      'zustand'
     ]
   },
   build: {
@@ -67,14 +74,8 @@ export default defineConfig({
     rollupOptions: {
       external: [],
       output: {
-        // Separate MGT components into their own chunk
+        // Separate chunks for better performance
         manualChunks: (id) => {
-          if (id.includes('@microsoft/mgt')) {
-            return 'mgt'
-          }
-          if (id.includes('lit')) {
-            return 'lit'
-          }
           if (id.includes('framer-motion')) {
             return 'framer-motion';
           }
@@ -83,6 +84,9 @@ export default defineConfig({
           }
           if (id.includes('axios')) {
             return 'axios';
+          }
+          if (id.includes('react-router-dom')) {
+            return 'react-router';
           }
         },
       }

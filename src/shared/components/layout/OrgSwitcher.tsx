@@ -1,10 +1,10 @@
 import React from 'react';
 import { useOrganizationStore } from '@/shared/stores/organizationStore';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { ChevronDown } from 'lucide-react';
 
 export const OrgSwitcher: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { orgs, activeOrgId, setActiveOrg, loadMemberships } = useOrganizationStore();
 
   React.useEffect(() => {

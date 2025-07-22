@@ -4,7 +4,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from '@/core/supabase';
 import {
   Database,
@@ -23,7 +23,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { triggerManualSync } from '@/domains/integrations/lib/syncService';
-import { BaseIntegration } from '@/domains/integrations/lib/baseIntegration';
+import type { BaseIntegration } from '@/domains/integrations/lib/baseIntegration';
 import { GoogleWorkspaceIntegration } from '@/domains/integrations/lib/GoogleWorkspaceIntegration';
 import { Microsoft365Integration } from '@/domains/integrations/lib/Microsoft365Integration';
 import { DropboxIntegration } from '@/domains/integrations/lib/DropboxIntegration';
@@ -82,7 +82,7 @@ const integrationClassRegistry: Record<string, typeof BaseIntegration> = {
 };
 
 const IntegrationDataDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [integrationData, setIntegrationData] = useState<IntegrationData[]>([]);
   const [insights, setInsights] = useState<IntegrationInsight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -113,19 +113,39 @@ const IntegrationDataDashboard: React.FC = () => {
           status,
           updated_at,
           config,
-          integrations!inner(
-            id,
-            name,
-            slug
-          )
+          integration_id
         `)
         .eq('user_id', user!.id)
         .eq('status', 'active');
 
       if (error) throw error;
 
+      // Fetch integration details separately to avoid join issues
+      const integrationsWithDetails = await Promise.all(
+        (userIntegrations || []).map(async (userIntegration) => {
+          try {
+            const { data: integrationDetails } = await supabase
+              .from('integrations')
+              .select('id, name, slug')
+              .eq('id', userIntegration.integration_id)
+              .single();
+            
+            return {
+              ...userIntegration,
+              integrations: integrationDetails || { name: 'Unknown', slug: 'unknown' }
+            };
+          } catch (error) {
+            console.error('Error fetching integration details:', error);
+            return {
+              ...userIntegration,
+              integrations: { name: 'Unknown', slug: 'unknown' }
+            };
+          }
+        })
+      );
+
       // Mock data enhancement - in real implementation, this would come from actual data collection
-      const enhancedData: IntegrationData[] = userIntegrations.map((integration: any) => {
+      const enhancedData: IntegrationData[] = integrationsWithDetails.map((integration: any) => {
         const mockMetrics = generateMockMetrics(integration.integrations.slug);
         
         return {

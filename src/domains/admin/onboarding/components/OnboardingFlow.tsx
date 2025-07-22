@@ -15,7 +15,7 @@ import {
   Target
 } from 'lucide-react';
 
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -65,7 +65,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete, 
   className = '' 
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
+  
+
   const [currentFlow] = useState<'unified-brain' | 'traditional' | 'ai-chat' | 'founder' | 'checklist'>('unified-brain');
   const [brainInsights] = useState<BrainInsight[]>([]);
   const [expertKnowledge] = useState<ExpertKnowledge[]>([]);

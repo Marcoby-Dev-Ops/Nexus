@@ -230,16 +230,21 @@ class ModuleRegistry {
 // Global registry instance
 export const moduleRegistry = new ModuleRegistry();
 
-// Initialize with existing modules
-export const initializeModuleRegistry = () => {
-  // Sales Module
-  moduleRegistry.registerModule({
+// Track if modules have been initialized
+let modulesInitialized = false;
+
+// Global initialization guard to prevent multiple initializations in React StrictMode
+let globalModuleRegistryGuard = false;
+
+// Lazy module definitions - only loaded when needed
+const LAZY_MODULE_DEFINITIONS = {
+  'sales-module': () => ({
     id: 'sales-module',
     name: 'Sales Intelligence Module',
     version: '1.0.0',
     description: 'Comprehensive sales intelligence with Trinity Brain capabilities for predictive revenue generation',
     department: 'sales',
-    status: 'development',
+    status: 'development' as const,
     capabilities: [
       {
         id: 'pipeline-analysis',
@@ -296,16 +301,15 @@ export const initializeModuleRegistry = () => {
       successRate: 0.97,
       resourceUsage: 'medium'
     }
-  });
+  }),
 
-  // Product Development Module
-  moduleRegistry.registerModule({
+  'product-development-module': () => ({
     id: 'product-development-module',
     name: 'Product Development Intelligence',
     version: '1.0.0',
     description: 'Product strategy and development intelligence with user-centric insights',
     department: 'product',
-    status: 'active',
+    status: 'active' as const,
     capabilities: [
       {
         id: 'feature-adoption-analysis',
@@ -346,16 +350,15 @@ export const initializeModuleRegistry = () => {
       successRate: 0.94,
       resourceUsage: 'low'
     }
-  });
+  }),
 
-  // Marketing Module
-  moduleRegistry.registerModule({
+  'marketing-module': () => ({
     id: 'marketing-module',
     name: 'Marketing Intelligence Engine',
     version: '1.0.0',
     description: 'Comprehensive marketing intelligence and campaign optimization',
     department: 'marketing',
-    status: 'development',
+    status: 'development' as const,
     capabilities: [
       {
         id: 'campaign-optimization',
@@ -396,9 +399,94 @@ export const initializeModuleRegistry = () => {
       successRate: 0.92,
       resourceUsage: 'medium'
     }
+  })
+};
+
+/**
+ * Initialize a specific module on-demand
+ */
+export const initializeModule = async (moduleId: string): Promise<ModuleMetadata | null> => {
+  try {
+    // Check if module is already registered
+    const existingModule = moduleRegistry.getModule(moduleId);
+    if (existingModule) {
+      return existingModule;
+    }
+
+    // Check if module definition exists
+    const moduleDefinition = LAZY_MODULE_DEFINITIONS[moduleId as keyof typeof LAZY_MODULE_DEFINITIONS];
+    if (!moduleDefinition) {
+      console.warn(`⚠️ Module ${moduleId} not found in lazy definitions`);
+      return null;
+    }
+
+    // Load and register the module
+    const moduleMetadata = moduleDefinition();
+    moduleRegistry.registerModule(moduleMetadata);
+    
+    console.log(`🚀 Lazy-loaded module: ${moduleMetadata.name} (${moduleId})`);
+    return moduleMetadata;
+  } catch (error) {
+    console.error(`❌ Failed to initialize module ${moduleId}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Initialize multiple modules on-demand
+ */
+export const initializeModules = async (moduleIds: string[]): Promise<ModuleMetadata[]> => {
+  const results = await Promise.all(
+    moduleIds.map(id => initializeModule(id))
+  );
+  return results.filter((module): module is ModuleMetadata => module !== null);
+};
+
+/**
+ * Initialize all modules (for backward compatibility)
+ */
+export const initializeModuleRegistry = () => {
+  // Global guard to prevent multiple initializations
+  if (globalModuleRegistryGuard) {
+    console.log('📋 Module Registry already initialized globally');
+    return;
+  }
+  
+  if (modulesInitialized) {
+    console.log('📋 Module Registry already initialized');
+    return;
+  }
+
+  // Set global guard
+  globalModuleRegistryGuard = true;
+
+  // Only initialize core modules that are always needed
+  const coreModules = ['sales-module']; // Only load essential modules on startup
+  
+  coreModules.forEach(moduleId => {
+    const moduleDefinition = LAZY_MODULE_DEFINITIONS[moduleId as keyof typeof LAZY_MODULE_DEFINITIONS];
+    if (moduleDefinition) {
+      const moduleMetadata = moduleDefinition();
+      moduleRegistry.registerModule(moduleMetadata);
+    }
   });
 
-  console.log('📋 Module Registry initialized with existing modules');
+  modulesInitialized = true;
+  console.log('📋 Module Registry initialized with core modules only');
+};
+
+/**
+ * Get available module IDs for lazy loading
+ */
+export const getAvailableModuleIds = (): string[] => {
+  return Object.keys(LAZY_MODULE_DEFINITIONS);
+};
+
+/**
+ * Check if a module is available for loading
+ */
+export const isModuleAvailable = (moduleId: string): boolean => {
+  return moduleId in LAZY_MODULE_DEFINITIONS;
 };
 
 // Trinity Brain System capabilities for each module
@@ -472,7 +560,4 @@ export const TRINITY_BRAIN_CAPABILITIES: Record<string, TrinityBrainCapabilities
       opportunityCapture: true
     }
   }
-};
-
-// Initialize on module load
-// initializeModuleRegistry(); 
+}; 

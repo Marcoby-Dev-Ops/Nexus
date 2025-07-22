@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -23,10 +23,10 @@ import {
 } from 'lucide-react';
 import { getAllAgents, getAgentsByType, type Agent } from '@/domains/ai/lib/agentRegistry';
 import { continuousImprovementService } from '@/domains/ai/lib/continuousImprovementService';
-import { ProgressiveIntelligence } from '@/domains/ai/features/components/ProgressiveIntelligence';
-import { AIFeatureCard } from '@/domains/ai/features/components/AIFeatureCard';
-import { ModelPerformanceMonitor } from '@/domains/ai/features/components/ModelPerformanceMonitor';
-import { AdvancedAICapabilitiesDemo } from '@/domains/ai/features/components/AdvancedAICapabilitiesDemo';
+import { ProgressiveIntelligence } from '@/domains/ai/components/ProgressiveIntelligence';
+import { AIFeatureCard } from '@/domains/ai/components/AIFeatureCard';
+import { ModelPerformanceMonitor } from '@/domains/ai/components/ModelPerformanceMonitor';
+import { AdvancedAICapabilitiesDemo } from '@/domains/ai/components/AdvancedAICapabilitiesDemo';
 
 interface AIHubStats {
   totalAgents: number;
@@ -48,7 +48,7 @@ interface AIFeature {
 }
 
 export default function AIHubPage() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [stats, setStats] = useState<AIHubStats>({
     totalAgents: 0,

@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from '../core/supabase';
 import { quotaService } from '../services/quotaService';
 import type { ChatMessage, ChatState, ChatActions } from '../types/chat';
@@ -56,7 +56,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     enableCaching = true,
   } = options;
 
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [quotas, setQuotas] = useState<ChatQuotas>();

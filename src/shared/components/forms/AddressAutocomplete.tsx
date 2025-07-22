@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Label } from '@/shared/components/ui/Label';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Loader2, MapPin, Building, Navigation } from 'lucide-react';
-import { googlePlacesService, type PlaceAutocompleteResult, type ParsedAddress } from '@/core/services/googlePlacesService';
+import { googlePlacesService, type PlaceAutocompleteResult, type ParsedAddress } from '@/domains/integrations';
 import { cn } from '@/shared/utils/styles';
 
 interface AddressAutocompleteProps {

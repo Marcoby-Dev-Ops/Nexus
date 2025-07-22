@@ -44,7 +44,7 @@ export type { DropdownItem, DropdownProps } from './Dropdown';
 export type { FormProps, FormFieldProps } from './Form';
 export type { RadioGroupProps, RadioGroupItemProps } from './RadioGroup';
 // Modal and Table types are exported with their components
-// export type { TooltipProps } from '@shared/shared/components/ui/Tooltip';
+// export type { TooltipProps } from '@shared/components/ui/Tooltip';
 
 // Re-export hooks
 export { useToast } from './use-toast';

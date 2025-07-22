@@ -1,1 +1,1 @@
-export { default, EmailWidget } from '@shared/shared/components/widgets/EmailWidget'; 
+export { default, EmailWidget } from '@shared/components/widgets/EmailWidget'; 

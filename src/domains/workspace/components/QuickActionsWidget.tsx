@@ -1,1 +1,1 @@
-export { default, QuickActionsWidget } from '@shared/shared/components/widgets/QuickActionsWidget'; 
+export { default, QuickActionsWidget } from '@shared/components/widgets/QuickActionsWidget'; 

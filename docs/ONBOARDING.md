@@ -22,7 +22,7 @@
   ```
 - [ ] **Start the dev server:**
   ```bash
-  npm run dev
+  pnpm dev
   ```
 - [ ] **Run tests:**
   ```bash

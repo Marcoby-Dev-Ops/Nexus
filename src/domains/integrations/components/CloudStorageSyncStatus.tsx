@@ -16,7 +16,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
-import { useToast } from '@/shared/components/ui/Toast';
+import { useToast } from '@/shared/ui/components/Toast';
 import { cloudStorageRAGService } from '@/domains/services/cloudStorageRAG';
 
 interface CloudStorageSyncStatusProps {

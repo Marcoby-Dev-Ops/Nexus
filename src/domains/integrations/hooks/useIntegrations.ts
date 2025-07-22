@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
-import { useToast } from '@/shared/components/ui/Toast';
-import { supabase } from "@/core/supabase";
+import { supabase } from '@/core/supabase';
+import { useAuth } from '@/shared/hooks/useAuth';
+import { useToast } from '@/shared/ui/components/Toast';
 
 interface Integration {
   id: string;
@@ -27,8 +27,16 @@ export const useIntegrations = (): UseIntegrationsReturn => {
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const { user } = useAuth();
+  const { user, integrations: authIntegrations } = useAuth();
   const { showToast } = useToast();
+
+  // Use integrations from auth store instead of making separate calls
+  useEffect(() => {
+    if (authIntegrations) {
+      setIntegrations(authIntegrations);
+      setIsLoading(false);
+    }
+  }, [authIntegrations]);
 
   const refreshIntegrations = useCallback(async () => {
     if (!user) return;
@@ -36,28 +44,28 @@ export const useIntegrations = (): UseIntegrationsReturn => {
     try {
       setIsLoading(true);
       setError(null);
-
+      
+      console.log('🔄 Starting integration refresh for user:', user.id);
+      
       const { data, error } = await supabase
         .from('user_integrations')
-        .select(`*
-          ,integrations:integrations!inner(id,name,slug,auth_type,category)`)
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
+        .select('*')
+        .eq('user_id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Failed to fetch integrations:', error);
+        throw error;
+      }
 
-      setIntegrations(data ?? []);
+      console.log('✅ Successfully fetched integrations:', data?.length || 0);
+      setIntegrations(data || []);
     } catch (err) {
+      console.error('❌ Error refreshing integrations:', err);
       setError(err instanceof Error ? err : new Error('An error occurred'));
-      showToast({
-        title: 'Error',
-        description: 'Failed to load integrations',
-        type: 'error'
-      });
     } finally {
       setIsLoading(false);
     }
-  }, [user, showToast]);
+  }, [user]);
 
   const addIntegration = useCallback(async (integration: Omit<Integration, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user) return;
@@ -179,6 +187,6 @@ export const useIntegrations = (): UseIntegrationsReturn => {
     addIntegration,
     removeIntegration,
     updateIntegration,
-    refreshIntegrations
+    refreshIntegrations,
   };
 }; 

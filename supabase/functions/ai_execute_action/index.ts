@@ -1,6 +1,62 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.10';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.5';
 import { corsHeaders } from '../_shared/cors.ts';
+
+// Environment validation
+const validateEnvironment = () => {
+  const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+  const missing = required.filter(key => !Deno.env.get(key));
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
+  }
+};
+
+// Error response helper
+const createErrorResponse = (message: string, status: number = 400) => {
+  return new Response(JSON.stringify({ 
+    error: message, 
+    timestamp: new Date().toISOString(),
+    status 
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+};
+
+// Success response helper
+const createSuccessResponse = (data: any, status: number = 200) => {
+  return new Response(JSON.stringify({ 
+    data, 
+    timestamp: new Date().toISOString(),
+    status 
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+};
+
+// Authentication helper
+const authenticateRequest = async (req: Request) => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { user: null, supabase, error: 'No authorization header' };
+  }
+  
+  const jwt = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(jwt);
+  
+  if (error || !user) {
+    return { user: null, supabase, error: 'Invalid token' };
+  }
+  
+  return { user, supabase };
+};
 
 interface ExecuteActionRequest {
   actionType: string;
@@ -22,48 +78,18 @@ interface ActionResult {
   executionTime?: number;
 }
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
+// Main handler
+const handleRequest = async (req: Request, auth: { user: any; supabase: any }) => {
+  const { user, supabase } = auth;
+  
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Missing required environment variables');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // Authenticate user
-    const authHeader = req.headers.get('authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-
-    const jwt = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
-    
-    if (authError || !user?.id) {
-      return new Response(JSON.stringify({ error: 'Invalid token' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 401,
-      });
-    }
-
     const { actionType, actionData, userId, companyId, metadata } = await req.json() as ExecuteActionRequest;
 
     if (!actionType || !actionData) {
-      return new Response(JSON.stringify({ error: 'Missing actionType or actionData' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
-      });
+      return createErrorResponse('Missing actionType or actionData', 400);
     }
+
+    console.log(`⚡ [Action Execute] Processing ${actionType} action for user ${user.id}`);
 
     const startTime = Date.now();
 
@@ -149,27 +175,30 @@ serve(async (req) => {
       executionTime,
     };
 
-    return new Response(JSON.stringify(response), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: error ? 500 : 200,
-    });
+    if (error) {
+      return createErrorResponse(`Action execution failed: ${error}`, 500);
+    }
+
+    console.log(`✅ [Action Execute] Successfully executed ${actionType} in ${executionTime}ms`);
+    return createSuccessResponse(response);
 
   } catch (error) {
-    console.error('ai_execute_action error:', error);
-    return new Response(JSON.stringify({
-      error: error instanceof Error ? error.message : 'Unknown error',
-      success: false,
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    console.error('Action execution processing error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to process action execution',
+      500
+    );
   }
-});
+};
 
 // Action execution functions
 async function executeCreateContact(supabase: any, data: any, userId: string, companyId?: string) {
   const { name, email, phone, company, notes } = data;
   
+  if (!name || !email) {
+    throw new Error('Contact name and email are required');
+  }
+
   const { data: contact, error } = await supabase
     .from('contacts')
     .insert({
@@ -180,17 +209,26 @@ async function executeCreateContact(supabase: any, data: any, userId: string, co
       notes,
       user_id: userId,
       company_id: companyId,
+      created_at: new Date().toISOString(),
     })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Contact creation error:', error);
+    throw new Error(`Failed to create contact: ${error.message}`);
+  }
+
   return contact;
 }
 
 async function executeCreateDeal(supabase: any, data: any, userId: string, companyId?: string) {
   const { title, value, stage, contact_id, notes } = data;
   
+  if (!title || !value) {
+    throw new Error('Deal title and value are required');
+  }
+
   const { data: deal, error } = await supabase
     .from('deals')
     .insert({
@@ -201,85 +239,158 @@ async function executeCreateDeal(supabase: any, data: any, userId: string, compa
       notes,
       user_id: userId,
       company_id: companyId,
+      created_at: new Date().toISOString(),
     })
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Deal creation error:', error);
+    throw new Error(`Failed to create deal: ${error.message}`);
+  }
+
   return deal;
 }
 
 async function executeSendEmail(supabase: any, data: any, userId: string, companyId?: string) {
-  // This would integrate with your email service
-  const { to, subject, body, template } = data;
+  const { to, subject, body, template_id } = data;
   
-  // For now, just log the email action
+  if (!to || !subject || !body) {
+    throw new Error('Email to, subject, and body are required');
+  }
+
+  // Log email for now (implement actual email sending later)
   const { data: emailLog, error } = await supabase
-    .from('ai_action_logs')
+    .from('email_logs')
     .insert({
+      to,
+      subject,
+      body,
+      template_id,
       user_id: userId,
       company_id: companyId,
-      action_type: 'email_sent',
-      action_data: { to, subject, template },
-      status: 'completed',
+      status: 'sent',
+      sent_at: new Date().toISOString(),
     })
     .select()
     .single();
 
-  if (error) throw error;
-  return { message: 'Email queued for sending', logId: emailLog.id };
+  if (error) {
+    console.error('Email logging error:', error);
+    throw new Error(`Failed to log email: ${error.message}`);
+  }
+
+  return emailLog;
 }
 
 async function executeScheduleMeeting(supabase: any, data: any, userId: string, companyId?: string) {
-  const { title, attendees, start_time, duration, notes } = data;
+  const { title, start_time, end_time, attendees, notes } = data;
   
-  // This would integrate with your calendar service
-  const { data: meetingLog, error } = await supabase
-    .from('ai_action_logs')
+  if (!title || !start_time || !end_time) {
+    throw new Error('Meeting title, start time, and end time are required');
+  }
+
+  const { data: meeting, error } = await supabase
+    .from('meetings')
     .insert({
+      title,
+      start_time,
+      end_time,
+      attendees,
+      notes,
       user_id: userId,
       company_id: companyId,
-      action_type: 'meeting_scheduled',
-      action_data: { title, attendees, start_time, duration },
-      status: 'completed',
+      created_at: new Date().toISOString(),
     })
     .select()
     .single();
 
-  if (error) throw error;
-  return { message: 'Meeting scheduled', logId: meetingLog.id };
+  if (error) {
+    console.error('Meeting creation error:', error);
+    throw new Error(`Failed to create meeting: ${error.message}`);
+  }
+
+  return meeting;
 }
 
 async function executeUpdateCRM(supabase: any, data: any, userId: string, companyId?: string) {
-  const { table, record_id, updates } = data;
+  const { record_type, record_id, updates } = data;
   
-  const { data: result, error } = await supabase
-    .from(table)
+  if (!record_type || !record_id || !updates) {
+    throw new Error('Record type, ID, and updates are required');
+  }
+
+  const { data: updatedRecord, error } = await supabase
+    .from(record_type)
     .update(updates)
     .eq('id', record_id)
+    .eq('user_id', userId)
     .select()
     .single();
 
-  if (error) throw error;
-  return result;
+  if (error) {
+    console.error('CRM update error:', error);
+    throw new Error(`Failed to update CRM record: ${error.message}`);
+  }
+
+  return updatedRecord;
 }
 
 async function executeGenerateReport(supabase: any, data: any, userId: string, companyId?: string) {
   const { report_type, parameters, format } = data;
   
-  // This would generate a report based on the type
+  if (!report_type) {
+    throw new Error('Report type is required');
+  }
+
+  // Log report generation for now (implement actual report generation later)
   const { data: reportLog, error } = await supabase
-    .from('ai_action_logs')
+    .from('report_logs')
     .insert({
+      report_type,
+      parameters,
+      format,
       user_id: userId,
       company_id: companyId,
-      action_type: 'report_generated',
-      action_data: { report_type, parameters, format },
-      status: 'completed',
+      status: 'generated',
+      generated_at: new Date().toISOString(),
     })
     .select()
     .single();
 
-  if (error) throw error;
-  return { message: 'Report generated', logId: reportLog.id };
-} 
+  if (error) {
+    console.error('Report logging error:', error);
+    throw new Error(`Failed to log report: ${error.message}`);
+  }
+
+  return reportLog;
+}
+
+// Main serve function
+serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+  
+  try {
+    // Validate environment
+    validateEnvironment();
+    
+    // Authenticate request
+    const auth = await authenticateRequest(req);
+    if (auth.error) {
+      return createErrorResponse(auth.error, 401);
+    }
+    
+    // Call handler
+    return await handleRequest(req, auth);
+    
+  } catch (error) {
+    console.error('Action execute error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Internal server error',
+      500
+    );
+  }
+}); 

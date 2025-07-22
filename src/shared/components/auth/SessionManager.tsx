@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { persistentAuthService } from '@/shared/services/persistentAuthService';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
@@ -24,7 +24,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   showDetails = false, 
   className = '' 
 }) => {
-  const { user, session, signOut } = useAuth();
+  const { user, session, signOut } = useAuthContext();
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [timeUntilExpiry, setTimeUntilExpiry] = useState<number | null>(null);

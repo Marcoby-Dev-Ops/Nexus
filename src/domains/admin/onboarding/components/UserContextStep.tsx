@@ -9,7 +9,7 @@ import {
   Target, 
   Zap
 } from 'lucide-react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import type { Json } from '@/core/types/database.types';
 
 interface UserContextData {
@@ -29,7 +29,7 @@ interface UserContextStepProps {
 }
 
 export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip, onBack }) => {
-  const { updateProfile } = useAuth();
+  const { updateProfile } = useAuthContext();
   const [contextData, setContextData] = useState<UserContextData>({
     role: '',
     experience_level: 'intermediate',

@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
 import { useTheme } from '@/shared/components/ui/theme-provider';
 import { useNotifications } from '@/core/hooks/NotificationContext';
 import { CommandPalette } from '@/shared/components/layout/CommandPalette';
-import { QuickChatTrigger } from '@/domains/ai/components/QuickChatTrigger';
+import { QuickChatTrigger } from '@/domains/ai/chat';
 import { FireCycleOverlay } from '@/core/fire-cycle/FireCycleOverlay';
 import { Menu, Bell, Sun, Moon, User, Settings, Search, Palette, Mail, Calendar as CalendarIcon, MessageSquare, Lightbulb, Home } from 'lucide-react';
 import { navItems } from '@/shared/components/layout/navConfig';
@@ -21,7 +21,7 @@ interface FeatureItem {
 }
 
 export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggle: () => void; onThemePanelToggle: () => void; }) {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useZustandAuth();
   const { theme, setTheme } = useTheme();
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -33,7 +33,7 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
   const notificationsRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  const displayName = user?.name || user?.profile?.display_name || user?.email?.split('@')[0] || 'User';
+  const displayName = user?.profile?.first_name || user?.profile?.display_name || user?.name || user?.email?.split('@')[0] || 'User';
   const initials = displayName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase();
   
   useEffect(() => {

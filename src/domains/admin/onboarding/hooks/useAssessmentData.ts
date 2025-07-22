@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/core/supabase";
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import type { 
     AssessmentSummary, 
     AssessmentCategoryScore, 
@@ -21,7 +21,7 @@ export interface AssessmentData {
 }
 
 export function useAssessmentData() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthContext();
   const [data, setData] = useState<AssessmentData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);

@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { domainAnalysisService } from '@/domains/services/domainAnalysisService';
 import { logger } from '@/shared/lib/security/logger';
 
@@ -22,7 +22,7 @@ export interface ProfessionalEmailStatus {
 }
 
 export const useProfessionalEmailAnalysis = (autoUpdate = true) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [status, setStatus] = useState<ProfessionalEmailStatus>({
     isAnalyzed: false,
     hasProfessionalEmail: false,

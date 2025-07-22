@@ -2,27 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle 
-} from '@/shared/shared/components/ui/Card';
+} from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
-import { useIntegrations } from '@/domains/integrations/features/hooks/useIntegrations';
-import { supabase } from "@/core/supabase";
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { dbService } from '@/core/supabase';
+import { supabase } from '@/core/supabase';
+import { toast } from 'sonner';
 import {
   Network,
   Plus,
   Search,
-  Filter,
   CheckCircle2,
   AlertCircle,
   Clock,
   Settings,
   RefreshCw,
-  ExternalLink,
   Zap,
   Shield,
   Database,
@@ -38,10 +36,6 @@ import {
   Star,
   TrendingUp,
   Activity,
-  Eye,
-  Edit,
-  Trash2,
-  MoreHorizontal,
   MessageSquare,
   Building2,
   HardDrive,
@@ -49,8 +43,9 @@ import {
 } from 'lucide-react';
 
 // Import setup components
-import GoogleWorkspaceSetup from '@/domains/integrations/features/components/GoogleWorkspaceSetup';
-import Microsoft365Setup from '@/domains/integrations/features/components/Microsoft365Setup';
+import GoogleWorkspaceSetup from '@/domains/integrations/components/GoogleWorkspaceSetup';
+import Microsoft365Setup from '@/domains/integrations/components/Microsoft365Setup';
+import { HubSpotSetup } from '@/domains/integrations/components/HubSpotSetup';
 
 interface IntegrationStatus {
   id: string;
@@ -79,8 +74,7 @@ interface AvailableIntegration {
 
 const IntegrationsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { integrations, isLoading, error, refreshIntegrations } = useIntegrations();
+  const { user } = useAuthContext();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'active' | 'inactive' | 'error'>('all');
   const [integrationStatus, setIntegrationStatus] = useState<IntegrationStatus[]>([]);
@@ -94,7 +88,7 @@ const IntegrationsPage: React.FC = () => {
       id: 'microsoft-365',
       name: 'Microsoft 365',
       provider: 'Microsoft',
-      description: 'Connect your Microsoft 365 account for Email, Calendar, Teams, OneDrive, SharePoint, and more.',
+              description: 'Connect your Microsoft 365 account for Email, Calendar, Teams, OneDrive, SharePoint, and comprehensive productivity insights.',
       category: 'Productivity',
       icon: <Building2 className="h-6 w-6 text-blue-600" />,
       setupComponent: Microsoft365Setup,
@@ -157,8 +151,10 @@ const IntegrationsPage: React.FC = () => {
       description: 'Connect HubSpot for marketing, sales, and CRM automation.',
       category: 'CRM',
       icon: <Zap className="h-6 w-6 text-orange-500" />,
+      setupComponent: HubSpotSetup,
       authType: 'oauth',
       setupTime: '7 minutes',
+      isPopular: true,
       dataFields: ['contacts', 'companies', 'deals', 'tickets', 'emails', 'calls']
     },
     {
@@ -221,6 +217,10 @@ const IntegrationsPage: React.FC = () => {
   useEffect(() => {
     if (user?.id) {
       fetchIntegrationStatus();
+    } else {
+      // If no user, set loading to false and empty status
+      setSystemLoading(false);
+      setIntegrationStatus([]);
     }
   }, [user?.id]);
 
@@ -228,39 +228,35 @@ const IntegrationsPage: React.FC = () => {
     try {
       setSystemLoading(true);
       
-      // Fetch user's connected integrations
-      const { data: userIntegrations, error } = await supabase
-        .from('user_integrations')
-        .select(`
-          id,
-          status,
-          updated_at,
-          config,
-          integrations!inner(
-            id,
-            name,
-            slug,
-            category,
-            description
-          )
-        `)
-        .eq('user_id', user!.id);
+      console.log('🔄 Fetching integration status for user:', user!.id);
+      
+      const { data: userIntegrations, error } = await dbService.getIntegrationStatus(
+        user!.id,
+        'IntegrationsPage.fetchIntegrationStatus'
+      );
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Failed to fetch integration status:', error);
+        // Set empty array instead of returning early
+        setIntegrationStatus([]);
+        return;
+      }
 
-      const statusData: IntegrationStatus[] = userIntegrations.map((integration: any) => ({
+      const statusData: IntegrationStatus[] = (userIntegrations || []).map((integration: any) => ({
         id: integration.id,
-        name: integration.integrations.name,
+        name: integration.integration_name || 'Unknown Integration',
         status: integration.status,
         lastSync: integration.updated_at,
-        category: integration.integrations.category,
-        description: integration.integrations.description,
+        category: integration.integration_type || 'general',
+        description: `Integration: ${integration.integration_name || 'Unknown'}`,
         dataPoints: Math.floor(Math.random() * 1000) + 100 // Mock data
       }));
 
       setIntegrationStatus(statusData);
     } catch (error) {
       console.error('Error fetching integration status:', error);
+      // Set empty array on error as well
+      setIntegrationStatus([]);
     } finally {
       setSystemLoading(false);
     }
@@ -348,11 +344,58 @@ const IntegrationsPage: React.FC = () => {
     setSelectedIntegration(null);
   };
 
+  const handleDisconnectIntegration = async (integrationId: string, integrationName: string) => {
+    if (!user?.id) return;
+    
+    if (!confirm(`Are you sure you want to disconnect ${integrationName}? This will remove all associated data and tokens.`)) {
+      return;
+    }
+
+    try {
+      setSystemLoading(true);
+      
+      // Delete the user integration
+      const { error } = await supabase
+        .from('user_integrations')
+        .delete()
+        .eq('id', integrationId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error disconnecting integration:', error);
+        toast.error('Failed to disconnect integration');
+        return;
+      }
+
+      // Also delete any associated OAuth tokens
+      const { error: tokenError } = await supabase
+        .from('oauth_tokens')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('integration_slug', integrationName.toLowerCase().replace(/\s+/g, '-'));
+
+      if (tokenError) {
+        console.error('Error deleting OAuth tokens:', tokenError);
+        // Don't fail the entire operation if token deletion fails
+      }
+
+      // Refresh the integration status
+      await fetchIntegrationStatus();
+      
+      toast.success(`${integrationName} disconnected successfully`);
+    } catch (error) {
+      console.error('Error disconnecting integration:', error);
+      toast.error('Failed to disconnect integration');
+    } finally {
+      setSystemLoading(false);
+    }
+  };
+
   const activeIntegrations = integrationStatus.filter(i => i.status === 'active').length;
   const totalIntegrations = integrationStatus.length;
   const healthScore = totalIntegrations > 0 ? Math.round((activeIntegrations / totalIntegrations) * 100) : 0;
 
-  if (isLoading || systemLoading) {
+  if (systemLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex items-center space-x-2">
@@ -674,8 +717,13 @@ const IntegrationsPage: React.FC = () => {
                         <Button variant="outline" size="sm">
                           <Settings className="w-4 h-4" />
                         </Button>
-                        <Button variant="outline" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleDisconnectIntegration(integration.id, integration.name)}
+                          disabled={systemLoading}
+                        >
+                          <XCircle className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>

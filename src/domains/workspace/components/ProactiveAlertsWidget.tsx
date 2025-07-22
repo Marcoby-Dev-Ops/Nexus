@@ -1,1 +1,1 @@
-export { default, ProactiveAlertsWidget } from '@shared/shared/components/widgets/ProactiveAlertsWidget'; 
+export { default, ProactiveAlertsWidget } from '@shared/components/widgets/ProactiveAlertsWidget'; 

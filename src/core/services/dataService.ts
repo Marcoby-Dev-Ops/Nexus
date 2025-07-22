@@ -5,6 +5,7 @@
  */
 
 import { backendConnector } from '../backendConnector';
+import { supabase } from '../supabase';
 import { logger } from '../auth/logger';
 
 export interface DataServiceOptions {
@@ -242,19 +243,55 @@ export class DataService {
    * Fetch inbox items
    */
   async fetchInboxItems(userId: string, filters: any = {}, limit = 50, offset = 0) {
-    const queryParams = new URLSearchParams({
-      user_id: userId,
-      limit: limit.toString(),
-      offset: offset.toString(),
-      ...filters
-    });
+    try {
+          // Use supabase directly
+    let query = supabase
+        .from('ai_inbox_items')
+        .select('*', { count: 'exact' });
 
-    return this.fetchFromSupabase(
-      'ai_inbox_items',
-      queryParams.toString(),
-      {},
-      `inbox:${userId}:${JSON.stringify(filters)}:${limit}:${offset}`
-    );
+      // Apply filters
+      if (filters.search) {
+        query = query.or(`subject.ilike.%${filters.search}%,body_preview.ilike.%${filters.search}%,sender_email.ilike.%${filters.search}%`);
+      }
+      if (filters.account_id) {
+        query = query.eq('integration_id', filters.account_id);
+      }
+      if (filters.is_read !== undefined) {
+        query = query.eq('is_read', filters.is_read);
+      }
+      if (filters.is_important !== undefined) {
+        query = query.eq('is_important', filters.is_important);
+      }
+      if (filters.source_type) {
+        query = query.eq('source_type', filters.source_type);
+      }
+      if (filters.date_from) {
+        query = query.gte('item_timestamp', filters.date_from);
+      }
+      if (filters.date_to) {
+        query = query.lte('item_timestamp', filters.date_to);
+      }
+
+      // Apply pagination
+      query = query.range(offset, offset + limit - 1);
+      query = query.order('item_timestamp', { ascending: false });
+
+      const { data, error, count } = await query;
+
+      if (error) {
+        logger.error({ error }, 'Error fetching inbox items from database');
+        throw error;
+      }
+
+      return {
+        items: data || [],
+        total: count || 0
+      };
+
+    } catch (error) {
+      logger.error({ error }, 'Error in fetchInboxItems');
+      throw error;
+    }
   }
 
   /**

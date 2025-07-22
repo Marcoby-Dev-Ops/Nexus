@@ -1,4 +1,4 @@
-import { BaseIntegration } from '@/domains/integrations/lib/baseIntegration';
+import type { BaseIntegration } from '@/domains/integrations/lib/baseIntegration';
 import type { SyncResult } from '@/domains/integrations/lib/types';
 
 // Mock database client for now - replace with actual implementation

@@ -31,7 +31,7 @@ import {
   RefreshCw,
   ExternalLink
 } from 'lucide-react';
-import { communicationAnalyticsService, type UnifiedCommunicationInsights, type CommunicationHealthScore } from '@/domains/services/communicationAnalyticsService';
+import { communicationAnalyticsService, type UnifiedCommunicationInsights, type CommunicationHealthScore } from '@/domains/analytics';
 
 interface PlatformStatus {
   slack: {

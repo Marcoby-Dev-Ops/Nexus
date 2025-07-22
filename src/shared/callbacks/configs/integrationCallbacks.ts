@@ -3,7 +3,7 @@
  * Defines callback configurations for all existing integrations
  */
 
-import type { CallbackConfig } from '@/shared/lib/types/callbacks';
+import type { CallbackConfig } from '@/core/types/callbacks';
 
 /**
  * Google Analytics OAuth Callback Configuration
@@ -110,8 +110,7 @@ export const hubspotCallback: CallbackConfig = {
   handler: 'handleSupabaseRedirectCallback',
   config: {
           oauth: {
-        validateState: false, // Supabase function handles state validation
-        supabaseFunctionUrl: '/functions/v1/hubspot-callback',
+        validateState: false, // Frontend handles state validation
         redirectUrl: '/integrations',
         flowType: 'redirect'
       }
@@ -275,6 +274,50 @@ export const linkedinCallback: CallbackConfig = {
 };
 
 /**
+ * Slack OAuth Callback Configuration
+ * Note: OAuth goes to Supabase function first, then redirects to Nexus
+ */
+export const slackCallback: CallbackConfig = {
+  id: 'slack-oauth',
+  integrationSlug: 'slack',
+  type: 'oauth',
+  path: '/integrations/slack/callback',
+  methods: ['GET'],
+  handler: 'handleSupabaseRedirectCallback',
+  config: {
+    oauth: {
+      validateState: false, // Supabase function handles state validation
+      supabaseFunctionUrl: '/functions/v1/slack-oauth-callback',
+      redirectUrl: '/integrations',
+      flowType: 'redirect'
+    }
+  },
+  security: {
+    requireAuth: false,
+    cors: {
+      origins: ['https://slack.com'],
+      methods: ['GET'],
+      headers: ['Content-Type', 'Authorization']
+    }
+  },
+  metadata: {
+    description: 'Slack OAuth 2.0 callback handler',
+    tags: ['oauth', 'slack', 'communication'],
+    version: '1.0.0',
+    analytics: {
+      trackEvents: true,
+      eventPrefix: 'slack'
+    },
+    errorHandling: {
+      logErrors: true,
+      notifyOnError: true
+    }
+  },
+  isActive: true,
+  createdAt: new Date().toISOString()
+};
+
+/**
  * Supabase Auth Callback Configuration
  */
 export const supabaseAuthCallback: CallbackConfig = {
@@ -366,6 +409,7 @@ export const allCallbackConfigs: CallbackConfig[] = [
   paypalCallback,
   ninjaRmmCallback,
   linkedinCallback,
+  slackCallback,
   supabaseAuthCallback,
   microsoftCallback
 ];

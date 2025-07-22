@@ -10,7 +10,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Loader2, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { callbackRegistry } from '@/shared/callbacks/CallbackRegistry';
 import { CallbackProcessor } from '@/shared/callbacks/CallbackHandler';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/core/hooks/NotificationContext';
 import type { CallbackConfig, CallbackResponse } from '@/core/types/callbacks';
 
@@ -30,7 +30,7 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
   const { integration: paramIntegration } = useParams<{ integration: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
 
   const [status, setStatus] = useState<CallbackStatus>('processing');

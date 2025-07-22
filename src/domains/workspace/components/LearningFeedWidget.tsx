@@ -1,1 +1,1 @@
-export { default, LearningFeedWidget } from '@shared/shared/components/widgets/LearningFeedWidget'; 
+export { default, LearningFeedWidget } from '@shared/components/widgets/LearningFeedWidget'; 

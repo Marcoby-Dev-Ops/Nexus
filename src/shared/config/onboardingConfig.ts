@@ -34,7 +34,7 @@ export interface OnboardingConfig {
 
 export const onboardingConfig: OnboardingConfig = {
   // Core Settings
-  enabled: true,
+  enabled: true, // Re-enable onboarding for user info collection
   skipForPublicRoutes: true,
   skipForAuthenticatedUsers: false,
   skipForCompletedUsers: true,
@@ -104,7 +104,7 @@ export const onboardingConfig: OnboardingConfig = {
   requireInitialization: true,
   
   // Behavior Settings
-  showLoadingDuringCheck: true,
+  showLoadingDuringCheck: false, // Disable loading check
   gracefulFallback: true,
   debugMode: import.meta.env.DEV,
   

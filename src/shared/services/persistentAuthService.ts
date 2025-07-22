@@ -33,8 +33,8 @@ export class PersistentAuthService {
 
   constructor(config: Partial<PersistentAuthConfig> = {}) {
     this.config = {
-      sessionCheckInterval: 5 * 60 * 1000, // Check every 5 minutes
-      tokenRefreshThreshold: 10 * 60 * 1000, // Refresh when 10 minutes left
+      sessionCheckInterval: 10 * 60 * 1000, // Check every 10 minutes (reduced from 5 minutes)
+      tokenRefreshThreshold: 15 * 60 * 1000, // Refresh when 15 minutes left (increased from 10 minutes)
       maxRetries: 3,
       retryDelay: 2000,
       ...config
@@ -68,7 +68,7 @@ export class PersistentAuthService {
     }
 
     // Add a small delay to prevent rapid re-initialization in StrictMode
-    await new Promise(resolve => setTimeout(resolve, 10));
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     // Double-check after delay in case another initialization completed
     if (this.isInitialized) {
@@ -307,7 +307,9 @@ export class PersistentAuthService {
       const now = Date.now();
       
       // Check if stored session is still valid
-      if (sessionData.expiresAt && sessionData.expiresAt < now) {
+      // sessionData.expiresAt is in seconds, convert to milliseconds for comparison
+      const expiresAtMs = sessionData.expiresAt * 1000;
+      if (sessionData.expiresAt && expiresAtMs < now) {
         logger.debug('Stored session is expired, clearing');
         await this.clearStoredSession();
         return;
@@ -400,7 +402,8 @@ export class PersistentAuthService {
 
       const sessionData = JSON.parse(storedSession);
       const now = Date.now();
-      const expiresAt = sessionData.expiresAt ? new Date(sessionData.expiresAt) : null;
+      // sessionData.expiresAt is in seconds, convert to milliseconds for Date constructor
+      const expiresAt = sessionData.expiresAt ? new Date(sessionData.expiresAt * 1000) : null;
       const timeUntilExpiry = expiresAt ? expiresAt.getTime() - now : null;
 
       return { expiresAt, timeUntilExpiry };

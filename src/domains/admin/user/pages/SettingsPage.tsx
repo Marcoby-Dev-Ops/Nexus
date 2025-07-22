@@ -10,11 +10,11 @@ import AdvancedSettings from '@/domains/admin/user/pages/AdvancedSettings';
 import AIModelSettings from '@/domains/admin/user/pages/AIModelSettings';
 import BillingSettings from '@/domains/admin/user/pages/BillingSettings';
 import { ContinuousImprovementDashboard } from '@/domains/ai/components/ContinuousImprovementDashboard';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 // AI Performance Settings Component
 const AIPerformanceSettings = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return (
     <div className="space-y-6">

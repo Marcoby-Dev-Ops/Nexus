@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -16,10 +16,10 @@ import {
 } from 'lucide-react';
 import { getAllAgents, getAgentsByType, type Agent } from '@/domains/ai/lib/agentRegistry';
 import { StreamingComposer } from '@/domains/ai/components/StreamingComposer';
-import AgentPicker from '@/domains/ai/components/AgentPicker';
-import { DomainAgentIndicator } from '@/domains/ai/components/DomainAgentIndicator';
-import { ContextChips } from '@/domains/ai/features/components/ContextChips';
-import { QuickChatTrigger } from '@/domains/ai/features/components/QuickChatTrigger';
+import { AgentPicker } from '@/domains/ai/agents';
+import { DomainAgentIndicator } from '@/domains/ai/agents';
+import { ContextChips } from '@/domains/ai/chat';
+import { QuickChatTrigger } from '@/domains/ai/chat';
 
 interface ChatStats {
   totalConversations: number;
@@ -31,7 +31,7 @@ interface ChatStats {
 }
 
 export default function ChatPage() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
   const [conversationId, setConversationId] = useState<string | null>(null);

@@ -5,7 +5,8 @@
  * intelligence to provide organizationally-aware sales recommendations.
  */
 
-import { enhancedContextualRAG, EnhancedContextualResponse } from '@/domains/ai/lib/enhancedContextualRAG';
+import type { EnhancedContextualResponse } from '@/domains/ai/lib/enhancedContextualRAG';
+import { enhancedContextualRAG } from '@/domains/ai/lib/enhancedContextualRAG';
 import { crossDepartmentalContext } from '@/domains/ai/lib/crossDepartmentalContext';
 
 export interface SalesIntelligence {

@@ -52,7 +52,6 @@ Your project has the following edge functions deployed:
 - `stripe-checkout-session` - Stripe checkout
 - `complete-founder-onboarding` - Founder onboarding
 - `hubspot-callback` - HubSpot callbacks
-- `hubspot-connect` - HubSpot connection
 - `sync_user_profile` - User profile sync
 - `ops_action_worker` - Operations worker
 - `ops_metrics_ingest` - Metrics ingestion

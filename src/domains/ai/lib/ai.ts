@@ -29,7 +29,7 @@ export async function callNexusAdvisor({ prompt, snapshot, orgId }: AdvisorParam
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${import.meta.env.VITE_OPENAI_KEY}`,
+        Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
       },
       body: JSON.stringify({
         model: 'text-embedding-3-small',

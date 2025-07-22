@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '@/core/supabase';
+import { useAuthStore } from '@/shared/stores/authStore';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Alert } from '@/shared/components/ui/Alert';
@@ -23,6 +24,9 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
   const [message, setMessage] = useState<string | null>(null);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
 
+  // Get auth actions from Zustand store
+  const { signIn: authSignIn, signUp: authSignUp } = useAuthStore();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -32,24 +36,20 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
     try {
       switch (mode) {
         case 'login': {
-          const { error: signInError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          if (signInError) throw signInError;
+          const result = await authSignIn(email, password);
+          if (!result.success) {
+            throw new Error(result.error || 'Sign in failed');
+          }
+          setLoading(false); // Reset loading before calling onSuccess
           onSuccess?.();
           break;
         }
 
         case 'signup': {
-          const { error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback`,
-            },
-          });
-          if (signUpError) throw signUpError;
+          const result = await authSignUp(email, password);
+          if (!result.success) {
+            throw new Error(result.error || 'Sign up failed');
+          }
           setMessage('Check your email for the confirmation link.');
           break;
         }
@@ -67,6 +67,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       onError?.(errorMessage);
+      setLoading(false); // Make sure loading is reset on error
     } finally {
       setLoading(false);
     }
@@ -164,6 +165,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
               disabled={loading}
               className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
               data-testid="email-input"
+              autoComplete="email"
             />
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,6 +184,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSuccess, onError, initialM
                 required
                 disabled={loading}
                 className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                autoComplete="current-password"
               />
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">

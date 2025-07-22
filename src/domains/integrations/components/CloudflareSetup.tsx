@@ -7,7 +7,7 @@ import {
   Badge,
   Separator,
   Alert, AlertDescription
-} from '@/shared/shared/components/ui';
+} from '@/shared/components/ui';
 import { 
   Shield, 
   Globe, 
@@ -22,8 +22,8 @@ import {
   EyeOff
 } from 'lucide-react';
 import { cloudflareService } from '@/domains/services/cloudflareService';
-import { supabase } from '../../lib/core/supabase';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { supabase } from '@/core/supabase';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 
 interface CloudflareSetupProps {
@@ -39,7 +39,7 @@ interface SetupStep {
 }
 
 const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   
   const [currentStep, setCurrentStep] = useState(1);

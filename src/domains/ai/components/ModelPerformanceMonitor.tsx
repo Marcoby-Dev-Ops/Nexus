@@ -1,319 +1,241 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { 
-  Brain, 
   TrendingUp, 
   TrendingDown, 
+  DollarSign, 
   Clock, 
-  AlertTriangle, 
   CheckCircle, 
-  Activity,
-  Zap,
-  Target,
+  AlertTriangle,
   BarChart3,
-  Cpu,
-  Gauge
+  Settings,
+  RefreshCw
 } from 'lucide-react';
+import { hybridModelService } from '@/domains/ai/lib/hybridModelService';
+import type { ModelPerformance, CostOptimizationSuggestion, BudgetStatus } from '@/domains/ai/lib/hybridModelService';
 
-interface ModelMetric {
-  name: string;
-  value: number;
-  target: number;
-  unit: string;
-  trend: 'up' | 'down' | 'stable';
-  status: 'excellent' | 'good' | 'warning' | 'critical';
-  lastUpdated: Date;
+interface ModelPerformanceMonitorProps {
+  className?: string;
 }
 
-interface ModelPerformance {
-  modelId: string;
-  modelName: string;
-  metrics: ModelMetric[];
-  overallScore: number;
-  status: 'online' | 'degraded' | 'offline';
-  lastInference: Date;
-  totalInferences: number;
-  averageResponseTime: number;
-}
-
-const mockModels: ModelPerformance[] = [
-  {
-    modelId: 'gpt-4',
-    modelName: 'GPT-4 Turbo',
-    overallScore: 94,
-    status: 'online',
-    lastInference: new Date(),
-    totalInferences: 15420,
-    averageResponseTime: 2.3,
-    metrics: [
-      {
-        name: 'Accuracy',
-        value: 96.2,
-        target: 95,
-        unit: '%',
-        trend: 'up',
-        status: 'excellent',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Response Time',
-        value: 2.3,
-        target: 3.0,
-        unit: 's',
-        trend: 'down',
-        status: 'excellent',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Token Usage',
-        value: 1250,
-        target: 1500,
-        unit: 'tokens',
-        trend: 'down',
-        status: 'good',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Error Rate',
-        value: 0.8,
-        target: 1.0,
-        unit: '%',
-        trend: 'down',
-        status: 'excellent',
-        lastUpdated: new Date()
-      }
-    ]
-  },
-  {
-    modelId: 'claude-3',
-    modelName: 'Claude 3 Sonnet',
-    overallScore: 89,
-    status: 'online',
-    lastInference: new Date(Date.now() - 300000),
-    totalInferences: 8920,
-    averageResponseTime: 3.1,
-    metrics: [
-      {
-        name: 'Accuracy',
-        value: 92.1,
-        target: 90,
-        unit: '%',
-        trend: 'up',
-        status: 'good',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Response Time',
-        value: 3.1,
-        target: 3.5,
-        unit: 's',
-        trend: 'stable',
-        status: 'good',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Token Usage',
-        value: 980,
-        target: 1200,
-        unit: 'tokens',
-        trend: 'down',
-        status: 'excellent',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Error Rate',
-        value: 1.2,
-        target: 1.5,
-        unit: '%',
-        trend: 'down',
-        status: 'good',
-        lastUpdated: new Date()
-      }
-    ]
-  },
-  {
-    modelId: 'custom-rag',
-    modelName: 'Custom RAG Model',
-    overallScore: 76,
-    status: 'degraded',
-    lastInference: new Date(Date.now() - 600000),
-    totalInferences: 3420,
-    averageResponseTime: 4.8,
-    metrics: [
-      {
-        name: 'Accuracy',
-        value: 78.5,
-        target: 85,
-        unit: '%',
-        trend: 'down',
-        status: 'warning',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Response Time',
-        value: 4.8,
-        target: 4.0,
-        unit: 's',
-        trend: 'up',
-        status: 'warning',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Token Usage',
-        value: 2100,
-        target: 1800,
-        unit: 'tokens',
-        trend: 'up',
-        status: 'warning',
-        lastUpdated: new Date()
-      },
-      {
-        name: 'Error Rate',
-        value: 2.1,
-        target: 2.0,
-        unit: '%',
-        trend: 'up',
-        status: 'warning',
-        lastUpdated: new Date()
-      }
-    ]
-  }
-];
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case 'excellent': return 'text-green-600 bg-green-50 border-green-200';
-    case 'good': return 'text-blue-600 bg-blue-50 border-blue-200';
-    case 'warning': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    case 'critical': return 'text-red-600 bg-red-50 border-red-200';
-    default: return 'text-gray-600 bg-gray-50 border-gray-200';
-  }
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case 'excellent': return <CheckCircle className="w-4 h-4" />;
-    case 'good': return <CheckCircle className="w-4 h-4" />;
-    case 'warning': return <AlertTriangle className="w-4 h-4" />;
-    case 'critical': return <AlertTriangle className="w-4 h-4" />;
-    default: return <Activity className="w-4 h-4" />;
-  }
-};
-
-const getTrendIcon = (trend: string) => {
-  switch (trend) {
-    case 'up': return <TrendingUp className="w-4 h-4 text-green-600" />;
-    case 'down': return <TrendingDown className="w-4 h-4 text-red-600" />;
-    case 'stable': return <Activity className="w-4 h-4 text-gray-600" />;
-    default: return <Activity className="w-4 h-4" />;
-  }
-};
-
-const getModelStatusColor = (status: string) => {
-  switch (status) {
-    case 'online': return 'text-green-600 bg-green-50 border-green-200';
-    case 'degraded': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    case 'offline': return 'text-red-600 bg-red-50 border-red-200';
-    default: return 'text-gray-600 bg-gray-50 border-gray-200';
-  }
-};
-
-export const ModelPerformanceMonitor: React.FC = () => {
-  const [models, setModels] = useState<ModelPerformance[]>(mockModels);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
+export function ModelPerformanceMonitor({ className = '' }: ModelPerformanceMonitorProps) {
+  const [budgetStatus, setBudgetStatus] = useState<BudgetStatus | null>(null);
+  const [modelPerformance, setModelPerformance] = useState<ModelPerformance[]>([]);
+  const [suggestions, setSuggestions] = useState<CostOptimizationSuggestion[]>([]);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [timeframe, setTimeframe] = useState<'day' | 'week' | 'month'>('month');
 
   useEffect(() => {
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      setModels(prevModels => 
-        prevModels.map(model => ({
-          ...model,
-          lastInference: new Date(),
-          totalInferences: model.totalInferences + Math.floor(Math.random() * 10),
-          metrics: model.metrics.map(metric => ({
-            ...metric,
-            value: metric.value + (Math.random() - 0.5) * 2,
-            lastUpdated: new Date()
-          }))
-        }))
-      );
-    }, 5000);
-
+    loadData();
+    const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [timeframe]);
 
-  const selectedModelData = models.find(m => m.modelId === selectedModel);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [budget, performance, optimizations, usage] = await Promise.all([
+        hybridModelService.getBudgetStatus(),
+        hybridModelService.getModelPerformance(),
+        hybridModelService.getCostOptimizationSuggestions(),
+        hybridModelService.getUsageAnalytics(timeframe)
+      ]);
+
+      setBudgetStatus(budget);
+      setModelPerformance(performance);
+      setSuggestions(optimizations);
+      setAnalytics(usage);
+    } catch (error) {
+      console.error('Error loading performance data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => `$${amount.toFixed(2)}`;
+  const formatLatency = (ms: number) => `${ms.toFixed(0)}ms`;
+  const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
+
+  const getBudgetColor = (status: BudgetStatus) => {
+    if (status.isOverBudget) return 'destructive';
+    if (status.utilizationPercent > 0.8) return 'secondary';
+    return 'default';
+  };
+
+  const getPerformanceColor = (successRate: number) => {
+    if (successRate >= 0.95) return 'text-success';
+    if (successRate >= 0.9) return 'text-warning';
+    return 'text-destructive';
+  };
+
+  const getTrendIcon = (trend: string) => {
+    switch (trend) {
+      case 'improving':
+        return <TrendingUp className="h-4 w-4 text-success" />;
+      case 'degrading':
+        return <TrendingDown className="h-4 w-4 text-destructive" />;
+      default:
+        return <BarChart3 className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'destructive';
+      case 'medium':
+        return 'secondary';
+      default:
+        return 'secondary';
+    }
+  };
+
+  if (loading && !budgetStatus) {
+    return (
+      <div className={`flex items-center justify-center p-8 ${className}`}>
+        <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+        <span>Loading performance data...</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Brain className="h-8 w-8 text-primary" />
-          <div>
-            <h2 className="text-2xl font-bold">Model Performance Monitor</h2>
-            <p className="text-muted-foreground">Real-time AI model performance tracking</p>
-          </div>
-        </div>
-        <Badge variant="outline" className="flex items-center gap-2">
-          <Activity className="w-4 h-4" />
-          Live Monitoring
-        </Badge>
-      </div>
+    <div className={`space-y-6 ${className}`}>
+      {/* Budget Status */}
+      {budgetStatus && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">AI Budget Status</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-2xl font-bold">
+                  {formatCurrency(budgetStatus.used)}
+                </span>
+                <Badge variant={getBudgetColor(budgetStatus)}>
+                  {formatPercent(budgetStatus.utilizationPercent)} used
+                </Badge>
+              </div>
+              <Progress 
+                value={budgetStatus.utilizationPercent * 100} 
+                className="w-full"
+              />
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>Remaining: {formatCurrency(budgetStatus.remaining)}</span>
+                <span>Total: {formatCurrency(budgetStatus.total)}</span>
+              </div>
+              {budgetStatus.projectedMonthlySpend > budgetStatus.total && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Projected monthly spend: {formatCurrency(budgetStatus.projectedMonthlySpend)}
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Model Overview */}
-        <div className="lg:col-span-2">
+      {/* Performance Overview */}
+      <Tabs value={timeframe} onValueChange={(value) => setTimeframe(value as any)}>
+        <div className="flex items-center justify-between">
+          <TabsList>
+            <TabsTrigger value="day">24 Hours</TabsTrigger>
+            <TabsTrigger value="week">7 Days</TabsTrigger>
+            <TabsTrigger value="month">30 Days</TabsTrigger>
+          </TabsList>
+          <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+
+        <TabsContent value={timeframe} className="space-y-4">
+          {analytics && (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{analytics.totalRequests}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total Cost</CardTitle>
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatCurrency(analytics.totalCost)}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Avg Latency</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatLatency(analytics.averageLatency)}</div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+                  <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{formatPercent(analytics.successRate)}</div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Model Performance Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Cpu className="w-5 h-5" />
-                Model Performance Overview
-              </CardTitle>
+              <CardTitle>Model Performance</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {models.map((model) => (
-                  <div
-                    key={model.modelId}
-                    className={`p-4 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
-                      selectedModel === model.modelId ? 'border-primary bg-primary/5' : 'border-gray-200'
-                    }`}
-                    onClick={() => setSelectedModel(model.modelId)}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-2">
-                          <Brain className="w-5 h-5 text-primary" />
-                          <h3 className="font-semibold">{model.modelName}</h3>
+                {modelPerformance.map((model) => (
+                  <div key={model.model} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div>
+                        <div className="font-medium">{model.model}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {model.provider} • {model.totalUsage} requests
                         </div>
-                        <Badge className={getModelStatusColor(model.status)}>
-                          {model.status}
-                        </Badge>
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-primary">
-                          {model.overallScore}%
-                        </div>
-                        <div className="text-sm text-muted-foreground">Overall Score</div>
-                      </div>
+                      {getTrendIcon(model.trend)}
                     </div>
-
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <div className="text-muted-foreground">Total Inferences</div>
-                        <div className="font-semibold">{model.totalInferences.toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground">Avg Response</div>
-                        <div className="font-semibold">{model.averageResponseTime}s</div>
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground">Last Activity</div>
-                        <div className="font-semibold">
-                          {Math.floor((Date.now() - model.lastInference.getTime()) / 60000)}m ago
+                    <div className="flex items-center space-x-4 text-sm">
+                      <div className="text-center">
+                        <div className={`font-medium ${getPerformanceColor(model.successRate)}`}>
+                          {formatPercent(model.successRate)}
                         </div>
+                        <div className="text-muted-foreground">Success</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium">{formatLatency(model.averageLatency)}</div>
+                        <div className="text-muted-foreground">Latency</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-medium">{formatCurrency(model.averageCost)}</div>
+                        <div className="text-muted-foreground">Avg Cost</div>
                       </div>
                     </div>
                   </div>
@@ -321,97 +243,54 @@ export const ModelPerformanceMonitor: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* Detailed Metrics */}
-        {selectedModelData && (
-          <div className="lg:col-span-1">
+          {/* Cost Optimization Suggestions */}
+          {suggestions.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="w-5 h-5" />
-                  {selectedModelData.modelName} Metrics
-                </CardTitle>
+                <CardTitle>Cost Optimization Suggestions</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {selectedModelData.metrics.map((metric) => (
-                    <div key={metric.name} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          {getStatusIcon(metric.status)}
-                          <span className="font-medium">{metric.name}</span>
+                  {suggestions.map((suggestion, index) => (
+                    <Alert key={index}>
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <span className="font-medium">{suggestion.title}</span>
+                              <Badge variant={getPriorityColor(suggestion.priority)}>
+                                {suggestion.priority}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              {suggestion.description}
+                            </p>
+                            <p className="text-sm">{suggestion.recommendation}</p>
+                          </div>
+                          {suggestion.potentialSavings > 0 && (
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-success">
+                                Save {formatCurrency(suggestion.potentialSavings)}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {suggestion.implementationEffort} effort
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
-                          {getTrendIcon(metric.trend)}
-                          <span className="font-semibold">
-                            {metric.value.toFixed(1)}{metric.unit}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-1">
-                        <div className="flex justify-between text-xs text-muted-foreground">
-                          <span>Target: {metric.target}{metric.unit}</span>
-                          <span>{Math.round((metric.value / metric.target) * 100)}%</span>
-                        </div>
-                        <Progress 
-                          value={(metric.value / metric.target) * 100} 
-                          className="h-2"
-                        />
-                      </div>
-                    </div>
+                      </AlertDescription>
+                    </Alert>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
-      </div>
-
-      {/* Performance Alerts */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            Performance Alerts
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {models.filter(m => m.status === 'degraded').map((model) => (
-              <div key={model.modelId} className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                <div className="flex-1">
-                  <div className="font-medium text-yellow-800">
-                    {model.modelName} performance degraded
-                  </div>
-                  <div className="text-sm text-yellow-600">
-                    Overall score dropped to {model.overallScore}%
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-yellow-600 border-yellow-300">
-                  Investigate
-                </Badge>
-              </div>
-            ))}
-            
-            {models.filter(m => m.status === 'online').length === models.length && (
-              <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <div className="flex-1">
-                  <div className="font-medium text-green-800">
-                    All models performing optimally
-                  </div>
-                  <div className="text-sm text-green-600">
-                    No performance issues detected
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
-}; 
+}
+
+export default ModelPerformanceMonitor; 

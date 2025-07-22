@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 import { corsHeaders } from '../_shared/cors.ts';
+import { createDatabaseService, authenticateRequest } from '../_shared/database.ts';
 
 interface SyncRequest {
   providers?: string[]; // 'google-drive', 'onedrive', or both
@@ -32,12 +33,19 @@ serve(async (req) => {
       throw new Error('Missing required environment variables');
     }
 
-    const supabaseClient = createClient(supabaseUrl, supabaseServiceKey);
-    const { providers = ['google-drive', 'onedrive'], userId }: SyncRequest = await req.json();
-
-    if (!userId) {
-      throw new Error('userId is required');
+    // Authenticate the request
+    const { userId, error: authError } = await authenticateRequest(req, supabaseUrl, supabaseServiceKey);
+    if (authError || !userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
     }
+
+    // Create database service
+    const dbService = createDatabaseService(supabaseUrl, supabaseServiceKey, userId);
+    
+    const { providers = ['google-drive', 'onedrive'] }: SyncRequest = await req.json();
 
     const results = {
       totalProcessed: 0,
@@ -46,12 +54,15 @@ serve(async (req) => {
       oneDrive: null as any
     };
 
-    // Get user's connected integrations
-    const { data: integrations } = await supabaseClient
-      .from('user_integrations')
-      .select('integration_name, credentials')
-      .eq('user_id', userId)
-      .in('integration_name', ['google-workspace', 'microsoft-365']);
+    // Get user's connected integrations using centralized service
+    const { data: integrations, error: integrationsError } = await dbService.getUserIntegrations(
+      userId,
+      'ai_sync_cloud_storage'
+    );
+
+    if (integrationsError) {
+      throw new Error(`Failed to fetch integrations: ${integrationsError.message}`);
+    }
 
     const connectedProviders = new Map(
       integrations?.map(i => [i.integration_name, i.credentials]) || []
@@ -61,7 +72,7 @@ serve(async (req) => {
     if (providers.includes('google-drive') && connectedProviders.has('google-workspace')) {
       try {
         const credentials = connectedProviders.get('google-workspace');
-        const syncResult = await syncGoogleDrive(credentials, supabaseClient, openaiApiKey);
+        const syncResult = await syncGoogleDrive(credentials, dbService, openaiApiKey);
         results.googleDrive = syncResult;
         results.totalProcessed += syncResult.processed;
         results.totalErrors.push(...syncResult.errors);
@@ -76,7 +87,7 @@ serve(async (req) => {
     if (providers.includes('onedrive') && connectedProviders.has('microsoft-365')) {
       try {
         const credentials = connectedProviders.get('microsoft-365');
-        const syncResult = await syncOneDrive(credentials, supabaseClient, openaiApiKey);
+        const syncResult = await syncOneDrive(credentials, dbService, openaiApiKey);
         results.oneDrive = syncResult;
         results.totalProcessed += syncResult.processed;
         results.totalErrors.push(...syncResult.errors);
@@ -87,11 +98,12 @@ serve(async (req) => {
       }
     }
 
-    // Update sync metadata
+    // Update sync metadata using centralized service
     for (const integration of integrations || []) {
-      await supabaseClient
-        .from('user_integrations')
-        .update({
+      await dbService.updateUserIntegration(
+        userId,
+        integration.integration_name,
+        {
           metadata: {
             ...integration.metadata,
             lastCloudStorageSync: new Date().toISOString(),
@@ -100,9 +112,9 @@ serve(async (req) => {
               errors: results.totalErrors.length
             }
           }
-        })
-        .eq('user_id', userId)
-        .eq('integration_name', integration.integration_name);
+        },
+        'ai_sync_cloud_storage'
+      );
     }
 
     return new Response(

@@ -9,10 +9,18 @@
  * - Workflow automation powers
  */
 
-import { n8nService } from './n8nService';
-import { supabase } from './core/supabase';
+import { supabase } from '@/core/supabase';
 import type { Agent } from '@/domains/ai/lib/agentRegistry';
-import { listPayPalTxns } from '@/domains/ai/lib/tools/paypal';
+// import { listPayPalTxns } from '@/domains/ai/lib/tools/paypal';
+
+// Mock services for now
+const n8nService = {
+  salesAction: async (_action: string, _params: any) => ({ success: false, error: 'Service not implemented' }),
+  financeAction: async (_action: string, _params: any) => ({ success: false, error: 'Service not implemented' }),
+  triggerWorkflow: async (_workflow: string, _params: any) => ({ success: false, error: 'Service not implemented' })
+};
+
+const listPayPalTxns = async (_params: any) => [];
 
 // Tool definitions for OpenAI function calling
 export interface AITool {
@@ -587,7 +595,7 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(openaiRequest),
@@ -626,7 +634,7 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
             const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
-                'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+                'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify(followUpRequest),

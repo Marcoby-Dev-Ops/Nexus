@@ -6,7 +6,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/Dialog';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 import { n8nService } from '@/domains/automation/services/n8nService';
 import { userN8nConfigService } from '@/domains/automation/services/userN8nConfig';
@@ -59,7 +59,7 @@ interface AutomationRecipe {
  * Pillar: 1,2 - Customer Success Automation + Business Workflow Intelligence
  */
 const AutomationRecipesPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   const [recipes, setRecipes] = useState<AutomationRecipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<AutomationRecipe[]>([]);

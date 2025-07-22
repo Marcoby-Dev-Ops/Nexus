@@ -6,8 +6,8 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
-import { supabase } from '../../lib/core/supabase';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { supabase } from '@/core/supabase';
 import {
   Users,
   Search,
@@ -92,7 +92,7 @@ interface ClientIntelligenceAlert {
 }
 
 const UnifiedClientProfilesView: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [profiles, setProfiles] = useState<UnifiedClientProfile[]>([]);
   const [interactions, setInteractions] = useState<ClientInteraction[]>([]);
   const [alerts, setAlerts] = useState<ClientIntelligenceAlert[]>([]);

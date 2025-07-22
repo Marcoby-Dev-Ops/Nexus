@@ -25,7 +25,7 @@ import {
   CheckSquare,
   Inbox
 } from 'lucide-react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 interface UserJourney {
@@ -59,7 +59,7 @@ interface UserGuideSystemProps {
 }
 
 export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const navigate = useNavigate();
   const [selectedJourney, setSelectedJourney] = useState<UserJourney | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});

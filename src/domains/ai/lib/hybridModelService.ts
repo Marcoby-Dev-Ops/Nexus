@@ -599,5 +599,5 @@ export class HybridModelService {
 
 // Export singleton instance
 export const hybridModelService = new HybridModelService(
-  Number(import.meta.env.VITE_MONTHLY_AI_BUDGET) || 100
+        100
 ); 

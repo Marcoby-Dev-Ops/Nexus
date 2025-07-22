@@ -12,7 +12,7 @@ import {
   BarChart3,
   Sparkles
 } from 'lucide-react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 interface BusinessContextData {
   industry: string;
@@ -37,7 +37,7 @@ interface BusinessContextStepProps {
 }
 
 export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext, onBack, enrichedData }) => {
-  const { user, updateCompany } = useAuth();
+  const { user, updateCompany } = useAuthContext();
   const [businessData, setBusinessData] = useState<BusinessContextData>({
     industry: '',
     business_model: '',

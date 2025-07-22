@@ -10,7 +10,6 @@
 
 ```bash
 pnpm install
-pnpm supabase start
 pnpm run dev
 ```
 

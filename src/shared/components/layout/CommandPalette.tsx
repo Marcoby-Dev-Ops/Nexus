@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { navItems } from '@/shared/components/layout/navConfig';
 import { features as featureRegistry } from '@/shared/components/ui/featureRegistry';
-import { getSlashCommands, type SlashCommand } from '@/core/services/slashCommandService';
+import { getSlashCommands, type SlashCommand } from '@/domains/ai/services/slashCommandService';
 import Modal from '@/shared/components/ui/Modal';
 import { Input } from '@/shared/components/ui/Input';
 import { Badge } from '@/shared/components/ui/Badge';

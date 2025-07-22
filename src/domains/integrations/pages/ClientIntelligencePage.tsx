@@ -6,7 +6,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import {
   Users,
   Search,
@@ -115,7 +115,7 @@ interface AnalyticsData {
 
 
 const ClientIntelligencePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [profiles, setProfiles] = useState<UnifiedClientProfile[]>([]);
   const [interactions, setInteractions] = useState<ClientInteraction[]>([]);
   const [alerts, setAlerts] = useState<ClientIntelligenceAlert[]>([]);

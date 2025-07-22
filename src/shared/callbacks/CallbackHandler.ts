@@ -7,13 +7,10 @@ import type {
   CallbackConfig,
   CallbackRequest,
   CallbackResponse,
-  CallbackContext,
-  CallbackStatus,
   CallbackHandler as CallbackHandlerType
-} from '@/shared/types/callbacks';
-import { CallbackEvent } from '@/shared/types/callbacks';
+} from '@/core/types/callbacks';
+import { CallbackEvent } from '@/core/types/callbacks';
 import { callbackRegistry } from '@/shared/callbacks/CallbackRegistry';
-import { supabase } from "@/core/supabase";
 
 /**
  * Built-in callback handlers
@@ -369,6 +366,8 @@ export class CallbackHandlers {
     }
   }
 
+
+
   /**
    * Handle custom callback (fallback)
    */
@@ -387,10 +386,10 @@ export class CallbackHandlers {
    * Exchange OAuth code for tokens
    */
   private static async exchangeOAuthCode(
-    integrationSlug: string,
-    code: string,
-    state: string,
-    userId?: string
+    _integrationSlug: string,
+    _code: string,
+    _state: string,
+    _userId?: string
   ): Promise<any> {
     // This would typically make an API call to exchange the code for tokens
     // and store them in the database
@@ -424,9 +423,9 @@ export class CallbackHandlers {
    * Process webhook payload
    */
   private static async processWebhookPayload(
-    integrationSlug: string,
-    payload: any,
-    headers: Record<string, string>
+    _integrationSlug: string,
+    _payload: any,
+    _headers: Record<string, string>
   ): Promise<{ eventType: string; recordsProcessed: number }> {
     // This would typically process the webhook payload based on the integration
     // For now, return a mock response
@@ -440,9 +439,9 @@ export class CallbackHandlers {
    * Validate API key
    */
   private static async validateApiKey(
-    integrationSlug: string,
+    _integrationSlug: string,
     apiKey: string,
-    validationEndpoint?: string
+    _validationEndpoint?: string
   ): Promise<boolean> {
     // This would typically validate the API key against the integration's API
     // For now, return true as a placeholder
@@ -457,16 +456,8 @@ export class CallbackHandlers {
       // This would typically send to an analytics service
       console.log(`Callback Event: ${event}`, properties);
       
-      // Optionally store in database
-      if (supabase) {
-        await supabase
-          .from('callback_events')
-          .insert({
-            event_type: event,
-            properties: properties,
-            created_at: new Date().toISOString()
-          });
-      }
+      // TODO: Store in database when callback_events table is created
+      // For now, just log the event
     } catch (error) {
       console.error('Failed to track callback event:', error);
     }

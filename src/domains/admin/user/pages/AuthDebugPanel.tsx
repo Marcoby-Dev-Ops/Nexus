@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { useUnifiedAuth } from '@/domains/hooks/useUnifiedAuth';
-import { supabaseDebugService } from '@/core/services/supabaseDebugService';
+import { supabaseDebugService } from '@/shared/services/supabaseDebugService';
 import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/ui/Card';
 import { Alert } from '@/shared/components/ui/Alert';

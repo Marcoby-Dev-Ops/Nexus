@@ -3,7 +3,7 @@ import {
   Card, CardContent, CardHeader, CardTitle,
   Badge,
   Button
-} from '@/shared/shared/components/ui';
+} from '@/shared/components/ui';
 import { 
   X, 
   ArrowRight, 

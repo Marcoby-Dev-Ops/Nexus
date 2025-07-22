@@ -3,7 +3,7 @@ import { Database, Search, Download, Upload, BarChart2, RefreshCw, AlertCircle, 
 import { ContentCard } from '@/shared/components/patterns/ContentCard';
 import { KpiCard } from '@/domains/dashboard/components/KpiCard';
 import { SimpleBarChart } from '@/domains/dashboard/components/SimpleBarChart';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from '@/core/supabase';
 
 /**
@@ -50,7 +50,7 @@ interface RecentSyncActivity {
 }
 
 const DataWarehouseHome: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);

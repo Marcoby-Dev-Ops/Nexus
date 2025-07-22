@@ -12,7 +12,7 @@ import {
   Alert, AlertDescription,
   Tabs, TabsContent, TabsList, TabsTrigger,
   Button
-} from '@/shared/shared/components/ui';
+} from '@/shared/components/ui';
 import { 
   MessageSquare, 
   Video,

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from '@/core/supabase';
-import { useToast } from '@/shared/components/ui/Toast';
+import { useToast } from '@/shared/ui/components/Toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/Dialog';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 
@@ -63,7 +63,7 @@ interface OrganizationSetupStepProps {
 }
 
 export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ onNext, onBack }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const company = user?.company;
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);

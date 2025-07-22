@@ -3,7 +3,7 @@
  * Provides debugging utilities for Supabase operations
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '@/core/supabase';
 import { logger } from '@/core/auth/logger';
 
 export interface DebugInfo {

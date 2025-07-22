@@ -44,7 +44,7 @@ export interface AuthConfig {
 
 export const authConfig: AuthConfig = {
   // Session Management
-  sessionCheckInterval: 5 * 60 * 1000, // Check every 5 minutes
+  sessionCheckInterval: 10 * 60 * 1000, // Check every 10 minutes (reduced from 5 minutes)
   tokenRefreshThreshold: 10 * 60 * 1000, // Refresh when 10 minutes left
   sessionTimeout: 24 * 60 * 60 * 1000, // 24 hours
   maxSessionAge: 7 * 24 * 60 * 60 * 1000, // 7 days
@@ -87,8 +87,8 @@ export const getAuthConfig = (): AuthConfig => {
   
   // Development overrides
   if (import.meta.env.DEV) {
-    config.sessionCheckInterval = 2 * 60 * 1000; // Check every 2 minutes in dev
-    config.tokenRefreshThreshold = 5 * 60 * 1000; // Refresh when 5 minutes left in dev
+    config.sessionCheckInterval = 10 * 60 * 1000; // Check every 10 minutes in dev (reduced from 2 minutes)
+    config.tokenRefreshThreshold = 15 * 60 * 1000; // Refresh when 15 minutes left in dev (increased from 5 minutes)
     config.enableDebugLogging = true;
     config.enableSessionMonitoring = true;
   }

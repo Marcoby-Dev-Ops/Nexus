@@ -128,76 +128,111 @@ export class HubSpotIntegration {
         }
       });
       
-      // Add token refresh interceptor
+      // Enhanced token refresh interceptor with best practices
       this.apiClient.interceptors.response.use(
         (response: any) => response,
         async (error: any) => {
           const originalRequest = error.config;
           
-          // If error is 401 and we haven't tried to refresh token yet
-          if (error.response.status === 401 && !originalRequest._retry && this.config.refreshToken) {
+          // Only attempt refresh on 401 errors and if we haven't retried yet
+          if (error.response?.status === 401 && !originalRequest._retry && this.config.refreshToken) {
             originalRequest._retry = true;
             
-            // Check if token needs refresh
-            if (this.config.expiresAt && Date.now() > this.config.expiresAt) {
-              // Refresh token
-              try {
-                const refreshResponse = await axios.post('https://api.hubapi.com/oauth/v1/token', {
-                  grant_type: 'refresh_token',
-                  client_id: this.config.clientId,
-                  client_secret: this.config.clientSecret,
-                  refresh_token: this.config.refreshToken
-                });
+            try {
+              // Check if token is expired or will expire soon (5 minutes buffer)
+              const shouldRefresh = this.shouldRefreshToken();
+              
+              if (shouldRefresh) {
+                console.log('🔄 [HubSpot] Token expired or expiring soon, refreshing...');
+                await this.refreshAccessToken();
                 
-                const responseData = refreshResponse.data as { 
-                  access_token: string; 
-                  refresh_token?: string; 
-                  expires_in: number;
-                };
-                
-                // Update tokens in config
-                this.config.accessToken = responseData.access_token;
-                this.config.refreshToken = responseData.refresh_token || this.config.refreshToken;
-                this.config.expiresAt = Date.now() + (responseData.expires_in * 1000);
-                
-                // Update authorization header
+                // Update authorization header with new token
                 originalRequest.headers['Authorization'] = `Bearer ${this.config.accessToken}`;
                 
-                // Retry the request with new token
+                // Retry the original request with new token
                 return this.apiClient(originalRequest);
-              } catch (refreshError) {
-                console.error('Token refresh failed:', refreshError);
-                return Promise.reject(refreshError);
+              } else {
+                console.warn('⚠️ [HubSpot] Token refresh needed but no refresh token available');
+                throw new Error('Authentication token expired and cannot be refreshed');
               }
+            } catch (refreshError) {
+              console.error('❌ [HubSpot] Token refresh failed:', refreshError);
+              
+              // Clear invalid tokens
+              this.config.accessToken = undefined;
+              this.config.refreshToken = undefined;
+              this.config.expiresAt = undefined;
+              
+              throw new Error('Authentication failed - please reconnect your HubSpot account');
             }
           }
           
           return Promise.reject(error);
         }
       );
-      
-      return;
     }
+  }
+
+  /**
+   * Check if token should be refreshed (expired or expiring within 5 minutes)
+   */
+  private shouldRefreshToken(): boolean {
+    if (!this.config.expiresAt) return false;
     
-    throw new Error('No authentication method provided for HubSpot integration');
+    const now = Date.now();
+    const expiresAt = typeof this.config.expiresAt === 'number' 
+      ? this.config.expiresAt 
+      : new Date(this.config.expiresAt).getTime();
+    
+    const fiveMinutes = 5 * 60 * 1000;
+    return now + fiveMinutes >= expiresAt;
+  }
+
+  /**
+   * Refresh the access token using the refresh token
+   */
+  private async refreshAccessToken(): Promise<void> {
+    if (!this.config.refreshToken || !this.config.clientId || !this.config.clientSecret) {
+      throw new Error('Missing refresh token or client credentials');
+    }
+
+    try {
+      const response = await axios.post('https://api.hubapi.com/oauth/v1/token', {
+        grant_type: 'refresh_token',
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        refresh_token: this.config.refreshToken
+      });
+
+      const responseData = response.data as { 
+        access_token: string; 
+        refresh_token?: string; 
+        expires_in: number;
+      };
+
+      // Update tokens in config
+      this.config.accessToken = responseData.access_token;
+      this.config.refreshToken = responseData.refresh_token || this.config.refreshToken;
+      this.config.expiresAt = Date.now() + (responseData.expires_in * 1000);
+
+      console.log('✅ [HubSpot] Token refreshed successfully');
+    } catch (error) {
+      console.error('❌ [HubSpot] Token refresh failed:', error);
+      throw error;
+    }
   }
   
   /**
    * Get OAuth2 authorization URL
    */
-  getAuthorizationUrl(): string {
+  async getAuthorizationUrl(): Promise<string> {
     if (!this.config.clientId || !this.config.redirectUri) {
       throw new Error('Client ID and redirect URI are required for OAuth2 authorization');
     }
     
-    const scopes = [
-      'crm.objects.contacts.read',
-      'crm.objects.contacts.write',
-      'crm.objects.companies.read',
-      'crm.objects.companies.write',
-      'crm.objects.deals.read',
-      'crm.objects.deals.write'
-    ];
+    // Use consolidated HubSpot scopes
+    const { HUBSPOT_REQUIRED_SCOPES } = await import('./hubspot/constants');
+    const scopes = HUBSPOT_REQUIRED_SCOPES;
     
     return `https://app.hubspot.com/oauth/authorize?client_id=${this.config.clientId}&redirect_uri=${encodeURIComponent(this.config.redirectUri)}&scope=${encodeURIComponent(scopes.join(' '))}&response_type=code`;
   }

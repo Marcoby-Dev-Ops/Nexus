@@ -21,7 +21,7 @@ import {
   User
 } from 'lucide-react';
 
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { BusinessContextCollector } from './brain/BusinessContextCollector';
@@ -141,7 +141,7 @@ export const UnifiedBrainOnboarding: React.FC<{
   onComplete: () => void;
   className?: string;
 }> = ({ onComplete, className = '' }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [session, setSession] = useState<BrainOnboardingSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [state, setState] = useState<BrainOnboardingState>({

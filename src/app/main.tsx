@@ -4,15 +4,15 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
 
 // Core providers and services
-import { AuthProvider } from '@/domains/admin/user/hooks/AuthContext';
 import { ThemeProvider } from '@/shared/components/ui/theme-provider';
-import { ToastProvider } from '@/shared/components/ui/Toast';
+import { ToastProvider } from '@/shared/ui/components/Toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/domains/admin/user/hooks/AuthContext';
 
 // Core services initialization
 import { logger } from '@/core/auth/logger';
 import { validateEnvironment } from '@/core/environment';
-import { initializePersistentAuth } from '@/shared/services/persistentAuthService';
+import { initializeAuth } from '@/shared/services/authService';
 
 // Callback system
 import { initializeCallbackSystem } from '@/shared/callbacks';
@@ -33,18 +33,30 @@ try {
   // Continue with app initialization even if validation fails
 }
 
+// Global initialization guard to prevent multiple initializations in React StrictMode
+let globalCoreServicesGuard = false;
+
 // Initialize core services in proper order
 const initializeCoreServices = async () => {
+  // Global guard to prevent multiple initializations
+  if (globalCoreServicesGuard) {
+    logger.info('Core services already initialized globally, skipping...');
+    return;
+  }
+  
   try {
-    // Step 1: Initialize persistent authentication first
-    await initializePersistentAuth();
-    logger.info('Persistent authentication initialized successfully');
+    // Set global guard
+    globalCoreServicesGuard = true;
+    
+    // Step 1: Initialize authentication service
+    await initializeAuth();
+    logger.info('Authentication service initialized successfully');
     
     // Step 2: Initialize callback system
     await initializeCallbackSystem();
     
-    // Step 3: Initialize module registry
-    initializeModuleRegistry();
+    // Step 3: Initialize module registry (core only)
+    initializeModuleRegistry(); // Only loads core modules, others loaded on-demand
     
     logger.info('All app services initialized successfully');
   } catch (error) {
@@ -130,18 +142,21 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// Create root and render app
+const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+
+root.render(
   <React.StrictMode>
-    <Router>
-      <ThemeProvider defaultTheme="system">
-        <AuthProvider>
-          <ToastProvider>
-            <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
+              <ThemeProvider defaultTheme="light">
+        <ToastProvider>
+          <Router>
+            <AuthProvider>
               <App />
-            </QueryClientProvider>
-          </ToastProvider>
-        </AuthProvider>
+            </AuthProvider>
+          </Router>
+        </ToastProvider>
       </ThemeProvider>
-    </Router>
+    </QueryClientProvider>
   </React.StrictMode>
 );

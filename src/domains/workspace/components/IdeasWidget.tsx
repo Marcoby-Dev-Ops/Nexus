@@ -1,1 +1,1 @@
-export { default, IdeasWidget } from '@shared/shared/components/widgets/IdeasWidget'; 
+export { default, IdeasWidget } from '@shared/components/widgets/IdeasWidget'; 

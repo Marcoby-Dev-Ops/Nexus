@@ -13,9 +13,9 @@ import {
   ExternalLink,
   AlertTriangle
 } from 'lucide-react';
-import { billingService } from '@/core/services/billingService';
+import { billingService } from '@/domains/admin';
 import { quotaService } from '@/shared/services/quotaService';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import type { BillingStatus } from '@/core/types/billing';
 import type { ChatQuotas, UsageTracking } from '@/core/types/licensing';
 import { LoadingSkeleton } from '@/shared/components/patterns/LoadingStates';
@@ -25,7 +25,7 @@ interface BillingDashboardProps {
 }
 
 export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
   const [quotaStatus, setQuotaStatus] = useState<ChatQuotas | null>(null);
   const [usageData, setUsageData] = useState<UsageTracking | null>(null);

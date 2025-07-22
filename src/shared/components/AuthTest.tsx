@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { testAuthentication, testInsertDebugLog } from '@/core/testAuth';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 export const AuthTest: React.FC = () => {
   const [testResult, setTestResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const { user, session } = useAuth();
+  const { user, session } = useAuthContext();
 
   const runAuthTest = async () => {
     setLoading(true);

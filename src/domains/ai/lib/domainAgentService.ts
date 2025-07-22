@@ -5,9 +5,10 @@
  * Each domain agent has access to relevant business data, specialized prompts, and department-specific tools.
  */
 
-import { Agent, agentRegistry, getAgentsByDepartment } from '@/domains/ai/lib/agentRegistry';
+import type { Agent} from '@/domains/ai/lib/agentRegistry';
+import { agentRegistry, getAgentsByDepartment } from '@/domains/ai/lib/agentRegistry';
 import { BusinessHealthService } from '../services/businessHealthService';
-import { supabase } from '../supabase';
+import { supabase } from '@/core/supabase';
 
 export interface DomainContext {
   departmentId: string;

@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { CheckCircle, XCircle, Info, X, Loader2 } from "lucide-react";
 import { Progress } from '@/shared/components/ui/Progress';
 import Confetti from "react-confetti";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/Tooltip';
-import { supabase, authUtils } from '@/core/supabase';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/Tooltip';
+import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
 
 const onboardingSteps = [
   {
@@ -47,124 +47,19 @@ function getFirstName(profile: unknown): string {
   return "there";
 }
 
-// Custom hooks for Supabase data fetching
-function useUserProfile() {
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchProfile() {
-      try {
-        setLoading(true);
-        const user = await authUtils.getCurrentUser();
-        
-        if (!user) {
-          setError('No authenticated user');
-          return;
-        }
-
-        const { data, error: fetchError } = await supabase
-          .from('user_profiles')
-          .select('*')
-          .eq('user_id', user.id)
-          .single();
-
-        if (fetchError) {
-          console.error('Error fetching profile:', fetchError);
-          // Don't treat this as a fatal error - just log it and continue
-          // Set a basic profile with user info
-          setProfile({
-            id: user.id,
-            user_id: user.id,
-            email: user.email,
-            full_name: user.email?.split('@')[0] || 'User',
-            created_at: user.created_at
-          });
-        } else {
-          setProfile(data);
-        }
-      } catch (err) {
-        console.error('Error in useUserProfile:', err);
-        // Don't treat this as a fatal error - just log it and continue
-        // Set a basic profile with user info
-        const user = await authUtils.getCurrentUser();
-        if (user) {
-          setProfile({
-            id: user.id,
-            user_id: user.id,
-            email: user.email,
-            full_name: user.email?.split('@')[0] || 'User',
-            created_at: user.created_at
-          });
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchProfile();
-  }, []);
-
-  return { data: profile, loading, error };
-}
-
-function useUserIntegrations() {
-  const [integrations, setIntegrations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function fetchIntegrations() {
-      try {
-        setLoading(true);
-        const user = await authUtils.getCurrentUser();
-        
-        if (!user) {
-          setError('No authenticated user');
-          return;
-        }
-
-        // Check for user integrations in the proper table
-        const { data, error: fetchError } = await supabase
-          .from('user_integrations')
-          .select('*')
-          .eq('user_id', user.id);
-
-        if (fetchError) {
-          console.error('Error fetching integrations:', fetchError);
-          // Don't treat this as a fatal error - just log it and continue
-          setIntegrations([]);
-        } else {
-          setIntegrations(data || []);
-        }
-      } catch (err) {
-        console.error('Error in useUserIntegrations:', err);
-        // Don't treat this as a fatal error - just log it and continue
-        setIntegrations([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchIntegrations();
-  }, []);
-
-  return { data: integrations, loading, error };
-}
+// Remove useUserProfile and useUserIntegrations hooks
 
 export const OnboardingChecklist: React.FC = () => {
-  const { data: profile, loading: profileLoading, error: profileError } = useUserProfile();
-  const { data: integrationsRaw, loading: integrationsLoading, error: integrationsError } = useUserIntegrations();
+  const { profile, integrations, loading: authLoading, error: authError } = useZustandAuth();
   const [dismissed, setDismissed] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Ensure integrations is always an array
-  const integrations = Array.isArray(integrationsRaw) ? integrationsRaw : [];
+  const safeIntegrations = Array.isArray(integrations) ? integrations : [];
 
   const steps = onboardingSteps.map((step) => ({
     ...step,
-    completed: step.check(profile, integrations),
+    completed: step.check(profile, safeIntegrations),
   }));
 
   const completedCount = steps.filter((s) => s.completed).length;
@@ -187,7 +82,7 @@ export const OnboardingChecklist: React.FC = () => {
   if (dismissed) return null;
 
   // Show loading state
-  if (profileLoading || integrationsLoading) {
+  if (authLoading) {
     return (
       <Card className="mb-6">
         <CardHeader>
@@ -204,7 +99,7 @@ export const OnboardingChecklist: React.FC = () => {
   }
 
   // Show error state
-  if (profileError || integrationsError) {
+  if (authError) {
     // Only show error if we don't have any profile data at all
     if (!profile) {
       return (
@@ -271,13 +166,12 @@ export const OnboardingChecklist: React.FC = () => {
                 )}
                 {step.label}
                 <TooltipProvider>
-                  <Tooltip>
+                  <Tooltip content={step.help}>
                     <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 ml-2 text-muted-foreground cursor-pointer" />
+                      <div className="inline-block">
+                        <Info className="h-4 w-4 ml-2 text-muted-foreground cursor-pointer" />
+                      </div>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p>{step.help}</p>
-                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </span>

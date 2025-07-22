@@ -6,7 +6,7 @@
  * that understand cross-departmental impact and dependencies.
  */
 
-import { supabase } from '../core/supabase';
+import { supabase } from '@/core/supabase';
 import type { DepartmentData } from '@/domains/ai/lib/contextualRAG';
 import { 
   productDevelopmentImpactMap, 

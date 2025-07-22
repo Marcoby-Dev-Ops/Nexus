@@ -549,7 +549,7 @@ export class ModelManager {
 
 // Export enhanced singleton instance
 export const modelManager = new ModelManager(
-  import.meta.env.VITE_OPENAI_API_KEY || '',
   import.meta.env.VITE_OPENROUTER_API_KEY || '',
-  Number(import.meta.env.VITE_MONTHLY_AI_BUDGET) || 100
+  import.meta.env.VITE_OPENROUTER_API_KEY || '',
+  100
 ); 

@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from '@/core/supabase';
 
 export interface AIUserContext {
@@ -60,7 +60,7 @@ export interface AIUserContext {
 }
 
 export const useUserContext = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [context, setContext] = useState<AIUserContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

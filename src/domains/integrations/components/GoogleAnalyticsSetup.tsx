@@ -5,7 +5,7 @@ import {
   Badge,
   Separator,
   Alert, AlertDescription
-} from '@/shared/shared/components/ui';
+} from '@/shared/components/ui';
 import { 
   BarChart3, 
   Users, 
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { googleAnalyticsService } from '@/domains/services/googleAnalyticsService';
 import { supabase } from "@/core/supabase";
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 
 interface GoogleAnalyticsSetupProps {
@@ -39,7 +39,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
   onComplete, 
   onClose 
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   const [currentStep, setCurrentStep] = useState<'connect' | 'properties' | 'test' | 'complete'>('connect');
   const [isConnecting, setIsConnecting] = useState(false);
@@ -164,7 +164,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
         .from('user_integrations')
         .upsert({
           user_id: user.id,
-          integration_id: 'google-analytics', // This should match the slug in integrations table
+          integration_id: '59c9e3cd-9e51-4632-a2c1-656450fd7294', // Google Analytics integration UUID
           status: 'active',
           configuration: {
             propertyId: selectedProperty.id,

@@ -14,7 +14,7 @@ import {
   Bot
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { QuickChatTrigger } from '@/domains/ai/components/QuickChatTrigger';
+import { QuickChatTrigger } from '@/domains/ai/chat';
 // import { MVPScopeIndicator } from '@/shared/components/chat/MVPScopeIndicator';
 
 /**

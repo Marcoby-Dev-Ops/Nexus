@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 // Mock team member data
 const teamMembers = [
@@ -38,7 +38,7 @@ const teamRoles = [
  * - Remove team members
  */
 const TeamSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
   

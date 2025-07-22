@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 // Hooks and Context
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useOnboardingChatStore } from '@/shared/stores/onboardingChatStore';
 
 // Services
@@ -73,7 +73,7 @@ interface OnboardingStep {
 }
 
 export const OnboardingChatAI: React.FC = () => {
-  const { user, completeOnboarding } = useAuth();
+  const { user, completeOnboarding } = useAuthContext();
   const { messages, isTyping, addMessage, setIsTyping } = useOnboardingChatStore();
   
   // UI State

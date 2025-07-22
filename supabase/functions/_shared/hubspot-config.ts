@@ -8,7 +8,7 @@
  * @returns {string | null} The HubSpot API key, or null if it is not set.
  */
 export function getHubspotApiKey(): string | null {
-  return process.env.HUBSPOT_API_KEY || null;
+  return Deno.env.get('HUBSPOT_API_KEY') || null;
 }
 
 /**
@@ -31,30 +31,25 @@ export function getHubspotConfig() {
   return {
     clientId: clientId,
     clientSecret: clientSecret,
-    redirectUri: `${appUrl}/functions/v1/hubspot-callback`,
+    redirectUri: `${appUrl}/integrations/hubspot/callback`,
+    // Minimal required scopes for basic CRM access
     scopes: [
-      'contacts',
       'crm.objects.contacts.read',
-      'crm.objects.contacts.write',
-      'crm.objects.deals.read',
-      'crm.objects.deals.write',
       'crm.objects.companies.read',
-      'crm.objects.companies.write',
-      'crm.schemas.contacts.read',
-      'crm.schemas.contacts.write',
-      'crm.schemas.deals.read',
-      'crm.schemas.deals.write',
-      'crm.schemas.companies.read',
-      'crm.schemas.companies.write',
-      'crm.import',
-      'files',
-      'files.ui_hidden.read',
-      'files.ui_hidden.write',
-      // Required for refresh tokens
-      'oauth',
+      'crm.objects.deals.read'
     ],
     authUrl: 'https://app.hubspot.com/oauth/authorize',
-    tokenUrl: 'https://api.hubspot.com/oauth/v1/token',
+    tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
     apiBaseUrl: 'https://api.hubapi.com',
+    
+    // Public app specific settings
+    appSettings: {
+      appId: 'nexus-business-platform',
+      appName: 'Nexus Business Platform',
+      appDescription: 'Comprehensive business management platform with HubSpot integration',
+      webhookUrl: `${appUrl}/functions/v1/hubspot-webhooks`,
+      iframeUrl: `${appUrl}/integrations/hubspot/dashboard`,
+      cardUrl: `${appUrl}/integrations/hubspot/cards`
+    }
   };
 } 

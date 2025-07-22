@@ -6,7 +6,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { AlertCircle, Check, ChevronRight, FileUp, DownloadCloud, Globe, Key, Lock } from 'lucide-react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { ApiIntegrationService, type ApiIntegrationData } from '@/domains/services/apiIntegrationService';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Progress } from '@/shared/components/ui/Progress';
@@ -44,7 +44,7 @@ interface ApiDocAnalysisResult {
 }
 
 const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onIntegrationCreated }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [apiUrl, setApiUrl] = useState<string>('');
   const [apiDoc, setApiDoc] = useState<string>('');

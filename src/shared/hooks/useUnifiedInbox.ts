@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { useCallback } from 'react';
-import { unifiedInboxService } from '@/domains/services/unifiedInboxService';
-import type { InboxFilters, InboxItem } from '@/domains/services/unifiedInboxService';
+import { owaInboxService } from '@/domains/services/owaInboxService';
+import type { OWAInboxFilters, OWAEmailItem } from '@/domains/services/owaInboxService';
 
 export interface UseUnifiedInboxOptions {
-  filters?: InboxFilters;
+  filters?: OWAInboxFilters;
   limit?: number;
   offset?: number;
 }
 
 export interface UseUnifiedInboxResult {
-  items: InboxItem[];
+  items: OWAEmailItem[];
   total: number;
   isLoading: boolean;
   isError: boolean;
@@ -21,14 +21,33 @@ export interface UseUnifiedInboxResult {
 export function useUnifiedInbox({ filters = {}, limit = 50, offset = 0 }: UseUnifiedInboxOptions = {}): UseUnifiedInboxResult {
   const queryKey = ['unifiedInbox', filters, limit, offset];
 
-  const queryFn = useCallback(async () => {
-    return await unifiedInboxService.getInboxItems(filters, limit, offset);
-  }, [filters, limit, offset]);
-
-  const { data, isLoading, isError, error, refetch } = useQuery<{ items: InboxItem[]; total: number }, Error>({
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch
+  } = useQuery({
     queryKey,
-    queryFn,
-    staleTime: 60 * 1000, // 1 minute
+    queryFn: async () => {
+      try {
+        console.log('useUnifiedInbox: Starting email fetch with filters:', filters);
+        const result = await owaInboxService.getEmails(filters, limit, offset);
+        console.log('useUnifiedInbox: Successfully fetched emails:', result);
+        return result;
+      } catch (error) {
+        console.error('useUnifiedInbox: Error fetching emails:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: (failureCount, error) => {
+      // Don't retry on authentication errors
+      if (error instanceof Error && error.message.includes('not authenticated')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   return {

@@ -1,9 +1,10 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { createDatabaseService, authenticateRequest } from '../_shared/database.ts'
 
 // Supabase client setup
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 // The 'access-control-allow-origin' header is needed for browsers to access the function
 const corsHeaders = {
@@ -14,9 +15,7 @@ const corsHeaders = {
 // Main function logic
 async function ingestData() {
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` } },
-    })
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     // 1. Fetch active API Learning integrations with the 'Monitoring & Alerts' pattern
     const { data: userIntegrations, error: integrationsError } = await supabase
@@ -116,6 +115,13 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the request (optional for this function since it's a background job)
+    const { userId, error: authError } = await authenticateRequest(req, supabaseUrl, supabaseServiceKey);
+    if (authError) {
+      console.warn('Authentication failed for data ingestion:', authError);
+      // Continue anyway since this might be called by a cron job
+    }
+
     const result = await ingestData();
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

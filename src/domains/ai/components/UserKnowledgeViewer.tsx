@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
-import { Separator } from '@/shared/components/ui/Separator';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { supabase } from '@/core/supabase';
 import { ContextualRAG } from '@/domains/ai/lib/contextualRAG';
-import { thoughtsService } from '@/domains/services/thoughtsService';
+import { thoughtsService } from '@/domains/knowledge/lib/services/thoughtsService';
 import {
   Brain,
   User,
@@ -18,62 +17,85 @@ import {
   Activity,
   Lightbulb,
   BarChart3,
-  Settings,
   Eye,
   RefreshCw,
   Download,
-  Clock,
   TrendingUp,
   MessageSquare,
-  MapPin,
-  Mail,
-  Phone,
   Globe,
   Award,
   Briefcase,
-  Heart,
   Zap,
   Database,
   Shield,
-  ChevronRight,
   Info
 } from 'lucide-react';
 
+interface Interaction {
+  id: string;
+  created_at: string | null;
+  content?: string;
+  interaction_type: string | null;
+  prompt_text?: string | null;
+  ai_response?: string | null;
+  user_id: string;
+  company_id?: string | null;
+  thought_id?: string | null;
+  context_data?: unknown;
+  metadata?: {
+    topic_tags?: string[];
+    user_rating?: number;
+    context?: string;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+interface InteractionPatterns {
+  most_common_topics: string[];
+  preferred_interaction_style: string;
+  learning_progression: {
+    early_topics: string[];
+    recent_topics: string[];
+    complexity_increase: boolean;
+  };
+}
+
 interface UserKnowledge {
   profile: {
-    basic: Record<string, any>;
-    professional: Record<string, any>;
-    preferences: Record<string, any>;
+    basic: Record<string, unknown>;
+    professional: Record<string, unknown>;
+    preferences: Record<string, unknown>;
     completeness: number;
   };
   business_context: {
-    company: Record<string, any>;
-    role_context: Record<string, any>;
-    goals: Record<string, any>;
+    company: Record<string, unknown>;
+    role_context: Record<string, unknown>;
+    goals: Record<string, unknown>;
     challenges: string[];
   };
   activity_patterns: {
-    session_data: Record<string, any>;
-    usage_patterns: Record<string, any>;
+    session_data: Record<string, unknown>;
+    usage_patterns: Record<string, unknown>;
     feature_usage: string[];
-    productivity_metrics: Record<string, any>;
+    productivity_metrics: Record<string, unknown>;
   };
   ai_insights: {
     thoughts_captured: number;
     interactions_count: number;
-    learning_progress: Record<string, any>;
+    learning_progress: Record<string, unknown>;
     personalization_score: number;
   };
   integrations: {
-    connected_services: any[];
+    connected_services: unknown[];
     data_sources: string[];
-    sync_status: Record<string, any>;
+    sync_status: Record<string, unknown>;
   };
   memory_bank: {
-    personal_thoughts: any[];
-    business_observations: any[];
-    contextual_insights: any[];
-    conversation_history: any[];
+    personal_thoughts: unknown[];
+    business_observations: unknown[];
+    contextual_insights: unknown[];
+    conversation_history: unknown[];
   };
 }
 
@@ -84,7 +106,7 @@ interface UserKnowledgeViewerProps {
 export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({ 
   className = '' 
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [knowledge, setKnowledge] = useState<UserKnowledge | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -96,7 +118,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     }
   }, [user]);
 
-  const loadUserKnowledge = async () => {
+  const loadUserKnowledge = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
@@ -141,36 +163,33 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const fetchProfileKnowledge = async () => {
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user?.id)
-      .single();
+    // Use profile from auth context instead of making a separate database call
+    const profile = user?.profile;
 
     const basicFields = ['first_name', 'last_name', 'display_name', 'bio', 'location'];
     const professionalFields = ['job_title', 'department', 'role', 'skills', 'hire_date'];
     const preferenceFields = ['preferences', 'timezone', 'work_location'];
 
     const basic = basicFields.reduce((acc, field) => {
-      if (profile?.[field]) acc[field] = profile[field];
+      if (profile?.[field as keyof typeof profile]) acc[field] = profile[field as keyof typeof profile];
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
 
     const professional = professionalFields.reduce((acc, field) => {
-      if (profile?.[field]) acc[field] = profile[field];
+      if (profile?.[field as keyof typeof profile]) acc[field] = profile[field as keyof typeof profile];
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
 
     const preferences = preferenceFields.reduce((acc, field) => {
-      if (profile?.[field]) acc[field] = profile[field];
+      if (profile?.[field as keyof typeof profile]) acc[field] = profile[field as keyof typeof profile];
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
 
     const totalFields = [...basicFields, ...professionalFields, ...preferenceFields];
-    const completedFields = totalFields.filter(field => profile?.[field]);
+    const completedFields = totalFields.filter(field => profile?.[field as keyof typeof profile]);
     const completeness = Math.round((completedFields.length / totalFields.length) * 100);
 
     return { basic, professional, preferences, completeness };
@@ -181,7 +200,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     const { data: company } = await supabase
       .from('companies')
       .select('*')
-      .eq('id', user?.profile?.company_id)
+      .eq('id', user?.profile?.company_id || '')
       .single();
 
     // Define an interface for the expected preferences shape
@@ -213,7 +232,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     const { data: interactions } = await supabase
       .from('ai_interactions')
       .select('*')
-      .eq('user_id', user?.id)
+      .eq('user_id', user?.id || '')
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -241,7 +260,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
         recent: thoughts.thoughts.slice(0, 5),
         metrics: metrics
       };
-    } catch (error) {
+    } catch {
       return { total: 0, recent: [], metrics: {} };
     }
   };
@@ -250,7 +269,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     const { data: interactions } = await supabase
       .from('ai_interactions')
       .select('*')
-      .eq('user_id', user?.id)
+      .eq('user_id', user?.id || '')
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -262,21 +281,46 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   };
 
   const fetchIntegrationsKnowledge = async () => {
-    const { data: integrations } = await supabase
+    const { data: userIntegrations } = await supabase
       .from('user_integrations')
       .select(`
-        *,
-        integrations!inner(category, name, slug)
+        id,
+        status,
+        integration_id
       `)
-      .eq('user_id', user?.id);
+      .eq('user_id', user?.id || '');
+
+    // Fetch integration details separately to avoid join issues
+    const integrationsWithDetails = await Promise.all(
+      (userIntegrations || []).map(async (userIntegration) => {
+        try {
+          const { data: integrationDetails } = await supabase
+            .from('integrations')
+            .select('id, name, slug, category')
+            .eq('id', userIntegration.integration_id)
+            .single();
+          
+          return {
+            ...userIntegration,
+            integrations: integrationDetails || { name: 'Unknown', slug: 'unknown', category: 'general' }
+          };
+        } catch (error) {
+          console.error('Error fetching integration details:', error);
+          return {
+            ...userIntegration,
+            integrations: { name: 'Unknown', slug: 'unknown', category: 'general' }
+          };
+        }
+      })
+    );
 
     return {
-      connected_services: integrations || [],
-      data_sources: (integrations || []).map(i => {
+      connected_services: integrationsWithDetails || [],
+      data_sources: (integrationsWithDetails || []).map(i => {
         const integrationInfo = Array.isArray(i.integrations) ? i.integrations[0] : i.integrations;
         return integrationInfo?.category || integrationInfo?.name || 'unknown';
       }),
-      sync_status: (integrations || []).reduce((acc, integration) => {
+      sync_status: (integrationsWithDetails || []).reduce((acc, integration) => {
         const integrationInfo = Array.isArray(integration.integrations) ? integration.integrations[0] : integration.integrations;
         const key = integrationInfo?.category || integrationInfo?.name || 'unknown';
         acc[key] = integration.status;
@@ -286,10 +330,14 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   };
 
   const fetchConversationKnowledge = async () => {
+    if (!user?.id) {
+      return { recent: [], total_conversations: 0, total_messages: 0 };
+    }
+    
     const { data: conversations } = await supabase
       .from('conversations')
       .select('*, chat_messages(*)')
-      .eq('user_id', user?.id)
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false })
       .limit(10);
 
@@ -318,7 +366,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   };
 
   // Helper functions
-  const calculatePersonalizationScore = (profile: any, thoughts: any, interactions: any): number => {
+  const calculatePersonalizationScore = (profile: unknown, thoughts: unknown, interactions: unknown): number => {
     let score = 0;
     
     // Profile completeness (40 points)
@@ -333,7 +381,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     return Math.min(Math.round(score), 100);
   };
 
-  const calculateSessionMetrics = (interactions: any[]) => {
+  const calculateSessionMetrics = (interactions: Interaction[]) => {
     if (interactions.length === 0) return {};
     
     const sessions = groupInteractionsBySessions(interactions);
@@ -347,7 +395,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     };
   };
 
-  const calculateUsagePatterns = (interactions: any[]) => {
+  const calculateUsagePatterns = (interactions: Interaction[]) => {
     const patterns = {
       daily_usage: calculateDailyUsage(interactions),
       feature_preferences: calculateFeaturePreferences(interactions),
@@ -357,7 +405,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     return patterns;
   };
 
-  const extractFeatureUsage = (interactions: any[]): string[] => {
+  const extractFeatureUsage = (interactions: Interaction[]): string[] => {
     const features = new Set<string>();
     interactions.forEach(interaction => {
       if (interaction.metadata?.feature) {
@@ -370,7 +418,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     return Array.from(features);
   };
 
-  const calculateProductivityMetrics = (interactions: any[]) => {
+  const calculateProductivityMetrics = (interactions: Interaction[]) => {
     return {
       questions_asked: interactions.filter(i => i.interaction_type === 'question').length,
       actions_taken: interactions.filter(i => i.interaction_type === 'action').length,
@@ -380,13 +428,13 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   };
 
   // UI Helper functions
-  const groupInteractionsBySessions = (interactions: any[]) => {
+  const groupInteractionsBySessions = (interactions: Interaction[]) => {
     // Group interactions into sessions (30 min gaps = new session)
     const sessions: any[] = [];
     let currentSession: any = null;
     
     interactions.forEach(interaction => {
-      const timestamp = new Date(interaction.created_at).getTime();
+      const timestamp = new Date(interaction.created_at || '').getTime();
       
       if (!currentSession || (timestamp - currentSession.lastActivity) > 30 * 60 * 1000) {
         currentSession = {
@@ -408,10 +456,10 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     return sessions;
   };
 
-  const findMostActiveTimeOfDay = (interactions: any[]): string => {
+  const findMostActiveTimeOfDay = (interactions: Interaction[]): string => {
     const hourCounts = new Array(24).fill(0);
     interactions.forEach(interaction => {
-      const hour = new Date(interaction.created_at).getHours();
+      const hour = new Date(interaction.created_at || '').getHours();
       hourCounts[hour]++;
     });
     
@@ -419,16 +467,16 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     return `${maxHour}:00`;
   };
 
-  const calculateDailyUsage = (interactions: any[]) => {
+  const calculateDailyUsage = (interactions: Interaction[]): Record<string, number> => {
     const dailyCounts: Record<string, number> = {};
     interactions.forEach(interaction => {
-      const date = new Date(interaction.created_at).toDateString();
+      const date = new Date(interaction.created_at || '').toDateString();
       dailyCounts[date] = (dailyCounts[date] || 0) + 1;
     });
     return dailyCounts;
   };
 
-  const calculateFeaturePreferences = (interactions: any[]) => {
+  const calculateFeaturePreferences = (interactions: Interaction[]): Record<string, number> => {
     const featureCounts: Record<string, number> = {};
     interactions.forEach(interaction => {
       const feature = interaction.metadata?.agent_id || 'general';
@@ -437,7 +485,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     return featureCounts;
   };
 
-  const calculateInteractionTypes = (interactions: any[]) => {
+  const calculateInteractionTypes = (interactions: Interaction[]): Record<string, number> => {
     const typeCounts: Record<string, number> = {};
     interactions.forEach(interaction => {
       const type = interaction.interaction_type || 'unknown';
@@ -446,7 +494,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     return typeCounts;
   };
 
-  const extractBusinessObservations = (interactions: any[]) => {
+  const extractBusinessObservations = (interactions: Interaction[]): unknown[] => {
     return interactions
       .filter(i => i.metadata?.business_observation)
       .map(i => ({
@@ -457,7 +505,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
       .slice(0, 5);
   };
 
-  const analyzeInteractionPatterns = (interactions: any[]) => {
+  const analyzeInteractionPatterns = (interactions: Interaction[]): InteractionPatterns => {
     return {
       most_common_topics: extractCommonTopics(interactions),
       preferred_interaction_style: determineInteractionStyle(interactions),
@@ -465,7 +513,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     };
   };
 
-  const extractCommonTopics = (interactions: any[]): string[] => {
+  const extractCommonTopics = (interactions: Interaction[]): string[] => {
     const topics: Record<string, number> = {};
     interactions.forEach(interaction => {
       if (interaction.metadata?.topic_tags) {
@@ -481,18 +529,34 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
       .map(([topic]) => topic);
   };
 
-  const determineInteractionStyle = (interactions: any[]): string => {
-    const styles = analyzeInteractionPatterns(interactions);
-    if (Object.values(styles).every(v => v === 0)) return 'balanced';
+  const determineInteractionStyle = (interactions: Interaction[]): string => {
+    // Analyze interaction patterns to determine preferred style
+    const patterns = analyzeInteractionPatterns(interactions);
     
-    type StyleKey = keyof typeof styles;
-    const maxStyle = Object.entries(styles).reduce((a, b) => 
-      styles[a[0] as StyleKey] > styles[b[0] as StyleKey] ? a : b
-    );
-    return maxStyle[0];
+    // Use the preferred_interaction_style from the patterns
+    if (patterns && typeof patterns.preferred_interaction_style === 'string') {
+      return patterns.preferred_interaction_style;
+    }
+    
+    // Fallback: analyze interaction types to determine style
+    const interactionTypes = calculateInteractionTypes(interactions);
+    const totalInteractions = interactions.length;
+    
+    if (totalInteractions === 0) return 'balanced';
+    
+    // Determine style based on interaction type distribution
+    const questionRatio = (interactionTypes.questions || 0) / totalInteractions;
+    const commandRatio = (interactionTypes.commands || 0) / totalInteractions;
+    const feedbackRatio = (interactionTypes.feedback || 0) / totalInteractions;
+    
+    if (questionRatio > 0.6) return 'inquisitive';
+    if (commandRatio > 0.6) return 'directive';
+    if (feedbackRatio > 0.6) return 'collaborative';
+    
+    return 'balanced';
   };
 
-  const trackLearningProgression = (interactions: any[]) => {
+  const trackLearningProgression = (interactions: Interaction[]) => {
     // Analyze how user's questions/interactions have evolved over time
     const early = interactions.slice(-Math.floor(interactions.length * 0.7));
     const recent = interactions.slice(0, Math.floor(interactions.length * 0.3));
@@ -506,7 +570,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     };
   };
 
-  const calculateAverageRating = (interactions: any[]): number => {
+  const calculateAverageRating = (interactions: Interaction[]): number => {
     const ratedInteractions = interactions.filter(i => i.metadata?.user_rating);
     if (ratedInteractions.length === 0) return 0;
     

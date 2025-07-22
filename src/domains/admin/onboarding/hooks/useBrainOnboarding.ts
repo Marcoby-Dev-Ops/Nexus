@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { brainOnboardingService, type BrainOnboardingSession } from '../services/brainOnboardingService';
 
 export interface BrainOnboardingState {
@@ -75,7 +75,7 @@ export interface BrainOnboardingActions {
 }
 
 export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActions] {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [state, setState] = useState<BrainOnboardingState>({
     session: null,
     isLoading: true,

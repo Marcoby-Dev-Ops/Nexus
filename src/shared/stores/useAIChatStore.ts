@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
 import type { AgentResponse } from '@/domains/ai/lib/assistant/types';
-import { supabase } from "@/core/supabase";
+import { supabase } from '@/core/supabase';
 import { immer } from 'zustand/middleware/immer';
 
 export type AIRole = 'user' | 'assistant' | 'system';
@@ -183,21 +183,22 @@ export const useAIChatStore = create<AIChatStoreState>()(
       }
       try {
         // Fetch from both tables in parallel
-        const [aiRes, chatRes] = await Promise.all([
-          (supabase as any)
-            .from('ai_messages')
-            .select('*')
-            .eq('conversation_id', conversationId),
-          (supabase as any)
-            .from('chat_messages')
-            .select('*')
-            .eq('conversation_id', conversationId),
-        ]);
+        const { data: aiMessages, error: aiError } = await supabase
+          .from('ai_messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
 
-        if (aiRes.error) throw aiRes.error;
-        if (chatRes.error) throw chatRes.error;
+        const { data: chatMessages, error: chatError } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('conversation_id', conversationId)
+          .order('created_at', { ascending: true });
 
-        const combined = [...(aiRes.data || []), ...(chatRes.data || [])] as any[];
+        if (aiError) throw aiError;
+        if (chatError) throw chatError;
+
+        const combined = [...(aiMessages || []), ...(chatMessages || [])] as any[];
 
         combined.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
@@ -234,7 +235,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
       if (!user) throw new Error('Not authenticated');
 
       // Persist conversation row and retrieve the generated id
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('ai_conversations')
         .insert({
           title,
@@ -273,7 +274,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
       const anchor = before || conv.messages[0]?.createdAt;
       if (!anchor) return 0;
 
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from('ai_messages')
         .select('*')
         .eq('conversation_id', conversationId)

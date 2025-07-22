@@ -4,19 +4,18 @@
  * on every page based on user behavior and integration data
  */
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { googleAnalyticsService } from '@/domains/services/googleAnalyticsService';
 import { callEdgeFunction } from '@/domains/services/supabaseFunctions';
+import { useAuth } from '@/shared/hooks/useAuth';
 import type { 
   UseSecondBrainReturn,
-  SecondBrainContext,
   BusinessInsight,
   ProgressiveAction,
   AutomationOpportunity,
   LearningEvent,
   UserProfile,
-  IntegrationDataPoint,
-  ActionSuggestion
+  IntegrationDataPoint
 } from '@/shared/lib/types/learning-system';
 
 export function useSecondBrain(pageId: string): UseSecondBrainReturn {
@@ -26,7 +25,7 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
   const [automationOpportunities, setAutomationOpportunities] = useState<AutomationOpportunity[]>([]);
   const [isLearning, setIsLearning] = useState(false);
   const [integrationData, setIntegrationData] = useState<IntegrationDataPoint[]>([]);
-  const [recentEvents, setRecentEvents] = useState<LearningEvent[]>([]);
+  const { profile } = useAuth();
 
   // Load user profile and context on mount
   useEffect(() => {
@@ -46,21 +45,9 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
   const loadUserProfile = async () => {
     try {
-      // Fetch the current authenticated user
-      const { data: { user }, error: userError } = await import('@/shared/lib/core/supabase').then(m => m.supabase.auth.getUser());
-      if (userError) throw userError;
-      if (!user) throw new Error('User not authenticated');
-
-      // Fetch the user profile from Supabase
-      const { data, error } = await import('@/shared/lib/core/supabase').then(m => m.supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      );
-      if (error) throw error;
-      if (data) {
-        setUserProfile(data as UserProfile);
+      // Use profile from auth context instead of making separate database calls
+      if (profile) {
+        setUserProfile(profile as UserProfile);
       } else {
         setUserProfile(null);
       }

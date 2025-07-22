@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 import { workspaceComponentRegistry, type WorkspaceLayout, type WorkspaceTemplate } from '@/domains/services/workspaceComponentRegistry';
 import { WORKSPACE_TEMPLATES, getTemplateRecommendations } from '@/domains/services/workspaceTemplates';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { toast } from 'sonner';
 
 interface MarketplaceWorkspace extends WorkspaceLayout {
@@ -266,7 +266,7 @@ const WorkspaceCard: React.FC<{
                 <div className="flex items-center space-x-4 text-xs text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     <Avatar className="w-4 h-4">
-                      <AvatarImage src={workspace.authorAvatar} />
+                      <AvatarImage src={workspace.authorAvatar || undefined} />
                       <AvatarFallback>{workspace.author.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span>{workspace.author}</span>
@@ -328,7 +328,7 @@ const WorkspaceCard: React.FC<{
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2">
               <Avatar className="w-5 h-5">
-                <AvatarImage src={workspace.authorAvatar} />
+                <AvatarImage src={workspace.authorAvatar || undefined} />
                 <AvatarFallback>{workspace.author.charAt(0)}</AvatarFallback>
               </Avatar>
               <span className="text-muted-foreground">{workspace.author}</span>
@@ -512,7 +512,7 @@ const WorkspacePreview: React.FC<{
                   <Card key={review.id} className="p-4">
                     <div className="flex items-start space-x-4">
                       <Avatar>
-                        <AvatarImage src={review.userAvatar} />
+                        <AvatarImage src={review.userAvatar || undefined} />
                         <AvatarFallback>{review.userName.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
@@ -547,7 +547,7 @@ const WorkspacePreview: React.FC<{
           <TabsContent value="author" className="space-y-4">
             <div className="flex items-start space-x-4">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={workspace.authorAvatar} />
+                <AvatarImage src={workspace.authorAvatar || undefined} />
                 <AvatarFallback>{workspace.author.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
@@ -566,7 +566,7 @@ const WorkspacePreview: React.FC<{
 };
 
 export const WorkspaceMarketplace: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [workspaces, setWorkspaces] = useState<MarketplaceWorkspace[]>(MOCK_MARKETPLACE_WORKSPACES);
   const [filteredWorkspaces, setFilteredWorkspaces] = useState<MarketplaceWorkspace[]>(workspaces);
   const [searchTerm, setSearchTerm] = useState('');

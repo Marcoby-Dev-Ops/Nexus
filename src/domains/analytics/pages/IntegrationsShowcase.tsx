@@ -29,7 +29,7 @@ import {
   Building,
   Smartphone
 } from 'lucide-react';
-import DualPlatformDemo from '@/domains/integrations/features/components/DualPlatformDemo';
+import DualPlatformDemo from '@/domains/integrations/components/DualPlatformDemo';
 import UnifiedCommunicationDashboard from '@/domains/dashboard/components/UnifiedCommunicationDashboard';
 
 interface DemoScenario {

@@ -1,9 +1,8 @@
-import OperationsHome from './OperationsHome';
-export default OperationsHome;
-
+export { default as OperationsPage } from './components/OperationsPage';
+export { default as OperationsDashboard } from './components/OperationsDashboard';
 export * from './types';
 export * from './config';
 export * from './hooks/useOperationsMetrics';
 export * from './hooks/useOperationsSuggestions';
 export * from './hooks/useOpsScore';
-export { default as OperationsDashboard } from './OperationsDashboard'; 
+export * from './hooks/useRunPlaybook';

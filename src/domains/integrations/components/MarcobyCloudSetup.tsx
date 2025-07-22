@@ -24,8 +24,8 @@ import {
   HardDrive
 } from 'lucide-react';
 import { marcobyCloudService } from '@/domains/services/marcobyCloudService';
-import { supabase } from '../../lib/core/supabase';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { supabase } from '@/core/supabase';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 
 interface MarcobyCloudSetupProps {
@@ -41,7 +41,7 @@ interface SetupStep {
 }
 
 const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClose }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   
   const [currentStep, setCurrentStep] = useState(1);

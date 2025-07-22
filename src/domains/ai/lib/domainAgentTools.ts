@@ -4,7 +4,7 @@
  * Specialized tools and capabilities for domain agents to perform department-specific tasks.
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '@/core/supabase';
 import { BusinessHealthService } from '../services/businessHealthService';
 
 export interface AgentTool {

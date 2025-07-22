@@ -6,14 +6,8 @@
  * the "Nexus gets me" experience across all AI interactions.
  */
 
-import { supabase } from '../supabase';
+import { supabase } from '@/core/supabase';
 import type { EABusinessObservation } from '../services/businessObservationService';
-
-interface UserActivityRow {
-  page: string;
-  timestamp: string;
-  [key: string]: unknown;
-}
 
 interface IntegratedPlatformData {
   hubspot: {
@@ -91,7 +85,7 @@ export interface EnhancedUserContext {
     revenue_stage: string;
     growth_stage: 'startup' | 'growth' | 'enterprise';
     fiscal_year_end: string;
-    key_metrics: Record<string, any>;
+    key_metrics: Record<string, unknown>;
     // Enhanced from onboarding
     primary_departments: string[];
     key_tools: string[];
@@ -134,7 +128,7 @@ export interface DepartmentData {
       stage: string;
       close_date: string;
     }>;
-    team_performance: Record<string, any>;
+    team_performance: Record<string, unknown>;
     recent_wins: Array<{
       company: string;
       value: number;
@@ -142,7 +136,7 @@ export interface DepartmentData {
     }>;
   };
   marketing: {
-    campaign_performance: Record<string, any>;
+    campaign_performance: Record<string, unknown>;
     lead_generation: {
       total_leads: number;
       qualified_leads: number;
@@ -362,6 +356,7 @@ INSTRUCTIONS:
         .limit(5);
 
       if (error) {
+        // eslint-disable-next-line no-console
         console.error('Error fetching cloud storage documents:', error);
       }
 
@@ -369,11 +364,16 @@ INSTRUCTIONS:
         return 'No cloud storage documents synced yet. Connect Google Drive or OneDrive to enable document-based insights.';
       }
 
+      // Fix getCloudStorageContext document metadata access
       const documentSummaries = documents.map(doc => {
-        const metadata = doc.metadata || {};
-        return `• ${metadata.fileName || 'Unknown'} (${metadata.source || 'cloud'}) - Modified: ${
-          metadata.lastModified ? new Date(metadata.lastModified).toLocaleDateString() : 'Unknown'
-        }`;
+        let metadata: Record<string, unknown> = {};
+        if (typeof doc.metadata === 'object' && doc.metadata !== null && !Array.isArray(doc.metadata)) {
+          metadata = doc.metadata as Record<string, unknown>;
+        }
+        const fileName = typeof metadata.fileName === 'string' ? metadata.fileName : 'Unknown';
+        const source = typeof metadata.source === 'string' ? metadata.source : 'cloud';
+        const lastModified = metadata.lastModified ? new Date(metadata.lastModified as string).toLocaleDateString() : 'Unknown';
+        return `• ${fileName} (${source}) - Modified: ${lastModified}`;
       }).join('\n');
 
       return `Recent Cloud Documents Available for Context:
@@ -381,6 +381,7 @@ ${documentSummaries}
 
 These documents are searchable and can be referenced in responses. The AI can pull specific information from these files to provide contextual business insights.`;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Failed to get cloud storage context:', error);
       return 'Cloud storage context temporarily unavailable.';
     }
@@ -392,11 +393,25 @@ These documents are searchable and can be referenced in responses. The AI can pu
   private async fetchUserContext(userId: string): Promise<EnhancedUserContext> {
     try {
       // Fetch user profile
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();
+
+      if (profileError) {
+        // eslint-disable-next-line no-console
+        console.error('Error fetching user profile:', profileError);
+      } else if (profile) {
+        // eslint-disable-next-line no-console
+        console.log('User profile data:', { 
+          id: profile.id, 
+          display_name: profile.display_name, 
+          first_name: profile.first_name, 
+          last_name: profile.last_name,
+          email: profile.email 
+        });
+      }
 
       // Fetch user activity (using chat_messages as proxy for user activity)
       const { data: activity, error: activityError } = await supabase
@@ -406,6 +421,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
         .limit(100);
 
       if (activityError) {
+        // eslint-disable-next-line no-console
         console.error('Error fetching user activity:', activityError);
       }
 
@@ -424,7 +440,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
         profile: {
           id: profile?.id || userId,
           email: profile?.email || '',
-          name: profile?.first_name || 'User',
+          name: profile?.display_name || profile?.first_name || (profile?.first_name && profile?.last_name ? `${profile.first_name} ${profile.last_name}`.trim() : 'User'),
           role: profile?.role || 'Team Member',
           department: profile?.department || 'General',
           company_id: profile?.company_id || '',
@@ -444,11 +460,15 @@ These documents are searchable and can be referenced in responses. The AI can pu
         },
         activity: {
           recent_pages:
-            activity?.map((a: UserActivityRow) => a.page).slice(0, 5) || [
-              '/dashboard',
-            ],
+            Array.isArray(activity)
+              ? activity.map((a: Record<string, unknown>) => typeof a.page === 'string' ? a.page : '').slice(0, 5)
+              : ['/dashboard'],
           frequent_actions: this.calculateFrequentActions(),
-          last_active: activity?.[0]?.timestamp || new Date().toISOString(),
+          last_active: Array.isArray(activity) && activity[0]
+            ? ('timestamp' in activity[0] && activity[0].timestamp
+                ? String(activity[0].timestamp)
+                : String(activity[0].created_at || new Date().toISOString()))
+            : new Date().toISOString(),
           session_duration: this.calculateSessionDuration(),
           total_sessions: 5, // Placeholder
           most_used_features: ['AI Chat', 'Analytics', 'Integrations'], // Placeholder
@@ -467,7 +487,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
             annual_revenue: 5000000,
             growth_rate: 25,
             customer_count: 150
-          },
+          } as Record<string, unknown>,
           primary_departments: ['Sales', 'Marketing'],
           key_tools: ['CRM', 'Marketing Automation'],
           data_sources: ['Customer Feedback', 'Social Media'],
@@ -488,6 +508,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
         }
       };
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching user context:', error);
       // Return default context
       return this.getDefaultUserContext(userId);
@@ -499,13 +520,13 @@ These documents are searchable and can be referenced in responses. The AI can pu
    */
   private async fetchDepartmentData(
     department: string,
-  ): Promise<DepartmentData[keyof DepartmentData] | {}> {
+  ): Promise<DepartmentData[keyof DepartmentData] | Record<string, unknown>> {
     // In a real application, this would fetch data from a database or API
     // For now, we'll use demo data
     return this.getDemoData(department);
   }
 
-  private getDemoData(department: string): DepartmentData[keyof DepartmentData] | {} {
+  private getDemoData(department: string): DepartmentData[keyof DepartmentData] | Record<string, unknown> {
     const demoData: DepartmentData = {
       sales: {
         pipeline_value: 1250000,
@@ -516,14 +537,14 @@ These documents are searchable and can be referenced in responses. The AI can pu
           { company: 'Innovation Labs', value: 185000, stage: 'Negotiation', close_date: '2024-02-28' },
           { company: 'Future Systems', value: 320000, stage: 'Qualified', close_date: '2024-03-15' }
         ],
-        team_performance: { quota_attainment: 87, top_performer: 'Sarah Johnson' },
+        team_performance: { quota_attainment: 87, top_performer: 'Sarah Johnson' } as Record<string, unknown>,
         recent_wins: [
           { company: 'DataFlow Corp', value: 125000, rep: 'Mike Chen' },
           { company: 'CloudTech Solutions', value: 95000, rep: 'Sarah Johnson' }
         ]
       },
       marketing: {
-        campaign_performance: { total_campaigns: 12, active_campaigns: 5, avg_roi: 3.2 },
+        campaign_performance: { total_campaigns: 12, active_campaigns: 5, avg_roi: 3.2 } as Record<string, unknown>,
         lead_generation: { total_leads: 847, qualified_leads: 234, cost_per_lead: 45 },
         website_analytics: { traffic: 25000, conversion_rate: 2.8, top_pages: ['/pricing', '/features', '/demo'] },
         content_performance: [
@@ -653,6 +674,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
         insights.push(...predictions);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching cross-platform analytics:', error);
     }
 
@@ -678,6 +700,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
       }
       return intelligence;
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching business observations:', error);
       return 'No business context available.';
     }
@@ -714,6 +737,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
       }
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error fetching cross-platform data:', error);
     }
 
@@ -738,6 +762,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
       });
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error analyzing correlations:', error);
     }
 
@@ -762,6 +787,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
       });
 
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('Error generating predictions:', error);
     }
 
@@ -869,7 +895,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
       profile: {
         id: userId,
         email: 'user@company.com',
-        name: 'User',
+        name: 'Guest User',
         role: 'Team Member',
         department: 'General',
         company_id: companyId,
@@ -930,7 +956,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
 
   private formatDepartmentData(
     department: string,
-    data: DepartmentData[keyof DepartmentData] | {},
+    data: DepartmentData[keyof DepartmentData] | Record<string, unknown>,
   ): string {
     if (!data || Object.keys(data).length === 0) {
       return `No data available for ${department}.`;
@@ -940,7 +966,7 @@ These documents are searchable and can be referenced in responses. The AI can pu
   }
 
   private extractRelevantData(
-    data: DepartmentData[keyof DepartmentData] | {},
+    data: DepartmentData[keyof DepartmentData] | Record<string, unknown>,
     query: string,
   ): string {
     if (!data || Object.keys(data).length === 0) {

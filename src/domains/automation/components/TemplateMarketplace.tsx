@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/shared/components/ui/NotificationContext';
 import { automationTemplateImporter, type AutomationTemplate } from '@/domains/automation/templateImporter';
 import {
@@ -66,7 +66,7 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
   onTemplateSelected,
   onClose
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   
   const [templates, setTemplates] = useState<AutomationTemplate[]>([]);

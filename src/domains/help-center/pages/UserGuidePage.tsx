@@ -71,7 +71,7 @@ export const UserGuidePage: React.FC = () => {
         { name: 'Microsoft 365', description: 'Email, calendar, and document intelligence', route: '/integrations' },
         { name: 'PayPal', description: 'Financial data and transaction insights', route: '/integrations' },
         { name: 'API Learning', description: 'Custom integration development', route: '/integrations/api-learning' },
-        { name: 'Storage Connectors', description: 'OneDrive, Google Drive, Dropbox', route: '/integrations' }
+        { name: 'Storage Connectors', description: 'Microsoft 365 (OneDrive/SharePoint), Google Drive, Dropbox', route: '/integrations' }
       ]
     },
     {

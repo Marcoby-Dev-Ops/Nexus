@@ -1,1 +1,1 @@
-export { default, NotificationsWidget } from '@shared/shared/components/widgets/NotificationsWidget'; 
+export { default, NotificationsWidget } from '@shared/components/widgets/NotificationsWidget'; 

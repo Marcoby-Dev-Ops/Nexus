@@ -1,4 +1,4 @@
-import { supabase } from '../core/supabase';
+import { supabase } from '@/core/supabase';
 import { profileContextService } from './profileContextService';
 import type { RAGProfileContext } from './profileContextService';
 
@@ -430,8 +430,8 @@ export class ContextualDataCompletionService {
   
   private async generateContextCompletionSuggestions(
     contextGaps: ContextGap[],
-    queryAnalysis: any,
-    userId: string
+    _queryAnalysis: any,
+    _userId: string
   ): Promise<ContextCompletionSuggestion[]> {
     const suggestions: ContextCompletionSuggestion[] = [];
     

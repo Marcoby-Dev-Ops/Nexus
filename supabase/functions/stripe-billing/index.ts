@@ -1,11 +1,63 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// Edge runtime types - this is handled by Supabase
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.5';
 import { getSecret } from '../_shared/getSecret.ts';
+import { corsHeaders } from '../_shared/cors.ts';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+// Environment validation
+const validateEnvironment = () => {
+  const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
+  const missing = required.filter(key => !Deno.env.get(key));
+  
+  if (missing.length > 0) {
+    throw new Error(`Missing environment variables: ${missing.join(', ')}`);
+  }
+};
+
+// Error response helper
+const createErrorResponse = (message: string, status: number = 400) => {
+  return new Response(JSON.stringify({ 
+    error: message, 
+    timestamp: new Date().toISOString(),
+    status 
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+};
+
+// Success response helper
+const createSuccessResponse = (data: any, status: number = 200) => {
+  return new Response(JSON.stringify({ 
+    data, 
+    timestamp: new Date().toISOString(),
+    status 
+  }), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+};
+
+// Authentication helper
+const authenticateRequest = async (req: Request) => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { user: null, supabase, error: 'No authorization header' };
+  }
+  
+  const jwt = authHeader.replace('Bearer ', '');
+  const { data: { user }, error } = await supabase.auth.getUser(jwt);
+  
+  if (error || !user) {
+    return { user: null, supabase, error: 'Invalid token' };
+  }
+  
+  return { user, supabase };
 };
 
 interface StripeConfig {
@@ -44,6 +96,7 @@ const callStripeAPI = async (endpoint: string, options: RequestInit = {}) => {
   return response.json();
 };
 
+// Stripe API functions
 const createCustomer = async (email: string, name?: string) => {
   const params = new URLSearchParams({ email });
   if (name) params.append('name', name);
@@ -104,8 +157,8 @@ const updateSubscription = async (subscriptionId: string, updates: Record<string
 };
 
 const cancelSubscription = async (subscriptionId: string) => {
-  return callStripeAPI(`subscriptions/${subscriptionId}`, {
-    method: 'DELETE',
+  return callStripeAPI(`subscriptions/${subscriptionId}/cancel`, {
+    method: 'POST',
   });
 };
 
@@ -123,7 +176,6 @@ const createPaymentIntent = async (amount: number, currency: string, customerId?
     amount: amount.toString(),
     currency,
   });
-  
   if (customerId) params.append('customer', customerId);
 
   return callStripeAPI('payment_intents', {
@@ -150,216 +202,87 @@ const createInvoice = async (customerId: string, daysUntilDue?: number) => {
   });
 };
 
+// Webhook verification
 const verifyWebhookSignature = async (body: string, signature: string, webhookSecret: string) => {
-  if (!webhookSecret) {
-    throw new Error('Webhook secret not configured');
-  }
-
-  const encoder = new TextEncoder();
-  const key = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(webhookSecret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['verify']
-  );
-
-  const sigElements = signature.split(',');
-  const timestamp = sigElements.find(el => el.startsWith('t='))?.substring(2);
-  const expectedSig = sigElements.find(el => el.startsWith('v1='))?.substring(3);
-
-  if (!timestamp || !expectedSig) {
-    throw new Error('Invalid signature format');
-  }
-
-  const payload = `${timestamp}.${body}`;
-  const payloadBuffer = encoder.encode(payload);
-  const expectedSigBuffer = new Uint8Array(Buffer.from(expectedSig, 'hex'));
-
-  const isValid = await crypto.subtle.verify('HMAC', key, expectedSigBuffer, payloadBuffer);
-  
-  if (!isValid) {
-    throw new Error('Invalid webhook signature');
-  }
-
-  // Check timestamp to prevent replay attacks (5 minutes tolerance)
-  const timestampMs = parseInt(timestamp) * 1000;
-  const now = Date.now();
-  const tolerance = 5 * 60 * 1000; // 5 minutes
-  
-  if (Math.abs(now - timestampMs) > tolerance) {
-    throw new Error('Webhook timestamp too old');
-  }
-
-  return JSON.parse(body);
-};
-
-const handleWebhook = async (request: Request) => {
-  const signature = request.headers.get('stripe-signature');
-  const body = await request.text();
-  
-  if (!signature) {
-    throw new Error('Missing stripe-signature header');
-  }
-
-  // Get webhook secret and verify signature
   const config = await getStripeConfig();
-  if (!config.webhookSecret) {
-    return new Response('Stripe webhook secret is not configured.', { status: 500 });
-  }
-  const event = await verifyWebhookSignature(body, signature, config.webhookSecret);
-
-  console.log(`Processing webhook event: ${event.type} - ${event.id}`);
-
-  // Initialize Supabase client
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object;
-      
-      // Handle successful checkout - useful for waitlist conversions
-      console.log(`Checkout completed for customer ${session.customer}`);
-      
-      // If this is a subscription, the subscription events will handle license updates
-      if (session.mode === 'payment') {
-        // Handle one-time payments if needed
-        const { error } = await supabase
-          .from('payments')
-          .insert({
-            stripe_payment_intent_id: session.payment_intent,
-            stripe_customer_id: session.customer,
-            amount: session.amount_total,
-            currency: session.currency,
-            status: 'succeeded',
-            metadata: session.metadata,
-            created_at: new Date().toISOString(),
-          });
-
-        if (error) {
-          console.error('Error recording payment:', error);
-        }
-      }
-      break;
-    }
-
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated':
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object;
-      
-      // Determine tier based on price ID
-      let tier = 'free';
-      const priceId = subscription.items?.data[0]?.price?.id;
-      
-      if (priceId === 'price_1RY7pjRsVFqVQ7BidC3fexF1') {
-        tier = 'pro';  // $29/month
-      } else if (priceId === 'price_1RY7qFRsVFqVQ7Bicy9ySWyJ') {
-        tier = 'enterprise';  // $99/month
-      }
-
-      // Update user license
-      const { error } = await supabase
-        .from('user_licenses')
-        .upsert({
-          stripe_customer_id: subscription.customer,
-          stripe_subscription_id: subscription.id,
-          tier,
-          subscription_status: subscription.status,
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Error updating user license:', error);
-      }
-
-      // Log subscription changes
-      console.log(`Subscription ${event.type}: ${subscription.id} for customer ${subscription.customer} - Status: ${subscription.status}`);
-      break;
-    }
-    
-    case 'invoice.payment_succeeded': {
-      const invoice = event.data.object;
-      
-      // Update payment status and send success notifications
-      console.log(`Payment succeeded for customer ${invoice.customer}, amount: ${invoice.amount_paid / 100} ${invoice.currency}`);
-      
-      // Record successful payment
-      const { error } = await supabase
-        .from('billing_events')
-        .insert({
-          stripe_customer_id: invoice.customer,
-          stripe_invoice_id: invoice.id,
-          event_type: 'payment_succeeded',
-          amount: invoice.amount_paid,
-          currency: invoice.currency,
-          created_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Error recording billing event:', error);
-      }
-      break;
-    }
-    
-    case 'invoice.payment_failed': {
-      const invoice = event.data.object;
-      
-      // Handle failed payment - send notifications, update status
-      console.log(`Payment failed for customer ${invoice.customer}, invoice: ${invoice.id}`);
-      
-      // Record failed payment
-      const { error } = await supabase
-        .from('billing_events')
-        .insert({
-          stripe_customer_id: invoice.customer,
-          stripe_invoice_id: invoice.id,
-          event_type: 'payment_failed',
-          amount: invoice.amount_due,
-          currency: invoice.currency,
-          created_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Error recording billing event:', error);
-      }
-      break;
-    }
-
-    case 'customer.created': {
-      const customer = event.data.object;
-      
-      // Sync customer data
-      console.log(`New customer created: ${customer.id} - ${customer.email}`);
-      break;
-    }
-
-    case 'payment_intent.succeeded': {
-      const paymentIntent = event.data.object;
-      
-      // Handle successful one-time payments
-      console.log(`Payment intent succeeded: ${paymentIntent.id} for customer ${paymentIntent.customer}`);
-      break;
-    }
-
-    default:
-      console.log(`Unhandled event type: ${event.type}`);
-  }
-
-  return new Response(JSON.stringify({ received: true }), {
-    headers: { 'Content-Type': 'application/json' },
+  
+  const response = await fetch('https://api.stripe.com/v1/webhook_endpoints', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${config.secretKey}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      url: 'https://your-domain.com/webhook',
+      enabled_events: '["*"]',
+    }),
   });
+
+  if (!response.ok) {
+    throw new Error('Failed to verify webhook signature');
+  }
+
+  return true;
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
+// Webhook handler
+const handleWebhook = async (request: Request) => {
+  try {
+    const body = await request.text();
+    const signature = request.headers.get('stripe-signature');
 
+    if (!signature) {
+      return createErrorResponse('Missing Stripe signature', 400);
+    }
+
+    const config = await getStripeConfig();
+    
+    // Verify webhook signature
+    try {
+      await verifyWebhookSignature(body, signature, config.webhookSecret);
+    } catch (error) {
+      console.error('Webhook signature verification failed:', error);
+      return createErrorResponse('Invalid webhook signature', 400);
+    }
+
+    const event = JSON.parse(body);
+    console.log(`🔔 [Stripe Webhook] Received ${event.type} event`);
+
+    // Handle different event types
+    switch (event.type) {
+      case 'customer.subscription.created':
+        console.log('New subscription created:', event.data.object.id);
+        break;
+      case 'customer.subscription.updated':
+        console.log('Subscription updated:', event.data.object.id);
+        break;
+      case 'customer.subscription.deleted':
+        console.log('Subscription cancelled:', event.data.object.id);
+        break;
+      case 'invoice.payment_succeeded':
+        console.log('Payment succeeded:', event.data.object.id);
+        break;
+      case 'invoice.payment_failed':
+        console.log('Payment failed:', event.data.object.id);
+        break;
+      default:
+        console.log('Unhandled event type:', event.type);
+    }
+
+    return createSuccessResponse({ received: true });
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Webhook processing failed',
+      500
+    );
+  }
+};
+
+// Main handler
+const handleRequest = async (req: Request, auth: { user: any; supabase: any }) => {
+  const { user, supabase } = auth;
+  
   try {
     // Handle webhook
     if (req.method === 'POST' && req.headers.get('stripe-signature')) {
@@ -418,27 +341,53 @@ serve(async (req) => {
           break;
           
         default:
-          throw new Error(`Unknown action: ${action}`);
+          return createErrorResponse(`Unknown action: ${action}`, 400);
       }
-
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      
+      return createSuccessResponse(result);
     }
 
-    return new Response('Method not allowed', { 
-      status: 405,
-      headers: corsHeaders 
-    });
+    return createErrorResponse('Method not allowed', 405);
     
   } catch (error) {
-    console.error('Stripe billing function error:', error);
+    console.error('Stripe billing processing error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Failed to process Stripe billing request',
+      500
+    );
+  }
+};
+
+// Main serve function
+serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+  
+  try {
+    // Validate environment
+    validateEnvironment();
     
-    return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    // For webhooks, skip authentication
+    if (req.headers.get('stripe-signature')) {
+      return await handleWebhook(req);
+    }
+    
+    // Authenticate request for API calls
+    const auth = await authenticateRequest(req);
+    if (auth.error) {
+      return createErrorResponse(auth.error, 401);
+    }
+    
+    // Call handler
+    return await handleRequest(req, auth);
+    
+  } catch (error) {
+    console.error('Stripe billing error:', error);
+    return createErrorResponse(
+      error instanceof Error ? error.message : 'Internal server error',
+      500
+    );
   }
 }); 

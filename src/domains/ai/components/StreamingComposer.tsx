@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from "@/core/supabase";
 import { env } from "@/core/environment";
 import { Card, CardContent } from '@/shared/components/ui/Card';
@@ -6,10 +6,10 @@ import { Textarea } from '@/shared/components/ui/Textarea';
 import { Button } from '@/shared/components/ui/Button';
 import SourceDrawer from '@/domains/ai/components/SourceDrawer';
 import type { SourceMeta } from '@/domains/ai/components/SourceDrawer';
-import { getSlashCommands, filterSlashCommands, type SlashCommand } from '@/core/services/slashCommandService';
+import { getSlashCommands, filterSlashCommands, type SlashCommand } from '@/domains/ai/services/slashCommandService';
 import SlashCommandMenu from '@/domains/ai/components/SlashCommandMenu';
-import { useToast } from '@/shared/components/ui/Toast';
-import { SecurityManager } from '@/archive/features/security';
+import { useToast } from '@/shared/ui/components/Toast';
+import { securityManager as adminSecurityManager } from '@/domains/admin';
 
 // Chat is always enabled; previous VITE_CHAT_V2 gate removed
 const isChatEnabled = true;
@@ -147,7 +147,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
 
   if (!enabled) return null;
 
-  const securityManager = SecurityManager.getInstance();
+  const securityManager = adminSecurityManager;
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -184,7 +184,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       }
 
       // Use SecurityManager for audit logging
-      securityManager.logSecurityEvent({
+      securityManager.logEvent({
         eventType: 'data_modification',
         eventDetails: { agentId },
       });

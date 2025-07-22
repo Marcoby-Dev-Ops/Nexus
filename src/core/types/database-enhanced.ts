@@ -51,29 +51,6 @@ export interface EmailAccount {
   updated_at: string;
 }
 
-export interface InboxItem {
-  id: string;
-  user_id: string;
-  company_id: string;
-  item_type: 'email' | 'notification' | 'system' | 'task' | 'calendar';
-  source_id?: string;
-  source_type?: string;
-  title: string;
-  preview?: string;
-  sender?: string;
-  is_read: boolean;
-  is_important: boolean;
-  is_archived: boolean;
-  priority_score: number;
-  item_timestamp: string;
-  received_at: string;
-  ai_category?: string;
-  ai_action_suggestion?: string;
-  ai_urgency?: 'low' | 'medium' | 'high' | 'urgent';
-  created_at: string;
-  updated_at: string;
-}
-
 // Enhanced Company and User Profile Types
 export interface EnhancedCompany {
   id: string;
@@ -295,10 +272,6 @@ export interface SearchFilters {
 // Type guards for runtime type checking
 export const isEmailAccount = (obj: any): obj is EmailAccount => {
   return obj && typeof obj.id === 'string' && typeof obj.email_address === 'string';
-};
-
-export const isInboxItem = (obj: any): obj is InboxItem => {
-  return obj && typeof obj.id === 'string' && typeof obj.title === 'string';
 };
 
 export const isAIConversation = (obj: any): obj is AIConversation => {

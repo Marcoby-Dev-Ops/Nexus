@@ -1,4 +1,14 @@
 /**
+ * HubSpot Configuration
+ * 
+ * This module provides centralized configuration for HubSpot integration.
+ * All OAuth scopes and settings are managed here to ensure consistency.
+ */
+
+import { HUBSPOT_API_ENDPOINTS, HUBSPOT_REQUIRED_SCOPES, HUBSPOT_OPTIONAL_SCOPES } from './constants';
+import type { HubSpotConfig } from './types';
+
+/**
  * Retrieves the HubSpot API key from environment variables.
  *
  * In a production Supabase environment, secrets are injected directly
@@ -19,42 +29,30 @@ export function getHubspotApiKey(): string | null {
  *
  * @returns The HubSpot configuration object.
  */
-export function getHubspotConfig() {
+export function getHubspotConfig(): HubSpotConfig {
   const clientId = process.env.HUBSPOT_CLIENT_ID;
   const clientSecret = process.env.HUBSPOT_CLIENT_SECRET;
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+
 
   if (!clientId || !clientSecret) {
     throw new Error('HubSpot Client ID or Secret is not configured in environment variables.');
   }
 
   return {
-    clientId: clientId,
-    clientSecret: clientSecret,
-    redirectUri: `${supabaseUrl}/functions/v1/hubspot-callback`,
-    scopes: [
-      'contacts',
-      'crm.objects.contacts.read',
-      'crm.objects.contacts.write',
-      'crm.objects.deals.read',
-      'crm.objects.deals.write',
-      'crm.objects.companies.read',
-      'crm.objects.companies.write',
-      'crm.schemas.contacts.read',
-      'crm.schemas.contacts.write',
-      'crm.schemas.deals.read',
-      'crm.schemas.deals.write',
-      'crm.schemas.companies.read',
-      'crm.schemas.companies.write',
-      'crm.import',
-      'files',
-      'files.ui_hidden.read',
-      'files.ui_hidden.write',
-      // Required for refresh tokens
-      'oauth',
-    ],
-    authUrl: 'https://app.hubspot.com/oauth/authorize',
-    tokenUrl: 'https://api.hubspot.com/oauth/v1/token',
-    apiBaseUrl: 'https://api.hubapi.com',
+    baseUrl: HUBSPOT_API_ENDPOINTS.API_BASE_URL,
+    clientId,
+    clientSecret,
+    redirectUri: `${typeof window !== 'undefined' ? window.location.origin : 'https://nexus.marcoby.com'}/integrations/hubspot/callback`,
+    // Note: Scopes are now managed in constants.ts and should be used via utils.ts
   };
+}
+
+/**
+ * Get HubSpot OAuth scopes for different use cases
+ */
+export function getHubSpotScopes(includeOptional = true) {
+  if (includeOptional) {
+    return [...HUBSPOT_REQUIRED_SCOPES, ...HUBSPOT_OPTIONAL_SCOPES];
+  }
+  return [...HUBSPOT_REQUIRED_SCOPES];
 } 

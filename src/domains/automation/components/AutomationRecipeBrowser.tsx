@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { Search, Clock, Users, Star, Play, CheckCircle, AlertCircle } from 'lucide-react';
 import { automationRecipeEngine } from '@/domains/automation/automationRecipeEngine';
 import type { AutomationRecipe } from '@/domains/automation/automationRecipeEngine';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 export interface AutomationRecipeBrowserProps {
   onRecipeDeployed?: (recipeId: string, deploymentId: string) => void;
@@ -27,7 +27,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
   category,
   className = ''
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [recipes, setRecipes] = useState<AutomationRecipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<AutomationRecipe[]>([]);
   const [loading, setLoading] = useState(true);

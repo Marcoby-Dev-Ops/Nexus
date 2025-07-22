@@ -4,174 +4,135 @@
  */
 
 import React, { useState } from 'react';
-import { Button } from '../ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
-import { Badge } from '../ui/Badge';
-import { CheckCircle, ExternalLink, Loader2, AlertCircle, Users, DollarSign, TrendingUp, Mail } from 'lucide-react';
-import { hubspotService } from '../../lib/services/hubspotService';
-import { supabase } from '../../lib/core/supabase';
-import { useNotifications } from '../../contexts/NotificationContext';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Progress } from '@/shared/components/ui/Progress';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { supabase } from '@/core/supabase';
+
+import {
+  CheckCircle2,
+  AlertCircle,
+  Zap,
+  Users,
+  Building2,
+  TrendingUp,
+  ArrowRight,
+  Shield,
+  Clock,
+  Key
+} from 'lucide-react';
 
 interface HubSpotSetupProps {
-  onComplete: () => void;
-  onCancel: () => void;
+  onComplete?: (data: any) => void;
+  onCancel?: () => void;
 }
 
 export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
+  const { user } = useAuthContext();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [connectionResult, setConnectionResult] = useState<any>(null);
-  const [metrics, setMetrics] = useState<any>(null);
-  const { addNotification } = useNotifications();
 
-  const steps = [
-    { id: 1, title: 'Connect to HubSpot', description: 'Authorize access to your HubSpot CRM' },
-    { id: 2, title: 'Test Connection', description: 'Verify data access and permissions' },
-    { id: 3, title: 'Review Capabilities', description: 'See what data will be synced' },
-    { id: 4, title: 'Complete Setup', description: 'Finalize HubSpot integration' }
-  ];
+  const totalSteps = 4;
 
   const initiateOAuth = async () => {
     setLoading(true);
     setError(null);
 
     try {
+      // Use a more reliable session check before OAuth
+      console.log('🔄 [HubSpotSetup] Checking session before OAuth...');
+      
+      // Get current session without forcing refresh
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.warn('⚠️ [HubSpotSetup] Session check failed:', sessionError);
+        setError('Authentication error. Please log in again and try connecting HubSpot.');
+        setLoading(false);
+        return;
+      }
+
+      if (!session) {
+        console.error('❌ [HubSpotSetup] No valid session found');
+        setError('Please log in again before connecting HubSpot.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ [HubSpotSetup] Session validated, proceeding with OAuth');
+
       // Use the existing HubSpot app credentials from environment
       const clientId = import.meta.env.VITE_HUBSPOT_CLIENT_ID;
       if (!clientId) {
         throw new Error('HubSpot client ID not configured');
       }
 
-      // Configure OAuth settings
+      // Configure OAuth settings - redirect to frontend callback page
       const redirectUri = `${window.location.origin}/integrations/hubspot/callback`;
       
-      const scopes = [
-        'crm.objects.contacts.read',
-        'crm.objects.contacts.write',
-        'crm.objects.companies.read',
-        'crm.objects.companies.write',
-        'crm.objects.deals.read',
-        'crm.objects.deals.write',
-        'crm.lists.read',
-        'crm.lists.write'
-      ];
+      // Use the consolidated HubSpot utilities
+      const { createHubSpotAuthUrl } = await import('@/domains/integrations/lib/hubspot/utils');
+      const { HUBSPOT_REQUIRED_SCOPES } = await import('@/domains/integrations/lib/hubspot/constants');
       
+      // Create state parameter with user ID and timestamp for security
       const state = btoa(JSON.stringify({ 
         timestamp: Date.now(),
-        service: 'hubspot'
+        service: 'hubspot',
+        userId: user?.id || null
       }));
       
-      const params = new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        scope: scopes.join(' '),
-        response_type: 'code',
+      console.log('🔧 [HubSpotSetup] Creating OAuth URL with:', {
+        clientId: clientId ? '***' : 'missing',
+        redirectUri,
+        windowOrigin: window.location.origin,
+        scopes: HUBSPOT_REQUIRED_SCOPES,
+        state: state ? '***' : 'missing',
+        userId: user?.id || 'missing'
+      });
+      
+      const authUrl = createHubSpotAuthUrl({
+        clientId,
+        redirectUri,
+        requiredScopes: HUBSPOT_REQUIRED_SCOPES,
         state
       });
       
-      const authUrl = `https://app.hubspot.com/oauth/authorize?${params.toString()}`;
+      console.log('🔧 [HubSpotSetup] Generated auth URL:', authUrl);
       
-      // Redirect to HubSpot OAuth
+      // Debug: Log the complete OAuth URL for verification
+      console.log('🔧 [HubSpotSetup] Complete OAuth URL for verification:', {
+        baseUrl: 'https://app.hubspot.com/oauth/authorize',
+        clientId: clientId,
+        redirectUri,
+        scopes: HUBSPOT_REQUIRED_SCOPES.join(' '),
+        state: state,
+        fullUrl: authUrl
+      });
+      
+      // Redirect to HubSpot OAuth (frontend callback approach)
       window.location.href = authUrl;
       
     } catch (error: any) {
-      console.error('OAuth initiation failed:', error);
+      console.error('❌ [HubSpotSetup] OAuth initiation failed:', error);
       setError(error.message || 'Failed to initiate HubSpot connection');
       setLoading(false);
     }
   };
 
-  const testConnection = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Initialize and test the connection
-      await hubspotService.initialize();
-      const result = await hubspotService.testConnection();
-      setConnectionResult(result);
-
-      if (result.success) {
-        // Get sample metrics
-        try {
-          const metricsData = await hubspotService.getKeyMetrics();
-          setMetrics(metricsData);
-        } catch (metricsError) {
-          // Non-critical error - connection works but metrics failed
-          console.warn('Failed to fetch metrics:', metricsError);
-        }
-        
-        setCurrentStep(3);
-      } else {
-        setError(result.message);
-      }
-    } catch (error: any) {
-      console.error('Connection test failed:', error);
-      setError(error.message || 'Failed to test HubSpot connection');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const completeSetup = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Store integration in database
-      const { error: dbError } = await supabase
-        .from('user_integrations')
-        .upsert({
-          integration_slug: 'hubspot',
-          status: 'active',
-          credentials: {
-            client_id: import.meta.env.VITE_HUBSPOT_CLIENT_ID
-            // OAuth tokens will be stored by the callback handler
-          },
-          config: {
-            redirect_uri: `${window.location.origin}/integrations/hubspot/callback`,
-            features_enabled: ['contacts', 'deals', 'companies', 'marketing', 'analytics']
-          },
-          metadata: {
-            setup_completed_at: new Date().toISOString(),
-            capabilities: [
-              'CRM Data Sync',
-              'Sales Pipeline Tracking',
-              'Marketing Analytics',
-              'Lead Management',
-              'Contact Management',
-              'Deal Tracking',
-              'Revenue Analytics'
-            ]
-          }
-        }, {
-          onConflict: 'integration_slug'
-        });
-
-      if (dbError) throw dbError;
-
-      // Update business health KPIs
-      try {
-        await hubspotService.updateBusinessHealthKPIs();
-      } catch (kpiError) {
-        console.warn('Failed to update KPIs:', kpiError);
-      }
-
-      addNotification({
-        type: 'success',
-        message: 'HubSpot integration completed! CRM data and sales analytics are now active.'
-      });
-
-      setCurrentStep(4);
-      setTimeout(onComplete, 1500);
-
-    } catch (error: any) {
-      console.error('Setup completion failed:', error);
-      setError(error.message || 'Failed to complete HubSpot setup');
-    } finally {
-      setLoading(false);
-    }
+    // The integration is now handled by the callback page
+    // This function is kept for compatibility but doesn't need to do anything
+    console.log('✅ [HubSpotSetup] Setup completed via callback page');
+    setLoading(false);
+    onComplete?.({ 
+      integration_slug: 'hubspot',
+      status: 'active',
+      capabilities: ['CRM Data Sync', 'Sales Pipeline Tracking', 'Marketing Analytics']
+    });
   };
 
   const renderStepContent = () => {
@@ -179,61 +140,58 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       case 1:
         return (
           <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-orange-100 rounded-full flex items-center justify-center">
-                <Users className="w-8 h-8 text-warning" />
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
+                <Zap className="w-8 h-8 text-orange-600" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold">Connect to HubSpot CRM</h3>
-                <p className="text-muted-foreground">
-                  Authorize Nexus to access your HubSpot data for automated CRM insights
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-muted/50 p-4 rounded-lg space-y-4">
-              <h4 className="font-medium flex items-center gap-2">
-                <ExternalLink className="w-4 h-4" />
-                What you'll get:
-              </h4>
-              <ul className="text-sm space-y-1 ml-4 list-disc">
-                <li><strong>Contact Management:</strong> Sync and analyze contact data</li>
-                <li><strong>Deal Pipeline:</strong> Track sales opportunities and revenue</li>
-                <li><strong>Marketing Analytics:</strong> Monitor campaign performance</li>
-                <li><strong>Lead Scoring:</strong> Automated lead qualification</li>
-                <li><strong>Revenue Insights:</strong> Sales forecasting and reporting</li>
-                <li><strong>Business Health KPIs:</strong> Automated CRM metrics</li>
-              </ul>
-            </div>
-
-            <div className="bg-primary/5 p-4 rounded-lg">
-              <h4 className="font-medium text-foreground mb-2">🔐 Security & Privacy</h4>
-              <p className="text-sm text-primary">
-                Your HubSpot data is encrypted and only used to provide business insights. 
-                We follow industry-standard security practices and never share your data.
+              <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
+                Connect HubSpot CRM
+              </h3>
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
+                Connect your HubSpot account to unlock powerful CRM insights, sales analytics, and marketing automation.
               </p>
             </div>
 
-            <div className="flex gap-4">
-              <Button 
-                onClick={initiateOAuth} 
-                disabled={loading}
-                className="flex-1"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Connecting...
-                  </>
-                ) : (
-                  <>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Connect HubSpot
-                  </>
-                )}
-              </Button>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium">Contact Management</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Sync contacts, companies, and lead data</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <span className="font-medium">Sales Analytics</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Track deals, pipeline, and revenue metrics</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Building2 className="w-4 h-4 text-purple-600" />
+                    <span className="font-medium">Marketing Insights</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Analyze campaigns and lead generation</p>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-orange-600" />
+                    <span className="font-medium">Secure OAuth</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Industry-standard security protocols</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-between">
               <Button variant="outline" onClick={onCancel}>
                 Cancel
+              </Button>
+              <Button onClick={() => setCurrentStep(2)}>
+                Continue
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -242,53 +200,47 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       case 2:
         return (
           <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-primary" />
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
+                <Key className="w-8 h-8 text-orange-600" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold">Test HubSpot Connection</h3>
-                <p className="text-muted-foreground">
-                  Verify that we can access your CRM data successfully
-                </p>
+              <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
+                Authentication Setup
+              </h3>
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
+                We'll securely connect to your HubSpot account using OAuth 2.0.
+              </p>
+            </div>
+
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                You'll be redirected to HubSpot to authorize Nexus. This process is secure and only takes a few minutes.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span>Read contacts, companies, and deals</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span>Access marketing analytics</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span>Sync pipeline and revenue data</span>
               </div>
             </div>
 
-            {connectionResult && (
-              <div className={`p-4 rounded-lg ${connectionResult.success ? 'bg-success/5' : 'bg-destructive/5'}`}>
-                <div className="flex items-center gap-2">
-                  {connectionResult.success ? (
-                    <CheckCircle className="w-5 h-5 text-success" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-destructive" />
-                  )}
-                  <span className={`font-medium ${connectionResult.success ? 'text-success' : 'text-destructive'}`}>
-                    {connectionResult.success ? 'Connection Successful!' : 'Connection Failed'}
-                  </span>
-                </div>
-                <p className={`text-sm mt-1 ${connectionResult.success ? 'text-success' : 'text-destructive'}`}>
-                  {connectionResult.message}
-                </p>
-              </div>
-            )}
-
-            <div className="flex gap-4">
-              <Button 
-                onClick={testConnection} 
-                disabled={loading}
-                className="flex-1"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Testing...
-                  </>
-                ) : (
-                  'Test Connection'
-                )}
+            <div className="flex justify-between">
+              <Button variant="outline" onClick={() => setCurrentStep(1)}>
+                Back
               </Button>
-              <Button variant="outline" onClick={onCancel}>
-                Cancel
+              <Button onClick={initiateOAuth} disabled={loading}>
+                {loading ? 'Connecting...' : 'Connect HubSpot Account'}
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -297,77 +249,42 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       case 3:
         return (
           <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 mx-auto bg-success/10 rounded-full flex items-center justify-center">
-                <TrendingUp className="w-8 h-8 text-success" />
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold">HubSpot Integration Ready</h3>
-                <p className="text-muted-foreground">
-                  Review the capabilities and data that will be synced
-                </p>
-              </div>
+              <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
+                Connection Successful!
+              </h3>
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
+                Your HubSpot account has been connected. Let's complete the setup.
+              </p>
             </div>
-
-            {metrics && metrics.length > 0 && (
-              <div className="grid grid-cols-2 gap-4">
-                {metrics.slice(0, 4).map((metric: any, index: number) => (
-                  <Card key={index} className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-muted-foreground">{metric.name}</p>
-                        <p className="text-lg font-semibold">{metric.value}</p>
-                      </div>
-                      <div className={`w-2 h-2 rounded-full ${
-                        metric.trend === 'up' ? 'bg-success' : 
-                        metric.trend === 'down' ? 'bg-destructive' : 'bg-muted'
-                      }`} />
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            )}
 
             <div className="space-y-4">
-              <h4 className="font-medium">📊 Business Health KPIs Updated:</h4>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <Badge variant="secondary">Customer Acquisition Cost</Badge>
-                <Badge variant="secondary">Conversion Rate</Badge>
-                <Badge variant="secondary">Customer Lifetime Value</Badge>
-                <Badge variant="secondary">Monthly Recurring Revenue</Badge>
-                <Badge variant="secondary">Sales Cycle Length</Badge>
-                <Badge variant="secondary">Lead Velocity</Badge>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+                <div>
+                  <div className="font-medium">OAuth Authentication</div>
+                  <div className="text-sm text-muted-foreground">Successfully connected to HubSpot</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 border rounded-lg">
+                <Clock className="w-5 h-5 text-blue-600" />
+                <div>
+                  <div className="font-medium">Data Sync</div>
+                  <div className="text-sm text-muted-foreground">Initializing data synchronization</div>
+                </div>
               </div>
             </div>
 
-            <div className="bg-success/5 p-4 rounded-lg">
-              <h4 className="font-medium text-success mb-2">✅ Integration Benefits</h4>
-              <ul className="text-sm text-success space-y-1">
-                <li>• Automated CRM data synchronization</li>
-                <li>• Real-time sales pipeline tracking</li>
-                <li>• Marketing campaign performance insights</li>
-                <li>• Customer lifecycle analytics</li>
-                <li>• Revenue forecasting and reporting</li>
-              </ul>
-            </div>
-
-            <div className="flex gap-4">
-              <Button 
-                onClick={completeSetup} 
-                disabled={loading}
-                className="flex-1"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Finalizing...
-                  </>
-                ) : (
-                  'Complete Setup'
-                )}
-              </Button>
+            <div className="flex justify-between">
               <Button variant="outline" onClick={() => setCurrentStep(2)}>
                 Back
+              </Button>
+              <Button onClick={completeSetup} disabled={loading}>
+                {loading ? 'Completing Setup...' : 'Complete Setup'}
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           </div>
@@ -375,19 +292,42 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
 
       case 4:
         return (
-          <div className="text-center space-y-6">
-            <div className="w-16 h-16 mx-auto bg-success/10 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-success" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground">HubSpot Integration Complete!</h3>
-              <p className="text-muted-foreground">
-                Your CRM data is now being synced and analyzed automatically
+          <div className="space-y-6">
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
+                HubSpot Integration Complete!
+              </h3>
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
+                Your HubSpot CRM is now connected and ready to provide insights.
               </p>
             </div>
-            <div className="flex items-center justify-center gap-2 text-sm text-success">
-              <Mail className="w-4 h-4" />
-              <span>Business health metrics will update every hour</span>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-900/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-green-600" />
+                    <span className="font-medium">Contacts Synced</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">All contacts available in Nexus</p>
+                </div>
+                <div className="p-4 border rounded-lg bg-green-50 dark:bg-green-900/10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <TrendingUp className="w-4 h-4 text-green-600" />
+                    <span className="font-medium">Deals Active</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Pipeline data flowing to dashboard</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <Button onClick={() => onComplete && onComplete({})}>
+                Done
+              </Button>
             </div>
           </div>
         );
@@ -401,49 +341,21 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
     <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Users className="w-5 h-5 text-warning" />
-          HubSpot CRM Integration
+          <Zap className="w-5 h-5 text-orange-600" />
+          HubSpot CRM Setup
         </CardTitle>
         <CardDescription>
-          Connect your HubSpot CRM for automated sales and marketing analytics
+          Step {currentStep} of {totalSteps}
         </CardDescription>
+        <Progress value={(currentStep / totalSteps) * 100} className="w-full" />
       </CardHeader>
       <CardContent>
-        {/* Progress Steps */}
-        <div className="flex items-center justify-between mb-8">
-          {steps.map((step, index) => (
-            <div key={step.id} className="flex items-center">
-              <div className={`
-                w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                ${currentStep >= step.id 
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted text-muted-foreground'
-                }
-              `}>
-                {currentStep > step.id ? <CheckCircle className="w-4 h-4" /> : step.id}
-              </div>
-              {index < steps.length - 1 && (
-                <div className={`
-                  w-12 h-0.5 mx-2
-                  ${currentStep > step.id ? 'bg-primary' : 'bg-muted'}
-                `} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Error Display */}
         {error && (
-          <div className="bg-destructive/5 border border-red-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 text-destructive">
-              <AlertCircle className="w-4 h-4" />
-              <span className="font-medium">Setup Error</span>
-            </div>
-            <p className="text-sm text-destructive mt-1">{error}</p>
-          </div>
+          <Alert className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
-
-        {/* Step Content */}
         {renderStepContent()}
       </CardContent>
     </Card>

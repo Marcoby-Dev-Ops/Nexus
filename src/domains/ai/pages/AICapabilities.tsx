@@ -30,11 +30,11 @@ import {
   Cpu,
   Network
 } from 'lucide-react';
-import { AdvancedAICapabilitiesDemo } from '@/domains/ai/features/components/AdvancedAICapabilitiesDemo';
-import { ContextualDataCompletionDemo } from '@/domains/ai/features/components/ContextualDataCompletionDemo';
-import { CrossPlatformIntelligenceDemo } from '@/domains/ai/features/components/CrossPlatformIntelligenceDemo';
-import { ToolEnabledDemo } from '@/domains/ai/features/components/ToolEnabledDemo';
-import { ModelPerformanceMonitor } from '@/domains/ai/features/components/ModelPerformanceMonitor';
+import { AdvancedAICapabilitiesDemo } from '@/domains/ai/components/AdvancedAICapabilitiesDemo';
+import { ContextualDataCompletionDemo } from '@/domains/ai/components/ContextualDataCompletionDemo';
+import { CrossPlatformIntelligenceDemo } from '@/domains/ai/components/CrossPlatformIntelligenceDemo';
+import { ToolEnabledDemo } from '@/domains/ai/components/ToolEnabledDemo';
+import { ModelPerformanceMonitor } from '@/domains/ai/components/ModelPerformanceMonitor';
 
 interface AICapability {
   id: string;

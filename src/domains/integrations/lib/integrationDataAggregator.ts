@@ -4,7 +4,7 @@
  * Aggregates data from all connected services for comprehensive insights
  */
 
-import { supabase } from './core/supabase';
+import { supabase } from '@/core/supabase';
 import { logger } from './security/logger';
 import { produce } from 'immer';
 
@@ -120,19 +120,44 @@ class IntegrationDataAggregator {
   /**
    * Initialize aggregation for a user
    */
-  async initializeAggregation(userId: string, companyId?: string): Promise<void> {
+  async initializeAggregation(userId: string, _companyId?: string): Promise<void> {
     try {
       // Get user's active integrations
-      const { data: integrations } = await supabase
+      const { data: userIntegrations } = await supabase
         .from('user_integrations')
         .select(`
           id,
           integration_id,
-          config,
-          integrations!inner(name, slug, category)
+          config
         `)
         .eq('user_id', userId)
         .eq('status', 'active');
+
+      if (!userIntegrations) return;
+
+      // Fetch integration details separately to avoid join issues
+      const integrations = await Promise.all(
+        userIntegrations.map(async (userIntegration) => {
+          try {
+            const { data: integrationDetails } = await supabase
+              .from('integrations')
+              .select('id, name, slug, category')
+              .eq('id', userIntegration.integration_id)
+              .single();
+            
+            return {
+              ...userIntegration,
+              integrations: integrationDetails || { name: 'Unknown', slug: 'unknown', category: 'general' }
+            };
+          } catch (error) {
+            console.error('Error fetching integration details:', error);
+            return {
+              ...userIntegration,
+              integrations: { name: 'Unknown', slug: 'unknown', category: 'general' }
+            };
+          }
+        })
+      );
 
       if (!integrations) return;
 
@@ -192,16 +217,50 @@ class IntegrationDataAggregator {
       .select(`
         *,
         user_integrations!inner(
-          integrations!inner(name, slug, category)
+          integration_id
         )
       `)
       .eq('user_integrations.user_id', userId)
-      .eq('user_integrations.integrations.slug', source)
       .gte('data_timestamp', startDate.toISOString());
 
     if (!rawData) return [];
 
-    return rawData.map(item => this.transformToAggregatedDataPoint(item));
+    // Fetch integration details separately
+    const dataWithIntegrationDetails = await Promise.all(
+      rawData.map(async (item) => {
+        try {
+          const { data: integrationDetails } = await supabase
+            .from('integrations')
+            .select('id, name, slug, category')
+            .eq('id', item.user_integrations.integration_id)
+            .single();
+          
+          return {
+            ...item,
+            user_integrations: {
+              ...item.user_integrations,
+              integrations: integrationDetails || { name: 'Unknown', slug: 'unknown', category: 'general' }
+            }
+          };
+        } catch (error) {
+          console.error('Error fetching integration details:', error);
+          return {
+            ...item,
+            user_integrations: {
+              ...item.user_integrations,
+              integrations: { name: 'Unknown', slug: 'unknown', category: 'general' }
+            }
+          };
+        }
+      })
+    );
+
+    // Filter by source slug
+    const filteredData = dataWithIntegrationDetails.filter(item => 
+      item.user_integrations.integrations.slug === source
+    );
+
+    return filteredData.map(item => this.transformToAggregatedDataPoint(item));
   }
 
   /**

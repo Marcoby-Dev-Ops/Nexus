@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
+import { PublicHeader } from '@/shared/components/layout/PublicHeader';
 import { 
   Brain, 
   Eye, 
@@ -18,6 +19,9 @@ import {
 export const LandingPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background">
+      {/* Public Header */}
+      <PublicHeader />
+      
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
@@ -39,6 +43,11 @@ export const LandingPage: React.FC = () => {
                 <Link to="/signup" className="flex items-center justify-center w-full">
                   Get Started Free
                   <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                <Link to="/login" className="flex items-center justify-center w-full">
+                  Log In
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="w-full sm:w-auto">

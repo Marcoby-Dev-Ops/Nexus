@@ -58,7 +58,6 @@ FUNCTIONS=(
     "stripe-checkout-session"
     "complete-founder-onboarding"
     "hubspot-callback"
-    "hubspot-connect"
     "sync_user_profile"
     "ops_action_worker"
     "ops_metrics_ingest"

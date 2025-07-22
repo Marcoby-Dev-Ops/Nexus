@@ -24,7 +24,7 @@ import { Progress } from '@/shared/components/ui/Progress';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 interface BusinessContextCollectorProps {
   userProfile?: any;
@@ -78,7 +78,7 @@ export const BusinessContextCollector: React.FC<BusinessContextCollectorProps> =
   systemIntelligence,
   onContextUpdated 
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [context, setContext] = useState<BusinessContext>({
     company: { name: '', industry: '', size: '', description: '', challenges: [], goals: [] },
     user: { role: '', experience: '', responsibilities: [], goals: [] },

@@ -5,6 +5,8 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { safeGetLocalStorage, safeSetLocalStorage } from '@/shared/utils/storageUtils';
+import { supabase } from '@/core/supabase';
+import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
 
 export interface OnboardingState {
   step: number;
@@ -51,41 +53,76 @@ export interface UseOnboardingReturn {
 /**
  * Main onboarding hook - PROPER IMPLEMENTATION
  */
-export function useOnboarding(): UseOnboardingReturn {
+export function useOnboarding(user?: any): UseOnboardingReturn {
+  const { profile, loading: authLoading, fetchProfile } = useZustandAuth();
   const [onboardingState] = useState<OnboardingState | null>(null);
   const [userN8nConfig] = useState<UserN8nConfig | null>(null);
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load onboarding status from localStorage
+  // Load onboarding status from canonical profile state
   useEffect(() => {
-    const loadStatus = async () => {
-      try {
-        const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
-        setNeedsOnboarding(!completed);
-      } catch (error) {
-        console.error('Failed to load onboarding status:', error);
-        // Default to not needing onboarding if we can't load status
-        setNeedsOnboarding(false);
-      } finally {
-        setIsLoading(false);
-      }
+    let timeoutId: NodeJS.Timeout | null = null;
+    setIsLoading(true);
+    if (user?.id) {
+      fetchProfile(user.id).finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
+    }
+    // Timeout fallback
+    timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 10000);
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
     };
-    loadStatus();
-  }, []);
+  }, [user?.id, fetchProfile]);
+
+  useEffect(() => {
+    if (profile) {
+      setNeedsOnboarding(!profile.onboarding_completed);
+    }
+  }, [profile]);
 
   const startOnboarding = useCallback(() => {
     setNeedsOnboarding(true);
   }, []);
 
-  const completeOnboarding = useCallback(() => {
+  const completeOnboarding = useCallback(async () => {
     try {
-      safeSetLocalStorage('nexus_onboarding_complete', true);
+      if (!user?.id) {
+        console.error('No user ID available for completing onboarding');
+        return;
+      }
+
+      console.log('[completeOnboarding] Completing onboarding for user:', user.id);
+
+      // Call the database function to complete onboarding
+      const { error } = await supabase
+        .rpc('complete_user_onboarding', { 
+          user_uuid: user.id,
+          onboarding_data: { completed_at: new Date().toISOString() }
+        });
+
+      if (error) {
+        console.error('Error completing onboarding in database:', error);
+        // Fallback to localStorage
+        safeSetLocalStorage('nexus_onboarding_complete', true);
+      } else {
+        console.log('[completeOnboarding] Successfully completed onboarding in database');
+        // Also update localStorage for consistency
+        safeSetLocalStorage('nexus_onboarding_complete', true);
+      }
+      
       setNeedsOnboarding(false);
+      console.log('[completeOnboarding] Set needsOnboarding to false');
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
+      // Fallback to localStorage
+      safeSetLocalStorage('nexus_onboarding_complete', true);
+      setNeedsOnboarding(false);
     }
-  }, []);
+  }, [user?.id]);
 
   const resetOnboarding = useCallback(() => {
     try {
@@ -98,16 +135,85 @@ export function useOnboarding(): UseOnboardingReturn {
 
   const checkOnboardingStatus = useCallback(async () => {
     setIsLoading(true);
+    let timeoutId: NodeJS.Timeout | null = null;
+    
     try {
-      const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
-      setNeedsOnboarding(!completed);
+      // Add timeout to prevent hanging
+      timeoutId = setTimeout(() => {
+        console.log('[checkOnboardingStatus] Timeout reached, setting default values');
+        setNeedsOnboarding(false);
+        setIsLoading(false);
+      }, 10000); // 10 second timeout
+      
+      if (!user?.id) {
+        if (timeoutId) clearTimeout(timeoutId);
+        setNeedsOnboarding(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // Check if user profile exists
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('id, onboarding_completed')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError && profileError.code === 'PGRST116') {
+        // Profile doesn't exist, create a basic one
+        console.log('checkOnboardingStatus: No user profile found, creating basic profile');
+        const { data: newProfile, error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            id: user.id,
+            email: user.email || '',
+            display_name: user.email?.split('@')[0] || 'User',
+            role: 'user',
+            onboarding_completed: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select('id, onboarding_completed')
+          .single();
+        
+        if (createError) {
+          console.error('checkOnboardingStatus: Error creating user profile:', createError);
+          if (timeoutId) clearTimeout(timeoutId);
+          setNeedsOnboarding(true);
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log('checkOnboardingStatus: Created basic profile, needs onboarding');
+        if (timeoutId) clearTimeout(timeoutId);
+        setNeedsOnboarding(!newProfile.onboarding_completed);
+        setIsLoading(false);
+        return;
+      }
+      
+      if (profileError) {
+        console.error('checkOnboardingStatus: Error checking user profile:', profileError);
+        if (timeoutId) clearTimeout(timeoutId);
+        setNeedsOnboarding(true);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Profile exists, check onboarding status
+      console.log('checkOnboardingStatus: Profile exists, onboarding_completed:', profile.onboarding_completed);
+      if (timeoutId) clearTimeout(timeoutId);
+      setNeedsOnboarding(!profile.onboarding_completed);
+      setIsLoading(false);
+      
     } catch (error) {
-      console.error('Failed to check onboarding status:', error);
-      setNeedsOnboarding(false);
-    } finally {
+      console.error('checkOnboardingStatus: Failed to check onboarding status:', error);
+      // Fallback to localStorage
+      const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
+      if (timeoutId) clearTimeout(timeoutId);
+      setNeedsOnboarding(!completed);
       setIsLoading(false);
     }
-  }, []);
+  }, [user?.id]);
 
   const testN8nConnection = useCallback(async (_baseUrl: string, _apiKey: string) => {
     return { success: true };
@@ -116,7 +222,7 @@ export function useOnboarding(): UseOnboardingReturn {
   return {
     onboardingState,
     needsOnboarding,
-    isLoading,
+    isLoading: isLoading || authLoading,
     userN8nConfig,
     startOnboarding,
     completeOnboarding,

@@ -1,10 +1,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
-import { corsHeaders } from './cors.ts';
-
-interface Payload {
-  thoughtId: string;
-}
+import { corsHeaders } from '../_shared/cors.ts';
+import { createDatabaseService, authenticateRequest } from '../_shared/database.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,110 +12,85 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+
     if (!supabaseUrl || !supabaseServiceKey || !openaiApiKey) {
       throw new Error('Missing required environment variables');
     }
 
-    const sb = createClient(supabaseUrl, supabaseServiceKey);
+    // Authenticate the request
+    const { userId, error: authError } = await authenticateRequest(req, supabaseUrl, supabaseServiceKey);
+    if (authError || !userId) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      });
+    }
 
-    // Auth (optional — we just trust service role key)
+    // Create database service
+    const dbService = createDatabaseService(supabaseUrl, supabaseServiceKey, userId);
 
-    const { thoughtId } = (await req.json()) as Payload;
-    if (!thoughtId) throw new Error('thoughtId is required');
+    // Get user's integrations using centralized service
+    const { data: integrations, error: integrationsError } = await dbService.getUserIntegrations(
+      userId,
+      'ai_generate_thought_suggestions'
+    );
 
-    // Fetch the thought
-    const { data: thought, error: thoughtErr } = await sb
-      .from('thoughts')
-      .select('*')
-      .eq('id', thoughtId)
-      .single();
-    if (thoughtErr) throw thoughtErr;
+    if (integrationsError) {
+      throw new Error(`Failed to fetch integrations: ${integrationsError.message}`);
+    }
 
-    // Fetch user integrations
-    const { data: integrations } = await sb
-      .from('user_integrations')
-      .select('provider,status')
-      .eq('user_id', thought.user_id)
-      .eq('status', 'connected');
+    // Generate suggestions based on integrations
+    const suggestions = await generateSuggestions(integrations || [], openaiApiKey);
 
-    const connected = integrations?.map((i: any) => i.provider) ?? [];
-    const integrationCtx = connected.length
-      ? `The user has connected the following tools: ${connected.join(', ')}.`
-      : 'The user has no marketing integrations connected.';
+    return new Response(
+      JSON.stringify({ suggestions }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
 
-    // Build prompt
-    const prompt = `You are an AI marketing strategist in Nexus.
-${integrationCtx}
-Analyse the user's thought and propose up to 5 actionable initiatives. Each initiative must be possible with the available tools.
-Provide your output as valid JSON array where each element has: title, description, recommended_tool (string), first_task (string).
-Do not wrap your answer in markdown.
-
-User Thought: "${thought.content}"`;
-
-    // Call OpenAI
-    const llmRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'system', content: prompt }],
-        temperature: 0.7,
+  } catch (error) {
+    console.error('Thought suggestions error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       }),
-    });
-
-    if (!llmRes.ok) {
-      const body = await llmRes.text();
-      throw new Error(`LLM call failed: ${body}`);
-    }
-
-    const llmJson = await llmRes.json();
-    const content = llmJson.choices?.[0]?.message?.content ?? '[]';
-    let suggestions: any[] = [];
-    try {
-      suggestions = JSON.parse(content);
-    } catch (_) {
-      suggestions = [];
-    }
-
-    // Persist suggestions as ideas & tasks
-    for (const sug of suggestions) {
-      const { title, description, first_task } = sug;
-      if (!title) continue;
-      // insert idea
-      const { data: ideaRow } = await sb
-        .from('thoughts')
-        .insert({
-          user_id: thought.user_id,
-          content: title + (description ? ` - ${description}` : ''),
-          category: 'idea',
-          status: 'concept',
-          parent_idea_id: thoughtId,
-          ai_insights: sug,
-        })
-        .select()
-        .single();
-
-      if (first_task) {
-        await sb.from('thoughts').insert({
-          user_id: thought.user_id,
-          content: first_task,
-          category: 'task',
-          status: 'not_started',
-          parent_idea_id: ideaRow.id,
-        });
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
       }
-    }
-
-    return new Response(JSON.stringify({ success: true, suggestions }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ success: false, error: (e as Error).message }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+    );
   }
-}); 
+});
+
+async function generateSuggestions(integrations: any[], openaiApiKey: string): Promise<string[]> {
+  // Implementation for generating thought suggestions based on integrations
+  const integrationNames = integrations.map(i => i.integrations?.name || i.integration_name).filter(Boolean);
+  
+  if (integrationNames.length === 0) {
+    return ['Consider connecting your first integration to get personalized suggestions'];
+  }
+
+  const prompt = `Based on the user's connected integrations: ${integrationNames.join(', ')}, suggest 3-5 thought-provoking questions or insights they might want to explore.`;
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.7,
+      max_tokens: 200,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to generate suggestions');
+  }
+
+  const data = await response.json();
+  const suggestions = data.choices[0].message.content.split('\n').filter((s: string) => s.trim());
+  
+  return suggestions;
+} 

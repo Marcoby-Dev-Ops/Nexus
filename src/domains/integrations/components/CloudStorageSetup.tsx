@@ -21,7 +21,7 @@ import {
   Progress,
   Switch,
   useToast,
-} from '@/shared/shared/components/ui';
+} from '@/shared/components/ui';
 import { googleDriveService } from '@/domains/services/googleDriveService';
 import { oneDriveService } from '@/domains/services/oneDriveService';
 

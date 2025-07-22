@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
@@ -9,11 +10,11 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { Separator } from '@/shared/components/ui/Separator';
+
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Spinner } from '@/shared/components/ui/Spinner';
-import { logger } from '@/shared/lib/security/logger';
+// import { logger } from '@/shared/lib/security/logger';
 import { 
   User, 
   Mail, 
@@ -21,21 +22,14 @@ import {
   MapPin, 
   Building2, 
   Calendar, 
-  Globe, 
   Shield, 
-  Settings,
   Camera,
-  Check,
   X,
   Plus,
-  Trash2,
-  ExternalLink,
   Users,
   Award,
-  Languages,
   AlertCircle,
   Save,
-  RefreshCw,
   Edit,
   Clock,
   Briefcase,
@@ -43,8 +37,66 @@ import {
   Coffee,
   Brain
 } from 'lucide-react';
-import type { UserProfile } from '@/shared/types/userProfile';
+// Define UserProfile type locally since the import doesn't exist
+interface UserProfile {
+  id: string;
+  company_id?: string;
+  first_name?: string;
+  last_name?: string;
+  display_name?: string;
+  avatar_url?: string;
+  bio?: string;
+  phone?: string;
+  mobile?: string;
+  work_phone?: string;
+  personal_email?: string;
+  role: 'owner' | 'admin' | 'manager' | 'user';
+  department?: string;
+  job_title?: string;
+  employee_id?: string;
+  hire_date?: string;
+  manager_id?: string;
+  direct_reports?: string[];
+  timezone: string;
+  location?: string;
+  work_location?: 'office' | 'remote' | 'hybrid';
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    postal_code?: string;
+    country?: string;
+  };
+  linkedin_url?: string;
+  github_url?: string;
+  twitter_url?: string;
+  skills?: string[];
+  certifications?: string[];
+  languages?: { language: string; proficiency: 'basic' | 'intermediate' | 'advanced' | 'native' }[];
+  emergency_contact?: {
+    name?: string;
+    relationship?: string;
+    phone?: string;
+    email?: string;
+  };
+  preferences: {
+    theme: 'light' | 'dark' | 'system';
+    notifications: boolean;
+    language: string;
+    date_format?: 'MM/DD/YYYY' | 'DD/MM/YYYY' | 'YYYY-MM-DD';
+    time_format?: '12h' | '24h';
+    currency?: string;
+    [key: string]: unknown;
+  };
+  status?: 'active' | 'inactive' | 'pending' | 'suspended';
+  last_login?: string;
+  onboarding_completed: boolean;
+  profile_completion_percentage?: number;
+  created_at: string;
+  updated_at: string;
+}
 import { UserKnowledgeViewer } from '@/domains/ai/components/UserKnowledgeViewer';
+import { ProfileVerificationBanner } from '@/domains/admin/user/components/ProfileVerificationBanner';
 
 interface DatabaseProfile {
   id?: string;
@@ -68,15 +120,15 @@ interface DatabaseProfile {
   timezone?: string | null;
   location?: string | null;
   work_location?: string | null;
-  address?: any; // Json type from database
+  address?: Record<string, unknown> | null; // Json type from database
   linkedin_url?: string | null;
   github_url?: string | null;
   twitter_url?: string | null;
   skills?: string[] | null;
   certifications?: string[] | null;
-  languages?: any; // Json type from database
-  emergency_contact?: any;
-  preferences?: Record<string, any> | null;
+  languages?: Record<string, unknown> | null; // Json type from database
+  emergency_contact?: Record<string, unknown> | null;
+  preferences?: Record<string, unknown> | null;
   status?: string | null;
   last_login?: string | null;
   onboarding_completed?: boolean | null;
@@ -87,7 +139,8 @@ interface DatabaseProfile {
 }
 
 export const Profile: React.FC = () => {
-  const { user, updateProfile, loading } = useAuth();
+  const { user, updateProfile, loading } = useAuthContext();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -124,7 +177,12 @@ export const Profile: React.FC = () => {
       twitter_url: dbProfile.twitter_url || undefined,
       skills: dbProfile.skills || undefined,
       certifications: dbProfile.certifications || undefined,
-      languages: dbProfile.languages?.map((lang: string) => ({ language: lang, proficiency: 'intermediate' as const })) || undefined,
+      languages: Array.isArray(dbProfile.languages) 
+        ? dbProfile.languages.map((lang: unknown) => ({ 
+            language: typeof lang === 'string' ? lang : String(lang), 
+            proficiency: 'intermediate' as const 
+          }))
+        : undefined,
       emergency_contact: dbProfile.emergency_contact || undefined,
       preferences: {
         theme: 'light',
@@ -159,17 +217,17 @@ export const Profile: React.FC = () => {
     }).length;
     
     return Math.round((completedFields / fields.length) * 100);
-  }, [user?.profile]);
+  }, [user]);
 
   const handleInputChange = (field: keyof UserProfile, value: string | number | boolean | string[] | undefined) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev: Partial<UserProfile>) => ({ ...prev, [field]: value }));
   };
 
   const handleNestedInputChange = (parentField: keyof UserProfile, nestedField: string, value: string | number | boolean) => {
-    setFormData(prev => ({
+    setFormData((prev: Partial<UserProfile>) => ({
       ...prev,
       [parentField]: {
-        ...(prev[parentField] as Record<string, any>),
+        ...(prev[parentField] as Record<string, unknown>),
         [nestedField]: value
       }
     }));
@@ -180,13 +238,20 @@ export const Profile: React.FC = () => {
     
     setIsSaving(true);
     try {
-      await updateProfile(formData);
+      // Convert UserProfile back to DatabaseProfile format for the API
+      const dbFormData: Partial<DatabaseProfile> = {
+        ...formData,
+        languages: formData.languages ? formData.languages.map(lang => lang.language) as unknown as Record<string, unknown> : undefined,
+        preferences: formData.preferences as Record<string, unknown> | null
+      };
+      
+      await updateProfile(dbFormData as any);
       setSaveMessage('Profile updated successfully!');
       setIsEditing(false);
       setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error({ err: error }, 'Error updating profile');
+      // Log error for debugging - eslint-disable-next-line no-console
+      console.error('Error updating profile:', error);
       setSaveMessage('Failed to update profile. Please try again.');
       setTimeout(() => setSaveMessage(null), 5000);
     } finally {
@@ -318,6 +383,9 @@ export const Profile: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar - Profile Overview */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Profile Verification Banner */}
+          <ProfileVerificationBanner className="mb-6" />
+          
           {/* Profile Card */}
           <Card>
             <CardContent className="p-6">
@@ -510,13 +578,13 @@ export const Profile: React.FC = () => {
               {/* Quick Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Employment Info */}
-                {(user?.profile as any)?.hire_date && (
+                {(user?.profile as DatabaseProfile)?.hire_date && (
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Calendar className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <p className="text-sm font-medium text-foreground">Joined</p>
                       <p className="text-lg font-bold text-primary">
-                        {new Date((user?.profile as any).hire_date).toLocaleDateString()}
+                        {new Date((user?.profile as DatabaseProfile).hire_date!).toLocaleDateString()}
                       </p>
                     </CardContent>
                   </Card>
@@ -535,13 +603,13 @@ export const Profile: React.FC = () => {
                 )}
 
                 {/* Status Badge */}
-                {(user?.profile as any)?.status && (
+                {(user?.profile as DatabaseProfile)?.status && (
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Shield className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <p className="text-sm font-medium text-foreground">Status</p>
-                      <Badge variant={(user?.profile as any).status === 'active' ? 'default' : 'secondary'} className="text-lg">
-                        {(user?.profile as any).status}
+                      <Badge variant={(user?.profile as DatabaseProfile).status === 'active' ? 'default' : 'secondary'} className="text-lg">
+                        {(user?.profile as DatabaseProfile).status}
                       </Badge>
                     </CardContent>
                   </Card>
@@ -785,7 +853,7 @@ export const Profile: React.FC = () => {
                           typeof profile?.preferences === 'object' && 
                           profile?.preferences !== null &&
                           'language' in profile.preferences ? 
-                          (profile.preferences as Record<string, any>).language || 'en' : 'en'
+                          String((profile.preferences as Record<string, unknown>).language || 'en') : 'en'
                         )}
                         onValueChange={(value) => handleNestedInputChange('preferences', 'language', value)}
                         disabled={!isEditing}

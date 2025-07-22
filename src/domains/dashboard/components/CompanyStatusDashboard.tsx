@@ -19,7 +19,7 @@ import {
   Settings,
   Zap
 } from 'lucide-react';
-import { companyStatusService, type CompanyStatusOverview, type DimensionStatus } from '@/core/services/companyStatusService';
+import { companyStatusService, type CompanyStatusOverview, type DimensionStatus } from '@/domains/business';
 import { logger } from '@/core/auth/logger';
 
 interface CompanyStatusDashboardProps {
@@ -355,33 +355,25 @@ const DimensionCard: React.FC<DimensionCardProps> = ({ dimension, data, icon }) 
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {/* Key Indicators */}
-          <div>
-            <h4 className="text-sm font-medium mb-2">Key Indicators</h4>
-            <div className="space-y-1">
-              {data.keyIndicators.map((indicator, index) => (
-                <div key={index} className="text-sm text-muted-foreground">
-                  • {indicator}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Action Items */}
-          {data.actionItems.length > 0 && (
+                  <div className="space-y-4">
+            {/* Description */}
             <div>
-              <h4 className="text-sm font-medium mb-2">Recommended Actions</h4>
-              <div className="space-y-1">
-                {data.actionItems.slice(0, 2).map((action, index) => (
-                  <div key={index} className="text-sm text-muted-foreground">
-                    • {action}
-                  </div>
-                ))}
+              <h4 className="text-sm font-medium mb-2">Overview</h4>
+              <div className="text-sm text-muted-foreground">
+                {data.description || 'No description available'}
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Last Updated */}
+            {data.lastUpdated && (
+              <div>
+                <h4 className="text-sm font-medium mb-2">Last Updated</h4>
+                <div className="text-sm text-muted-foreground">
+                  {new Date(data.lastUpdated).toLocaleDateString()}
+                </div>
+              </div>
+            )}
+          </div>
       </CardContent>
     </Card>
   );

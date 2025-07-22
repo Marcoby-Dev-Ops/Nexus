@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { CheckCircle, XCircle, Clock, AlertCircle, User } from 'lucide-react';
@@ -10,7 +10,7 @@ interface AuthStatusProps {
 }
 
 export function AuthStatus({ showDetails = false, className = '' }: AuthStatusProps) {
-  const { user, session, loading, error, status, initialized } = useAuth();
+  const { user, session, loading, error, status, initialized } = useAuthContext();
 
   const getStatusIcon = () => {
     if (loading) return <Clock className="w-4 h-4 text-primary animate-spin" />;

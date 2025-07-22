@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from "@/core/supabase";
 import StreamingComposer from '@/shared/components/chat/StreamingComposer';
 import { Button } from '@/shared/components/ui/Button';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 
 interface ConversationRow { id: string; title: string | null; updated_at: string }
 

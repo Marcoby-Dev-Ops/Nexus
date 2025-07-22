@@ -6,7 +6,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/shared/components/ui/Dialog';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuth } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 import { multiModalIntelligence } from '@/domains/ai/services/multiModalIntelligence';
 import { supabase } from "@/core/supabase";
@@ -91,7 +91,7 @@ interface DocumentStats {
  * Pillar: 1,2 - Customer Success Automation + Business Workflow Intelligence
  */
 const DocumentCenter: React.FC = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { addNotification } = useNotifications();
   const [documents, setDocuments] = useState<DocumentFile[]>([]);
   const [folders, setFolders] = useState<DocumentFolder[]>([]);

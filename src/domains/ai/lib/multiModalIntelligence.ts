@@ -4,8 +4,10 @@
  * Provides intelligent extraction, analysis, and automation across all data types
  */
 
-import { supabase } from '../core/supabase';
-import { n8nService } from '../automation/n8nService';
+import { supabase } from '@/core/supabase';
+import { logger } from '@/core/auth/logger';
+import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { n8nService } from '@/domains/automation/services/n8nService';
 
 interface DocumentIntelligence {
   id: string;

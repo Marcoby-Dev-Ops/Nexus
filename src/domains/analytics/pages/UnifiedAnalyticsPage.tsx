@@ -26,9 +26,9 @@ import {
   Settings,
   AlertCircle
 } from 'lucide-react';
-import UnifiedAnalyticsDashboard from '@/domains/analytics/features/components/UnifiedAnalyticsDashboard';
-import CrossPlatformInsightsEngine from '@/domains/analytics/features/components/CrossPlatformInsightsEngine';
-import DigestibleMetricsDashboard from '@/domains/analytics/features/components/DigestibleMetricsDashboard';
+import UnifiedAnalyticsDashboard from '@/domains/analytics/components/UnifiedAnalyticsDashboard';
+import CrossPlatformInsightsEngine from '@/domains/analytics/components/CrossPlatformInsightsEngine';
+import DigestibleMetricsDashboard from '@/domains/analytics/components/DigestibleMetricsDashboard';
 import { useSystemContext } from '@/core/hooks/SystemContext';
 
 /**

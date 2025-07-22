@@ -6,7 +6,7 @@ import {
   Checkbox,
   Label,
   Input
-} from '@/shared/shared/components/ui';
+} from '@/shared/components/ui';
 import { 
   X, 
   ArrowRight, 
