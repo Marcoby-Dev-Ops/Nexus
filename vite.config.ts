@@ -79,6 +79,7 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
       strictPort: true,
+      allowedHosts: ['nexus.marcoby.net', 'localhost', '.marcoby.net'],
     },
     optimizeDeps: {
       // Optimize dependencies for better performance
