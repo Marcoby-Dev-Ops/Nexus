@@ -4,6 +4,12 @@
 
 ## 🚀 Recent Updates
 
+### Domain Configuration & Deployment
+- **Development Environment**: `nexus.marcoby.net` for testing and development
+- **Production Environment**: `nexus.marcoby.com` for live deployments
+- **Coolify Deployment**: Automated deployment via Coolify with Docker containerization
+- **Environment Variables**: Comprehensive configuration for all integrations
+
 ### Microsoft 365 Integration Consolidation
 - **Unified Integration**: OneDrive, SharePoint, Teams, and Outlook now integrated under single Microsoft 365 connection
 - **Enhanced Permissions**: Comprehensive OAuth flow grants access to all Microsoft 365 services
@@ -50,6 +56,7 @@
 - **Styling**: Tailwind CSS, Radix UI Components
 - **State Management**: React Context, Custom Hooks
 - **Package Manager**: pnpm
+- **Deployment**: Coolify with Docker containerization
 
 ## 🚀 Getting Started
 
@@ -58,11 +65,11 @@
 - pnpm
 - Supabase CLI
 
-### Installation
+### Local Development
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/nexus.git
-cd nexus
+git clone https://github.com/Marcoby-Dev-Ops/Nexus.git
+cd Nexus
 
 # Install dependencies
 pnpm install
@@ -77,26 +84,80 @@ pnpm dev
 
 ### Environment Variables
 ```bash
-# Supabase
-VITE_SUPABASE_URL=your_supabase_url
+# Supabase Configuration
+VITE_SUPABASE_URL=https://kqclbpimkraenvbffnpk.supabase.co
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Domain Configuration
+VITE_NEXT_PUBLIC_APP_URL=https://nexus.marcoby.net
+VITE_DEV_APP_URL=http://localhost:5173
 
 # AI Services
 VITE_OPENROUTER_API_KEY=your_openrouter_key
 VITE_BRAVE_API_KEY=your_brave_key
 
-# Integrations
+# OAuth Integrations
 VITE_MICROSOFT_CLIENT_ID=your_microsoft_client_id
+VITE_MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
+VITE_GOOGLE_CLIENT_SECRET=your_google_client_secret
 VITE_HUBSPOT_CLIENT_ID=your_hubspot_client_id
+VITE_HUBSPOT_CLIENT_SECRET=your_hubspot_client_secret
+VITE_PAYPAL_CLIENT_ID=your_paypal_client_id
+VITE_PAYPAL_ENV=live
+
+# External Services
+VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
+VITE_STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+VITE_N8N_URL=https://automate.marcoby.net
+VITE_N8N_API_KEY=your_n8n_api_key
 ```
+
+## 🌐 Deployment
+
+### Development Environment
+- **URL**: https://nexus.marcoby.net
+- **Deployment**: Automated via Coolify
+- **Branch**: `main`
+- **Container**: Docker with Node.js serve
+
+### Production Environment
+- **URL**: https://nexus.marcoby.com
+- **Deployment**: Manual via Coolify
+- **Environment**: Production configuration
+
+### Deployment Process
+1. **Push to GitHub**: Changes automatically trigger Coolify deployment
+2. **Docker Build**: Multi-stage build with environment variables
+3. **Health Check**: Automated health monitoring
+4. **SSL Certificate**: Automatic Let's Encrypt SSL
 
 ## 📚 Documentation
 
-- [User Guide](./docs/USER_GUIDE.md) - Complete user documentation
-- [Developer Guide](./docs/DEVELOPER_GUIDE.md) - Technical implementation details
-- [API Reference](./docs/API_REFERENCE.md) - Integration and API documentation
-- [Deployment Guide](./docs/DEPLOYMENT.md) - Production deployment instructions
+- [Domain Configuration](./DOMAIN_UPDATE_SUMMARY.md) - Domain setup and OAuth configuration
+- [Deployment Guide](./docs/deployment/COOLIFY_DEPLOYMENT_GUIDE.md) - Coolify deployment instructions
+- [OAuth Configuration](./docs/OAUTH_CONFIGURATION_GUIDE.md) - OAuth provider setup
+- [Developer Guide](./docs/DEVELOPMENT.md) - Local development setup
+
+## 🔧 Development Commands
+
+```bash
+# Development
+pnpm dev                    # Start development server
+pnpm build                  # Build for production
+pnpm test                   # Run tests
+pnpm lint                   # Lint code
+pnpm type-check             # TypeScript check
+
+# Database
+pnpm supabase:db:pull      # Pull remote schema
+pnpm supabase:db:push      # Push local changes
+pnpm supabase:gen-types    # Generate TypeScript types
+
+# Edge Functions
+pnpm supabase functions deploy  # Deploy all functions
+```
 
 ## 🤝 Contributing
 
@@ -110,7 +171,7 @@ This project is licensed under the MIT License - see the [LICENSE](./LICENSE) fi
 
 - **Documentation**: [docs.nexus.com](https://docs.nexus.com)
 - **Community**: [Discord](https://discord.gg/nexus)
-- **Issues**: [GitHub Issues](https://github.com/your-org/nexus/issues)
+- **Issues**: [GitHub Issues](https://github.com/Marcoby-Dev-Ops/Nexus/issues)
 
 ---
 
