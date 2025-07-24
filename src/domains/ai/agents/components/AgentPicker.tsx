@@ -18,7 +18,7 @@ const AGENTS: Agent[] = [
 
 const AgentPicker: React.FC<Props> = ({ value, onChange, className = '' }) => (
   <Select value={value} onValueChange={onChange}>
-    <SelectTrigger className={`h-10 w-full md:w-60 ${className}`} aria-label="Choose AI agent">
+    <SelectTrigger className={`h-10 w-full md: w-60 ${className}`} aria-label="Choose AI agent">
       <SelectValue placeholder="Choose AI agent" />
     </SelectTrigger>
     <SelectContent>

@@ -82,7 +82,7 @@ export const WelcomeDashboard: React.FC<WelcomeDashboardProps> = ({
           <div className="text-xs text-muted-foreground mb-2">{progressPercent}% of goal</div>
         </div>
         <div className="mb-6">
-          <div className="text-base font-semibold mb-1">✅ Next Best Action:</div>
+          <div className="text-base font-semibold mb-1">✅ Next Best Action: </div>
           <div className="flex items-center gap-2">
             <span>{nextAction}</span>
             {nextActionWhy && (

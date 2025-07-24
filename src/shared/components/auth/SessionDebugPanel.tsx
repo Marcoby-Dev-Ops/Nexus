@@ -34,7 +34,10 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
       const info = await getSessionDebugInfo();
       setDebugInfo(info);
     } catch (error) {
-      console.error('Failed to get debug info:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to get debug info: ', error);
     } finally {
       setLoading(false);
     }
@@ -46,7 +49,10 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
       clearAllSessionStorage();
       await refreshDebugInfo();
     } catch (error) {
-      console.error('Failed to clear storage:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to clear storage: ', error);
     } finally {
       setLoading(false);
     }
@@ -60,7 +66,10 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
         await refreshDebugInfo();
       }
     } catch (error) {
-      console.error('Failed to force refresh session:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to force refresh session: ', error);
     } finally {
       setLoading(false);
     }
@@ -112,7 +121,7 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
           {/* Status Overview */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Storage Available:</span>
+              <span className="text-sm font-medium">Storage Available: </span>
               <div className="flex gap-2">
                 <Badge variant={debugInfo?.hasLocalStorage ? "default" : "destructive"} className="text-xs">
                   localStorage
@@ -139,7 +148,7 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
             
             {debugInfo?.sessionExpiry && (
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Expiry:</span>
+                <span className="text-sm font-medium">Expiry: </span>
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
                   <span className="text-xs">
@@ -194,7 +203,7 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
             <div className="space-y-2 text-xs">
               {debugInfo?.storedSession && (
                 <div>
-                  <strong>Stored Session:</strong>
+                  <strong>Stored Session: </strong>
                   <pre className="bg-muted p-2 rounded mt-1 overflow-auto max-h-20">
                     {JSON.stringify(debugInfo.storedSession, null, 2)}
                   </pre>
@@ -203,7 +212,7 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
               
               {debugInfo?.supabaseSession && (
                 <div>
-                  <strong>Supabase Session:</strong>
+                  <strong>Supabase Session: </strong>
                   <pre className="bg-muted p-2 rounded mt-1 overflow-auto max-h-20">
                     {JSON.stringify(debugInfo.supabaseSession, null, 2)}
                   </pre>
@@ -212,7 +221,7 @@ export const SessionDebugPanel: React.FC<SessionDebugPanelProps> = ({
               
               {debugInfo?.errors.length > 0 && (
                 <div>
-                  <strong className="text-destructive">Errors:</strong>
+                  <strong className="text-destructive">Errors: </strong>
                   <ul className="list-disc list-inside mt-1 text-destructive">
                     {debugInfo.errors.map((error: string, index: number) => (
                       <li key={index}>{error}</li>

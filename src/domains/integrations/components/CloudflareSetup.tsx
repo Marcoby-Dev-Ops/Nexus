@@ -8,22 +8,10 @@ import {
   Separator,
   Alert, AlertDescription
 } from '@/shared/components/ui';
-import { 
-  Shield, 
-  Globe, 
-  Zap, 
-  BarChart3, 
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  ExternalLink,
-  Copy,
-  Eye,
-  EyeOff
-} from 'lucide-react';
+import { Shield, Globe, BarChart3, CheckCircle, AlertCircle, Loader2, ExternalLink, Copy, Eye, EyeOff } from 'lucide-react';
 import { cloudflareService } from '@/domains/services/cloudflareService';
 import { supabase } from '@/core/supabase';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 
 interface CloudflareSetupProps {
@@ -39,7 +27,7 @@ interface SetupStep {
 }
 
 const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -113,7 +101,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
 
     try {
       // Test basic connection
-      const response = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+      const response = await fetch('https: //api.cloudflare.com/client/v4/user/tokens/verify', {
         headers: {
           'Authorization': `Bearer ${formData.apiToken}`,
           'Content-Type': 'application/json'
@@ -126,7 +114,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
         setTestResults(prev => ({ ...prev, connection: true }));
         
         // Fetch available zones
-        const zonesResponse = await fetch('https://api.cloudflare.com/client/v4/zones', {
+        const zonesResponse = await fetch('https: //api.cloudflare.com/client/v4/zones', {
           headers: {
             'Authorization': `Bearer ${formData.apiToken}`,
             'Content-Type': 'application/json'
@@ -145,14 +133,14 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
         throw new Error(data.errors?.[0]?.message || 'Authentication failed');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection test failed');
+      setError(err instanceof Error ? err.message: 'Connection test failed');
       setTestResults(prev => ({ ...prev, connection: false }));
     } finally {
       setLoading(false);
     }
   };
 
-  const selectZone = async (zone: any) => {
+  const selectZone = async (__zone: any) => {
     setFormData(prev => ({
       ...prev,
       zoneId: zone.id,
@@ -169,7 +157,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
     try {
       // Test analytics API
       const response = await fetch(
-        `https://api.cloudflare.com/client/v4/zones/${formData.zoneId}/analytics/dashboard`,
+        `https: //api.cloudflare.com/client/v4/zones/${formData.zoneId}/analytics/dashboard`,
         {
           headers: {
             'Authorization': `Bearer ${formData.apiToken}`,
@@ -187,7 +175,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
         throw new Error('Failed to fetch analytics data');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Analytics test failed');
+      setError(err instanceof Error ? err.message: 'Analytics test failed');
     } finally {
       setLoading(false);
     }
@@ -202,25 +190,23 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
     try {
       // Save integration to database
       const integrationData = {
-        user_id: user.id,
-        integration_slug: 'cloudflare',
+        userid: user.id,
+        integrationslug: 'cloudflare',
         name: `Cloudflare - ${testResults.zones?.find(z => z.id === formData.zoneId)?.name}`,
         status: 'active',
         config: {
-          zone_id: formData.zoneId,
-          account_id: formData.accountId,
-          zone_name: testResults.zones?.find(z => z.id === formData.zoneId)?.name
+          zoneid: formData.zoneId,
+          accountid: formData.accountId,
+          zonename: testResults.zones?.find(z => z.id === formData.zoneId)?.name
         },
         credentials: {
-          api_token: formData.apiToken,
+          apitoken: formData.apiToken,
           email: formData.email
         },
-        last_sync_at: new Date().toISOString()
+        lastsync_at: new Date().toISOString()
       };
 
-      const { error: saveError } = await supabase
-        .from('user_integrations')
-        .insert(integrationData);
+      
 
       if (saveError) throw saveError;
 
@@ -231,7 +217,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
 
       onComplete();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save integration');
+      setError(err instanceof Error ? err.message: 'Failed to save integration');
     } finally {
       setLoading(false);
     }
@@ -318,7 +304,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
                 <li>Go to <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Cloudflare API Tokens</a></li>
                 <li>Click "Create Token"</li>
                 <li>Use "Custom token" template</li>
-                <li>Add permissions: Zone:Read, Analytics:Read</li>
+                <li>Add permissions: Zone:Read, Analytics: Read</li>
                 <li>Include all zones or select specific zones</li>
                 <li>Copy the generated token</li>
               </ol>
@@ -392,7 +378,7 @@ const CloudflareSetup: React.FC<CloudflareSetupProps> = ({ onComplete, onClose }
               {testResults.zones.map((zone: any) => (
                 <Card 
                   key={zone.id} 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  className="cursor-pointer hover: bg-muted/50 transition-colors"
                   onClick={() => selectZone(zone)}
                 >
                   <CardContent className="p-4">

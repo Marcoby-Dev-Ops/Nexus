@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 
 export function SeePage() {
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm: p-6 lg:p-8">
       <h1 className="text-3xl font-bold tracking-tight text-foreground">See: Business Health</h1>
       <p className="mt-2 text-lg text-muted-foreground">
         Analyze your key business metrics and gain insights into your company's performance.

@@ -71,7 +71,7 @@ export const AdminPage: React.FC = () => {
         </Card>
 
         {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
@@ -113,7 +113,7 @@ export const AdminPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {adminFeatures.map((feature, index) => (
                 <Link key={index} to={feature.path}>
-                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <Card className="hover: shadow-md transition-shadow cursor-pointer">
                     <CardContent className="pt-6">
                       <div className="flex items-center space-x-3">
                         <div className={`p-3 rounded-lg ${feature.bgColor}`}>

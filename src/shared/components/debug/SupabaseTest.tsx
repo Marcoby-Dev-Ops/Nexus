@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, authUtils, dbUtils } from '@/core/supabase';
+import { supabase, authUtils, dbUtils, handleSupabaseError } from '@/core/supabase';
 
 export function SupabaseTest() {
   const [user, setUser] = useState<any>(null);
@@ -16,7 +16,10 @@ export function SupabaseTest() {
       const currentUser = await authUtils.getCurrentUser();
       setUser(currentUser);
     } catch (error) {
-      console.log('No authenticated user');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('No authenticated user');
     } finally {
       setLoading(false);
     }
@@ -26,14 +29,17 @@ export function SupabaseTest() {
     try {
       setTestResult('Testing connection...');
       
-      // Test basic query
-      const { data, error } = await supabase
-        .from('service_health')
-        .select('*')
-        .limit(1);
+      // Test basic query using enhanced utilities
+      const { data, error } = await dbUtils.safeQuery(async () => 
+        supabase
+          .from('user_profiles')
+          .select('*')
+          .limit(1)
+      );
 
       if (error) {
-        setTestResult(`❌ Connection failed: ${error.message}`);
+        const handledError = handleSupabaseError(error, 'testConnection');
+        setTestResult(`❌ Connection failed: ${handledError.error}`);
         return;
       }
 
@@ -52,18 +58,21 @@ export function SupabaseTest() {
     try {
       setTestResult('Testing user data access...');
 
-      // Test user-specific query
-      const { data, error } = await supabase
-        .from('debug_logs')
-        .select('*')
-        .limit(5);
+      // Test user-specific query using enhanced utilities
+      const { data, error } = await dbUtils.safeQuery(async () => 
+        supabase
+          .from('tasks')
+          .select('*')
+          .limit(5)
+      );
 
       if (error) {
-        setTestResult(`❌ User data access failed: ${error.message}`);
+        const handledError = handleSupabaseError(error, 'testUserData');
+        setTestResult(`❌ User data access failed: ${handledError.error}`);
         return;
       }
 
-      setTestResult(`✅ User data access successful! Found ${data?.length || 0} debug logs`);
+      setTestResult(`✅ User data access successful! Found ${data?.length || 0} tasks`);
     } catch (error) {
       setTestResult(`❌ User data test failed: ${error}`);
     }
@@ -78,15 +87,27 @@ export function SupabaseTest() {
     try {
       setTestResult('Creating test task...');
 
-      const newTask = await dbUtils.safeInsert('tasks', {
-        title: `Test Task ${Date.now()}`,
-        description: 'This is a test task created by the Supabase test component',
-        user_id: user.id,
-        status: 'pending',
-        priority: 'medium'
-      });
+      const { data: newTask, error } = await dbUtils.safeQuery(async () => 
+        supabase
+          .from('tasks')
+          .insert({
+            title: `Test Task ${Date.now()}`,
+            description: 'This is a test task created by the Supabase test component',
+            user_id: user.id,
+            status: 'pending',
+            priority: 'medium'
+          })
+          .select()
+          .single()
+      );
 
-      setTestResult(`✅ Test task created successfully! ID: ${newTask.id}`);
+      if (error) {
+        const handledError = handleSupabaseError(error, 'createTestTask');
+        setTestResult(`❌ Failed to create task: ${handledError.error}`);
+        return;
+      }
+
+      setTestResult(`✅ Test task created successfully! ID: ${newTask?.id}`);
       
       // Refresh tasks list
       loadTasks();
@@ -107,13 +128,19 @@ export function SupabaseTest() {
         .limit(10);
 
       if (error) {
-        console.error('Failed to load tasks:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load tasks: ', error);
         return;
       }
 
       setTasks(data || []);
     } catch (error) {
-      console.error('Error loading tasks:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading tasks: ', error);
     }
   };
 
@@ -138,7 +165,7 @@ export function SupabaseTest() {
       
       <div className="space-y-2">
         <div className="text-sm">
-          <strong>User:</strong> {user ? user.email : 'Not authenticated'}
+          <strong>User: </strong> {user ? user.email : 'Not authenticated'}
         </div>
         <div className="text-sm">
           <strong>User ID:</strong> {user?.id || 'N/A'}
@@ -176,7 +203,7 @@ export function SupabaseTest() {
 
       {tasks.length > 0 && (
         <div className="space-y-2">
-          <h3 className="font-semibold">Recent Tasks:</h3>
+          <h3 className="font-semibold">Recent Tasks: </h3>
           <div className="space-y-1">
             {tasks.map((task) => (
               <div key={task.id} className="p-2 bg-white rounded border text-sm">
@@ -192,7 +219,7 @@ export function SupabaseTest() {
       )}
 
       <div className="text-xs text-gray-600 mt-4">
-        <strong>Available Tables:</strong> user_profiles, activities, user_licenses, 
+        <strong>Available Tables: </strong> user_profiles, activities, user_licenses, 
         chat_usage_tracking, ai_action_card_templates, audit_log_events, recents, 
         pins, tasks, notifications, communication_events, company_status, debug_logs, 
         analytics_events, realtime_sync_events, service_health

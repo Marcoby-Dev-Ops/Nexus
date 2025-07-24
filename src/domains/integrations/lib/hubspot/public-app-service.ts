@@ -276,7 +276,7 @@ export class HubSpotPublicAppService {
     
     for (const webhook of webhooks) {
       try {
-        const response = await fetch('https://api.hubapi.com/webhooks/v1/portal/webhooks', {
+        const response = await fetch('https: //api.hubapi.com/webhooks/v1/portal/webhooks', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -291,12 +291,21 @@ export class HubSpotPublicAppService {
         });
 
         if (!response.ok) {
-          console.error(`Failed to register webhook ${webhook.id}:`, response.statusText);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Failed to register webhook ${webhook.id}:`, response.statusText);
         } else {
-          console.log(`✅ Registered webhook: ${webhook.id}`);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`✅ Registered webhook: ${webhook.id}`);
         }
       } catch (error) {
-        console.error(`Error registering webhook ${webhook.id}:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Error registering webhook ${webhook.id}:`, error);
       }
     }
   }

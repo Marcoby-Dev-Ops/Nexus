@@ -5,17 +5,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Clock, 
-  CheckCircle, 
-  AlertTriangle,
-  BarChart3,
-  Settings,
-  RefreshCw
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Clock, CheckCircle, AlertTriangle, BarChart3, RefreshCw } from 'lucide-react';
 import { hybridModelService } from '@/domains/ai/lib/hybridModelService';
 import type { ModelPerformance, CostOptimizationSuggestion, BudgetStatus } from '@/domains/ai/lib/hybridModelService';
 
@@ -52,7 +42,10 @@ export function ModelPerformanceMonitor({ className = '' }: ModelPerformanceMoni
       setSuggestions(optimizations);
       setAnalytics(usage);
     } catch (error) {
-      console.error('Error loading performance data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading performance data: ', error);
     } finally {
       setLoading(false);
     }
@@ -80,8 +73,7 @@ export function ModelPerformanceMonitor({ className = '' }: ModelPerformanceMoni
         return <TrendingUp className="h-4 w-4 text-success" />;
       case 'degrading':
         return <TrendingDown className="h-4 w-4 text-destructive" />;
-      default:
-        return <BarChart3 className="h-4 w-4 text-muted-foreground" />;
+      default: return <BarChart3 className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -91,8 +83,7 @@ export function ModelPerformanceMonitor({ className = '' }: ModelPerformanceMoni
         return 'destructive';
       case 'medium':
         return 'secondary';
-      default:
-        return 'secondary';
+      default: return 'secondary';
     }
   };
 
@@ -161,7 +152,7 @@ export function ModelPerformanceMonitor({ className = '' }: ModelPerformanceMoni
 
         <TabsContent value={timeframe} className="space-y-4">
           {analytics && (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md: grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total Requests</CardTitle>

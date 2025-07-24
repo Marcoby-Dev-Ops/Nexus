@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, AlertTriangle, Brain, Eye, Zap, TrendingUp, ExternalLink } from 'lucide-react';
+import { Brain, Eye, Zap, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { crossDepartmentalContext } from '../../lib/ai/crossDepartmentalContext';
 import { useState } from 'react';
@@ -21,10 +21,7 @@ const fetchOrgContext = async () => {
 };
 
 export const OrganizationalTrinityWidget: React.FC = () => {
-  const { data: orgContext, isLoading, isError } = useQuery({
-    queryKey: ['organizational_context'],
-    queryFn: fetchOrgContext,
-  });
+  
 
   // Metrics for SEE
   const metrics: OrgMetric[] = orgContext
@@ -83,7 +80,7 @@ export const OrganizationalTrinityWidget: React.FC = () => {
 
   return (
     <Card className="w-full max-w-4xl mx-auto my-8 bg-card rounded-2xl shadow-lg border border-border">
-      <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <CardHeader className="flex flex-col md: flex-row items-center justify-between gap-4">
         <CardTitle className="flex items-center gap-2 text-2xl font-bold">
           <Brain className="text-primary" />
           Organizational Trinity
@@ -91,7 +88,7 @@ export const OrganizationalTrinityWidget: React.FC = () => {
       </CardHeader>
       <CardContent>
         {/* Overview grid for THINK, SEE, ACT */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
           {/* THINK Overview */}
           <div className="flex flex-col h-full min-h-[180px] p-4 bg-muted rounded-xl">
             <div className="flex items-center gap-2 mb-2">

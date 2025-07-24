@@ -367,6 +367,9 @@ export class AutomatedWorkflowOptimization {
     if (this.isAnalyzing) return;
 
     this.isAnalyzing = true;
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🔍 Starting workflow optimization analysis...');
 
     try {
@@ -403,10 +406,16 @@ export class AutomatedWorkflowOptimization {
       });
 
       this.updateMetrics();
-      console.log(`✅ Workflow analysis complete. ${this.optimizationQueue.length} optimizations queued.`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`✅ Workflow analysis complete. ${this.optimizationQueue.length} optimizations queued.`);
 
     } catch (error) {
-      console.error('❌ Workflow analysis failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Workflow analysis failed: ', error);
     } finally {
       this.isAnalyzing = false;
     }
@@ -420,7 +429,10 @@ export class AutomatedWorkflowOptimization {
       const workflow = this.workflows.get(recommendation.workflowId);
       if (!workflow) return false;
 
-      console.log(`🚀 Implementing optimization: ${recommendation.title}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`🚀 Implementing optimization: ${recommendation.title}`);
 
       // Create optimization event
       const optimizationEvent: OptimizationEvent = {
@@ -469,13 +481,19 @@ export class AutomatedWorkflowOptimization {
           userId: 'system'
         });
 
-        console.log(`✅ Optimization implemented successfully: ${recommendation.title}`);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`✅ Optimization implemented successfully: ${recommendation.title}`);
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error(`❌ Failed to implement optimization: ${recommendation.title}`, error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`❌ Failed to implement optimization: ${recommendation.title}`, error);
       return false;
     }
   }
@@ -618,7 +636,7 @@ export class AutomatedWorkflowOptimization {
     
     this.metrics.totalTimeOptimized = totalTimeSaved;
     this.metrics.totalCostSaved = totalCostSaved;
-    this.metrics.roi = totalCostSaved > 0 ? (totalCostSaved / (totalCostSaved * 0.2)) * 100 : 0;
+    this.metrics.roi = totalCostSaved > 0 ? (totalCostSaved / (totalCostSaved * 0.2)) * 100: 0;
   }
 
   private getOptimizationType(category: string): OptimizationEvent['type'] {
@@ -636,7 +654,7 @@ export class AutomatedWorkflowOptimization {
                          recommendation.expectedBenefits.costSavings + 
                          recommendation.expectedBenefits.qualityImprovement;
     const implementationCost = recommendation.implementationPlan.timeline * 100; // Rough estimate
-    return implementationCost > 0 ? (totalBenefits / implementationCost) * 100 : 0;
+    return implementationCost > 0 ? (totalBenefits / implementationCost) * 100: 0;
   }
 }
 
@@ -681,11 +699,13 @@ class WorkflowOptimizationEngine {
           return this.applyResourceOptimization(optimizedWorkflow, recommendation);
         case 'quality_enhancement':
           return this.applyQualityEnhancement(optimizedWorkflow, recommendation);
-        default:
-          return null;
+        default: return null;
       }
     } catch (error) {
-      console.error('Failed to apply optimization:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to apply optimization: ', error);
       return null;
     }
   }

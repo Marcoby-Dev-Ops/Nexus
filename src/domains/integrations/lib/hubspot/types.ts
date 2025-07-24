@@ -62,10 +62,10 @@ export interface HubSpotIntegration {
 }
 
 export interface HubSpotOAuthTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  token_type: string;
+  accesstoken: string;
+  refreshtoken: string;
+  expiresin: number;
+  tokentype: string;
   scope?: string;
 }
 

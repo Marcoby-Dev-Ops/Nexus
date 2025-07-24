@@ -1,42 +1,33 @@
 import React, { useState, useCallback } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { useAuth } from '@/core/auth/AuthProvider';
+import { DatabaseService } from '@/core/database/DatabaseService';
 import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/Progress';
-import { Spinner } from '@/shared/components/ui/Spinner';
-// import { logger } from '@/shared/lib/security/logger';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { 
   User, 
   Mail, 
   Phone, 
   MapPin, 
-  Building2, 
-  Calendar, 
-  Shield, 
-  Camera,
-  X,
-  Plus,
-  Users,
-  Award,
-  AlertCircle,
+  Briefcase, 
+  Globe, 
+  Linkedin, 
+  Github, 
+  Twitter,
   Save,
+  X,
   Edit,
-  Clock,
-  Briefcase,
-  Home,
-  Coffee,
-  Brain
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
+
 // Define UserProfile type locally since the import doesn't exist
 interface UserProfile {
   id: string;
@@ -90,10 +81,10 @@ interface UserProfile {
   };
   status?: 'active' | 'inactive' | 'pending' | 'suspended';
   last_login?: string;
-  onboarding_completed: boolean;
+  onboardingcompleted: boolean;
   profile_completion_percentage?: number;
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
 }
 import { UserKnowledgeViewer } from '@/domains/ai/components/UserKnowledgeViewer';
 import { ProfileVerificationBanner } from '@/domains/admin/user/components/ProfileVerificationBanner';
@@ -139,7 +130,7 @@ interface DatabaseProfile {
 }
 
 export const Profile: React.FC = () => {
-  const { user, updateProfile, loading } = useAuthContext();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
@@ -152,29 +143,29 @@ export const Profile: React.FC = () => {
     
     return {
       id: dbProfile.id || '',
-      first_name: dbProfile.first_name || undefined,
-      last_name: dbProfile.last_name || undefined,
-      display_name: dbProfile.display_name || dbProfile.name || undefined,
-      avatar_url: dbProfile.avatar_url || undefined,
+      firstname: dbProfile.first_name || undefined,
+      lastname: dbProfile.last_name || undefined,
+      displayname: dbProfile.display_name || dbProfile.name || undefined,
+      avatarurl: dbProfile.avatar_url || undefined,
       bio: dbProfile.bio || undefined,
       phone: dbProfile.phone || undefined,
       mobile: dbProfile.mobile || undefined,
-      work_phone: dbProfile.work_phone || undefined,
-      personal_email: dbProfile.personal_email || undefined,
+      workphone: dbProfile.work_phone || undefined,
+      personalemail: dbProfile.personal_email || undefined,
       role: (dbProfile.role as 'owner' | 'admin' | 'manager' | 'user') || 'user',
       department: dbProfile.department || undefined,
-      job_title: dbProfile.job_title || undefined,
-      employee_id: dbProfile.employee_id || undefined,
-      hire_date: dbProfile.hire_date || undefined,
-      manager_id: dbProfile.manager_id || undefined,
-      direct_reports: dbProfile.direct_reports || undefined,
+      jobtitle: dbProfile.job_title || undefined,
+      employeeid: dbProfile.employee_id || undefined,
+      hiredate: dbProfile.hire_date || undefined,
+      managerid: dbProfile.manager_id || undefined,
+      directreports: dbProfile.direct_reports || undefined,
       timezone: dbProfile.timezone || 'UTC',
       location: dbProfile.location || undefined,
-      work_location: (dbProfile.work_location as 'office' | 'remote' | 'hybrid') || undefined,
+      worklocation: (dbProfile.work_location as 'office' | 'remote' | 'hybrid') || undefined,
       address: typeof dbProfile.address === 'object' && dbProfile.address !== null ? dbProfile.address : undefined,
-      linkedin_url: dbProfile.linkedin_url || undefined,
-      github_url: dbProfile.github_url || undefined,
-      twitter_url: dbProfile.twitter_url || undefined,
+      linkedinurl: dbProfile.linkedin_url || undefined,
+      githuburl: dbProfile.github_url || undefined,
+      twitterurl: dbProfile.twitter_url || undefined,
       skills: dbProfile.skills || undefined,
       certifications: dbProfile.certifications || undefined,
       languages: Array.isArray(dbProfile.languages) 
@@ -183,20 +174,20 @@ export const Profile: React.FC = () => {
             proficiency: 'intermediate' as const 
           }))
         : undefined,
-      emergency_contact: dbProfile.emergency_contact || undefined,
+      emergencycontact: dbProfile.emergency_contact || undefined,
       preferences: {
         theme: 'light',
         notifications: true,
         language: 'en',
-        ...(typeof dbProfile.preferences === 'object' && dbProfile.preferences !== null ? dbProfile.preferences : {})
+        ...(typeof dbProfile.preferences === 'object' && dbProfile.preferences !== null ? dbProfile.preferences: {})
       },
       status: (dbProfile.status as 'active' | 'inactive' | 'pending' | 'suspended') || undefined,
-      last_login: dbProfile.last_login || undefined,
-      onboarding_completed: dbProfile.onboarding_completed || false,
-      profile_completion_percentage: dbProfile.profile_completion_percentage || undefined,
-      created_at: dbProfile.created_at || new Date().toISOString(),
-      updated_at: dbProfile.updated_at || new Date().toISOString(),
-      company_id: dbProfile.company_id || undefined
+      lastlogin: dbProfile.last_login || undefined,
+      onboardingcompleted: dbProfile.onboarding_completed || false,
+      profilecompletion_percentage: dbProfile.profile_completion_percentage || undefined,
+      createdat: dbProfile.created_at || new Date().toISOString(),
+      updatedat: dbProfile.updated_at || new Date().toISOString(),
+      companyid: dbProfile.company_id || undefined
     };
   };
 
@@ -237,23 +228,17 @@ export const Profile: React.FC = () => {
     if (!user) return;
     
     setIsSaving(true);
+    setSaveMessage(null);
+
     try {
-      // Convert UserProfile back to DatabaseProfile format for the API
-      const dbFormData: Partial<DatabaseProfile> = {
-        ...formData,
-        languages: formData.languages ? formData.languages.map(lang => lang.language) as unknown as Record<string, unknown> : undefined,
-        preferences: formData.preferences as Record<string, unknown> | null
-      };
+      // Use DatabaseService to update the profile
+      await DatabaseService.updateUserProfile(user.id, formData);
       
-      await updateProfile(dbFormData as any);
       setSaveMessage('Profile updated successfully!');
       setIsEditing(false);
-      setTimeout(() => setSaveMessage(null), 3000);
     } catch (error) {
-      // Log error for debugging - eslint-disable-next-line no-console
-      console.error('Error updating profile:', error);
       setSaveMessage('Failed to update profile. Please try again.');
-      setTimeout(() => setSaveMessage(null), 5000);
+      console.error('Error updating profile:', error);
     } finally {
       setIsSaving(false);
     }
@@ -362,15 +347,15 @@ export const Profile: React.FC = () => {
             <div>
               <h3 className="font-medium text-foreground">Profile vs Account Settings</h3>
               <p className="text-sm text-primary mt-1">
-                <strong>Profile:</strong> Your professional identity, bio, and public information visible to team members.
+                <strong>Profile: </strong> Your professional identity, bio, and public information visible to team members.
               </p>
               <p className="text-sm text-primary">
-                <strong>Account Settings:</strong> Private account details, security settings, and system preferences.
+                <strong>Account Settings: </strong> Private account details, security settings, and system preferences.
               </p>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="mt-2 border-border text-primary hover:bg-primary/10"
+                className="mt-2 border-border text-primary hover: bg-primary/10"
                 onClick={() => navigate('/settings')}
               >
                 Go to Account Settings
@@ -380,7 +365,7 @@ export const Profile: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-4 gap-6">
         {/* Sidebar - Profile Overview */}
         <div className="lg:col-span-1 space-y-6">
           {/* Profile Verification Banner */}
@@ -528,7 +513,7 @@ export const Profile: React.FC = () => {
         </div>
 
         {/* Main Content */}
-        <div className="lg:col-span-3">
+        <div className="lg: col-span-3">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -576,7 +561,7 @@ export const Profile: React.FC = () => {
               )}
 
               {/* Quick Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
                 {/* Employment Info */}
                 {(user?.profile as DatabaseProfile)?.hire_date && (
                   <Card>
@@ -627,7 +612,7 @@ export const Profile: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="first_name">First Name</Label>
                       <Input
@@ -646,7 +631,7 @@ export const Profile: React.FC = () => {
                         disabled={!isEditing}
                       />
                     </div>
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2 md: col-span-2">
                       <Label htmlFor="display_name">Display Name</Label>
                       <Input
                         id="display_name"
@@ -656,7 +641,7 @@ export const Profile: React.FC = () => {
                         placeholder="How you'd like to be known"
                       />
                     </div>
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2 md: col-span-2">
                       <Label htmlFor="bio">Bio</Label>
                       <Textarea
                         id="bio"
@@ -703,7 +688,7 @@ export const Profile: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="job_title">Job Title</Label>
                       <Input
@@ -768,13 +753,13 @@ export const Profile: React.FC = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex flex-wrap gap-2">
-                    {(isEditing ? formData.skills : profile?.skills)?.map((skill, index) => (
+                    {(isEditing ? formData.skills: profile?.skills)?.map((skill, index) => (
                       <Badge key={index} variant="secondary" className="flex items-center gap-1">
                         {skill}
                         {isEditing && (
                           <button
                             onClick={() => removeSkill(skill)}
-                            className="ml-1 hover:text-destructive"
+                            className="ml-1 hover: text-destructive"
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -823,7 +808,7 @@ export const Profile: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="timezone">Timezone</Label>
                       <Select

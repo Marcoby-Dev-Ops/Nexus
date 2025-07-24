@@ -7,7 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { User, CheckCircle, ArrowRight } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
@@ -23,17 +23,17 @@ interface ProfileConfirmationStepProps {
 }
 
 export const ProfileConfirmationStep: React.FC<ProfileConfirmationStepProps> = ({ 
-  step: _step, 
-  state: _state, 
+  step: step, 
+  state: state, 
   onComplete, 
-  onBack: _onBack, 
-  user: _user 
+  onBack: onBack, 
+  user: user 
 }) => {
-  const { user, updateProfile, loading: authLoading } = useAuthContext();
+  const { user, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
-    first_name: '',
-    last_name: '',
-    display_name: ''
+    firstname: '',
+    lastname: '',
+    displayname: ''
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,9 +43,9 @@ export const ProfileConfirmationStep: React.FC<ProfileConfirmationStepProps> = (
   useEffect(() => {
     if (user?.profile) {
       setFormData({
-        first_name: user.profile.first_name || '',
-        last_name: user.profile.last_name || '',
-        display_name: user.profile.display_name || ''
+        firstname: user.profile.first_name || '',
+        lastname: user.profile.last_name || '',
+        displayname: user.profile.display_name || ''
       });
     }
   }, [user?.profile]);
@@ -70,9 +70,9 @@ export const ProfileConfirmationStep: React.FC<ProfileConfirmationStepProps> = (
     try {
       // Update the user profile
       await updateProfile({
-        first_name: formData.first_name.trim(),
-        last_name: formData.last_name.trim(),
-        display_name: formData.display_name.trim() || `${formData.first_name.trim()} ${formData.last_name.trim()}`
+        firstname: formData.first_name.trim(),
+        lastname: formData.last_name.trim(),
+        displayname: formData.display_name.trim() || `${formData.first_name.trim()} ${formData.last_name.trim()}`
       });
 
       // Complete the step
@@ -87,7 +87,10 @@ export const ProfileConfirmationStep: React.FC<ProfileConfirmationStepProps> = (
       });
     } catch (err) {
       setError('Failed to update profile. Please try again.');
-      console.error('Profile update error:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Profile update error: ', err);
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +103,7 @@ export const ProfileConfirmationStep: React.FC<ProfileConfirmationStepProps> = (
   };
 
   // Show loading state while auth is loading
-  if (authLoading) {
+  if (loading) {
     return (
       <div className="max-w-2xl mx-auto space-y-6">
         <div className="text-center space-y-4">
@@ -165,7 +168,7 @@ export const ProfileConfirmationStep: React.FC<ProfileConfirmationStepProps> = (
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="first_name">First Name *</Label>
               <Input

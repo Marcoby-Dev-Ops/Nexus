@@ -220,7 +220,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
       const clientId = import.meta.env.VITE_SLACK_CLIENT_ID;
       const redirectUri = `${window.location.origin}/integrations/slack/callback`;
       
-      const authUrl = `https://slack.com/oauth/v2/authorize?` +
+      const authUrl = `https: //slack.com/oauth/v2/authorize?` +
         `client_id=${clientId}&` +
         `scope=${scopes}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
@@ -274,7 +274,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
 
     } catch (err) {
       setConnectionStatus('error');
-      setError(err instanceof Error ? err.message : 'Failed to connect to Slack');
+      setError(err instanceof Error ? err.message: 'Failed to connect to Slack');
     } finally {
       setIsConnecting(false);
     }
@@ -309,15 +309,14 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
     // Remove protocol and trailing slash, ensure .slack.com domain
     let formatted = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
     if (!formatted.includes('.slack.com')) {
-      formatted = formatted.includes('.') ? formatted : `${formatted}.slack.com`;
+      formatted = formatted.includes('.') ? formatted: `${formatted}.slack.com`;
     }
     return formatted;
   };
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0:
-        return (
+      case 0: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -400,8 +399,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           </div>
         );
 
-      case 1:
-        return (
+      case 1: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -471,8 +469,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           </div>
         );
 
-      case 2:
-        return (
+      case 2: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -566,8 +563,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           </div>
         );
 
-      case 3:
-        return (
+      case 3: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -610,7 +606,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
             <Alert>
               <Zap className="h-4 w-4" />
               <AlertDescription>
-                <strong>Next Step:</strong> Add Microsoft Teams integration for complete 
+                <strong>Next Step: </strong> Add Microsoft Teams integration for complete 
                 cross-platform communication intelligence and optimization insights.
               </AlertDescription>
             </Alert>
@@ -622,8 +618,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
           </div>
         );
 
-      default:
-        return null;
+      default: return null;
     }
   };
 
@@ -661,7 +656,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
                     step.current ? 'border-purple-600 bg-secondary' : 'border-muted-foreground'
                   }`} />
                 )}
-                <span className="hidden sm:inline">{step.title}</span>
+                <span className="hidden sm: inline">{step.title}</span>
               </div>
               {index < setupSteps.length - 1 && (
                 <div className="w-8 h-px bg-muted" />

@@ -1,24 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, 
-  Filter, 
-  TrendingUp, 
-  Activity, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  ArrowRight,
-  BarChart3,
-  Network,
-  Component,
-  Eye,
-  MapPin,
-  Calendar,
-  Users,
-  Zap
-} from 'lucide-react';
-
+import { Search, Filter, TrendingUp, Activity, CheckCircle, Clock, ArrowRight, BarChart3, Network, Component, Eye, MapPin, Users, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -148,7 +130,10 @@ const IntegrationTrackingPage: React.FC = () => {
         setAnalytics(mockAnalytics);
         setComponentStats(mockAnalytics.topComponents);
       } catch (error) {
-        console.error('Error loading integration data:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading integration data: ', error);
       } finally {
         setLoading(false);
       }
@@ -168,8 +153,7 @@ const IntegrationTrackingPage: React.FC = () => {
         return matchesSearch && component.totalUsage === 0;
       case 'errors':
         return matchesSearch && component.performance.errorRate > 0.1;
-      default:
-        return matchesSearch;
+      default: return matchesSearch;
     }
   });
 
@@ -215,7 +199,7 @@ const IntegrationTrackingPage: React.FC = () => {
       </p>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -268,7 +252,7 @@ const IntegrationTrackingPage: React.FC = () => {
       </div>
 
       {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col sm: flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -314,7 +298,7 @@ const IntegrationTrackingPage: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium">Overall Health</span>
@@ -410,7 +394,7 @@ const IntegrationTrackingPage: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 {analytics?.recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 hover:bg-muted rounded-md">
+                  <div key={index} className="flex items-center justify-between p-2 hover: bg-muted rounded-md">
                     <div className="flex items-center space-x-4">
                       <div className="w-2 h-2 bg-success rounded-full"></div>
                       <div>
@@ -432,7 +416,7 @@ const IntegrationTrackingPage: React.FC = () => {
           {/* Component List */}
           <div className="grid grid-cols-1 gap-4">
             {filteredComponents.map((component) => (
-              <Card key={component.componentName} className="hover:shadow-md transition-shadow">
+              <Card key={component.componentName} className="hover: shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
@@ -529,7 +513,7 @@ const IntegrationTrackingPage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Usage Trends</CardTitle>

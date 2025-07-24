@@ -26,8 +26,7 @@ export const FireCycleFloatingWidget: React.FC<FireCycleFloatingWidgetProps> = (
         return 'top-4 right-4';
       case 'top-left':
         return 'top-4 left-4';
-      default:
-        return 'bottom-4 right-4';
+      default: return 'bottom-4 right-4';
     }
   };
 
@@ -62,13 +61,13 @@ export const FireCycleFloatingWidget: React.FC<FireCycleFloatingWidgetProps> = (
             <div className="flex items-center space-x-2">
               <button
                 onClick={() => setIsExpanded(false)}
-                className="p-1 rounded hover:bg-muted transition-colors"
+                className="p-1 rounded hover: bg-muted transition-colors"
               >
                 <ChevronDown className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setIsVisible(false)}
-                className="p-1 rounded hover:bg-muted transition-colors"
+                className="p-1 rounded hover: bg-muted transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -84,7 +83,7 @@ export const FireCycleFloatingWidget: React.FC<FireCycleFloatingWidgetProps> = (
           <div className="flex space-x-2">
             <button
               onClick={() => setIsExpanded(true)}
-              className="bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:bg-primary/90 transition-colors"
+              className="bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover: bg-primary/90 transition-colors"
               title="Open FIRE Cycle"
             >
               <ChevronUp className="w-5 h-5" />

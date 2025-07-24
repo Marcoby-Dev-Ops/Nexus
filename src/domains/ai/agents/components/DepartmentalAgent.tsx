@@ -11,7 +11,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Send, ArrowLeft, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { chatHistory } from '@/core/supabase';
 import { useRealtimeChat } from '@/shared/hooks/useRealtimeChat';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { getChildAgents, type Agent } from '@/domains/ai/lib/agentRegistry';
 import { supervisorAgent } from '@/domains/ai/lib/assistant/supervisor';
 import { Button } from '@/shared/components/ui/Button';
@@ -133,18 +133,14 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
   const [activeAgent, setActiveAgent] = useState<Agent>(agent); // Can switch between dept head and specialists
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   // Get specialists under this department
   const specialists = getChildAgents(agent.id);
 
   // Use realtime chat hook for messages
-  const { 
-    messages, 
-    loading: messagesLoading, 
-    error: messagesError 
-  } = useRealtimeChat(currentConversationId || '');
+  const { messages } = useRealtimeChat(currentConversationId || '');
 
   // Get department-specific data
   const systemPrompt = getDepartmentSystemPrompt(agent, specialists);
@@ -161,7 +157,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
           agent.id,
           { 
             page: location.pathname,
-            user_id: user.id,
+            userid: user.id,
             department: agent.department
           }
         );
@@ -172,7 +168,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
           role: 'system' as const,
           content: systemPrompt,
           metadata: { 
-            agent_id: agent.id,
+            agentid: agent.id,
             department: agent.department
           }
         };
@@ -182,11 +178,14 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
         const welcomeMessage = {
           role: 'assistant' as const,
           content: `Hello! I'm ${agent.name}. I'm here to help you with ${agent.department} tasks. ${agent.specialties ? `I specialize in ${agent.specialties.join(', ')}.` : ''} ${specialists.length > 0 ? `\n\nI also have access to ${specialists.length} specialist assistants who can provide deeper expertise when needed.` : ''} How can I assist you today?`,
-          metadata: { agent_id: agent.id }
+          metadata: { agentid: agent.id }
         };
         await chatHistory.addMessage(conversation.id, welcomeMessage);
       } catch (err) {
-        console.error('Failed to initialize conversation:', err);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to initialize conversation: ', err);
         setError('Failed to initialize chat. Please try again.');
       }
     };
@@ -211,7 +210,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
         role: 'user',
         content: textToSend,
         metadata: { 
-          agent_id: activeAgent.id,
+          agentid: activeAgent.id,
           department: agent.department
         }
       });
@@ -230,7 +229,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
           await chatHistory.addMessage(currentConversationId, {
             role: 'assistant',
             content: routing.content,
-            metadata: { agent_id: activeAgent.id, agent_switch_suggestion: true },
+            metadata: { agentid: activeAgent.id, agentswitch_suggestion: true },
           });
 
           setActiveAgent(target);
@@ -238,7 +237,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
           await chatHistory.addMessage(currentConversationId, {
             role: 'assistant',
             content: `Switching you to ${target.name} for deeper expertise.`,
-            metadata: { agent_id: target.id, agent_switch: true },
+            metadata: { agentid: target.id, agentswitch: true },
           });
 
           setLoading(false);
@@ -250,13 +249,16 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
       await chatHistory.addMessage(currentConversationId, {
         role: 'assistant',
         content: routing.content,
-        metadata: { agent_id: activeAgent.id }
+        metadata: { agentid: activeAgent.id }
       });
 
       setLoading(false);
 
     } catch (err) {
-      console.error('Error in handleSend:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error in handleSend: ', err);
       setError('Failed to send message. Please try again.');
       setLoading(false);
     }
@@ -272,8 +274,8 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
         role: 'assistant' as const,
         content: `I'm now connecting you with ${specialist.name}, our ${specialist.name.toLowerCase()}. They specialize in ${specialist.specialties?.join(', ')}.`,
         metadata: { 
-          agent_id: specialist.id,
-          agent_switch: true
+          agentid: specialist.id,
+          agentswitch: true
         }
       };
       chatHistory.addMessage(currentConversationId, switchMessage);
@@ -289,8 +291,8 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
         role: 'assistant' as const,
         content: `You're back with ${agent.name}. I can help with general ${agent.department} questions or connect you with other specialists as needed.`,
         metadata: { 
-          agent_id: agent.id,
-          agent_switch: true
+          agentid: agent.id,
+          agentswitch: true
         }
       };
       chatHistory.addMessage(currentConversationId, switchMessage);
@@ -349,7 +351,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
           <div className="px-4 pb-3">
             <button
               onClick={() => setShowSpecialists(!showSpecialists)}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover: text-foreground transition-colors"
             >
               <span>{specialists.length} specialists available</span>
               {showSpecialists ? (
@@ -365,7 +367,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
                 {activeAgent.id !== agent.id && (
                   <button
                     onClick={handleBackToDepartmentHead}
-                    className="w-full flex items-center gap-2 p-4 text-left text-sm bg-muted/50 hover:bg-muted rounded-lg transition-colors"
+                    className="w-full flex items-center gap-2 p-4 text-left text-sm bg-muted/50 hover: bg-muted rounded-lg transition-colors"
                   >
                     <span className="text-base">{agent.avatar}</span>
                     <span className="font-medium">{agent.name}</span>
@@ -379,7 +381,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
                     className={`w-full flex items-center gap-2 p-4 text-left text-sm rounded-lg transition-colors ${
                       activeAgent.id === specialist.id
                         ? 'bg-primary/10 border border-primary/20'
-                        : 'bg-muted/50 hover:bg-muted'
+                        : 'bg-muted/50 hover: bg-muted'
                     }`}
                   >
                     <span className="text-base">{specialist.avatar}</span>
@@ -417,12 +419,12 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
             
             {/* Quick Actions */}
             <div className="w-full space-y-2">
-              <p className="text-sm font-medium text-foreground">Quick Actions:</p>
+              <p className="text-sm font-medium text-foreground">Quick Actions: </p>
               {quickActions.map((action, index) => (
                 <button
                   key={index}
                   onClick={() => handleSend(action)}
-                  className="w-full p-4 text-left text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors border border-border hover:border-border/80"
+                  className="w-full p-4 text-left text-sm bg-muted hover: bg-muted/80 rounded-lg transition-colors border border-border hover:border-border/80"
                 >
                   {action}
                 </button>
@@ -432,7 +434,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
             {/* Specialists Preview */}
             {specialists.length > 0 && (
               <div className="w-full mt-6 p-4 bg-muted/30 rounded-lg">
-                <p className="text-sm font-medium text-foreground mb-2">Available Specialists:</p>
+                <p className="text-sm font-medium text-foreground mb-2">Available Specialists: </p>
                 <div className="flex flex-wrap gap-2">
                   {specialists.map((specialist) => (
                     <span
@@ -515,7 +517,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
       {/* Input */}
       <div className="border-t border-border p-4 bg-background">
         <div className="max-w-3xl mx-auto">
-          <div className="flex items-end gap-4 bg-muted rounded-xl p-4 border border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+          <div className="flex items-end gap-4 bg-muted rounded-xl p-4 border border-border focus-within: border-primary focus-within:ring-1 focus-within:ring-blue-500 transition-all">
             <div className="flex-1">
               <textarea
                 value={input}
@@ -541,7 +543,7 @@ export const DepartmentalAgent: React.FC<DepartmentalAgentProps> = ({
               disabled={!input.trim() || loading}
                               className={`p-4 rounded-lg transition-colors ${
                 input.trim() && !loading
-                  ? `${getDepartmentColor(agent.department || '')} hover:opacity-90 text-primary-foreground`
+                  ? `${getDepartmentColor(agent.department || '')} hover: opacity-90 text-primary-foreground`
                   : 'bg-muted-foreground/20 text-muted-foreground cursor-not-allowed'
               }`}
             >

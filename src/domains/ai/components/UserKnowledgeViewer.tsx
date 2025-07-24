@@ -5,10 +5,10 @@ import { Button } from '@/shared/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 import { ContextualRAG } from '@/domains/ai/lib/contextualRAG';
-import { thoughtsService } from '@/domains/knowledge/lib/services/thoughtsService';
+import { thoughtsService } from '@/domains/help-center/knowledge/lib/services/thoughtsService';
 import {
   Brain,
   User,
@@ -33,12 +33,12 @@ import {
 
 interface Interaction {
   id: string;
-  created_at: string | null;
+  createdat: string | null;
   content?: string;
-  interaction_type: string | null;
+  interactiontype: string | null;
   prompt_text?: string | null;
   ai_response?: string | null;
-  user_id: string;
+  userid: string;
   company_id?: string | null;
   thought_id?: string | null;
   context_data?: unknown;
@@ -52,12 +52,12 @@ interface Interaction {
 }
 
 interface InteractionPatterns {
-  most_common_topics: string[];
-  preferred_interaction_style: string;
-  learning_progression: {
-    early_topics: string[];
-    recent_topics: string[];
-    complexity_increase: boolean;
+  mostcommontopics: string[];
+  preferredinteractionstyle: string;
+  learningprogression: {
+    earlytopics: string[];
+    recenttopics: string[];
+    complexityincrease: boolean;
   };
 }
 
@@ -68,34 +68,34 @@ interface UserKnowledge {
     preferences: Record<string, unknown>;
     completeness: number;
   };
-  business_context: {
+  businesscontext: {
     company: Record<string, unknown>;
-    role_context: Record<string, unknown>;
+    rolecontext: Record<string, unknown>;
     goals: Record<string, unknown>;
     challenges: string[];
   };
-  activity_patterns: {
-    session_data: Record<string, unknown>;
-    usage_patterns: Record<string, unknown>;
-    feature_usage: string[];
-    productivity_metrics: Record<string, unknown>;
+  activitypatterns: {
+    sessiondata: Record<string, unknown>;
+    usagepatterns: Record<string, unknown>;
+    featureusage: string[];
+    productivitymetrics: Record<string, unknown>;
   };
-  ai_insights: {
-    thoughts_captured: number;
-    interactions_count: number;
-    learning_progress: Record<string, unknown>;
-    personalization_score: number;
+  aiinsights: {
+    thoughtscaptured: number;
+    interactionscount: number;
+    learningprogress: Record<string, unknown>;
+    personalizationscore: number;
   };
   integrations: {
-    connected_services: unknown[];
-    data_sources: string[];
-    sync_status: Record<string, unknown>;
+    connectedservices: unknown[];
+    datasources: string[];
+    syncstatus: Record<string, unknown>;
   };
-  memory_bank: {
-    personal_thoughts: unknown[];
-    business_observations: unknown[];
-    contextual_insights: unknown[];
-    conversation_history: unknown[];
+  memorybank: {
+    personalthoughts: unknown[];
+    businessobservations: unknown[];
+    contextualinsights: unknown[];
+    conversationhistory: unknown[];
   };
 }
 
@@ -106,7 +106,7 @@ interface UserKnowledgeViewerProps {
 export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({ 
   className = '' 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [knowledge, setKnowledge] = useState<UserKnowledge | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -140,26 +140,29 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
       const compiledKnowledge: UserKnowledge = {
         profile: profileData,
-        business_context: await fetchBusinessContext(),
-        activity_patterns: await fetchActivityPatterns(),
-        ai_insights: {
-          thoughts_captured: thoughtsData.total || 0,
-          interactions_count: interactionsData.total || 0,
-          learning_progress: thoughtsData.metrics || {},
-          personalization_score: calculatePersonalizationScore(profileData, thoughtsData, interactionsData)
+        businesscontext: await fetchBusinessContext(),
+        activitypatterns: await fetchActivityPatterns(),
+        aiinsights: {
+          thoughtscaptured: thoughtsData.total || 0,
+          interactionscount: interactionsData.total || 0,
+          learningprogress: thoughtsData.metrics || {},
+          personalizationscore: calculatePersonalizationScore(profileData, thoughtsData, interactionsData)
         },
         integrations: integrationsData,
-        memory_bank: {
-          personal_thoughts: thoughtsData.recent || [],
-          business_observations: interactionsData.observations || [],
-          contextual_insights: await fetchContextualInsights(),
-          conversation_history: conversationsData.recent || []
+        memorybank: {
+          personalthoughts: thoughtsData.recent || [],
+          businessobservations: interactionsData.observations || [],
+          contextualinsights: await fetchContextualInsights(),
+          conversationhistory: conversationsData.recent || []
         }
       };
 
       setKnowledge(compiledKnowledge);
     } catch (error) {
-      console.error('Error loading user knowledge:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading user knowledge: ', error);
     } finally {
       setLoading(false);
     }
@@ -214,11 +217,11 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
     return {
       company: company || {},
-      role_context: userContext,
+      rolecontext: userContext,
       goals: {
-        immediate_goals: userContext.ideal_outcome || '',
-        biggest_challenge: userContext.biggest_challenge || '',
-        daily_frustration: userContext.daily_frustration || ''
+        immediategoals: userContext.ideal_outcome || '',
+        biggestchallenge: userContext.biggest_challenge || '',
+        dailyfrustration: userContext.daily_frustration || ''
       },
       challenges: [
         userContext.biggest_challenge,
@@ -241,10 +244,10 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     const featureUsage = extractFeatureUsage(interactions || []);
 
     return {
-      session_data: sessionData,
-      usage_patterns: usagePatterns,
-      feature_usage: featureUsage,
-      productivity_metrics: calculateProductivityMetrics(interactions || [])
+      sessiondata: sessionData,
+      usagepatterns: usagePatterns,
+      featureusage: featureUsage,
+      productivitymetrics: calculateProductivityMetrics(interactions || [])
     };
   };
 
@@ -305,7 +308,10 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
             integrations: integrationDetails || { name: 'Unknown', slug: 'unknown', category: 'general' }
           };
         } catch (error) {
-          console.error('Error fetching integration details:', error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching integration details: ', error);
           return {
             ...userIntegration,
             integrations: { name: 'Unknown', slug: 'unknown', category: 'general' }
@@ -315,12 +321,12 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     );
 
     return {
-      connected_services: integrationsWithDetails || [],
-      data_sources: (integrationsWithDetails || []).map(i => {
+      connectedservices: integrationsWithDetails || [],
+      datasources: (integrationsWithDetails || []).map(i => {
         const integrationInfo = Array.isArray(i.integrations) ? i.integrations[0] : i.integrations;
         return integrationInfo?.category || integrationInfo?.name || 'unknown';
       }),
-      sync_status: (integrationsWithDetails || []).reduce((acc, integration) => {
+      syncstatus: (integrationsWithDetails || []).reduce((acc, integration) => {
         const integrationInfo = Array.isArray(integration.integrations) ? integration.integrations[0] : integration.integrations;
         const key = integrationInfo?.category || integrationInfo?.name || 'unknown';
         acc[key] = integration.status;
@@ -331,7 +337,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
   const fetchConversationKnowledge = async () => {
     if (!user?.id) {
-      return { recent: [], total_conversations: 0, total_messages: 0 };
+      return { recent: [], totalconversations: 0, totalmessages: 0 };
     }
     
     const { data: conversations } = await supabase
@@ -343,8 +349,8 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
     return {
       recent: conversations || [],
-      total_conversations: conversations?.length || 0,
-      total_messages: conversations?.reduce((acc, conv) => acc + (conv.chat_messages?.length || 0), 0) || 0
+      totalconversations: conversations?.length || 0,
+      totalmessages: conversations?.reduce((acc, conv) => acc + (conv.chat_messages?.length || 0), 0) || 0
     };
   };
 
@@ -360,7 +366,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
       {
         type: 'personalization',
         content: insights,
-        generated_at: new Date().toISOString()
+        generatedat: new Date().toISOString()
       }
     ];
   };
@@ -388,18 +394,18 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     const avgSessionLength = sessions.reduce((acc, session) => acc + session.duration, 0) / sessions.length;
     
     return {
-      total_sessions: sessions.length,
-      avg_session_duration: Math.round(avgSessionLength / 60), // minutes
-      last_active: interactions[0]?.created_at,
-      most_active_time: findMostActiveTimeOfDay(interactions)
+      totalsessions: sessions.length,
+      avgsession_duration: Math.round(avgSessionLength / 60), // minutes
+      lastactive: interactions[0]?.created_at,
+      mostactive_time: findMostActiveTimeOfDay(interactions)
     };
   };
 
   const calculateUsagePatterns = (interactions: Interaction[]) => {
     const patterns = {
-      daily_usage: calculateDailyUsage(interactions),
-      feature_preferences: calculateFeaturePreferences(interactions),
-      interaction_types: calculateInteractionTypes(interactions)
+      dailyusage: calculateDailyUsage(interactions),
+      featurepreferences: calculateFeaturePreferences(interactions),
+      interactiontypes: calculateInteractionTypes(interactions)
     };
     
     return patterns;
@@ -420,10 +426,10 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
   const calculateProductivityMetrics = (interactions: Interaction[]) => {
     return {
-      questions_asked: interactions.filter(i => i.interaction_type === 'question').length,
-      actions_taken: interactions.filter(i => i.interaction_type === 'action').length,
-      insights_generated: interactions.filter(i => i.interaction_type === 'insight').length,
-      avg_response_satisfaction: calculateAverageRating(interactions)
+      questionsasked: interactions.filter(i => i.interaction_type === 'question').length,
+      actionstaken: interactions.filter(i => i.interaction_type === 'action').length,
+      insightsgenerated: interactions.filter(i => i.interaction_type === 'insight').length,
+      avgresponse_satisfaction: calculateAverageRating(interactions)
     };
   };
 
@@ -507,9 +513,9 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
   const analyzeInteractionPatterns = (interactions: Interaction[]): InteractionPatterns => {
     return {
-      most_common_topics: extractCommonTopics(interactions),
-      preferred_interaction_style: determineInteractionStyle(interactions),
-      learning_progression: trackLearningProgression(interactions)
+      mostcommon_topics: extractCommonTopics(interactions),
+      preferredinteraction_style: determineInteractionStyle(interactions),
+      learningprogression: trackLearningProgression(interactions)
     };
   };
 
@@ -562,9 +568,9 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     const recent = interactions.slice(0, Math.floor(interactions.length * 0.3));
     
     return {
-      early_topics: extractCommonTopics(early).slice(0, 3),
-      recent_topics: extractCommonTopics(recent).slice(0, 3),
-      complexity_increase: recent.length > 0 && early.length > 0 ? 
+      earlytopics: extractCommonTopics(early).slice(0, 3),
+      recenttopics: extractCommonTopics(recent).slice(0, 3),
+      complexityincrease: recent.length > 0 && early.length > 0 ? 
         (recent.reduce((acc, i) => acc + (i.content?.length || 0), 0) / recent.length) >
         (early.reduce((acc, i) => acc + (i.content?.length || 0), 0) / early.length) : false
     };
@@ -656,7 +662,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
       </div>
 
       {/* Knowledge Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -822,7 +828,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
         {/* Profile Tab */}
         <TabsContent value="profile" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             {/* Basic Information */}
             <Card>
               <CardHeader>
@@ -884,7 +890,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
         {/* Business Tab */}
         <TabsContent value="business" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             {/* Company Information */}
             <Card>
               <CardHeader>
@@ -949,7 +955,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
         {/* Activity Tab */}
         <TabsContent value="activity" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             {/* Session Data */}
             <Card>
               <CardHeader>
@@ -1086,7 +1092,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary">
                     {knowledge.memory_bank.conversation_history.length}

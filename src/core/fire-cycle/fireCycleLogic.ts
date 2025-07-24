@@ -1,4 +1,4 @@
-import type { FireCyclePhase } from '@/domains/fire-cycle/types';
+import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
 
 export interface UserContext {
   // User profile and preferences
@@ -172,7 +172,7 @@ export class FireCycleLogicEngine {
 
     // Return the phase with the highest score
     return Object.entries(scores).reduce((a, b) => 
-      scores[a[0] as FireCyclePhase] > scores[b[0] as FireCyclePhase] ? a : b
+      scores[a[0] as FireCyclePhase] > scores[b[0] as FireCyclePhase] ? a: b
     )[0] as FireCyclePhase;
   }
 
@@ -261,7 +261,7 @@ export class FireCycleLogicEngine {
     
     // Good alignment if critical projects are being worked on
     const criticalProgress = criticalProjects.length > 0 ? 
-      criticalProjects.reduce((sum, p) => sum + p.progress, 0) / criticalProjects.length : 0;
+      criticalProjects.reduce((sum, p) => sum + p.progress, 0) / criticalProjects.length: 0;
     
     return Math.min(1, (criticalProgress + highPriorityProjects.length / currentProjects.length) / 2);
   }
@@ -276,10 +276,10 @@ export class FireCycleLogicEngine {
     
     // Calculate progress based on project completion and metric performance
     const projectProgress = currentProjects.length > 0 ? 
-      currentProjects.reduce((sum, p) => sum + p.progress, 0) / currentProjects.length : 0;
+      currentProjects.reduce((sum, p) => sum + p.progress, 0) / currentProjects.length: 0;
     
     const metricProgress = metrics.length > 0 ? 
-      metrics.filter(m => m.value >= m.target).length / metrics.length : 0;
+      metrics.filter(m => m.value >= m.target).length / metrics.length: 0;
     
     return (projectProgress + metricProgress) / 2;
   }
@@ -425,7 +425,7 @@ export class FireCycleLogicEngine {
     const progressTrackingRatio = projectsWithProgress.length / Math.max(currentProjects.length, 1);
     
     // Check if metrics are being tracked
-    const metricsTrackingRatio = metrics.length > 0 ? 1 : 0;
+    const metricsTrackingRatio = metrics.length > 0 ? 1: 0;
     
     return (progressTrackingRatio + metricsTrackingRatio) / 2;
   }
@@ -644,7 +644,7 @@ export class FireCycleLogicEngine {
    * Calculate confidence in the analysis
    */
   private calculateConfidence(analysis: any): number {
-    const dataQuality = this.userContext.metrics.length > 5 ? 0.8 : 0.4;
+    const dataQuality = this.userContext.metrics.length > 5 ? 0.8: 0.4;
     const activityQuality = this.userContext.recentActivities.length > 10 ? 0.7 : 0.5;
     const projectQuality = this.userContext.currentProjects.length > 0 ? 0.6 : 0.3;
     

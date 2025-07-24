@@ -4,7 +4,7 @@
  */
 
 // Admin Components
-export { useAuth } from './user/hooks/AuthContext';
+// useAuth is now provided by AuthProvider
 export { BackendHealthMonitor } from './components/BackendHealthMonitor';
 
 // Admin Services

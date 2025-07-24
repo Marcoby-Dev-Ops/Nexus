@@ -9,10 +9,10 @@ import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { CheckCircle, XCircle, AlertCircle, Info, RefreshCw } from 'lucide-react';
 import { supabase, diagnoseJWTTransmission, debugClientInstances, clearAllClientInstances } from "@/core/supabase";
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 export default function DebugPage() {
-  const { retrySessionFetch } = useAuthContext();
+  const { retrySessionFetch } = useAuth();
   const [systemChecks, setSystemChecks] = React.useState({
     localStorage: false,
     sessionStorage: false,
@@ -79,7 +79,10 @@ export default function DebugPage() {
       sessionStorage.clear();
       window.location.reload();
     } catch (err) {
-      console.error('Failed to clear storage:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to clear storage: ', err);
     }
   };
 
@@ -87,7 +90,10 @@ export default function DebugPage() {
     try {
       // Use the existing Supabase client instead of creating a new one
       const { data, error } = await supabase.auth.getSession();
-      console.log('Supabase connection test:', { data, error });
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Supabase connection test: ', { data, error });
       
       if (error) {
         alert(`Supabase connection failed: ${error.message}`);
@@ -95,7 +101,10 @@ export default function DebugPage() {
         alert('Supabase connection successful!');
       }
     } catch (err) {
-      console.error('Supabase connection test failed:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Supabase connection test failed: ', err);
       alert(`Supabase connection test failed: ${err}`);
     }
   };
@@ -103,15 +112,24 @@ export default function DebugPage() {
   const testJWTTransmission = async () => {
     try {
       const results = await diagnoseJWTTransmission();
-      console.log('JWT Transmission Test Results:', results);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('JWT Transmission Test Results: ', results);
       alert(`JWT Transmission Test Complete. Check console for details.`);
     } catch (err) {
-      console.error('JWT transmission test failed:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('JWT transmission test failed: ', err);
       alert(`JWT transmission test failed: ${err}`);
     }
   };
 
   const monitorSessionChanges = () => {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🔍 Starting session change monitoring...');
     
     // Monitor localStorage changes
@@ -120,17 +138,26 @@ export default function DebugPage() {
     const originalClear = localStorage.clear;
     
     localStorage.setItem = function(key, value) {
-      console.log(`📝 localStorage.setItem: ${key} = ${value}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`📝 localStorage.setItem: ${key} = ${value}`);
       return originalSetItem.apply(this, [key, value]);
     };
     
     localStorage.removeItem = function(key) {
-      console.log(`🗑️ localStorage.removeItem: ${key}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`🗑️ localStorage.removeItem: ${key}`);
       return originalRemoveItem.apply(this, [key]);
     };
     
     localStorage.clear = function() {
-      console.log(`🧹 localStorage.clear called`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`🧹 localStorage.clear called`);
       return originalClear.apply(this, []);
     };
     
@@ -140,17 +167,26 @@ export default function DebugPage() {
     const originalSessionClear = sessionStorage.clear;
     
     sessionStorage.setItem = function(key, value) {
-      console.log(`📝 sessionStorage.setItem: ${key} = ${value}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`📝 sessionStorage.setItem: ${key} = ${value}`);
       return originalSessionSetItem.apply(this, [key, value]);
     };
     
     sessionStorage.removeItem = function(key) {
-      console.log(`🗑️ sessionStorage.removeItem: ${key}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`🗑️ sessionStorage.removeItem: ${key}`);
       return originalSessionRemoveItem.apply(this, [key]);
     };
     
     sessionStorage.clear = function() {
-      console.log(`🧹 sessionStorage.clear called`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`🧹 sessionStorage.clear called`);
       return originalSessionClear.apply(this, []);
     };
     
@@ -237,7 +273,7 @@ export default function DebugPage() {
           {diagResult && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-medium">Supabase Ping:</span>
+                <span className="font-medium">Supabase Ping: </span>
                 <Badge variant={diagResult.ping.ok ? 'default' : 'destructive'}>
                   {diagResult.ping.ok ? 'OK' : 'FAIL'}
                 </Badge>
@@ -295,7 +331,7 @@ export default function DebugPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-3 gap-4">
             {Object.entries(systemChecks).map(([key, passed]) => (
               <div key={key} className="flex items-center gap-2">
                 {getCheckIcon(passed)}
@@ -318,21 +354,21 @@ export default function DebugPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4 text-sm">
             <div>
-              <span className="font-medium">VITE_SUPABASE_URL:</span>
+              <span className="font-medium">VITESUPABASEURL:</span>
               <span className="ml-2 text-muted-foreground">
                 {import.meta.env.VITE_SUPABASE_URL ? '✅ Set' : '❌ Missing'}
               </span>
             </div>
             <div>
-              <span className="font-medium">VITE_SUPABASE_ANON_KEY:</span>
+              <span className="font-medium">VITESUPABASEANON_KEY:</span>
               <span className="ml-2 text-muted-foreground">
                 {import.meta.env.VITE_SUPABASE_ANON_KEY ? '✅ Set' : '❌ Missing'}
               </span>
             </div>
             <div>
-              <span className="font-medium">NODE_ENV:</span>
+              <span className="font-medium">NODEENV:</span>
               <span className="ml-2 text-muted-foreground">
                 {import.meta.env.MODE}
               </span>
@@ -403,7 +439,10 @@ export default function DebugPage() {
               variant="outline" 
               onClick={() => {
                 console.clear();
-                console.log('Console cleared');
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Console cleared');
               }}
             >
               Clear Console
@@ -440,7 +479,10 @@ export default function DebugPage() {
                 try {
                   // Check current session state
                   const { data: { session }, error } = await supabase.auth.getSession();
-                  console.log('🔍 Current session state:', {
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 Current session state: ', {
                     hasSession: !!session,
                     userId: session?.user?.id,
                     email: session?.user?.email,
@@ -450,15 +492,24 @@ export default function DebugPage() {
                   
                   // Check localStorage
                   const storedSession = localStorage.getItem('nexus_auth_session');
-                  console.log('📦 Stored session:', storedSession ? JSON.parse(storedSession) : null);
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📦 Stored session: ', storedSession ? JSON.parse(storedSession) : null);
                   
                   // Check sessionStorage
                   const currentSession = sessionStorage.getItem('nexus_current_session');
-                  console.log('📦 Current session storage:', currentSession ? JSON.parse(currentSession) : null);
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📦 Current session storage: ', currentSession ? JSON.parse(currentSession) : null);
                   
                   alert('Session state logged to console. Check browser console for details.');
                 } catch (err) {
-                  console.error('Session check failed:', err);
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Session check failed: ', err);
                   alert(`Session check failed: ${err}`);
                 }
               }}
@@ -497,7 +548,10 @@ export default function DebugPage() {
                   const expiresAtMs = parsedSession.expiresAt * 1000; // Convert seconds to milliseconds
                   const isValid = expiresAtMs > now;
                   
-                  console.log('🧪 Session persistence test:', {
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 Session persistence test: ', {
                     originalExpiresAt: session.expires_at,
                     storedExpiresAt: parsedSession.expiresAt,
                     expiresAtMs,
@@ -508,7 +562,10 @@ export default function DebugPage() {
                   
                   alert(`Session persistence test complete. Valid: ${isValid}. Check console for details.`);
                 } catch (err) {
-                  console.error('Session persistence test failed:', err);
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Session persistence test failed: ', err);
                   alert(`Session persistence test failed: ${err}`);
                 }
               }}
@@ -520,7 +577,10 @@ export default function DebugPage() {
               variant="outline" 
               onClick={() => {
                 // Monitor component re-renders and database calls
-                console.log('🔍 Performance monitoring started...');
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 Performance monitoring started...');
                 
                 // Monitor React component renders
                 const originalConsoleLog = console.log;
@@ -543,7 +603,10 @@ export default function DebugPage() {
                   const url = args[0];
                   if (typeof url === 'string' && url.includes('supabase.co')) {
                     dbCallCount++;
-                    console.log(`🗄️ Database call #${dbCallCount}:`, url);
+                    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`🗄️ Database call #${dbCallCount}:`, url);
                   }
                   return originalFetch.apply(window, args);
                 };

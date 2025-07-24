@@ -78,7 +78,10 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
         error: null
       });
     } catch (error) {
-      console.error('Failed to load sync stats:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load sync stats: ', error);
       setSyncStats(prev => ({ 
         ...prev, 
         isLoading: false, 
@@ -109,7 +112,10 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
       await loadSyncStats();
       
     } catch (error) {
-      console.error('Sync failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Sync failed: ', error);
       showToast({
         title: "Sync Failed",
         description: error instanceof Error ? error.message : "Unknown error occurred",
@@ -212,13 +218,13 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
             {/* Info */}
             {syncStats.totalDocuments > 0 && (
               <div className="p-2 bg-primary/5 rounded text-xs text-primary">
-                <strong>AI Ready:</strong> Your documents are available for intelligent search and contextual insights.
+                <strong>AI Ready: </strong> Your documents are available for intelligent search and contextual insights.
               </div>
             )}
 
             {syncStats.totalDocuments === 0 && (
               <div className="p-2 bg-orange-50 rounded text-xs text-warning">
-                <strong>Setup Needed:</strong> Connect Google Drive or OneDrive to enable document-based AI insights.
+                <strong>Setup Needed: </strong> Connect Google Drive or OneDrive to enable document-based AI insights.
               </div>
             )}
           </>

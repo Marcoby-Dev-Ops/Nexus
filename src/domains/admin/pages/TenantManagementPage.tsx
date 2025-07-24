@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from "@/core/supabase";
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/Table';
@@ -10,12 +10,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { 
-  Building, Users, Calendar, Mail, Phone, Globe, Edit, Trash2, Plus, 
-  CreditCard, DollarSign, FileText, BarChart3, Settings, Eye, 
-  TrendingUp, AlertCircle, CheckCircle, Clock, Zap
-} from 'lucide-react';
-
+import { Building, Users, Calendar, Mail, Phone, Globe, Edit, Trash2, Plus, CreditCard, BarChart3, Eye, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 interface Tenant {
   id: string;
   name: string;
@@ -26,8 +21,8 @@ interface Tenant {
   industry?: string;
   size?: string;
   status: 'active' | 'suspended' | 'pending';
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
   user_count?: number;
   subscription_tier?: string;
   // Billing & Licensing
@@ -90,13 +85,7 @@ export const TenantManagementPage: React.FC = () => {
 
     try {
       // Fetch companies (tenants) from the database
-      const { data: companies, error: companiesError } = await supabase
-        .from('companies')
-        .select(`
-          *,
-          user_profiles!inner(count)
-        `)
-        .order('created_at', { ascending: false });
+      
 
       if (companiesError) {
         throw companiesError;
@@ -113,32 +102,35 @@ export const TenantManagementPage: React.FC = () => {
         industry: company.industry,
         size: company.size,
         status: company.status || 'active',
-        created_at: company.created_at,
-        updated_at: company.updated_at,
-        user_count: company.user_profiles?.[0]?.count || 0,
-        subscription_tier: company.subscription_tier || 'free',
+        createdat: company.created_at,
+        updatedat: company.updated_at,
+        usercount: company.user_profiles?.[0]?.count || 0,
+        subscriptiontier: company.subscription_tier || 'free',
         // Enhanced billing & licensing data (mock data for now)
-        billing_status: company.billing_status || 'active',
-        subscription_plan: company.subscription_plan || 'free',
-        monthly_revenue: company.monthly_revenue || 0,
-        total_revenue: company.total_revenue || 0,
-        next_billing_date: company.next_billing_date || null,
-        contract_end_date: company.contract_end_date || null,
-        license_count: company.license_count || 0,
-        license_usage: company.license_usage || 0,
-        monthly_messages: company.monthly_messages || 0,
-        monthly_messages_limit: company.monthly_messages_limit || 1000,
-        storage_used_gb: company.storage_used_gb || 0,
-        storage_limit_gb: company.storage_limit_gb || 10,
-        account_manager: company.account_manager || null,
-        sales_rep: company.sales_rep || null,
-        contract_value: company.contract_value || 0,
-        renewal_date: company.renewal_date || null,
+        billingstatus: company.billing_status || 'active',
+        subscriptionplan: company.subscription_plan || 'free',
+        monthlyrevenue: company.monthly_revenue || 0,
+        totalrevenue: company.total_revenue || 0,
+        nextbilling_date: company.next_billing_date || null,
+        contractend_date: company.contract_end_date || null,
+        licensecount: company.license_count || 0,
+        licenseusage: company.license_usage || 0,
+        monthlymessages: company.monthly_messages || 0,
+        monthlymessages_limit: company.monthly_messages_limit || 1000,
+        storageused_gb: company.storage_used_gb || 0,
+        storagelimit_gb: company.storage_limit_gb || 10,
+        accountmanager: company.account_manager || null,
+        salesrep: company.sales_rep || null,
+        contractvalue: company.contract_value || 0,
+        renewaldate: company.renewal_date || null,
       }));
 
       setTenants(transformedTenants);
     } catch (e: any) {
-      console.error('Error fetching tenants:', e);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching tenants: ', e);
       setError(e.message || 'Failed to fetch tenants');
     } finally {
       setLoading(false);
@@ -197,7 +189,7 @@ export const TenantManagementPage: React.FC = () => {
             industry: formData.industry || null,
             size: formData.size || null,
             status: formData.status,
-            updated_at: new Date().toISOString(),
+            updatedat: new Date().toISOString(),
           })
           .eq('id', selectedTenant.id)
           .select()
@@ -228,11 +220,14 @@ export const TenantManagementPage: React.FC = () => {
         if (error) throw error;
 
         // Add to local state
-        setTenants([{ ...data, user_count: 0, subscription_tier: 'free' }, ...tenants]);
+        setTenants([{ ...data, usercount: 0, subscriptiontier: 'free' }, ...tenants]);
         setIsCreateModalOpen(false);
       }
     } catch (e: any) {
-      console.error('Error saving tenant:', e);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error saving tenant: ', e);
       setUpdateError(e.message || 'Failed to save tenant');
     } finally {
       setUpdating(false);
@@ -256,7 +251,10 @@ export const TenantManagementPage: React.FC = () => {
       setTenants(tenants.filter(t => t.id !== tenantId));
       setIsModalOpen(false);
     } catch (e: any) {
-      console.error('Error deleting tenant:', e);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error deleting tenant: ', e);
       setUpdateError(e.message || 'Failed to delete tenant');
     }
   };
@@ -278,14 +276,14 @@ export const TenantManagementPage: React.FC = () => {
   const getBillingStatusBadge = (status: string) => {
     const variants = {
       active: 'default',
-      past_due: 'destructive',
+      pastdue: 'destructive',
       cancelled: 'outline',
       trial: 'outline',
     } as const;
 
     const colors = {
       active: 'text-green-600',
-      past_due: 'text-red-600',
+      pastdue: 'text-red-600',
       cancelled: 'text-gray-600',
       trial: 'text-blue-600',
     } as const;
@@ -414,7 +412,7 @@ export const TenantManagementPage: React.FC = () => {
           </TableHeader>
         <TableBody>
           {filteredTenants.map(tenant => (
-            <TableRow key={tenant.id} className="cursor-pointer hover:bg-muted/50">
+            <TableRow key={tenant.id} className="cursor-pointer hover: bg-muted/50">
               <TableCell>
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -561,7 +559,7 @@ export const TenantManagementPage: React.FC = () => {
                       e.stopPropagation();
                       handleDeleteTenant(tenant.id);
                     }}
-                    className="text-destructive hover:text-destructive"
+                    className="text-destructive hover: text-destructive"
                     title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -579,7 +577,7 @@ export const TenantManagementPage: React.FC = () => {
     <PageLayout title="Tenant Management">
       <div className="space-y-6">
         {/* Header with stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
@@ -639,7 +637,7 @@ export const TenantManagementPage: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="flex flex-col sm: flex-row gap-4 mb-6">
               <div className="flex-1">
                 <Input
                   placeholder="Search tenants..."
@@ -736,7 +734,7 @@ export const TenantManagementPage: React.FC = () => {
                 id="website"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                placeholder="https://example.com"
+                placeholder="https: //example.com"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -838,7 +836,7 @@ export const TenantManagementPage: React.FC = () => {
               id="create-website"
               value={formData.website}
               onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              placeholder="https://example.com"
+              placeholder="https: //example.com"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">

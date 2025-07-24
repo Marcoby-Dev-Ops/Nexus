@@ -1,6 +1,6 @@
 import React from 'react';
 import { Target, Calendar } from 'lucide-react';
-import type { NorthStar } from '@/domains/fire-cycle/types';
+import type { NorthStar } from '@/domains/business/fire-cycle/types';
 
 interface NorthStarCardProps {
   northStar: NorthStar;
@@ -26,7 +26,7 @@ export const NorthStarCard: React.FC<NorthStarCardProps> = ({ northStar }) => {
           <h4 className="text-lg font-semibold mb-2">{northStar.title}</h4>
           <p className="text-muted-foreground mb-4">{northStar.description}</p>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4 mb-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">
                 {northStar.currentValue.toLocaleString()}

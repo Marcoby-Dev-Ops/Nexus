@@ -2,19 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  CheckCircle2, 
-  Lightbulb, 
-  ArrowRight,
-  DollarSign,
-  Users,
-  Target,
-  Clock,
-  Zap
-} from 'lucide-react';
+import { TrendingUp, AlertTriangle, CheckCircle2, Lightbulb, ArrowRight, DollarSign, Users, Target, Clock, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface BusinessInsight {
@@ -122,7 +110,10 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
         setInsights(mockInsights);
       } catch (err) {
         setError('Failed to load business insights. Please try again.');
-        console.error('Error loading insights:', err);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading insights: ', err);
       } finally {
         setIsLoading(false);
       }
@@ -141,15 +132,14 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
         return <AlertTriangle className="w-5 h-5 text-warning" />;
       case 'trend':
         return <TrendingUp className="w-5 h-5 text-secondary" />;
-      default:
-        return <CheckCircle2 className="w-5 h-5 text-muted-foreground" />;
+      default: return <CheckCircle2 className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
   const getInsightColor = (type: BusinessInsight['type']) => {
     switch (type) {
       case 'achievement':
-        return 'border-green-200 bg-success/5 hover:bg-success/10';
+        return 'border-green-200 bg-success/5 hover: bg-success/10';
       case 'opportunity':
         return 'border-border bg-primary/5 hover:bg-primary/10';
       case 'alert':
@@ -184,8 +174,7 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
         return <Clock className="w-4 h-4" />;
       case 'efficiency':
         return <Zap className="w-4 h-4" />;
-      default:
-        return <CheckCircle2 className="w-4 h-4" />;
+      default: return <CheckCircle2 className="w-4 h-4" />;
     }
   };
 
@@ -239,7 +228,7 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
                   <div key={category} className="h-8 bg-muted animate-pulse rounded w-20"></div>
                 ))}
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                 {Array.from({ length: 4 }).map((_, index) => (
                   <div key={index} className="p-4 border rounded-lg">
                     <div className="flex items-start justify-between mb-3">
@@ -274,7 +263,7 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
               </div>
 
               {/* Insights Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                 {filteredInsights.map((insight, index) => (
                   <motion.div
                     key={insight.id}

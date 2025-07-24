@@ -135,9 +135,9 @@ export class BusinessBenchmarkingService {
       // Get anonymized scores from other users
       const { data: scores, error } = await supabase
         .rpc('get_anonymized_business_scores', {
-          user_industry: businessProfile?.industry,
-          user_size: businessProfile?.size,
-          exclude_user: userId
+          userindustry: businessProfile?.industry,
+          usersize: businessProfile?.size,
+          excludeuser: userId
         });
 
       if (error) throw error;
@@ -219,8 +219,7 @@ export class BusinessBenchmarkingService {
       const quarterlyChange = this.calculateChange(scoreHistory, 90);
       
       const improvementRate = scoreHistory.length > 1 
-        ? Math.round(((scoreHistory[0].score - scoreHistory[scoreHistory.length - 1].score) / scoreHistory.length) * 100) / 100
-        : 0;
+        ? Math.round(((scoreHistory[0].score - scoreHistory[scoreHistory.length - 1].score) / scoreHistory.length) * 100) / 100: 0;
 
       return {
         scoreHistory,
@@ -250,9 +249,9 @@ export class BusinessBenchmarkingService {
       // Get similar businesses (same industry, similar size)
       const { data: peers, error } = await supabase
         .rpc('get_peer_businesses', {
-          user_industry: businessProfile?.industry,
-          user_size: businessProfile?.size,
-          exclude_user: userId
+          userindustry: businessProfile?.industry,
+          usersize: businessProfile?.size,
+          excludeuser: userId
         });
 
       if (error) throw error;
@@ -270,8 +269,7 @@ export class BusinessBenchmarkingService {
       Object.entries(healthData.categoryBreakdown).forEach(([category, data]: [string, any]) => {
         const peerCategoryScores = peers?.map((p: any) => p.category_scores[category]).filter(Boolean) || [];
         const peerAverage = peerCategoryScores.length > 0 
-          ? peerCategoryScores.reduce((sum: number, score: number) => sum + score, 0) / peerCategoryScores.length
-          : 0;
+          ? peerCategoryScores.reduce((sum: number, score: number) => sum + score, 0) / peerCategoryScores.length: 0;
 
         categoryComparisons[category] = {
           yourScore: data.percentage,
@@ -318,7 +316,7 @@ export class BusinessBenchmarkingService {
 
     try {
       const { data: insights, error } = await supabase
-        .rpc('get_industry_insights', { industry_name: industry });
+        .rpc('get_industry_insights', { industryname: industry });
 
       if (error) throw error;
 

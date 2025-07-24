@@ -5,31 +5,8 @@ import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
-import {
-  TrendingUp,
-  TrendingDown,
-  DollarSign,
-  Users,
-  Target,
-  Clock,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  Lightbulb,
-  BarChart3,
-  PieChart,
-  Activity,
-  Zap,
-  Globe,
-  Mail,
-  Settings,
-  RefreshCw,
-  HelpCircle,
-  ExternalLink,
-  Play
-} from 'lucide-react';
-
+import { useAuth } from '@/core/auth/AuthProvider';
+import { TrendingUp, TrendingDown, DollarSign, Users, CheckCircle2, AlertTriangle, ArrowRight, Lightbulb, Activity, Globe, Mail, Settings, RefreshCw, HelpCircle, Play } from 'lucide-react';
 interface DigestibleMetric {
   id: string;
   title: string;
@@ -74,7 +51,7 @@ interface BusinessStory {
 }
 
 const DigestibleMetricsDashboard: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'revenue' | 'customers' | 'operations' | 'marketing' | 'team'>('all');
   const [selectedView, setSelectedView] = useState<'metrics' | 'stories' | 'actions'>('metrics');
@@ -384,7 +361,10 @@ const DigestibleMetricsDashboard: React.FC = () => {
       setBusinessStories(stories);
       
     } catch (error) {
-      console.error('Error loading digestible data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading digestible data: ', error);
     } finally {
       setLoading(false);
     }
@@ -408,7 +388,7 @@ const DigestibleMetricsDashboard: React.FC = () => {
     }
   };
 
-  const getTrendIcon = (trend: any) => {
+  const getTrendIcon = (__trend: any) => {
     const color = getTrendColor(trend);
     if (trend.direction === 'up') {
       return <TrendingUp className={`w-4 h-4 ${color}`} />;
@@ -515,7 +495,7 @@ const DigestibleMetricsDashboard: React.FC = () => {
 
         {/* Metrics Tab */}
         <TabsContent value="metrics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             {filteredMetrics.map((metric) => (
               <Card key={metric.id} className={`border-l-4 ${getHealthStatusColor(metric.healthStatus).split(' ')[1]} ${getHealthStatusColor(metric.healthStatus).split(' ')[2]}`}>
                 <CardHeader className="pb-3">
@@ -558,7 +538,7 @@ const DigestibleMetricsDashboard: React.FC = () => {
                         </span>
                       </div>
                       <Progress 
-                        value={Math.min(100, (typeof metric.value === 'number' ? metric.value : parseFloat(metric.value.toString().replace(/[^0-9.]/g, ''))) / metric.benchmark.yourTarget * 100)} 
+                        value={Math.min(100, (typeof metric.value === 'number' ? metric.value: parseFloat(metric.value.toString().replace(/[^0-9.]/g, ''))) / metric.benchmark.yourTarget * 100)} 
                         className="h-2"
                       />
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -624,7 +604,7 @@ const DigestibleMetricsDashboard: React.FC = () => {
                 <CardContent className="space-y-4">
                   <p className="text-muted-foreground leading-relaxed">{story.narrative}</p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div>
                       <h5 className="font-medium text-sm mb-2">Key Insights</h5>
                       <ul className="space-y-1">

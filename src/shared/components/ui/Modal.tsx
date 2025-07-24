@@ -46,7 +46,7 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, className, title
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+          className="absolute top-4 right-4 text-muted-foreground hover: text-foreground"
           aria-label="Close modal"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" strokeWidth="1.5">

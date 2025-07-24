@@ -10,7 +10,7 @@ import {
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface FounderOnboardingProps {
   onComplete: () => void;
@@ -67,7 +67,7 @@ const INDUSTRY_SPECIFICS = {
 };
 
 export const FounderOnboarding: React.FC<FounderOnboardingProps> = ({ onComplete }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<FounderProfile>({
     industry: '',
@@ -145,7 +145,7 @@ export const FounderOnboarding: React.FC<FounderOnboardingProps> = ({ onComplete
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark: from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center mb-4">
@@ -218,7 +218,7 @@ const IndustryStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComplet
           <Button
             key={industry.id}
             variant="outline"
-            className="h-auto p-4 justify-start text-left hover:bg-primary/5"
+            className="h-auto p-4 justify-start text-left hover: bg-primary/5"
             onClick={() => onComplete({ industry: industry.id })}
           >
             <span className="text-2xl mr-3">{industry.icon}</span>
@@ -253,7 +253,7 @@ const CompanySizeStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComp
           <Button
             key={size.id}
             variant="outline"
-            className="w-full h-auto p-4 justify-between hover:bg-primary/5"
+            className="w-full h-auto p-4 justify-between hover: bg-primary/5"
             onClick={() => onComplete({ companySize: size.id })}
           >
             <div className="text-left">
@@ -286,7 +286,7 @@ const ChallengeStep: React.FC<{ onComplete: (data: any) => void; industry: strin
           <Button
             key={index}
             variant="outline"
-            className="w-full h-auto p-4 justify-between hover:bg-primary/5"
+            className="w-full h-auto p-4 justify-between hover: bg-primary/5"
             onClick={() => onComplete({ biggestChallenge: challenge })}
           >
             <span className="font-medium">{challenge}</span>
@@ -321,7 +321,7 @@ const RevenueStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComplete
           <Button
             key={range.id}
             variant="outline"
-            className="w-full h-auto p-4 justify-between hover:bg-primary/5"
+            className="w-full h-auto p-4 justify-between hover: bg-primary/5"
             onClick={() => onComplete({ monthlyRevenue: range.value })}
           >
             <span className="font-medium">{range.label}</span>
@@ -356,7 +356,7 @@ const TimeStep: React.FC<{ onComplete: (data: any) => void }> = ({ onComplete })
           <Button
             key={range.id}
             variant="outline"
-            className="w-full h-auto p-4 justify-between hover:bg-primary/5"
+            className="w-full h-auto p-4 justify-between hover: bg-primary/5"
             onClick={() => onComplete({ timeSpentOnAdmin: range.value })}
           >
             <span className="font-medium">{range.label}</span>
@@ -443,7 +443,7 @@ const FounderDemo: React.FC<{
               </div>
 
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-6">
-                <h3 className="font-semibold mb-3">Here's how we'll do it:</h3>
+                <h3 className="font-semibold mb-3">Here's how we'll do it: </h3>
                 <div className="space-y-2 text-left">
                   {industryData.aiSolutions.map((solution: string, index: number) => (
                     <div key={index} className="flex items-center">
@@ -467,7 +467,7 @@ const FounderDemo: React.FC<{
 
   // Demo steps showing actual automation
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark: from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl">
         <CardContent className="p-8">
           <div className="text-center mb-8">

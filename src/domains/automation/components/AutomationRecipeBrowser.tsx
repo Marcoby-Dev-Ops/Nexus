@@ -12,7 +12,7 @@ import { toast } from 'sonner';
 import { Search, Clock, Users, Star, Play, CheckCircle, AlertCircle } from 'lucide-react';
 import { automationRecipeEngine } from '@/domains/automation/automationRecipeEngine';
 import type { AutomationRecipe } from '@/domains/automation/automationRecipeEngine';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 export interface AutomationRecipeBrowserProps {
   onRecipeDeployed?: (recipeId: string, deploymentId: string) => void;
@@ -23,11 +23,11 @@ export interface AutomationRecipeBrowserProps {
 
 export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = ({
   onRecipeDeployed,
-  showDeployedOnly: _showDeployedOnly = false,
+  showDeployedOnly: showDeployedOnly = false,
   category,
   className = ''
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState<AutomationRecipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<AutomationRecipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,7 +79,10 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
       setRecipes(loadedRecipes);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Failed to load recipes:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load recipes: ', error);
       toast.error('Failed to load automation recipes. Please try again.');
     } finally {
       setLoading(false);
@@ -174,7 +177,10 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Deployment error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Deployment error: ', error);
       toast.error('An unexpected error occurred during deployment.');
     } finally {
       setDeploying(false);
@@ -239,8 +245,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
             onCheckedChange={(checked) => handleCustomizationChange(option.id, checked)}
           />
         );
-      default:
-        return (
+      default: return (
           <Input
             value={value as string || ''}
             onChange={(e) => handleCustomizationChange(option.id, e.target.value)}
@@ -280,7 +285,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm: flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -291,7 +296,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
           />
         </div>
         <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="w-full sm: w-[180px]">
             <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
@@ -319,7 +324,7 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
       {/* Recipe Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredRecipes.map((recipe) => (
-          <Card key={recipe.id} className="hover:shadow-md transition-shadow">
+          <Card key={recipe.id} className="hover: shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-2">

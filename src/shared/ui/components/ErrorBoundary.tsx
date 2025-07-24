@@ -32,7 +32,10 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log the error details
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('ErrorBoundary caught an error: ', error, errorInfo);
     
     this.setState({
       error,
@@ -59,14 +62,20 @@ class ErrorBoundary extends Component<Props, State> {
                 JSON.parse(value); // Test if it's valid JSON
               }
             } catch {
-              console.warn(`Removing corrupted localStorage key: ${key}`);
+              // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Removing corrupted localStorage key: ${key}`);
               localStorage.removeItem(key);
             }
           }
         });
       });
     } catch (error) {
-      console.warn('Error cleaning localStorage:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Error cleaning localStorage: ', error);
     }
     
     // Reset state and reload
@@ -75,9 +84,9 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   private handleGoHome = (): void => {
-    // Reset state and navigate to home
+    // Reset state and navigate to dashboard home
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
-    window.location.href = '/dashboard';
+          window.location.href = '/dashboard/home';
   };
 
   render(): ReactNode {
@@ -88,7 +97,7 @@ class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-8">
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark: from-gray-900 dark:via-gray-900 dark:to-gray-800 flex items-center justify-center p-8">
           <div className="max-w-lg w-full bg-card dark:bg-background rounded-lg shadow-lg p-8 text-center">
             <div className="flex justify-center mb-6">
               <div className="p-4 rounded-full bg-destructive/10 dark:bg-destructive/20">
@@ -109,7 +118,7 @@ class ErrorBoundary extends Component<Props, State> {
                 <summary className="cursor-pointer text-sm text-muted-foreground dark:text-muted-foreground mb-2">
                   Error Details (Development)
                 </summary>
-                <div className="bg-muted dark:bg-muted/20 rounded-lg p-4 text-xs font-mono overflow-auto max-h-40">
+                <div className="bg-muted dark: bg-muted/20 rounded-lg p-4 text-xs font-mono overflow-auto max-h-40">
                   <pre className="whitespace-pre-wrap">
                     {this.state.error.toString()}
                     {this.state.errorInfo?.componentStack}
@@ -118,7 +127,7 @@ class ErrorBoundary extends Component<Props, State> {
               </details>
             )}
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm: flex-row gap-4 justify-center">
               <button
                 onClick={this.handleReload}
                 className="flex items-center justify-center space-x-2 px-6 py-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors duration-200 font-medium"

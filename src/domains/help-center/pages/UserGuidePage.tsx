@@ -114,7 +114,7 @@ export const UserGuidePage: React.FC = () => {
         <h2 className="text-2xl font-semibold mb-4">Quick Start Guides</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {quickStartGuides.map((guide, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(guide.route)}>
+            <Card key={index} className="hover: shadow-md transition-shadow cursor-pointer" onClick={() => navigate(guide.route)}>
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -162,11 +162,11 @@ export const UserGuidePage: React.FC = () => {
                 <CardTitle className="text-lg">{category.category}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                   {category.items.map((item, itemIndex) => (
                     <div 
                       key={itemIndex}
-                      className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                      className="flex items-center justify-between p-4 rounded-lg border hover: bg-muted/50 transition-colors cursor-pointer"
                       onClick={() => navigate(item.route)}
                     >
                       <div>
@@ -188,7 +188,7 @@ export const UserGuidePage: React.FC = () => {
       {/* Additional Resources */}
       <div>
         <h2 className="text-2xl font-semibold mb-4">Additional Resources</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
           <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/help/privacy-policy')}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4 mb-2">
@@ -199,7 +199,7 @@ export const UserGuidePage: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/help/about')}>
+          <Card className="hover: shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/help/about')}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4 mb-2">
                 <BookOpen className="h-5 w-5 text-primary" />
@@ -209,7 +209,7 @@ export const UserGuidePage: React.FC = () => {
             </CardContent>
           </Card>
           
-          <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/settings')}>
+          <Card className="hover: shadow-md transition-shadow cursor-pointer" onClick={() => navigate('/settings')}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4 mb-2">
                 <Settings className="h-5 w-5 text-primary" />

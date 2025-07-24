@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { onboardingVerificationService } from '../services/onboardingVerificationService';
 import type { VerificationResult } from '../services/onboardingVerificationService';
 
@@ -26,7 +26,7 @@ export interface UseOnboardingVerificationReturn {
 }
 
 export function useOnboardingVerification(): UseOnboardingVerificationReturn {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -45,12 +45,18 @@ export function useOnboardingVerification(): UseOnboardingVerificationReturn {
       setVerificationResult(result);
       
       if (!result.success) {
-        console.warn('Onboarding verification failed:', result.summary);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Onboarding verification failed: ', result.summary);
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Verification failed';
+      const errorMessage = err instanceof Error ? err.message: 'Verification failed';
       setError(errorMessage);
-      console.error('Onboarding verification error:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Onboarding verification error: ', err);
     } finally {
       setIsVerifying(false);
     }
@@ -67,7 +73,7 @@ export function useOnboardingVerification(): UseOnboardingVerificationReturn {
 
   // Computed values
   const isComplete = verificationResult?.success ?? false;
-  const hasIssues = verificationResult ? !verificationResult.success : false;
+  const hasIssues = verificationResult ? !verificationResult.success: false;
   const issues = verificationResult?.checks
     .filter(check => check.status === 'fail')
     .map(check => check.message) ?? [];

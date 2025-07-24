@@ -1,26 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  BarChart, 
-  PieChart, 
-  DollarSign, 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  Filter, 
-  Download,
-  Calendar,
-  TrendingUp,
-  TrendingDown,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  PlusCircle,
-  RefreshCw,
-  AlertCircle,
-  Activity,
-  Lightbulb,
-  Zap,
-  Brain
-} from 'lucide-react';
+import { BarChart, PieChart, DollarSign, Filter, Download, Calendar, TrendingUp, CheckCircle2, Clock, PlusCircle, RefreshCw, AlertCircle, Activity, Lightbulb, Zap, Brain } from 'lucide-react';
 import { Button } from '../../../components/ui/Button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { 
@@ -36,8 +15,8 @@ import { Badge } from '../../../components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/Tabs';
 import { Separator } from '../../../components/ui/Separator';
 import { Progress } from '../../../components/ui/Progress';
-import { useSystemContext } from '@/core/hooks/SystemContext';
-import { useAuth } from '../../../contexts/AuthContext';
+import { useData } from '@/shared/contexts/DataContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { API_CONFIG } from '@/core/constants';
 import { Skeleton } from '../../../components/ui/Skeleton';
 
@@ -59,7 +38,7 @@ const FinancialOperationsPage: React.FC = () => {
   const [financialStats, setFinancialStats] = useState<FinancialStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { session } = useAuthContext();
+  const { session } = useAuth();
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -239,8 +218,7 @@ const FinancialOperationsPage: React.FC = () => {
         return <AlertCircle className="w-4 h-4 text-destructive" />;
       case 'paused':
         return <Clock className="w-4 h-4 text-warning" />;
-      default:
-        return <Activity className="w-4 h-4 text-muted-foreground" />;
+      default: return <Activity className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -255,9 +233,9 @@ const FinancialOperationsPage: React.FC = () => {
   };
 
   const SystemFinanceCards: React.FC = () => {
-    const { integrationStatus, businessHealth, aiInsights, loading: systemLoading, refresh } = useSystemContext();
+    const { businessData, systemStatus, refreshAll } = useData();
     return (
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
+      <div className="grid gap-6 md: grid-cols-2 xl:grid-cols-4 mb-8">
         {/* System Health Card */}
         <Card className="flex flex-col">
           <CardHeader>
@@ -381,7 +359,7 @@ const FinancialOperationsPage: React.FC = () => {
   const renderFinancialStats = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Card key={index}>
               <CardContent className="p-6">
@@ -404,7 +382,7 @@ const FinancialOperationsPage: React.FC = () => {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
         {financialStats.map(stat => (
           <Card key={stat.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -427,7 +405,7 @@ const FinancialOperationsPage: React.FC = () => {
     <div className="space-y-8">
       <SystemFinanceCards />
       <div className="space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col md: flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold">Financial Operations</h1>
             <p className="text-muted-foreground">Track, analyze, and optimize your company's finances</p>
@@ -471,7 +449,7 @@ const FinancialOperationsPage: React.FC = () => {
           </TabsContent>
         </Tabs>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg: grid-cols-3 gap-6">
           {/* Left Column - Expense Breakdown */}
           <Card className="lg:col-span-1">
             <CardHeader>
@@ -507,7 +485,7 @@ const FinancialOperationsPage: React.FC = () => {
           </Card>
 
           {/* Middle Column - Budget vs. Actual */}
-          <Card className="lg:col-span-1">
+          <Card className="lg: col-span-1">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <BarChart className="h-5 w-5 mr-2 text-primary" />
@@ -554,7 +532,7 @@ const FinancialOperationsPage: React.FC = () => {
           </Card>
 
           {/* Right Column - Financial Reports */}
-          <Card className="lg:col-span-1">
+          <Card className="lg: col-span-1">
             <CardHeader>
               <CardTitle className="text-lg flex items-center">
                 <Calendar className="h-5 w-5 mr-2 text-primary" />
@@ -619,7 +597,7 @@ const FinancialOperationsPage: React.FC = () => {
           <CardContent>
             <div className="space-y-2">
               {recentTransactions.map(transaction => (
-                <div key={transaction.id} className="flex items-center justify-between p-2 rounded-md hover:bg-muted">
+                <div key={transaction.id} className="flex items-center justify-between p-2 rounded-md hover: bg-muted">
                   <div className="flex items-center space-x-4">
                     <div className="bg-primary/10 p-2 rounded-full">
                       <DollarSign className="h-4 w-4 text-primary" />

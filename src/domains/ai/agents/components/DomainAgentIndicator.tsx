@@ -69,7 +69,7 @@ export const DomainAgentIndicator: React.FC<DomainAgentIndicatorProps> = ({
           <CardContent className="p-4 space-y-2">
             {domainCapabilities.expertise?.length > 0 && (
               <div>
-                <h4 className="text-xs font-semibold text-foreground/90 mb-1">Expertise Areas:</h4>
+                <h4 className="text-xs font-semibold text-foreground/90 mb-1">Expertise Areas: </h4>
                 <div className="flex flex-wrap gap-1">
                   {domainCapabilities.expertise.slice(0, 4).map((expertise, idx) => (
                     <Badge key={idx} variant="secondary" className="text-xs">
@@ -87,7 +87,7 @@ export const DomainAgentIndicator: React.FC<DomainAgentIndicatorProps> = ({
 
             {domainCapabilities.tools?.length > 0 && (
               <div>
-                <h4 className="text-xs font-semibold text-foreground/90 mb-1">Available Tools:</h4>
+                <h4 className="text-xs font-semibold text-foreground/90 mb-1">Available Tools: </h4>
                 <div className="flex flex-wrap gap-1">
                   {domainCapabilities.tools.slice(0, 3).map((tool, idx) => (
                     <Badge key={idx} variant="outline" className="text-xs">
@@ -105,7 +105,7 @@ export const DomainAgentIndicator: React.FC<DomainAgentIndicatorProps> = ({
 
             {domainCapabilities.insights?.length > 0 && (
               <div>
-                <h4 className="text-xs font-semibold text-foreground/90 mb-1">Recent Insights:</h4>
+                <h4 className="text-xs font-semibold text-foreground/90 mb-1">Recent Insights: </h4>
                 <div className="space-y-1">
                   {domainCapabilities.insights.slice(0, 2).map((insight, idx) => (
                     <p key={idx} className="text-xs text-muted-foreground bg-card p-2 rounded border">

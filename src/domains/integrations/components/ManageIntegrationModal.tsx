@@ -10,30 +10,12 @@ import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Separator } from '@/shared/components/ui/Separator';
 import { ApiIntegrationService } from '@/domains/services/apiIntegrationService';
-import {
-  Settings,
-  RefreshCw,
-  CheckCircle2,
-  AlertCircle,
-  Copy,
-  Eye,
-  EyeOff,
-  Trash2,
-  Save,
-  Code,
-  Database,
-  Globe,
-  Key,
-  Clock,
-  Activity,
-  X
-} from 'lucide-react';
-
+import { Settings, RefreshCw, CheckCircle2, AlertCircle, Copy, Eye, EyeOff, Trash2, Save, Code, Globe, Key, Activity, X } from 'lucide-react';
 interface ApiIntegration {
   id: string;
   name: string;
   description?: string;
-  api_url: string;
+  apiurl: string;
   config?: {
     auth_methods?: string[];
     rate_limits?: any;
@@ -46,9 +28,9 @@ interface ApiIntegration {
     last_tested?: string;
   };
   generated_code?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  isactive: boolean;
+  createdat: string;
+  updatedat: string;
 }
 
 interface ManageIntegrationModalProps {
@@ -77,18 +59,18 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
   const [formData, setFormData] = useState({
     name: integration.name,
     description: integration.description || '',
-    api_url: integration.api_url,
-    is_active: integration.is_active,
-    auth_config: {
-      api_key: '',
-      auth_header: 'Authorization',
-      auth_prefix: 'Bearer '
+    apiurl: integration.api_url,
+    isactive: integration.is_active,
+    authconfig: {
+      apikey: '',
+      authheader: 'Authorization',
+      authprefix: 'Bearer '
     },
-    sync_frequency: '5', // minutes
-    enable_webhooks: false,
-    webhook_url: '',
-    rate_limit_requests: 100,
-    rate_limit_window: 60 // seconds
+    syncfrequency: '5', // minutes
+    enablewebhooks: false,
+    webhookurl: '',
+    ratelimit_requests: 100,
+    ratelimit_window: 60 // seconds
   });
 
   useEffect(() => {
@@ -96,18 +78,18 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
       setFormData({
         name: integration.name,
         description: integration.description || '',
-        api_url: integration.api_url,
-        is_active: integration.is_active,
-        auth_config: {
-          api_key: '',
-          auth_header: 'Authorization',
-          auth_prefix: 'Bearer '
+        apiurl: integration.api_url,
+        isactive: integration.is_active,
+        authconfig: {
+          apikey: '',
+          authheader: 'Authorization',
+          authprefix: 'Bearer '
         },
-        sync_frequency: '5',
-        enable_webhooks: false,
-        webhook_url: '',
-        rate_limit_requests: 100,
-        rate_limit_window: 60
+        syncfrequency: '5',
+        enablewebhooks: false,
+        webhookurl: '',
+        ratelimit_requests: 100,
+        ratelimit_window: 60
       });
     }
   }, [integration]);
@@ -118,15 +100,15 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
       const updatedIntegration = await ApiIntegrationService.updateApiIntegration(integration.id, {
         name: formData.name,
         description: formData.description,
-        api_url: formData.api_url,
-        is_active: formData.is_active,
+        apiurl: formData.api_url,
+        isactive: formData.is_active,
         config: {
           ...integration.config,
-          auth_config: formData.auth_config,
-          sync_frequency: formData.sync_frequency,
-          enable_webhooks: formData.enable_webhooks,
-          webhook_url: formData.webhook_url,
-          rate_limits: {
+          authconfig: formData.auth_config,
+          syncfrequency: formData.sync_frequency,
+          enablewebhooks: formData.enable_webhooks,
+          webhookurl: formData.webhook_url,
+          ratelimits: {
             requests: formData.rate_limit_requests,
             window: formData.rate_limit_window
           }
@@ -136,7 +118,10 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
       onUpdate(updatedIntegration);
       setActiveTab('settings');
     } catch (error) {
-      console.error('Failed to update integration:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to update integration: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -169,7 +154,10 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
         onDelete(integration.id);
         onClose();
       } catch (error) {
-        console.error('Failed to delete integration:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to delete integration: ', error);
       } finally {
         setIsLoading(false);
       }
@@ -214,7 +202,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
             <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
               {/* Settings Tab */}
               <TabsContent value="settings" className="space-y-6 mt-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="name">Integration Name</Label>
@@ -242,8 +230,8 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                       <Input
                         id="api_url"
                         value={formData.api_url}
-                        onChange={(e) => setFormData(prev => ({ ...prev, api_url: e.target.value }))}
-                        placeholder="https://api.example.com/v1"
+                        onChange={(e) => setFormData(prev => ({ ...prev, apiurl: e.target.value }))}
+                        placeholder="https: //api.example.com/v1"
                       />
                     </div>
                   </div>
@@ -254,7 +242,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                       <Switch
                         id="is_active"
                         checked={formData.is_active}
-                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isactive: checked }))}
                       />
                     </div>
 
@@ -264,7 +252,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                         id="sync_frequency"
                         type="number"
                         value={formData.sync_frequency}
-                        onChange={(e) => setFormData(prev => ({ ...prev, sync_frequency: e.target.value }))}
+                        onChange={(e) => setFormData(prev => ({ ...prev, syncfrequency: e.target.value }))}
                         min="1"
                         max="1440"
                       />
@@ -279,7 +267,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                             id="rate_requests"
                             type="number"
                             value={formData.rate_limit_requests}
-                            onChange={(e) => setFormData(prev => ({ ...prev, rate_limit_requests: parseInt(e.target.value) }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, ratelimit_requests: parseInt(e.target.value) }))}
                             min="1"
                           />
                         </div>
@@ -289,7 +277,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                             id="rate_window"
                             type="number"
                             value={formData.rate_limit_window}
-                            onChange={(e) => setFormData(prev => ({ ...prev, rate_limit_window: parseInt(e.target.value) }))}
+                            onChange={(e) => setFormData(prev => ({ ...prev, ratelimit_window: parseInt(e.target.value) }))}
                             min="1"
                           />
                         </div>
@@ -306,7 +294,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                     <Switch
                       id="enable_webhooks"
                       checked={formData.enable_webhooks}
-                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, enable_webhooks: checked }))}
+                      onCheckedChange={(checked) => setFormData(prev => ({ ...prev, enablewebhooks: checked }))}
                     />
                   </div>
 
@@ -316,8 +304,8 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                       <Input
                         id="webhook_url"
                         value={formData.webhook_url}
-                        onChange={(e) => setFormData(prev => ({ ...prev, webhook_url: e.target.value }))}
-                        placeholder="https://your-app.com/webhooks/api-integration"
+                        onChange={(e) => setFormData(prev => ({ ...prev, webhookurl: e.target.value }))}
+                        placeholder="https: //your-app.com/webhooks/api-integration"
                       />
                     </div>
                   )}
@@ -341,7 +329,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                       value={formData.auth_config.auth_header}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        auth_config: { ...prev.auth_config, auth_header: e.target.value }
+                        authconfig: { ...prev.auth_config, authheader: e.target.value }
                       }))}
                       placeholder="Authorization"
                     />
@@ -354,7 +342,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                       value={formData.auth_config.auth_prefix}
                       onChange={(e) => setFormData(prev => ({
                         ...prev,
-                        auth_config: { ...prev.auth_config, auth_prefix: e.target.value }
+                        authconfig: { ...prev.auth_config, authprefix: e.target.value }
                       }))}
                       placeholder="Bearer "
                     />
@@ -369,7 +357,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                         value={formData.auth_config.api_key}
                         onChange={(e) => setFormData(prev => ({
                           ...prev,
-                          auth_config: { ...prev.auth_config, api_key: e.target.value }
+                          authconfig: { ...prev.auth_config, apikey: e.target.value }
                         }))}
                         placeholder="Enter your API key"
                       />
@@ -389,7 +377,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                   <h4 className="font-medium mb-2">Integration Details</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Auth Type:</span>
+                      <span className="text-muted-foreground">Auth Type: </span>
                       <span className="ml-2">{integration.metadata?.auth_type || 'API Key'}</span>
                     </div>
                     <div>
@@ -451,7 +439,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
                   </Alert>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
                   <Card>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">

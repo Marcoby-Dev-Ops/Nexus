@@ -161,7 +161,10 @@ export class CrossDepartmentalContextEngine {
       try {
         data[dept] = await this.fetchDepartmentData(dept, companyId);
       } catch (error) {
-        console.error(`Error fetching ${dept} data:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Error fetching ${dept} data: `, error);
         data[dept] = {};
       }
     }
@@ -179,77 +182,77 @@ export class CrossDepartmentalContextEngine {
 
     const demoData: Record<string, any> = {
       sales: {
-        pipeline_value: 2500000,
-        deals_closing_this_month: 8,
-        conversion_rate: 0.23,
-        average_deal_size: 45000,
-        sales_cycle_length: 45,
-        team_capacity: 0.78,
-        top_opportunities: [
-          { company: 'Enterprise Corp', value: 250000, stage: 'negotiation', close_probability: 0.85 },
-          { company: 'TechStart Inc', value: 120000, stage: 'proposal', close_probability: 0.65 }
+        pipelinevalue: 2500000,
+        dealsclosing_this_month: 8,
+        conversionrate: 0.23,
+        averagedeal_size: 45000,
+        salescycle_length: 45,
+        teamcapacity: 0.78,
+        topopportunities: [
+          { company: 'Enterprise Corp', value: 250000, stage: 'negotiation', closeprobability: 0.85 },
+          { company: 'TechStart Inc', value: 120000, stage: 'proposal', closeprobability: 0.65 }
         ],
-        recent_wins: [
+        recentwins: [
           { company: 'Acme Corp', value: 45000, rep: 'John Smith' }
         ],
         trends: {
-          pipeline_growth: 0.15,
-          conversion_improvement: 0.08,
-          deal_velocity: -0.05
+          pipelinegrowth: 0.15,
+          conversionimprovement: 0.08,
+          dealvelocity: -0.05
         }
       },
       marketing: {
-        monthly_leads: 450,
-        qualified_leads: 180,
-        cost_per_lead: 125,
-        conversion_rate: 0.40,
-        campaign_roi: 3.2,
-        website_traffic: 25000,
-        content_engagement: 0.67,
+        monthlyleads: 450,
+        qualifiedleads: 180,
+        costper_lead: 125,
+        conversionrate: 0.40,
+        campaignroi: 3.2,
+        websitetraffic: 25000,
+        contentengagement: 0.67,
         trends: {
-          lead_quality_improvement: 0.12,
-          cost_efficiency: 0.08,
-          engagement_growth: 0.15
+          leadqualityimprovement: 0.12,
+          costefficiency: 0.08,
+          engagementgrowth: 0.15
         }
       },
       finance: {
-        monthly_revenue: 890000,
-        monthly_expenses: 650000,
-        gross_margin: 0.73,
-        cash_flow: 240000,
-        burn_rate: 85000,
-        runway_months: 18,
-        budget_variance: -0.05,
+        monthlyrevenue: 890000,
+        monthlyexpenses: 650000,
+        grossmargin: 0.73,
+        cashflow: 240000,
+        burnrate: 85000,
+        runwaymonths: 18,
+        budgetvariance: -0.05,
         trends: {
-          revenue_growth: 0.18,
-          margin_improvement: 0.03,
-          expense_control: 0.12
+          revenuegrowth: 0.18,
+          marginimprovement: 0.03,
+          expensecontrol: 0.12
         }
       },
       operations: {
-        project_completion_rate: 0.89,
-        team_utilization: 0.85,
-        system_uptime: 0.998,
-        process_efficiency: 0.82,
-        automation_coverage: 0.65,
-        quality_score: 0.94,
+        projectcompletionrate: 0.89,
+        teamutilization: 0.85,
+        systemuptime: 0.998,
+        processefficiency: 0.82,
+        automationcoverage: 0.65,
+        qualityscore: 0.94,
         trends: {
-          efficiency_improvement: 0.10,
-          automation_growth: 0.25,
-          quality_enhancement: 0.05
+          efficiencyimprovement: 0.10,
+          automationgrowth: 0.25,
+          qualityenhancement: 0.05
         }
       },
       hr: {
-        employee_count: 47,
-        retention_rate: 0.945,
-        satisfaction_score: 4.2,
-        time_to_hire: 18,
-        training_completion: 0.88,
-        performance_rating: 4.1,
+        employeecount: 47,
+        retentionrate: 0.945,
+        satisfactionscore: 4.2,
+        timeto_hire: 18,
+        trainingcompletion: 0.88,
+        performancerating: 4.1,
         trends: {
-          retention_improvement: 0.02,
-          satisfaction_growth: 0.07,
-          hiring_efficiency: 0.15
+          retentionimprovement: 0.02,
+          satisfactiongrowth: 0.07,
+          hiringefficiency: 0.15
         }
       },
       // NEW MODULE: Product Development (automatically integrated)
@@ -297,12 +300,12 @@ export class CrossDepartmentalContextEngine {
     const finance = departmentData.finance || {};
 
     // Check if marketing lead generation supports sales pipeline
-    const leadToSalesRatio = marketing.qualified_leads ? sales.deals_closing_this_month / marketing.qualified_leads : 0;
+    const leadToSalesRatio = marketing.qualified_leads ? sales.deals_closing_this_month / marketing.qualifiedleads: 0;
     const leadQualityScore = Math.min(leadToSalesRatio * 100, 100);
 
     // Check if sales forecasts align with financial projections
     const forecastAccuracy = sales.pipeline_value && finance.monthly_revenue ? 
-      Math.min((sales.pipeline_value * 0.25) / finance.monthly_revenue, 1) * 100 : 50;
+      Math.min((sales.pipeline_value * 0.25) / finance.monthly_revenue, 1) * 100: 50;
 
     // Average the alignment metrics
     return Math.round((leadQualityScore + forecastAccuracy) / 2);

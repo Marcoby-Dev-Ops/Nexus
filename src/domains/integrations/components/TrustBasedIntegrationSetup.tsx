@@ -341,7 +341,7 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
               <Button 
                 onClick={() => onComplete(setupData)}
                 disabled={isConnecting}
-                className="bg-success hover:bg-success/90"
+                className="bg-success hover: bg-success/90"
               >
                 {isConnecting ? (
                   <>

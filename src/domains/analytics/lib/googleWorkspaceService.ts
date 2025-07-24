@@ -104,44 +104,44 @@ export class GoogleWorkspaceService {
     // Comprehensive scopes for all Google business tools
     const scopes = [
       // Gmail
-      'https://www.googleapis.com/auth/gmail.readonly',
-      'https://www.googleapis.com/auth/gmail.metadata',
+      'https: //www.googleapis.com/auth/gmail.readonly',
+      'https: //www.googleapis.com/auth/gmail.metadata',
       
       // Drive
-      'https://www.googleapis.com/auth/drive.readonly',
-      'https://www.googleapis.com/auth/drive.metadata.readonly',
+      'https: //www.googleapis.com/auth/drive.readonly',
+      'https: //www.googleapis.com/auth/drive.metadata.readonly',
       
       // Calendar
-      'https://www.googleapis.com/auth/calendar.readonly',
-      'https://www.googleapis.com/auth/calendar.events.readonly',
+      'https: //www.googleapis.com/auth/calendar.readonly',
+      'https: //www.googleapis.com/auth/calendar.events.readonly',
       
       // Contacts
-      'https://www.googleapis.com/auth/contacts.readonly',
+      'https: //www.googleapis.com/auth/contacts.readonly',
       
       // Business Profile (Google My Business)
-      'https://www.googleapis.com/auth/business.manage',
+      'https: //www.googleapis.com/auth/business.manage',
       
       // Analytics (for comprehensive data)
-      'https://www.googleapis.com/auth/analytics.readonly',
+      'https: //www.googleapis.com/auth/analytics.readonly',
       
       // Search Console
-      'https://www.googleapis.com/auth/webmasters.readonly',
+      'https: //www.googleapis.com/auth/webmasters.readonly',
       
       // Admin SDK (if admin)
-      'https://www.googleapis.com/auth/admin.directory.user.readonly',
-      'https://www.googleapis.com/auth/admin.reports.audit.readonly'
+      'https: //www.googleapis.com/auth/admin.directory.user.readonly',
+      'https: //www.googleapis.com/auth/admin.reports.audit.readonly'
     ];
 
     const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
+      clientid: clientId,
+      redirecturi: redirectUri,
+      responsetype: 'code',
       scope: scopes.join(' '),
-      access_type: 'offline',
+      accesstype: 'offline',
       prompt: 'consent'
     });
 
-    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    return `https: //accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
   /**
@@ -152,17 +152,17 @@ export class GoogleWorkspaceService {
     const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
     const redirectUri = `${window.location.origin}/integrations/google-workspace/callback`;
 
-    const response = await fetch('https://oauth2.googleapis.com/token', {
+    const response = await fetch('https: //oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
+        clientid: clientId,
+        clientsecret: clientSecret,
         code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
+        granttype: 'authorization_code',
+        redirecturi: redirectUri,
       }),
     });
 
@@ -216,11 +216,11 @@ export class GoogleWorkspaceService {
    */
   private async getGmailMetrics() {
     const response = (await this.makeAuthenticatedRequest(
-      'https://gmail.googleapis.com/gmail/v1/users/me/profile'
+      'https: //gmail.googleapis.com/gmail/v1/users/me/profile'
     )) as GmailProfile;
 
     const threadsResponse = (await this.makeAuthenticatedRequest(
-      'https://gmail.googleapis.com/gmail/v1/users/me/threads?maxResults=100'
+      'https: //gmail.googleapis.com/gmail/v1/users/me/threads?maxResults=100'
     )) as GmailThreads;
 
     return {
@@ -235,11 +235,11 @@ export class GoogleWorkspaceService {
    */
   private async getDriveMetrics() {
     const aboutResponse = (await this.makeAuthenticatedRequest(
-      'https://www.googleapis.com/drive/v3/about?fields=storageQuota,user'
+      'https: //www.googleapis.com/drive/v3/about?fields=storageQuota,user'
     )) as DriveAbout;
 
     const filesResponse = (await this.makeAuthenticatedRequest(
-      'https://www.googleapis.com/drive/v3/files?pageSize=1000&fields=files(id,name,size,mimeType)'
+      'https: //www.googleapis.com/drive/v3/files?pageSize=1000&fields=files(id,name,size,mimeType)'
     )) as DriveFiles;
 
     const quota = aboutResponse.storageQuota;
@@ -267,7 +267,7 @@ export class GoogleWorkspaceService {
     });
 
     const response = await this.makeAuthenticatedRequest(
-      `https://www.googleapis.com/auth/calendar/v3/calendars/primary/events?${params.toString()}`
+      `https: //www.googleapis.com/auth/calendar/v3/calendars/primary/events?${params.toString()}`
     );
 
     const totalMeetings = response.items.length;
@@ -305,7 +305,7 @@ export class GoogleWorkspaceService {
     });
     
     const response = await this.makeAuthenticatedRequest(
-      `https://www.googleapis.com/v1/calendars/primary/events?${params.toString()}`
+      `https: //www.googleapis.com/v1/calendars/primary/events?${params.toString()}`
     );
 
     return response.items || [];
@@ -330,7 +330,7 @@ export class GoogleWorkspaceService {
    */
   async getBusinessProfileMetrics() {
     const response = await this.makeAuthenticatedRequest(
-      'https://mybusinessbusinessinformation.googleapis.com/v1/accounts'
+      'https: //mybusinessbusinessinformation.googleapis.com/v1/accounts'
     );
 
     if (!response.accounts || response.accounts.length === 0) {
@@ -426,16 +426,16 @@ export class GoogleWorkspaceService {
       throw new Error('No refresh token available');
     }
 
-    const response = await fetch('https://oauth2.googleapis.com/token', {
+    const response = await fetch('https: //oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: this.config.clientId,
-        client_secret: this.config.clientSecret,
-        refresh_token: this.config.refreshToken,
-        grant_type: 'refresh_token',
+        clientid: this.config.clientId,
+        clientsecret: this.config.clientSecret,
+        refreshtoken: this.config.refreshToken,
+        granttype: 'refresh_token',
       }),
     });
 
@@ -478,12 +478,12 @@ export class GoogleWorkspaceService {
    */
   async getEmails(limit = 10): Promise<GoogleEmail[]> {
     const response = await this.makeAuthenticatedRequest(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${limit}`
+      `https: //gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${limit}`
     );
 
     const emailPromises = response.messages.map((msg: { id: string; }) =>
       this.makeAuthenticatedRequest(
-        `https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`
+        `https: //gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}`
       )
     );
     
@@ -498,7 +498,7 @@ export class GoogleWorkspaceService {
       throw new Error('Not authenticated with Google Workspace');
     }
     await this.makeAuthenticatedRequest(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}/modify`,
+      `https: //gmail.googleapis.com/gmail/v1/users/me/messages/${emailId}/modify`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

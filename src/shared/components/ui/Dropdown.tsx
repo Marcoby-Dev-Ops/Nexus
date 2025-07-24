@@ -54,7 +54,7 @@ const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div 
           className={cn(
-            'absolute z-10 mt-1 w-56 rounded-md bg-card shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none',
+            'absolute z-10 mt-1 w-56 rounded-md bg-card shadow-lg ring-1 ring-black ring-opacity-5 focus: outline-none',
             align === 'right' ? 'right-0' : 'left-0'
           )}
         >
@@ -68,7 +68,7 @@ const Dropdown: React.FC<DropdownProps> = ({
                   'block w-full px-4 py-2 text-left text-sm',
                   item.disabled
                     ? 'text-muted-foreground cursor-not-allowed'
-                    : 'text-foreground/90 hover:bg-muted hover:text-foreground'
+                    : 'text-foreground/90 hover: bg-muted hover:text-foreground'
                 )}
               >
                 {item.label}

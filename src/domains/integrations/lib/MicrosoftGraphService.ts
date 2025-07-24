@@ -67,7 +67,7 @@ export class MicrosoftGraphService {
   /**
    * Refresh Microsoft OAuth token
    */
-  private async refreshToken(refreshToken: string, _userId: string): Promise<string> {
+  private async refreshToken(refreshToken: string, userId: string): Promise<string> {
     const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
     const clientSecret = import.meta.env.VITE_MICROSOFT_CLIENT_SECRET;
 
@@ -75,14 +75,14 @@ export class MicrosoftGraphService {
       throw new Error('Microsoft OAuth credentials not configured');
     }
 
-    const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+    const response = await fetch('https: //login.microsoftonline.com/common/oauth2/v2.0/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        grant_type: 'refresh_token',
-        refresh_token: refreshToken,
+        clientid: clientId,
+        clientsecret: clientSecret,
+        granttype: 'refresh_token',
+        refreshtoken: refreshToken,
       }),
     });
 
@@ -95,11 +95,11 @@ export class MicrosoftGraphService {
     
     // Store the refreshed tokens using OAuthTokenService
     const updatedToken = await OAuthTokenService.updateTokens('microsoft', {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      expires_in: tokenData.expires_in,
+      accesstoken: tokenData.access_token,
+      refreshtoken: tokenData.refresh_token,
+      expiresin: tokenData.expires_in,
       scope: tokenData.scope,
-      token_type: tokenData.token_type,
+      tokentype: tokenData.token_type,
     });
 
     if (!updatedToken) {
@@ -124,7 +124,7 @@ export class MicrosoftGraphService {
             await new Promise(resolve => setTimeout(resolve, this.minRequestInterval - timeSinceLastRequest));
           }
 
-          const response = await fetch(`https://graph.microsoft.com/v1.0${endpoint}`, {
+          const response = await fetch(`https: //graph.microsoft.com/v1.0${endpoint}`, {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
@@ -162,7 +162,7 @@ export class MicrosoftGraphService {
         try {
           await request();
         } catch (error) {
-          logger.error('Graph API request failed:', error);
+          logger.error('Graph API request failed: ', error);
         }
       }
     }
@@ -215,7 +215,7 @@ export class MicrosoftGraphService {
     let endpoint = `/me/drive/root/children?$top=${limit}&$select=id,name,size,lastModifiedDateTime,webUrl`;
     
     if (folder) {
-      endpoint = `/me/drive/root:/${encodeURIComponent(folder)}:/children?$top=${limit}&$select=id,name,size,lastModifiedDateTime,webUrl`;
+      endpoint = `/me/drive/root: /${encodeURIComponent(folder)}:/children?$top=${limit}&$select=id,name,size,lastModifiedDateTime,webUrl`;
     }
 
     return this.makeGraphRequest(endpoint, accessToken);
@@ -226,7 +226,7 @@ export class MicrosoftGraphService {
    */
   async getUserProfile(): Promise<any> {
     const accessToken = await this.getValidToken();
-    const response = await fetch('https://graph.microsoft.com/v1.0/me', {
+    const response = await fetch('https: //graph.microsoft.com/v1.0/me', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
@@ -246,7 +246,7 @@ export class MicrosoftGraphService {
    */
   async getOrganizationInfo(): Promise<any> {
     const accessToken = await this.getValidToken();
-    const response = await fetch('https://graph.microsoft.com/v1.0/organization', {
+    const response = await fetch('https: //graph.microsoft.com/v1.0/organization', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
@@ -269,7 +269,7 @@ export class MicrosoftGraphService {
       await this.getUserProfile();
       return true;
     } catch (error) {
-      logger.error('Microsoft Graph connection test failed:', error);
+      logger.error('Microsoft Graph connection test failed: ', error);
       return false;
     }
   }

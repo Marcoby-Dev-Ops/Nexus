@@ -45,7 +45,7 @@ interface DemoResult {
   timeElapsed?: number;
 }
 
-const ADVANCED_CAPABILITIES: AICapability[] = [
+const ADVANCEDCAPABILITIES: AICapability[] = [
   {
     id: 'self-evolution',
     title: 'Self-Evolving System Architecture',
@@ -384,11 +384,11 @@ export const AdvancedAICapabilitiesDemo: React.FC = () => {
   };
 
   const getCapabilityCardClass = (capability: AICapability) => {
-    const baseClass = 'p-6 border-2 transition-all duration-300 cursor-pointer hover:shadow-lg';
+    const baseClass = 'p-6 border-2 transition-all duration-300 cursor-pointer hover: shadow-lg';
     if (activeDemo === capability.id) {
       return `${baseClass} border-primary bg-primary/5`;
     }
-    return `${baseClass} border-gray-200 hover:border-primary/50`;
+    return `${baseClass} border-gray-200 hover: border-primary/50`;
   };
 
   const getImpactColor = (impact: string) => {
@@ -440,7 +440,10 @@ export const AdvancedAICapabilitiesDemo: React.FC = () => {
                 runProcessMiningDemo();
               } else {
                 // Handle other demos
-                console.log(`Demo for ${capability.id} not implemented yet`);
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Demo for ${capability.id} not implemented yet`);
               }
             }}
           >
@@ -571,7 +574,7 @@ const DemoResultDisplay: React.FC<{ result: DemoResult }> = ({ result }) => {
 
       {result.insights && (
         <div className="space-y-2">
-          <p className="text-sm font-medium">Insights:</p>
+          <p className="text-sm font-medium">Insights: </p>
           <div className="space-y-1">
             {result.insights.map((insight, index) => (
               <div key={index} className="text-xs flex items-start gap-2">
@@ -585,7 +588,7 @@ const DemoResultDisplay: React.FC<{ result: DemoResult }> = ({ result }) => {
 
       {result.improvements && result.status === 'success' && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-green-600">Improvements:</p>
+          <p className="text-sm font-medium text-green-600">Improvements: </p>
           <div className="space-y-1">
             {result.improvements.map((improvement, index) => (
               <div key={index} className="text-xs flex items-start gap-2">
@@ -612,7 +615,7 @@ const ImplementationGuide: React.FC = () => (
       </CardDescription>
     </CardHeader>
     <CardContent>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
         <div>
           <h4 className="font-semibold mb-3">Phase 1: Foundation (Weeks 1-4)</h4>
           <ul className="space-y-2 text-sm">

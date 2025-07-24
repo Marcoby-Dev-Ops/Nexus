@@ -226,7 +226,7 @@ export class PersistentAuthService {
 
       const now = Math.floor(Date.now() / 1000);
       const expiresAt = session.expires_at;
-      const timeUntilExpiry = expiresAt ? (expiresAt - now) * 1000 : null;
+      const timeUntilExpiry = expiresAt ? (expiresAt - now) * 1000: null;
       const needsRefresh = timeUntilExpiry !== null && timeUntilExpiry < this.config.tokenRefreshThreshold;
 
       if (needsRefresh) {
@@ -317,8 +317,8 @@ export class PersistentAuthService {
 
       // Try to set the session
       const { data: { session }, error } = await supabase.auth.setSession({
-        access_token: sessionData.accessToken,
-        refresh_token: sessionData.refreshToken
+        accesstoken: sessionData.accessToken,
+        refreshtoken: sessionData.refreshToken
       });
 
       if (error) {
@@ -404,7 +404,7 @@ export class PersistentAuthService {
       const now = Date.now();
       // sessionData.expiresAt is in seconds, convert to milliseconds for Date constructor
       const expiresAt = sessionData.expiresAt ? new Date(sessionData.expiresAt * 1000) : null;
-      const timeUntilExpiry = expiresAt ? expiresAt.getTime() - now : null;
+      const timeUntilExpiry = expiresAt ? expiresAt.getTime() - now: null;
 
       return { expiresAt, timeUntilExpiry };
     } catch (error) {

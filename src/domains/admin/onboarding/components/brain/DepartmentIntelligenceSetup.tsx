@@ -6,22 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Users, 
-  TrendingUp, 
-  Lightbulb, 
-  Sparkles,
-  CheckCircle,
-  Clock,
-  BarChart3,
-  DollarSign,
-  Zap,
-  Target,
-  Brain,
-  Settings,
-  Activity
-} from 'lucide-react';
-
+import { Users, Sparkles, CheckCircle, Clock, BarChart3, DollarSign, Zap, Target, Settings, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/Progress';
@@ -72,9 +57,9 @@ interface DepartmentInsight {
 }
 
 export const DepartmentIntelligenceSetup: React.FC<DepartmentIntelligenceSetupProps> = ({ 
-  userProfile: _userProfile, 
+  userProfile: userProfile, 
   systemIntelligence,
-  onDepartmentsConfigured: _onDepartmentsConfigured 
+  onDepartmentsConfigured: onDepartmentsConfigured 
 }) => {
   const [departments, setDepartments] = useState<DepartmentConfig[]>([]);
   const [activeDepartment, setActiveDepartment] = useState<string>('');
@@ -347,14 +332,14 @@ export const DepartmentIntelligenceSetup: React.FC<DepartmentIntelligenceSetupPr
       )}
 
       {/* Department Selection */}
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md: grid-cols-2 gap-4">
         {departments.map((dept) => (
           <Card 
             key={dept.id}
             className={`cursor-pointer transition-all duration-300 ${
               dept.isActive 
                 ? 'ring-2 ring-primary shadow-lg' 
-                : 'hover:shadow-md'
+                : 'hover: shadow-md'
             }`}
             onClick={() => handleDepartmentToggle(dept.id)}
           >
@@ -428,7 +413,7 @@ export const DepartmentIntelligenceSetup: React.FC<DepartmentIntelligenceSetupPr
                       {agent.description}
                     </p>
                     <div className="space-y-1">
-                      <div className="text-xs font-medium text-primary">Capabilities:</div>
+                      <div className="text-xs font-medium text-primary">Capabilities: </div>
                       <div className="flex flex-wrap gap-1">
                         {agent.capabilities.map((capability, index) => (
                           <Badge key={index} variant="outline" className="text-xs">

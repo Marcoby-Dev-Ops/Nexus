@@ -24,7 +24,7 @@ import {
   Crown,
   Medal
 } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 // Mock types and services for now
 interface LivingAssessment {
@@ -69,7 +69,10 @@ const businessBenchmarkingService = {
 };
 
 const logger = {
-  error: (message: string, error: any) => console.error(message, error)
+  error: (message: string, error: any) => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(message, error)
 };
 
 interface LivingBusinessAssessmentProps {
@@ -100,8 +103,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
         return <TrendingUp className="w-4 h-4 text-success" />;
       case 'below':
         return <TrendingDown className="w-4 h-4 text-destructive" />;
-      default:
-        return <BarChart3 className="w-4 h-4 text-muted-foreground" />;
+      default: return <BarChart3 className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -121,8 +123,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
         return <Trophy className="w-5 h-5 text-warning" />;
       case 'Category Excellence':
         return <Crown className="w-5 h-5 text-secondary" />;
-      default:
-        return <Award className="w-5 h-5 text-muted-foreground" />;
+      default: return <Award className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -178,7 +179,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
           </div>
 
           {/* Quick Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
             <div className="text-center p-4 rounded-lg bg-muted/30">
               <div className="flex items-center justify-center mb-2">
                 <Trophy className="w-5 h-5 text-warning" />
@@ -239,7 +240,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
 
       {/* Tab Content */}
       {selectedTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
           {/* Benchmark Comparison */}
           <Card>
             <CardHeader>
@@ -317,7 +318,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
       )}
 
       {selectedTab === 'peers' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
           {/* Peer Score Comparison */}
           <Card>
             <CardHeader>
@@ -389,7 +390,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
       )}
 
       {selectedTab === 'achievements' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
           {assessment.achievements.map((achievement, index) => (
             <Card key={index} className="p-4">
               <div className="flex items-start gap-4">
@@ -419,7 +420,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             <div className="text-center p-4 rounded-lg bg-muted/30">
               <div className="text-2xl font-bold">{assessment.industryInsights.averageScore}</div>
               <div className="text-sm text-muted-foreground">Industry Average</div>
@@ -445,7 +446,7 @@ const LivingBusinessAssessment: React.FC<LivingBusinessAssessmentProps> = ({
           </div>
 
           {assessment.industryInsights.growthOpportunities.length > 0 && (
-            <div className="mt-4 p-4 bg-primary/5 dark:bg-blue-900/20 rounded-lg">
+            <div className="mt-4 p-4 bg-primary/5 dark: bg-blue-900/20 rounded-lg">
               <div className="font-semibold text-blue-900 dark:text-blue-100 mb-2">
                 Growth Opportunities in Your Industry
               </div>

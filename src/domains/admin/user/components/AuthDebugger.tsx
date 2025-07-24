@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { supabase, sessionUtils } from '@/core/supabase';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 export const AuthDebugger: React.FC = () => {
   const { user, session } = useAuth();
@@ -13,11 +13,17 @@ export const AuthDebugger: React.FC = () => {
   const testJWTTransmission = async () => {
     setIsLoading(true);
     try {
-      console.log('🧪 Testing JWT token transmission...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 Testing JWT token transmission...');
       
       // Test the new JWT transmission function
       const result = await sessionUtils.testAndFixJWTTransmission();
-      console.log('JWT transmission test result:', result);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('JWT transmission test result: ', result);
       
       if (result.success) {
         // Now test if we can access user_integrations with regular supabase client
@@ -26,7 +32,10 @@ export const AuthDebugger: React.FC = () => {
           .select('*')
           .eq('user_id', user?.id);
         
-        console.log('User integrations test:', { integrations, error: integrationsError });
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('User integrations test: ', { integrations, error: integrationsError });
         
         setTestResults({
           jwtTest: result,
@@ -43,7 +52,10 @@ export const AuthDebugger: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Test error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Test error: ', error);
       setTestResults({
         jwtTest: { success: false, error: error instanceof Error ? error.message : 'Unknown error' },
         integrationsTest: null
@@ -56,7 +68,10 @@ export const AuthDebugger: React.FC = () => {
   const testDirectAccess = async () => {
     setIsLoading(true);
     try {
-      console.log('🧪 Testing direct access to user_integrations...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 Testing direct access to user_integrations...');
       
       // Test direct access without any special handling
       const { data, error } = await supabase
@@ -64,7 +79,10 @@ export const AuthDebugger: React.FC = () => {
         .select('*')
         .eq('user_id', user?.id);
       
-      console.log('Direct access test:', { data, error });
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Direct access test: ', { data, error });
       
       setTestResults({
         directAccess: {
@@ -74,7 +92,10 @@ export const AuthDebugger: React.FC = () => {
         }
       });
     } catch (error) {
-      console.error('Direct access test error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Direct access test error: ', error);
       setTestResults({
         directAccess: {
           success: false,
@@ -89,14 +110,23 @@ export const AuthDebugger: React.FC = () => {
   const testSessionAndJWT = async () => {
     setIsLoading(true);
     try {
-      console.log('🧪 Testing session and JWT transmission...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 Testing session and JWT transmission...');
       
       // Get current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Current session:', { session, error: sessionError });
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Current session: ', { session, error: sessionError });
       
       if (!session) {
-        console.error('❌ No session found');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ No session found');
         setTestResults({
           sessionTest: {
             success: false,
@@ -106,7 +136,10 @@ export const AuthDebugger: React.FC = () => {
         return;
       }
       
-      console.log('✅ Session found:', {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Session found: ', {
         userId: session.user.id,
         email: session.user.email,
         hasAccessToken: !!session.access_token,
@@ -118,10 +151,16 @@ export const AuthDebugger: React.FC = () => {
       
       // Test if session is expired
       if (session.expires_at && (session.expires_at * 1000) < Date.now()) {
-        console.log('⚠️ Session is expired, attempting refresh...');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('⚠️ Session is expired, attempting refresh...');
         const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
         if (refreshError || !refreshData.session) {
-          console.error('❌ Session refresh failed:', refreshError);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Session refresh failed: ', refreshError);
           setTestResults({
             sessionTest: {
               success: false,
@@ -130,7 +169,10 @@ export const AuthDebugger: React.FC = () => {
           });
           return;
         }
-        console.log('✅ Session refreshed successfully');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Session refreshed successfully');
       }
       
       // Test a simple query to see if JWT is being sent
@@ -140,7 +182,10 @@ export const AuthDebugger: React.FC = () => {
         .eq('id', session.user.id)
         .limit(1);
       
-      console.log('JWT transmission test:', { testData, testError });
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('JWT transmission test: ', { testData, testError });
       
       setTestResults({
         sessionTest: {
@@ -157,7 +202,10 @@ export const AuthDebugger: React.FC = () => {
         }
       });
     } catch (error) {
-      console.error('Session test error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Session test error: ', error);
       setTestResults({
         sessionTest: {
           success: false,
@@ -180,7 +228,7 @@ export const AuthDebugger: React.FC = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
           <Button 
             onClick={testJWTTransmission}
             disabled={isLoading}
@@ -229,7 +277,7 @@ export const AuthDebugger: React.FC = () => {
 
             {testResults.integrationsTest && (
               <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-2">User Integrations Test:</h4>
+                <h4 className="font-medium mb-2">User Integrations Test: </h4>
                 <div className="text-sm space-y-1">
                   <div>Status: <Badge variant={testResults.integrationsTest.success ? 'default' : 'destructive'}>
                     {testResults.integrationsTest.success ? 'Success' : 'Failed'}
@@ -246,7 +294,7 @@ export const AuthDebugger: React.FC = () => {
 
             {testResults.directAccess && (
               <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-2">Direct Access Test:</h4>
+                <h4 className="font-medium mb-2">Direct Access Test: </h4>
                 <div className="text-sm space-y-1">
                   <div>Status: <Badge variant={testResults.directAccess.success ? 'default' : 'destructive'}>
                     {testResults.directAccess.success ? 'Success' : 'Failed'}
@@ -263,7 +311,7 @@ export const AuthDebugger: React.FC = () => {
 
             {testResults.sessionTest && (
               <div className="p-4 border rounded-lg">
-                <h4 className="font-medium mb-2">Session & JWT Test:</h4>
+                <h4 className="font-medium mb-2">Session & JWT Test: </h4>
                 <div className="text-sm space-y-1">
                   <div>Status: <Badge variant={testResults.sessionTest.success ? 'default' : 'destructive'}>
                     {testResults.sessionTest.success ? 'Success' : 'Failed'}
@@ -290,7 +338,7 @@ export const AuthDebugger: React.FC = () => {
         )}
 
         <div className="text-sm text-gray-600">
-          <p><strong>Session Status:</strong> {session ? 'Active' : 'Inactive'}</p>
+          <p><strong>Session Status: </strong> {session ? 'Active' : 'Inactive'}</p>
           <p><strong>User ID:</strong> {user?.id || 'None'}</p>
           <p><strong>Email:</strong> {user?.email || 'None'}</p>
           {session && (

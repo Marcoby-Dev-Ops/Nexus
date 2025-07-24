@@ -1,21 +1,27 @@
 import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { testAuthentication, testInsertDebugLog } from '@/core/testAuth';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 export const AuthTest: React.FC = () => {
   const [testResult, setTestResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const { user, session } = useAuthContext();
+  const { user, session } = useAuth();
 
   const runAuthTest = async () => {
     setLoading(true);
     try {
       const result = await testAuthentication();
       setTestResult(result);
-      console.log('Auth test result:', result);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Auth test result: ', result);
     } catch (error) {
-      console.error('Auth test error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Auth test error: ', error);
       setTestResult({ error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setLoading(false);
@@ -27,9 +33,15 @@ export const AuthTest: React.FC = () => {
     try {
       const result = await testInsertDebugLog();
       setTestResult(result);
-      console.log('Insert test result:', result);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Insert test result: ', result);
     } catch (error) {
-      console.error('Insert test error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Insert test error: ', error);
       setTestResult({ error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setLoading(false);
@@ -41,7 +53,7 @@ export const AuthTest: React.FC = () => {
       <h3 className="text-lg font-semibold mb-4">Authentication Test</h3>
       
       <div className="mb-4">
-        <p><strong>Current User:</strong> {user?.email || 'None'}</p>
+        <p><strong>Current User: </strong> {user?.email || 'None'}</p>
         <p><strong>User ID:</strong> {user?.id || 'None'}</p>
         <p><strong>Session:</strong> {session ? 'Active' : 'None'}</p>
       </div>

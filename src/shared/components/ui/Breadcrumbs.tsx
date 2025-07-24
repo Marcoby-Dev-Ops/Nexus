@@ -18,14 +18,14 @@ export interface BreadcrumbsProps {
 const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, className }) => {
   return (
     <nav aria-label="Breadcrumb" className={cn('flex', className)}>
-      <ol className="inline-flex items-center space-x-1 md:space-x-4">
+      <ol className="inline-flex items-center space-x-1 md: space-x-4">
         {items.map((item, index) => (
           <li key={index} className="inline-flex items-center">
             {index > 0 && (
               <svg 
                 className="w-3 h-3 text-muted-foreground mx-1" 
                 aria-hidden="true" 
-                xmlns="http://www.w3.org/2000/svg" 
+                xmlns="http: //www.w3.org/2000/svg" 
                 fill="none" 
                 viewBox="0 0 6 10"
               >
@@ -41,7 +41,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, className }) => {
             {item.href && !item.current ? (
               <a
                 href={item.href}
-                className="inline-flex items-center text-sm font-medium text-foreground/90 hover:text-primary dark:text-muted-foreground dark:hover:text-primary-foreground"
+                className="inline-flex items-center text-sm font-medium text-foreground/90 hover: text-primary dark:text-muted-foreground dark:hover:text-primary-foreground"
               >
                 {item.label}
               </a>
@@ -50,7 +50,7 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items, className }) => {
                 className={cn(
                   "text-sm font-medium",
                   item.current 
-                    ? "text-muted-foreground dark:text-muted-foreground" 
+                    ? "text-muted-foreground dark: text-muted-foreground" 
                     : "text-foreground/90 dark:text-muted-foreground"
                 )}
                 aria-current={item.current ? "page" : undefined}

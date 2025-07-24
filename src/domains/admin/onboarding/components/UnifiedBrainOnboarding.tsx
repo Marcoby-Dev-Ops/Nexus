@@ -21,7 +21,7 @@ import {
   User
 } from 'lucide-react';
 
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { BusinessContextCollector } from './brain/BusinessContextCollector';
@@ -141,7 +141,7 @@ export const UnifiedBrainOnboarding: React.FC<{
   onComplete: () => void;
   className?: string;
 }> = ({ onComplete, className = '' }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [session, setSession] = useState<BrainOnboardingSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [state, setState] = useState<BrainOnboardingState>({
@@ -203,7 +203,10 @@ export const UnifiedBrainOnboarding: React.FC<{
           }));
         }
       } catch (error) {
-        console.error('Error initializing brain onboarding session:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error initializing brain onboarding session: ', error);
       } finally {
         setIsLoading(false);
       }
@@ -325,35 +328,35 @@ export const UnifiedBrainOnboarding: React.FC<{
 
       // Save session progress
       await brainOnboardingService.updateSessionProgress(session.session_id, {
-        current_step: state.currentStep + 1,
-        completed_steps: [...state.completedSteps, `step_${state.currentStep}`],
-        system_intelligence: brainAnalysis.updatedIntelligence,
-        last_interaction_at: new Date().toISOString()
+        currentstep: state.currentStep + 1,
+        completedsteps: [...state.completedSteps, `step_${state.currentStep}`],
+        systemintelligence: brainAnalysis.updatedIntelligence,
+        lastinteraction_at: new Date().toISOString()
       });
 
       // Record FIRE action
       await brainOnboardingService.recordFireAction(session.session_id, {
-        action_type: 'feedback',
-        step_id: `step_${state.currentStep}`,
-        action_data: stepData,
-        fire_cycle_phase: 'feedback',
-        intelligence_gain: brainAnalysis.intelligenceGain || 0,
-        brain_response: brainAnalysis.brainResponse,
-        response_confidence: brainAnalysis.brainResponse?.confidence || 0.8
+        actiontype: 'feedback',
+        stepid: `step_${state.currentStep}`,
+        actiondata: stepData,
+        firecycle_phase: 'feedback',
+        intelligencegain: brainAnalysis.intelligenceGain || 0,
+        brainresponse: brainAnalysis.brainResponse,
+        responseconfidence: brainAnalysis.brainResponse?.confidence || 0.8
       });
 
       // Generate insights from brain analysis
       if (brainAnalysis.insights?.length > 0) {
         for (const insight of brainAnalysis.insights) {
           await brainOnboardingService.generateInsight(session.session_id, {
-            insight_type: insight.type,
+            insighttype: insight.type,
             title: insight.title,
             description: insight.description,
             category: insight.category,
             impact: insight.impact,
             confidence: insight.confidence,
-            step_id: `step_${state.currentStep}`,
-            brain_integration_type: 'action-analysis'
+            stepid: `step_${state.currentStep}`,
+            brainintegration_type: 'action-analysis'
           });
         }
       }
@@ -365,7 +368,10 @@ export const UnifiedBrainOnboarding: React.FC<{
       }));
 
     } catch (error) {
-      console.error('Error completing step:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing step: ', error);
       // Continue without brain analysis if it fails
       setState(prev => ({
         ...prev,
@@ -389,10 +395,16 @@ export const UnifiedBrainOnboarding: React.FC<{
       // Clear session
       brainOnboardingService.clearCurrentSession();
       
-      console.log('Onboarding Complete - Transformation Analysis:', analyzeTransformation(state));
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Onboarding Complete - Transformation Analysis: ', analyzeTransformation(state));
       onComplete();
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing onboarding: ', error);
       onComplete(); // Still complete even if backend fails
     }
   };
@@ -474,13 +486,13 @@ const BrainIntroductionStep: React.FC<{
         {/* Personalized Welcome Message */}
         <div className="bg-primary/5 rounded-lg p-4 max-w-2xl mx-auto">
           <p className="text-sm text-muted-foreground">
-            <strong>Your Brain is Learning:</strong> I'm analyzing your profile and preparing personalized insights. 
+            <strong>Your Brain is Learning: </strong> I'm analyzing your profile and preparing personalized insights. 
             As you provide more information, I'll get smarter and provide more targeted guidance.
           </p>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md: grid-cols-3 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
@@ -553,8 +565,8 @@ const BusinessContextStep: React.FC<{
   onComplete: (data: Partial<BrainOnboardingState>) => void;
   onBack: () => void;
   user: any;
-}> = ({ step: _step, state, onComplete, onBack: _onBack, user: _user }) => {
-  const handleContextUpdated = (context: any) => {
+}> = ({ step: step, state, onComplete, onBack: onBack, user: user }) => {
+  const handleContextUpdated = (__context: any) => {
     const updatedIntelligence = {
       ...state.systemIntelligence,
       understandingLevel: Math.min(100, state.systemIntelligence.understandingLevel + 25),
@@ -583,8 +595,8 @@ const GoalSettingStep: React.FC<{
   state: BrainOnboardingState;
   onComplete: (data: Partial<BrainOnboardingState>) => void;
   onBack: () => void;
-}> = ({ step: _step, state, onComplete, onBack: _onBack }) => {
-  const handleGoalsSet = (_goals: any) => {
+}> = ({ step: step, state, onComplete, onBack: onBack }) => {
+  const handleGoalsSet = (___goals: any) => {
     const updatedIntelligence = {
       ...state.systemIntelligence,
       understandingLevel: Math.min(100, state.systemIntelligence.understandingLevel + 20),
@@ -620,8 +632,8 @@ const DepartmentSetupStep: React.FC<{
   state: BrainOnboardingState;
   onComplete: (data: Partial<BrainOnboardingState>) => void;
   onBack: () => void;
-}> = ({ step: _step, state, onComplete, onBack: _onBack }) => {
-  const handleDepartmentsConfigured = (_departments: any) => {
+}> = ({ step: step, state, onComplete, onBack: onBack }) => {
+  const handleDepartmentsConfigured = (___departments: any) => {
     const updatedIntelligence = {
       ...state.systemIntelligence,
       understandingLevel: Math.min(100, state.systemIntelligence.understandingLevel + 15),
@@ -657,8 +669,8 @@ const BrainDemoStep: React.FC<{
   state: BrainOnboardingState;
   onComplete: (data: Partial<BrainOnboardingState>) => void;
   onBack: () => void;
-}> = ({ step: _step, state, onComplete, onBack: _onBack }) => {
-  const handleAnalysisComplete = (_analysis: any) => {
+}> = ({ step: step, state, onComplete, onBack: onBack }) => {
+  const handleAnalysisComplete = (___analysis: any) => {
     const updatedIntelligence = {
       ...state.systemIntelligence,
       understandingLevel: Math.min(100, state.systemIntelligence.understandingLevel + 30),
@@ -694,8 +706,8 @@ const TransformationPreviewStep: React.FC<{
   state: BrainOnboardingState;
   onComplete: (data: Partial<BrainOnboardingState>) => void;
   onBack: () => void;
-}> = ({ step: _step, state, onComplete, onBack: _onBack }) => {
-  const handleTransformationComplete = (_transformation: any) => {
+}> = ({ step: step, state, onComplete, onBack: onBack }) => {
+  const handleTransformationComplete = (___transformation: any) => {
     const updatedIntelligence = {
       ...state.systemIntelligence,
       understandingLevel: Math.min(100, state.systemIntelligence.understandingLevel + 25),
@@ -770,15 +782,15 @@ const OnboardingComplete: React.FC<{
             <h4 className="font-semibold mb-2">System Intelligence Summary</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Understanding Level:</span>
+                <span>Understanding Level: </span>
                 <span className="font-medium">{Math.round(state.systemIntelligence.understandingLevel)}%</span>
               </div>
               <div className="flex justify-between">
-                <span>Personalized Insights:</span>
+                <span>Personalized Insights: </span>
                 <span className="font-medium">{Math.round(state.systemIntelligence.personalizedInsights)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Context Accuracy:</span>
+                <span>Context Accuracy: </span>
                 <span className="font-medium">{Math.round(state.systemIntelligence.contextAccuracy)}%</span>
               </div>
             </div>

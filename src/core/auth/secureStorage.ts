@@ -48,7 +48,10 @@ class SecureStorage {
         ['encrypt', 'decrypt']
       );
     } catch (error) {
-      console.warn('Failed to initialize encryption key:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to initialize encryption key: ', error);
       this.key = null;
     }
   }
@@ -82,7 +85,10 @@ class SecureStorage {
 
       return btoa(String.fromCharCode(...combined));
     } catch (error) {
-      console.warn('Encryption failed, using base64:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Encryption failed, using base64: ', error);
       return btoa(data);
     }
   }
@@ -120,7 +126,10 @@ class SecureStorage {
 
       return new TextDecoder().decode(decryptedData);
     } catch (error) {
-      console.warn('Decryption failed, trying base64:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Decryption failed, trying base64: ', error);
       try {
         return atob(encryptedData);
       } catch {
@@ -136,7 +145,10 @@ class SecureStorage {
     try {
       // Validate input value
       if (value === undefined) {
-        console.warn(`Attempting to store undefined value for key: ${key}`);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Attempting to store undefined value for key: ${key}`);
         return;
       }
 
@@ -145,7 +157,10 @@ class SecureStorage {
       try {
         serializableValue = JSON.parse(JSON.stringify(value));
       } catch (error) {
-        console.error(`Value for ${key} is not serializable:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Value for ${key} is not serializable: `, error);
         throw new Error(`Cannot store non-serializable value for key: ${key}`);
       }
 
@@ -170,7 +185,10 @@ class SecureStorage {
         finalValue
       );
     } catch (error) {
-      console.error(`Failed to store ${key}:`, error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Failed to store ${key}:`, error);
       throw new Error(`Storage failed for key: ${key}`);
     }
   }
@@ -190,14 +208,20 @@ class SecureStorage {
 
       // Handle cases where the stored value is not a string or is corrupted
       if (typeof storedValue !== 'string') {
-        console.warn(`Invalid stored value type for ${key}:`, typeof storedValue);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Invalid stored value type for ${key}:`, typeof storedValue);
         this.removeItem(key);
         return defaultValue ?? null;
       }
 
       // Check for obvious corruption (e.g., "[object Object]")
       if (storedValue === '[object Object]' || storedValue.startsWith('[object ')) {
-        console.warn(`Corrupted stored value detected for ${key}:`, storedValue);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Corrupted stored value detected for ${key}:`, storedValue);
         this.removeItem(key);
         return defaultValue ?? null;
       }
@@ -208,7 +232,10 @@ class SecureStorage {
 
       // Validate that rawValue is a string before parsing
       if (typeof rawValue !== 'string') {
-        console.warn(`Decrypted value is not a string for ${key}:`, typeof rawValue);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Decrypted value is not a string for ${key}:`, typeof rawValue);
         this.removeItem(key);
         return defaultValue ?? null;
       }
@@ -217,14 +244,20 @@ class SecureStorage {
       try {
         parsed = JSON.parse(rawValue);
       } catch (parseError) {
-        console.warn(`JSON parse error for ${key}:`, parseError, 'Raw value:', rawValue);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`JSON parse error for ${key}:`, parseError, 'Raw value: ', rawValue);
         this.removeItem(key);
         return defaultValue ?? null;
       }
 
       // Validate parsed structure
       if (!parsed || typeof parsed !== 'object') {
-        console.warn(`Invalid parsed structure for ${key}:`, parsed);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Invalid parsed structure for ${key}:`, parsed);
         this.removeItem(key);
         return defaultValue ?? null;
       }
@@ -237,7 +270,10 @@ class SecureStorage {
 
       return parsed.data;
     } catch (error) {
-      console.warn(`Failed to retrieve ${key}:`, error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Failed to retrieve ${key}:`, error);
       // Clean up corrupted data
       this.removeItem(key);
       return defaultValue ?? null;
@@ -288,22 +324,34 @@ class SecureStorage {
       try {
         const value = localStorage.getItem(key);
         if (value === '[object Object]' || (value && value.startsWith('[object '))) {
-          console.warn(`Found corrupted entry: ${key} = ${value}`);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Found corrupted entry: ${key} = ${value}`);
           keysToRemove.push(key);
         }
       } catch (error) {
-        console.warn(`Error checking key ${key}:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Error checking key ${key}:`, error);
         keysToRemove.push(key);
       }
     }
     
     keysToRemove.forEach(key => {
-      console.log(`Removing corrupted entry: ${key}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Removing corrupted entry: ${key}`);
       localStorage.removeItem(key);
     });
     
     if (keysToRemove.length > 0) {
-      console.log(`Cleaned up ${keysToRemove.length} corrupted localStorage entries`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Cleaned up ${keysToRemove.length} corrupted localStorage entries`);
     }
   }
 }

@@ -6,7 +6,7 @@
  */
 
 import React, { useState } from 'react';
-import { useAuthContext } from '@/shared/contexts/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export default function HubSpotTest() {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -34,13 +34,19 @@ export default function HubSpotTest() {
     setDebugInfo(null);
 
     try {
-      console.log('🧪 [HubSpotTest] Starting OAuth test...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 [HubSpotTest] Starting OAuth test...');
       
       // Check environment variables
       const clientId = import.meta.env.VITE_HUBSPOT_CLIENT_ID;
       const appUrl = import.meta.env.VITE_NEXT_PUBLIC_APP_URL || window.location.origin;
       
-      console.log('🧪 [HubSpotTest] Environment check:', {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 [HubSpotTest] Environment check: ', {
         hasClientId: !!clientId,
         appUrl,
         userId: user?.id
@@ -75,14 +81,17 @@ export default function HubSpotTest() {
         'crm.objects.deals.write'
       ].join(',');
 
-      const authUrl = `https://app.hubspot.com/oauth/authorize?` +
+      const authUrl = `https: //app.hubspot.com/oauth/authorize?` +
         `client_id=${clientId}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
         `scope=${encodeURIComponent(scopes)}&` +
         `response_type=code&` +
         `state=${encodeURIComponent(state)}`;
 
-      console.log('🧪 [HubSpotTest] Generated auth URL:', authUrl);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 [HubSpotTest] Generated auth URL: ', authUrl);
 
       // Store debug info
       setDebugInfo({
@@ -104,19 +113,31 @@ export default function HubSpotTest() {
         throw new Error('Popup blocked. Please allow popups for this site and try again.');
       }
 
-      console.log('🧪 [HubSpotTest] Popup opened successfully');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 [HubSpotTest] Popup opened successfully');
 
       // Listen for OAuth completion
       const handleMessage = (event: MessageEvent) => {
-        console.log('🧪 [HubSpotTest] Received message:', event.data);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 [HubSpotTest] Received message: ', event.data);
         
         if (event.origin !== window.location.origin) {
-          console.log('🧪 [HubSpotTest] Ignoring message from different origin:', event.origin);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 [HubSpotTest] Ignoring message from different origin: ', event.origin);
           return;
         }
         
         if (event.data.type === 'hubspot-oauth-success') {
-          console.log('✅ [HubSpotTest] OAuth success received');
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ [HubSpotTest] OAuth success received');
           authWindow?.close();
           setLoading(false);
           setSuccess('HubSpot OAuth completed successfully!');
@@ -126,7 +147,10 @@ export default function HubSpotTest() {
             receivedData: event.data
           }));
         } else if (event.data.type === 'hubspot-oauth-error') {
-          console.log('❌ [HubSpotTest] OAuth error received:', event.data.error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('❌ [HubSpotTest] OAuth error received: ', event.data.error);
           authWindow?.close();
           setLoading(false);
           setError(event.data.error || 'Authentication failed');
@@ -151,7 +175,10 @@ export default function HubSpotTest() {
       }, 300000); // 5 minutes
 
     } catch (error: any) {
-      console.error('❌ [HubSpotTest] OAuth test failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [HubSpotTest] OAuth test failed: ', error);
       setError(error.message || 'Failed to start OAuth test');
       setLoading(false);
     }
@@ -159,14 +186,17 @@ export default function HubSpotTest() {
 
   const checkEnvironment = () => {
     const env = {
-      VITE_HUBSPOT_CLIENT_ID: import.meta.env.VITE_HUBSPOT_CLIENT_ID,
-      VITE_HUBSPOT_CLIENT_SECRET: import.meta.env.VITE_HUBSPOT_CLIENT_SECRET ? '***' : 'missing',
-      VITE_NEXT_PUBLIC_APP_URL: import.meta.env.VITE_NEXT_PUBLIC_APP_URL,
-      VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+      VITEHUBSPOT_CLIENT_ID: import.meta.env.VITE_HUBSPOT_CLIENT_ID,
+      VITEHUBSPOT_CLIENT_SECRET: import.meta.env.VITE_HUBSPOT_CLIENT_SECRET ? '***' : 'missing',
+      VITENEXT_PUBLIC_APP_URL: import.meta.env.VITE_NEXT_PUBLIC_APP_URL,
+      VITESUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
       currentOrigin: window.location.origin,
       userAuthenticated: !!user?.id
     };
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🔍 [HubSpotTest] Environment check:', env);
     setDebugInfo(prev => ({ ...prev, environment: env }));
   };
@@ -206,7 +236,7 @@ export default function HubSpotTest() {
       )}
 
       {/* Test Controls */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -251,7 +281,7 @@ export default function HubSpotTest() {
           <CardContent>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Authenticated:</span>
+                <span>Authenticated: </span>
                 <Badge variant={user?.id ? "default" : "secondary"}>
                   {user?.id ? "Yes" : "No"}
                 </Badge>

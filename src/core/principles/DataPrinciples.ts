@@ -20,7 +20,7 @@ export interface ComplianceRequirement {
   riskLevel: 'low' | 'medium' | 'high';
 }
 
-export const DATA_PRINCIPLES: DataPrinciple[] = [
+export const DATAPRINCIPLES: DataPrinciple[] = [
   {
     principle: "Zero Client Data Storage",
     description: "Never store sensitive client data locally. Only store metadata, analysis results, and configuration.",
@@ -78,7 +78,7 @@ export const DATA_PRINCIPLES: DataPrinciple[] = [
   }
 ];
 
-export const COMPLIANCE_REQUIREMENTS: ComplianceRequirement[] = [
+export const COMPLIANCEREQUIREMENTS: ComplianceRequirement[] = [
   {
     requirement: "GDPR Compliance",
     description: "No personal data storage, right to be forgotten, data portability",
@@ -129,7 +129,7 @@ export interface DataClassificationPolicy {
   encryptionRequired: boolean;
 }
 
-export const DATA_CLASSIFICATION_POLICIES: Record<DataClassification, DataClassificationPolicy> = {
+export const DATACLASSIFICATIONPOLICIES: Record<DataClassification, DataClassificationPolicy> = {
   [DataClassification.PUBLIC]: {
     classification: DataClassification.PUBLIC,
     description: "Public business information",
@@ -171,7 +171,7 @@ export interface DataProcessingGuideline {
   complianceNotes: string[];
 }
 
-export const DATA_PROCESSING_GUIDELINES: DataProcessingGuideline[] = [
+export const DATAPROCESSINGGUIDELINES: DataProcessingGuideline[] = [
   {
     domain: "Email & Communication",
     dataType: "Email content, attachments, metadata",
@@ -244,7 +244,7 @@ export interface ImplementationChecklist {
   testingCriteria: string[];
 }
 
-export const IMPLEMENTATION_CHECKLIST: ImplementationChecklist[] = [
+export const IMPLEMENTATIONCHECKLIST: ImplementationChecklist[] = [
   {
     component: "Email Integration",
     requirements: [

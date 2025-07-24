@@ -7,35 +7,10 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Input } from '@/shared/components/ui/Input';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 import { toast } from 'sonner';
-import {
-  Shield,
-  Lock,
-  Key,
-  Smartphone,
-  Monitor,
-  Globe,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Trash2,
-  RefreshCw,
-  Eye,
-  EyeOff,
-  Plus,
-  Edit,
-  LogOut,
-  Settings,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  XCircle
-} from 'lucide-react';
-
+import { Shield, Lock, Key, Smartphone, Monitor, Clock, Trash2, RefreshCw, Eye, EyeOff, Edit, LogOut, XCircle } from 'lucide-react';
 interface SecuritySettings {
   twoFactorEnabled: boolean;
   emailNotifications: boolean;
@@ -57,7 +32,7 @@ interface ActiveSession {
 }
 
 const SecuritySettings: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorEnabled: false,
     emailNotifications: true,
@@ -109,7 +84,10 @@ const SecuritySettings: React.FC = () => {
 
       setActiveSessions(mockSessions);
     } catch (error) {
-      console.error('Error fetching security data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching security data: ', error);
       toast.error('Failed to load security information');
     } finally {
       setLoading(false);
@@ -239,7 +217,7 @@ const SecuritySettings: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Security & Privacy</h3>
           <p className="text-sm text-muted-foreground">
@@ -331,7 +309,7 @@ const SecuritySettings: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             <div>
               <p className="font-medium mb-2">Last Login</p>
               <p className="text-sm text-muted-foreground">

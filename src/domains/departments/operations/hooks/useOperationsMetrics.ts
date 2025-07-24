@@ -21,7 +21,10 @@ export function useOperationsMetrics() {
         .maybeSingle();
 
       if (error) {
-        console.warn('[useOperationsMetrics] error fetching view', error.message);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('[useOperationsMetrics] error fetching view', error.message);
       }
 
       if (data && data.state) {

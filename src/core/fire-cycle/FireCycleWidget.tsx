@@ -51,7 +51,7 @@ export const FireCycleWidget: React.FC<{ className?: string }> = ({ className })
           return (
             <button
               key={p.id}
-              className={`flex flex-col items-center flex-1 px-1 py-2 transition-all ${active ? 'bg-primary/10 border-primary border-2' : 'hover:bg-accent border border-transparent'} rounded-lg mx-1`}
+              className={`flex flex-col items-center flex-1 px-1 py-2 transition-all ${active ? 'bg-primary/10 border-primary border-2' : 'hover: bg-accent border border-transparent'} rounded-lg mx-1`}
               onClick={() => setPhase(p.id as PhaseId)}
               aria-current={active ? 'step' : undefined}
               aria-label={p.label}

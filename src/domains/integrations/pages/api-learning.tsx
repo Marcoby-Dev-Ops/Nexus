@@ -122,7 +122,7 @@ export default function ApiLearningPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md: grid-cols-4 gap-6">
                 {[
                   { step: 1, title: 'Upload API Docs', description: 'Upload your business tool\'s API documentation or provide URLs' },
                   { step: 2, title: 'AI Analysis', description: 'Our AI analyzes your tool\'s data structure and capabilities' },
@@ -142,7 +142,7 @@ export default function ApiLearningPage() {
           </Card>
 
           {/* Benefits */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">⚡ Speed</CardTitle>
@@ -210,9 +210,9 @@ export default function ApiLearningPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
                 {supportedApis.map((api, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-accent transition-colors">
+                  <div key={index} className="flex items-center space-x-4 p-4 border rounded-lg hover: bg-accent transition-colors">
                     <span className="text-2xl">{api.logo}</span>
                     <div>
                       <p className="font-medium text-sm">{api.name}</p>
@@ -223,7 +223,7 @@ export default function ApiLearningPage() {
               </div>
               <div className="mt-6 p-4 bg-muted rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  <strong>Universal Support:</strong> Works with any API that provides OpenAPI 3.0, Swagger 2.0, 
+                  <strong>Universal Support: </strong> Works with any API that provides OpenAPI 3.0, Swagger 2.0, 
                   or similar machine-readable documentation. Custom APIs and proprietary systems supported with manual documentation.
                 </p>
               </div>
@@ -233,8 +233,11 @@ export default function ApiLearningPage() {
 
         <TabsContent value="builder" className="space-y-6">
           <ApiDocIntegrationSetup 
-            onIntegrationCreated={(_integration: any) => {
-              // console.log('Integration created:', integration);
+            onIntegrationCreated={(___integration: any) => {
+              // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Integration created: ', integration);
               // Could navigate to integration management or show success
             }}
           />

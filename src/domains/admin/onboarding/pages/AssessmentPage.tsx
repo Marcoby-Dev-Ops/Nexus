@@ -87,7 +87,7 @@ const AssessmentPage: React.FC = () => {
                 <p>Your answer: <span className="text-primary font-medium">{res.value}</span> (Score: {res.score})</p>
                 {res.question?.offer && (
                   <div className="mt-2 p-4 bg-secondary rounded-md">
-                    <p className="font-bold text-secondary-foreground">Marcoby Opportunity:</p>
+                    <p className="font-bold text-secondary-foreground">Marcoby Opportunity: </p>
                     <p className="text-sm">{res.question.offer.name} - {res.question.offer.description}</p>
                   </div>
                 )}

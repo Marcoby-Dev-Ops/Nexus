@@ -6,7 +6,7 @@ import { Textarea } from '@/shared/components/ui/Textarea';
 import { Badge } from '@/shared/components/ui/Badge';
 import { useToast } from '@/shared/ui/components/Toast';
 import { Building2, Users, DollarSign, Target, TrendingUp } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from "@/core/supabase";
 import { useOrganizationStore } from '@/shared/stores/organizationStore';
 
@@ -37,7 +37,7 @@ interface MarcobyProfile {
 
 export const QuickBusinessSetup: React.FC = () => {
   const { toast, showToast } = useToast() as any;
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { activeOrgId, loadMemberships } = useOrganizationStore();
   const [profile, setProfile] = useState<MarcobyProfile>({
     companyName: 'Marcoby',
@@ -87,24 +87,22 @@ export const QuickBusinessSetup: React.FC = () => {
 
       // Persist to Supabase (upsert per-org)
       const { error } = await supabase
-        .from('ai_business_profiles')
+        .from('business_profiles')
         .upsert(
           {
-            user_id: user.id,
             org_id: orgId,
             company_name: profile.companyName,
             industry: profile.industry,
             business_model: profile.businessModel,
             primary_services: profile.primaryServices,
-            value_proposition: profile.valueProposition,
+            unique_value_proposition: profile.valueProposition,
             target_markets: profile.targetMarkets,
-            ideal_customer_profile: profile.idealCustomerProfile,
-            total_clients: profile.totalClients,
-            active_clients: profile.activeClients,
-            monthly_revenue: profile.monthlyRevenue,
-            average_deal_size: profile.averageDealSize,
-            short_term_goals: profile.shortTermGoals,
-            current_challenges: profile.currentChallenges,
+            ideal_client_profile: profile.idealCustomerProfile,
+            current_clients: [profile.totalClients.toString()],
+            revenue_model: profile.monthlyRevenue.toString(),
+            pricing_strategy: profile.averageDealSize.toString(),
+            strategic_objectives: Array.isArray(profile.shortTermGoals) ? profile.shortTermGoals : [profile.shortTermGoals],
+            financial_goals: Array.isArray(profile.currentChallenges) ? profile.currentChallenges : [profile.currentChallenges],
           },
           { onConflict: 'org_id' }
         );
@@ -124,7 +122,10 @@ export const QuickBusinessSetup: React.FC = () => {
         variant: 'default'
       });
     } catch (err: any) {
-      console.error('Failed to save business profile', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to save business profile', err);
       (showToast || toast)({
         title: 'Error',
         description: err?.message ?? 'Failed to save business profile',
@@ -135,23 +136,19 @@ export const QuickBusinessSetup: React.FC = () => {
 
   const generateBusinessContext = (profile: MarcobyProfile): string => {
     return `
-BUSINESS CONTEXT FOR AI ASSISTANCE:
-
-Company: ${profile.companyName}
+BUSINESS CONTEXT FOR AI ASSISTANCE: Company: ${profile.companyName}
 Industry: ${profile.industry}
 Business Model: ${profile.businessModel}
 
 SERVICES PROVIDED:
 ${profile.primaryServices.join(', ')}
 
-VALUE PROPOSITION:
-${profile.valueProposition}
+VALUE PROPOSITION: ${profile.valueProposition}
 
 TARGET MARKETS:
 ${profile.targetMarkets.join(', ')}
 
-IDEAL CUSTOMER:
-${profile.idealCustomerProfile}
+IDEAL CUSTOMER: ${profile.idealCustomerProfile}
 
 CURRENT BUSINESS METRICS:
 - Total Clients: ${profile.totalClients}
@@ -159,14 +156,11 @@ CURRENT BUSINESS METRICS:
 - Monthly Revenue: $${profile.monthlyRevenue.toLocaleString()}
 - Average Deal Size: $${profile.averageDealSize.toLocaleString()}
 
-BUSINESS GOALS:
-${profile.shortTermGoals.join(', ')}
+BUSINESS GOALS: ${profile.shortTermGoals.join(', ')}
 
-CURRENT CHALLENGES:
-${profile.currentChallenges.join(', ')}
+CURRENT CHALLENGES: ${profile.currentChallenges.join(', ')}
 
-BUSINESS INTELLIGENCE INSIGHTS:
-${generateInsights(profile)}
+BUSINESS INTELLIGENCE INSIGHTS: ${generateInsights(profile)}
 
 Use this context to provide specific, actionable business advice tailored to Marcoby's situation as a ${profile.businessModel} in the ${profile.industry} space.
     `.trim();
@@ -221,7 +215,7 @@ Use this context to provide specific, actionable business advice tailored to Mar
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Company Name</label>
               <Input
@@ -352,7 +346,7 @@ Use this context to provide specific, actionable business advice tailored to Mar
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Total Clients</label>
               <Input

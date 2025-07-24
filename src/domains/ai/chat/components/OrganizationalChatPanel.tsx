@@ -20,7 +20,7 @@ import {
 } from '@/domains/ai/lib/agentRegistry';
 import { ModernExecutiveAssistant } from '@/domains/ai/agents';
 import { DepartmentalAgent } from '@/domains/ai/agents';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 /**
  * @interface OrganizationalChatPanelProps
@@ -88,11 +88,11 @@ const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ onDepartmentSel
             <button
               key={agent.id}
               onClick={() => onDepartmentSelect(agent)}
-              className="group p-6 rounded-xl border border-border hover:border-border/80 bg-card hover:bg-card/80 transition-all duration-200 text-left"
+              className="group p-6 rounded-xl border border-border hover: border-border/80 bg-card hover:bg-card/80 transition-all duration-200 text-left"
             >
               <div className="flex items-start gap-4">
                 {/* Department Icon */}
-                <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${getDepartmentColor(agent.department || '')} flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
+                <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${getDepartmentColor(agent.department || '')} flex items-center justify-center flex-shrink-0 group-hover: scale-105 transition-transform`}>
                   <span className="text-xl">{agent.avatar}</span>
                 </div>
                 
@@ -129,7 +129,7 @@ const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ onDepartmentSel
                 </div>
 
                 {/* Arrow */}
-                <div className="flex-shrink-0 opacity-50 group-hover:opacity-100 transition-opacity">
+                <div className="flex-shrink-0 opacity-50 group-hover: opacity-100 transition-opacity">
                   <MessageSquare className="w-5 h-5 text-muted-foreground" />
                 </div>
               </div>
@@ -140,7 +140,7 @@ const DepartmentSelector: React.FC<DepartmentSelectorProps> = ({ onDepartmentSel
         {/* Help Text */}
         <div className="text-center p-4 bg-muted/30 rounded-lg mt-6 max-w-md mx-auto">
           <p className="text-sm text-muted-foreground">
-            💡 <strong>Tip:</strong> Department assistants have specialized knowledge and can route to expert sub-assistants
+            💡 <strong>Tip: </strong> Department assistants have specialized knowledge and can route to expert sub-assistants
           </p>
         </div>
       </div>
@@ -155,7 +155,7 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
   const [currentView, setCurrentView] = useState<'executive' | 'departments' | 'department-chat'>('executive');
   const [selectedDepartment, setSelectedDepartment] = useState<Agent | null>(null);
   const [sessionId, setSessionId] = useState<string>('');
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   // Initialize session ID for comprehensive tracking
   useEffect(() => {
@@ -165,13 +165,16 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
           const { chatHistory } = await import('@/domains/admin/onboarding/services/chatHistoryService');
           const { executiveAgent } = await import('@/domains/ai/lib/agentRegistry');
           const conv = await chatHistory.createConversation({
-            user_id: user.id,
+            userid: user.id,
             title: 'Organizational Chat',
-            context: { source: 'org-chat', agent_id: executiveAgent.id }
+            context: { source: 'org-chat', agentid: executiveAgent.id }
           });
           setSessionId(conv.id);
         } catch (err) {
-          console.error('Failed to create organizational conversation', err);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to create organizational conversation', err);
         }
       }
     })();
@@ -215,7 +218,7 @@ export const OrganizationalChatPanel: React.FC<OrganizationalChatPanelProps> = (
               {/* Department Access Button */}
               <button
                 onClick={handleShowDepartments}
-                className="flex items-center gap-2 px-4 py-4 text-sm bg-muted hover:bg-muted/80 rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-4 text-sm bg-muted hover: bg-muted/80 rounded-lg transition-colors"
               >
                 <Users className="w-4 h-4" />
                 <span>Departments</span>

@@ -29,7 +29,7 @@ import {
 import UnifiedAnalyticsDashboard from '@/domains/analytics/components/UnifiedAnalyticsDashboard';
 import CrossPlatformInsightsEngine from '@/domains/analytics/components/CrossPlatformInsightsEngine';
 import DigestibleMetricsDashboard from '@/domains/analytics/components/DigestibleMetricsDashboard';
-import { useSystemContext } from '@/core/hooks/SystemContext';
+import { useData } from '@/shared/contexts/DataContext';
 
 /**
  * @name UnifiedAnalyticsPage
@@ -63,7 +63,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
   
   const department = getDepartmentFromPath();
   const [selectedView, setSelectedView] = useState<'overview' | 'digestible' | 'technical' | 'insights'>('digestible');
-  const { integrationStatus, businessHealth, aiInsights, loading, refresh } = useSystemContext();
+  const { businessData, systemStatus, loading, refreshAll } = useData();
 
   // Mock overview data - in real implementation, this would come from actual analytics
   const analyticsOverview: AnalyticsOverview = {
@@ -219,7 +219,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
 
       {/* Department-Specific System Cards */}
       {department !== 'all' && (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
+        <div className="grid gap-6 md: grid-cols-2 xl:grid-cols-4 mb-8">
           {/* System Health Card */}
           <Card className="flex flex-col">
             <CardHeader>
@@ -347,7 +347,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
       )}
 
       {/* Key Benefits Banner */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
         <Card className="border-l-4 border-l-primary bg-primary/5">
           <CardContent className="p-4">
             <div className="flex items-center space-x-4">
@@ -510,7 +510,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
             </div>
 
             {/* Executive Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -642,7 +642,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                   <Button variant="outline" className="h-auto p-4 justify-start">
                     <div className="text-left">
                       <div className="font-semibold">Scale Successful Marketing Channels</div>
@@ -686,7 +686,7 @@ const UnifiedAnalyticsPage: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4 text-sm">
             <div>
               <h4 className="font-semibold mb-2">📊 Business Dashboard</h4>
               <p className="text-muted-foreground">

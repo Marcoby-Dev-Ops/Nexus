@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 // Hooks and Context
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useOnboardingChatStore } from '@/shared/stores/onboardingChatStore';
 
 // Services
@@ -73,7 +73,7 @@ interface OnboardingStep {
 }
 
 export const OnboardingChatAI: React.FC = () => {
-  const { user, completeOnboarding } = useAuthContext();
+  const { user } = useAuth();
   const { messages, isTyping, addMessage, setIsTyping } = useOnboardingChatStore();
   
   // UI State
@@ -214,8 +214,7 @@ export const OnboardingChatAI: React.FC = () => {
     setSteps(prevSteps =>
       prevSteps.map(step => ({
         ...step,
-        completed:
-          step.requiredProfileFields.length === 0 ||
+        completed: step.requiredProfileFields.length === 0 ||
           step.requiredProfileFields.every(field =>
             userProfile.completedSections[field]
           )
@@ -242,7 +241,7 @@ export const OnboardingChatAI: React.FC = () => {
 
         // Create conversation in database
         const conversation = await chatHistory.createConversation({
-          user_id: user.id,
+          userid: user.id,
           title: 'Onboarding Chat',
           context: { type: 'onboarding' }
         });
@@ -258,7 +257,10 @@ export const OnboardingChatAI: React.FC = () => {
         }, 100);
 
       } catch (error) {
-        console.error('Failed to initialize AI conversation:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to initialize AI conversation: ', error);
         // Fallback to display error message
         addMessage({
           role: 'assistant',
@@ -272,9 +274,12 @@ export const OnboardingChatAI: React.FC = () => {
   }, [user?.id]); // Only depend on user.id to prevent re-initialization
 
   // Update the initial greeting to be more action-oriented and clarify the goal
-  const sendInitialGreeting = async (_convId: string, _sessId: string) => {
+  const sendInitialGreeting = async (_convId: string, sessId: string) => {
     if (messages.length > 0) {
-      console.log('Initial greeting already sent, skipping...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Initial greeting already sent, skipping...');
       return;
     }
 
@@ -283,8 +288,7 @@ export const OnboardingChatAI: React.FC = () => {
 
       const greetingContent = `Hi! I'm your AI Executive Assistant. The goal of our conversation is for me to learn about you and your business so I can provide personalized support.
 
-To start, I need just 3 key pieces of information:
-1. Your company name and role
+To start, I need just 3 key pieces of information: 1. Your company name and role
 2. Your main business
 3. How you measure success
 
@@ -306,7 +310,10 @@ What's your company name and what role do you play?`;
       });
 
     } catch (error) {
-      console.error('Error sending initial greeting:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error sending initial greeting: ', error);
       addMessage({
         role: 'assistant',
         content: "Hi! I'm your AI Executive Assistant. The goal of our conversation is for me to learn about you and your business so I can provide personalized support. What's your company name and role?",
@@ -320,7 +327,10 @@ What's your company name and what role do you play?`;
   const sendAIMessage = async (userMessage: string) => {
     // Ensure we have required data
     if (!conversationId || !sessionId || !user) {
-      console.error('Missing required data for AI message', { conversationId, sessionId, user: !!user });
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Missing required data for AI message', { conversationId, sessionId, user: !!user });
       addMessage({
         role: 'assistant',
         content: "I'm still setting up our conversation. Please wait a moment and try again.",
@@ -346,8 +356,7 @@ What's your company name and what role do you play?`;
       const profileJson = JSON.stringify(userProfile, null, 2);
       
       const onboardingContext = `
-ONBOARDING CONTEXT:
-- This is an onboarding conversation with a new user.
+ONBOARDING CONTEXT: - This is an onboarding conversation with a new user.
 - Current step: ${currentStep + 1} of ${steps.length} (${currentOnboardingStep?.title}: ${currentOnboardingStep?.description})
 - User name: ${user?.profile?.first_name || 'there'}
 - USER PROFILE SO FAR: ${profileJson}
@@ -356,8 +365,7 @@ ONBOARDING CONTEXT:
 You are Nex, their Executive Assistant with access to real business tools and data. Be warm, professional, and genuinely interested.
 Ask thoughtful follow-up questions.
 
-To help me track what you've learned, please include a structured JSON block at the end of your message like this:
-\`\`\`json
+To help me track what you've learned, please include a structured JSON block at the end of your message like this: \`\`\`json
 {
   "extracted_info": {
     "company_name": "Example Corp",
@@ -441,7 +449,10 @@ Only include fields that you were able to extract from the user's message.`;
             }
           }
         } catch (error) {
-          console.error('Error parsing extracted JSON data:', error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error parsing extracted JSON data: ', error);
         }
       }
 
@@ -475,7 +486,10 @@ Only include fields that you were able to extract from the user's message.`;
       }
 
     } catch (error) {
-      console.error('Error sending AI message:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error sending AI message: ', error);
       addMessage({
         role: 'assistant',
         content: "I apologize, but I'm having trouble processing that right now. Could you try again?",
@@ -520,11 +534,17 @@ Only include fields that you were able to extract from the user's message.`;
                   userProfile.goals?.successMetrics
                 ].filter(Boolean) as string[]
               },
-              user_id: user.id
+              userid: user.id
             });
-            console.log('Onboarding profile would be saved:', userProfile);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Onboarding profile would be saved: ', userProfile);
           } catch (error) {
-            console.error('Failed to persist onboarding profile:', error);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to persist onboarding profile: ', error);
           } finally {
             completeOnboarding();
           }
@@ -568,7 +588,7 @@ Only include fields that you were able to extract from the user's message.`;
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Progress Steps */}
-      <div className="border-b border-border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-4 flex-shrink-0">
+      <div className="border-b border-border bg-gradient-to-r from-purple-50 to-blue-50 dark: from-purple-900/20 dark:to-blue-900/20 p-4 flex-shrink-0">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-foreground">Meeting Your Executive Assistant</h3>
@@ -692,14 +712,14 @@ Only include fields that you were able to extract from the user's message.`;
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message to Nex..."
                 disabled={isTyping}
-                className="w-full resize-none border border-border rounded-xl px-4 py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[52px] max-h-32 transition-all"
+                className="w-full resize-none border border-border rounded-xl px-4 py-3 text-sm bg-background focus: outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[52px] max-h-32 transition-all"
                 rows={1}
               />
             </div>
             <button
               onClick={handleSendMessage}
               disabled={!userInput.trim() || isTyping}
-              className="px-4 py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-shrink-0"
+              className="px-4 py-3 bg-primary text-primary-foreground rounded-xl hover: bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>

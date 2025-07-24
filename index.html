@@ -1,34 +1,46 @@
-<!doctype html>
-<html lang="en" class="h-full">
+<!DOCTYPE html>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/Nexus/nexus-square-40x40-transparent.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="NEXUS is a modern, modular business operating system for small and medium-sized businesses. Centralize your operations, analytics, and AI-powered tools in one intuitive platform." />
-    <title>NEXUS - Business Operating System</title>
-    <!-- Prevent theme flashing -->
-    <script>
-      (function() {
-        try {
-          const storedTheme = localStorage.getItem('nexus-theme');
-          if (storedTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-          } else if (storedTheme === 'light') {
-            document.documentElement.classList.add('light');
-          } else {
-            // Check system preference
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.classList.add(prefersDark ? 'dark' : 'light');
-          }
-        } catch (e) {
-          // Fallback to light theme
-          document.documentElement.classList.add('light');
-        }
-      })();
-    </script>
+    <title>Nexus - Business Intelligence Platform</title>
+    <meta name="description" content="Nexus is a comprehensive business intelligence platform that combines AI, analytics, and automation to help businesses make better decisions." />
+    <meta name="keywords" content="business intelligence, AI, analytics, automation, dashboard, nexus" />
+    <meta name="author" content="Nexus Team" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nexus.app/" />
+    <meta property="og:title" content="Nexus - Business Intelligence Platform" />
+    <meta property="og:description" content="Transform your business with AI-powered insights and automation." />
+    <meta property="og:image" content="/Nexus/nexus-social-preview.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://nexus.app/" />
+    <meta property="twitter:title" content="Nexus - Business Intelligence Platform" />
+    <meta property="twitter:description" content="Transform your business with AI-powered insights and automation." />
+    <meta property="twitter:image" content="/Nexus/nexus-social-preview.png" />
+
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/Nexus/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/Nexus/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/Nexus/favicon-16x16.png" />
+    <link rel="manifest" href="/Nexus/site.webmanifest" />
+    
+    <!-- Theme color -->
+    <meta name="theme-color" content="#10b981" />
   </head>
-  <body class="h-full bg-background text-foreground">
-    <div id="root" class="h-full"></div>
+  <body>
+    <div id="root"></div>
     <script type="module" src="/src/app/main.tsx"></script>
   </body>
-</html>
+</html> 

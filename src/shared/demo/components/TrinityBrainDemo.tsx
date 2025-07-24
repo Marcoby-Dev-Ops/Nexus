@@ -241,7 +241,7 @@ export const TrinityBrainDemo: React.FC = () => {
       )}
 
       {/* Trinity Brain Capabilities */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

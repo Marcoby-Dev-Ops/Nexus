@@ -1,6 +1,6 @@
 import { FireCycleProcessor, type ProcessedInput, type NextAction } from './fireCycleProcessor';
 import type { UserContext } from './fireCycleLogic';
-import type { FireCyclePhase } from '@/domains/fire-cycle/types';
+import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
 
 export interface AgentResponse {
   id: string;
@@ -109,16 +109,16 @@ export class FireCycleAgent {
   /**
    * Generate Focus phase responses
    */
-  private generateFocusResponse(entities: any[], _sentiment: any): string {
+  private generateFocusResponse(entities: any[], sentiment: any): string {
     const goals = entities.filter(e => e.type === 'goal');
     const challenges = entities.filter(e => e.type === 'challenge');
     
     if (goals.length > 0) {
-      return `🎯 **New Focus Detected**: "${goals[0].value}"\n\nThis looks like a new goal or objective. Would you like to:\n• Set this as your primary focus?\n• Break it down into smaller objectives?\n• Link it to existing projects?`;
+      return `🎯 **New Focus Detected**: "${goals[0].value}"\n\nThis looks like a new goal or objective. Would you like to: \n• Set this as your primary focus?\n• Break it down into smaller objectives?\n• Link it to existing projects?`;
     }
     
     if (challenges.length > 0) {
-      return `⚠️ **Challenge Identified**: "${challenges[0].value}"\n\nI've detected a challenge or blocker. Let's address this by:\n• Understanding the root cause\n• Exploring potential solutions\n• Creating an action plan`;
+      return `⚠️ **Challenge Identified**: "${challenges[0].value}"\n\nI've detected a challenge or blocker. Let's address this by: \n• Understanding the root cause\n• Exploring potential solutions\n• Creating an action plan`;
     }
     
     return `🎯 **Focus Area Detected**\n\nI've identified this as a focus area. Let's clarify:\n• What's your main objective here?\n• What's the most important outcome you want?\n• What's blocking your progress?`;
@@ -131,11 +131,11 @@ export class FireCycleAgent {
     const metrics = entities.filter(e => e.type === 'metric');
     
     if (metrics.length > 0) {
-      return `📊 **Data Insight**: "${metrics[0].value}"\n\nThis looks like a new data point or trend. Let's analyze:\n• What does this metric tell us?\n• What patterns are you seeing?\n• How does this impact your goals?`;
+      return `📊 **Data Insight**: "${metrics[0].value}"\n\nThis looks like a new data point or trend. Let's analyze: \n• What does this metric tell us?\n• What patterns are you seeing?\n• How does this impact your goals?`;
     }
     
     if (sentiment.label === 'positive') {
-      return `💡 **Positive Insight Detected**\n\nYou've discovered something valuable! Let's capture this insight:\n• What did you learn?\n• How can we apply this knowledge?\n• What opportunities does this create?`;
+      return `💡 **Positive Insight Detected**\n\nYou've discovered something valuable! Let's capture this insight: \n• What did you learn?\n• How can we apply this knowledge?\n• What opportunities does this create?`;
     }
     
     return `💡 **New Insight Captured**\n\nI've identified this as a learning or discovery. Let's explore:\n• What patterns are you noticing?\n• What does this tell us about your situation?\n• How can we use this information?`;
@@ -144,11 +144,11 @@ export class FireCycleAgent {
   /**
    * Generate Roadmap phase responses
    */
-  private generateRoadmapResponse(entities: any[], _sentiment: any): string {
+  private generateRoadmapResponse(entities: any[], sentiment: any): string {
     const projects = entities.filter(e => e.type === 'project');
     
     if (projects.length > 0) {
-      return `🗺️ **New Project Plan**: "${projects[0].value}"\n\nThis looks like a new project or initiative. Let's create a roadmap:\n• What are the key milestones?\n• What resources do you need?\n• What's the timeline?`;
+      return `🗺️ **New Project Plan**: "${projects[0].value}"\n\nThis looks like a new project or initiative. Let's create a roadmap: \n• What are the key milestones?\n• What resources do you need?\n• What's the timeline?`;
     }
     
     return `🗺️ **Planning Mode Detected**\n\nI see you're in planning mode. Let's build a roadmap:\n• What's the end goal?\n• What are the key steps?\n• What's the timeline and priority?`;
@@ -157,11 +157,11 @@ export class FireCycleAgent {
   /**
    * Generate Execute phase responses
    */
-  private generateExecuteResponse(entities: any[], _sentiment: any): string {
+  private generateExecuteResponse(entities: any[], sentiment: any): string {
     const tasks = entities.filter(e => e.type === 'task');
     
     if (tasks.length > 0) {
-      return `⚡ **Action Item**: "${tasks[0].value}"\n\nThis looks like an action or task. Let's execute:\n• What's the first step?\n• What resources do you need?\n• How will you track progress?`;
+      return `⚡ **Action Item**: "${tasks[0].value}"\n\nThis looks like an action or task. Let's execute: \n• What's the first step?\n• What resources do you need?\n• How will you track progress?`;
     }
     
     return `⚡ **Execution Mode Detected**\n\nI see you're ready to take action. Let's get started:\n• What's the immediate next step?\n• What's your timeline?\n• How will you measure success?`;
@@ -171,19 +171,19 @@ export class FireCycleAgent {
    * Generate update responses for existing items
    */
   private generateFocusUpdateResponse(contextMatch: any): string {
-    return `🎯 **Updating Focus**: "${contextMatch.name}"\n\nI've linked this to your existing focus area. This update helps us:\n• Refine your priorities\n• Track progress better\n• Stay aligned with your goals`;
+    return `🎯 **Updating Focus**: "${contextMatch.name}"\n\nI've linked this to your existing focus area. This update helps us: \n• Refine your priorities\n• Track progress better\n• Stay aligned with your goals`;
   }
 
   private generateInsightUpdateResponse(contextMatch: any): string {
-    return `💡 **Enhancing Insight**: "${contextMatch.name}"\n\nThis adds valuable context to your existing insights. This helps us:\n• Deepen our understanding\n• Identify new patterns\n• Make better decisions`;
+    return `💡 **Enhancing Insight**: "${contextMatch.name}"\n\nThis adds valuable context to your existing insights. This helps us: \n• Deepen our understanding\n• Identify new patterns\n• Make better decisions`;
   }
 
   private generateRoadmapUpdateResponse(contextMatch: any): string {
-    return `🗺️ **Updating Roadmap**: "${contextMatch.name}"\n\nThis improves your existing plan. This helps us:\n• Refine the strategy\n• Adjust timelines\n• Optimize resources`;
+    return `🗺️ **Updating Roadmap**: "${contextMatch.name}"\n\nThis improves your existing plan. This helps us: \n• Refine the strategy\n• Adjust timelines\n• Optimize resources`;
   }
 
   private generateExecuteUpdateResponse(contextMatch: any): string {
-    return `⚡ **Progress Update**: "${contextMatch.name}"\n\nThis shows progress on your existing action. This helps us:\n• Track completion\n• Identify blockers\n• Plan next steps`;
+    return `⚡ **Progress Update**: "${contextMatch.name}"\n\nThis shows progress on your existing action. This helps us: \n• Track completion\n• Identify blockers\n• Plan next steps`;
   }
 
   /**
@@ -323,6 +323,9 @@ export class FireCycleAgent {
    * Execute an action (placeholder for real implementation)
    */
   private executeAction(action: NextAction): void {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Executing action: ${action.title}`);
     // This would integrate with your actual action system
     // For example, creating tasks, updating projects, etc.

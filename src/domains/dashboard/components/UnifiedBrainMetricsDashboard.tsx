@@ -1,24 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Brain, 
-  TrendingUp, 
-  Users, 
-  Target, 
-  Zap, 
-  CheckCircle, 
-  AlertTriangle, 
-  BarChart3, 
-  LineChart, 
-  PieChart,
-  Activity,
-  Clock,
-  Award,
-  Lightbulb,
-  DollarSign,
-  ArrowUp,
-  ArrowDown,
-  Minus
-} from 'lucide-react';
+import { Brain, TrendingUp, Users, Target, Zap, CheckCircle, BarChart3, LineChart, Activity, Clock, Award, Lightbulb, DollarSign, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 import { nexusUnifiedBrain } from '../../lib/core/nexusUnifiedBrain';
 import { advancedAIRecommendationEngine } from '../../lib/core/advancedAIRecommendationEngine';
 import { realTimeCrossDepartmentalSync } from '../../lib/core/realTimeCrossDepartmentalSync';
@@ -72,7 +53,10 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
         ]);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error loading metrics:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading metrics: ', error);
         setIsLoading(false);
       }
     };
@@ -371,7 +355,7 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
           User Transformation Metrics
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           {userTransformationMetrics.map((metric, index) => (
             <div key={index} className="bg-background rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
@@ -402,7 +386,7 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
           Business Impact Metrics
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           {businessImpactMetrics.map((metric, index) => (
             <div key={index} className="bg-background rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
@@ -433,7 +417,7 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
           Brain Intelligence Metrics
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           {brainIntelligenceMetrics.map((metric, index) => (
             <div key={index} className="bg-background rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
@@ -466,7 +450,7 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
         
         <div className="space-y-4">
           {transformationData.map((user, index) => (
-            <div key={index} className="border rounded-lg p-4 hover:bg-background transition-colors">
+            <div key={index} className="border rounded-lg p-4 hover: bg-background transition-colors">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h3 className="font-semibold text-foreground">{user.userName}</h3>
@@ -517,7 +501,7 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
           Brain Performance Metrics
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
           {brainPerformance.map((metric, index) => (
             <div key={index} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
@@ -562,7 +546,7 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
           Success Criteria Achievement
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="bg-card rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-semibold text-foreground">Democratization Goal</h3>
@@ -614,7 +598,7 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-primary">1,247</div>
             <p className="text-sm text-muted-foreground">Active Users</p>

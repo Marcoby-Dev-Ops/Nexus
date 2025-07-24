@@ -29,14 +29,14 @@ export const OriginalCard: React.FC<CardProps> = React.memo(({ header, footer, c
   const interactive = typeof onClick === 'function';
   const base = 'bg-card text-card-foreground rounded-xl shadow p-6';
   const interactiveClasses = interactive
-    ? 'hover:bg-primary/5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary cursor-pointer transition-colors transition-shadow outline-none'
+    ? 'hover: bg-primary/5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary cursor-pointer transition-colors transition-shadow outline-none'
     : '';
   return (
     <div
       className={cn(base, interactiveClasses, className)}
       onClick={onClick}
       role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
+      tabIndex={interactive ? 0: undefined}
       aria-label={interactive ? ariaLabel : undefined}
     >
       {header && <div className="mb-2 font-semibold">{header}</div>}

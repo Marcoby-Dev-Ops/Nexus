@@ -5,23 +5,23 @@ export interface BusinessProfile {
   id?: string;
   org_id: string;
   company_name: string;
-  industry: string;
-  business_model: string;
-  company_size: 'solopreneur' | 'startup' | 'small' | 'medium' | 'enterprise';
-  mission_statement: string;
-  primary_services: string[];
-  unique_value_proposition: string;
-  competitive_advantages: string[];
-  target_markets: string[];
-  ideal_client_profile: string[];
-  service_delivery_methods: string[];
-  current_clients: string[];
-  revenue_model: string;
-  pricing_strategy: string;
-  financial_goals: string[];
-  strategic_objectives: string[];
-  created_at?: string;
-  updated_at?: string;
+  industry: string | null;
+  business_model: string | null;
+  company_size: string | null;
+  mission_statement: string | null;
+  primary_services: string[] | null;
+  unique_value_proposition: string | null;
+  competitive_advantages: string[] | null;
+  target_markets: string[] | null;
+  ideal_client_profile: string[] | null;
+  service_delivery_methods: string[] | null;
+  current_clients: string[] | null;
+  revenue_model: string | null;
+  pricing_strategy: string | null;
+  financial_goals: string[] | null;
+  strategic_objectives: string[] | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 class BusinessProfileService {
@@ -60,6 +60,7 @@ class BusinessProfileService {
       const profileData = {
         ...profile,
         org_id: orgId,
+        company_name: profile.company_name || 'My Business',
         updated_at: new Date().toISOString()
       };
 

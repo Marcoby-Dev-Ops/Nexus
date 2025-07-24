@@ -43,8 +43,7 @@ export const EABusinessObservationCard: React.FC<EABusinessObservationCardProps>
         return <CheckCircle className="h-4 w-4 text-primary" />;
       case 'recommendation':
         return <Lightbulb className="h-4 w-4 text-info" />;
-      default:
-        return <Lightbulb className="h-4 w-4 text-secondary" />;
+      default: return <Lightbulb className="h-4 w-4 text-secondary" />;
     }
   };
 
@@ -58,8 +57,7 @@ export const EABusinessObservationCard: React.FC<EABusinessObservationCardProps>
         return 'secondary';
       case 'low':
         return 'outline';
-      default:
-        return 'secondary';
+      default: return 'secondary';
     }
   };
 
@@ -92,7 +90,7 @@ export const EABusinessObservationCard: React.FC<EABusinessObservationCardProps>
   };
 
   return (
-    <Card className={`${compact ? 'text-sm' : ''} hover:shadow-md transition-shadow`}>
+    <Card className={`${compact ? 'text-sm' : ''} hover: shadow-md transition-shadow`}>
       <CardHeader className={`pb-3 ${compact ? 'py-3' : ''}`}>
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4 flex-1">
@@ -173,7 +171,7 @@ export const EABusinessObservationCard: React.FC<EABusinessObservationCardProps>
             <div className="mb-4">
               <h4 className="text-sm font-medium mb-2">Recommended Actions</h4>
               <div className="space-y-2">
-                {observation.actionItems.slice(0, compact ? 2 : 5).map((actionItem, index) => (
+                {observation.actionItems.slice(0, compact ? 2: 5).map((actionItem, index) => (
                   <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
                     <span className="text-xs flex-1">{actionItem}</span>
                     <Button
@@ -186,9 +184,9 @@ export const EABusinessObservationCard: React.FC<EABusinessObservationCardProps>
                     </Button>
                   </div>
                 ))}
-                {observation.actionItems.length > (compact ? 2 : 5) && (
+                {observation.actionItems.length > (compact ? 2: 5) && (
                   <p className="text-xs text-muted-foreground">
-                    +{observation.actionItems.length - (compact ? 2 : 5)} more actions
+                    +{observation.actionItems.length - (compact ? 2: 5)} more actions
                   </p>
                 )}
               </div>

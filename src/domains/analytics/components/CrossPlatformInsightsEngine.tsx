@@ -4,27 +4,9 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
-import {
-  Brain,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Target,
-  Zap,
-  AlertTriangle,
-  CheckCircle2,
-  ArrowRight,
-  Lightbulb,
-  DollarSign,
-  Clock,
-  Users,
-  Activity,
-  RefreshCw,
-  ExternalLink
-} from 'lucide-react';
-
+import { Brain, TrendingUp, TrendingDown, BarChart3, Target, Zap, AlertTriangle, CheckCircle2, ArrowRight, Lightbulb, DollarSign, Clock, Users, Activity, RefreshCw } from 'lucide-react';
 interface DataCorrelation {
   id: string;
   sourceA: string;
@@ -70,7 +52,7 @@ interface BusinessIntelligence {
 }
 
 const CrossPlatformInsightsEngine: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [correlations, setCorrelations] = useState<DataCorrelation[]>([]);
   const [predictions, setPredictions] = useState<PredictiveInsight[]>([]);
@@ -88,17 +70,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
       setLoading(true);
       
       // Fetch user's active integrations to understand available data sources
-      const { data: integrations } = await supabase
-        .from('user_integrations')
-        .select(`
-          integrations (
-            name,
-            slug,
-            category
-          )
-        `)
-        .eq('user_id', user!.id)
-        .eq('status', 'active');
+      
 
       // Generate insights based on available integrations
       await Promise.all([
@@ -108,7 +80,10 @@ const CrossPlatformInsightsEngine: React.FC = () => {
       ]);
       
     } catch (error) {
-      console.error('Error loading insights:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading insights: ', error);
     } finally {
       setLoading(false);
     }
@@ -396,7 +371,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             {correlations.map((correlation) => (
               <div key={correlation.id} className="p-4 border rounded-lg space-y-4">
                 <div className="flex items-center justify-between">
@@ -449,7 +424,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg: grid-cols-3 gap-4">
             {predictions.map((prediction) => (
               <div key={prediction.id} className="p-4 border rounded-lg space-y-4">
                 <div className="flex items-center justify-between">
@@ -568,7 +543,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
                     </ul>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div>
                       <h5 className="font-medium text-sm mb-1">Recommendation</h5>
                       <p className="text-sm text-muted-foreground">{intelligence.recommendation}</p>

@@ -171,7 +171,7 @@ class DataPrincipleService {
   /**
    * Get data classification for content
    */
-  classifyData(content: string, _context: string): DataClassification {
+  classifyData(content: string, context: string): DataClassification {
     // Simple classification logic - in practice, this would be more sophisticated
     const sensitiveKeywords = ['password', 'credit card', 'ssn', 'confidential', 'secret'];
     const internalKeywords = ['internal', 'company', 'team', 'project'];

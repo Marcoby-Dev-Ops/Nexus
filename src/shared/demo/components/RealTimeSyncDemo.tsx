@@ -20,7 +20,10 @@ export const RealTimeSyncDemo: React.FC = () => {
         setRecentData(recent);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error updating real-time sync data:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating real-time sync data: ', error);
       }
     };
 
@@ -159,9 +162,9 @@ export const RealTimeSyncDemo: React.FC = () => {
           Department Data Sources
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
           {dataSources.map((source) => (
-            <div key={source.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div key={source.id} className="border rounded-lg p-4 hover: shadow-md transition-shadow">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <span className="text-2xl">{getDepartmentIcon(source.department)}</span>
@@ -177,14 +180,14 @@ export const RealTimeSyncDemo: React.FC = () => {
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Last Sync:</span>
+                  <span className="text-muted-foreground">Last Sync: </span>
                   <span className="font-medium">
                     {new Date(source.lastSync).toLocaleTimeString()}
                   </span>
                 </div>
                 
                 <div className="text-sm text-muted-foreground">
-                  <p className="font-medium mb-1">Recent Metrics:</p>
+                  <p className="font-medium mb-1">Recent Metrics: </p>
                   <div className="grid grid-cols-2 gap-1 text-xs">
                     {Object.entries(source.metrics).slice(0, 4).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
@@ -217,7 +220,7 @@ export const RealTimeSyncDemo: React.FC = () => {
             <p className="text-muted-foreground text-center py-8">No recent data available</p>
           ) : (
             recentData.map((data) => (
-              <div key={data.id} className="border rounded-lg p-4 hover:bg-background transition-colors">
+              <div key={data.id} className="border rounded-lg p-4 hover: bg-background transition-colors">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center space-x-4">
                     <span className="text-lg">{getDepartmentIcon(data.department)}</span>
@@ -236,7 +239,7 @@ export const RealTimeSyncDemo: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                <div className="grid grid-cols-1 md: grid-cols-2 gap-4 mt-3">
                   <div>
                     <p className="text-sm font-medium text-foreground/90 mb-1">Business Context:</p>
                     <div className="text-xs text-muted-foreground space-y-1">
@@ -247,7 +250,7 @@ export const RealTimeSyncDemo: React.FC = () => {
                       )}
                       {data.businessContext.relatedDepartments.length > 0 && (
                         <div>
-                          <span className="font-medium">Related:</span> {data.businessContext.relatedDepartments.join(', ')}
+                          <span className="font-medium">Related: </span> {data.businessContext.relatedDepartments.join(', ')}
                         </div>
                       )}
                       {data.businessContext.actionRequired && (
@@ -260,7 +263,7 @@ export const RealTimeSyncDemo: React.FC = () => {
                   </div>
 
                   <div>
-                    <p className="text-sm font-medium text-foreground/90 mb-1">Intelligence:</p>
+                    <p className="text-sm font-medium text-foreground/90 mb-1">Intelligence: </p>
                     <div className="text-xs text-muted-foreground space-y-1">
                       {data.intelligence.insights.length > 0 && (
                         <div>
@@ -269,12 +272,12 @@ export const RealTimeSyncDemo: React.FC = () => {
                       )}
                       {data.intelligence.recommendations.length > 0 && (
                         <div>
-                          <span className="font-medium">Recommendations:</span> {data.intelligence.recommendations.slice(0, 2).join(', ')}
+                          <span className="font-medium">Recommendations: </span> {data.intelligence.recommendations.slice(0, 2).join(', ')}
                         </div>
                       )}
                       {data.intelligence.patterns.length > 0 && (
                         <div>
-                          <span className="font-medium">Patterns:</span> {data.intelligence.patterns.slice(0, 1).join(', ')}
+                          <span className="font-medium">Patterns: </span> {data.intelligence.patterns.slice(0, 1).join(', ')}
                         </div>
                       )}
                     </div>
@@ -283,7 +286,7 @@ export const RealTimeSyncDemo: React.FC = () => {
 
                 {/* Key Metrics */}
                 <div className="mt-3 pt-3 border-t">
-                  <p className="text-sm font-medium text-foreground/90 mb-2">Key Metrics:</p>
+                  <p className="text-sm font-medium text-foreground/90 mb-2">Key Metrics: </p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
                     {Object.entries(data.data).slice(0, 4).map(([key, value]) => (
                       <div key={key} className="flex justify-between">
@@ -310,7 +313,7 @@ export const RealTimeSyncDemo: React.FC = () => {
           🚀 Phase 2 Intelligence Amplification Features
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
           <div className="space-y-4">
             <div className="flex items-start space-x-4">
               <CheckCircle className="h-5 w-5 text-success mt-0.5" />
@@ -371,7 +374,7 @@ export const RealTimeSyncDemo: React.FC = () => {
           📊 Real-Time Performance Metrics
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
           <div className="bg-primary/5 rounded-lg p-4">
             <h4 className="font-medium text-blue-900 mb-2">Data Latency</h4>
             <p className="text-2xl font-bold text-primary">

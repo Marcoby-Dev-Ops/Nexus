@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertCircle, Brain, CheckCircle2, Clock, Zap, ArrowRight, Plus, X } from 'lucide-react';
+import { AlertCircle, Brain, CheckCircle2, Clock, Zap, ArrowRight, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Input } from '@/shared/components/ui/Input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 // import { contextualDataCompletionService } from '@/domains/services/contextualDataCompletionService';
 // import type { 
 //   ContextCompletionSuggestion, 
@@ -44,8 +44,8 @@ interface ConversationContextAnalysis {
 }
 
 const contextualDataCompletionService = {
-  getProactiveContextSuggestions: async (_userId: string) => [],
-  applyContextSuggestion: async (_userId: string, _field: string, _value: any) => true
+  getProactiveContextSuggestions: async (userId: string) => [],
+  applyContextSuggestion: async (userId: string, field: string, value: any) => true
 };
 
 interface ContextCompletionSuggestionsProps {
@@ -61,7 +61,7 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
   onComplete,
   className = ''
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [suggestions, setSuggestions] = useState<ContextCompletionSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedSuggestion, setExpandedSuggestion] = useState<string | null>(null);
@@ -85,7 +85,10 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
       const proactiveSuggestions = await contextualDataCompletionService.getProactiveContextSuggestions(user.id);
       setSuggestions(proactiveSuggestions);
     } catch (error) {
-      console.error('Error loading proactive suggestions:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading proactive suggestions: ', error);
     } finally {
       setLoading(false);
     }
@@ -108,7 +111,10 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
         onComplete?.([gap]);
       }
     } catch (error) {
-      console.error('Error completing gap:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing gap: ', error);
     } finally {
       setCompletingGaps(prev => {
         const newSet = new Set(prev);
@@ -131,7 +137,10 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
         });
         onComplete?.(suggestion.gaps);
       } catch (error) {
-        console.error('Error completing suggestion:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing suggestion: ', error);
       } finally {
         setCompletingGaps(prev => {
           const newSet = new Set(prev);
@@ -176,7 +185,7 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
   const totalCompleted = suggestions.reduce((sum, s) => 
     sum + s.gaps.filter(g => completedGaps.has(g.id)).length, 0
   );
-  const completionPercentage = totalGaps > 0 ? (totalCompleted / totalGaps) * 100 : 0;
+  const completionPercentage = totalGaps > 0 ? (totalCompleted / totalGaps) * 100: 0;
 
   if (loading) {
     return (
@@ -314,7 +323,7 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
                 <div className="bg-background rounded-lg p-4 mb-3">
                   <div className="flex items-start gap-2">
                     <ArrowRight className="w-4 h-4 text-primary mt-0.5" />
-                    <span className="text-sm font-medium text-foreground">Expected Impact:</span>
+                    <span className="text-sm font-medium text-foreground">Expected Impact: </span>
                   </div>
                   <p className="text-sm text-foreground/90 mt-1">{suggestion.expectedImpact}</p>
                 </div>
@@ -457,7 +466,7 @@ const DetailedCompletionDialog: React.FC<DetailedCompletionDialogProps> = ({
   onClose,
   onComplete
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [completing, setCompleting] = useState(false);
 
@@ -484,7 +493,10 @@ const DetailedCompletionDialog: React.FC<DetailedCompletionDialogProps> = ({
       
       onComplete(completedGaps);
     } catch (error) {
-      console.error('Error completing suggestion:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing suggestion: ', error);
     } finally {
       setCompleting(false);
     }

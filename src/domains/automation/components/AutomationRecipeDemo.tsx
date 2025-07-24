@@ -5,23 +5,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Progress } from '@/shared/components/ui/Progress';
-import { 
-  Play, 
-  Pause, 
-  Settings, 
-  CheckCircle, 
-  Clock, 
-  Star,
-  TrendingUp,
-  Users,
-  Zap,
-  AlertCircle,
-  BarChart3,
-  Mail,
-  Database,
-  Bot,
-  Workflow
-} from 'lucide-react';
+import { Play, Pause, Settings, CheckCircle, Clock, Star, TrendingUp, Users, Zap, AlertCircle, BarChart3, Bot, Workflow } from 'lucide-react';
 import { AutomationRecipeBrowser } from '@/domains/automation/components/AutomationRecipeBrowser';
 import { useAutomationRecipes } from '@/domains/automation/hooks/useAutomationRecipes';
 import type { AutomationRecipe } from '@/domains/automation/automationRecipeEngine';
@@ -31,7 +15,7 @@ export interface AutomationRecipeDemoProps {
 }
 
 export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ className = '' }) => {
-  const { recipes, deployments, loading, deployRecipe, toggleDeployment } = useAutomationRecipes();
+  const { recipes, deployments, deployRecipe, toggleDeployment } = useAutomationRecipes();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [demoStats, setDemoStats] = useState({
     totalRecipes: 0,
@@ -98,9 +82,9 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
   const handleQuickDeploy = async (recipe: AutomationRecipe) => {
     await deployRecipe(recipe.id, {
       // Use default customizations for demo
-      company_name: 'Nexus Demo Company',
-      payment_terms: '30',
-      report_recipients: 'admin@nexus.com'
+      companyname: 'Nexus Demo Company',
+      paymentterms: '30',
+      reportrecipients: 'admin@nexus.com'
     });
   };
 
@@ -119,7 +103,7 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
@@ -178,9 +162,9 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
         <TabsContent value="featured" className="space-y-6">
           <div>
             <h3 className="text-xl font-semibold mb-4">🌟 Featured Automation Recipes</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
               {featuredRecipes.map((recipe) => (
-                <Card key={recipe.id} className="hover:shadow-lg transition-shadow">
+                <Card key={recipe.id} className="hover: shadow-lg transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
@@ -239,7 +223,7 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Demo Mode:</strong> These recipes are pre-configured with demo data. 
+              <strong>Demo Mode: </strong> These recipes are pre-configured with demo data. 
               In production, you would customize them with your specific business requirements.
             </AlertDescription>
           </Alert>
@@ -248,13 +232,13 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
         <TabsContent value="categories" className="space-y-6">
           <div>
             <h3 className="text-xl font-semibold mb-4">📂 Recipe Categories</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
               {categoryStats.map((category) => {
                 const Icon = category.icon;
                 return (
                   <Card 
                     key={category.category} 
-                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    className="cursor-pointer hover: shadow-md transition-shadow"
                     onClick={() => setSelectedCategory(category.category)}
                   >
                     <CardContent className="p-6">
@@ -285,7 +269,10 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
               <AutomationRecipeBrowser 
                 category={selectedCategory as any}
                 onRecipeDeployed={(recipeId, deploymentId) => {
-                  console.log('Recipe deployed:', { recipeId, deploymentId });
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Recipe deployed: ', { recipeId, deploymentId });
                 }}
               />
             </div>
@@ -295,7 +282,10 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
         <TabsContent value="browse" className="space-y-6">
           <AutomationRecipeBrowser 
             onRecipeDeployed={(recipeId, deploymentId) => {
-              console.log('Recipe deployed:', { recipeId, deploymentId });
+              // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Recipe deployed: ', { recipeId, deploymentId });
             }}
           />
         </TabsContent>
@@ -390,7 +380,7 @@ export const AutomationRecipeDemo: React.FC<AutomationRecipeDemoProps> = ({ clas
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <Clock className="h-5 w-5 text-primary" />

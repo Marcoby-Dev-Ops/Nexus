@@ -30,7 +30,10 @@ const Microsoft365CallbackPage: React.FC = () => {
   const handleCallback = async () => {
     // Prevent multiple executions
     if (hasProcessed.current) {
-      console.log('Callback already processed, skipping...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Callback already processed, skipping...');
       return;
     }
     
@@ -63,7 +66,10 @@ const Microsoft365CallbackPage: React.FC = () => {
 
       // Get code verifier from session storage
       const codeVerifier = sessionStorage.getItem('microsoft_code_verifier');
-      console.log('Retrieved code verifier:', { 
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Retrieved code verifier: ', { 
         hasCodeVerifier: !!codeVerifier, 
         codeVerifierLength: codeVerifier?.length,
         currentUrl: window.location.href,
@@ -72,9 +78,18 @@ const Microsoft365CallbackPage: React.FC = () => {
       });
       
       if (!codeVerifier) {
-        console.error('Code verifier not found in session storage!');
-        console.error('Available session storage keys:', Object.keys(sessionStorage));
-        console.error('This will cause the OAuth flow to fail with code_verifier mismatch');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Code verifier not found in session storage!');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Available session storage keys: ', Object.keys(sessionStorage));
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('This will cause the OAuth flow to fail with code_verifier mismatch');
         throw new Error('Code verifier not found. Please try connecting again.');
       }
 
@@ -85,29 +100,34 @@ const Microsoft365CallbackPage: React.FC = () => {
 
       // Exchange code for tokens directly in the browser (SPA requirement)
       const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
-      const redirectUri = 'http://localhost:5173/integrations/microsoft/callback';
+      const redirectUri = import.meta.env.VITE_NEXT_PUBLIC_APP_URL 
+        ? `${import.meta.env.VITE_NEXT_PUBLIC_APP_URL}/integrations/microsoft/callback`
+        : `${window.location.origin}/integrations/microsoft/callback`;
       
       const params = new URLSearchParams({
-        client_id: clientId,
+        clientid: clientId,
         scope: 'User.Read Organization.Read.All openid profile email offline_access',
         code,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-        ...(codeVerifier && { code_verifier: codeVerifier }),
+        redirecturi: redirectUri,
+        granttype: 'authorization_code',
+        ...(codeVerifier && { codeverifier: codeVerifier }),
       });
 
-      console.log('Token exchange parameters:', {
-        client_id: clientId,
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Token exchange parameters: ', {
+        clientid: clientId,
         scope: 'User.Read Organization.Read.All openid profile email offline_access',
-        code_length: code?.length,
-        redirect_uri: redirectUri,
-        grant_type: 'authorization_code',
-        has_code_verifier: !!codeVerifier,
-        code_verifier_length: codeVerifier?.length,
-        params_string: params.toString()
+        codelength: code?.length,
+        redirecturi: redirectUri,
+        granttype: 'authorization_code',
+        hascode_verifier: !!codeVerifier,
+        codeverifier_length: codeVerifier?.length,
+        paramsstring: params.toString()
       });
 
-      const tokenResponse = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
+      const tokenResponse = await fetch('https: //login.microsoftonline.com/common/oauth2/v2.0/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -117,7 +137,10 @@ const Microsoft365CallbackPage: React.FC = () => {
 
       if (!tokenResponse.ok) {
         const errorData = await tokenResponse.json();
-        console.error('Token exchange failed:', {
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Token exchange failed: ', {
           status: tokenResponse.status,
           statusText: tokenResponse.statusText,
           error: errorData
@@ -133,7 +156,10 @@ const Microsoft365CallbackPage: React.FC = () => {
                   throw new Error('No valid session found');
                 }
 
-                console.log('Calling edge function with session token:', {
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Calling edge function with session token: ', {
                   hasSessionToken: !!session.access_token,
                   tokenLength: session.access_token?.length,
                   supabaseUrl: import.meta.env.VITE_SUPABASE_URL
@@ -146,15 +172,18 @@ const Microsoft365CallbackPage: React.FC = () => {
                     'Authorization': `Bearer ${session.access_token}`,
                   },
                   body: JSON.stringify({
-                    access_token: tokenData.access_token,
-                    refresh_token: tokenData.refresh_token,
-                    expires_in: tokenData.expires_in,
+                    accesstoken: tokenData.access_token,
+                    refreshtoken: tokenData.refresh_token,
+                    expiresin: tokenData.expires_in,
                     scope: tokenData.scope,
-                    token_type: tokenData.token_type,
+                    tokentype: tokenData.token_type,
                   }),
                 });
 
-                console.log('Edge function response:', {
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Edge function response: ', {
                   status: response.status,
                   statusText: response.statusText,
                   ok: response.ok
@@ -162,7 +191,10 @@ const Microsoft365CallbackPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Edge function error response:', errorData);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Edge function error response: ', errorData);
         throw new Error(errorData.error_description || errorData.error || `Failed to complete OAuth flow: ${response.status}`);
       }
 
@@ -180,7 +212,7 @@ const Microsoft365CallbackPage: React.FC = () => {
       }
     } catch (error) {
       logger.error({ error }, 'Microsoft 365 callback failed');
-      setError(error instanceof Error ? error.message : 'Unknown error occurred');
+      setError(error instanceof Error ? error.message: 'Unknown error occurred');
       setStatus('error');
     }
   };

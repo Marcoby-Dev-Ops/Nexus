@@ -3,33 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
-import { 
-  X, 
-  ArrowRight, 
-  ArrowLeft, 
-  Check, 
-  AlertCircle, 
-  Key, 
-  Globe, 
-  Shield,
-  Zap,
-  Clock,
-  Database,
-  HelpCircle,
-  ExternalLink,
-  Copy,
-  Eye,
-  EyeOff,
-  RefreshCw,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Book,
-  MessageCircle,
-  Star,
-  SkipForward
-} from 'lucide-react';
-
+import { X, ArrowRight, ArrowLeft, Check, AlertCircle, Key, Globe, Shield, Zap, Clock, Database, HelpCircle, ExternalLink, Eye, RefreshCw, CheckCircle2, AlertTriangle, Book, MessageCircle, SkipForward } from 'lucide-react';
 import { useIntegrationSetup } from '@/domains/hooks/useIntegrationSetup';
 import type { IntegrationSetupProps } from '@/shared/lib/types/integrations';
 
@@ -47,25 +21,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   config,
   initialData
 }) => {
-  const {
-    currentStep,
-    steps,
-    setupData,
-    isConnecting,
-    connectionStatus,
-    errors,
-    analytics,
-    nextStep,
-    previousStep,
-    skipStep,
-    retryStep,
-    validateStep,
-    resetSetup,
-    completeSetup,
-    getStepProgress,
-    getEstimatedTimeRemaining,
-    canProceed
-  } = useIntegrationSetup(integration, config);
+  const { currentStep, steps, setupData, isConnecting, connectionStatus, errors, analytics, nextStep, previousStep, skipStep, retryStep, completeSetup, getStepProgress, getEstimatedTimeRemaining, canProceed } = useIntegrationSetup(integration, config);
 
   const currentStepData = steps[currentStep];
   const progress = getStepProgress();
@@ -78,14 +34,14 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
     <div className="mb-8">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-foreground/90 dark:text-muted-foreground/60">
+          <span className="text-sm font-medium text-foreground/90 dark: text-muted-foreground/60">
             Step {currentStep + 1} of {steps.length}
           </span>
           {currentStepData.optional && (
             <Badge variant="secondary" className="text-xs">Optional</Badge>
           )}
         </div>
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground dark:text-muted-foreground">
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground dark: text-muted-foreground">
           <Clock className="w-4 h-4" />
           <span>{timeRemaining} remaining</span>
         </div>
@@ -108,7 +64,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
                   ? 'bg-primary' 
                   : 'bg-muted'
             }`} />
-            <span className="text-xs font-medium hidden md:block">{step.title}</span>
+            <span className="text-xs font-medium hidden md: block">{step.title}</span>
           </div>
         ))}
       </div>
@@ -128,7 +84,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
             key={index}
             className={`border rounded-lg p-4 ${
               error.severity === 'high' || error.severity === 'critical'
-                ? 'bg-destructive/5 dark:bg-destructive/20 border-destructive/20 dark:border-red-800'
+                ? 'bg-destructive/5 dark: bg-destructive/20 border-destructive/20 dark:border-red-800'
                 : 'bg-warning/5 dark:bg-warning/20/20 border-warning/20 dark:border-warning/80'
             }`}
           >
@@ -186,7 +142,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-20 h-20 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-6">
+              <div className="mx-auto w-20 h-20 bg-primary/10 dark: bg-primary/20/20 rounded-full flex items-center justify-center mb-6">
                 {integration.icon}
               </div>
               <h2 className="text-2xl font-bold text-foreground dark:text-primary-foreground mb-3">
@@ -223,14 +179,14 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
                 {integration.features.map((feature, index) => (
                   <div key={index} className="flex items-center space-x-4">
                     <CheckCircle2 className="w-5 h-5 text-success flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground dark:text-muted-foreground">{feature}</span>
+                    <span className="text-sm text-muted-foreground dark: text-muted-foreground">{feature}</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Trust Signals */}
-            <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
+            <div className="bg-primary/5 dark: bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
               <div className="flex items-center space-x-4 mb-2">
                 <Shield className="w-5 h-5 text-primary" />
                 <h4 className="font-medium text-foreground">Secure & Trusted</h4>
@@ -251,7 +207,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-warning/10 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-warning/10 dark: bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
                 <Book className="w-8 h-8 text-warning" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -266,7 +222,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
               {integration.prerequisites?.map((prereq, index) => (
                 <label 
                   key={index} 
-                  className="flex items-start space-x-4 p-4 border border-border dark:border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer"
+                  className="flex items-start space-x-4 p-4 border border-border dark: border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -282,7 +238,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
             </div>
 
             {/* Troubleshooting Help */}
-            <div className="bg-background dark:bg-background/50 border border-border dark:border-border rounded-lg p-4">
+            <div className="bg-background dark: bg-background/50 border border-border dark:border-border rounded-lg p-4">
               <div className="flex items-start space-x-4">
                 <HelpCircle className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                 <div>
@@ -316,8 +272,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
       case 'success':
         return renderSuccessStep();
 
-      default:
-        return null;
+      default: return null;
     }
   };
 
@@ -327,7 +282,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   const renderOAuthStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
+        <div className="mx-auto w-16 h-16 bg-primary/10 dark: bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
           <Shield className="w-8 h-8 text-primary" />
         </div>
         <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -373,7 +328,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   const renderApiKeyStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-4">
+        <div className="mx-auto w-16 h-16 bg-success/10 dark: bg-success/20 rounded-full flex items-center justify-center mb-4">
           <Key className="w-8 h-8 text-success" />
         </div>
         <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -422,7 +377,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   const renderPermissionsStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-secondary/10 dark:bg-secondary/20/20 rounded-full flex items-center justify-center mb-4">
+        <div className="mx-auto w-16 h-16 bg-secondary/10 dark: bg-secondary/20/20 rounded-full flex items-center justify-center mb-4">
           <Shield className="w-8 h-8 text-secondary" />
         </div>
         <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -437,7 +392,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         {integration.features.map((feature, index) => (
           <label 
             key={index} 
-            className="flex items-center justify-between p-4 border border-border dark:border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer"
+            className="flex items-center justify-between p-4 border border-border dark: border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer"
           >
             <div className="flex items-center space-x-4">
               <input
@@ -459,7 +414,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
         ))}
       </div>
 
-      <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
+      <div className="bg-primary/5 dark: bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
         <p className="text-sm text-primary dark:text-primary">
           💡 <strong>Pro tip:</strong> Start with all permissions enabled. You can fine-tune access levels later in the integration settings.
         </p>
@@ -476,7 +431,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
                       <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
           <Zap className="w-8 h-8 text-primary" />
         </div>
-        <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
+        <h3 className="text-xl font-semibold text-foreground dark: text-primary-foreground mb-2">
           Advanced Settings
         </h3>
         <p className="text-muted-foreground dark:text-muted-foreground mb-6">
@@ -507,14 +462,14 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   const renderTestingStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto w-16 h-16 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-4">
+        <div className="mx-auto w-16 h-16 bg-success/10 dark: bg-success/20 rounded-full flex items-center justify-center mb-4">
           {connectionStatus === 'testing' ? (
             <RefreshCw className="w-8 h-8 text-success animate-spin" />
           ) : (
             <Zap className="w-8 h-8 text-success" />
           )}
         </div>
-        <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
+        <h3 className="text-xl font-semibold text-foreground dark: text-primary-foreground mb-2">
           Testing Connection
         </h3>
         <p className="text-muted-foreground dark:text-muted-foreground mb-6">
@@ -568,7 +523,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
   const renderSuccessStep = () => (
     <div className="space-y-6 text-center">
       <div>
-        <div className="mx-auto w-20 h-20 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-6">
+        <div className="mx-auto w-20 h-20 bg-success/10 dark: bg-success/20 rounded-full flex items-center justify-center mb-6">
           <CheckCircle2 className="w-10 h-10 text-success" />
         </div>
         <h2 className="text-2xl font-bold text-foreground dark:text-primary-foreground mb-3">
@@ -615,7 +570,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
    * Navigation Controls
    */
   const renderNavigation = () => (
-    <div className="flex items-center justify-between pt-6 border-t border-border dark:border-border">
+    <div className="flex items-center justify-between pt-6 border-t border-border dark: border-border">
       <Button
         variant="outline"
         onClick={previousStep}

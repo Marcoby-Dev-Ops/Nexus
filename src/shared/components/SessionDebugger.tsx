@@ -16,7 +16,10 @@ export const SessionDebugger: React.FC = () => {
       const info = await debugSessionExpiry();
       setDebugInfo(info);
     } catch (error) {
-      console.error('Debug failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Debug failed: ', error);
     } finally {
       setLoading(false);
     }
@@ -31,7 +34,10 @@ export const SessionDebugger: React.FC = () => {
       const info = await debugSessionExpiry();
       setDebugInfo(info);
     } catch (error) {
-      console.error('Force refresh failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Force refresh failed: ', error);
     } finally {
       setLoading(false);
     }
@@ -81,7 +87,7 @@ export const SessionDebugger: React.FC = () => {
               </Badge>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               <Card>
                 <CardHeader className="text-sm font-medium">Session State</CardHeader>
                 <CardContent className="text-xs space-y-1">

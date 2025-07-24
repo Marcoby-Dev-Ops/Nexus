@@ -123,9 +123,9 @@ export const AboutPage: React.FC = () => {
       {/* Core Values */}
       <div>
         <h2 className="text-2xl font-semibold mb-4 text-center">Our Core Values</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
           {coreValues.map((value, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow">
+            <Card key={index} className="hover: shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -171,7 +171,7 @@ export const AboutPage: React.FC = () => {
       {/* Company Stats */}
       <div>
         <h2 className="text-2xl font-semibold mb-4 text-center">Platform Scale</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
           {companyStats.map((stat, index) => (
             <Card key={index} className="text-center">
               <CardContent className="pt-6">
@@ -193,7 +193,7 @@ export const AboutPage: React.FC = () => {
         <h2 className="text-2xl font-semibold mb-4">Built for the Future</h2>
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-3 flex items-center gap-2">
                   <Brain className="h-5 w-5 text-primary" />
@@ -250,7 +250,7 @@ export const AboutPage: React.FC = () => {
         <h2 className="text-2xl font-semibold mb-4 text-center">Get in Touch</h2>
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 md: grid-cols-3 gap-4 text-center">
               <div>
                 <h3 className="font-semibold mb-2">General Inquiries</h3>
                 <p className="text-sm text-muted-foreground">

@@ -77,7 +77,7 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ className = '' }) =
         })}
         
         <div className="text-center pt-2">
-          <button className="text-xs text-primary hover:text-primary/80 transition-colors">
+          <button className="text-xs text-primary hover: text-primary/80 transition-colors">
             View more insights
           </button>
         </div>

@@ -12,19 +12,19 @@ import {
   BarChart3,
   Sparkles
 } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface BusinessContextData {
   industry: string;
-  business_model: string;
-  revenue_stage: string;
-  primary_departments: string[];
-  key_tools: string[];
-  data_sources: string[];
-  automation_maturity: 'none' | 'basic' | 'intermediate' | 'advanced';
-  business_priorities: string[];
-  success_timeframe: string;
-  budget_expectation: string;
+  businessmodel: string;
+  revenuestage: string;
+  primarydepartments: string[];
+  keytools: string[];
+  datasources: string[];
+  automationmaturity: 'none' | 'basic' | 'intermediate' | 'advanced';
+  businesspriorities: string[];
+  successtimeframe: string;
+  budgetexpectation: string;
 }
 
 interface BusinessContextStepProps {
@@ -37,18 +37,18 @@ interface BusinessContextStepProps {
 }
 
 export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext, onBack, enrichedData }) => {
-  const { user, updateCompany } = useAuthContext();
+  const { user, updateCompany } = useAuth();
   const [businessData, setBusinessData] = useState<BusinessContextData>({
     industry: '',
-    business_model: '',
-    revenue_stage: '',
-    primary_departments: [],
-    key_tools: [],
-    data_sources: [],
-    automation_maturity: 'basic',
-    business_priorities: [],
-    success_timeframe: '3-months',
-    budget_expectation: 'moderate'
+    businessmodel: '',
+    revenuestage: '',
+    primarydepartments: [],
+    keytools: [],
+    datasources: [],
+    automationmaturity: 'basic',
+    businesspriorities: [],
+    successtimeframe: '3-months',
+    budgetexpectation: 'moderate'
   });
 
   // Pre-fill industry from enriched data
@@ -111,20 +111,23 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
       if (user?.company_id) {
         await updateCompany({
           settings: {
-            business_model: businessData.business_model,
-            revenue_stage: businessData.revenue_stage,
-            automation_maturity: businessData.automation_maturity,
-            primary_departments: businessData.primary_departments,
-            key_tools: businessData.key_tools,
-            data_sources: businessData.data_sources,
-            business_priorities: businessData.business_priorities,
-            success_timeframe: businessData.success_timeframe,
-            budget_expectation: businessData.budget_expectation
+            businessmodel: businessData.business_model,
+            revenuestage: businessData.revenue_stage,
+            automationmaturity: businessData.automation_maturity,
+            primarydepartments: businessData.primary_departments,
+            keytools: businessData.key_tools,
+            datasources: businessData.data_sources,
+            businesspriorities: businessData.business_priorities,
+            successtimeframe: businessData.success_timeframe,
+            budgetexpectation: businessData.budget_expectation
           }
         });
       }
     } catch (error) {
-      console.error('Error updating business context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating business context: ', error);
     }
     
     onNext(businessData);
@@ -170,7 +173,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
 
       <div className="grid gap-6">
         {/* Business Model & Revenue */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md: grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -181,7 +184,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
             <CardContent>
               <RadioGroup
                 value={businessData.business_model}
-                onValueChange={(value: string) => setBusinessData(prev => ({ ...prev, business_model: value }))}
+                onValueChange={(value: string) => setBusinessData(prev => ({ ...prev, businessmodel: value }))}
               >
                 {businessModels.map((model) => (
                   <div key={model} className="flex items-center space-x-2">
@@ -203,7 +206,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
             <CardContent>
               <RadioGroup
                 value={businessData.revenue_stage}
-                onValueChange={(value: string) => setBusinessData(prev => ({ ...prev, revenue_stage: value }))}
+                onValueChange={(value: string) => setBusinessData(prev => ({ ...prev, revenuestage: value }))}
               >
                 {revenueStages.map((stage) => (
                   <div key={stage} className="flex items-center space-x-2">
@@ -223,7 +226,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">Which departments will use Nexus most?</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 md: grid-cols-5 gap-2">
               {departments.map((dept) => (
                 <div key={dept} className="flex items-center space-x-2">
                   <Checkbox
@@ -232,7 +235,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       businessData.primary_departments, 
                       dept, 
-                      (arr) => setBusinessData(prev => ({ ...prev, primary_departments: arr }))
+                      (arr) => setBusinessData(prev => ({ ...prev, primarydepartments: arr }))
                     )}
                   />
                   <Label htmlFor={dept} className="text-sm">{dept}</Label>
@@ -252,7 +255,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">What tools are you currently using?</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-2">
               {tools.map((tool) => (
                 <div key={tool} className="flex items-center space-x-2">
                   <Checkbox
@@ -261,7 +264,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       businessData.key_tools, 
                       tool, 
-                      (arr) => setBusinessData(prev => ({ ...prev, key_tools: arr }))
+                      (arr) => setBusinessData(prev => ({ ...prev, keytools: arr }))
                     )}
                   />
                   <Label htmlFor={tool} className="text-sm">{tool}</Label>
@@ -281,7 +284,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">What data do you want to analyze and automate?</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 md: grid-cols-3 gap-2">
               {dataSources.map((source) => (
                 <div key={source} className="flex items-center space-x-2">
                   <Checkbox
@@ -290,7 +293,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       businessData.data_sources, 
                       source, 
-                      (arr) => setBusinessData(prev => ({ ...prev, data_sources: arr }))
+                      (arr) => setBusinessData(prev => ({ ...prev, datasources: arr }))
                     )}
                   />
                   <Label htmlFor={source} className="text-sm">{source}</Label>
@@ -309,7 +312,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 md: grid-cols-3 gap-2">
               {priorities.map((priority) => (
                 <div key={priority} className="flex items-center space-x-2">
                   <Checkbox
@@ -318,7 +321,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       businessData.business_priorities, 
                       priority, 
-                      (arr) => setBusinessData(prev => ({ ...prev, business_priorities: arr }))
+                      (arr) => setBusinessData(prev => ({ ...prev, businesspriorities: arr }))
                     )}
                   />
                   <Label htmlFor={priority} className="text-sm">{priority}</Label>
@@ -339,7 +342,7 @@ export const BusinessContextStep: React.FC<BusinessContextStepProps> = ({ onNext
               value={businessData.automation_maturity}
               onValueChange={(value: string) => setBusinessData(prev => ({ 
                 ...prev, 
-                automation_maturity: value as 'none' | 'basic' | 'intermediate' | 'advanced' 
+                automationmaturity: value as 'none' | 'basic' | 'intermediate' | 'advanced' 
               }))}
             >
               <div className="flex items-center space-x-2">

@@ -10,7 +10,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Loader2, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { callbackRegistry } from '@/shared/callbacks/CallbackRegistry';
 import { CallbackProcessor } from '@/shared/callbacks/CallbackHandler';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNotifications } from '@/core/hooks/NotificationContext';
 import type { CallbackConfig, CallbackResponse } from '@/core/types/callbacks';
 
@@ -30,7 +30,7 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
   const { integration: paramIntegration } = useParams<{ integration: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
 
   const [status, setStatus] = useState<CallbackStatus>('processing');
@@ -129,7 +129,10 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
       }
 
     } catch (error: any) {
-      console.error('Callback processing error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Callback processing error: ', error);
       
       setStatus('error');
       setMessage(error.message || 'Failed to process callback');
@@ -174,8 +177,7 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
         return `Webhook configured successfully for ${finalIntegrationSlug}!`;
       case 'api_key':
         return `API key validated successfully for ${finalIntegrationSlug}!`;
-      default:
-        return `${finalIntegrationSlug} integration completed successfully!`;
+      default: return `${finalIntegrationSlug} integration completed successfully!`;
     }
   };
 
@@ -189,8 +191,7 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
     }
 
     switch (response.status) {
-      case 400:
-        return 'Invalid callback request';
+      case 400: return 'Invalid callback request';
       case 401:
         return 'Authentication failed';
       case 403:
@@ -199,8 +200,7 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
         return 'Callback configuration not found';
       case 429:
         return 'Too many requests, please try again later';
-      case 500:
-        return 'Server error occurred';
+      case 500: return 'Server error occurred';
       default:
         return `Callback failed with status ${response.status}`;
     }
@@ -220,8 +220,7 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
         return '🥷';
       case 'linkedin':
         return '💼';
-      default:
-        return '🔗';
+      default: return '🔗';
     }
   };
 

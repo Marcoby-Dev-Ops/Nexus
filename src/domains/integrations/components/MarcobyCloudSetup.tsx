@@ -6,26 +6,10 @@ import { Label } from '@/shared/components/ui/Label';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Separator } from '@/shared/components/ui/Separator';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { 
-  Cloud, 
-  Server, 
-  Activity, 
-  DollarSign, 
-  Shield,
-  Zap,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  ExternalLink,
-  Eye,
-  EyeOff,
-  BarChart3,
-  Cpu,
-  HardDrive
-} from 'lucide-react';
+import { Cloud, Server, Activity, DollarSign, CheckCircle, AlertCircle, Loader2, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { marcobyCloudService } from '@/domains/services/marcobyCloudService';
 import { supabase } from '@/core/supabase';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 
 interface MarcobyCloudSetupProps {
@@ -41,7 +25,7 @@ interface SetupStep {
 }
 
 const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClose }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -125,7 +109,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
         throw new Error(connectionResult.message);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Connection test failed');
+      setError(err instanceof Error ? err.message: 'Connection test failed');
       setTestResults(prev => ({ ...prev, connection: false }));
     } finally {
       setLoading(false);
@@ -160,7 +144,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
       
       setCurrentStep(3);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Infrastructure test failed');
+      setError(err instanceof Error ? err.message: 'Infrastructure test failed');
     } finally {
       setLoading(false);
     }
@@ -175,26 +159,24 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
     try {
       // Save integration to database
       const integrationData = {
-        user_id: user.id,
-        integration_slug: 'marcoby-cloud',
+        userid: user.id,
+        integrationslug: 'marcoby-cloud',
         name: `Marcoby Cloud - ${formData.orgId}`,
         status: 'active',
         config: {
-          org_id: formData.orgId,
+          orgid: formData.orgId,
           endpoint: formData.endpoint,
-          rsp_api_url: 'https://cp.resellerspanel.com/api'
+          rspapi_url: 'https://cp.resellerspanel.com/api'
         },
         credentials: {
-          api_key: formData.apiKey || '',
-          rsp_username: formData.rspUsername,
-          rsp_password: formData.rspPassword
+          apikey: formData.apiKey || '',
+          rspusername: formData.rspUsername,
+          rsppassword: formData.rspPassword
         },
-        last_sync_at: new Date().toISOString()
+        lastsync_at: new Date().toISOString()
       };
 
-      const { error: saveError } = await supabase
-        .from('user_integrations')
-        .insert(integrationData);
+      
 
       if (saveError) throw saveError;
 
@@ -205,7 +187,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
 
       onComplete();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save integration');
+      setError(err instanceof Error ? err.message: 'Failed to save integration');
     } finally {
       setLoading(false);
     }
@@ -325,7 +307,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="orgId">Organization ID (Optional)</Label>
                 <Input
@@ -340,7 +322,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
                 <Label htmlFor="endpoint">Marcoby Cloud URL</Label>
                 <Input
                   id="endpoint"
-                  placeholder="https://cloud.marcoby.com"
+                  placeholder="https: //cloud.marcoby.com"
                   value={formData.endpoint}
                   onChange={(e) => handleInputChange('endpoint', e.target.value)}
                 />
@@ -464,7 +446,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h4 className="font-medium text-success">✅ Performance Monitoring</h4>
                 <ul className="text-sm text-muted-foreground space-y-1 ml-4">

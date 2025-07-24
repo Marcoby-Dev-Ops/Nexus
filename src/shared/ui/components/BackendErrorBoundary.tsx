@@ -4,7 +4,7 @@
  */
 
 import React, { Component, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { AlertTriangle, RefreshCw, WifiOff } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -39,7 +39,10 @@ export class BackendErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('Backend Error Boundary caught an error:', error, errorInfo);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Backend Error Boundary caught an error: ', error, errorInfo);
   }
 
   handleRetry = async () => {

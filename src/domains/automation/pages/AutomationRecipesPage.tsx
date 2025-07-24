@@ -6,37 +6,11 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/Dialog';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 import { n8nService } from '@/domains/automation/services/n8nService';
 import { userN8nConfigService } from '@/domains/automation/services/userN8nConfig';
-import {
-  Zap,
-  Search,
-  Filter,
-  Clock,
-  Users,
-  DollarSign,
-  Mail,
-  Calendar,
-  MessageSquare,
-  BarChart3,
-  Settings,
-  Play,
-  Download,
-  ExternalLink,
-  Workflow,
-  Bot,
-  Target,
-  CheckCircle2,
-  AlertCircle,
-  Plus,
-  Sparkles,
-  ArrowRight,
-  Code,
-  GitBranch
-} from 'lucide-react';
-
+import { Zap, Search, Clock, DollarSign, Calendar, MessageSquare, BarChart3, Settings, Play, ExternalLink, Workflow, Target, CheckCircle2, AlertCircle, Sparkles, ArrowRight, Code, GitBranch } from 'lucide-react';
 interface AutomationRecipe {
   id: string;
   title: string;
@@ -59,7 +33,7 @@ interface AutomationRecipe {
  * Pillar: 1,2 - Customer Success Automation + Business Workflow Intelligence
  */
 const AutomationRecipesPage: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
   const [recipes, setRecipes] = useState<AutomationRecipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<AutomationRecipe[]>([]);
@@ -409,7 +383,7 @@ const AutomationRecipesPage: React.FC = () => {
       {/* Search and Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md: flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -449,7 +423,7 @@ const AutomationRecipesPage: React.FC = () => {
       </Card>
 
       {/* Recipe Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
         <Card>
           <CardContent className="flex flex-col items-center justify-center gap-1 pt-6">
             <Workflow className="h-8 w-8 text-primary" />
@@ -490,9 +464,9 @@ const AutomationRecipesPage: React.FC = () => {
       </div>
 
       {/* Recipe Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredRecipes.map((recipe) => (
-          <Card key={recipe.id} className="hover:shadow-lg transition-shadow">
+          <Card key={recipe.id} className="hover: shadow-lg transition-shadow">
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
@@ -525,7 +499,7 @@ const AutomationRecipesPage: React.FC = () => {
               </div>
               
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Time savings:</span>
+                <span className="text-muted-foreground">Time savings: </span>
                 <span className="font-semibold text-success">{recipe.timeSavingsPerWeek}h/week</span>
               </div>
               
@@ -587,13 +561,13 @@ const AutomationRecipesPage: React.FC = () => {
                           </div>
                           <div className="space-y-4">
                             <div className="flex justify-between">
-                              <span className="text-sm">Difficulty:</span>
+                              <span className="text-sm">Difficulty: </span>
                               <Badge className={getDifficultyColor(recipe.difficulty)}>
                                 {recipe.difficulty}
                               </Badge>
                             </div>
                             <div className="flex justify-between">
-                              <span className="text-sm">Setup Time:</span>
+                              <span className="text-sm">Setup Time: </span>
                               <span className="text-sm font-medium">{recipe.estimatedSetupTime} minutes</span>
                             </div>
                             <div className="flex justify-between">
@@ -672,7 +646,7 @@ const AutomationRecipesPage: React.FC = () => {
                             This workflow will be automatically generated when you deploy it to n8n.
                           </p>
                           <div className="bg-muted rounded-lg p-4 text-left">
-                            <p className="text-sm font-medium mb-2">Workflow Overview:</p>
+                            <p className="text-sm font-medium mb-2">Workflow Overview: </p>
                             <div className="space-y-2 text-sm">
                               <div className="flex items-center gap-2">
                                 <span className="w-2 h-2 bg-primary rounded-full"></span>

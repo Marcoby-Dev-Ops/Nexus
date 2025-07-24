@@ -11,21 +11,8 @@ import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { 
-  Users, 
-  Building2, 
-  TrendingUp, 
-  DollarSign, 
-  Target, 
-  BarChart3,
-  RefreshCw,
-  Download,
-  Activity,
-  Calendar,
-  Mail,
-  Phone
-} from 'lucide-react';
-import { useAuth } from '@/shared/stores/authStore';
+import { Users, Building2, TrendingUp, Target, RefreshCw, Activity } from 'lucide-react';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { callEdgeFunction } from '@/core/supabase';
 
 interface HubSpotMetrics {
@@ -86,7 +73,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
         setError('Failed to fetch HubSpot metrics');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch metrics');
+      setError(err instanceof Error ? err.message: 'Failed to fetch metrics');
     } finally {
       setLoading(false);
     }
@@ -175,7 +162,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
@@ -238,7 +225,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
         </TabsList>
 
         <TabsContent value="pipeline" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Deals by Stage</CardTitle>
@@ -286,7 +273,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
         </TabsContent>
 
         <TabsContent value="customers" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Top Industries</CardTitle>
@@ -333,7 +320,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
         </TabsContent>
 
         <TabsContent value="revenue" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle>Revenue Metrics</CardTitle>
@@ -398,7 +385,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
           <CardDescription>HubSpot CRM data overview</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-blue-600">{formatNumber(metrics.data.contactsCount)}</div>
               <p className="text-sm text-muted-foreground">Contacts</p>

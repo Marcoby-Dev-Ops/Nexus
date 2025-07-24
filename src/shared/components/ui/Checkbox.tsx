@@ -84,10 +84,10 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
           disabled={disabled}
           className={cn(
             "peer appearance-none rounded border border-border bg-card transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
-            "checked:bg-primary checked:border-blue-600",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            "dark:border-gray-600 dark:bg-background dark:checked:bg-primary dark:checked:border-blue-600",
-            "hover:border-gray-400 dark:hover:border-gray-500",
+            "checked: bg-primary checked:border-blue-600",
+            "disabled: cursor-not-allowed disabled:opacity-50",
+            "dark: border-gray-600 dark:bg-background dark:checked:bg-primary dark:checked:border-blue-600",
+            "hover: border-gray-400 dark:hover:border-gray-500",
             sizeClasses[size],
             className
           )}
@@ -96,7 +96,7 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         <Check 
           className={cn(
             "absolute left-0 top-0 text-primary-foreground opacity-0 transition-opacity pointer-events-none",
-            "peer-checked:opacity-100",
+            "peer-checked: opacity-100",
             sizeClasses[size]
           )}
           size={checkIconSizes[size]}
@@ -112,8 +112,8 @@ const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
             htmlFor={checkboxId}
             className={cn(
               "text-sm font-medium leading-none cursor-pointer",
-              "peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-              "dark:text-foreground"
+              "peer-disabled: cursor-not-allowed peer-disabled:opacity-70",
+              "dark: text-foreground"
             )}
           >
             {label}

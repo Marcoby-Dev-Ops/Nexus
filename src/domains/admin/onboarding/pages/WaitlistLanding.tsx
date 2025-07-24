@@ -7,34 +7,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { waitlistService, type WaitlistSignup } from '@/domains/admin/onboarding/lib/waitlistService';
-import { 
-  ArrowRight, 
-  Clock, 
-  Users, 
-  Sparkles, 
-  Check, 
-  Share2, 
-  Gift, 
-  Star, 
-  TrendingUp, 
-  Building2, 
-  Zap, 
-  Shield, 
-  Globe, 
-  Mail,
-  Twitter,
-  Linkedin,
-  Facebook,
-  Copy,
-  CheckCircle2,
-  Rocket,
-  Target,
-  BarChart3,
-  Crown,
-  Flame,
-  Bolt,
-  AlertCircle
-} from 'lucide-react';
+import { ArrowRight, Users, Sparkles, Check, Zap, Shield, Globe, Twitter, Linkedin, Facebook, Copy, CheckCircle2, BarChart3, Crown, Bolt, AlertCircle } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Card, CardContent } from '@/shared/components/ui/Card';
@@ -156,7 +129,10 @@ const WaitlistLanding: React.FC = () => {
       }
       
     } catch (error) {
-      console.error('Signup failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Signup failed: ', error);
       setSubmitError('Network error. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
@@ -250,7 +226,7 @@ const WaitlistLanding: React.FC = () => {
         {/* Animated Gradient Background */}
         <div className="absolute inset-0 -z-10 h-full w-full bg-background bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,hsl(var(--primary)/0.15),rgba(255,255,255,0))]" />
 
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm: px-6 lg:px-8">
           {/* ----- Header ----- */}
           <header className="flex justify-between items-center py-6">
             <div className="flex items-center gap-4">
@@ -305,7 +281,7 @@ const WaitlistLanding: React.FC = () => {
                         className="flex-1"
                         required
                       />
-                      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting}>
+                      <Button type="submit" size="lg" className="w-full sm: w-auto" disabled={isSubmitting}>
                         {isSubmitting ? <Spinner /> : 'Get Early Access'}
                       </Button>
                     </div>
@@ -318,7 +294,7 @@ const WaitlistLanding: React.FC = () => {
                   </form>
                   <div className="mt-8 flex justify-center items-center gap-4">
                     <div className="flex -space-x-2">
-                      <img className="inline-block h-8 w-8 rounded-full ring-2 ring-background" src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="User" />
+                      <img className="inline-block h-8 w-8 rounded-full ring-2 ring-background" src="https: //i.pravatar.cc/150?u=a042581f4e29026704d" alt="User" />
                       <img className="inline-block h-8 w-8 rounded-full ring-2 ring-background" src="https://i.pravatar.cc/150?u=a042581f4e29026704e" alt="User" />
                       <img className="inline-block h-8 w-8 rounded-full ring-2 ring-background" src="https://i.pravatar.cc/150?u=a042581f4e29026704f" alt="User" />
                     </div>
@@ -371,14 +347,14 @@ const WaitlistLanding: React.FC = () => {
 
       {/* ----- Features Section ----- */}
       <div className="py-24 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm: px-6 lg:px-8">
           <div className="text-center max-w-3xl lg:max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">One Platform to Rule Them All</h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Stop gluing together a dozen different tools. Nexus provides a single source of truth, saving you time, money, and sanity.
             </p>
           </div>
-          <div className="mt-20 grid gap-12 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-20 grid gap-12 sm: grid-cols-2 lg:grid-cols-3">
             {features.map((feature, index) => (
               <motion.div
                 key={index}
@@ -402,7 +378,7 @@ const WaitlistLanding: React.FC = () => {
 
       {/* ----- Testimonials Section ----- */}
       <div className="py-24 bg-primary/5">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm: px-6 lg:px-8">
           <div className="text-center max-w-3xl lg:max-w-4xl mx-auto">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Loved by Leaders at Visionary Companies</h2>
           </div>
@@ -438,7 +414,7 @@ const WaitlistLanding: React.FC = () => {
 
       {/* ----- Countdown Section ----- */}
       <div className="bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-24">
+        <div className="container mx-auto px-4 sm: px-6 lg:px-8 py-24">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-6">The Future is Arriving Soon</h2>
             <p className="text-lg text-muted-foreground mb-12">

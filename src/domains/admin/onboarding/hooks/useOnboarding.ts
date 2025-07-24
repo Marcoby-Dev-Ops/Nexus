@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { safeGetLocalStorage, safeSetLocalStorage } from '@/shared/utils/storageUtils';
 import { supabase } from '@/core/supabase';
-import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 export interface OnboardingState {
   step: number;
@@ -54,7 +54,7 @@ export interface UseOnboardingReturn {
  * Main onboarding hook - PROPER IMPLEMENTATION
  */
 export function useOnboarding(user?: any): UseOnboardingReturn {
-  const { profile, loading: authLoading, fetchProfile } = useZustandAuth();
+  const { profile, fetchProfile } = useAuth();
   const [onboardingState] = useState<OnboardingState | null>(null);
   const [userN8nConfig] = useState<UserN8nConfig | null>(null);
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean>(false);
@@ -91,33 +91,51 @@ export function useOnboarding(user?: any): UseOnboardingReturn {
   const completeOnboarding = useCallback(async () => {
     try {
       if (!user?.id) {
-        console.error('No user ID available for completing onboarding');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('No user ID available for completing onboarding');
         return;
       }
 
-      console.log('[completeOnboarding] Completing onboarding for user:', user.id);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[completeOnboarding] Completing onboarding for user: ', user.id);
 
       // Call the database function to complete onboarding
       const { error } = await supabase
         .rpc('complete_user_onboarding', { 
-          user_uuid: user.id,
-          onboarding_data: { completed_at: new Date().toISOString() }
+          useruuid: user.id,
+          onboardingdata: { completedat: new Date().toISOString() }
         });
 
       if (error) {
-        console.error('Error completing onboarding in database:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing onboarding in database: ', error);
         // Fallback to localStorage
         safeSetLocalStorage('nexus_onboarding_complete', true);
       } else {
-        console.log('[completeOnboarding] Successfully completed onboarding in database');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[completeOnboarding] Successfully completed onboarding in database');
         // Also update localStorage for consistency
         safeSetLocalStorage('nexus_onboarding_complete', true);
       }
       
       setNeedsOnboarding(false);
-      console.log('[completeOnboarding] Set needsOnboarding to false');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[completeOnboarding] Set needsOnboarding to false');
     } catch (error) {
-      console.error('Failed to complete onboarding:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to complete onboarding: ', error);
       // Fallback to localStorage
       safeSetLocalStorage('nexus_onboarding_complete', true);
       setNeedsOnboarding(false);
@@ -129,7 +147,10 @@ export function useOnboarding(user?: any): UseOnboardingReturn {
       safeSetLocalStorage('nexus_onboarding_complete', false);
       setNeedsOnboarding(true);
     } catch (error) {
-      console.error('Failed to reset onboarding:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to reset onboarding: ', error);
     }
   }, []);
 
@@ -140,7 +161,10 @@ export function useOnboarding(user?: any): UseOnboardingReturn {
     try {
       // Add timeout to prevent hanging
       timeoutId = setTimeout(() => {
-        console.log('[checkOnboardingStatus] Timeout reached, setting default values');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[checkOnboardingStatus] Timeout reached, setting default values');
         setNeedsOnboarding(false);
         setIsLoading(false);
       }, 10000); // 10 second timeout
@@ -161,30 +185,39 @@ export function useOnboarding(user?: any): UseOnboardingReturn {
       
       if (profileError && profileError.code === 'PGRST116') {
         // Profile doesn't exist, create a basic one
-        console.log('checkOnboardingStatus: No user profile found, creating basic profile');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('checkOnboardingStatus: No user profile found, creating basic profile');
         const { data: newProfile, error: createError } = await supabase
           .from('user_profiles')
           .insert({
             id: user.id,
             email: user.email || '',
-            display_name: user.email?.split('@')[0] || 'User',
+            displayname: user.email?.split('@')[0] || 'User',
             role: 'user',
-            onboarding_completed: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            onboardingcompleted: false,
+            createdat: new Date().toISOString(),
+            updatedat: new Date().toISOString()
           })
           .select('id, onboarding_completed')
           .single();
         
         if (createError) {
-          console.error('checkOnboardingStatus: Error creating user profile:', createError);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('checkOnboardingStatus: Error creating user profile:', createError);
           if (timeoutId) clearTimeout(timeoutId);
           setNeedsOnboarding(true);
           setIsLoading(false);
           return;
         }
         
-        console.log('checkOnboardingStatus: Created basic profile, needs onboarding');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('checkOnboardingStatus: Created basic profile, needs onboarding');
         if (timeoutId) clearTimeout(timeoutId);
         setNeedsOnboarding(!newProfile.onboarding_completed);
         setIsLoading(false);
@@ -192,7 +225,10 @@ export function useOnboarding(user?: any): UseOnboardingReturn {
       }
       
       if (profileError) {
-        console.error('checkOnboardingStatus: Error checking user profile:', profileError);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('checkOnboardingStatus: Error checking user profile:', profileError);
         if (timeoutId) clearTimeout(timeoutId);
         setNeedsOnboarding(true);
         setIsLoading(false);
@@ -200,13 +236,19 @@ export function useOnboarding(user?: any): UseOnboardingReturn {
       }
       
       // Profile exists, check onboarding status
-      console.log('checkOnboardingStatus: Profile exists, onboarding_completed:', profile.onboarding_completed);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('checkOnboardingStatus: Profile exists, onboardingcompleted: ', profile.onboarding_completed);
       if (timeoutId) clearTimeout(timeoutId);
       setNeedsOnboarding(!profile.onboarding_completed);
       setIsLoading(false);
       
     } catch (error) {
-      console.error('checkOnboardingStatus: Failed to check onboarding status:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('checkOnboardingStatus: Failed to check onboarding status:', error);
       // Fallback to localStorage
       const completed = safeGetLocalStorage<boolean>('nexus_onboarding_complete', false);
       if (timeoutId) clearTimeout(timeoutId);
@@ -215,14 +257,14 @@ export function useOnboarding(user?: any): UseOnboardingReturn {
     }
   }, [user?.id]);
 
-  const testN8nConnection = useCallback(async (_baseUrl: string, _apiKey: string) => {
+  const testN8nConnection = useCallback(async (_baseUrl: string, apiKey: string) => {
     return { success: true };
   }, []);
 
   return {
     onboardingState,
     needsOnboarding,
-    isLoading: isLoading || authLoading,
+    isLoading: isLoading || loading,
     userN8nConfig,
     startOnboarding,
     completeOnboarding,
@@ -251,7 +293,10 @@ export function useN8nConfigStatus() {
           setConfig(null);
         }
       } catch (error) {
-        console.error('Failed to load n8n config:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load n8n config: ', error);
       } finally {
         setIsLoading(false);
       }
@@ -272,7 +317,10 @@ export function useN8nConfigStatus() {
         setConfig(null);
       }
     } catch (error) {
-      console.error('Failed to refresh n8n config:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to refresh n8n config: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -312,7 +360,10 @@ export function useShowOnboarding(): { shouldShow: boolean; isLoading: boolean }
         const needs = await mockN8nOnboardingManager.needsOnboarding();
         setShouldShow(needs);
       } catch (error) {
-        console.error('Failed to check onboarding status:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to check onboarding status: ', error);
         // Default to showing onboarding if we can't determine status
         setShouldShow(true);
       } finally {

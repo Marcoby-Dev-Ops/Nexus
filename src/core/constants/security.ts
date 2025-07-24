@@ -21,16 +21,16 @@ export const SECURITY_HEADERS = {
 // LocalStorage security settings
 export const STORAGE_CONFIG = {
   // Keys that should be encrypted
-  SENSITIVE_KEYS: [
+  SENSITIVEKEYS: [
     'nexus_user_context',
     'nexus_success_criteria',
     'teams_tokens',
     'ga4_config',
   ],
   // Maximum age for stored data (in milliseconds)
-  MAX_AGE: 24 * 60 * 60 * 1000, // 24 hours
+  MAXAGE: 24 * 60 * 60 * 1000, // 24 hours
   // Keys to exclude from cleanup
-  SYSTEM_KEYS: [
+  SYSTEMKEYS: [
     'vite-ui-theme',
   ],
 } as const;
@@ -51,30 +51,30 @@ export const VALIDATION_PATTERNS = {
   URL: /^https?:\/\/.+/,
   // Prevent XSS in user inputs
   // eslint-disable-next-line no-useless-escape
-  SAFE_TEXT: /^[a-zA-Z0-9\s\-_.,!?@#$%^&*()+={}[\]:";'<>\/\\|`~]*$/,
+  SAFETEXT: /^[a-zA-Z0-9\s\-_.,!?@#$%^&*()+={}[\]:";'<>\/\\|`~]*$/,
 } as const;
 
 // Content Security Policy
 export const CSP_DIRECTIVES = {
   'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", 'https://js.stripe.com'],
-  'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
-  'font-src': ["'self'", 'https://fonts.gstatic.com'],
-  'img-src': ["'self'", 'data:', 'https:'],
+  'script-src': ["'self'", "'unsafe-inline'", 'https: //js.stripe.com'],
+  'style-src': ["'self'", "'unsafe-inline'", 'https: //fonts.googleapis.com'],
+  'font-src': ["'self'", 'https: //fonts.gstatic.com'],
+  'img-src': ["'self'", 'data: ', 'https: '],
   'connect-src': [
     "'self'",
-    'https://kqclbpimkraenvbffnpk.supabase.co',
-    'https://api.stripe.com',
+    'https: //kqclbpimkraenvbffnpk.supabase.co',
+    'https: //api.stripe.com',
   ],
-  'frame-src': ['https://js.stripe.com'],
+  'frame-src': ['https: //js.stripe.com'],
 } as const;
 
 // Production security checks
 export const SECURITY_CHECKS = {
   // Disable console.log in production
-  DISABLE_CONSOLE_IN_PROD: true,
+  DISABLECONSOLE_IN_PROD: true,
   // Enable HTTPS redirect
-  FORCE_HTTPS: true,
+  FORCEHTTPS: true,
   // Enable secure cookies
-  SECURE_COOKIES: true,
+  SECURECOOKIES: true,
 } as const; 

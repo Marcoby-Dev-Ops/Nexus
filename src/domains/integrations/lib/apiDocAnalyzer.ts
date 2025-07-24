@@ -139,7 +139,10 @@ export class APIDocAnalyzer {
       
       return apiDoc;
     } catch (error) {
-      console.error('Error parsing OpenAPI document:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error parsing OpenAPI document: ', error);
       throw new Error(`Failed to parse API documentation: ${error}`);
     }
   }
@@ -266,7 +269,7 @@ export class APIDocAnalyzer {
     // Iterate through all paths and methods
     Object.entries(apiDoc.paths).forEach(([path, methods]) => {
       Object.entries(methods).forEach(([_method, endpoint]) => {
-        const tags = endpoint.tags?.length ? endpoint.tags : ['default'];
+        const tags = endpoint.tags?.length ? endpoint.tags: ['default'];
         
         // Add this endpoint to each of its tags
         tags.forEach(tag => {
@@ -329,7 +332,7 @@ export class APIDocAnalyzer {
   /**
    * Extract data models from endpoints
    */
-  private extractDataModels(endpoints: APIEndpoint[], _apiDoc: APIDocumentation): Record<string, APISchema> {
+  private extractDataModels(endpoints: APIEndpoint[], apiDoc: APIDocumentation): Record<string, APISchema> {
     const dataModels: Record<string, APISchema> = {};
     
     // Look at request bodies and responses for data models
@@ -837,7 +840,10 @@ export const ${functionName} = async (client: ApiClient, `;
     code += `
       return response.data;
     } catch (error) {
-      console.error(\`Error in ${functionName}:\`, error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(\`Error in ${functionName}:\`, error);
       throw new Error(\`API error in ${functionName}: \${error.message}\`);
     }
   };`;
@@ -910,8 +916,7 @@ export const ${functionName} = async (client: ApiClient, `;
           }`;
         }
         return 'Record<string, any>';
-      default:
-        return 'any';
+      default: return 'any';
     }
   }
   

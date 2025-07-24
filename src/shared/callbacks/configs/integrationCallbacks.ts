@@ -64,8 +64,8 @@ export const googleWorkspaceCallback: CallbackConfig = {
       validateState: true,
       requiredScopes: [
         'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/drive.readonly',
-        'https://www.googleapis.com/auth/calendar.readonly'
+        'https: //www.googleapis.com/auth/drive.readonly',
+        'https: //www.googleapis.com/auth/calendar.readonly'
       ],
       tokenEndpoint: 'https://oauth2.googleapis.com/token',
       redirectUrl: '/integrations',
@@ -162,7 +162,7 @@ export const paypalCallback: CallbackConfig = {
   security: {
     requireAuth: false,
     cors: {
-      origins: ['https://www.paypal.com', 'https://www.sandbox.paypal.com'],
+      origins: ['https://www.paypal.com', 'https: //www.sandbox.paypal.com'],
       methods: ['GET'],
       headers: ['Content-Type', 'Authorization']
     }
@@ -416,20 +416,50 @@ export const allCallbackConfigs: CallbackConfig[] = [
 
 /**
  * Register all callback configurations
+ * This should only be called once per app lifecycle
  */
 export const registerAllCallbacks = async () => {
   const { callbackRegistry } = await import('../CallbackRegistry');
   
+  // Check if callbacks are already registered
+  if (callbackRegistry.isCallbacksLoaded()) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Callbacks already registered, skipping re-registration');
+    return;
+  }
+  
+  let registeredCount = 0;
   allCallbackConfigs.forEach(config => {
     try {
+      // Check if callback is already registered
+      if (callbackRegistry.get(config.id)) {
+        // eslint-disable-next-line no-console
+        // eslint-disable-next-line no-console
+        // eslint-disable-next-line no-console
+        console.log(`⏭️  Callback ${config.id} already registered, skipping`);
+        return;
+      }
+      
       callbackRegistry.register(config);
-      console.log(`✅ Registered callback: ${config.id}`);
+      registeredCount++;
+      // Only log in development
+      if (import.meta.env.DEV) {
+        console.log(`✅ Registered callback: ${config.id}`);
+      }
     } catch (error) {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
       console.error(`❌ Failed to register callback ${config.id}:`, error);
     }
   });
   
-  console.log(`📋 Registered ${allCallbackConfigs.length} callback configurations`);
+  // Only log in development
+  if (import.meta.env.DEV) {
+    console.log(`📋 Registered ${registeredCount} new callback configurations (${allCallbackConfigs.length} total available)`);
+  }
 };
 
 /**

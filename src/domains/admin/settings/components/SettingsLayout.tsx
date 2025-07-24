@@ -1,16 +1,7 @@
 import React from 'react';
 import type { ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  User, 
-  Shield, 
-  Wrench, 
-  Users,
-  CreditCard,
-  ChevronRight,
-  Settings as SettingsIcon
-} from 'lucide-react';
-
+import { User, Shield, Users, CreditCard, ChevronRight, Settings as SettingsIcon } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Separator } from '../ui/Separator';
 import Breadcrumbs from '../ui/Breadcrumbs';
@@ -77,7 +68,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
   const isActive = (path: string) => location.pathname === path;
   
   return (
-    <div className="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+    <div className="flex flex-col space-y-8 lg: flex-row lg:space-x-12 lg:space-y-0">
       <aside className="-mx-4 lg:w-1/5 lg:min-w-[250px]">
         <div className="lg:pr-4 lg:sticky lg:top-16 lg:h-[calc(100vh-120px)] overflow-auto">
           <div className="px-4 py-2">
@@ -105,7 +96,7 @@ export const SettingsLayout: React.FC<SettingsLayoutProps> = ({
           </div>
         </div>
       </aside>
-      <div className="flex-1 lg:max-w-3xl">
+      <div className="flex-1 lg: max-w-3xl">
         <div className="space-y-6">
           <Breadcrumbs items={breadcrumbItems} />
           <div>

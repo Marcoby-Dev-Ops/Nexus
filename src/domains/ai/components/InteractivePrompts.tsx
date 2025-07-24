@@ -6,28 +6,16 @@
  */
 
 import React, { useState, useRef, useCallback } from 'react';
-import { 
-  Mic, 
-  Upload, 
-  MessageCircle, 
-  Copy, 
-  Send, 
-  FileText, 
-  Image, 
-  Video,
-  X,
-  Loader2,
-  CheckCircle
-} from 'lucide-react';
+import { Mic, Upload, MessageCircle, Copy, Send, FileText, Image } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Spinner } from '@/shared/components/ui/Spinner';
 import { Alert } from '@/shared/components/ui/Alert';
-import { thoughtsService } from '@/domains/knowledge/features/lib/services/thoughtsService';
-import type { InteractionMethod, ThoughtCategory } from '@/domains/knowledge/features/lib/types/thoughts';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { thoughtsService } from '@/domains/help-center/knowledge/features/lib/services/thoughtsService';
+import type { InteractionMethod, ThoughtCategory } from '@/domains/help-center/knowledge/features/lib/types/thoughts';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface InteractivePromptsProps {
   onThoughtCreated?: (thoughtId: string) => void;
@@ -88,7 +76,7 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   // ====== Voice Recording ======
   
@@ -113,7 +101,10 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       mediaRecorder.start();
       setIsRecording(true);
     } catch (error) {
-      console.error('Error starting recording:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error starting recording: ', error);
     }
   }, []);
 
@@ -141,7 +132,10 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       // Auto-suggest categories based on voice content
       await generateSuggestions(mockTranscription);
     } catch (error) {
-      console.error('Error processing voice input:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error processing voice input: ', error);
       setInputState(prev => ({ ...prev, isProcessing: false }));
     }
   };
@@ -175,7 +169,10 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       
       await generateSuggestions(extractedContent);
     } catch (error) {
-      console.error('Error processing file:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error processing file: ', error);
       setInputState(prev => ({ ...prev, isProcessing: false }));
     }
   }, []);
@@ -203,7 +200,10 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       }));
       await generateSuggestions(clipboardText);
     } catch (error) {
-      console.error('Error reading clipboard:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error reading clipboard: ', error);
     }
   }, []);
 
@@ -216,12 +216,14 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
     setError(null);
     
     try {
-      if (!user?.company_id) throw new Error('No company_id in user context');
+      // Get company_id from user profile
+      
+
       const thought = await thoughtsService.createThought({
         content: inputState.content,
-        interaction_method: inputState.method,
+        interactionmethod: inputState.method,
         status: 'not_started',
-        company_id: user.company_id,
+        companyid: userProfile?.company_id || undefined,
         category: 'idea'
       });
       
@@ -235,7 +237,10 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       
       onThoughtCreated?.(thought.id);
     } catch (error) {
-      console.error('Error creating thought:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error creating thought: ', error);
       setError('Failed to create thought. Please try again.');
       setInputState(prev => ({ ...prev, isProcessing: false }));
     }
@@ -244,7 +249,7 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
   // ====== Render ======
   
   const renderMethodButtons = () => (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 lg: grid-cols-4 gap-4 mb-6">
       {INTERACTION_METHODS.map((method) => {
         const Icon = method.icon;
         const isActive = activeMethod === method.id;
@@ -309,7 +314,7 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
           
           {inputState.content && (
             <div className="p-4 bg-background rounded-lg">
-              <p className="text-sm font-medium mb-2">Transcribed:</p>
+              <p className="text-sm font-medium mb-2">Transcribed: </p>
               <p className="text-sm">{inputState.content}</p>
             </div>
           )}
@@ -398,13 +403,13 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
           {/* AI Suggestions */}
           {suggestions.length > 0 && (
             <div className="space-y-2">
-              <p className="text-sm font-medium">AI Suggestions:</p>
+              <p className="text-sm font-medium">AI Suggestions: </p>
               <div className="flex flex-wrap gap-2">
                 {suggestions.map((suggestion, index) => (
                   <Badge
                     key={index}
                     variant="secondary"
-                    className="cursor-pointer hover:bg-primary/10"
+                    className="cursor-pointer hover: bg-primary/10"
                     onClick={() => {
                       setInputState(prev => ({
                         ...prev,

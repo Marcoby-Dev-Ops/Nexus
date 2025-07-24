@@ -9,26 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { 
-  MessageSquare, 
-  Video,
-  Users, 
-  TrendingUp,
-  BarChart3,
-  Zap,
-  Lightbulb,
-  ArrowRight,
-  CheckCircle2,
-  Play,
-  Pause,
-  Calendar,
-  Clock,
-  Target,
-  Shield,
-  Globe,
-  Building,
-  Smartphone
-} from 'lucide-react';
+import { MessageSquare, Video, Users, TrendingUp, BarChart3, Zap, Lightbulb, CheckCircle2, Play, Shield, Globe, Building } from 'lucide-react';
 import DualPlatformDemo from '@/domains/integrations/components/DualPlatformDemo';
 import UnifiedCommunicationDashboard from '@/domains/dashboard/components/UnifiedCommunicationDashboard';
 
@@ -188,7 +169,7 @@ const IntegrationsShowcase: React.FC = () => {
       </div>
 
       {/* Key Benefits */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-6">
         {platformBenefits.map((benefit) => {
           const Icon = benefit.icon;
           return (
@@ -259,7 +240,7 @@ const IntegrationsShowcase: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg: grid-cols-2 gap-8">
               <div className="space-y-6">
                 <div>
                   <h3 className="font-semibold mb-2">Challenge & Solution</h3>
@@ -314,7 +295,7 @@ const IntegrationsShowcase: React.FC = () => {
               <MessageSquare className="w-4 h-4 mr-2" />
               Connect Slack
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-primary-foreground hover:bg-card hover:text-secondary">
+            <Button size="lg" variant="outline" className="border-white text-primary-foreground hover: bg-card hover:text-secondary">
               <Video className="w-4 h-4 mr-2" />
               Connect Teams
             </Button>

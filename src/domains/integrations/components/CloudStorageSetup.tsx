@@ -94,7 +94,10 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
             syncStatus
           };
         } catch (error) {
-          console.error(`Failed to check ${provider.name} status:`, error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Failed to check ${provider.name} status: `, error);
           return provider;
         }
       })
@@ -156,8 +159,11 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
         ));
 
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-        console.error(`Failed to sync ${provider.name}:`, error);
+        const errorMessage = error instanceof Error ? error.message: 'An unknown error occurred';
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Failed to sync ${provider.name}:`, error);
         results.push({ 
           provider: provider.name, 
           success: false, 
@@ -193,7 +199,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
       </div>
 
       <div className="bg-primary/5 p-4 rounded-lg">
-        <h4 className="font-medium text-blue-900 mb-2">What This Enables:</h4>
+        <h4 className="font-medium text-blue-900 mb-2">What This Enables: </h4>
         <ul className="text-sm text-primary space-y-1">
           <li>• AI can reference your meeting notes, project docs, and spreadsheets</li>
           <li>• "Based on last week's board meeting..." type responses</li>
@@ -258,7 +264,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
               
               {provider.syncStatus.errors.length > 0 && (
                 <div className="mt-3 p-2 bg-destructive/5 rounded text-sm text-destructive">
-                  <strong>Sync Errors:</strong>
+                  <strong>Sync Errors: </strong>
                   <ul className="mt-1 space-y-1">
                     {provider.syncStatus.errors.map((error, index) => (
                       <li key={index}>• {error}</li>
@@ -275,7 +281,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
         <div className="flex items-start space-x-2">
           <Eye className="w-5 h-5 text-warning mt-0.5" />
           <div className="text-sm text-amber-800">
-            <strong>Privacy Note:</strong> Documents are processed locally and stored securely. 
+            <strong>Privacy Note: </strong> Documents are processed locally and stored securely. 
             Only text content is extracted for AI context - original files remain in your cloud storage.
           </div>
         </div>
@@ -346,7 +352,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
 
       {syncResults && (
         <div className="space-y-4">
-          <h4 className="font-medium">Sync Results:</h4>
+          <h4 className="font-medium">Sync Results: </h4>
           {syncResults.map((result: any, index: number) => (
             <Card key={index} className="border">
               <CardContent className="p-4">
@@ -368,7 +374,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
                 
                 {result.errors && result.errors.length > 0 && (
                   <div className="mt-2 text-sm text-destructive">
-                    <strong>Errors:</strong>
+                    <strong>Errors: </strong>
                     <ul className="mt-1 space-y-1">
                       {result.errors.map((error: string, i: number) => (
                         <li key={i}>• {error}</li>
@@ -386,7 +392,7 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
         <div className="flex items-start space-x-2">
           <Zap className="w-5 h-5 text-success mt-0.5" />
           <div className="text-sm text-success">
-            <strong>What's Next:</strong> Your AI assistants can now reference your documents. 
+            <strong>What's Next: </strong> Your AI assistants can now reference your documents. 
             Try asking "What did we discuss in last week's meeting?" or "Show me our Q4 budget."
           </div>
         </div>

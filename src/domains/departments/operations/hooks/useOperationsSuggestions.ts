@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { callNexusAdvisor } from '@/domains/services/ai';
+import { callNexusAdvisor } from '@/domains/ai/services/aiService';
 import { departmentId } from '../config';
 import type { DepartmentState } from '../types';
 

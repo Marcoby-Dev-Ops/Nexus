@@ -9,12 +9,12 @@ export interface StripeCustomer {
 export interface StripePrice {
   id: string;
   product: string;
-  unit_amount: number;
+  unitamount: number;
   currency: string;
   type: 'one_time' | 'recurring';
   recurring?: {
     interval: 'month' | 'year' | 'week' | 'day';
-    interval_count: number;
+    intervalcount: number;
   };
   active: boolean;
 }
@@ -32,9 +32,9 @@ export interface StripeSubscription {
   id: string;
   customer: string;
   status: 'active' | 'past_due' | 'unpaid' | 'canceled' | 'incomplete' | 'incomplete_expired' | 'trialing';
-  current_period_start: number;
-  current_period_end: number;
-  cancel_at_period_end: boolean;
+  currentperiodstart: number;
+  currentperiodend: number;
+  cancelatperiod_end: boolean;
   items: {
     data: Array<{
       id: string;
@@ -80,8 +80,8 @@ export interface BillingStatus {
   paymentMethod?: {
     brand: string;
     last4: string;
-    exp_month: number;
-    exp_year: number;
+    expmonth: number;
+    expyear: number;
   };
 }
 

@@ -1,10 +1,10 @@
 import React from 'react';
 import { useOrganizationStore } from '@/shared/stores/organizationStore';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { ChevronDown } from 'lucide-react';
 
 export const OrgSwitcher: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { orgs, activeOrgId, setActiveOrg, loadMemberships } = useOrganizationStore();
 
   React.useEffect(() => {
@@ -23,7 +23,7 @@ export const OrgSwitcher: React.FC = () => {
   return (
     <div className="relative" onBlur={() => setOpen(false)} tabIndex={0}>
       <button
-        className="flex items-center gap-1 px-4 py-2 rounded-md bg-muted text-sm hover:bg-muted/80"
+        className="flex items-center gap-1 px-4 py-2 rounded-md bg-muted text-sm hover: bg-muted/80"
         title="Switch organisation"
         onClick={() => setOpen((p) => !p)}
       >
@@ -35,7 +35,7 @@ export const OrgSwitcher: React.FC = () => {
           {orgs.map((org) => (
             <button
               key={org.id}
-              className={`w-full text-left px-4 py-2 text-sm hover:bg-accent ${org.id === activeOrgId ? 'bg-muted' : ''}`}
+              className={`w-full text-left px-4 py-2 text-sm hover: bg-accent ${org.id === activeOrgId ? 'bg-muted' : ''}`}
               onClick={() => {
                 setActiveOrg(org.id);
                 setOpen(false);

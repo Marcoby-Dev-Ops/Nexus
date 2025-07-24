@@ -10,8 +10,7 @@ interface AdvisorParams {
 /**
  * callNexusAdvisor (v2)
  * --------------------
- * Implements a lightweight RAG loop entirely on the client:
- *   1. Embed the user prompt
+ * Implements a lightweight RAG loop entirely on the client: *   1. Embed the user prompt
  *   2. Retrieve top-k matching runbook chunks via `match_ops_docs` RPC
  *   3. Send context + KPI snapshot to the `ai_chat` edge function for the final answer
  *
@@ -40,18 +39,19 @@ export async function callNexusAdvisor({ prompt, snapshot, orgId }: AdvisorParam
     const json = await resp.json();
     vector = json.data?.[0]?.embedding;
   } catch (err) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.error('Embedding failed', err);
     return 'Could not generate advice at this time.';
   }
 
   // 2. Retrieve context chunks
-  const { data: matches, error: matchErr } = await (supabase as any).rpc('match_ops_docs', {
-    query_embedding: vector,
-    match_threshold: 0.8,
-    match_count: 8,
-    p_org: orgId ?? null,
-  });
+  
   if (matchErr) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.error('match_ops_docs error', matchErr);
   }
 
@@ -63,7 +63,7 @@ export async function callNexusAdvisor({ prompt, snapshot, orgId }: AdvisorParam
       messages: [
         {
           role: 'system',
-          content: `You are the Nexus Operations Advisor. Use the following runbook snippets and KPI snapshot to propose ONE actionable recommendation (≤2 sentences) to improve the Ops score.\n\nRunbook context:\n${context}`,
+          content: `You are the Nexus Operations Advisor. Use the following runbook snippets and KPI snapshot to propose ONE actionable recommendation (≤2 sentences) to improve the Ops score.\n\nRunbook context: \n${context}`,
         },
         {
           role: 'user',
@@ -74,6 +74,9 @@ export async function callNexusAdvisor({ prompt, snapshot, orgId }: AdvisorParam
   });
 
   if (error) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.error('ai_chat error', error);
     return 'N/A';
   }

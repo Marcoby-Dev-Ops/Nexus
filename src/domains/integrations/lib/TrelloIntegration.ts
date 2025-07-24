@@ -7,7 +7,7 @@ export class TrelloIntegration extends BaseIntegration {
   name = 'Trello';
   dataFields = ['boards', 'cards', 'lists', 'members', 'labels', 'checklists', 'attachments', 'comments'];
 
-  async fetchProviderData({ userId: _userId, fullSync: _fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
+  async fetchProviderData({ userId: userId, fullSync: fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
     // TODO: Implement actual Trello API fetch logic
     return {
       boards: [],

@@ -19,7 +19,7 @@ import {
   RefreshCw,
   Shield
 } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Microsoft365Integration } from '@/domains/integrations/lib/Microsoft365Integration';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { logger } from '@/core/auth/logger';
@@ -52,7 +52,7 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
   onComplete, 
   onCancel 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({ connected: false });
   const [isConnecting, setIsConnecting] = useState(false);
@@ -107,7 +107,10 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
       
       // Store code verifier in session storage for callback
       sessionStorage.setItem('microsoft_code_verifier', codeVerifier);
-      console.log('Stored code verifier:', { 
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Stored code verifier: ', { 
         codeVerifierLength: codeVerifier.length,
         timestamp: new Date().toISOString(),
         url: window.location.href
@@ -115,17 +118,22 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
       
       // Verify storage worked
       const storedVerifier = sessionStorage.getItem('microsoft_code_verifier');
-      console.log('Verification - stored code verifier:', { 
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Verification - stored code verifier: ', { 
         hasStoredVerifier: !!storedVerifier,
         storedVerifierLength: storedVerifier?.length
       });
       
       // Build Microsoft OAuth URL
       const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
-      const redirectUri = 'http://localhost:5173/integrations/microsoft/callback';
+      const redirectUri = import.meta.env.VITE_NEXT_PUBLIC_APP_URL 
+        ? `${import.meta.env.VITE_NEXT_PUBLIC_APP_URL}/integrations/microsoft/callback`
+        : `${window.location.origin}/integrations/microsoft/callback`;
       const state = user.id; // Use user ID as state
       
-      const authUrl = new URL('https://login.microsoftonline.com/common/oauth2/v2.0/authorize');
+      const authUrl = new URL('https: //login.microsoftonline.com/common/oauth2/v2.0/authorize');
       authUrl.searchParams.set('client_id', clientId);
       authUrl.searchParams.set('response_type', 'code');
       authUrl.searchParams.set('redirect_uri', redirectUri);
@@ -257,7 +265,7 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
                 </Alert>
               ) : (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="flex items-center gap-2 p-3 border rounded-lg">
                       <Mail className="h-4 w-4 text-blue-600" />
                       <span className="text-sm">Email & Calendar</span>
@@ -359,7 +367,7 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
                 </AlertDescription>
               </Alert>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-2">

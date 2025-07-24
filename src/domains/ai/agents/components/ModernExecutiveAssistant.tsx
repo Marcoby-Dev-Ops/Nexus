@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Sparkles, FileText, Code, Lightbulb, MessageSquare, Send } from 'lucide-react';
 import { useAIChatStore, useActiveConversation, type AIConversation } from '@/shared/stores/useAIChatStore';
 import { VirtualizedMessageList } from '@/domains/ai/chat';
@@ -85,7 +85,7 @@ const WelcomeScreen: React.FC<{
           <button
             key={action.label}
             onClick={() => onQuickAction(action.prompt)}
-            className="p-4 rounded-xl border border-border hover:border-primary/50 hover:bg-muted/50 transition-all text-left group"
+            className="p-4 rounded-xl border border-border hover: border-primary/50 hover:bg-muted/50 transition-all text-left group"
           >
             <div className="flex items-center gap-4 mb-2">
               <div className="text-primary group-hover:scale-110 transition-transform">
@@ -127,7 +127,7 @@ const MessageBubble: React.FC<{ msg: MessageType; conversationId: string }> = Re
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 rehypePlugins={[rehypeHighlight]}
-                className="prose prose-sm dark:prose-invert max-w-none"
+                className="prose prose-sm dark: prose-invert max-w-none"
                 components={{
                   // eslint-disable-next-line @typescript-eslint/no-unused-vars
                   a: ({node, ...props}: any) => <a {...props} target="_blank" rel="noreferrer" />,
@@ -175,7 +175,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
   onClose, 
   sessionId = '' 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const contextCompletion = useContextualDataCompletion({
     autoAnalyze: true,
     proactiveSuggestions: true,
@@ -189,10 +189,10 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
   const autoScrollRef = useRef(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const { cards: actionCards } = useActionCards(conversationId);
+  
 
   const conv = conversation as AIConversation | undefined;
-  const messagesLength = conv?.messages ? conv.messages.length : 0;
+  const messagesLength = conv?.messages ? conv.messages.length: 0;
   const isConversationEmpty = !conversation || messagesLength === 0;
 
   // If a sessionId prop is passed, initialise that conversation
@@ -217,7 +217,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
 
   const handleSend = useCallback(async () => {
     if (!input.trim() || !conversationId || !user?.id) return;
-    await sendMessage(conversationId, input, user.id, user.company_id ? user.company_id : undefined);
+    await sendMessage(conversationId, input, user.id, user.company_id ? user.company_id: undefined);
     setInput('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -240,7 +240,7 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
         textareaRef.current?.focus();
       }
 
-      const sendCombo = (isMac ? e.metaKey : e.ctrlKey) && e.shiftKey && e.key === 'Enter';
+      const sendCombo = (isMac ? e.metaKey: e.ctrlKey) && e.shiftKey && e.key === 'Enter';
       if (sendCombo) {
         e.preventDefault();
         handleSend();
@@ -310,14 +310,14 @@ export const ModernExecutiveAssistant: React.FC<ModernExecutiveAssistantProps> =
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
-          className="flex-1 resize-none rounded-lg border border-border p-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+          className="flex-1 resize-none rounded-lg border border-border p-2 text-sm bg-background focus: outline-none focus:ring-2 focus:ring-primary"
           rows={1}
           disabled={loading}
         />
         <button
           onClick={handleSend}
           disabled={loading || !input.trim()}
-          className="ml-2 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="ml-2 p-2 rounded-lg bg-primary text-primary-foreground hover: bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Send className="w-5 h-5" />
         </button>

@@ -94,7 +94,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({ classNam
       </div>
 
       {/* Phase Navigation */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
         {phases.map((phase) => (
           <motion.button
             key={phase.id}
@@ -102,7 +102,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({ classNam
             className={`relative p-4 rounded-lg border-2 transition-all duration-200 ${
               activePhase === phase.id
                 ? 'border-primary bg-primary/5'
-                : 'border-border hover:border-primary/50'
+                : 'border-border hover: border-primary/50'
             }`}
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -150,7 +150,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({ classNam
             className="space-y-6"
           >
             <NorthStarCard northStar={{ id: '1', title: 'Q3 Revenue Target', description: 'Achieve $500K in Q3', targetValue: 500000, currentValue: 350000, unit: 'USD', timeframe: 'quarterly', lastUpdated: new Date() }} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
               <KeyMetricsCard metrics={[]} />
               <PrioritiesCard priorities={[]} />
             </div>
@@ -207,7 +207,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({ classNam
       {/* Quick Actions */}
       <div className="bg-card rounded-lg p-6 border">
         <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
           <motion.button
             className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-accent transition-colors"
             whileHover={{ scale: 1.02 }}

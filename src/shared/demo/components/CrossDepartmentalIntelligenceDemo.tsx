@@ -6,20 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  AlertTriangle, 
-  CheckCircle, 
-  Users, 
-  DollarSign,
-  BarChart3,
-  ArrowRight,
-  Network,
-  Brain,
-  Target
-} from 'lucide-react';
-
+import { AlertTriangle, CheckCircle, BarChart3, Network, Brain, Target } from 'lucide-react';
 interface DemoScenario {
   id: string;
   title: string;
@@ -29,7 +16,7 @@ interface DemoScenario {
   impactedDepartments: string[];
 }
 
-const DEMO_SCENARIOS: DemoScenario[] = [
+const DEMOSCENARIOS: DemoScenario[] = [
   {
     id: 'pipeline-analysis',
     title: 'Pipeline Health Analysis',
@@ -117,7 +104,7 @@ export const CrossDepartmentalIntelligenceDemo: React.FC = () => {
           </h3>
         </div>
         <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             {DEMO_SCENARIOS.map(scenario => (
               <div 
                 key={scenario.id}
@@ -157,7 +144,7 @@ export const CrossDepartmentalIntelligenceDemo: React.FC = () => {
           <button 
             onClick={runAnalysis}
             disabled={isAnalyzing}
-            className="w-full px-4 py-2 bg-primary hover:bg-primary disabled:bg-gray-300 disabled:cursor-not-allowed text-primary-foreground rounded-md transition-colors"
+            className="w-full px-4 py-2 bg-primary hover: bg-primary disabled:bg-gray-300 disabled:cursor-not-allowed text-primary-foreground rounded-md transition-colors"
           >
             {isAnalyzing ? 'Analyzing Cross-Departmental Impact...' : 'Run Cross-Departmental Analysis'}
           </button>
@@ -183,7 +170,7 @@ export const CrossDepartmentalIntelligenceDemo: React.FC = () => {
                     className={`px-4 py-2 rounded-md transition-colors ${
                       activeTab === tab.id
                         ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        : 'text-muted-foreground hover: text-foreground hover:bg-muted'
                     }`}
                   >
                     {tab.label}
@@ -252,13 +239,13 @@ export const CrossDepartmentalIntelligenceDemo: React.FC = () => {
                     <BarChart3 className="h-5 w-5" />
                     <h3 className="text-lg font-semibold">Impact Analysis</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     {Object.entries(analysisResults.impactAnalysis).map(([dept, impact]: [string, any]) => (
                       <div key={dept} className="bg-card border border-border p-4 rounded-lg">
                         <h4 className="font-semibold capitalize mb-2">{dept.replace('-', ' ')}</h4>
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Impact Level:</span>
+                            <span className="text-sm text-muted-foreground">Impact Level: </span>
                             <span className={`px-2 py-1 rounded-full text-xs ${
                               impact.level === 'high' ? 'bg-destructive/10 text-destructive' :
                               impact.level === 'medium' ? 'bg-warning/10 text-yellow-700' :
@@ -300,7 +287,7 @@ export const CrossDepartmentalIntelligenceDemo: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-sm text-foreground/90 mb-3">{action.description}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      <div className="grid grid-cols-1 md: grid-cols-3 gap-4 text-xs">
                         <div>
                           <span className="font-medium text-muted-foreground">Owner:</span>
                           <p className="text-foreground">{action.owner}</p>
@@ -330,7 +317,7 @@ export const CrossDepartmentalIntelligenceDemo: React.FC = () => {
           Cross-Departmental Intelligence Benefits
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
           <div className="bg-card rounded-lg p-4">
             <h4 className="font-semibold mb-2">🔗 Organizational Awareness</h4>
             <p className="text-sm text-muted-foreground">

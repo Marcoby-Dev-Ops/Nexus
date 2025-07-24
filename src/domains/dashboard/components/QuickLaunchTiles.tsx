@@ -19,12 +19,12 @@ export interface QuickLaunchAction {
  */
 const QuickLaunchTiles: React.FC<{ actions: QuickLaunchAction[] }> = ({ actions }) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 sm: grid-cols-3 lg:grid-cols-6 gap-4">
       {actions.map((action) => (
         <button
           key={action.label}
           onClick={action.onClick}
-          className="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
+          className="flex flex-col items-center p-6 rounded-lg bg-background border border-border hover: border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 group"
           aria-label={action.label}
           disabled={action.loading}
         >

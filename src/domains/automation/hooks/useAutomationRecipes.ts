@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { automationRecipeEngine } from '@/domains/automation/automationRecipeEngine';
 import type { AutomationRecipe, RecipeDeployment, RecipeExecutionResult } from '@/domains/automation/automationRecipeEngine';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { toast } from 'sonner';
 
 export interface UseAutomationRecipesOptions {
@@ -30,8 +30,8 @@ export interface UseAutomationRecipesReturn {
 }
 
 export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}): UseAutomationRecipesReturn {
-  const { user } = useAuthContext();
-  const { category, autoLoad = true } = options;
+  const { user } = useAuth();
+  const { category } = options;
   
   const [recipes, setRecipes] = useState<AutomationRecipe[]>([]);
   const [deployments, setDeployments] = useState<RecipeDeployment[]>([]);
@@ -53,9 +53,12 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
       
       setRecipes(loadedRecipes);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load recipes';
+      const errorMessage = err instanceof Error ? err.message: 'Failed to load recipes';
       setError(errorMessage);
-      console.error('Error loading recipes:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading recipes: ', err);
     } finally {
       setLoading(false);
     }
@@ -71,9 +74,12 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
       const userDeployments = await automationRecipeEngine.getUserDeployments(user.id);
       setDeployments(userDeployments);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load deployments';
+      const errorMessage = err instanceof Error ? err.message: 'Failed to load deployments';
       setError(errorMessage);
-      console.error('Error loading deployments:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading deployments: ', err);
     } finally {
       setLoading(false);
     }
@@ -111,9 +117,12 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
       
       return result;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Deployment error';
+      const errorMessage = err instanceof Error ? err.message: 'Deployment error';
       setError(errorMessage);
-      console.error('Error deploying recipe:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error deploying recipe: ', err);
       
       toast.error('Deployment Error', {
         description: errorMessage
@@ -151,9 +160,12 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
       
       return success;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : `Failed to ${action} deployment`;
+      const errorMessage = err instanceof Error ? err.message: `Failed to ${action} deployment`;
       setError(errorMessage);
-      console.error(`Error ${action}ing deployment:`, err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Error ${action}ing deployment: `, err);
       
       toast.error(`${action} Error`, {
         description: errorMessage

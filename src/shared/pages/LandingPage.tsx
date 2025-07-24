@@ -24,7 +24,7 @@ export const LandingPage: React.FC = () => {
       
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm: px-6 lg:px-8 py-16 lg:py-24">
           <div className="text-center">
             <Badge variant="secondary" className="mb-4">
               <Sparkles className="w-4 h-4 mr-2" />
@@ -38,7 +38,7 @@ export const LandingPage: React.FC = () => {
               Nexus transforms your business into a self-optimizing, intelligent organism. 
               No degree required – just the vision to grow.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm: flex-row gap-4 justify-center items-center">
               <Button size="lg" className="w-full sm:w-auto">
                 <Link to="/signup" className="flex items-center justify-center w-full">
                   Get Started Free
@@ -73,7 +73,7 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md: grid-cols-3 gap-8">
             <Card className="border-2 hover:border-primary/50 transition-colors">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
@@ -94,7 +94,7 @@ export const LandingPage: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
+            <Card className="border-2 hover: border-primary/50 transition-colors">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                   <Eye className="w-6 h-6 text-primary" />
@@ -149,7 +149,7 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md: grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: TrendingUp,
@@ -182,7 +182,7 @@ export const LandingPage: React.FC = () => {
                 description: "Eliminate repetitive tasks and focus on growth"
               }
             ].map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
+              <Card key={index} className="hover: shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
                     <feature.icon className="w-5 h-5 text-primary" />
@@ -200,7 +200,7 @@ export const LandingPage: React.FC = () => {
 
       {/* CTA Section */}
       <div className="py-16 bg-primary/5">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto px-4 sm: px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">
             Ready to Transform Your Business?
           </h2>
@@ -249,7 +249,7 @@ export const LandingPage: React.FC = () => {
               <h3 className="font-semibold text-foreground mb-4">Product</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link to="/pricing" className="text-muted-foreground hover: text-primary transition-colors">
                     Pricing
                   </Link>
                 </li>

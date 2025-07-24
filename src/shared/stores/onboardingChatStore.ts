@@ -30,7 +30,7 @@ type WithSelectors<S> = S extends { getState: () => infer T }
   : never;
 
 const createSelectors = <S extends UseBoundStore<StoreApi<object>>>(
-  _store: S,
+  store: S,
 ) => {
   const store = _store as WithSelectors<typeof _store>;
   store.use = {};
@@ -47,8 +47,14 @@ const useOnboardingChatStoreBase = create<OnboardingChatState>((set, get) => ({
   hasInitialized: false,
 
   initialize: (user) => {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('[OnboardingChatStore] Initialize called. Has initialized?', get().hasInitialized);
     if (get().hasInitialized || !user) return;
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('[OnboardingChatStore] Initializing for the first time...');
 
     const profile = user.profile;
@@ -98,6 +104,9 @@ Before we dive in, I want to make sure I'm on the right track.`;
       }
     };
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('[OnboardingChatStore] Setting initial message.');
     set({ messages: [introMessage], hasInitialized: true });
   },

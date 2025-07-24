@@ -4,7 +4,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 import {
   Database,
@@ -82,7 +82,7 @@ const integrationClassRegistry: Record<string, typeof BaseIntegration> = {
 };
 
 const IntegrationDataDashboard: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [integrationData, setIntegrationData] = useState<IntegrationData[]>([]);
   const [insights, setInsights] = useState<IntegrationInsight[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -135,7 +135,10 @@ const IntegrationDataDashboard: React.FC = () => {
               integrations: integrationDetails || { name: 'Unknown', slug: 'unknown' }
             };
           } catch (error) {
-            console.error('Error fetching integration details:', error);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching integration details: ', error);
             return {
               ...userIntegration,
               integrations: { name: 'Unknown', slug: 'unknown' }
@@ -168,7 +171,10 @@ const IntegrationDataDashboard: React.FC = () => {
 
       setIntegrationData(enhancedData);
     } catch (error) {
-      console.error('Error fetching integration data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching integration data: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -304,7 +310,7 @@ const IntegrationDataDashboard: React.FC = () => {
         fetchIntegrationData();
       }
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : 'Sync failed');
+      setSyncError(err instanceof Error ? err.message: 'Sync failed');
     } finally {
       setSyncing(null);
     }
@@ -320,8 +326,7 @@ const IntegrationDataDashboard: React.FC = () => {
         return <AlertCircle className="w-4 h-4 text-destructive" />;
       case 'paused':
         return <Clock className="w-4 h-4 text-warning" />;
-      default:
-        return <Activity className="w-4 h-4 text-muted-foreground" />;
+      default: return <Activity className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -394,7 +399,7 @@ const IntegrationDataDashboard: React.FC = () => {
       const status = await instance.getSyncStatus(user!.id);
       setSyncStatuses(prev => ({ ...prev, [integration.slug]: status }));
     } catch (err) {
-      setStatusError(prev => ({ ...prev, [integration.slug]: err instanceof Error ? err.message : 'Failed to fetch status' }));
+      setStatusError(prev => ({ ...prev, [integration.slug]: err instanceof Error ? err.message: 'Failed to fetch status' }));
     } finally {
       setStatusLoading(prev => ({ ...prev, [integration.slug]: false }));
     }
@@ -423,7 +428,7 @@ const IntegrationDataDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Integration Data Dashboard</h2>
           <p className="text-muted-foreground">
@@ -633,7 +638,7 @@ const IntegrationDataDashboard: React.FC = () => {
                   )}
 
                   {/* Data Points */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
                     <div className="text-center p-4 bg-muted/30 rounded-lg">
                       <div className="text-lg font-bold">{integration.dataPoints.total.toLocaleString()}</div>
                       <div className="text-sm text-muted-foreground">Total Records</div>
@@ -649,7 +654,7 @@ const IntegrationDataDashboard: React.FC = () => {
                   </div>
 
                   {/* Metrics */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
                     {integration.metrics.map((metric, index) => (
                       <div key={index} className="p-4 border rounded-lg">
                         <div className="flex justify-between items-center">
@@ -723,7 +728,7 @@ const IntegrationDataDashboard: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md: grid-cols-3 gap-4 mb-6">
                 <div className="text-center p-4 bg-primary/5 rounded-lg">
                   <div className="text-2xl font-bold text-primary">247</div>
                   <div className="text-sm text-muted-foreground">Unified Profiles</div>
@@ -749,13 +754,13 @@ const IntegrationDataDashboard: React.FC = () => {
                   variant="outline"
                   onClick={() => {
                     // Trigger client intelligence refresh
-                    fetch('https://automate.marcoby.net/webhook/client-intelligence-monitor', {
+                    fetch('https: //automate.marcoby.net/webhook/client-intelligence-monitor', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        user_id: user?.id,
-                        company_id: user?.company_id,
-                        trigger_type: 'manual'
+                        userid: user?.id,
+                        companyid: user?.company_id,
+                        triggertype: 'manual'
                       })
                     });
                   }}

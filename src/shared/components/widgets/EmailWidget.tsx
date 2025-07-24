@@ -10,7 +10,7 @@ export interface EmailWidgetProps {
  */
 const EmailWidget: React.FC<EmailWidgetProps> = ({ className = '' }) => (
   <section
-    className={`rounded-lg bg-white dark:bg-gray-900 shadow p-4 ${className}`}
+    className={`rounded-lg bg-white dark: bg-gray-900 shadow p-4 ${className}`}
     aria-label="Email"
   >
     <h3 className="text-lg font-semibold mb-2">Email</h3>

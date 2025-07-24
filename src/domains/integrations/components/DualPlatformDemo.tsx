@@ -13,29 +13,7 @@ import {
   Tabs, TabsContent, TabsList, TabsTrigger,
   Button
 } from '@/shared/components/ui';
-import { 
-  MessageSquare, 
-  Video,
-  Users, 
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Clock,
-  Target,
-  Zap,
-  Lightbulb,
-  ArrowRight,
-  CheckCircle2,
-  AlertTriangle,
-  Activity,
-  Calendar,
-  Hash,
-  FileText,
-  Smartphone,
-  Monitor,
-  RefreshCw
-} from 'lucide-react';
-
+import { MessageSquare, Video, Users, TrendingUp, BarChart3, Clock, Target, Zap, Lightbulb, ArrowRight, CheckCircle2, Activity, Calendar, RefreshCw } from 'lucide-react';
 interface PlatformMetrics {
   platform: 'slack' | 'teams';
   connected: boolean;
@@ -222,7 +200,7 @@ const DualPlatformDemo: React.FC = () => {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-8 bg-muted rounded w-1/3"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
           <div className="h-32 bg-muted rounded"></div>
           <div className="h-32 bg-muted rounded"></div>
         </div>
@@ -254,7 +232,7 @@ const DualPlatformDemo: React.FC = () => {
       </div>
 
       {/* Platform Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
         {platformMetrics.map((platform) => (
           <Card key={platform.platform}>
             <CardHeader>
@@ -344,7 +322,7 @@ const DualPlatformDemo: React.FC = () => {
                         </div>
                       </div>
                       <p className="text-muted-foreground mb-3">{insight.description}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 md: grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">Expected Impact:</span>
                           <p className="font-medium text-success">{insight.impact}</p>
@@ -433,7 +411,7 @@ const DualPlatformDemo: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="efficiency" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center space-x-2">

@@ -1,27 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  MessageCircle, 
-  Send, 
-  Brain, 
-  Lightbulb, 
-  TrendingUp, 
-  Target, 
-  BarChart3,
-  Clock,
-  CheckCircle,
-  ArrowRight,
-  Mic,
-  MicOff,
-  Volume2,
-  Copy,
-  ThumbsUp,
-  ThumbsDown,
-  Sparkles,
-  Zap,
-  Activity,
-  Users
-} from 'lucide-react';
-
+import { MessageCircle, Send, Brain, Lightbulb, Target, BarChart3, Clock, Mic, MicOff, Copy, ThumbsUp, ThumbsDown, Activity, Users } from 'lucide-react';
 interface Message {
   id: string;
   type: 'user' | 'assistant';
@@ -158,15 +136,13 @@ export const NaturalLanguageInterface: React.FC = () => {
       analytics: {
         content: `📊 **Performance Analysis**
 
-Based on your current business data, here's what I found:
-
-**Key Highlights:**
+Based on your current business data, here's what I found: **Key Highlights:**
 • **Sales Performance**: Up 23% compared to last month
 • **Customer Satisfaction**: 4.8/5 (excellent trend)
 • **Operational Efficiency**: 87% (above target)
 • **Revenue Growth**: $45,000 increase this quarter
 
-**Brain Insights:**
+**Brain Insights: **
 The unified brain has identified that your recent process optimizations are driving the performance improvements. Your automation implementations have reduced manual work by 34% while maintaining quality standards.
 
 **Recommendations:**
@@ -228,14 +204,12 @@ The unified brain has identified that your biggest bottlenecks are in manual pro
       prediction: {
         content: `🔮 **Business Predictions**
 
-Based on historical data and current trends, here are my forecasts:
-
-**Revenue Forecast (Next Quarter):**
+Based on historical data and current trends, here are my forecasts: **Revenue Forecast (Next Quarter):**
 • **Most Likely**: $187,000 (confidence: 87%)
 • **Optimistic**: $205,000 (if current growth continues)
 • **Conservative**: $172,000 (accounting for market factors)
 
-**Key Drivers:**
+**Key Drivers: **
 • Customer acquisition rate: +15% projected
 • Average deal size: Stable with slight growth
 • Churn rate: Expected to decrease by 8%
@@ -243,7 +217,7 @@ Based on historical data and current trends, here are my forecasts:
 **Market Factors:**
 The AI models show positive indicators across your industry, with seasonal trends favoring your business model in the coming months.
 
-**Confidence Factors:**
+**Confidence Factors: **
 ✅ Strong historical pattern recognition (94%)
 ✅ Stable customer behavior trends (91%)
 ✅ Positive market indicators (78%)`,
@@ -273,12 +247,12 @@ Here's how your current performance compares:
 • Conversion Rate: +12% (2.4% → 2.7%)
 • Customer Satisfaction: +5% (4.6 → 4.8/5)
 
-**vs Industry Average:**
+**vs Industry Average: **
 • Revenue Growth: **Above Average** (+23% vs +8% industry)
 • Customer Retention: **Excellent** (94% vs 85% industry)
 • Operational Efficiency: **Leading** (87% vs 72% industry)
 
-**Key Insights:**
+**Key Insights: **
 Your business is outperforming industry benchmarks across all major metrics. The unified brain attributes this to your recent optimization efforts and strong customer focus.`,
         confidence: 0.91,
         visualizations: [
@@ -315,12 +289,12 @@ The patterns I'm seeing suggest that recent changes in your processes are having
    - Faster response times
    - Better data visibility
 
-**Secondary Factors:**
+**Secondary Factors: **
 • Market conditions favorable (+10% industry growth)
 • Seasonal trends supporting your business model
 • Customer loyalty programs showing strong ROI
 
-**Brain Insights:**
+**Brain Insights: **
 The unified brain has identified this as a virtuous cycle - improvements in one area are amplifying benefits in others.`,
         confidence: 0.85,
         visualizations: [
@@ -339,9 +313,7 @@ The unified brain has identified this as a virtuous cycle - improvements in one 
       recommendation: {
         content: `💡 **Strategic Recommendations**
 
-Based on your business context and current performance, here's what you should focus on:
-
-**Immediate Actions (Next 2 Weeks):**
+Based on your business context and current performance, here's what you should focus on: **Immediate Actions (Next 2 Weeks):**
 1. **Implement Lead Scoring Automation**
    - Expected Impact: 60% time savings in sales
    - Resources Needed: 1 developer, 1 sales manager
@@ -362,7 +334,7 @@ Based on your business context and current performance, here's what you should f
 • Predictive customer success interventions
 • Market expansion based on current success patterns
 
-**Brain Recommendation Priority:**
+**Brain Recommendation Priority: **
 The unified brain suggests focusing on automation first, as it has the highest confidence score (94%) and fastest ROI.`,
         confidence: 0.94,
         visualizations: [
@@ -391,7 +363,7 @@ Here's the information you requested:
 • **Customer Satisfaction**: 4.8/5 (↑5% increase)
 • **Team Efficiency**: 87% (↑15% optimization)
 
-**Department Performance:**
+**Department Performance: **
 • **Sales**: Exceeding targets by 23%
 • **Marketing**: Campaign ROI up 34%
 • **Operations**: 87% efficiency score
@@ -465,7 +437,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
       totalQueries: prev.totalQueries + 1,
       averageConfidence: (prev.averageConfidence * prev.totalQueries + (message.confidence || 0)) / (prev.totalQueries + 1),
       averageResponseTime: (prev.averageResponseTime * prev.totalQueries + (message.processingTime || 0)) / (prev.totalQueries + 1),
-      successRate: (prev.successRate * prev.totalQueries + ((message.confidence || 0) > 0.7 ? 1 : 0)) / (prev.totalQueries + 1)
+      successRate: (prev.successRate * prev.totalQueries + ((message.confidence || 0) > 0.7 ? 1: 0)) / (prev.totalQueries + 1)
     }));
   };
 
@@ -503,7 +475,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
 
         {/* Stats Bar */}
         <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{conversationStats.totalQueries}</div>
               <div className="text-sm text-muted-foreground">Total Queries</div>
@@ -529,7 +501,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg: grid-cols-4 gap-6">
           {/* Suggestions Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-card rounded-2xl shadow-xl p-6 sticky top-6">
@@ -543,7 +515,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full text-left p-4 rounded-lg bg-background hover:bg-primary/5 hover:border-border border border-transparent transition-all text-sm text-foreground/90 hover:text-primary"
+                    className="w-full text-left p-4 rounded-lg bg-background hover: bg-primary/5 hover:border-border border border-transparent transition-all text-sm text-foreground/90 hover:text-primary"
                   >
                     {suggestion}
                   </button>
@@ -563,7 +535,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
           </div>
 
           {/* Chat Interface */}
-          <div className="lg:col-span-3">
+          <div className="lg: col-span-3">
             <div className="bg-card rounded-2xl shadow-xl h-[600px] flex flex-col">
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-6 space-y-4">
@@ -612,7 +584,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
                         <div className="mt-4 space-y-2">
                           <div className="text-sm font-medium text-foreground/90 flex items-center space-x-1">
                             <Target className="w-4 h-4" />
-                            <span>Action Items:</span>
+                            <span>Action Items: </span>
                           </div>
                           {message.actionItems.map((item, index) => (
                             <div key={index} className="bg-warning/10 rounded-lg p-2">
@@ -630,12 +602,12 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
 
                       {message.followUpQuestions && message.followUpQuestions.length > 0 && (
                         <div className="mt-4 space-y-2">
-                          <div className="text-sm font-medium text-foreground/90">Follow-up questions:</div>
+                          <div className="text-sm font-medium text-foreground/90">Follow-up questions: </div>
                           {message.followUpQuestions.map((question, index) => (
                             <button
                               key={index}
                               onClick={() => handleSuggestionClick(question)}
-                              className="block w-full text-left text-sm text-primary hover:text-primary hover:bg-primary/5 p-2 rounded transition-colors"
+                              className="block w-full text-left text-sm text-primary hover: text-primary hover:bg-primary/5 p-2 rounded transition-colors"
                             >
                               • {question}
                             </button>
@@ -659,7 +631,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => copyToClipboard(message.content)}
-                              className="text-muted-foreground hover:text-muted-foreground"
+                              className="text-muted-foreground hover: text-muted-foreground"
                             >
                               <Copy className="w-4 h-4" />
                             </button>
@@ -706,13 +678,13 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyPress={handleKeyPress}
                       placeholder="Ask me anything about your business..."
-                      className="w-full px-4 py-3 border border-border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-primary pr-12"
+                      className="w-full px-4 py-3 border border-border rounded-xl focus: ring-2 focus:ring-blue-500 focus:border-primary pr-12"
                       disabled={isProcessing}
                     />
                     <button
                       onClick={() => setIsListening(!isListening)}
                       className={`absolute right-3 top-1/2 transform -translate-y-1/2 p-1 rounded-full ${
-                        isListening ? 'text-destructive bg-destructive/5' : 'text-muted-foreground hover:text-muted-foreground'
+                        isListening ? 'text-destructive bg-destructive/5' : 'text-muted-foreground hover: text-muted-foreground'
                       }`}
                     >
                       {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -722,7 +694,7 @@ I can assist you with many aspects of your business using the Nexus Unified Brai
                   <button
                     onClick={handleSendMessage}
                     disabled={!inputValue.trim() || isProcessing}
-                    className="bg-primary hover:bg-primary disabled:bg-gray-300 disabled:cursor-not-allowed text-primary-foreground p-4 rounded-xl transition-colors"
+                    className="bg-primary hover: bg-primary disabled:bg-gray-300 disabled:cursor-not-allowed text-primary-foreground p-4 rounded-xl transition-colors"
                   >
                     <Send className="w-5 h-5" />
                   </button>

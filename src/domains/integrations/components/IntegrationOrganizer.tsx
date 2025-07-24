@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useToast } from '@/shared/ui/components/Toast';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useIntegrations } from '@/domains/hooks/useIntegrations';
 import { supabase } from '@/core/supabase';
 import type { Database } from '@/shared/types/database.types';
@@ -40,14 +40,14 @@ interface IntegrationInsight {
   content: string;
   type: string;
   importance: 'low' | 'medium' | 'high';
-  created_at: string;
+  createdat: string;
 }
 
 // Define the IntegrationConnection type
 interface IntegrationConnection {
   id: string;
-  source_id: string;
-  target_id: string;
+  sourceid: string;
+  targetid: string;
   type: string;
   strength?: number;
   metadata?: Record<string, unknown>;
@@ -66,7 +66,7 @@ interface IntegrationData {
 // type DatabaseIntegration = Database['public']['Tables']['integrations']['Row'];
 
 export const IntegrationOrganizer: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const { 
     integrations, 
@@ -93,7 +93,7 @@ export const IntegrationOrganizer: React.FC = () => {
   //   }
 
   //   try {
-  //     const { data: integration, error } = await supabase
+  //     const { error } = await supabase
   //       .from('integrations')
   //       .select('*')
   //       .eq('id', integrationId)
@@ -102,7 +102,7 @@ export const IntegrationOrganizer: React.FC = () => {
   //     if (error) throw error;
 
   //     const newIntegration = {
-  //       integration_id: integration.id,
+  //       integrationid: integration.id,
   //       type: integration.auth_type || 'oauth',
   //       name: integration.name,
   //       category: integration.category,
@@ -116,7 +116,10 @@ export const IntegrationOrganizer: React.FC = () => {
   //     await addIntegration(newIntegration);
   //     toast.success('Integration connected successfully');
   //   } catch (error) {
-  //     console.error('Error connecting integration:', error);
+  //     // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error connecting integration: ', error);
   //     toast.error('Failed to connect integration');
   //   }
   // };
@@ -126,7 +129,10 @@ export const IntegrationOrganizer: React.FC = () => {
       await removeIntegration(integrationId);
       toast.success('Integration disconnected successfully');
     } catch (error) {
-      console.error('Error disconnecting integration:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error disconnecting integration: ', error);
       toast.error('Failed to disconnect integration');
     }
   };
@@ -144,7 +150,10 @@ export const IntegrationOrganizer: React.FC = () => {
       await updateIntegration(integrationId, updatedIntegration);
       toast.success('Settings updated successfully');
     } catch (error) {
-      console.error('Error updating settings:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating settings: ', error);
       toast.error('Failed to update settings');
     }
   };
@@ -195,8 +204,7 @@ export const IntegrationOrganizer: React.FC = () => {
   //   integration: IntegrationData
   // ): number => {
   //   // Implement connection strength calculation logic
-  //   // This could be based on:
-  //   // - Frequency of interaction
+  //   // This could be based on: //   // - Frequency of interaction
   //   // - Data overlap
   //   // - User-defined importance
   //   // - AI-analyzed relevance
@@ -274,7 +282,7 @@ export const IntegrationOrganizer: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-3 gap-6">
         {/* Integration List */}
         <div className="lg:col-span-2">
           <Card>
@@ -295,7 +303,7 @@ export const IntegrationOrganizer: React.FC = () => {
                   {integrations.map(integration => (
                     <div
                       key={integration.id}
-                      className="p-4 border rounded-lg hover:bg-accent cursor-pointer"
+                      className="p-4 border rounded-lg hover: bg-accent cursor-pointer"
                       onClick={() => setSelectedIntegration(integration)}
                     >
                       <div className="flex justify-between items-start">

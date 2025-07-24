@@ -255,9 +255,7 @@ export class BusinessAdvisor {
     if (!profile) return 'No business profile available';
 
     return `
-BUSINESS CONTEXT FOR AI ASSISTANCE:
-
-Company: ${profile.company_name}
+BUSINESS CONTEXT FOR AI ASSISTANCE: Company: ${profile.company_name}
 Industry: ${profile.industry}
 Business Model: ${profile.business_model}
 Size: ${profile.company_size}
@@ -265,14 +263,12 @@ Size: ${profile.company_size}
 SERVICES:
 ${profile.primary_services?.join(', ')}
 
-VALUE PROPOSITION:
-${profile.unique_value_proposition}
+VALUE PROPOSITION: ${profile.unique_value_proposition}
 
 TARGET MARKET:
 ${profile.target_markets?.join(', ')}
 
-CURRENT SITUATION:
-- Total Clients: ${profile.total_clients}
+CURRENT SITUATION: - Total Clients: ${profile.total_clients}
 - Active Clients: ${profile.active_clients}
 - MRR: $${profile.monthly_recurring_revenue || 'Not specified'}
 
@@ -280,8 +276,7 @@ GOALS:
 Short-term: ${profile.short_term_goals?.join(', ')}
 Long-term: ${profile.long_term_goals?.join(', ')}
 
-CHALLENGES:
-${profile.current_challenges?.join(', ')}
+CHALLENGES: ${profile.current_challenges?.join(', ')}
 
 Use this context to provide specific, actionable business advice tailored to this company's situation.
     `.trim();

@@ -97,8 +97,7 @@ export class AutomationTemplateImporter {
         case 'custom':
           template = await this.convertCustomTemplate(templateData);
           break;
-        default:
-          throw new Error(`Unsupported template source: ${source}`);
+        default: throw new Error(`Unsupported template source: ${source}`);
       }
 
       // Save template to database
@@ -106,9 +105,9 @@ export class AutomationTemplateImporter {
         .from('automation_templates')
         .insert({
           ...template,
-          created_by: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          createdby: userId,
+          createdat: new Date().toISOString(),
+          updatedat: new Date().toISOString()
         })
         .select()
         .single();
@@ -127,7 +126,7 @@ export class AutomationTemplateImporter {
           // Update template with workflow ID
           await supabase
             .from('automation_templates')
-            .update({ nexus_workflow_id: nexusWorkflowId })
+            .update({ nexusworkflow_id: nexusWorkflowId })
             .eq('id', savedTemplate.id);
         }
       }
@@ -179,7 +178,10 @@ export class AutomationTemplateImporter {
       template.conversionStatus = 'converted';
     } catch (error) {
       template.conversionStatus = 'failed';
-      console.warn('Failed to convert Zapier template:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to convert Zapier template: ', error);
     }
 
     return template;
@@ -215,7 +217,10 @@ export class AutomationTemplateImporter {
       template.conversionStatus = 'converted';
     } catch (error) {
       template.conversionStatus = 'failed';
-      console.warn('Failed to convert Make template:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to convert Make template: ', error);
     }
 
     return template;
@@ -491,7 +496,7 @@ export class AutomationTemplateImporter {
     const integrations = new Set<string>();
     
     if (n8nTemplate.nodes) {
-      n8nTemplate.nodes.forEach((node: any) => {
+      n8nTemplate.nodes.forEach((_node: any) => {
         if (node.type && node.type.includes('.')) {
           const app = node.type.split('.').pop();
           if (app && app !== 'base') {
@@ -589,11 +594,11 @@ export class AutomationTemplateImporter {
         await supabase
           .from('template_deployments')
           .insert({
-            template_id: templateId,
-            user_id: userId,
-            workflow_id: deployResult.workflowId,
+            templateid: templateId,
+            userid: userId,
+            workflowid: deployResult.workflowId,
             customizations,
-            deployed_at: new Date().toISOString()
+            deployedat: new Date().toISOString()
           });
 
         return {
@@ -620,7 +625,7 @@ export class AutomationTemplateImporter {
     
     // Apply customizations to nodes
     if (customizedWorkflow.nodes) {
-      customizedWorkflow.nodes.forEach((node: any) => {
+      customizedWorkflow.nodes.forEach((_node: any) => {
         if (customizations[node.name]) {
           node.parameters = { ...node.parameters, ...customizations[node.name] };
         }

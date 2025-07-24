@@ -1,5 +1,5 @@
 import { FireCycleLogicEngine, type UserContext, type FireAnalysis } from './fireCycleLogic';
-import type { FireCyclePhase } from '@/domains/fire-cycle/types';
+import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
 
 export interface ProcessedInput {
   id: string;
@@ -364,7 +364,7 @@ export class FireCycleProcessor {
     
     // Return phase with highest score
     return Object.entries(scores).reduce((a, b) => 
-      scores[a[0] as FireCyclePhase] > scores[b[0] as FireCyclePhase] ? a : b
+      scores[a[0] as FireCyclePhase] > scores[b[0] as FireCyclePhase] ? a: b
     )[0] as FireCyclePhase;
   }
 

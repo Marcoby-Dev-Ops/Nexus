@@ -16,12 +16,18 @@ class AnalyticsService {
    */
   init(userId: string, userProperties: Record<string, any> = {}) {
     if (this.isInitialized) {
-      console.warn('Analytics service already initialized.');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Analytics service already initialized.');
       return;
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[Analytics] Initialized for user ${userId}`, userProperties);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`[Analytics] Initialized for user ${userId}`, userProperties);
     }
     this.isInitialized = true;
   }
@@ -33,17 +39,22 @@ class AnalyticsService {
    */
   track(eventName: string, properties: Record<string, any> = {}) {
     if (!this.isInitialized) {
-      console.warn('Analytics service not initialized. Call init() first.');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Analytics service not initialized. Call init() first.');
       return;
     }
     
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[Analytics] Event: ${eventName}`, properties);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`[Analytics] Event: ${eventName}`, properties);
     }
 
     // In a real implementation, you would send this to your analytics backend.
-    // Example:
-    // window.analytics.track(eventName, properties);
+    // Example: // window.analytics.track(eventName, properties);
   }
 
   /**
@@ -51,7 +62,10 @@ class AnalyticsService {
    */
   reset() {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[Analytics] Service reset.');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[Analytics] Service reset.');
     }
     this.isInitialized = false;
   }

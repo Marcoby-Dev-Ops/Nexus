@@ -1,27 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useTheme } from '@/shared/components/ui/theme-provider';
 import { useNotifications } from '@/core/hooks/NotificationContext';
 import { CommandPalette } from '@/shared/components/layout/CommandPalette';
-import { QuickChatTrigger } from '@/domains/ai/chat';
 import { FireCycleOverlay } from '@/core/fire-cycle/FireCycleOverlay';
-import { Menu, Bell, Sun, Moon, User, Settings, Search, Palette, Mail, Calendar as CalendarIcon, MessageSquare, Lightbulb, Home } from 'lucide-react';
+import { QuickAccessBar } from './QuickAccessBar';
+import { Menu, Bell, Sun, Moon, User, Settings, Search, Lightbulb } from 'lucide-react';
 import { navItems } from '@/shared/components/layout/navConfig';
-import { features as featureRegistry } from '@/shared/components/ui/featureRegistry';
 import { useThoughtAssistantStore } from '@/shared/stores/thoughtAssistantStore';
 
 type NavItem = import('./navConfig').NavItem;
 
-interface FeatureItem {
-  id: string;
-  name: string;
-  path: string;
-  icon?: React.ReactNode;
-}
-
-export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggle: () => void; onThemePanelToggle: () => void; }) {
-  const { user, signOut } = useZustandAuth();
+export function Header({ onSidebarToggle }: { onSidebarToggle: () => void; }) {
+  const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
   const { notifications, unreadCount, markAsRead } = useNotifications();
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -66,12 +58,10 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
   return (
     <header className="bg-card shadow-sm z-30 border-b border-border">
       <div className="flex h-16 items-center justify-between px-4">
+        {/* Left Section: Menu, Title */}
         <div className="flex items-center gap-2">
-          <Link to="/home" className="flex items-center mr-2">
-            <img src="/Nexus/nexus-horizontal-160x48-transparent.png" alt="Nexus by Marcoby" className="h-8 w-auto" />
-          </Link>
           <button
-            className="lg:hidden mr-2 p-2"
+            className="lg: hidden mr-2 p-2"
             onClick={onSidebarToggle}
           >
             <Menu className="h-6 w-6" />
@@ -80,33 +70,20 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
             {navItems.find((item: NavItem) => isActive(item.path))?.name || 'Dashboard'}
           </h1>
         </div>
-        {/* Persistent Workspace Shortcuts */}
-        <nav className="flex items-center gap-2 md:gap-4">
-          <Link to="/workspace" className="flex flex-col items-center px-2 py-1 hover:bg-muted rounded transition-colors" title="Workspace">
-            <Home className="w-5 h-5" />
-            <span className="text-xs hidden md:block">Workspace</span>
-          </Link>
-          <Link to="/workspace/inbox" className="flex flex-col items-center px-2 py-1 hover:bg-muted rounded transition-colors font-semibold text-primary" title="Unified Inbox">
-            <Mail className="w-5 h-5" />
-            <span className="text-xs hidden md:block">Inbox</span>
-          </Link>
-          <Link to="/workspace/calendar-unified" className="flex flex-col items-center px-2 py-1 hover:bg-muted rounded transition-colors font-semibold text-primary" title="Unified Calendar">
-            <CalendarIcon className="w-5 h-5" />
-            <span className="text-xs hidden md:block">Calendar</span>
-          </Link>
-          <Link to="/chat" className="flex flex-col items-center px-2 py-1 hover:bg-muted rounded transition-colors" title="Chat">
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-xs hidden md:block">Chat</span>
-          </Link>
-        </nav>
-        {/* End Workspace Shortcuts */}
-        
-        {/* FIRE CYCLE Overlay */}
-        <div className="hidden lg:block">
-          <FireCycleOverlay variant="compact" />
+
+        {/* Center Section: Quick Access Bar */}
+        <div className="hidden lg:flex items-center">
+          <QuickAccessBar />
         </div>
         
-        <div className="flex items-center space-x-2 sm:space-x-4">
+        {/* Right Section: Essential Actions */}
+        <div className="flex items-center space-x-2">
+          {/* FIRE CYCLE Overlay */}
+          <div className="hidden lg:block">
+            <FireCycleOverlay variant="compact" />
+          </div>
+
+          {/* Search */}
           <button
             aria-label="Open command palette"
             className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -116,10 +93,10 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
           </button>
           <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
 
-          {/* Global Capture Thought Button (desktop only) */}
+          {/* Global Capture Thought Button */}
           <button
             aria-label="Capture Thought"
-            className="hidden md:inline-flex p-2 rounded-full text-warning hover:text-foreground hover:bg-warning/20 transition-colors"
+            className="hidden md: inline-flex p-2 rounded-full text-warning hover:text-foreground hover:bg-warning/20 transition-colors"
             onClick={open}
             title="Capture Thought (Global)"
             type="button"
@@ -127,22 +104,16 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
             <Lightbulb className="w-5 h-5" />
           </button>
 
-          <button
-            onClick={onThemePanelToggle}
-            title="Customize Theme"
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            <Palette className="w-5 h-5" />
-          </button>
-
+          {/* Theme Toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="p-2 rounded-full text-muted-foreground hover: text-foreground hover:bg-muted transition-colors"
           >
             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
 
+          {/* Notifications */}
           <div className="relative" ref={notificationsRef}>
             <button
               title="Notifications"
@@ -166,7 +137,7 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
                         notifications.forEach(n => !n.read && markAsRead(n.id));
                         setShowNotifications(false);
                       }}
-                      className="text-xs text-primary hover:underline"
+                      className="text-xs text-primary hover: underline"
                     >
                       Mark all as read
                     </button>
@@ -179,7 +150,7 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
                     notifications.map((notification) => (
                       <div
                         key={notification.id}
-                        className={`p-4 border-b border-border last:border-b-0 ${!notification.read ? 'bg-muted/50' : ''}`}
+                        className={`p-4 border-b border-border last: border-b-0 ${!notification.read ? 'bg-muted/50' : ''}`}
                       >
                         <div className="flex items-start space-x-4">
                           <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
@@ -202,9 +173,9 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
                                 e.stopPropagation();
                                 markAsRead(notification.id);
                               }}
-                              className="text-xs text-primary hover:underline"
+                              className="text-xs text-primary hover: underline"
                             >
-                              Mark read
+                              Mark as read
                             </button>
                           )}
                         </div>
@@ -215,55 +186,49 @@ export function Header({ onSidebarToggle, onThemePanelToggle }: { onSidebarToggl
               </div>
             )}
           </div>
-          
-          <QuickChatTrigger />
 
+          {/* User Menu */}
           <div className="relative" ref={userMenuRef}>
             <button
-              title="User Profile"
-              className="w-8 h-8 rounded-full bg-accent hover:opacity-90 transition-opacity flex items-center justify-center"
               onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center space-x-2 p-2 rounded-full hover: bg-muted transition-colors"
             >
-              <span className="text-sm font-semibold text-accent-foreground">{initials}</span>
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                {initials}
+              </div>
             </button>
             {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 w-64 bg-card border border-border rounded-lg shadow-xl z-50">
-                <div className="p-4 border-b border-border flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-lg font-semibold text-accent-foreground">
-                    {initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-foreground truncate">{displayName}</p>
-                    <p className="text-sm text-muted-foreground truncate">{user?.email}</p>
-                  </div>
+              <div className="absolute right-0 top-full mt-2 w-48 bg-card border border-border rounded-lg shadow-xl z-50">
+                <div className="p-4 border-b border-border">
+                  <p className="text-sm font-medium text-foreground">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
                 </div>
                 <div className="p-2">
                   <Link
-                    to="/profile"
+                    to="/settings/profile"
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
                     onClick={() => setShowUserMenu(false)}
-                    className="w-full flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
                   >
-                    <User className="w-4 h-4 mr-3 text-muted-foreground" />
-                    View Profile
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
                   </Link>
                   <Link
                     to="/settings"
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-foreground hover: bg-muted rounded-md transition-colors"
                     onClick={() => setShowUserMenu(false)}
-                    className="w-full flex items-center px-4 py-2 text-sm text-foreground hover:bg-muted rounded-md transition-colors"
                   >
-                    <Settings className="w-4 h-4 mr-3 text-muted-foreground" />
-                    Account Settings
+                    <Settings className="w-4 h-4" />
+                    <span>Settings</span>
                   </Link>
-                  <div className="h-px bg-border my-1" />
                   <button
                     onClick={() => {
-                      setShowUserMenu(false);
                       signOut();
+                      setShowUserMenu(false);
                     }}
-                    className="w-full flex items-center px-4 py-2 text-sm text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                    className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-foreground hover: bg-muted rounded-md transition-colors"
                   >
-                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3v1" /></svg>
-                    Sign Out
+                    <User className="w-4 h-4" />
+                    <span>Sign Out</span>
                   </button>
                 </div>
               </div>

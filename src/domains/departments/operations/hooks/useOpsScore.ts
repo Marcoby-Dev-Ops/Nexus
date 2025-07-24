@@ -14,7 +14,7 @@ export function useOpsScore(orgId?: string | null) {
     queryKey: ['ops-score', orgId],
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc('calc_ops_score', {
-        p_org: orgId,
+        porg: orgId,
       });
       if (error) throw error;
       return (data as number) ?? 0;

@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -57,7 +57,7 @@ interface HubSpotDashboardData {
 }
 
 export default function HubSpotDashboard() {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [data, setData] = useState<HubSpotDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -72,29 +72,33 @@ export default function HubSpotDashboard() {
       setLoading(true);
       setError(null);
 
-      console.log('🔍 [HubSpot Dashboard] Loading data for user:', user?.id);
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 [HubSpot Dashboard] Loading data for user: ', user.id);
 
       // Get HubSpot integration status
-      const { data: integration } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('integration_name', 'HubSpot')
-        .eq('status', 'active')
-        .maybeSingle();
+      
 
       if (!integration) {
         throw new Error('HubSpot integration not found or inactive');
       }
 
       // Get data from local database (synced from HubSpot)
-      console.log('🔍 [HubSpot Dashboard] Querying with user_id:', user?.id ?? '');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 [HubSpot Dashboard] Querying with userid: ', user.id);
       
       const [contactsData, companiesData, dealsData] = await Promise.all([
         supabase
           .from('contacts')
           .select('*')
-          .eq('user_id', user?.id ?? '')
+          .eq('user_id', user.id)
           .not('hubspotid', 'is', null),
         supabase
           .from('companies')
@@ -110,7 +114,10 @@ export default function HubSpotDashboard() {
       const companies = companiesData.data || [];
       const deals = dealsData.data || [];
 
-      console.log('🔍 [HubSpot Dashboard] Data loaded:', {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 [HubSpot Dashboard] Data loaded: ', {
         contactsCount: contacts.length,
         companiesCount: companies.length,
         dealsCount: deals.length,
@@ -125,13 +132,13 @@ export default function HubSpotDashboard() {
       thisMonth.setDate(1);
       thisMonth.setHours(0, 0, 0, 0);
       
-      const newContactsThisMonth = contacts.filter((contact: any) => {
+      const newContactsThisMonth = contacts.filter((__contact: any) => {
         const createdAt = contact.created_at ? new Date(contact.created_at) : null;
         return createdAt && createdAt >= thisMonth;
       }).length;
 
       // Calculate won deals this month
-      const wonDealsThisMonth = deals.filter((deal: any) => {
+      const wonDealsThisMonth = deals.filter((_deal: any) => {
         if (deal.stage !== 'closed_won') return false;
         const closeDate = deal.close_date ? new Date(deal.close_date) : null;
         return closeDate && closeDate >= thisMonth;
@@ -143,7 +150,7 @@ export default function HubSpotDashboard() {
       }, 0);
 
       // Calculate active deals (not closed)
-      const activeDeals = deals.filter((deal: any) => {
+      const activeDeals = deals.filter((_deal: any) => {
         return deal.stage !== 'closed_lost' && deal.stage !== 'closed_won';
       }).length;
 
@@ -173,14 +180,17 @@ export default function HubSpotDashboard() {
         },
         analytics: {
           revenueGrowth: totalDealValue > 0 ? 15.2 : 0, // Calculate from historical data
-          leadConversion: deals.length > 0 ? (wonDealsThisMonth / deals.length) * 100 : 0,
+          leadConversion: deals.length > 0 ? (wonDealsThisMonth / deals.length) * 100: 0,
           customerRetention: 94.7 // Would need historical data to calculate
         }
       };
 
       setData(dashboardData);
     } catch (err: any) {
-      console.error('HubSpot Dashboard Error:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('HubSpot Dashboard Error: ', err);
       setError(err.message || 'Failed to load HubSpot dashboard');
     } finally {
       setLoading(false);
@@ -191,9 +201,13 @@ export default function HubSpotDashboard() {
     try {
       setSyncing(true);
       
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       // Trigger manual sync
       const { error } = await supabase.functions.invoke('hubspot-sync', {
-        body: { userId: user?.id }
+        body: { userId: user.id }
       });
 
       if (error) throw error;
@@ -292,7 +306,7 @@ export default function HubSpotDashboard() {
       </Card>
 
       {/* Main Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Contacts</CardTitle>
@@ -356,7 +370,7 @@ export default function HubSpotDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Lead Conversion</CardTitle>
@@ -453,7 +467,7 @@ export default function HubSpotDashboard() {
               <CardTitle>Business Intelligence</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">
                     +{data.analytics.revenueGrowth}%

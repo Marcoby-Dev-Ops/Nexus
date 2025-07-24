@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
+import React, { useState } from 'react';
+import { useAuth } from '@/core/auth/AuthProvider';
+import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
@@ -9,63 +9,28 @@ interface UnifiedLayoutProps {
 }
 
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
-  const { user, session, loading, initialized } = useZustandAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { user, session, loading, initialized } = useAuth();
+  const { isPublicRoute, redirectInProgress } = useRedirectManager();
 
-  // Debug logging
-  console.log('[UnifiedLayout] State:', {
-    pathname: location.pathname,
-    user: !!user,
-    session: !!session,
-    loading,
-    initialized,
-    userEmail: user?.email,
-    sessionId: session?.access_token?.substring(0, 10)
-  });
-
-  // Handle authentication redirects in useEffect
-  useEffect(() => {
-    if (!loading && initialized && !user && !session && !isRedirecting) {
-      console.log('[UnifiedLayout] No user or session, redirecting to login');
-      setIsRedirecting(true);
-      navigate('/login', { replace: true });
-    }
-  }, [user, session, loading, initialized, navigate, isRedirecting]);
-
-  // Define public routes
-  const publicRoutes = ['/', '/login', '/signup', '/reset-password', '/auth/callback'];
-
-  // Memoize public routes check to prevent unnecessary recalculations
-  const isPublicRoute = useMemo(() => {
-    return publicRoutes.some(route => 
-      location.pathname === route || 
-      (route !== '/' && location.pathname.startsWith(route))
-    );
-  }, [location.pathname, publicRoutes]);
-  
-  console.log('[UnifiedLayout] Route check:', {
-    pathname: location.pathname,
-    publicRoutes,
-    isPublicRoute
-  });
-  
+  // For public routes, render children without auth context
   if (isPublicRoute) {
-    console.log('[UnifiedLayout] Rendering public route without layout');
     return <>{children}</>;
   }
 
-  // Show loading while auth is initializing
-  if (loading || !initialized || isRedirecting) {
-    console.log('[UnifiedLayout] Showing loading spinner - auth not ready or redirecting');
+  // Debug logging - only in development and only for important state changes
+  if (import.meta.env.DEV && !user && !session && initialized && !loading) {
+    console.log('[UnifiedLayout] No authenticated user on protected route');
+  }
+
+  // Show loading while auth is initializing or redirecting
+  if (loading || !initialized || redirectInProgress) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <p className="text-muted-foreground">
-            {isRedirecting ? 'Redirecting to login...' : 'Loading...'}
+            {redirectInProgress ? 'Redirecting...' : 'Loading...'}
           </p>
         </div>
       </div>
@@ -74,7 +39,6 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
 
   // Check authentication for protected routes
   if (!user || !session) {
-    console.log('[UnifiedLayout] No user or session, showing loading while redirecting');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -85,7 +49,6 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     );
   }
 
-  console.log('[UnifiedLayout] Rendering layout with header and sidebar');
   return (
     <div className="min-h-screen bg-background">
       <div className="flex h-screen">
@@ -100,7 +63,6 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           {/* Header */}
           <Header 
             onSidebarToggle={() => setSidebarOpen(true)}
-            onThemePanelToggle={() => {}}
           />
           
           {/* Main content area */}

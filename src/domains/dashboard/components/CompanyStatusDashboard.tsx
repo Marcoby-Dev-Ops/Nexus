@@ -40,7 +40,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
       setError(null);
       logger.info({ overallScore: statusData.overallHealth.score }, 'Company status loaded');
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load company status';
+      const errorMessage = err instanceof Error ? err.message: 'Failed to load company status';
       setError(errorMessage);
       logger.error({ err }, 'Failed to load company status');
     } finally {
@@ -59,15 +59,14 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
         return <TrendingUp className={`${size} text-emerald-500`} />;
       case 'declining':
         return <TrendingDown className={`${size} text-destructive`} />;
-      default:
-        return <Minus className={`${size} text-amber-500`} />;
+      default: return <Minus className={`${size} text-amber-500`} />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent':
-        return 'text-emerald-500 bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800';
+        return 'text-emerald-500 bg-emerald-50 border-emerald-200 dark: bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800';
       case 'good':
         return 'text-primary bg-primary/5 border-border dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800';
       case 'warning':
@@ -94,8 +93,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
         return <XCircle className="h-4 w-4 text-destructive" />;
       case 'warning':
         return <AlertTriangle className="h-4 w-4 text-amber-500" />;
-      default:
-        return <CheckCircle className="h-4 w-4 text-primary" />;
+      default: return <CheckCircle className="h-4 w-4 text-primary" />;
     }
   };
 
@@ -111,7 +109,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
             <Skeleton className="h-32 w-full" />
           </CardContent>
         </Card>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(5)].map((_, i) => (
             <Card key={i}>
               <CardContent className="p-4">
@@ -153,7 +151,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
     <div className={`space-y-6 ${className}`}>
       {/* Overall Health Header */}
       <Card className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark: from-blue-950/20 dark:via-indigo-950/20 dark:to-purple-950/20" />
         <CardContent className="relative p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -189,9 +187,9 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
           </div>
 
           {/* Key Metrics Row */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md: grid-cols-4 gap-4 mb-6">
             {Object.entries(status.keyMetrics).map(([key, metric]) => (
-              <div key={key} className="bg-card/80 dark:bg-background/80 backdrop-blur-sm rounded-lg p-4 border border-border/50">
+              <div key={key} className="bg-card/80 dark: bg-background/80 backdrop-blur-sm rounded-lg p-4 border border-border/50">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-muted-foreground capitalize">
                     {key}
@@ -213,7 +211,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
       </Card>
 
       {/* Dimensional Health Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
         {Object.entries(status.dimensions).map(([dimension, data]) => (
           <DimensionCard 
             key={dimension} 
@@ -225,7 +223,7 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
       </div>
 
       {/* Alerts and Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
         {/* Alerts */}
         <Card>
           <CardHeader>
@@ -333,8 +331,7 @@ const DimensionCard: React.FC<DimensionCardProps> = ({ dimension, data, icon }) 
         return <TrendingUp className="h-4 w-4 text-emerald-500" />;
       case 'declining':
         return <TrendingDown className="h-4 w-4 text-destructive" />;
-      default:
-        return <Minus className="h-4 w-4 text-amber-500" />;
+      default: return <Minus className="h-4 w-4 text-amber-500" />;
     }
   };
 

@@ -390,7 +390,7 @@ export class HubSpotDataFetcher {
       ).length;
 
       const conversionRate = deals.length > 0 ? 
-        (closedWonDeals / deals.length) * 100 : 0;
+        (closedWonDeals / deals.length) * 100: 0;
 
       const averageDealSize = deals.length > 0 ? 
         totalDealValue / deals.length : 0;

@@ -16,39 +16,39 @@ export type Functions = Database['public']['Functions'];
 // AI Models and Preferences (ensure these tables exist)
 export interface AIModel {
   id: string;
-  model_name: string;
+  modelname: string;
   provider: string;
-  display_name: string;
+  displayname: string;
   description?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  isactive: boolean;
+  createdat: string;
+  updatedat: string;
 }
 
 export interface UserAIModelPreference {
   id: string;
-  user_id: string;
-  selected_model_id: string;
-  created_at: string;
-  updated_at: string;
+  userid: string;
+  selectedmodelid: string;
+  createdat: string;
+  updatedat: string;
 }
 
 // Unified Inbox Types
 export interface EmailAccount {
   id: string;
-  user_id: string;
-  company_id: string;
-  email_address: string;
+  userid: string;
+  companyid: string;
+  emailaddress: string;
   display_name?: string;
   provider: 'gmail' | 'outlook' | 'exchange' | 'imap' | 'smtp';
   access_token?: string;
   refresh_token?: string;
   token_expires_at?: string;
-  sync_enabled: boolean;
-  sync_status: 'pending' | 'syncing' | 'success' | 'error';
+  syncenabled: boolean;
+  syncstatus: 'pending' | 'syncing' | 'success' | 'error';
   last_sync_at?: string;
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
 }
 
 // Enhanced Company and User Profile Types
@@ -126,11 +126,11 @@ export interface EnhancedUserProfile {
 // API Key Management Types
 export interface SecureAPIKey {
   id: string;
-  user_id: string;
-  key_name: string;
+  userid: string;
+  keyname: string;
   provider?: string;
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
   // Note: actual key value is never exposed in API responses
 }
 
@@ -160,11 +160,11 @@ export interface EnhancedUserIntegration extends Omit<Tables['user_integrations'
 // Conversation and Message Types
 export interface AIConversation {
   id: string;
-  user_id: string;
+  userid: string;
   title?: string;
   agent_id?: string;
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
   metadata?: {
     department?: string;
     context?: string;
@@ -175,11 +175,11 @@ export interface AIConversation {
 
 export interface AIMessage {
   id: string;
-  conversation_id: string;
-  user_id: string;
+  conversationid: string;
+  userid: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
-  created_at: string;
+  createdat: string;
   metadata?: {
     model?: string;
     tokens_used?: number;
@@ -196,7 +196,7 @@ export interface AIMessage {
 // Thought and AI Interaction Types
 export interface Thought {
   id: string;
-  user_id: string;
+  userid: string;
   content: string;
   category: 'idea' | 'task' | 'reminder' | 'update';
   status: string;
@@ -207,19 +207,19 @@ export interface Thought {
   parent_idea_id?: string;
   ai_insights?: Record<string, unknown>;
   interaction_method?: 'text' | 'speech' | 'copy_paste' | 'upload';
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
 }
 
 export interface AIInteraction {
   id: string;
-  user_id: string;
+  userid: string;
   thought_id?: string;
   prompt_text?: string;
   ai_response?: string;
   interaction_type?: string;
   context_data?: Record<string, unknown>;
-  created_at: string;
+  createdat: string;
 }
 
 // Utility types for database operations

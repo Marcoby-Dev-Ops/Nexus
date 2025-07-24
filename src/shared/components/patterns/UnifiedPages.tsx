@@ -24,7 +24,7 @@ import {
   CheckCircle, 
   Globe 
 } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 // Type definitions
 interface UnifiedMetricCardProps {
@@ -101,9 +101,18 @@ const SimpleBarChart: React.FC<{ data: any }> = ({ data }) => (
 
 // Mock analytics service
 const analyticsService = {
-  init: (userId: string, config: any) => console.log('Analytics init:', userId, config),
-  track: (event: string, data: any) => console.log('Analytics track:', event, data),
-  reset: () => console.log('Analytics reset')
+  init: (userId: string, config: any) => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Analytics init: ', userId, config),
+  track: (event: string, data: any) => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Analytics track: ', event, data),
+  reset: () => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Analytics reset')
 };
 
 interface SettingsSection {
@@ -133,7 +142,7 @@ export const UnifiedSettingsPage: React.FC<{ config: SettingsConfig }> = ({ conf
       </div>
       
       <Tabs value={activeSection} onValueChange={setActiveSection} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 lg: grid-cols-4">
           {config.sections.map((section) => (
             <TabsTrigger key={section.id} value={section.id} className="text-xs">
               {section.title}
@@ -197,7 +206,7 @@ export const UnifiedAnalyticsPage: React.FC<{ config: AnalyticsConfig }> = ({ co
               className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
                 activeTab === tab.id
                   ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted'
+                  : 'border-transparent text-muted-foreground hover: text-foreground hover:border-muted'
               }`}
             >
               {tab.label}
@@ -259,7 +268,7 @@ export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ 
               <p className="text-muted-foreground mb-4">{config.successMessage}</p>
               <button 
                 onClick={() => window.location.href = config.redirectPath}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover: bg-primary/90 transition-colors"
               >
                 Continue
               </button>
@@ -273,7 +282,7 @@ export const UnifiedCallbackPage: React.FC<{ config: CallbackPageConfig }> = ({ 
               <p className="text-muted-foreground mb-4">{config.errorMessage}</p>
               <button 
                 onClick={() => window.location.href = '/integrations'}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-lg hover: bg-primary/90 transition-colors"
               >
                 Try Again
               </button>
@@ -466,7 +475,7 @@ const EnhancedActivityFeed: React.FC<{ activities: EnhancedActivity[] }> = ({ ac
 
 // Main Component
 export const UnifiedDepartmentPage: React.FC<{ config: DepartmentConfig }> = ({ config }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -492,7 +501,7 @@ export const UnifiedDepartmentPage: React.FC<{ config: DepartmentConfig }> = ({ 
       subtitle={config.subtitle}
     >
       <ContentSection title="Key Performance Indicators">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           {config.kpis.map((kpi: any, index: number) => (
             <Card key={index}>
               <CardHeader>
@@ -518,7 +527,7 @@ export const UnifiedDepartmentPage: React.FC<{ config: DepartmentConfig }> = ({ 
         </div>
       </ContentSection>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+      <div className="grid grid-cols-1 lg: grid-cols-2 gap-8 mt-8">
         <ContentSection title="Analytics Overview">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>

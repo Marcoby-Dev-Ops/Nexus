@@ -2,20 +2,20 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
 import { Button } from '@/shared/components/ui/Button';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Tooltip } from '@/shared/components/ui/Tooltip';
 import { Info } from 'lucide-react';
 
 interface SnapshotData {
   mrr: number | null;
-  avg_deal_cycle_days: number | null;
-  website_visitors_month: number | null;
+  avgdealcycle_days: number | null;
+  websitevisitorsmonth: number | null;
   cac: number | null;
-  burn_rate: number | null;
-  gross_margin: number | null;
-  on_time_delivery_pct: number | null;
-  avg_first_response_mins: number | null;
+  burnrate: number | null;
+  grossmargin: number | null;
+  ontimedelivery_pct: number | null;
+  avgfirstresponse_mins: number | null;
   csat: number | null;
 }
 
@@ -25,18 +25,18 @@ interface BusinessSnapshotStepProps {
 }
 
 export const BusinessSnapshotStep: React.FC<BusinessSnapshotStepProps> = ({ onNext, onBack }) => {
-  const { user, updateCompany } = useAuthContext();
+  const { user, updateCompany } = useAuth();
   const company = user?.company;
 
   const [snapshot, setSnapshot] = useState<SnapshotData>({
     mrr: null,
-    avg_deal_cycle_days: null,
-    website_visitors_month: null,
+    avgdeal_cycle_days: null,
+    websitevisitors_month: null,
     cac: null,
-    burn_rate: null,
-    gross_margin: null,
-    on_time_delivery_pct: null,
-    avg_first_response_mins: null,
+    burnrate: null,
+    grossmargin: null,
+    ontime_delivery_pct: null,
+    avgfirst_response_mins: null,
     csat: null
   });
 
@@ -49,18 +49,21 @@ export const BusinessSnapshotStep: React.FC<BusinessSnapshotStepProps> = ({ onNe
       if (company?.id) {
         await updateCompany({
           mrr: snapshot.mrr,
-          avg_deal_cycle_days: snapshot.avg_deal_cycle_days,
-          website_visitors_month: snapshot.website_visitors_month,
+          avgdeal_cycle_days: snapshot.avg_deal_cycle_days,
+          websitevisitors_month: snapshot.website_visitors_month,
           cac: snapshot.cac,
-          burn_rate: snapshot.burn_rate,
-          gross_margin: snapshot.gross_margin,
-          on_time_delivery_pct: snapshot.on_time_delivery_pct,
-          avg_first_response_mins: snapshot.avg_first_response_mins,
+          burnrate: snapshot.burn_rate,
+          grossmargin: snapshot.gross_margin,
+          ontime_delivery_pct: snapshot.on_time_delivery_pct,
+          avgfirst_response_mins: snapshot.avg_first_response_mins,
           csat: snapshot.csat,
         } as any);
       }
     } catch (error) {
-      console.error('Failed to save baseline metrics', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to save baseline metrics', error);
     }
 
     onNext(snapshot);
@@ -72,8 +75,8 @@ export const BusinessSnapshotStep: React.FC<BusinessSnapshotStepProps> = ({ onNe
     { key: 'website_visitors_month', label: 'Website Visitors Last Month', placeholder: 'e.g., 12000', help: 'Baseline for website growth; will sync from Google Analytics.' },
     { key: 'cac', label: 'Customer Acquisition Cost (USD)', placeholder: 'e.g., 450', help: 'How much it costs to gain each customer.' },
     { key: 'burn_rate', label: 'Monthly Burn Rate (USD)', placeholder: 'e.g., 30000', help: 'Crucial for runway calculations; can sync from your accounting platform.' },
-    { key: 'gross_margin', label: 'Gross Margin (%)', placeholder: 'e.g., 65', suffix:'%', help: 'Indicator of financial health.' },
-    { key: 'on_time_delivery_pct', label: 'Projects Delivered On-Time (%)', placeholder: 'e.g., 85', suffix:'%', help: 'Reflects operational efficiency.' },
+    { key: 'gross_margin', label: 'Gross Margin (%)', placeholder: 'e.g., 65', suffix: '%', help: 'Indicator of financial health.' },
+    { key: 'on_time_delivery_pct', label: 'Projects Delivered On-Time (%)', placeholder: 'e.g., 85', suffix: '%', help: 'Reflects operational efficiency.' },
     { key: 'avg_first_response_mins', label: 'Avg Support First-Response (mins)', placeholder: 'e.g., 45', help: 'Lower is better for customer satisfaction.' },
     { key: 'csat', label: 'Customer Satisfaction (1-5)', placeholder: 'e.g., 4.3', help: 'High CSAT scores correlate with retention.' }
   ];

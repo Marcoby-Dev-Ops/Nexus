@@ -6,33 +6,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  MessageSquare, 
-  Send, 
-  Mic, 
-  MicOff, 
-  Paperclip, 
-  Zap,
-  Brain,
-  Target,
-  TrendingUp,
-  Users,
-  Building2,
-  DollarSign,
-  Settings,
-  Lightbulb,
-  ArrowRight,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  Star
-} from 'lucide-react';
-
+import { Send, Paperclip, Zap, Brain, Target, TrendingUp, Building2, Lightbulb, ArrowRight, Clock, Star } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { agentRegistry } from '@/domains/ai/lib/agentRegistry';
 
 interface MarcobyNexusAgentProps {
@@ -89,7 +68,7 @@ export const MarcobyNexusAgent: React.FC<MarcobyNexusAgentProps> = ({
   sessionId = '', 
   className = '' 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -192,7 +171,10 @@ export const MarcobyNexusAgent: React.FC<MarcobyNexusAgentProps> = ({
       ));
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error sending message: ', error);
     } finally {
       setLoading(false);
     }
@@ -265,7 +247,7 @@ export const MarcobyNexusAgent: React.FC<MarcobyNexusAgentProps> = ({
         >
           <Button
             onClick={() => setIsOpen(true)}
-            className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+            className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 hover: from-blue-700 hover:to-purple-700"
           >
             <Brain className="w-6 h-6 text-white" />
           </Button>
@@ -327,7 +309,7 @@ export const MarcobyNexusAgent: React.FC<MarcobyNexusAgentProps> = ({
                 {capabilities.slice(0, 4).map((capability) => (
                   <div
                     key={capability.id}
-                    className="p-2 bg-background rounded border text-xs cursor-pointer hover:bg-muted/50 transition-colors"
+                    className="p-2 bg-background rounded border text-xs cursor-pointer hover: bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-2 mb-1">
                       {capability.icon}
@@ -359,8 +341,7 @@ export const MarcobyNexusAgent: React.FC<MarcobyNexusAgentProps> = ({
                 <div className="flex-1">
                   <div className="bg-muted rounded-lg p-3">
                     <p className="text-sm">
-                      Hello! I'm your Marcoby Nexus business command center. I can help you with:
-                    </p>
+                      Hello! I'm your Marcoby Nexus business command center. I can help you with: </p>
                     <ul className="text-sm mt-2 space-y-1">
                       <li>• <strong>Focus:</strong> Define your North Star and key outcomes</li>
                       <li>• <strong>Insight:</strong> Surface opportunities and risks from your data</li>
@@ -409,7 +390,7 @@ export const MarcobyNexusAgent: React.FC<MarcobyNexusAgentProps> = ({
                     onChange={(e) => setInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                     placeholder="Ask me anything about your business..."
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus: outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={loading}
                   />
                   <Button
@@ -423,7 +404,7 @@ export const MarcobyNexusAgent: React.FC<MarcobyNexusAgentProps> = ({
                 <Button
                   onClick={handleSendMessage}
                   disabled={!input.trim() || loading}
-                  className="h-10 w-10 p-0 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                  className="h-10 w-10 p-0 bg-gradient-to-r from-blue-600 to-purple-600 hover: from-blue-700 hover:to-purple-700"
                 >
                   <Send className="w-4 h-4 text-white" />
                 </Button>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Database, FileText, User, TrendingUp, Building, Globe, Brain, AlertCircle } from 'lucide-react';
+import { ChevronDown, Database, FileText, User, TrendingUp, Globe, Brain, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
@@ -43,8 +43,7 @@ const getSourceIcon = (type: ContextSource['type']) => {
       return <Globe className="w-3 h-3" />;
     case 'conversation_history':
       return <Brain className="w-3 h-3" />;
-    default:
-      return <AlertCircle className="w-3 h-3" />;
+    default: return <AlertCircle className="w-3 h-3" />;
   }
 };
 
@@ -62,8 +61,7 @@ const getSourceColor = (type: ContextSource['type']) => {
       return 'bg-cyan-50 text-cyan-700 border-cyan-200';
     case 'conversation_history':
       return 'bg-background text-foreground/90 border-border';
-    default:
-      return 'bg-background text-foreground/90 border-border';
+    default: return 'bg-background text-foreground/90 border-border';
   }
 };
 
@@ -188,14 +186,14 @@ export const ContextChips: React.FC<ContextChipsProps> = ({ sources, className =
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
       {/* Context chips */}
-      {sortedSources.slice(0, compact ? 2 : 4).map((source) => (
+      {sortedSources.slice(0, compact ? 2: 4).map((source) => (
         <ContextChip key={source.id} source={source} compact={compact} />
       ))}
       
       {/* Show more chips if there are additional sources */}
-      {sortedSources.length > (compact ? 2 : 4) && (
+      {sortedSources.length > (compact ? 2: 4) && (
         <Badge variant="outline" className="text-xs px-2 py-1 text-muted-foreground">
-          +{sortedSources.length - (compact ? 2 : 4)} more
+          +{sortedSources.length - (compact ? 2: 4)} more
         </Badge>
       )}
       
@@ -205,7 +203,7 @@ export const ContextChips: React.FC<ContextChipsProps> = ({ sources, className =
           <Button 
             variant="ghost" 
             size="sm" 
-            className="h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
+            className="h-auto px-2 py-1 text-xs text-muted-foreground hover: text-foreground"
           >
             <span>Explain sources</span>
             <ChevronDown className="w-3 h-3 ml-1" />
@@ -218,8 +216,7 @@ export const ContextChips: React.FC<ContextChipsProps> = ({ sources, className =
               Response Sources ({sortedSources.length})
             </DialogTitle>
             <DialogDescription>
-              This response was generated using the following information sources:
-            </DialogDescription>
+              This response was generated using the following information sources: </DialogDescription>
           </DialogHeader>
                   <div className="px-4 pb-4 max-h-[60vh] overflow-y-auto">
           {sortedSources.map((source) => (

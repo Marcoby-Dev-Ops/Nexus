@@ -25,10 +25,7 @@ export const supervisorAgent = async (
   message: string,
   options: SupervisorOptions = {}
 ): Promise<SupervisorRouting> => {
-  const {
-    threshold = 0.7,
-    includeReason = true
-  } = options;
+  
 
   try {
     // Mock supervisor logic - in real implementation, this would use AI to analyze
@@ -74,7 +71,10 @@ export const supervisorAgent = async (
 
     return routing;
   } catch (error) {
-    console.error('Supervisor agent error:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Supervisor agent error: ', error);
     return {
       suggestedAgentId: '',
       confidence: 0.0,
@@ -87,7 +87,7 @@ export const supervisorAgent = async (
 /**
  * Get specialist agents for a given department
  */
-export const getSpecialistsForDepartment = (_department: string): Agent[] => {
+export const getSpecialistsForDepartment = (department: string): Agent[] => {
   // Mock implementation - in real app, this would query the agent registry
   return [];
 };
@@ -96,8 +96,8 @@ export const getSpecialistsForDepartment = (_department: string): Agent[] => {
  * Analyze conversation context for routing decisions
  */
 export const analyzeConversationContext = (
-  _messages: Array<{ role: string; content: string }>,
-  _currentAgent: Agent
+  messages: Array<{ role: string; content: string }>,
+  currentAgent: Agent
 ): SupervisorRouting => {
   // Mock implementation for conversation context analysis
   return {

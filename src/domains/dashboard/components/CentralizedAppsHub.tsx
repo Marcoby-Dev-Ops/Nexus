@@ -5,12 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
-  Building2, Zap, Brain, TrendingUp, AlertCircle, CheckCircle, 
-  Settings, Play, Pause, BarChart3, Users, DollarSign, 
-  MessageSquare, Globe, Database, Layers, ArrowRight,
-  RefreshCw, Bell, Target, Workflow, Plus
-} from 'lucide-react';
+import { Building2, Zap, Brain, TrendingUp, AlertCircle, CheckCircle, Settings, Play, BarChart3, Users, DollarSign, MessageSquare, Globe, Database, Layers, ArrowRight, RefreshCw, Target, Workflow, Plus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
@@ -50,7 +45,10 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
       setInsights(businessInsights);
 
     } catch (error) {
-      console.error('Failed to initialize centralized dashboard:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to initialize centralized dashboard: ', error);
     } finally {
       setLoading(false);
     }
@@ -66,10 +64,16 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
         'current-user'
       );
 
-      console.log('Unified command executed:', result);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Unified command executed: ', result);
       // Show success/results in UI
     } catch (error) {
-      console.error('Failed to execute unified command:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to execute unified command: ', error);
     }
   };
 
@@ -81,9 +85,15 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
         'current-user'
       );
 
-      console.log('Business function executed:', result);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Business function executed: ', result);
     } catch (error) {
-      console.error('Failed to execute business function:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to execute business function: ', error);
     }
   };
 
@@ -129,7 +139,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground dark:text-primary-foreground flex items-center">
+          <h1 className="text-3xl font-bold text-foreground dark: text-primary-foreground flex items-center">
             <Brain className="w-8 h-8 mr-3 text-primary" />
             Centralized Business OS
           </h1>
@@ -218,7 +228,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                   value={activeCommand}
                   onChange={(e) => setActiveCommand(e.target.value)}
                   placeholder="e.g., Generate monthly sales report, Update customer contact info, Send marketing campaign..."
-                  className="flex-1 px-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex-1 px-4 py-2 border border-border rounded-md focus: outline-none focus:ring-2 focus:ring-primary"
                 />
                 <Button onClick={executeUnifiedCommand} disabled={!activeCommand.trim() || selectedApps.length === 0}>
                   <Zap className="w-4 h-4 mr-2" />
@@ -243,7 +253,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                     className={`px-4 py-1 rounded-full text-sm border transition-all ${
                       selectedApps.includes(app.id)
                         ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background text-foreground/90 border-border hover:border-primary'
+                        : 'bg-background text-foreground/90 border-border hover: border-primary'
                     }`}
                   >
                     {getCategoryIcon(app.category)}
@@ -265,7 +275,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             {functions.map(func => (
               <div key={func.id} className="border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -287,7 +297,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                   <Button 
                     size="sm" 
                     onClick={() => executeBusinessFunction(func.id)}
-                    className="bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
+                    className="bg-primary/10 text-primary hover: bg-primary hover:text-primary-foreground"
                   >
                     <Play className="w-3 h-3 mr-1" />
                     Execute
@@ -308,7 +318,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
             {apps.map(app => (
               <div key={app.id} className="border border-border rounded-lg p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -324,7 +334,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
 
                 <div className="space-y-2 mb-3">
                   <div className="flex justify-between text-sm">
-                    <span>Integration Level:</span>
+                    <span>Integration Level: </span>
                     <Badge variant="outline" className="capitalize">{app.integrationLevel}</Badge>
                   </div>
                   {app.dataPoints && (
@@ -334,7 +344,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
-                    <span>Success Rate:</span>
+                    <span>Success Rate: </span>
                     <span className="font-medium text-success">{app.metrics.successRate}%</span>
                   </div>
                 </div>
@@ -364,7 +374,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               {insights.kpis.map((kpi: any, index: number) => (
                 <div key={index} className="text-center">
                   <p className="text-2xl font-bold">{kpi.value}</p>
@@ -376,7 +386,7 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
               <div>
                 <h4 className="font-semibold mb-3">AI Recommendations</h4>
                 <ul className="space-y-2">

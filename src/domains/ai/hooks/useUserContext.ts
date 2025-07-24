@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState, useCallback } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 
 export interface AIUserContext {
@@ -60,7 +60,7 @@ export interface AIUserContext {
 }
 
 export const useUserContext = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [context, setContext] = useState<AIUserContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -99,7 +99,10 @@ export const useUserContext = () => {
         }
       };
     } catch (err) {
-      console.error('Error building user context:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error building user context: ', err);
       throw err;
     }
   }, []);
@@ -145,14 +148,17 @@ export const useUserContext = () => {
         await supabase
           .from('user_activity')
           .insert({
-            user_id: user.id,
+            userid: user.id,
             action,
             details,
             timestamp: new Date().toISOString(),
             page: window.location.pathname
           });
       } catch (err) {
-        console.error('Error saving user activity:', err);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error saving user activity: ', err);
       }
     }
   }, [context, user?.id]);
@@ -167,8 +173,7 @@ export const useUserContext = () => {
     if (!context) return 'User context not available';
 
     return `
-USER CONTEXT FOR AI:
-Name: ${user?.name || 'User'}
+USER CONTEXT FOR AI: Name: ${user?.name || 'User'}
 Role: ${context.userRole}
 Department: ${context.userDepartment}
 Company: ${context.businessContext.companyName || 'Unknown'}
@@ -218,7 +223,10 @@ async function getUserPreferences(userId: string) {
       preferredAgents: preferences?.preferred_agents || ['executive']
     };
   } catch (error) {
-    console.error('Error fetching user preferences:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching user preferences: ', error);
     return {
       communicationStyle: 'direct',
       responseLength: 'standard',
@@ -271,7 +279,10 @@ async function getTeamMembers(companyId?: string) {
       department: user.department || 'General'
     })) || [];
   } catch (error) {
-    console.error('Error fetching team members:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching team members: ', error);
     return [];
   }
 } 

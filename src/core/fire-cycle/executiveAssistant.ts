@@ -136,8 +136,7 @@ export class ExecutiveAssistant {
         title = 'Action Planning & Execution';
         message = this.generateExecuteAction(fireResponse, playbookRecommendations);
         break;
-      default:
-        type = 'coaching';
+      default: type = 'coaching';
         title = 'Business Coaching';
         message = this.generateGeneralCoaching(fireResponse);
     }
@@ -181,7 +180,7 @@ export class ExecutiveAssistant {
     }
 
     if (challenges.length > 0) {
-      message += `**Challenge Analysis:** "${challenges[0].value}"\n\n`;
+      message += `**Challenge Analysis: ** "${challenges[0].value}"\n\n`;
       message += `**Root Cause Questions:**\n`;
       message += `• What's the underlying business issue here?\n`;
       message += `• What patterns have you noticed?\n`;
@@ -190,14 +189,14 @@ export class ExecutiveAssistant {
 
     // Add data-driven insights
     if (dataInsights.length > 0) {
-      message += `**Data-Driven Context:**\n`;
+      message += `**Data-Driven Context: **\n`;
       dataInsights.forEach(insight => {
         message += `• ${insight.title}: ${insight.description}\n`;
       });
       message += `\n`;
     }
 
-    message += `**Next Steps:**\n`;
+    message += `**Next Steps: **\n`;
     message += `• Define clear success metrics\n`;
     message += `• Identify key stakeholders\n`;
     message += `• Assess resource requirements\n`;
@@ -215,7 +214,7 @@ export class ExecutiveAssistant {
     let message = `📊 **Executive Analysis: Data Insights**\n\n`;
 
     if (metrics.length > 0) {
-      message += `**Key Metric:** ${metrics[0].value}\n\n`;
+      message += `**Key Metric: ** ${metrics[0].value}\n\n`;
       message += `**Strategic Implications:**\n`;
       message += `• What does this tell us about market trends?\n`;
       message += `• How does this impact our competitive position?\n`;
@@ -223,14 +222,14 @@ export class ExecutiveAssistant {
     }
 
     if (dataInsights.length > 0) {
-      message += `**Executive Insights:**\n`;
+      message += `**Executive Insights: **\n`;
       dataInsights.forEach(insight => {
         message += `• **${insight.category.toUpperCase()}**: ${insight.title}\n`;
         message += `  ${insight.description}\n\n`;
       });
     }
 
-    message += `**Strategic Questions:**\n`;
+    message += `**Strategic Questions: **\n`;
     message += `• What patterns are emerging?\n`;
     message += `• How can we capitalize on these insights?\n`;
     message += `• What risks should we monitor?\n`;
@@ -249,7 +248,7 @@ export class ExecutiveAssistant {
 
     if (playbookRecommendations.length > 0) {
       const playbook = playbookRecommendations[0];
-      message += `**Recommended Strategic Approach:** ${playbook.playbook.name}\n\n`;
+      message += `**Recommended Strategic Approach: ** ${playbook.playbook.name}\n\n`;
       message += `**Strategic Framework:**\n`;
       message += `• **Focus**: ${playbook.playbook.focus}\n`;
       message += `• **Insight**: ${playbook.playbook.insight}\n`;
@@ -282,7 +281,7 @@ export class ExecutiveAssistant {
 
     if (playbookRecommendations.length > 0) {
       const playbook = playbookRecommendations[0];
-      message += `**Strategic Implementation:** ${playbook.playbook.name}\n\n`;
+      message += `**Strategic Implementation: ** ${playbook.playbook.name}\n\n`;
       
       message += `**Immediate Actions:**\n`;
       playbook.playbook.execute.forEach((action, index) => {
@@ -295,7 +294,7 @@ export class ExecutiveAssistant {
       });
     }
 
-    message += `**Execution Best Practices:**\n`;
+    message += `**Execution Best Practices: **\n`;
     message += `• Start with high-impact, low-effort actions\n`;
     message += `• Establish clear success metrics\n`;
     message += `• Regular progress reviews and adjustments\n`;
@@ -307,7 +306,7 @@ export class ExecutiveAssistant {
   /**
    * Generate general coaching response
    */
-  private generateGeneralCoaching(_fireResponse: AgentResponse): string {
+  private generateGeneralCoaching(fireResponse: AgentResponse): string {
     return `🤝 **Executive Coaching Session**\n\n` +
            `I'm here to help you think strategically about your business challenges and opportunities.\n\n` +
            `**How can I support you today?**\n` +
@@ -385,8 +384,8 @@ export class ExecutiveAssistant {
    * Generate strategic next steps
    */
   private generateNextSteps(
-    _fireResponse: AgentResponse,
-    _playbookRecommendations: PlaybookRecommendation[]
+    fireResponse: AgentResponse,
+    playbookRecommendations: PlaybookRecommendation[]
   ): NextStep[] {
     const nextSteps: NextStep[] = [];
 
@@ -500,7 +499,7 @@ export class ExecutiveAssistant {
   /**
    * Generate context for response
    */
-  private generateContext(_fireResponse: AgentResponse): string {
+  private generateContext(fireResponse: AgentResponse): string {
     return `Based on your role as ${this.userContext.role} in ${this.userContext.department}, ` +
            `I'm analyzing this in the context of your ${this.userContext.industry} industry ` +
            `and ${this.userContext.companySize} company size.`;

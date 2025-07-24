@@ -2,17 +2,7 @@ import React, { type ReactNode } from 'react';
 import { Card, CardContent } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
-import { 
-  Users, 
-  TrendingUp, 
-  Clock, 
-  CheckCircle,
-  AlertTriangle,
-  ArrowRight,
-  Search,
-  Filter,
-  Bell
-} from 'lucide-react';
+import { Search, Filter, Bell } from 'lucide-react';
 import { Input } from '../ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 
@@ -85,7 +75,7 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
     <div className={`space-y-6 ${className}`}>
       {/* Department Header */}
       <div className="rounded-xl p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md: flex-row md:items-center justify-between gap-4">
           <div className="flex items-center">
             {icon && (
               <div className="mr-3 h-10 w-10 rounded-full flex items-center justify-center">
@@ -115,7 +105,7 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
         </div>
         {/* Department Metrics */}
         {metrics.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+          <div className="grid grid-cols-2 md: grid-cols-4 gap-4 mt-6">
             {metrics.map((metric, index) => (
               <Card key={index}>
                 <CardContent className="p-4">
@@ -146,7 +136,7 @@ export const DepartmentTemplate: React.FC<DepartmentTemplateProps> = ({
       </div>
       {/* Search and Filter Bar */}
       {showSearch && (
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
+        <div className="flex flex-col sm: flex-row gap-4 items-center">
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4" />
             <Input

@@ -9,7 +9,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useIntegrations } from '@/domains/integrations/hooks/useIntegrations';
 import { supabase } from '@/core/supabase';
 import { toast } from 'sonner';
@@ -49,7 +49,7 @@ interface IntegrationConfig {
 
 const IntegrationsSettings: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   // Integration data will be fetched directly from user_integrations table
   const [integrationConfigs, setIntegrationConfigs] = useState<IntegrationConfig[]>([]);
   const [selectedIntegration, setSelectedIntegration] = useState<IntegrationConfig | null>(null);
@@ -64,7 +64,7 @@ const IntegrationsSettings: React.FC = () => {
 
   const fetchIntegrationConfigs = async () => {
     try {
-      const { data: configs, error: fetchError } = await supabase
+      const { error: fetchError } = await supabase
         .from('user_integrations')
         .select('*')
         .eq('user_id', user?.id);
@@ -88,7 +88,10 @@ const IntegrationsSettings: React.FC = () => {
 
       setIntegrationConfigs(formattedConfigs);
     } catch (error) {
-      console.error('Error fetching integration configs:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching integration configs: ', error);
       toast.error('Failed to load integration configurations');
     }
   };
@@ -111,7 +114,10 @@ const IntegrationsSettings: React.FC = () => {
       setIntegrationConfigs(prev => prev.filter(config => config.id !== integrationId));
       toast.success('Integration disconnected successfully');
     } catch (error) {
-      console.error('Error disconnecting integration:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error disconnecting integration: ', error);
       toast.error('Failed to disconnect integration');
     } finally {
       setConfiguring(null);
@@ -171,7 +177,10 @@ const IntegrationsSettings: React.FC = () => {
       toast.success('Configuration updated successfully');
       setShowConfigModal(false);
     } catch (error) {
-      console.error('Error updating configuration:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating configuration: ', error);
       toast.error('Failed to update configuration');
     } finally {
       setConfiguring(null);
@@ -186,8 +195,7 @@ const IntegrationsSettings: React.FC = () => {
         return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'configuring':
         return 'bg-warning/10 text-warning border-warning/20';
-      default:
-        return 'bg-muted text-muted-foreground border-muted';
+      default: return 'bg-muted text-muted-foreground border-muted';
     }
   };
 
@@ -199,8 +207,7 @@ const IntegrationsSettings: React.FC = () => {
         return <AlertCircle className="w-4 h-4 text-destructive" />;
       case 'configuring':
         return <Clock className="w-4 h-4 text-warning" />;
-      default:
-        return <XCircle className="w-4 h-4 text-muted-foreground" />;
+      default: return <XCircle className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -216,8 +223,7 @@ const IntegrationsSettings: React.FC = () => {
         return <FileText className="w-5 h-5" />;
       case 'analytics':
         return <BarChart3 className="w-5 h-5" />;
-      default:
-        return <Globe className="w-5 h-5" />;
+      default: return <Globe className="w-5 h-5" />;
     }
   };
 
@@ -272,7 +278,7 @@ const IntegrationsSettings: React.FC = () => {
               {integrationConfigs.map((integration) => (
                 <div
                   key={integration.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                  className="flex items-center justify-between p-4 border rounded-lg hover: bg-accent/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     {getIntegrationIcon(integration.category)}
@@ -504,7 +510,7 @@ const IntegrationsSettings: React.FC = () => {
                     <Label htmlFor="webhook-url">Webhook URL</Label>
                     <Input
                       id="webhook-url"
-                      placeholder="https://your-domain.com/webhook"
+                      placeholder="https: //your-domain.com/webhook"
                       value={selectedIntegration.config?.webhookUrl || ''}
                       onChange={(e) => setSelectedIntegration({
                         ...selectedIntegration,

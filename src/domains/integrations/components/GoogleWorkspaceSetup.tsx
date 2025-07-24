@@ -8,27 +8,10 @@ import { Button } from '@/shared/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui';
 import { Alert, AlertDescription } from '@/shared/components/ui';
 import { Badge } from '@/shared/components/ui';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNotifications } from '@/core/hooks/NotificationContext';
 import { googleWorkspaceService } from '@/domains/analytics/lib/googleWorkspaceService';
-import { 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle, 
-  ExternalLink,
-  Calendar,
-  HardDrive,
-  Mail,
-  Users,
-  BarChart3,
-  Search,
-  Building,
-  Shield,
-  FileText,
-  Video,
-  ArrowRight
-} from 'lucide-react';
-
+import { Loader2, CheckCircle, AlertCircle, ExternalLink, Calendar, HardDrive, Mail, Users, BarChart3, Search, Building, Shield, FileText, ArrowRight } from 'lucide-react';
 interface GoogleWorkspaceSetupProps {
   onComplete: (integration: any) => void;
   onClose: () => void;
@@ -49,8 +32,8 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
   onComplete, 
   onClose 
 }) => {
-  const { user } = useAuthContext();
-  const { addNotification } = useNotifications();
+  const { user } = useAuth();
+  
   const [currentStep, setCurrentStep] = useState<'oauth' | 'services' | 'complete'>('oauth');
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle');
@@ -169,16 +152,16 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
       const redirectUri = `${window.location.origin}/integrations/google/callback`;
       
       const params = new URLSearchParams({
-        client_id: clientId,
-        response_type: 'code',
-        redirect_uri: redirectUri,
+        clientid: clientId,
+        responsetype: 'code',
+        redirecturi: redirectUri,
         scope: uniqueScopes.join(' '),
-        access_type: 'offline',
+        accesstype: 'offline',
         prompt: 'consent',
         state: btoa(JSON.stringify({ timestamp: Date.now() }))
       });
 
-      const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+      const authUrl = `https: //accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
       
       // Open OAuth window
       const authWindow = window.open(
@@ -222,7 +205,7 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
 
     } catch (err) {
       setConnectionStatus('error');
-      setError(err instanceof Error ? err.message : 'Failed to connect to Google Workspace');
+      setError(err instanceof Error ? err.message: 'Failed to connect to Google Workspace');
     } finally {
       setIsConnecting(false);
     }
@@ -303,8 +286,7 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
       <div className="bg-muted/50 p-6 rounded-lg space-y-4">
         <h4 className="font-medium flex items-center">
           <Shield className="w-4 h-4 mr-2" />
-          What you'll get access to:
-        </h4>
+          What you'll get access to: </h4>
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
@@ -445,7 +427,7 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
                       className={`border rounded-lg p-4 transition-colors ${
                         service.enabled 
                           ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
+                          : 'border-border hover: border-primary/50'
                       }`}
                     >
                       <div className="flex items-start space-x-4">
@@ -577,8 +559,7 @@ const GoogleWorkspaceSetup: React.FC<GoogleWorkspaceSetupProps> = ({
         return renderServicesStep();
       case 'complete':
         return renderCompleteStep();
-      default:
-        return null;
+      default: return null;
     }
   };
 

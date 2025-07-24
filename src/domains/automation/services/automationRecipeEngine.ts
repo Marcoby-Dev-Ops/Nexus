@@ -103,7 +103,10 @@ class AutomationRecipeEngine {
         .order('usage_count', { ascending: false });
 
       if (error) {
-        console.error('Failed to load recipes:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load recipes: ', error);
         return this.getDefaultRecipes();
       }
 
@@ -114,7 +117,10 @@ class AutomationRecipeEngine {
 
       return recipes || this.getDefaultRecipes();
     } catch (error) {
-      console.error('Error fetching recipes:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching recipes: ', error);
       return this.getDefaultRecipes();
     }
   }
@@ -191,7 +197,10 @@ class AutomationRecipeEngine {
       };
 
     } catch (error) {
-      console.error('Recipe deployment failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Recipe deployment failed: ', error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Unknown error occurred' 
@@ -214,13 +223,19 @@ class AutomationRecipeEngine {
         .order('deployed_at', { ascending: false });
 
       if (error) {
-        console.error('Failed to fetch deployments:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to fetch deployments: ', error);
         return [];
       }
 
       return deployments || [];
     } catch (error) {
-      console.error('Error fetching deployments:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching deployments: ', error);
       return [];
     }
   }
@@ -234,18 +249,24 @@ class AutomationRecipeEngine {
         .from('automation_recipe_deployments')
         .update({ 
           status: action === 'pause' ? 'paused' : 'active',
-          updated_at: new Date().toISOString()
+          updatedat: new Date().toISOString()
         })
         .eq('id', deploymentId);
 
       if (error) {
-        console.error('Failed to toggle deployment:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to toggle deployment: ', error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error toggling deployment:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error toggling deployment: ', error);
       return false;
     }
   }
@@ -324,14 +345,14 @@ class AutomationRecipeEngine {
     const { data, error } = await supabase
       .from('automation_recipe_deployments')
       .insert({
-        recipe_id: recipeId,
-        user_id: userId,
-        workflow_id: workflowId,
+        recipeid: recipeId,
+        userid: userId,
+        workflowid: workflowId,
         customizations,
         status: 'deployed',
-        deployed_at: new Date().toISOString(),
-        execution_count: 0,
-        error_count: 0
+        deployedat: new Date().toISOString(),
+        executioncount: 0,
+        errorcount: 0
       })
       .select('id')
       .single();
@@ -359,21 +380,21 @@ class AutomationRecipeEngine {
     const { data, error } = await supabase
       .from('action_cards')
       .insert({
-        user_id: userData.user.id,
+        userid: userData.user.id,
         domain: 'automation',
         kind: 'notification',
         title: `${recipe.name} Deployed Successfully`,
         description: `Your automation recipe "${recipe.name}" has been deployed and is now active.`,
         meta: {
-          recipe_id: recipe.id,
-          deployment_id: deploymentId,
-          webhook_url: webhookUrl,
-          success_metrics: recipe.successMetrics
+          recipeid: recipe.id,
+          deploymentid: deploymentId,
+          webhookurl: webhookUrl,
+          successmetrics: recipe.successMetrics
         },
         data: {
-          recipe_name: recipe.name,
+          recipename: recipe.name,
           category: recipe.category,
-          estimated_time: recipe.estimatedTime,
+          estimatedtime: recipe.estimatedTime,
           benefits: recipe.benefits
         },
         status: 'pending'
@@ -395,12 +416,15 @@ class AutomationRecipeEngine {
     const { error } = await supabase
       .from('automation_recipes')
       .update({ 
-        usage_count: supabase.rpc('increment_usage_count', { recipe_id: recipeId })
+        usagecount: supabase.rpc('increment_usage_count', { recipeid: recipeId })
       })
       .eq('id', recipeId);
 
     if (error) {
-      console.error('Failed to update recipe usage:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to update recipe usage: ', error);
     }
   }
 
@@ -623,8 +647,8 @@ class AutomationRecipeEngine {
             name: 'Generate Report',
             description: 'Generate weekly business report',
             parameters: {
-              report_type: 'weekly_summary',
-              include_metrics: ['revenue', 'customers', 'projects']
+              reporttype: 'weekly_summary',
+              includemetrics: ['revenue', 'customers', 'projects']
             },
             customizable: true,
             required: true
@@ -687,8 +711,8 @@ class AutomationRecipeEngine {
             name: 'Analyze Ticket',
             description: 'Analyze ticket content and urgency',
             parameters: {
-              analysis_type: 'ticket_categorization',
-              urgency_detection: true
+              analysistype: 'ticket_categorization',
+              urgencydetection: true
             },
             customizable: false,
             required: true

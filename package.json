@@ -31,6 +31,8 @@
     "generate-sitemap": "node scripts/generate-sitemap.cjs",
     "generate-robots": "node scripts/generate-robots.cjs",
     "lint:fix": "eslint . --ext ts,tsx --fix",
+    "lint:summary": "eslint . --ext ts,tsx --format=compact | grep -E '(error|warning)' | wc -l",
+    "lint:errors-only": "eslint . --ext ts,tsx --format=compact | grep 'error' | wc -l",
     "kill": "pkill -f 'vite\\|node.*dev\\|pnpm.*dev' || echo 'No development processes found'",
     "kill:all": "pkill -f node || echo 'No Node.js processes found'",
     "kill:ports": "lsof -ti:3000,5173,5432 | xargs kill -9 2>/dev/null || echo 'No processes found on ports 3000, 5173, 5432'",
@@ -50,7 +52,8 @@
     "sync:from-remote": "./scripts/pull-from-remote.sh",
     "cleanup:check": "node scripts/cleanup-dependencies.js",
     "cleanup:remove": "pnpm remove @azure/msal-browser @microsoft/mgt-components @microsoft/mgt-element @microsoft/mgt-msal2-provider @microsoft/mgt-react react-hot-toast supabase",
-    "cleanup:smart-client": "node scripts/remove-smart-client.js"
+
+    "supabase:gen-types": "pnpm supabase gen types typescript --project-id kqclbpimkraenvbffnpk --schema public > src/core/types/supabase.ts"
   },
   "pnpm": {
     "allowed-build-scripts": [],

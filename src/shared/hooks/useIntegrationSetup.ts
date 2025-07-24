@@ -14,7 +14,7 @@ import type {
 /**
  * Default workflow configuration based on best practices
  */
-const DEFAULT_CONFIG: WorkflowConfig = {
+const DEFAULTCONFIG: WorkflowConfig = {
   maxRetries: 3,
   timeoutMs: 30000,
   enableAnalytics: true,

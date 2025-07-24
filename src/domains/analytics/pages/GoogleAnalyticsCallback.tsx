@@ -63,7 +63,10 @@ const GoogleAnalyticsCallback: React.FC = () => {
         }, 2000);
 
       } catch (err: any) {
-        console.error('OAuth callback error:', err);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('OAuth callback error: ', err);
         setStatus('error');
         setMessage(err.message || 'Failed to complete authorization');
 

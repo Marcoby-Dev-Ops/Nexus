@@ -64,7 +64,10 @@ export async function generateInsights(
     const allInsights = [...basicInsights, ...patternInsights, ...complexInsights];
     return deduplicateInsights(allInsights);
   } catch (error) {
-    console.error('Error generating insights:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error generating insights: ', error);
     return [];
   }
 }
@@ -85,7 +88,7 @@ async function generateBasicInsights(context: InsightGenerationContext): Promise
         content: prompt
       }
     ],
-    max_tokens: MODEL_CONFIGS.simple.maxTokens,
+    maxtokens: MODEL_CONFIGS.simple.maxTokens,
     temperature: MODEL_CONFIGS.simple.temperature
   });
 
@@ -112,7 +115,7 @@ async function generatePatternInsights(context: InsightGenerationContext): Promi
         content: prompt
       }
     ],
-    max_tokens: MODEL_CONFIGS.pattern.maxTokens,
+    maxtokens: MODEL_CONFIGS.pattern.maxTokens,
     temperature: MODEL_CONFIGS.pattern.temperature
   });
 
@@ -140,7 +143,7 @@ async function generateComplexInsights(context: InsightGenerationContext): Promi
         content: prompt
       }
     ],
-    max_tokens: MODEL_CONFIGS.complex.maxTokens,
+    maxtokens: MODEL_CONFIGS.complex.maxTokens,
     temperature: MODEL_CONFIGS.complex.temperature
   });
   
@@ -157,9 +160,7 @@ async function getHistoricalInsights(integrationId: string): Promise<Integration
 function generateBasicPrompt(context: InsightGenerationContext): string {
   const { integration, recentInsight } = context;
   return `
-    Provide simple, clear insights about this integration:
-    
-    Integration ID: ${integration.id}
+    Provide simple, clear insights about this integration: Integration ID: ${integration.id}
     Type: ${integration.type}
     Status: ${integration.status}
     
@@ -177,16 +178,13 @@ function generateBasicPrompt(context: InsightGenerationContext): string {
 function generatePatternPrompt(context: InsightGenerationContext): string {
   const { integration, historicalInsights } = context;
   return `
-    Analyze patterns in this integration:
-    
-    Integration ID: ${integration.id}
+    Analyze patterns in this integration: Integration ID: ${integration.id}
     Type: ${integration.type}
     Status: ${integration.status}
     
     ${historicalInsights?.length ? `Historical Insights: ${historicalInsights.map(i => i.content).join('\n')}` : ''}
     
-    Focus on:
-    1. Recurring patterns
+    Focus on: 1. Recurring patterns
     2. Data relationships
     3. Organizational improvements
     4. Optimization opportunities
@@ -198,9 +196,7 @@ function generatePatternPrompt(context: InsightGenerationContext): string {
 function generateComplexPrompt(context: InsightGenerationContext): string {
   const { integration, recentInsight, historicalInsights } = context;
   return `
-    Provide deep analysis and strategic recommendations:
-    
-    Integration ID: ${integration.id}
+    Provide deep analysis and strategic recommendations: Integration ID: ${integration.id}
     Type: ${integration.type}
     Status: ${integration.status}
     
@@ -208,8 +204,7 @@ function generateComplexPrompt(context: InsightGenerationContext): string {
     
     ${historicalInsights?.length ? `Historical Insights: ${historicalInsights.map(i => i.content).join('\n')}` : ''}
     
-    Focus on:
-    1. Complex pattern recognition
+    Focus on: 1. Complex pattern recognition
     2. Strategic implications
     3. Long-term recommendations
     4. Cross-integration insights

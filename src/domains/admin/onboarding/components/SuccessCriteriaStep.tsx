@@ -18,18 +18,18 @@ import {
 } from 'lucide-react';
 
 interface SuccessCriteriaData {
-  primary_success_metric: string;
-  secondary_metrics: string[];
-  time_savings_goal: string;
-  roi_expectation: string;
-  usage_frequency: string;
-  success_scenarios: string[];
-  failure_conditions: string[];
-  measurement_method: string;
-  review_frequency: string;
-  stakeholder_buy_in: string[];
-  immediate_wins: string[];
-  long_term_vision: string;
+  primarysuccess_metric: string;
+  secondarymetrics: string[];
+  timesavingsgoal: string;
+  roiexpectation: string;
+  usagefrequency: string;
+  successscenarios: string[];
+  failureconditions: string[];
+  measurementmethod: string;
+  reviewfrequency: string;
+  stakeholderbuyin: string[];
+  immediatewins: string[];
+  longtermvision: string;
 }
 
 interface SuccessCriteriaStepProps {
@@ -39,18 +39,18 @@ interface SuccessCriteriaStepProps {
 
 export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext, onBack }) => {
   const [criteriaData, setCriteriaData] = useState<SuccessCriteriaData>({
-    primary_success_metric: '',
-    secondary_metrics: [],
-    time_savings_goal: '',
-    roi_expectation: '',
-    usage_frequency: 'daily',
-    success_scenarios: [],
-    failure_conditions: [],
-    measurement_method: 'quantitative',
-    review_frequency: 'monthly',
-    stakeholder_buy_in: [],
-    immediate_wins: [],
-    long_term_vision: ''
+    primarysuccess_metric: '',
+    secondarymetrics: [],
+    timesavings_goal: '',
+    roiexpectation: '',
+    usagefrequency: 'daily',
+    successscenarios: [],
+    failureconditions: [],
+    measurementmethod: 'quantitative',
+    reviewfrequency: 'monthly',
+    stakeholderbuy_in: [],
+    immediatewins: [],
+    longterm_vision: ''
   });
 
   const primaryMetrics = [
@@ -156,13 +156,13 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">What's the #1 way you'll measure success?</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 md: grid-cols-3 gap-2">
               {primaryMetrics.map((metric) => (
                 <Button
                   key={metric}
                   variant={criteriaData.primary_success_metric === metric ? "default" : "outline"}
                   className="justify-start h-auto p-4"
-                  onClick={() => setCriteriaData(prev => ({ ...prev, primary_success_metric: metric }))}
+                  onClick={() => setCriteriaData(prev => ({ ...prev, primarysuccess_metric: metric }))}
                 >
                   {metric}
                 </Button>
@@ -178,7 +178,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">Additional benefits you expect to see</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 md: grid-cols-3 gap-2">
               {secondaryMetrics.map((metric) => (
                 <div key={metric} className="flex items-center space-x-2">
                   <Checkbox
@@ -187,7 +187,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       criteriaData.secondary_metrics, 
                       metric, 
-                      (arr) => setCriteriaData(prev => ({ ...prev, secondary_metrics: arr }))
+                      (arr) => setCriteriaData(prev => ({ ...prev, secondarymetrics: arr }))
                     )}
                   />
                   <Label htmlFor={metric} className="text-sm">{metric}</Label>
@@ -198,7 +198,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
         </Card>
 
         {/* Time & ROI Expectations */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md: grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -209,7 +209,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <CardContent>
               <RadioGroup
                 value={criteriaData.time_savings_goal}
-                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, time_savings_goal: value }))}
+                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, timesavings_goal: value }))}
               >
                 {timeSavingsOptions.map((option) => (
                   <div key={option} className="flex items-center space-x-2">
@@ -231,7 +231,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <CardContent>
               <RadioGroup
                 value={criteriaData.roi_expectation}
-                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, roi_expectation: value }))}
+                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, roiexpectation: value }))}
               >
                 {roiExpectations.map((expectation) => (
                   <div key={expectation} className="flex items-center space-x-2">
@@ -245,7 +245,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
         </div>
 
         {/* Usage & Review Frequency */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md: grid-cols-2 gap-6">
           <Card>
             <CardHeader>
               <CardTitle>Expected Usage Frequency</CardTitle>
@@ -253,7 +253,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <CardContent>
               <RadioGroup
                 value={criteriaData.usage_frequency}
-                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, usage_frequency: value }))}
+                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, usagefrequency: value }))}
               >
                 {usageFrequencies.map((frequency) => (
                   <div key={frequency} className="flex items-center space-x-2">
@@ -272,7 +272,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <CardContent>
               <RadioGroup
                 value={criteriaData.review_frequency}
-                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, review_frequency: value }))}
+                onValueChange={(value) => setCriteriaData(prev => ({ ...prev, reviewfrequency: value }))}
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="weekly" id="weekly" />
@@ -301,7 +301,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">What does success look like?</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-2">
               {successScenarios.map((scenario) => (
                 <div key={scenario} className="flex items-center space-x-2">
                   <Checkbox
@@ -310,7 +310,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       criteriaData.success_scenarios, 
                       scenario, 
-                      (arr) => setCriteriaData(prev => ({ ...prev, success_scenarios: arr }))
+                      (arr) => setCriteriaData(prev => ({ ...prev, successscenarios: arr }))
                     )}
                   />
                   <Label htmlFor={scenario} className="text-sm">{scenario}</Label>
@@ -330,7 +330,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">What would indicate the implementation isn't working?</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-2">
               {failureConditions.map((condition) => (
                 <div key={condition} className="flex items-center space-x-2">
                   <Checkbox
@@ -339,7 +339,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       criteriaData.failure_conditions, 
                       condition, 
-                      (arr) => setCriteriaData(prev => ({ ...prev, failure_conditions: arr }))
+                      (arr) => setCriteriaData(prev => ({ ...prev, failureconditions: arr }))
                     )}
                   />
                   <Label htmlFor={condition} className="text-sm">{condition}</Label>
@@ -359,7 +359,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">Who needs to be on board for this to succeed?</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md: grid-cols-4 gap-2">
               {stakeholders.map((stakeholder) => (
                 <div key={stakeholder} className="flex items-center space-x-2">
                   <Checkbox
@@ -368,7 +368,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       criteriaData.stakeholder_buy_in, 
                       stakeholder, 
-                      (arr) => setCriteriaData(prev => ({ ...prev, stakeholder_buy_in: arr }))
+                      (arr) => setCriteriaData(prev => ({ ...prev, stakeholderbuy_in: arr }))
                     )}
                   />
                   <Label htmlFor={stakeholder} className="text-sm">{stakeholder}</Label>
@@ -388,7 +388,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <p className="text-sm text-muted-foreground">Quick wins to build momentum</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-2">
               {immediateWins.map((win) => (
                 <div key={win} className="flex items-center space-x-2">
                   <Checkbox
@@ -397,7 +397,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
                     onCheckedChange={() => handleArrayToggle(
                       criteriaData.immediate_wins, 
                       win, 
-                      (arr) => setCriteriaData(prev => ({ ...prev, immediate_wins: arr }))
+                      (arr) => setCriteriaData(prev => ({ ...prev, immediatewins: arr }))
                     )}
                   />
                   <Label htmlFor={win} className="text-sm">{win}</Label>
@@ -417,7 +417,7 @@ export const SuccessCriteriaStep: React.FC<SuccessCriteriaStepProps> = ({ onNext
             <Textarea
               placeholder="e.g., Fully automated financial reporting, predictive analytics driving strategy, team focused on high-value work rather than manual tasks..."
               value={criteriaData.long_term_vision}
-              onChange={(e) => setCriteriaData(prev => ({ ...prev, long_term_vision: e.target.value }))}
+              onChange={(e) => setCriteriaData(prev => ({ ...prev, longterm_vision: e.target.value }))}
               className="min-h-[100px]"
             />
           </CardContent>

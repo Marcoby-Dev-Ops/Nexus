@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Separator } from '@/shared/components/ui/Separator';
-import { FileText, Shield, Users, CreditCard, AlertTriangle, Globe, CheckCircle, XCircle, Clock, Zap } from 'lucide-react';
+import { FileText, Shield, Users, CreditCard, Zap } from 'lucide-react';
 import { Seo } from '@/shared/components/Seo';
 
 export const TermsOfServicePage: React.FC = () => {
@@ -34,7 +34,7 @@ export const TermsOfServicePage: React.FC = () => {
       <Seo
         title="Terms of Service – Nexus Platform | Marcoby"
         description="Read the terms and conditions for using Nexus, our AI-powered business operating system."
-        canonical="https://nexus.marcoby.com/help/terms-of-service"
+        canonical="https: //nexus.marcoby.com/help/terms-of-service"
         image="https://nexus.marcoby.com/og-image.png"
         structuredData={{
           '@context': 'https://schema.org',
@@ -44,7 +44,7 @@ export const TermsOfServicePage: React.FC = () => {
           logo: 'https://nexus.marcoby.com/nexus-horizontal-160x48-transparent.png',
           sameAs: [
             'https://www.linkedin.com/company/marcoby',
-            'https://twitter.com/marcobyhq'
+            'https: //twitter.com/marcobyhq'
           ]
         }}
       />
@@ -66,7 +66,7 @@ export const TermsOfServicePage: React.FC = () => {
       </div>
 
       {/* Key Features */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
         {keyTerms.map((term, index) => (
           <Card key={index}>
             <CardContent className="pt-6 flex items-start gap-4">
@@ -99,8 +99,7 @@ export const TermsOfServicePage: React.FC = () => {
       <div>
         <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
         <p className="text-muted-foreground mb-4">
-          Nexus is an AI-powered business operating system that provides:
-        </p>
+          Nexus is an AI-powered business operating system that provides: </p>
         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
           <li>Business intelligence and analytics</li>
           <li>AI-powered automation and workflows</li>
@@ -226,8 +225,7 @@ export const TermsOfServicePage: React.FC = () => {
       <div>
         <h2 className="text-2xl font-semibold mb-4">11. Contact Information</h2>
         <p className="text-muted-foreground">
-          If you have any questions about these Terms, please contact us at:
-        </p>
+          If you have any questions about these Terms, please contact us at: </p>
         <div className="mt-4 p-4 bg-card border rounded-lg">
           <p className="font-medium">Marcoby</p>
           <p className="text-muted-foreground">Email: legal@marcoby.com</p>

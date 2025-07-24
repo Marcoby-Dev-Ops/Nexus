@@ -25,8 +25,7 @@ export const BackendHealthTest: React.FC = () => {
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'unhealthy':
         return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <XCircle className="h-4 w-4 text-gray-500" />;
+      default: return <XCircle className="h-4 w-4 text-gray-500" />;
     }
   };
 
@@ -53,7 +52,7 @@ export const BackendHealthTest: React.FC = () => {
         )}
 
         <div className="space-y-2">
-          <h4 className="font-semibold">Service Status:</h4>
+          <h4 className="font-semibold">Service Status: </h4>
           {services.map((service) => (
             <div key={service.name} className="flex items-center justify-between p-2 border rounded">
               <div className="flex items-center gap-2">

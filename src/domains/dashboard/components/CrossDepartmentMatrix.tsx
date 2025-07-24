@@ -141,7 +141,7 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent':
-        return 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800';
+        return 'bg-emerald-50 border-emerald-200 dark: bg-emerald-950/20 dark:border-emerald-800';
       case 'good':
         return 'bg-primary/5 border-border dark:bg-blue-950/20 dark:border-primary/80';
       case 'warning':
@@ -154,7 +154,7 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'excellent':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300';
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark: bg-emerald-900/20 dark:text-emerald-300';
       case 'good':
         return 'bg-primary/10 text-primary border-border dark:bg-primary/20/20 dark:text-primary';
       case 'warning':
@@ -170,8 +170,7 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
         return <ArrowUp className="h-3 w-3 text-emerald-500" />;
       case 'down':
         return <ArrowDown className="h-3 w-3 text-destructive" />;
-      default:
-        return <Minus className="h-3 w-3 text-amber-500" />;
+      default: return <Minus className="h-3 w-3 text-amber-500" />;
     }
   };
 
@@ -190,7 +189,7 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
         {departmentMetrics.map((dept, index) => (
           <Card 
             key={index}
-            className="relative overflow-hidden transition-all hover:shadow-md"
+            className="relative overflow-hidden transition-all hover: shadow-md"
           >
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center justify-between text-sm font-semibold">
@@ -217,7 +216,7 @@ const CrossDepartmentMatrix: React.FC<CrossDepartmentMatrixProps> = ({
             <CardContent className="pt-0 space-y-4">
               {/* Primary Metric */}
               <div>
-                <div className="text-xs text-muted-foreground dark:text-muted-foreground mb-1">
+                <div className="text-xs text-muted-foreground dark: text-muted-foreground mb-1">
                   {dept.primaryMetric}
                 </div>
                 <div className="text-lg font-bold text-foreground dark:text-primary-foreground">

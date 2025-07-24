@@ -4,36 +4,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import {
-  Zap,
-  Download,
-  Star,
-  Clock,
-  TrendingUp,
-  Users,
-  BarChart3,
-  Settings,
-  Heart,
-  Sparkles,
-  Upload,
-  Code,
-  CheckCircle2,
-  ArrowRight,
-  Play,
-  Eye,
-  Tag,
-  DollarSign,
-  Shield,
-  Rocket,
-  Target,
-  Globe,
-  Cpu,
-  Database,
-  GitBranch,
-  Workflow,
-  ExternalLink
-} from 'lucide-react';
-
+import { Zap, Download, Star, Clock, TrendingUp, Users, BarChart3, Settings, Heart, Sparkles, Upload, Code, CheckCircle2, ArrowRight, Play, Eye, Tag, DollarSign, Shield, Rocket, Target, Globe, Cpu, GitBranch, Workflow, ExternalLink } from 'lucide-react';
 interface DemoTemplate {
   id: string;
   name: string;
@@ -51,7 +22,7 @@ interface DemoTemplate {
   conversionStatus: 'converted' | 'pending' | 'failed';
 }
 
-const DEMO_TEMPLATES: DemoTemplate[] = [
+const DEMOTEMPLATES: DemoTemplate[] = [
   {
     id: 'zapier-lead-capture',
     name: 'Zapier Lead Capture to HubSpot',
@@ -182,7 +153,7 @@ const CONVERSION_EXAMPLES = {
     {
       "app": "gmail",
       "module": "watch_emails",
-      "filter": "has:attachment invoice"
+      "filter": "has: attachment invoice"
     },
     {
       "app": "openai",
@@ -204,7 +175,7 @@ const CONVERSION_EXAMPLES = {
       "parameters": {
         "operation": "getAll",
         "format": "full",
-        "q": "has:attachment invoice"
+        "q": "has: attachment invoice"
       }
     },
     {
@@ -236,7 +207,7 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
 
   const getSourceColor = (source: string) => {
     switch (source) {
-      case 'nexus': return 'bg-primary/10 text-primary dark:bg-blue-900 dark:text-blue-200';
+      case 'nexus': return 'bg-primary/10 text-primary dark: bg-blue-900 dark:text-blue-200';
       case 'zapier': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
       case 'make': return 'bg-secondary/10 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'n8n': return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200';
@@ -246,7 +217,7 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-success/10 text-success dark:bg-green-900 dark:text-green-200';
+      case 'beginner': return 'bg-success/10 text-success dark: bg-green-900 dark:text-green-200';
       case 'intermediate': return 'bg-warning/10 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'advanced': return 'bg-destructive/10 text-destructive dark:bg-red-900 dark:text-red-200';
       default: return 'bg-muted text-foreground dark:bg-background dark:text-foreground';
@@ -315,11 +286,11 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
 
         {/* Marketplace Tab */}
         <TabsContent value="marketplace" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
             {DEMO_TEMPLATES.map((template) => {
               const CategoryIcon = getCategoryIcon(template.category);
               return (
-                <Card key={template.id} className="hover:shadow-lg transition-shadow">
+                <Card key={template.id} className="hover: shadow-lg transition-shadow">
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
@@ -458,7 +429,7 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
                         { name: 'n8n', icon: GitBranch, color: 'pink' },
                         { name: 'Custom', icon: Code, color: 'gray' }
                       ].map((platform) => (
-                        <Card key={platform.name} className="cursor-pointer hover:shadow-md transition-shadow">
+                        <Card key={platform.name} className="cursor-pointer hover: shadow-md transition-shadow">
                           <CardContent className="p-4 text-center">
                             <platform.icon className="w-8 h-8 mx-auto mb-2 text-primary" />
                             <div className="font-medium">{platform.name}</div>
@@ -566,11 +537,11 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
                     <div className="bg-muted/50 p-4 rounded-lg">
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                          <div className="font-medium">Estimated Savings:</div>
+                          <div className="font-medium">Estimated Savings: </div>
                           <div className="text-success">$2,400/year</div>
                         </div>
                         <div>
-                          <div className="font-medium">Time Saved:</div>
+                          <div className="font-medium">Time Saved: </div>
                           <div className="text-primary">5 hours/week</div>
                         </div>
                       </div>
@@ -611,7 +582,7 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
                   <div>
                     <h3 className="text-lg font-semibold mb-3">Original Template</h3>
                     <div className="bg-muted/50 p-4 rounded-lg">
@@ -644,7 +615,7 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
 
         {/* Benefits Tab */}
         <TabsContent value="benefits" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -659,11 +630,11 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
                     <span className="font-medium text-success">$7,188/year</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">vs. Make.com Pro:</span>
+                    <span className="text-sm">vs. Make.com Pro: </span>
                     <span className="font-medium text-success">$3,588/year</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-sm">vs. Multiple platforms:</span>
+                    <span className="text-sm">vs. Multiple platforms: </span>
                     <span className="font-medium text-success">$15,000+/year</span>
                   </div>
                 </div>
@@ -709,7 +680,7 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex justify-between">
-                    <span className="text-sm">Execution Speed:</span>
+                    <span className="text-sm">Execution Speed: </span>
                     <span className="font-medium text-secondary">3x faster</span>
                   </div>
                   <div className="flex justify-between">
@@ -779,7 +750,7 @@ export const AutomationTemplateMarketplaceDemo: React.FC = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
                     <div className="text-2xl font-bold">{selectedTemplate.rating}</div>
                     <div className="text-sm text-muted-foreground">Rating</div>

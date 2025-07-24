@@ -155,11 +155,11 @@ class BillingService {
       const { error: upsertError } = await supabase
         .from('user_licenses')
         .upsert({
-          user_id: userId,
-          org_id: null,
-          stripe_customer_id: customer.id,
+          userid: userId,
+          orgid: null,
+          stripecustomer_id: customer.id,
           tier: 'free',
-          updated_at: new Date().toISOString()
+          updatedat: new Date().toISOString()
         });
 
       if (upsertError) {
@@ -294,10 +294,10 @@ class BillingService {
         .from('user_licenses')
         .update({
           tier,
-          stripe_subscription_id: subscriptionId,
-          subscription_status: subscription.status,
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          updated_at: new Date().toISOString()
+          stripesubscription_id: subscriptionId,
+          subscriptionstatus: subscription.status,
+          currentperiod_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          updatedat: new Date().toISOString()
         })
         .eq('stripe_customer_id', subscription.customer);
 
@@ -345,7 +345,7 @@ class BillingService {
       logger.info({ subscriptionId }, 'Reactivating subscription');
       await this.callStripeEdgeFunction('update_subscription', {
         subscription: subscriptionId,
-        cancel_at_period_end: false
+        cancelat_period_end: false
       });
       logger.info({ subscriptionId }, 'Successfully reactivated subscription');
     } catch (error) {
@@ -419,7 +419,7 @@ class BillingService {
 
   private getNextMonth(yearMonth: string): string {
     const [year, month] = yearMonth.split('-').map(Number);
-    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextMonth = month === 12 ? 1: month + 1;
     const nextYear = month === 12 ? year + 1 : year;
     return `${nextYear}-${nextMonth.toString().padStart(2, '0')}-01`;
   }

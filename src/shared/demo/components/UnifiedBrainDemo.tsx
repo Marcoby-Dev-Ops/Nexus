@@ -33,25 +33,25 @@ export const UnifiedBrainDemo: React.FC = () => {
       title: 'First-Time Entrepreneur',
       description: 'No business experience, needs expert guidance',
       action: 'Looking at first sales opportunity',
-      context: { deal_value: 5000, customer_type: 'small_business', confidence: 0.3 }
+      context: { dealvalue: 5000, customertype: 'small_business', confidence: 0.3 }
     },
     {
       title: 'Struggling with Costs',
       description: 'Business owner trying to optimize expenses',
       action: 'Reviewing monthly expenses',
-      context: { monthly_costs: 12000, revenue: 15000, margin: 0.2 }
+      context: { monthlycosts: 12000, revenue: 15000, margin: 0.2 }
     },
     {
       title: 'Scaling Challenges',
       description: 'Growing business needs operational excellence',
       action: 'Planning team expansion',
-      context: { current_team: 5, planned_hires: 3, productivity_concerns: true }
+      context: { currentteam: 5, plannedhires: 3, productivityconcerns: true }
     },
     {
       title: 'Market Expansion',
       description: 'Ready to enter new markets',
       action: 'Researching new market segments',
-      context: { target_market: 'enterprise', competition_level: 'high', budget: 50000 }
+      context: { targetmarket: 'enterprise', competitionlevel: 'high', budget: 50000 }
     }
   ];
 
@@ -139,7 +139,7 @@ export const UnifiedBrainDemo: React.FC = () => {
                 </div>
                 <button
                   onClick={() => simulateUserAction(scenario.action, scenario.context)}
-                  className="w-full px-4 py-2 border border-border rounded-md hover:bg-background transition-colors"
+                  className="w-full px-4 py-2 border border-border rounded-md hover: bg-background transition-colors"
                 >
                   Simulate: {scenario.action}
                 </button>
@@ -191,7 +191,7 @@ export const UnifiedBrainDemo: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Expert Insights:</h4>
+                    <h4 className="font-medium text-sm">Expert Insights: </h4>
                     {analysis.expertInsights.slice(0, 2).map((insight, i) => (
                       <div key={i} className="bg-primary/5 p-2 rounded text-sm">
                         <strong>{insight.domain}:</strong> {insight.insight}
@@ -200,7 +200,7 @@ export const UnifiedBrainDemo: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Recommendations:</h4>
+                    <h4 className="font-medium text-sm">Recommendations: </h4>
                     {analysis.recommendations.slice(0, 2).map((rec, i) => (
                       <div key={i} className="bg-success/5 p-2 rounded text-sm">
                         <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export const UnifiedBrainDemo: React.FC = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Experience Level:</h4>
+                  <h4 className="font-medium text-sm">Experience Level: </h4>
                   <div className="bg-secondary/5 p-2 rounded text-sm">
                     {businessIntelligence.userProfile.experienceLevel}
                   </div>
@@ -268,7 +268,7 @@ export const UnifiedBrainDemo: React.FC = () => {
           What Makes This Brain Special
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
           <div className="bg-card rounded-lg p-4">
             <h4 className="font-semibold mb-2">🎯 Universal Action Analysis</h4>
             <p className="text-sm text-muted-foreground">

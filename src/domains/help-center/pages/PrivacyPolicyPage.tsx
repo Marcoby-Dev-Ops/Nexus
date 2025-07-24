@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Separator } from '@/shared/components/ui/Separator';
-import { Shield, Lock, Eye, Database, UserCheck, FileText, AlertTriangle, Globe, Users, Trash2, FileCheck2, Link2 } from 'lucide-react';
+import { Shield, Lock, Eye, UserCheck } from 'lucide-react';
 import { Seo } from '@/shared/components/Seo';
 
 export const PrivacyPolicyPage: React.FC = () => {
@@ -57,7 +57,7 @@ export const PrivacyPolicyPage: React.FC = () => {
       <Seo
         title="Privacy Policy – Nexus Platform | Marcoby"
         description="Learn how Marcoby and Nexus protect your privacy, what data we collect, and your rights as a user."
-        canonical="https://nexus.marcoby.com/help/privacy-policy"
+        canonical="https: //nexus.marcoby.com/help/privacy-policy"
         image="https://nexus.marcoby.com/og-image.png"
         structuredData={{
           '@context': 'https://schema.org',
@@ -67,7 +67,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           logo: 'https://nexus.marcoby.com/nexus-horizontal-160x48-transparent.png',
           sameAs: [
             'https://www.linkedin.com/company/marcoby',
-            'https://twitter.com/marcobyhq'
+            'https: //twitter.com/marcobyhq'
           ]
         }}
       />
@@ -101,11 +101,11 @@ export const PrivacyPolicyPage: React.FC = () => {
       <div>
         <h2 className="text-2xl font-semibold mb-4">1. Information We Collect</h2>
         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-          <li><b>Account & Profile Information:</b> Name, email, contact details, user roles, organization/workspace details</li>
-          <li><b>Usage Data:</b> Logins, activity logs, feature usage, workflow actions, integrations used, support requests</li>
-          <li><b>Device & Technical Data:</b> Browser, OS, device identifiers, IP address, time zone, cookies</li>
-          <li><b>Content & Files:</b> Documents, tasks, notes, messages you create or upload, workflow data processed through integrations</li>
-          <li><b>AI & Automation Data:</b> Prompts, agent conversations, actions taken by AI, data processed to provide automated recommendations</li>
+          <li><b>Account & Profile Information: </b> Name, email, contact details, user roles, organization/workspace details</li>
+          <li><b>Usage Data: </b> Logins, activity logs, feature usage, workflow actions, integrations used, support requests</li>
+          <li><b>Device & Technical Data: </b> Browser, OS, device identifiers, IP address, time zone, cookies</li>
+          <li><b>Content & Files: </b> Documents, tasks, notes, messages you create or upload, workflow data processed through integrations</li>
+          <li><b>AI & Automation Data: </b> Prompts, agent conversations, actions taken by AI, data processed to provide automated recommendations</li>
         </ul>
       </div>
 
@@ -130,13 +130,13 @@ export const PrivacyPolicyPage: React.FC = () => {
       <div>
         <h2 className="text-2xl font-semibold mb-4">3. Sharing & Disclosure</h2>
         <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-          <li><b>With service providers:</b> For hosting, analytics, email, and integrations (subject to strict confidentiality)</li>
-          <li><b>With authorized team members:</b> Per your organization’s permission settings</li>
+          <li><b>With service providers: </b> For hosting, analytics, email, and integrations (subject to strict confidentiality)</li>
+          <li><b>With authorized team members: </b> Per your organization’s permission settings</li>
           <li><b>Legal compliance:</b> If required by law or to protect the platform, users, or others</li>
-          <li><b>Business transfers:</b> If Marcoby is involved in a merger, acquisition, or asset sale</li>
+          <li><b>Business transfers: </b> If Marcoby is involved in a merger, acquisition, or asset sale</li>
         </ul>
         <div className="mt-2 text-sm text-muted-foreground">
-          <b>Subprocessors & Third-Party Integrations:</b> We use trusted third-party providers for hosting, analytics, and integrations. A list of subprocessors is available upon request.
+          <b>Subprocessors & Third-Party Integrations: </b> We use trusted third-party providers for hosting, analytics, and integrations. A list of subprocessors is available upon request.
         </div>
       </div>
 
@@ -151,7 +151,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           <li>Regular audits and monitoring</li>
         </ul>
         <div className="mt-2 text-sm text-muted-foreground">
-          <b>Self-Hosted Deployments:</b> For self-hosted deployments, security practices are the responsibility of your organization.
+          <b>Self-Hosted Deployments: </b> For self-hosted deployments, security practices are the responsibility of your organization.
         </div>
       </div>
 
@@ -240,8 +240,7 @@ export const PrivacyPolicyPage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <p className="text-muted-foreground">
-                For privacy-related questions or requests, contact:
-              </p>
+                For privacy-related questions or requests, contact: </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-semibold mb-2">Marcoby Privacy Team</h3>

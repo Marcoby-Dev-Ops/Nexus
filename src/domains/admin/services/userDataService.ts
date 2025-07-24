@@ -25,7 +25,7 @@ class UserDataService {
         profile: {
           id: user.id,
           email: user.email,
-          created_at: user.created_at,
+          createdat: user.created_at,
         },
         data: {
           recents,
@@ -33,7 +33,7 @@ class UserDataService {
           tasks,
           notifications,
         },
-        exported_at: new Date().toISOString(),
+        exportedat: new Date().toISOString(),
       };
 
       return JSON.stringify(userExport, null, 2);

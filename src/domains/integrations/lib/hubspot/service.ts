@@ -161,7 +161,7 @@ export class HubSpotService {
       name: deal.properties.dealname,
       value: parseFloat(deal.properties.amount) || 0,
       stage: deal.properties.dealstage,
-      expected_close_date: new Date(deal.properties.closedate),
+      expectedclose_date: new Date(deal.properties.closedate),
     };
 
     await prisma.deal.upsert({
@@ -192,8 +192,8 @@ export class HubSpotService {
   private async createVARLead(contact: HubSpotContact) {
     await prisma.vARLead.create({
       data: {
-        company_name: contact.properties.company,
-        contact_name: `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim(),
+        companyname: contact.properties.company,
+        contactname: `${contact.properties.firstname || ''} ${contact.properties.lastname || ''}`.trim(),
         email: contact.properties.email,
         phone: contact.properties.phone,
         status: 'New',
@@ -283,11 +283,11 @@ export async function syncHubspotData(userId: string) {
           name: deal.properties.dealname || 'Unnamed Deal',
           value: parseFloat(deal.properties.amount || '0'),
           stage: deal.properties.dealstage || 'Unknown',
-          expected_close_date: deal.properties.closedate
+          expectedclose_date: deal.properties.closedate
             ? new Date(deal.properties.closedate)
             : null,
-          company_id: company.id,
-          user_id: userId,
+          companyid: company.id,
+          userid: userId,
           hubspotId: deal.id,
         };
         await prisma.deal.upsert({

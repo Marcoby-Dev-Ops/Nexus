@@ -10,7 +10,7 @@ export interface NotificationsWidgetProps {
  */
 const NotificationsWidget: React.FC<NotificationsWidgetProps> = ({ className = '' }) => (
   <section
-    className={`rounded-lg bg-white dark:bg-gray-900 shadow p-4 ${className}`}
+    className={`rounded-lg bg-white dark: bg-gray-900 shadow p-4 ${className}`}
     aria-label="Notifications"
   >
     <h3 className="text-lg font-semibold mb-2">Notifications</h3>

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from "@/core/supabase";
 import StreamingComposer from '@/shared/components/chat/StreamingComposer';
 import { Button } from '@/shared/components/ui/Button';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
-interface ConversationRow { id: string; title: string | null; updated_at: string }
+interface ConversationRow { id: string; title: string | null; updatedat: string }
 
 const ChatV2Page: React.FC = () => {
   const enabled = import.meta.env.VITE_CHAT_V2 === '1';
@@ -16,7 +16,7 @@ const ChatV2Page: React.FC = () => {
     if (!enabled) return;
     (async () => {
       const { data, error } = await (supabase as any)
-        .rpc('conversations_with_messages', { limit_param: 20 });
+        .rpc('conversations_with_messages', { limitparam: 20 });
       if (!error && data) setConversations(data);
     })();
   }, [enabled]);
@@ -28,7 +28,7 @@ const ChatV2Page: React.FC = () => {
   const handleConversationCreated = (id: string) => {
     setActiveId(id);
     // refresh list
-    setConversations(prev => [{ id, title: 'Untitled', updated_at: new Date().toISOString() }, ...prev]);
+    setConversations(prev => [{ id, title: 'Untitled', updatedat: new Date().toISOString() }, ...prev]);
   };
 
   if (!enabled) {
@@ -44,7 +44,7 @@ const ChatV2Page: React.FC = () => {
   return (
     <div className="h-screen flex bg-background">
       {/* Sidebar */}
-      <aside className="hidden md:flex md:flex-col w-72 border-r border-border overflow-y-auto">
+      <aside className="hidden md: flex md:flex-col w-72 border-r border-border overflow-y-auto">
         <div className="p-4 flex justify-between items-center">
           <h2 className="text-sm font-semibold">Conversations</h2>
           <Button size="sm" onClick={handleNewChat}>New</Button>
@@ -54,7 +54,7 @@ const ChatV2Page: React.FC = () => {
             <button
               key={c.id}
               onClick={() => setActiveId(c.id)}
-              className={`w-full text-left px-4 py-3 text-sm hover:bg-accent/40 ${activeId === c.id ? 'bg-accent/60' : ''}`}
+              className={`w-full text-left px-4 py-3 text-sm hover: bg-accent/40 ${activeId === c.id ? 'bg-accent/60' : ''}`}
             >
               {c.title || 'Untitled'}
             </button>

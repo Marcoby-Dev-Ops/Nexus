@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Star, ThumbsDown } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 
 interface FeedbackButtonProps {
@@ -44,7 +44,7 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
   if (showFeedback) {
     return (
       <div className={`flex items-center gap-2 p-2 bg-background rounded-lg ${className}`}>
-        <span className="text-sm text-muted-foreground">Rate this response:</span>
+        <span className="text-sm text-muted-foreground">Rate this response: </span>
         <div className="flex gap-1">
           <Button
             size="sm"
@@ -85,7 +85,7 @@ export const FeedbackButton: React.FC<FeedbackButtonProps> = ({
       size="sm"
       variant="ghost"
       onClick={() => setShowFeedback(true)}
-      className={`text-xs text-muted-foreground hover:text-primary ${className}`}
+      className={`text-xs text-muted-foreground hover: text-primary ${className}`}
     >
       Rate response
     </Button>

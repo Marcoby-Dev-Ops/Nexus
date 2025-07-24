@@ -42,7 +42,7 @@ export const Tabs: React.FC<TabsProps> = ({
   className,
 }) => {
   const [internalValue, setInternalValue] = useState(defaultValue || '');
-  const value = controlledValue !== undefined ? controlledValue : internalValue;
+  const value = controlledValue !== undefined ? controlledValue: internalValue;
   
   const handleValueChange = (newValue: string) => {
     if (controlledValue === undefined) {
@@ -99,10 +99,10 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({
     <button
       type="button"
       className={cn(
-        "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex items-center justify-center whitespace-nowrap rounded-sm px-4 py-2 text-sm font-medium ring-offset-background transition-all focus-visible: outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
         isActive
           ? "bg-background text-foreground shadow-sm"
-          : "hover:bg-muted hover:text-foreground",
+          : "hover: bg-muted hover:text-foreground",
         className
       )}
       onClick={() => context.onValueChange(value)}
@@ -135,7 +135,7 @@ export const TabsContent: React.FC<TabsContentProps> = ({
   return (
     <div
       className={cn(
-        "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "mt-2 ring-offset-background focus-visible: outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className
       )}
       {...props}

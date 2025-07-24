@@ -1,31 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { 
-  Brain, 
-  Eye, 
-  Zap, 
-  TrendingUp, 
-  AlertCircle, 
-  Users, 
-  Target,
-  Activity,
-  BarChart3,
-  ArrowUpRight,
-  Sparkles,
-  Clock,
-  CheckCircle2,
-  Lightbulb,
-  Database,
-  Settings,
-  GripVertical,
-  Eye as EyeIcon,
-  EyeOff,
-  PlusCircle,
-  RefreshCw,
-  Building2,
-  DollarSign,
-  Globe,
-  Shield
-} from 'lucide-react';
+import { Brain, Eye, Zap, TrendingUp, AlertCircle, Users, Target, Activity, BarChart3, Database, Settings, Eye as EyeIcon, RefreshCw, Building2, DollarSign, Globe, Shield } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
@@ -34,7 +8,7 @@ import { SimpleBarChart } from './SimpleBarChart';
 import { dashboardService, type DashboardMetrics, type DashboardActivity } from '../../lib/services/dashboardService';
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from '@/shared/components/ui/ErrorBoundary';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { DashboardOnboarding } from '@/domains/dashboard/features/components/DashboardOnboarding';
 import { analyticsService } from '@/domains/analytics';
 import { ErrorBoundary as CommonErrorBoundary } from '@/shared/components/common/ErrorBoundary';
@@ -61,7 +35,7 @@ interface WidgetConfig {
   visible: boolean;
 }
 
-const DEFAULT_WIDGETS: WidgetConfig[] = [
+const DEFAULTWIDGETS: WidgetConfig[] = [
   { key: 'think', label: 'INNOVATION', visible: true },
   { key: 'see', label: 'INTELLIGENCE', visible: true },
   { key: 'act', label: 'EXECUTION', visible: true },
@@ -86,7 +60,7 @@ const DashboardSuspenseFallback = () => (
 );
 
 const EnhancedDashboard: React.FC = () => {
-  const { user, completeOnboarding } = useAuthContext();
+  const { user } = useAuth();
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics>({
     think: {
       ideasCaptured: 0,
@@ -194,7 +168,10 @@ const EnhancedDashboard: React.FC = () => {
           analyticsService.track('dashboard_auto_refresh');
         }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching dashboard data: ', error);
         setError(error as Error);
         setDashboardMetrics({
           think: {
@@ -242,7 +219,10 @@ const EnhancedDashboard: React.FC = () => {
       setLastUpdated(new Date());
       analyticsService.track('dashboard_refresh_manual');
     } catch (error) {
-      console.error("Failed to refresh dashboard data", error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error("Failed to refresh dashboard data", error);
     } finally {
       setRefreshing(false);
     }
@@ -256,8 +236,7 @@ const EnhancedDashboard: React.FC = () => {
         return "bg-warning-subtle text-warning";
       case "error":
         return "bg-destructive-subtle text-destructive";
-      default:
-        return "bg-muted text-muted-foreground";
+      default: return "bg-muted text-muted-foreground";
     }
   }
 
@@ -284,8 +263,7 @@ const EnhancedDashboard: React.FC = () => {
         return ['admin', 'owner'].includes(role) || department.toLowerCase() === 'finance';
       case 'act':
         return ['admin', 'manager'].includes(role) || department.toLowerCase() === 'operations';
-      default:
-        return true;
+      default: return true;
     }
   };
 
@@ -355,7 +333,7 @@ const EnhancedDashboard: React.FC = () => {
           </div>
           
           {/* Executive KPIs */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md: grid-cols-4 gap-6 max-w-4xl mx-auto">
             <Card>
               <CardContent className="p-6 text-center">
                 <DollarSign className="w-8 h-8 mx-auto mb-3 text-success" />
@@ -418,7 +396,7 @@ const EnhancedDashboard: React.FC = () => {
 
             <div className="grid grid-cols-12 gap-8">
               {/* Primary Content - Strategic Metrics */}
-              <div className="col-span-12 lg:col-span-8 space-y-8">
+              <div className="col-span-12 lg: col-span-8 space-y-8">
                 {/* Trinity Business Intelligence Widgets */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {allowedWidgetConfigs.map(widget => (
@@ -490,7 +468,7 @@ const EnhancedDashboard: React.FC = () => {
               </div>
 
               {/* Executive Controls Sidebar */}
-              <div className="col-span-12 lg:col-span-4 space-y-6">
+              <div className="col-span-12 lg: col-span-4 space-y-6">
                 {/* AI Performance Widget */}
                 <AIPerformanceWidget />
                 

@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../core/supabase';
 
 export interface PayPalTransaction {
-  txn_id: string;
+  txnid: string;
   amount: number;
   currency: string;
-  captured_at: string;
+  capturedat: string;
 }
 
 interface UsePayPalTransactionsState {
@@ -19,7 +19,7 @@ interface UsePayPalTransactionsState {
  * ---------------------
  * Fetches the latest successful PayPal transactions from the `ai_kpi_snapshots` table.
  * Assumes rows were inserted by the `paypal_sync` Edge Function with the following shape:
- *   { department_id: 'finance', kpi_id: 'paypal_revenue', value: { amount, currency, txn_id }, captured_at }
+ *   { departmentid: 'finance', kpiid: 'paypal_revenue', value: { amount, currency, txn_id }, captured_at }
  *
  * @param limit Number of transactions to fetch (default 10)
  */
@@ -42,10 +42,10 @@ export function usePayPalTransactions(limit = 10): UsePayPalTransactionsState {
         if (error) throw error;
 
         const transactions: PayPalTransaction[] = (data ?? []).map((row: any) => ({
-          txn_id: row.value?.txn_id,
+          txnid: row.value?.txn_id,
           amount: row.value?.amount,
           currency: row.value?.currency,
-          captured_at: row.captured_at,
+          capturedat: row.captured_at,
         }));
 
         if (!cancelled) setState({ loading: false, transactions });

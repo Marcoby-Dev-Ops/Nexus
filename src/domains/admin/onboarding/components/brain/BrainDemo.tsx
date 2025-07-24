@@ -54,7 +54,7 @@ interface AnalysisMetric {
 }
 
 export const BrainDemo: React.FC<BrainDemoProps> = ({ 
-  userProfile: _userProfile, 
+  userProfile: userProfile, 
   systemIntelligence,
   onInsightGenerated 
 }) => {
@@ -332,7 +332,7 @@ export const BrainDemo: React.FC<BrainDemoProps> = ({
             <span>Projected Impact</span>
           </h4>
           
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md: grid-cols-3 gap-4">
             {metrics.map((metric) => (
               <Card key={metric.name}>
                 <CardContent className="p-4">

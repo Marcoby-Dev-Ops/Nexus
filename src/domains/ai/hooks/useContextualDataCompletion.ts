@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { contextualDataCompletionService } from '@/domains/ai/lib/contextualDataCompletionService';
 import type { 
   ContextCompletionSuggestion, 
@@ -26,8 +26,8 @@ export interface ContextualDataCompletionState {
 export const useContextualDataCompletion = (
   options: UseContextualDataCompletionOptions = {}
 ) => {
-  const { user } = useAuthContext();
-  const { autoAnalyze = false, proactiveSuggestions = true, trackInteractions = true } = options;
+  const { user } = useAuth();
+  
   
   const [state, setState] = useState<ContextualDataCompletionState>({
     suggestions: [],
@@ -55,7 +55,7 @@ export const useContextualDataCompletion = (
     const completedGaps = state.suggestions.reduce((sum, s) => 
       sum + s.gaps.filter(g => completedGapIds.has(g.id)).length, 0
     );
-    const completionPercentage = totalGaps > 0 ? (completedGaps / totalGaps) * 100 : 0;
+    const completionPercentage = totalGaps > 0 ? (completedGaps / totalGaps) * 100: 0;
 
     setState(prev => ({
       ...prev,
@@ -81,7 +81,10 @@ export const useContextualDataCompletion = (
         loading: false 
       }));
     } catch (error) {
-      console.error('Error loading proactive suggestions:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading proactive suggestions: ', error);
       setState(prev => ({ 
         ...prev, 
         error: 'Failed to load context suggestions', 
@@ -130,7 +133,10 @@ export const useContextualDataCompletion = (
       
       return analysis;
     } catch (error) {
-      console.error('Error analyzing conversation:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error analyzing conversation: ', error);
       setState(prev => ({ 
         ...prev, 
         error: 'Failed to analyze conversation context', 
@@ -164,7 +170,10 @@ export const useContextualDataCompletion = (
       
       return suggestions;
     } catch (error) {
-      console.error('Error generating contextual suggestions:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error generating contextual suggestions: ', error);
       setState(prev => ({ 
         ...prev, 
         error: 'Failed to generate suggestions', 
@@ -203,7 +212,10 @@ export const useContextualDataCompletion = (
       
       return success;
     } catch (error) {
-      console.error('Error completing gap:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing gap: ', error);
       return false;
     }
   }, [user?.id, trackInteractions]);
@@ -260,7 +272,10 @@ export const useContextualDataCompletion = (
       
       return false;
     } catch (error) {
-      console.error('Error completing suggestion:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing suggestion: ', error);
       return false;
     }
   }, [user?.id, trackInteractions]);
@@ -287,7 +302,10 @@ export const useContextualDataCompletion = (
           'rejected'
         );
       } catch (error) {
-        console.error('Error tracking suggestion dismissal:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error tracking suggestion dismissal: ', error);
       }
     }
   }, [user?.id, trackInteractions]);
@@ -314,7 +332,10 @@ export const useContextualDataCompletion = (
           'deferred'
         );
       } catch (error) {
-        console.error('Error tracking suggestion deferral:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error tracking suggestion deferral: ', error);
       }
     }
   }, [user?.id, trackInteractions]);
@@ -367,7 +388,7 @@ export const useContextualDataCompletion = (
     return {
       completed,
       total,
-      percentage: total > 0 ? (completed / total) * 100 : 0,
+      percentage: total > 0 ? (completed / total) * 100: 0,
       isFullyCompleted,
       isPartiallyCompleted,
       isNotStarted: completed === 0

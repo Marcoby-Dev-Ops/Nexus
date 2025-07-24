@@ -286,7 +286,7 @@ export class EnhancedContextualRAG extends ContextualRAG {
 
     return `${baseContext}
 
-🔗 **CROSS-DEPARTMENTAL INTELLIGENCE:**
+🔗 **CROSS-DEPARTMENTAL INTELLIGENCE: **
 
 **Key Organizational Insights:**
 ${insights || 'No specific cross-departmental insights identified.'}
@@ -299,7 +299,7 @@ ${organizationalIntel.departmentSynergies.map(synergy =>
   `• ${synergy.departments.join(' + ')}: ${synergy.synergy}`
 ).join('\n')}
 
-**Action Items with Organizational Impact:**
+**Action Items with Organizational Impact: **
 ${contextualFeedback.contextualInsights.flatMap((insight: CrossDepartmentalInsight) => 
   insight.actionItems.map(action => 
     `• **${action.department}**: ${action.action} (${action.priority} priority)`
@@ -307,7 +307,7 @@ ${contextualFeedback.contextualInsights.flatMap((insight: CrossDepartmentalInsig
 ).join('\n')}
 
 This analysis considers data from all ${contextualFeedback.contextualInsights.length > 0 ? 
-  contextualFeedback.contextualInsights[0].impactedDepartments.length : 3} impacted departments to provide organizationally-aware recommendations.`;
+  contextualFeedback.contextualInsights[0].impactedDepartments.length: 3} impacted departments to provide organizationally-aware recommendations.`;
   }
 
   /**
@@ -320,23 +320,23 @@ This analysis considers data from all ${contextualFeedback.contextualInsights.le
   ): Promise<string> {
     return `${baseContext}
 
-🏢 **ORGANIZATIONAL INTELLIGENCE SUMMARY:**
+🏢 **ORGANIZATIONAL INTELLIGENCE SUMMARY: **
 
 **Cross-Departmental Insights (${organizationalImpact.insights.length} identified):**
 ${organizationalImpact.insights.slice(0, 3).map((insight: CrossDepartmentalInsight) => 
   `• ${insight.insight} (${insight.severity} severity)`
 ).join('\n')}
 
-**Strategic Priorities:**
+**Strategic Priorities: **
 ${organizationalImpact.recommendations.slice(0, 3).join('\n')}
 
-**Risk Mitigation:**
+**Risk Mitigation: **
 ${organizationalImpact.warnings.slice(0, 2).join('\n')}
 
-**Growth Opportunities:**
+**Growth Opportunities: **
 ${organizationalImpact.opportunities.slice(0, 2).join('\n')}
 
-**Resource Optimization:**
+**Resource Optimization: **
 ${organizationalIntel.resourceConflicts.map(conflict => 
   `• ${conflict.resource}: ${conflict.resolution}`
 ).join('\n')}
@@ -405,13 +405,13 @@ This executive briefing synthesizes intelligence from all organizational departm
   ): string {
     return `${basePrompt}
 
-🌐 **ORGANIZATIONAL CONTEXT:**
+🌐 **ORGANIZATIONAL CONTEXT: **
 ${crossDeptContext}
 
 🎯 **ORGANIZATIONAL PRIORITIES:**
 ${orgPriorities.map(priority => `• ${priority}`).join('\n')}
 
-**ENHANCED RESPONSE GUIDELINES:**
+**ENHANCED RESPONSE GUIDELINES: **
 - Consider impact on other departments in your recommendations
 - Align suggestions with organizational priorities
 - Highlight any cross-departmental coordination needed

@@ -70,7 +70,7 @@ export const getSessionDebugInfo = async (): Promise<SessionDebugInfo> => {
             // expiresAt is in seconds, convert to milliseconds for comparison
             debugInfo.sessionExpiry = debugInfo.storedSession.expiresAt * 1000;
             debugInfo.isExpired = debugInfo.sessionExpiry < Date.now();
-            debugInfo.timeUntilExpiry = debugInfo.isExpired ? 0 : debugInfo.sessionExpiry - Date.now();
+            debugInfo.timeUntilExpiry = debugInfo.isExpired ? 0: debugInfo.sessionExpiry - Date.now();
           }
         }
       } catch (error) {
@@ -78,23 +78,14 @@ export const getSessionDebugInfo = async (): Promise<SessionDebugInfo> => {
       }
     }
 
-    // Get current Supabase session using cached getter if available
+    // Get current Supabase session
     try {
-      let session;
-      try {
-        // Try to use cached session getter from auth store
-        const { getSessionWithCache } = await import('@/shared/stores/authStore');
-        session = await getSessionWithCache();
-      } catch {
-        // Fallback to direct call if cached getter not available
-        const { data: { session: directSession }, error } = await supabase.auth.getSession();
-        if (error) {
-          debugInfo.errors.push(`Supabase session error: ${error.message}`);
-        } else {
-          session = directSession;
-        }
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        debugInfo.errors.push(`Supabase session error: ${error.message}`);
+      } else {
+        debugInfo.supabaseSession = session;
       }
-      debugInfo.supabaseSession = session;
     } catch (error) {
       debugInfo.errors.push(`Failed to get Supabase session: ${error}`);
     }
@@ -124,7 +115,10 @@ export const clearAllSessionStorage = (): void => {
         localStorage.removeItem(key);
         sessionStorage.removeItem(key);
       } catch (error) {
-        console.warn(`Failed to remove ${key}:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Failed to remove ${key}:`, error);
       }
     });
 
@@ -134,14 +128,23 @@ export const clearAllSessionStorage = (): void => {
         try {
           localStorage.removeItem(key);
         } catch (error) {
-          console.warn(`Failed to remove ${key}:`, error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Failed to remove ${key}:`, error);
         }
       }
     });
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Cleared all session storage');
   } catch (error) {
-    console.error('Error clearing session storage:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error clearing session storage: ', error);
   }
 };
 
@@ -150,6 +153,9 @@ export const clearAllSessionStorage = (): void => {
  */
 export const forceRefreshSession = async (): Promise<boolean> => {
   try {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Force refreshing session...');
     
     // Clear stored session
@@ -159,12 +165,18 @@ export const forceRefreshSession = async (): Promise<boolean> => {
     const { data: { session }, error } = await supabase.auth.refreshSession();
     
     if (error) {
-      console.error('Session refresh failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Session refresh failed: ', error);
       return false;
     }
     
     if (session) {
-      console.log('Session refreshed successfully');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Session refreshed successfully');
       
       // Store the refreshed session
       try {
@@ -178,16 +190,25 @@ export const forceRefreshSession = async (): Promise<boolean> => {
         };
         localStorage.setItem('nexus_auth_session', JSON.stringify(sessionData));
       } catch (error) {
-        console.error('Failed to store refreshed session:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to store refreshed session: ', error);
       }
       
       return true;
     } else {
-      console.log('No session after refresh');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('No session after refresh');
       return false;
     }
   } catch (error) {
-    console.error('Error force refreshing session:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error force refreshing session: ', error);
     return false;
   }
 };
@@ -210,7 +231,10 @@ export const isSessionValid = async (): Promise<boolean> => {
     
     return true;
   } catch (error) {
-    console.error('Error checking session validity:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error checking session validity: ', error);
     return false;
   }
 };
@@ -222,32 +246,53 @@ export const logSessionDebugInfo = async (): Promise<void> => {
   const debugInfo = await getSessionDebugInfo();
   
   console.group('🔍 Session Debug Information');
-  console.log('Storage Available:', {
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Storage Available: ', {
     localStorage: debugInfo.hasLocalStorage,
     sessionStorage: debugInfo.hasSessionStorage
   });
   
-  console.log('Stored Session:', debugInfo.storedSession);
-  console.log('Supabase Session:', debugInfo.supabaseSession);
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Stored Session: ', debugInfo.storedSession);
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Supabase Session: ', debugInfo.supabaseSession);
   
   if (debugInfo.sessionExpiry) {
-    console.log('Session Expiry:', {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Session Expiry: ', {
       expiry: new Date(debugInfo.sessionExpiry),
       isExpired: debugInfo.isExpired,
       timeUntilExpiry: debugInfo.timeUntilExpiry ? `${Math.round(debugInfo.timeUntilExpiry / 1000)}s` : 'N/A'
     });
   }
   
-  console.log('localStorage Keys:', debugInfo.localStorageKeys.filter(key => 
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('localStorage Keys: ', debugInfo.localStorageKeys.filter(key => 
     key.includes('supabase') || key.includes('nexus') || key.includes('auth')
   ));
   
-  console.log('sessionStorage Keys:', debugInfo.sessionStorageKeys.filter(key => 
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('sessionStorage Keys: ', debugInfo.sessionStorageKeys.filter(key => 
     key.includes('supabase') || key.includes('nexus') || key.includes('auth')
   ));
   
   if (debugInfo.errors.length > 0) {
-    console.error('Errors:', debugInfo.errors);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Errors: ', debugInfo.errors);
   }
   
   console.groupEnd();
@@ -264,10 +309,25 @@ export const initializeSessionDebug = (): void => {
     (window as any).forceRefreshSession = forceRefreshSession;
     (window as any).isSessionValid = isSessionValid;
     
-    console.log('🔍 Session debug utilities available:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 Session debug utilities available: ');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('- debugSession() - Log detailed session info');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('- clearSessionStorage() - Clear all session storage');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('- forceRefreshSession() - Force refresh session');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('- isSessionValid() - Check if session is valid');
   }
 }; 
@@ -276,7 +336,10 @@ export const initializeSessionDebug = (): void => {
  * Comprehensive session debugging utility
  */
 export const debugSessionExpiry = async () => {
-  console.log('🔍 Starting comprehensive session debugging...');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 Starting comprehensive session debugging...');
   
   const debugInfo: any = {
     timestamp: new Date().toISOString(),
@@ -327,7 +390,10 @@ export const debugSessionExpiry = async () => {
       }
       debugInfo.localStorage.otherKeys = keys;
     } catch (error) {
-      console.error('❌ localStorage access failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ localStorage access failed: ', error);
     }
 
     // Check current Supabase session
@@ -343,23 +409,11 @@ export const debugSessionExpiry = async () => {
       } : null;
       debugInfo.supabaseState.error = error?.message;
     } catch (error) {
-      debugInfo.supabaseState.error = error instanceof Error ? error.message : 'Unknown error';
+      debugInfo.supabaseState.error = error instanceof Error ? error.message: 'Unknown error';
     }
 
-    // Check auth store state
-    try {
-      const { useAuthStore } = await import('@/shared/stores/authStore');
-      const store = useAuthStore.getState();
-      debugInfo.authStore = {
-        isAuthenticated: store.isAuthenticated,
-        isSessionValid: store.isSessionValid,
-        isSessionExpiring: store.isSessionExpiring,
-        sessionExpiry: store.sessionExpiry,
-        refreshAttempts: store.refreshAttempts
-      };
-    } catch (error) {
-      console.error('❌ Auth store access failed:', error);
-    }
+    // Auth store state is now handled by AuthProvider
+    // No need to check auth store state as it's managed by React Context
 
     // Calculate session expiry info
     if (debugInfo.supabaseState.sessionData) {
@@ -367,8 +421,7 @@ export const debugSessionExpiry = async () => {
       if (session.expiresAt) {
         const now = Date.now();
         const expiresAt = typeof session.expiresAt === 'number' 
-          ? session.expiresAt * 1000 
-          : new Date(session.expiresAt).getTime();
+          ? session.expiresAt * 1000: new Date(session.expiresAt).getTime();
         
         debugInfo.sessionState.hasSession = true;
         debugInfo.sessionState.expiresAt = expiresAt;
@@ -378,11 +431,17 @@ export const debugSessionExpiry = async () => {
       }
     }
 
-    console.log('🔍 Session Debug Results:', debugInfo);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 Session Debug Results: ', debugInfo);
     return debugInfo;
 
   } catch (error) {
-    console.error('❌ Session debugging failed:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Session debugging failed: ', error);
     return { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 };
@@ -391,7 +450,10 @@ export const debugSessionExpiry = async () => {
  * Force session refresh and debug
  */
 export const forceSessionRefresh = async () => {
-  console.log('🔄 Force refreshing session...');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 Force refreshing session...');
   
   try {
     // Clear any cached sessions
@@ -402,19 +464,31 @@ export const forceSessionRefresh = async () => {
     const { data, error } = await supabase.auth.refreshSession();
     
     if (error) {
-      console.error('❌ Force refresh failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Force refresh failed: ', error);
       return { success: false, error: error.message };
     }
     
     if (data.session) {
-      console.log('✅ Force refresh successful');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Force refresh successful');
       return { success: true, session: data.session };
     } else {
-      console.error('❌ No session returned from force refresh');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ No session returned from force refresh');
       return { success: false, error: 'No session returned' };
     }
   } catch (error) {
-    console.error('❌ Force refresh error:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Force refresh error: ', error);
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }; 

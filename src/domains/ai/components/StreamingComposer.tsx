@@ -16,7 +16,7 @@ const isChatEnabled = true;
 
 // Backend Edge Function URL (configure in .env)
 // When VITE_EA_CHAT_URL is not explicitly provided, fall back to the Supabase project URL so that
-// the path resolves correctly both in local (supabase start → http://localhost:54321) and production.
+// the path resolves correctly both in local (supabase start → http: //localhost:54321) and production.
 const AI_CHAT_FUNC_URL = `${env.supabase.url}/functions/v1/ai_chat`;
 
 interface StreamingComposerProps {
@@ -126,7 +126,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         const commands = await getSlashCommands();
         setAvailableCommands(commands);
       } catch (error) {
-        console.error('[StreamingComposer] Failed to load slash commands:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('[StreamingComposer] Failed to load slash commands: ', error);
         // Fallback to empty array - the service handles fallbacks internally
         setAvailableCommands([]);
       } finally {
@@ -194,7 +197,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       let done = false;
 
       while (!done) {
-        const { value, done: doneReading } = await reader.read();
+        const { value } = await reader.read();
         done = doneReading;
         const chunk = decoder.decode(value);
         
@@ -222,7 +225,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         }
       }
     } catch (err: any) {
-      console.error('Streaming error', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Streaming error', err);
       const errorMessage = `Error: ${err.message}`;
       setMessages(prev => {
         const updated = [...prev];
@@ -276,7 +282,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         //   }
         // );
       } catch (error) {
-        console.error('Error recording billing:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error recording billing: ', error);
       }
     }, 1000);
   };
@@ -302,9 +311,15 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       // });
 
       // Update message with feedback (extend ChatMessage type if needed)
-      console.log(`Feedback recorded: ${rating} stars for message ${messageIndex}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Feedback recorded: ${rating} stars for message ${messageIndex}`);
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error submitting feedback: ', error);
     }
   };
 
@@ -331,7 +346,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         variant: "default",
       });
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error submitting feedback: ', error);
       toast({
         title: "Error",
         description: "Failed to submit feedback. Please try again.",
@@ -364,7 +382,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
           <span className="text-sm font-medium text-foreground/90">How was this response?</span>
           <button
             onClick={() => setShowFeedback(prev => ({ ...prev, [messageId]: false }))}
-            className="text-muted-foreground hover:text-muted-foreground"
+            className="text-muted-foreground hover: text-muted-foreground"
           >
             ×
           </button>
@@ -378,7 +396,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-sm font-medium transition-colors ${
                 selectedRating === rating
                   ? 'bg-primary border-primary text-primary-foreground'
-                  : 'border-border text-muted-foreground hover:border-border'
+                  : 'border-border text-muted-foreground hover: border-border'
               }`}
             >
               {rating}
@@ -461,7 +479,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
                           ...prev, 
                           [(message as any).id || index.toString()]: true 
                         }))}
-                        className="text-sm text-primary hover:text-primary underline"
+                        className="text-sm text-primary hover: text-primary underline"
                       >
                         Rate this response
                       </button>

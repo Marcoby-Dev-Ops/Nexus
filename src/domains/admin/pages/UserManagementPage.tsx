@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { API_CONFIG } from '@/core/constants';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/Table';
@@ -12,14 +12,14 @@ interface User {
   id: string;
   email: string;
   role: string;
-  created_at: string;
+  createdat: string;
 }
 
 export const UserManagementPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { session } = useAuthContext();
+  const { session } = useAuth();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newRole, setNewRole] = useState('');
@@ -91,7 +91,7 @@ export const UserManagementPage: React.FC = () => {
       }
 
       const { user: updatedUser } = await res.json();
-      setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
+      setUsers(users.map(u => u.id === updatedUser.id ? updatedUser: u));
       setIsModalOpen(false);
     } catch (e: any) {
       setUpdateError(e.message);
@@ -152,7 +152,7 @@ export const UserManagementPage: React.FC = () => {
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} title="Edit User">
         {selectedUser && (
           <div className="space-y-4">
-            <p><strong>Email:</strong> {selectedUser.email}</p>
+            <p><strong>Email: </strong> {selectedUser.email}</p>
             <p><strong>Signed Up:</strong> {new Date(selectedUser.created_at).toLocaleDateString()}</p>
             <div className="space-y-2">
               <label className="block text-sm font-medium">Role</label>

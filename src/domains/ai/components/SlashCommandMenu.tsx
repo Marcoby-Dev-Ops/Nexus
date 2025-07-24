@@ -36,7 +36,7 @@ export const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
               key={cmd.slug}
               role="option"
               aria-selected={idx === selectedIndex}
-              className={`px-4 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover:bg-accent transition-colors ${
+              className={`px-4 py-2.5 text-sm cursor-pointer flex flex-col gap-1 hover: bg-accent transition-colors ${
                 idx === selectedIndex 
                   ? 'bg-primary text-primary-foreground' 
                   : 'bg-popover text-popover-foreground'

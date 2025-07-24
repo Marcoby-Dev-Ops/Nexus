@@ -189,7 +189,10 @@ export default function AIPerformancePage() {
       setMetrics(mockMetrics);
       setAgentPerformance(mockAgentPerformance);
     } catch (error) {
-      console.error('Error loading performance data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading performance data: ', error);
     } finally {
       setLoading(false);
     }
@@ -227,7 +230,7 @@ export default function AIPerformancePage() {
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
@@ -276,7 +279,7 @@ export default function AIPerformancePage() {
 
       {/* Time Range Selector */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">Time Range:</span>
+        <span className="text-sm font-medium">Time Range: </span>
         <div className="flex border rounded-md">
           {(['day', 'week', 'month'] as const).map((range) => (
             <Button
@@ -284,7 +287,7 @@ export default function AIPerformancePage() {
               variant={timeRange === range ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setTimeRange(range)}
-              className="rounded-none first:rounded-l-md last:rounded-r-md"
+              className="rounded-none first: rounded-l-md last:rounded-r-md"
             >
               {range.charAt(0).toUpperCase() + range.slice(1)}
             </Button>
@@ -293,7 +296,7 @@ export default function AIPerformancePage() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
@@ -361,7 +364,7 @@ export default function AIPerformancePage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             {/* Response Time Distribution */}
             <Card>
               <CardHeader>
@@ -435,7 +438,7 @@ export default function AIPerformancePage() {
         <TabsContent value="agents" className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4">Agent Performance</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg: grid-cols-2 gap-4">
               {agentPerformance.map((agent) => (
                 <Card key={agent.id}>
                   <CardHeader>
@@ -513,7 +516,7 @@ export default function AIPerformancePage() {
         <TabsContent value="costs" className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4">Cost Analysis</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">

@@ -62,8 +62,7 @@ const AnswerInput: React.FC<AnswerInputProps> = ({ question, onAnswer, isAnswere
           </Select>
         );
         break;
-      default:
-        return <p className="text-destructive">Unknown question type</p>;
+      default: return <p className="text-destructive">Unknown question type</p>;
     }
 
     return (

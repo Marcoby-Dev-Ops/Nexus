@@ -5,35 +5,7 @@
  */
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { 
-  Brain, 
-  Zap, 
-  Eye, 
-  Mic, 
-  FileText, 
-  BarChart3, 
-  Settings, 
-  Workflow,
-  Bot,
-  Lightbulb,
-  TrendingUp,
-  Code,
-  Play,
-  Pause,
-  Upload,
-  MicIcon,
-  Camera,
-  Cpu,
-  Network,
-  Shield,
-  Rocket,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  DollarSign,
-  Users,
-  Target
-} from 'lucide-react';
+import { Zap, Eye, BarChart3, Settings, Workflow, Bot, Lightbulb, Code, Play, Pause, Upload, MicIcon, Network, Rocket, AlertTriangle, CheckCircle, Clock, Target } from 'lucide-react';
 import { 
   Button,
   Card, CardContent, CardDescription, CardHeader, CardTitle,
@@ -155,7 +127,10 @@ export const NexusAIController: React.FC = () => {
         // Run comprehensive analysis
         runComprehensiveAnalysis();
       } catch (error) {
-        console.error('Failed to start orchestrator:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to start orchestrator: ', error);
       }
     }
   };
@@ -203,7 +178,10 @@ export const NexusAIController: React.FC = () => {
       
     } catch (error) {
       updateCapabilityStatus('system-evolution', 'error', 0);
-      console.error('Comprehensive analysis failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Comprehensive analysis failed: ', error);
     }
   };
 
@@ -319,7 +297,10 @@ export const NexusAIController: React.FC = () => {
       mediaRecorder.start();
       setIsRecording(true);
     } catch (error) {
-      console.error('Failed to start recording:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to start recording: ', error);
     }
   };
 
@@ -518,7 +499,7 @@ export const NexusAIController: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-3 lg:grid-cols-6 gap-4">
             <div className="text-center p-4 bg-primary/10 rounded-lg">
               <Clock className="h-8 w-8 mx-auto mb-2 text-primary" />
               <div className="text-2xl font-bold text-primary">
@@ -571,11 +552,11 @@ export const NexusAIController: React.FC = () => {
       </Card>
 
       {/* AI Capabilities Control Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-2 xl:grid-cols-3 gap-6">
         {Array.from(capabilities.values()).map((capability) => (
           <Card 
             key={capability.id} 
-            className={`cursor-pointer transition-all duration-300 hover:shadow-lg ${
+            className={`cursor-pointer transition-all duration-300 hover: shadow-lg ${
               selectedCapability === capability.id ? 'border-primary shadow-lg' : 'border-border'
             }`}
             onClick={() => setSelectedCapability(capability.id)}
@@ -675,7 +656,7 @@ export const NexusAIController: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             {/* Document Upload */}
             <div className="text-center space-y-2">
               <Button 
@@ -703,7 +684,7 @@ export const NexusAIController: React.FC = () => {
             {/* Voice Input */}
             <div className="text-center space-y-2">
               <Button 
-                onClick={isRecording ? stopVoiceRecording : startVoiceRecording}
+                onClick={isRecording ? stopVoiceRecording: startVoiceRecording}
                 variant={isRecording ? "destructive" : "outline"}
                 className="w-full"
               >
@@ -756,7 +737,7 @@ export const NexusAIController: React.FC = () => {
               insights.map((insight, index) => (
                 <div 
                   key={index} 
-                  className="p-4 border rounded-lg hover:shadow-md transition-shadow"
+                  className="p-4 border rounded-lg hover: shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center space-x-2">
@@ -822,7 +803,7 @@ export const NexusAIController: React.FC = () => {
               <Button 
                 variant="secondary" 
                 size="lg"
-                className="bg-card text-primary hover:bg-muted"
+                className="bg-card text-primary hover: bg-muted"
                 onClick={toggleOrchestrator}
               >
                 <Rocket className="h-5 w-5 mr-2" />

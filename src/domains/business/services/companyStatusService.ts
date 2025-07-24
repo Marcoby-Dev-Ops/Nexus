@@ -235,16 +235,16 @@ class CompanyStatusService {
       const { error } = await supabase
         .from('company_status')
         .upsert({
-          company_id: companyId,
-          overall_score: scores.overall,
-          financial_health: scores.financial,
-          operational_efficiency: scores.operational,
-          market_position: scores.market,
-          customer_satisfaction: scores.customer,
-          employee_engagement: scores.team,
-          risk_assessment: { risk_level: this.calculateRiskLevel(scores.overall) },
+          companyid: companyId,
+          overallscore: scores.overall,
+          financialhealth: scores.financial,
+          operationalefficiency: scores.operational,
+          marketposition: scores.market,
+          customersatisfaction: scores.customer,
+          employeeengagement: scores.team,
+          riskassessment: { risklevel: this.calculateRiskLevel(scores.overall) },
           recommendations: this.generateRecommendations(scores, company, integrations || []),
-          last_updated: new Date().toISOString()
+          lastupdated: new Date().toISOString()
         }, { onConflict: 'company_id' });
 
       if (error) {
@@ -286,11 +286,11 @@ class CompanyStatusService {
     baseScore += integrationBoost;
 
     // Calculate dimension-specific scores
-    const financial = Math.min(baseScore + (company?.mrr ? 15 : 0) + (company?.gross_margin ? 10 : 0), 95);
-    const operational = Math.min(baseScore + (activeIntegrations > 2 ? 15 : 0) + (company?.employee_count ? 10 : 0), 95);
-    const market = Math.min(baseScore + (company?.industry ? 10 : 0) + (company?.size ? 5 : 0), 95);
-    const customer = Math.min(baseScore + (company?.csat ? 15 : 0) + (activeIntegrations > 1 ? 10 : 0), 95);
-    const team = Math.min(baseScore + (company?.employee_count ? 10 : 0) + (activeIntegrations > 0 ? 5 : 0), 95);
+    const financial = Math.min(baseScore + (company?.mrr ? 15: 0) + (company?.gross_margin ? 10: 0), 95);
+    const operational = Math.min(baseScore + (activeIntegrations > 2 ? 15: 0) + (company?.employee_count ? 10: 0), 95);
+    const market = Math.min(baseScore + (company?.industry ? 10: 0) + (company?.size ? 5: 0), 95);
+    const customer = Math.min(baseScore + (company?.csat ? 15: 0) + (activeIntegrations > 1 ? 10: 0), 95);
+    const team = Math.min(baseScore + (company?.employee_count ? 10: 0) + (activeIntegrations > 0 ? 5: 0), 95);
 
     // Calculate overall score as average of dimensions
     const overall = Math.round((financial + operational + market + customer + team) / 5);
@@ -343,16 +343,16 @@ class CompanyStatusService {
   ): Promise<void> {
     try {
       const updateData = {
-        company_id: companyId,
-        overall_score: Math.round(status.overallHealth?.score || 0),
-        financial_health: Math.round(status.dimensions?.financial?.score || 0),
-        operational_efficiency: Math.round(status.dimensions?.operational?.score || 0),
-        market_position: Math.round(status.dimensions?.market?.score || 0),
-        customer_satisfaction: Math.round(status.dimensions?.customer?.score || 0),
-        employee_engagement: Math.round(status.dimensions?.team?.score || 0),
+        companyid: companyId,
+        overallscore: Math.round(status.overallHealth?.score || 0),
+        financialhealth: Math.round(status.dimensions?.financial?.score || 0),
+        operationalefficiency: Math.round(status.dimensions?.operational?.score || 0),
+        marketposition: Math.round(status.dimensions?.market?.score || 0),
+        customersatisfaction: Math.round(status.dimensions?.customer?.score || 0),
+        employeeengagement: Math.round(status.dimensions?.team?.score || 0),
         recommendations: status.insights?.map(i => i.description) || [],
-        risk_assessment: { risk_level: this.calculateRiskLevel(status.overallHealth?.score || 0) },
-        last_updated: new Date().toISOString()
+        riskassessment: { risklevel: this.calculateRiskLevel(status.overallHealth?.score || 0) },
+        lastupdated: new Date().toISOString()
       };
 
       const { error } = await supabase

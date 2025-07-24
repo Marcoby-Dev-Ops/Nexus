@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from "@/core/supabase";
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import type { 
     AssessmentSummary, 
     AssessmentCategoryScore, 
@@ -21,14 +21,14 @@ export interface AssessmentData {
 }
 
 export function useAssessmentData() {
-  const { user, loading: authLoading } = useAuthContext();
+  const { user } = useAuth();
   const [data, setData] = useState<AssessmentData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!user?.company_id) {
-      if (!authLoading) setLoading(false);
+      if (!loading) setLoading(false);
       return;
     }
 
@@ -44,8 +44,8 @@ export function useAssessmentData() {
       ] = await Promise.all([
         supabase.from('AssessmentSummary').select('*').eq('company_id', companyId).maybeSingle(),
         supabase.from('AssessmentCategoryScore').select('*').eq('company_id', companyId),
-        supabase.from('AssessmentResponse').select(`*, question:AssessmentQuestion (*, offer:Offer (*))`).eq('company_id', companyId),
-        supabase.from('AssessmentQuestion').select(`*, category:AssessmentCategory (*)`),
+        supabase.from('AssessmentResponse').select(`*, question: AssessmentQuestion (*, offer: Offer (*))`).eq('company_id', companyId),
+        supabase.from('AssessmentQuestion').select(`*, category: AssessmentCategory (*)`),
       ]);
 
       if (summaryRes.error) throw summaryRes.error;
@@ -65,7 +65,7 @@ export function useAssessmentData() {
     } finally {
       setLoading(false);
     }
-  }, [user, authLoading]);
+  }, [user, loading]);
 
   useEffect(() => {
     fetchData();

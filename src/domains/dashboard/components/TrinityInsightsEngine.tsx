@@ -2,20 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
-import { 
-  Brain, 
-  Eye, 
-  Zap, 
-  AlertTriangle, 
-  TrendingUp, 
-  Users,
-  DollarSign,
-  ArrowRight,
-  Lightbulb,
-  Target,
-  ChevronRight
-} from 'lucide-react';
-
+import { Brain, Eye, Zap, AlertTriangle, ArrowRight, Lightbulb, Target } from 'lucide-react';
 interface TrinityInsight {
   type: 'think' | 'see' | 'act';
   title: string;
@@ -132,7 +119,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
   const getImpactColor = (impact: string) => {
     switch (impact) {
       case 'high':
-        return 'bg-destructive/10 text-destructive border-destructive/20 dark:bg-destructive/20 dark:text-red-300';
+        return 'bg-destructive/10 text-destructive border-destructive/20 dark: bg-destructive/20 dark:text-red-300';
       case 'medium':
         return 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300';
       default:
@@ -146,8 +133,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
         return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case 'normal':
         return <Target className="h-4 w-4 text-amber-500" />;
-      default:
-        return <Lightbulb className="h-4 w-4 text-success" />;
+      default: return <Lightbulb className="h-4 w-4 text-success" />;
     }
   };
 
@@ -156,7 +142,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
   return (
     <div className={className}>
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-foreground dark:text-primary-foreground mb-2">
+        <h3 className="text-xl font-bold text-foreground dark: text-primary-foreground mb-2">
           Trinity Intelligence Engine
         </h3>
         <p className="text-sm text-muted-foreground dark:text-muted-foreground">
@@ -178,7 +164,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
               onClick={() => setActiveTab(type)}
               className={`flex items-center gap-2 ${
                 isActive 
-                  ? `bg-${config.color}-600 hover:bg-${config.color}-700 text-primary-foreground` 
+                  ? `bg-${config.color}-600 hover: bg-${config.color}-700 text-primary-foreground` 
                   : `hover:bg-${config.color}-50 dark:hover:bg-${config.color}-950/20`
               }`}
             >
@@ -193,7 +179,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
       {/* Insights Grid */}
       <div className="grid gap-4">
         {filteredInsights.map((insight, index) => (
-          <Card key={index} className="relative overflow-hidden hover:shadow-md transition-all">
+          <Card key={index} className="relative overflow-hidden hover: shadow-md transition-all">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
@@ -201,7 +187,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
                     {getUrgencyIcon(insight.urgency)}
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-foreground dark:text-primary-foreground mb-1">
+                    <h4 className="text-lg font-semibold text-foreground dark: text-primary-foreground mb-1">
                       {insight.title}
                     </h4>
                     <div className="flex items-center gap-2 mb-2">
@@ -218,7 +204,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
             </CardHeader>
             
             <CardContent className="pt-0">
-              <p className="text-muted-foreground dark:text-muted-foreground mb-4">
+              <p className="text-muted-foreground dark: text-muted-foreground mb-4">
                 {insight.description}
               </p>
 
@@ -238,7 +224,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
 
               {/* Recommendation */}
               {insight.recommendation && (
-                <div className="bg-background dark:bg-background/50 rounded-lg p-4 mb-4">
+                <div className="bg-background dark: bg-background/50 rounded-lg p-4 mb-4">
                   <div className="flex items-start gap-2">
                     <ArrowRight className="h-4 w-4 text-primary dark:text-primary mt-0.5 flex-shrink-0" />
                     <div>
@@ -256,7 +242,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
               {/* Estimated Value */}
               {insight.estimatedValue && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-muted-foreground dark:text-muted-foreground">
+                  <span className="text-sm font-medium text-muted-foreground dark: text-muted-foreground">
                     Estimated Value:
                   </span>
                   <Badge className="bg-success/10 text-success border-success/20 dark:bg-success/20 dark:text-success">
@@ -273,10 +259,10 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
       <div className="mt-6 p-4 rounded-lg">
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
-            <div className="text-2xl font-bold text-primary dark:text-primary">
+            <div className="text-2xl font-bold text-primary dark: text-primary">
               {insights.filter(i => i.type === 'think').length}
             </div>
-            <div className="text-xs text-muted-foreground dark:text-muted-foreground">
+            <div className="text-xs text-muted-foreground dark: text-muted-foreground">
               Pattern Insights
             </div>
           </div>
@@ -284,7 +270,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
             <div className="text-2xl font-bold text-secondary dark:text-secondary">
               {insights.filter(i => i.type === 'see').length}
             </div>
-            <div className="text-xs text-muted-foreground dark:text-muted-foreground">
+            <div className="text-xs text-muted-foreground dark: text-muted-foreground">
               Live Alerts
             </div>
           </div>
@@ -292,7 +278,7 @@ const TrinityInsightsEngine: React.FC<TrinityInsightsEngineProps> = ({
             <div className="text-2xl font-bold text-warning dark:text-warning">
               {insights.filter(i => i.type === 'act').length}
             </div>
-            <div className="text-xs text-muted-foreground dark:text-muted-foreground">
+            <div className="text-xs text-muted-foreground dark: text-muted-foreground">
               Auto Actions
             </div>
           </div>

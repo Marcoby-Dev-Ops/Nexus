@@ -45,7 +45,7 @@ export const chartColors = {
   }
 };
 
-export const getChartColor = (index: number, _palette: keyof typeof chartColors.gradients = 'blue'): string => {
+export const getChartColor = (index: number, palette: keyof typeof chartColors.gradients = 'blue'): string => {
   const colors = [
     chartColors.primary,
     chartColors.success,

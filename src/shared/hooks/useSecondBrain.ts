@@ -5,9 +5,9 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { googleAnalyticsService } from '@/domains/services/googleAnalyticsService';
-import { callEdgeFunction } from '@/domains/services/supabaseFunctions';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { googleAnalyticsService } from '@/domains/analytics/lib/googleAnalyticsService';
+import { callEdgeFunction } from '@/core/supabase/functions';
+import { useAuth } from '@/core/auth/AuthProvider';
 import type { 
   UseSecondBrainReturn,
   BusinessInsight,
@@ -52,7 +52,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         setUserProfile(null);
       }
     } catch (error) {
-      console.error('Failed to load user profile:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load user profile: ', error);
       setUserProfile(null);
     }
   };
@@ -87,7 +90,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
 
       setIntegrationData(integrationData);
     } catch (error) {
-      console.error('Failed to load integration data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load integration data: ', error);
       // Fallback to empty array
       setIntegrationData([]);
     }
@@ -122,7 +128,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         relevanceScore: 0.9
       };
     } catch (error) {
-      console.warn('Failed to load Google Analytics data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to load Google Analytics data: ', error);
       return null;
     }
   };
@@ -145,7 +154,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         relevanceScore: 0.7,
       };
     } catch (error) {
-      console.warn('Failed to load Slack data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to load Slack data: ', error);
       return null;
     }
   };
@@ -168,7 +180,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         relevanceScore: 0.8,
       };
     } catch (error) {
-      console.warn('Failed to load HubSpot data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to load HubSpot data: ', error);
       return null;
     }
   };
@@ -191,7 +206,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         relevanceScore: 0.95,
       };
     } catch (error) {
-      console.warn('Failed to load Stripe data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to load Stripe data: ', error);
       return null;
     }
   };
@@ -222,7 +240,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         source: event.source || 'system'
       })));
     } catch (error) {
-      console.error('Failed to load recent events:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load recent events: ', error);
       setRecentEvents([]);
     }
   };
@@ -539,10 +560,16 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         body: JSON.stringify(fullEvent)
       });
     } catch (error) {
-      console.warn('Failed to send event to analytics service:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to send event to analytics service: ', error);
     }
     
-    console.log('Learning event recorded:', fullEvent);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Learning event recorded: ', fullEvent);
   }, [userProfile]);
 
   const dismissInsight = useCallback((insightId: string) => {
@@ -596,9 +623,15 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
       }
 
       const result = await response.json();
-      console.log('Action executed successfully:', result);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Action executed successfully: ', result);
     } catch (error) {
-      console.error('Failed to execute action:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to execute action: ', error);
     }
   }, [actions, pageId, recordEvent]);
 
@@ -639,9 +672,15 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
       }
 
       const result = await response.json();
-      console.log('Automation created successfully:', result);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Automation created successfully: ', result);
     } catch (error) {
-      console.error('Failed to create automation:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to create automation: ', error);
     }
   }, [automationOpportunities, pageId, recordEvent]);
 
@@ -661,7 +700,10 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
         body: JSON.stringify({ preferences })
       });
     } catch (error) {
-      console.warn('Failed to persist preferences to backend:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to persist preferences to backend: ', error);
     }
 
     recordEvent({

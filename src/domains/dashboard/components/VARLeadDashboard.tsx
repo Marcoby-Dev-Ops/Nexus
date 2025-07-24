@@ -6,7 +6,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Select } from '@/shared/components/ui/Select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useToast } from '@/shared/ui/components/Toast';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useIntegrations } from '@/domains/hooks/useIntegrations';
 import {
   BarChart,
@@ -20,22 +20,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import {
-  Search,
-  Filter,
-  Download,
-  Mail,
-  Phone,
-  Building,
-  Users,
-  TrendingUp,
-  Star,
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  XCircle
-} from 'lucide-react';
-
+import { Search, Download, Mail, Phone, Users, TrendingUp, Star, CheckCircle2 } from 'lucide-react';
 interface VARLead {
   id: string;
   email: string;
@@ -75,7 +60,7 @@ const STATUS_LABELS = {
 };
 
 export const VARLeadDashboard: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [leads, setLeads] = useState<VARLead[]>([]);
   const [filteredLeads, setFilteredLeads] = useState<VARLead[]>([]);
@@ -209,7 +194,7 @@ export const VARLeadDashboard: React.FC = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
@@ -265,7 +250,7 @@ export const VARLeadDashboard: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col md: flex-row gap-4">
         <div className="flex-1">
           <Input
             placeholder="Search leads..."
@@ -299,7 +284,7 @@ export const VARLeadDashboard: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-3 gap-6">
         {/* Lead List */}
         <div className="lg:col-span-2">
           <Card>

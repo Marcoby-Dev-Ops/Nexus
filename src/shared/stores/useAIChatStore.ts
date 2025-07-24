@@ -38,7 +38,7 @@ interface AIChatStoreState {
 }
 
 // Helper to call Edge Function with dev fallback
-const callAIEndpoint = async (payload: any) => {
+const callAIEndpoint = async (__payload: any) => {
   const endpoints = ['/functions/v1/ai_chat', '/api/ai_chat'];
   let lastErr: any;
   for (const url of endpoints) {
@@ -118,7 +118,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
         if (error) throw error;
 
         const aiContent = (data as any)?.message ||
-          (typeof data === 'string' ? data : '');
+          (typeof data === 'string' ? data: '');
 
         // Persist AI response (edge function already does, but we keep local state in sync)
         set(produce((state: AIChatStoreState) => {
@@ -149,22 +149,25 @@ export const useAIChatStore = create<AIChatStoreState>()(
             // Trigger orchestrator workflow (non-blocking)
             await (supabase as any).functions.invoke('trigger-n8n-workflow', {
               body: {
-                workflow_name: 'executive_assistant_orchestrator',
+                workflowname: 'executive_assistant_orchestrator',
                 payload: {
                   query: message,
                   conversation: conversationText,
-                  user_id: userId,
-                  company_id: companyId,
-                  conversation_id: conversationId,
-                  user_context: `Recent conversation with ${conversation?.messages.length || 0} messages`,
-                  supabase_url: import.meta.env.VITE_SUPABASE_URL,
-                  supabase_anon_key: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                  userid: userId,
+                  companyid: companyId,
+                  conversationid: conversationId,
+                  usercontext: `Recent conversation with ${conversation?.messages.length || 0} messages`,
+                  supabaseurl: import.meta.env.VITE_SUPABASE_URL,
+                  supabaseanon_key: import.meta.env.VITE_SUPABASE_ANON_KEY,
                 },
               },
             });
           } catch (orchestratorError) {
             // Don't fail the main chat if orchestrator fails
-            console.warn('Executive Assistant Orchestrator failed:', orchestratorError);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Executive Assistant Orchestrator failed: ', orchestratorError);
           }
         }
       } catch (e: any) {
@@ -239,7 +242,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
         .from('ai_conversations')
         .insert({
           title,
-          user_id: user.id,
+          userid: user.id,
         })
         .select()
         .single();
@@ -284,7 +287,10 @@ export const useAIChatStore = create<AIChatStoreState>()(
 
       if (error) {
          
-        console.error('loadOlderMessages error', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('loadOlderMessages error', error);
         return 0;
       }
 

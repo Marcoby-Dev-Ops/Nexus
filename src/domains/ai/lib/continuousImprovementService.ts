@@ -88,14 +88,14 @@ export class ContinuousImprovementService {
       const { error } = await supabase
         .from('ai_user_feedback')
         .insert({
-          user_id: feedback.userId,
-          conversation_id: feedback.conversationId,
-          message_id: feedback.messageId,
+          userid: feedback.userId,
+          conversationid: feedback.conversationId,
+          messageid: feedback.messageId,
           rating: feedback.rating,
-          feedback_type: feedback.feedbackType,
+          feedbacktype: feedback.feedbackType,
           comment: feedback.comment,
-          agent_id: feedback.agentId,
-          model_used: feedback.modelUsed,
+          agentid: feedback.agentId,
+          modelused: feedback.modelUsed,
           provider: feedback.provider,
           timestamp: new Date().toISOString()
         });
@@ -105,7 +105,10 @@ export class ContinuousImprovementService {
       // Trigger improvement analysis
       await this.analyzeImprovementOpportunities();
     } catch (error) {
-      console.error('Error tracking user feedback:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error tracking user feedback: ', error);
     }
   }
 
@@ -133,19 +136,19 @@ export class ContinuousImprovementService {
       const { error } = await supabase
         .from('ai_quality_assessments')
         .insert({
-          conversation_id: conversationId,
-          message_id: messageId,
-          assessment_type: 'automated',
-          relevance_score: assessment.scores.relevance,
-          accuracy_score: assessment.scores.accuracy,
-          helpfulness_score: assessment.scores.helpfulness,
-          completeness_score: assessment.scores.completeness,
-          clarity_score: assessment.scores.clarity,
-          overall_score: assessment.overallScore,
+          conversationid: conversationId,
+          messageid: messageId,
+          assessmenttype: 'automated',
+          relevancescore: assessment.scores.relevance,
+          accuracyscore: assessment.scores.accuracy,
+          helpfulnessscore: assessment.scores.helpfulness,
+          completenessscore: assessment.scores.completeness,
+          clarityscore: assessment.scores.clarity,
+          overallscore: assessment.overallScore,
           flags: assessment.flags,
           improvements: assessment.improvements,
-          model_used: modelUsed,
-          agent_id: agentId,
+          modelused: modelUsed,
+          agentid: agentId,
           timestamp: new Date().toISOString()
         });
 
@@ -153,7 +156,10 @@ export class ContinuousImprovementService {
 
       return assessment;
     } catch (error) {
-      console.error('Error assessing response quality:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error assessing response quality: ', error);
       throw error;
     }
   }
@@ -179,9 +185,9 @@ export class ContinuousImprovementService {
     try {
       const { data, error } = await supabase
         .rpc('get_performance_trends', {
-          metric_name: metric,
-          timeframe_type: timeframe,
-          agent_filter: agentId
+          metricname: metric,
+          timeframetype: timeframe,
+          agentfilter: agentId
         });
 
       if (error) throw error;
@@ -191,7 +197,10 @@ export class ContinuousImprovementService {
       
       return trend;
     } catch (error) {
-      console.error('Error getting performance trends:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error getting performance trends: ', error);
       throw error;
     }
   }
@@ -229,7 +238,10 @@ export class ContinuousImprovementService {
         return priorityOrder[b.priority] - priorityOrder[a.priority];
       });
     } catch (error) {
-      console.error('Error generating improvement recommendations:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error generating improvement recommendations: ', error);
       return [];
     }
   }
@@ -267,7 +279,10 @@ export class ContinuousImprovementService {
         })
       };
     } catch (error) {
-      console.error('Error getting improvement dashboard:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error getting improvement dashboard: ', error);
       return null;
     }
   }
@@ -287,18 +302,21 @@ export class ContinuousImprovementService {
       const { error } = await supabase
         .from('ai_ab_test_results')
         .insert({
-          test_id: testId,
+          testid: testId,
           variant,
-          user_id: userId,
-          metric_name: metric,
-          metric_value: value,
+          userid: userId,
+          metricname: metric,
+          metricvalue: value,
           metadata,
           timestamp: new Date().toISOString()
         });
 
       if (error) throw error;
     } catch (error) {
-      console.error('Error tracking A/B test result:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error tracking A/B test result: ', error);
     }
   }
 
@@ -308,7 +326,7 @@ export class ContinuousImprovementService {
   async getABTestAnalysis(testId: string) {
     try {
       const { data, error } = await supabase
-        .rpc('analyze_ab_test', { test_id_param: testId });
+        .rpc('analyze_ab_test', { testid_param: testId });
 
       if (error) throw error;
 
@@ -321,7 +339,10 @@ export class ContinuousImprovementService {
         confidence: data.confidence
       };
     } catch (error) {
-      console.error('Error getting A/B test analysis:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error getting A/B test analysis: ', error);
       return null;
     }
   }

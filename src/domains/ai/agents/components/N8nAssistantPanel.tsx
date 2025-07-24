@@ -4,11 +4,11 @@
  * Provides department-specific assistants and workflow automation
  */
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, AlertCircle, CheckCircle, Settings, Workflow } from 'lucide-react';
+import { Send, Bot, AlertCircle, Settings, Workflow } from 'lucide-react';
 import { Spinner } from '@/shared/components/ui/Spinner';
 // Mock hooks for now - these would be implemented in the actual n8n integration
 const useDepartmentAssistant = (_department: string) => ({
-  askAssistant: async (_message: string, _context: any) => ({ 
+  askAssistant: async (message: string, context: any) => ({ 
     success: true, 
     data: { output: 'Mock response' },
     error: null,
@@ -22,7 +22,7 @@ const useDepartmentAssistant = (_department: string) => ({
 });
 
 const useWorkflowBuilder = () => ({
-  buildWorkflow: async (_requirements: string) => ({ 
+  buildWorkflow: async (requirements: string) => ({ 
     success: true, 
     data: { workflowId: 'mock-workflow' },
     error: null
@@ -181,12 +181,12 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
   return (
     <div className={`flex flex-col h-full bg-card dark:bg-background ${className}`}>
       {/* Header */}
-      <div className={`${getDepartmentBg(department)} px-4 py-4 border-b border-border dark:border-border`}>
+      <div className={`${getDepartmentBg(department)} px-4 py-4 border-b border-border dark: border-border`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Bot className={`h-6 w-6 ${getDepartmentColor(department)}`} />
             <div>
-              <h3 className="font-semibold text-foreground dark:text-primary-foreground capitalize">
+              <h3 className="font-semibold text-foreground dark: text-primary-foreground capitalize">
                 {department} Assistant
               </h3>
               <div className="flex items-center space-x-2 text-sm text-muted-foreground dark:text-muted-foreground">
@@ -198,7 +198,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowWorkflowBuilder(!showWorkflowBuilder)}
-              className="p-4 text-muted-foreground hover:text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
+              className="p-4 text-muted-foreground hover: text-muted-foreground dark:hover:text-muted-foreground/60 transition-colors"
               title="Workflow Builder"
             >
               <Workflow className="h-5 w-5" />
@@ -224,7 +224,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="px-4 py-4 bg-destructive/5 dark:bg-destructive/20 border-b border-destructive/20 dark:border-red-800">
+        <div className="px-4 py-4 bg-destructive/5 dark: bg-destructive/20 border-b border-destructive/20 dark:border-red-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-destructive dark:text-destructive">
               <AlertCircle className="h-4 w-4" />
@@ -263,7 +263,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
               className={`max-w-[80%] rounded-lg px-4 py-4 ${
                 message.role === 'user'
                   ? 'bg-primary text-primary-foreground'
-                  : `${getDepartmentBg(department)} text-foreground dark:text-primary-foreground`
+                  : `${getDepartmentBg(department)} text-foreground dark: text-primary-foreground`
               }`}
             >
               <div className="whitespace-pre-wrap">{message.content}</div>
@@ -280,14 +280,14 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
       </div>
 
       {/* Input */}
-      <div className="border-t border-border dark:border-border p-4">
+      <div className="border-t border-border dark: border-border p-4">
         <div className="flex space-x-2">
           <textarea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder={`Ask your ${department} assistant anything...`}
-            className="flex-1 resize-none border border-border rounded-lg px-4 py-4 bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="flex-1 resize-none border border-border rounded-lg px-4 py-4 bg-card text-foreground placeholder-muted-foreground focus: outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             rows={2}
             disabled={isLoading}
           />
@@ -297,7 +297,7 @@ export const N8nAssistantPanel: React.FC<N8nAssistantPanelProps> = ({
             className={`px-4 py-4 rounded-lg transition-colors ${
               isLoading || !inputValue.trim()
                 ? 'bg-muted cursor-not-allowed'
-                : `bg-primary hover:bg-primary/90 text-primary-foreground`
+                : `bg-primary hover: bg-primary/90 text-primary-foreground`
             }`}
           >
             {isLoading ? (
@@ -342,7 +342,7 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
         </h4>
         <button
           onClick={onClose}
-          className="text-primary hover:text-primary/80"
+          className="text-primary hover: text-primary/80"
         >
           ×
         </button>
@@ -351,7 +351,7 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
         value={requirements}
         onChange={(e) => setRequirements(e.target.value)}
         placeholder="Describe what you want this workflow to do..."
-        className="w-full border border-border rounded-lg px-4 py-4 bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+        className="w-full border border-border rounded-lg px-4 py-4 bg-card text-foreground placeholder-muted-foreground focus: outline-none focus:ring-2 focus:ring-primary"
         rows={3}
       />
       <div className="flex justify-end space-x-2">
@@ -364,7 +364,7 @@ const WorkflowBuilder: React.FC<WorkflowBuilderProps> = ({
         <button
           onClick={handleSubmit}
           disabled={isLoading || !requirements.trim()}
-          className="px-4 py-4 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-4 bg-primary text-primary-foreground rounded hover: bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? 'Creating...' : 'Create Workflow'}
         </button>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Lightbulb, Star } from 'lucide-react';
-import type { Opportunity } from '@/domains/fire-cycle/types';
+import type { Opportunity } from '@/domains/business/fire-cycle/types';
 
 interface OpportunitiesCardProps {
   opportunities: Opportunity[];
@@ -21,8 +21,7 @@ export const OpportunitiesCard: React.FC<OpportunitiesCardProps> = ({ opportunit
         return 'text-green-600 bg-green-100';
       case 'expired':
         return 'text-gray-600 bg-gray-100';
-      default:
-        return 'text-yellow-600 bg-yellow-100';
+      default: return 'text-yellow-600 bg-yellow-100';
     }
   };
 

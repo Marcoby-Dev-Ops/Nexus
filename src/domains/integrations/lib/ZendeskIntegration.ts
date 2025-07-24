@@ -7,7 +7,7 @@ export class ZendeskIntegration extends BaseIntegration {
   name = 'Zendesk';
   dataFields = ['tickets', 'users', 'organizations', 'comments', 'satisfactionRatings', 'groups', 'attachments'];
 
-  async fetchProviderData({ userId: _userId, fullSync: _fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
+  async fetchProviderData({ userId: userId, fullSync: fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
     // TODO: Implement actual Zendesk API fetch logic
     return {
       tickets: [],

@@ -179,7 +179,7 @@ export const DataUsagePage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">{type.description}</p>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                   <div>
                     <h4 className="font-medium mb-2">Data Types Processed:</h4>
                     <ul className="space-y-1">
@@ -193,7 +193,7 @@ export const DataUsagePage: React.FC = () => {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-1">Purpose:</h4>
+                      <h4 className="font-medium mb-1">Purpose: </h4>
                       <p className="text-sm text-muted-foreground">{type.purpose}</p>
                     </div>
                     <div>
@@ -215,7 +215,7 @@ export const DataUsagePage: React.FC = () => {
         <h2 className="text-2xl font-semibold mb-4">What We DON'T Do With Your Data</h2>
         <Card className="border-red-200 bg-destructive/5/50">
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-destructive">
                   <AlertCircle className="h-4 w-4" />
@@ -276,7 +276,7 @@ export const DataUsagePage: React.FC = () => {
         <h2 className="text-2xl font-semibold mb-4">Your Data Rights & Controls</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {dataRights.map((right, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow">
+            <Card key={index} className="hover: shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <h3 className="font-semibold flex items-center gap-2">
@@ -303,8 +303,7 @@ export const DataUsagePage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <p className="text-muted-foreground">
-                Under GDPR and other privacy laws, we process your data based on the following legal grounds:
-              </p>
+                Under GDPR and other privacy laws, we process your data based on the following legal grounds: </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted/30">
                   <h3 className="font-semibold mb-2">Contractual Necessity</h3>
@@ -345,8 +344,7 @@ export const DataUsagePage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <p className="text-muted-foreground">
-                If you have questions about how we use your data or want to exercise your rights:
-              </p>
+                If you have questions about how we use your data or want to exercise your rights: </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h3 className="font-semibold mb-2">Data Protection Officer</h3>

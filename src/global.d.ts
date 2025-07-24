@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_SUPABASE_URL: string;
-  readonly VITE_SUPABASE_ANON_KEY: string;
+  readonly VITESUPABASEURL: string;
+  readonly VITESUPABASEANON_KEY: string;
   // add other env variables here as needed
 }
 

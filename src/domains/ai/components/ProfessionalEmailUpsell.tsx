@@ -22,7 +22,7 @@ import {
   Star
 } from 'lucide-react';
 import { domainAnalysisService } from '@/domains/services/domainAnalysisService';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface ProfessionalEmailUpsellProps {
   userId?: string;
@@ -44,7 +44,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
   compact = false,
   onDismiss
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [recommendation, setRecommendation] = useState<UpsellRecommendation | null>(null);
@@ -64,7 +64,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
           setRecommendation(result.recommendation as UpsellRecommendation);
         }
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message: String(error);
         logger.error({ err: error }, 'Error fetching upsell recommendation');
       } finally {
         setLoading(false);
@@ -83,7 +83,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
 
     // In a real implementation, this would redirect to Microsoft 365 signup
     // or open a setup flow within the app
-    window.open('https://www.microsoft.com/en-us/microsoft-365/business', '_blank');
+    window.open('https: //www.microsoft.com/en-us/microsoft-365/business', '_blank');
   };
 
   const handleUpdateKPI = async () => {
@@ -97,7 +97,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
       });
       onDismiss?.();
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message: String(error);
       logger.error({ err: error }, 'Failed to update professional email KPI');
       toast({
         title: 'Update Failed',
@@ -196,7 +196,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
             <Star className="h-4 w-4 mr-1 text-warning" />
             Benefits
           </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-2">
             {recommendation.benefits.map((benefit: string, index: number) => (
               <div key={index} className="flex items-center space-x-2 text-sm">
                 <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
@@ -230,7 +230,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
               <Shield className="h-4 w-4 mr-1 text-primary" />
               Security & Compliance Features
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-2 text-sm">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4 text-success" />
                 <span>Advanced Threat Protection</span>
@@ -252,7 +252,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm: flex-row gap-4">
           <Button 
             onClick={handleGetStarted}
             className="flex-1 bg-primary hover:bg-primary/90"
@@ -279,7 +279,7 @@ export const ProfessionalEmailUpsell: React.FC<ProfessionalEmailUpsellProps> = (
         {/* Additional Info */}
         <div className="text-xs text-muted-foreground bg-card/30 rounded p-2">
           <p>
-            💡 <strong>Tip:</strong> Professional email addresses increase customer trust by 
+            💡 <strong>Tip: </strong> Professional email addresses increase customer trust by 
             up to 42% and improve email deliverability rates significantly.
           </p>
         </div>

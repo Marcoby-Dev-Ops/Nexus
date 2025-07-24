@@ -74,7 +74,10 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       setShowSuggestions(true);
       setSelectedIndex(-1);
     } catch (error) {
-      console.error('Error fetching address suggestions:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching address suggestions: ', error);
       setSuggestions([]);
     } finally {
       setIsLoading(false);
@@ -108,7 +111,10 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       const parsedAddress = googlePlacesService.parseAddressComponents(placeDetails);
       onChange?.(parsedAddress);
     } catch (error) {
-      console.error('Error fetching place details:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching place details: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -121,12 +127,12 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       case 'ArrowDown':
         e.preventDefault();
         setSelectedIndex(prev => 
-          prev < suggestions.length - 1 ? prev + 1 : prev
+          prev < suggestions.length - 1 ? prev + 1: prev
         );
         break;
       case 'ArrowUp':
         e.preventDefault();
-        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        setSelectedIndex(prev => prev > 0 ? prev - 1: -1);
         break;
       case 'Enter':
         e.preventDefault();
@@ -151,9 +157,15 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     try {
       const location = await googlePlacesService.getCurrentLocation();
       // You could implement reverse geocoding here if needed
-      console.log('Current location:', location);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Current location: ', location);
     } catch (error) {
-      console.error('Error getting current location:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error getting current location: ', error);
       alert('Unable to get your current location');
     } finally {
       setIsLoading(false);
@@ -195,7 +207,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           ref={inputRef}
           id="address-input"
           type="text"
-          placeholder={isApiAvailable ? placeholder : 'Google Places API not configured'}
+          placeholder={isApiAvailable ? placeholder: 'Google Places API not configured'}
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -204,7 +216,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
           disabled={disabled || !isApiAvailable}
           className={cn(
             'pr-20',
-            error && 'border-destructive focus:border-destructive'
+            error && 'border-destructive focus: border-destructive'
           )}
         />
         
@@ -246,7 +258,7 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             {suggestions.map((suggestion, index) => (
               <div
                 key={suggestion.place_id}
-                ref={index === selectedIndex ? suggestionsRef : undefined}
+                ref={index === selectedIndex ? suggestionsRef: undefined}
                 className={cn(
                   'flex items-start gap-4 p-4 cursor-pointer border-b border-border last:border-b-0 hover:bg-accent',
                   index === selectedIndex && 'bg-accent'

@@ -1,28 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Workflow, 
-  Zap, 
-  Clock, 
-  DollarSign, 
-  TrendingUp, 
-  CheckCircle, 
-  AlertTriangle,
-  Settings,
-  BarChart3,
-  ArrowRight,
-  Play,
-  Pause,
-  RefreshCw,
-  Target,
-  Users,
-  Brain,
-  Lightbulb,
-  Award,
-  Activity
-} from 'lucide-react';
-
-interface WorkflowOptimizationDemoProps {}
-
+import { Workflow, Zap, Clock, DollarSign, TrendingUp, CheckCircle, AlertTriangle, BarChart3, Play, Pause, RefreshCw, Target, Users, Brain, Lightbulb, Award, Activity } from 'lucide-react';
+type WorkflowOptimizationDemoProps = Record<string, never>;
 export const AutomatedWorkflowDemo: React.FC<WorkflowOptimizationDemoProps> = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [selectedWorkflow, setSelectedWorkflow] = useState<string | null>(null);
@@ -270,7 +248,7 @@ export const AutomatedWorkflowDemo: React.FC<WorkflowOptimizationDemoProps> = ()
                 onClick={toggleOptimization}
                 className={`flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all ${
                   isOptimizing 
-                    ? 'bg-destructive hover:bg-destructive text-primary-foreground' 
+                    ? 'bg-destructive hover: bg-destructive text-primary-foreground' 
                     : 'bg-success hover:bg-green-600 text-primary-foreground'
                 }`}
               >
@@ -347,7 +325,7 @@ export const AutomatedWorkflowDemo: React.FC<WorkflowOptimizationDemoProps> = ()
                   className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
                     selectedWorkflow === workflow.id 
                       ? 'border-primary bg-primary/5' 
-                      : 'border-border hover:border-border'
+                      : 'border-border hover: border-border'
                   }`}
                   onClick={() => setSelectedWorkflow(workflow.id)}
                 >
@@ -423,7 +401,7 @@ export const AutomatedWorkflowDemo: React.FC<WorkflowOptimizationDemoProps> = ()
                 optimizationQueue.map((optimization) => (
                   <div
                     key={optimization.id}
-                    className="p-4 rounded-lg border border-border hover:border-border transition-all"
+                    className="p-4 rounded-lg border border-border hover: border-border transition-all"
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center space-x-2">
@@ -446,7 +424,7 @@ export const AutomatedWorkflowDemo: React.FC<WorkflowOptimizationDemoProps> = ()
                         </span>
                         <button
                           onClick={() => implementOptimization(optimization.id)}
-                          className="bg-primary hover:bg-primary text-primary-foreground px-4 py-1 rounded text-xs font-medium transition-colors"
+                          className="bg-primary hover: bg-primary text-primary-foreground px-4 py-1 rounded text-xs font-medium transition-colors"
                         >
                           Implement
                         </button>
@@ -525,7 +503,7 @@ export const AutomatedWorkflowDemo: React.FC<WorkflowOptimizationDemoProps> = ()
             <h3 className="text-xl font-bold text-foreground">AI Workflow Intelligence</h3>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
             <div className="bg-card rounded-lg p-4">
               <div className="flex items-center space-x-2 mb-3">
                 <Lightbulb className="w-5 h-5 text-warning" />

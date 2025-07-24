@@ -79,7 +79,10 @@ export class DomainAgentService {
         companyId: userContext?.companyId
       };
     } catch (error) {
-      console.error('Error building domain context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error building domain context: ', error);
       return {
         departmentId,
         userRole: userContext?.role,
@@ -110,13 +113,16 @@ export class DomainAgentService {
       data?.forEach(kpi => {
         kpis[kpi.kpi_id] = {
           value: kpi.value,
-          captured_at: kpi.captured_at
+          capturedat: kpi.captured_at
         };
       });
 
       return kpis;
     } catch (error) {
-      console.error('Error fetching recent KPIs:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching recent KPIs: ', error);
       return {};
     }
   }
@@ -149,7 +155,10 @@ export class DomainAgentService {
           break;
       }
     } catch (error) {
-      console.error(`Error fetching ${departmentId} data:`, error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Error fetching ${departmentId} data: `, error);
     }
 
     return data;
@@ -176,19 +185,22 @@ export class DomainAgentService {
         deal.stage?.toLowerCase().includes('won')
       ) || [];
       const totalPipelineValue = openDeals.reduce((sum, deal) => sum + (deal.amount || 0), 0);
-      const conversionRate = deals?.length ? (closedWonDeals.length / deals.length) * 100 : 0;
+      const conversionRate = deals?.length ? (closedWonDeals.length / deals.length) * 100: 0;
 
       return {
-        recent_deals: deals?.slice(0, 10),
-        pipeline_summary: {
-          open_deals_count: openDeals.length,
-          total_pipeline_value: totalPipelineValue,
-          closed_won_count: closedWonDeals.length,
-          conversion_rate: conversionRate
+        recentdeals: deals?.slice(0, 10),
+        pipelinesummary: {
+          opendealscount: openDeals.length,
+          totalpipeline_value: totalPipelineValue,
+          closedwon_count: closedWonDeals.length,
+          conversionrate: conversionRate
         }
       };
     } catch (error) {
-      console.error('Error fetching sales data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching sales data: ', error);
       return {};
     }
   }
@@ -216,16 +228,19 @@ export class DomainAgentService {
         sum + (parseInt(contact.properties?.responses) || 0), 0) || 0;
 
       return {
-        recent_contacts: contacts?.slice(0, 10),
-        engagement_summary: {
-          total_contacts: totalContacts,
-          total_email_opens: totalEmailOpens,
-          total_responses: totalResponses,
-          response_rate: totalEmailOpens ? (totalResponses / totalEmailOpens) * 100 : 0
+        recentcontacts: contacts?.slice(0, 10),
+        engagementsummary: {
+          totalcontacts: totalContacts,
+          totalemail_opens: totalEmailOpens,
+          totalresponses: totalResponses,
+          responserate: totalEmailOpens ? (totalResponses / totalEmailOpens) * 100: 0
         }
       };
     } catch (error) {
-      console.error('Error fetching contact data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching contact data: ', error);
       return {};
     }
   }
@@ -369,27 +384,23 @@ export class DomainAgentService {
     
     // Add business context
     if (enhancedAgent.domainContext.businessHealth) {
-      contextAdditions.push(`\nCURRENT BUSINESS CONTEXT:
-- Overall business health score: ${enhancedAgent.domainContext.businessHealth.score}/100
+      contextAdditions.push(`\nCURRENT BUSINESS CONTEXT: - Overall business health score: ${enhancedAgent.domainContext.businessHealth.score}/100
 - Department score: ${enhancedAgent.domainContext.businessHealth.breakdown?.[enhancedAgent.domainContext.departmentId] || 'N/A'}/100`);
     }
 
     // Add recent insights
     if (enhancedAgent.recentInsights.length > 0) {
-      contextAdditions.push(`\nRECENT INSIGHTS:
-${enhancedAgent.recentInsights.map(insight => `- ${insight}`).join('\n')}`);
+      contextAdditions.push(`\nRECENT INSIGHTS: ${enhancedAgent.recentInsights.map(insight => `- ${insight}`).join('\n')}`);
     }
 
     // Add available tools
     if (enhancedAgent.availableTools.length > 0) {
-      contextAdditions.push(`\nAVAILABLE TOOLS:
-${enhancedAgent.availableTools.map(tool => `- ${tool}`).join('\n')}`);
+      contextAdditions.push(`\nAVAILABLE TOOLS: ${enhancedAgent.availableTools.map(tool => `- ${tool}`).join('\n')}`);
     }
 
     // Add contextual knowledge
     if (enhancedAgent.contextualKnowledge.length > 0) {
-      contextAdditions.push(`\nCONTEXTUAL KNOWLEDGE:
-${enhancedAgent.contextualKnowledge.map(knowledge => `- ${knowledge}`).join('\n')}`);
+      contextAdditions.push(`\nCONTEXTUAL KNOWLEDGE: ${enhancedAgent.contextualKnowledge.map(knowledge => `- ${knowledge}`).join('\n')}`);
     }
 
     return basePrompt + contextAdditions.join('\n');

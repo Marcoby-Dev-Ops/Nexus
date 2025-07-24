@@ -27,22 +27,14 @@ export const AuthDiagnostic: React.FC = () => {
       const diagnosisResults = await diagnoseAuthIssues();
       setResults(diagnosisResults);
       
-      // Check session status using cached getter if available
-      let session, error;
-      try {
-        // Try to use cached session getter from auth store
-        const { getSessionWithCache } = await import('@/shared/stores/authStore');
-        session = await getSessionWithCache();
-      } catch {
-        // Fallback to sessionUtils
-        const sessionResult = await sessionUtils.getSession();
-        session = sessionResult.session;
-        error = sessionResult.error;
-      }
+      // Check session status using sessionUtils
+      const sessionResult = await sessionUtils.getSession();
+      const session = sessionResult.session;
+      const error = sessionResult.error;
       
       setSessionStatus({
         hasSession: !!session,
-        isExpired: session ? sessionUtils.isSessionValid(session) === false : true,
+        isExpired: session ? sessionUtils.isSessionValid(session) === false: true,
         userEmail: session?.user?.email,
         expiresAt: session?.expires_at,
         expiresAtType: typeof session?.expires_at,
@@ -57,7 +49,10 @@ export const AuthDiagnostic: React.FC = () => {
         error: error?.message
       });
     } catch (error) {
-      console.error('Diagnosis failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Diagnosis failed: ', error);
     } finally {
       setLoading(false);
     }
@@ -68,14 +63,23 @@ export const AuthDiagnostic: React.FC = () => {
     try {
       const result = await sessionUtils.refreshSession();
       if (result.success) {
-        console.log('✅ Session refreshed successfully');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Session refreshed successfully');
         // Re-run diagnosis
         await runDiagnosis();
       } else {
-        console.error('❌ Session refresh failed:', result.error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Session refresh failed: ', result.error);
       }
     } catch (error) {
-      console.error('Session refresh error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Session refresh error: ', error);
     } finally {
       setLoading(false);
     }
@@ -86,14 +90,23 @@ export const AuthDiagnostic: React.FC = () => {
     try {
       const result = await sessionUtils.forceRefreshSession();
       if (result.success) {
-        console.log('✅ Force session refresh successful');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Force session refresh successful');
         // Re-run diagnosis
         await runDiagnosis();
       } else {
-        console.error('❌ Force session refresh failed:', result.error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Force session refresh failed: ', result.error);
       }
     } catch (error) {
-      console.error('Force session refresh error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Force session refresh error: ', error);
     } finally {
       setLoading(false);
     }
@@ -104,14 +117,23 @@ export const AuthDiagnostic: React.FC = () => {
     try {
       const result = await testAndFixSession();
       if (result.success) {
-        console.log('✅ Session test and fix successful');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Session test and fix successful');
         // Re-run diagnosis
         await runDiagnosis();
       } else {
-        console.error('❌ Session test and fix failed:', result.error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Session test and fix failed: ', result.error);
       }
     } catch (error) {
-      console.error('Session test and fix error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Session test and fix error: ', error);
     } finally {
       setLoading(false);
     }
@@ -120,22 +142,40 @@ export const AuthDiagnostic: React.FC = () => {
   const testSmartClient = async () => {
     setLoading(true);
     try {
-      console.log('🧪 Testing supabase...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 Testing supabase...');
       
       // Test service role key
-      console.log('🔧 Service role key check:');
-      console.log('🔧 Key length:', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.length || 'undefined');
-      console.log('🔧 Key starts with:', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + '...' || 'undefined');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 Service role key check: ');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 Key length: ', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.length || 'undefined');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 Key starts with: ', import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + '...' || 'undefined');
       
       // Test oauth_tokens
-      console.log('🧪 Testing oauth_tokens...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 Testing oauth_tokens...');
       const { data: oauthData, error: oauthError } = await supabase
         .from('oauth_tokens')
         .select('*')
         .limit(1);
       
       // Test ai_inbox_items
-      console.log('🧪 Testing ai_inbox_items...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧪 Testing ai_inbox_items...');
       const { data: inboxData, error: inboxError } = await supabase
         .from('ai_inbox_items')
         .select('*')
@@ -146,13 +186,19 @@ export const AuthDiagnostic: React.FC = () => {
         inbox: { data: inboxData, error: inboxError }
       });
       
-      console.log('📊 SmartClient Test Results:', {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📊 SmartClient Test Results: ', {
         oauth: { data: oauthData, error: oauthError },
         inbox: { data: inboxData, error: inboxError }
       });
       
     } catch (error) {
-      console.error('SmartClient test failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('SmartClient test failed: ', error);
       setSmartClientTest({ error: error instanceof Error ? error.message : 'Unknown error' });
     } finally {
       setLoading(false);
@@ -186,7 +232,7 @@ export const AuthDiagnostic: React.FC = () => {
 
           {sessionStatus && (
             <div className="space-y-2">
-              <h3 className="font-semibold">Session Status:</h3>
+              <h3 className="font-semibold">Session Status: </h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>Has Session: {sessionStatus.hasSession ? '✅' : '❌'}</div>
                 <div>Is Expired: {sessionStatus.isExpired ? '❌' : '✅'}</div>
@@ -219,7 +265,7 @@ export const AuthDiagnostic: React.FC = () => {
 
           {results && (
             <div className="space-y-2">
-              <h3 className="font-semibold">Diagnosis Results:</h3>
+              <h3 className="font-semibold">Diagnosis Results: </h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>Service Role Key: {results.serviceRoleKey ? '✅' : '❌'}</div>
                 <div>Anon Key: {results.anonKey ? '✅' : '❌'}</div>
@@ -238,7 +284,7 @@ export const AuthDiagnostic: React.FC = () => {
               {results.errors.length > 0 && (
                 <Alert>
                   <AlertDescription>
-                    <div className="font-semibold">Errors:</div>
+                    <div className="font-semibold">Errors: </div>
                     <ul className="list-disc list-inside">
                       {results.errors.map((error, index) => (
                         <li key={index}>{error}</li>
@@ -252,16 +298,16 @@ export const AuthDiagnostic: React.FC = () => {
 
           {smartClientTest && (
             <div className="space-y-2">
-              <h3 className="font-semibold">SmartClient Test Results:</h3>
+              <h3 className="font-semibold">SmartClient Test Results: </h3>
               <div className="text-sm space-y-1">
                 <div>
-                  oauth_tokens: {smartClientTest.oauth?.error ? '❌' : '✅'}
+                  oauthtokens: {smartClientTest.oauth?.error ? '❌' : '✅'}
                   {smartClientTest.oauth?.error && (
                     <div className="text-red-500 ml-2">{smartClientTest.oauth.error.message}</div>
                   )}
                 </div>
                 <div>
-                  ai_inbox_items: {smartClientTest.inbox?.error ? '❌' : '✅'}
+                  aiinbox_items: {smartClientTest.inbox?.error ? '❌' : '✅'}
                   {smartClientTest.inbox?.error && (
                     <div className="text-red-500 ml-2">{smartClientTest.inbox.error.message}</div>
                   )}

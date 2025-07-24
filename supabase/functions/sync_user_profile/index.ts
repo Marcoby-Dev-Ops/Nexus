@@ -45,7 +45,10 @@ serve(async (req) => {
     }
 
     const provider = user?.app_metadata?.provider ?? 'email';
-    const profile: Record<string, any> = { id: user.id };
+    const profile: Record<string, any> = { 
+      id: user.id,
+      user_id: user.id // Set user_id to match id
+    };
 
     // Enrichment based on provider
     if (provider === 'azure' && user.provider_token) {
@@ -69,7 +72,14 @@ serve(async (req) => {
 
     // Fallback enrichment for non-OAuth or failure cases
     if (!profile.full_name) {
-      profile.full_name = user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'User';
+      // Try to get full_name from user metadata first
+      const metadataFullName = user.user_metadata?.full_name;
+      if (metadataFullName) {
+        profile.full_name = metadataFullName;
+      } else {
+        // Fallback to email username if no full_name in metadata
+        profile.full_name = user.email?.split('@')[0] ?? 'User';
+      }
     }
     if (!profile.email) profile.email = user.email;
 

@@ -162,7 +162,7 @@ export const SecurityCompliancePage: React.FC = () => {
         <h2 className="text-2xl font-semibold mb-4">Security Measures</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {securityMeasures.map((measure, index) => (
-            <Card key={index} className="hover:shadow-md transition-shadow">
+            <Card key={index} className="hover: shadow-md transition-shadow">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <div className="flex items-start gap-4">
@@ -219,7 +219,7 @@ export const SecurityCompliancePage: React.FC = () => {
       {/* Data Protection */}
       <div>
         <h2 className="text-2xl font-semibold mb-4">Data Protection Framework</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
           {dataProtection.map((category, index) => (
             <Card key={index}>
               <CardHeader>
@@ -253,7 +253,7 @@ export const SecurityCompliancePage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                 {securityCertifications.map((cert, index) => (
                   <div key={index} className="flex items-center justify-between p-4 rounded-lg bg-muted/30">
                     <div>
@@ -289,7 +289,7 @@ export const SecurityCompliancePage: React.FC = () => {
               <p className="text-muted-foreground">
                 We take security incidents seriously and have established procedures for rapid response and transparent communication.
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted/30">
                   <h3 className="font-semibold mb-2 flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-amber-500" />
@@ -329,8 +329,7 @@ export const SecurityCompliancePage: React.FC = () => {
           <CardContent className="pt-6">
             <div className="space-y-4">
               <p className="text-muted-foreground">
-                While we secure our systems, here are recommendations to help protect your account:
-              </p>
+                While we secure our systems, here are recommendations to help protect your account: </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-4">
                   <h3 className="font-semibold">Account Security</h3>
@@ -387,7 +386,7 @@ export const SecurityCompliancePage: React.FC = () => {
         <h2 className="text-2xl font-semibold mb-4">Security Contact Information</h2>
         <Card>
           <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
               <div>
                 <h3 className="font-semibold mb-2">Security Team</h3>
                 <p className="text-sm text-muted-foreground">

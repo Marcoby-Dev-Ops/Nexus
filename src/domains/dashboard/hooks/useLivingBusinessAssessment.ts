@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { businessBenchmarkingService, type LivingAssessment } from '../services/businessBenchmarkingService';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { logger } from '../lib/security/logger';
 
 interface UseLivingBusinessAssessmentResult {
@@ -20,7 +20,7 @@ interface UseLivingBusinessAssessmentResult {
 }
 
 export function useLivingBusinessAssessment(): UseLivingBusinessAssessmentResult {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [assessment, setAssessment] = useState<LivingAssessment | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +86,7 @@ export function useLivingBusinessAssessment(): UseLivingBusinessAssessmentResult
   }, [fetchAssessment]);
 
   // Calculate derived values
-  const isImproving = assessment?.trends.monthlyChange ? assessment.trends.monthlyChange > 0 : false;
+  const isImproving = assessment?.trends.monthlyChange ? assessment.trends.monthlyChange > 0: false;
   
   const getMotivationalMessage = useCallback((): string | null => {
     if (!assessment) return null;

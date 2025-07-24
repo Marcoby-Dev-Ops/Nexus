@@ -6,22 +6,18 @@ import { useOperationsSuggestions } from './useOperationsSuggestions';
 import { KpiCard } from './KpiCard';
 import type { KPI } from './types';
 import ActionList from './ActionList';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 export default function OperationsDashboard() {
   const { data, isLoading } = useOperationsMetrics();
   const prompt = 'How to improve operations?';
 
   // Fetch the latest Operations composite score via RPC
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const orgId = user?.company_id;
 
   // Ensure we only call the suggestions query once metrics and orgId are ready
-  const { data: advice } = useOperationsSuggestions(
-    prompt,
-    data as any, // will not execute until enabled
-    orgId,
-  );
+  
 
   if (isLoading || !data) return <Skeleton className="h-96" />;
 
@@ -30,9 +26,9 @@ export default function OperationsDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md: grid-cols-3">
         {data.kpis.map((k: KPI) => (
-          <KpiCard key={k.id} kpi={k} isFocus={k.id === worst} advice={k.id === worst ? advice : undefined} />
+          <KpiCard key={k.id} kpi={k} isFocus={k.id === worst} advice={k.id === worst ? advice: undefined} />
         ))}
       </div>
 

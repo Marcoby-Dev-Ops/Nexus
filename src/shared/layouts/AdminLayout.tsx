@@ -20,7 +20,7 @@ export const AdminLayout: React.FC = () => {
               to={item.path}
               className={({ isActive }) =>
                 `flex items-center space-x-2 text-sm py-2 px-4 rounded-md transition-colors ${
-                  isActive ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+                  isActive ? 'bg-primary text-primary-foreground' : 'hover: bg-muted'
                 }`
               }
             >

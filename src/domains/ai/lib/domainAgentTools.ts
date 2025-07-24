@@ -34,7 +34,7 @@ export class DomainAgentTools {
       department: ['sales'],
       parameters: {
         timeframe: { type: 'string', default: '30d', options: ['7d', '30d', '90d'] },
-        stage_filter: { type: 'string', optional: true }
+        stagefilter: { type: 'string', optional: true }
       },
       execute: async (params: any, context?: any) => {
         try {
@@ -63,8 +63,8 @@ export class DomainAgentTools {
       description: 'Generate revenue forecasts based on current pipeline and historical data',
       department: ['sales'],
       parameters: {
-        forecast_period: { type: 'string', default: 'quarter', options: ['month', 'quarter', 'year'] },
-        confidence_level: { type: 'number', default: 0.8, min: 0.5, max: 0.95 }
+        forecastperiod: { type: 'string', default: 'quarter', options: ['month', 'quarter', 'year'] },
+        confidencelevel: { type: 'number', default: 0.8, min: 0.5, max: 0.95 }
       },
       execute: async (params: any, context?: any) => {
         try {
@@ -85,8 +85,8 @@ export class DomainAgentTools {
       description: 'Analyze and score leads based on engagement and fit criteria',
       department: ['sales'],
       parameters: {
-        lead_source: { type: 'string', optional: true },
-        score_threshold: { type: 'number', default: 70, min: 0, max: 100 }
+        leadsource: { type: 'string', optional: true },
+        scorethreshold: { type: 'number', default: 70, min: 0, max: 100 }
       },
       execute: async (params: any, context?: any) => {
         try {
@@ -101,7 +101,7 @@ export class DomainAgentTools {
           return {
             success: true,
             data: scoredLeads,
-            high_priority_leads: scoredLeads.filter(lead => lead.score >= params.score_threshold)
+            highpriority_leads: scoredLeads.filter(lead => lead.score >= params.score_threshold)
           };
         } catch (error) {
           return { success: false, error: error.message };
@@ -120,7 +120,7 @@ export class DomainAgentTools {
       description: 'Analyze marketing campaign performance and ROI',
       department: ['marketing'],
       parameters: {
-        campaign_type: { type: 'string', optional: true },
+        campaigntype: { type: 'string', optional: true },
         timeframe: { type: 'string', default: '30d', options: ['7d', '30d', '90d'] }
       },
       execute: async (params: any, context?: any) => {
@@ -129,7 +129,7 @@ export class DomainAgentTools {
           success: true,
           data: {
             placeholder: 'Campaign analysis would integrate with marketing platforms',
-            suggested_integrations: ['Google Analytics', 'HubSpot', 'Facebook Ads', 'LinkedIn Ads']
+            suggestedintegrations: ['Google Analytics', 'HubSpot', 'Facebook Ads', 'LinkedIn Ads']
           }
         };
       }
@@ -140,14 +140,14 @@ export class DomainAgentTools {
       description: 'Identify content gaps and opportunities based on customer journey',
       department: ['marketing'],
       parameters: {
-        target_audience: { type: 'string', optional: true },
-        content_type: { type: 'string', optional: true }
+        targetaudience: { type: 'string', optional: true },
+        contenttype: { type: 'string', optional: true }
       },
       execute: async (params: any, context?: any) => {
         return {
           success: true,
           data: {
-            content_gaps: [
+            contentgaps: [
               'Top-of-funnel educational content',
               'Case studies for enterprise segment',
               'Product comparison guides',
@@ -174,7 +174,7 @@ export class DomainAgentTools {
       description: 'Comprehensive analysis of financial metrics and trends',
       department: ['finance'],
       parameters: {
-        analysis_type: { type: 'string', default: 'comprehensive', options: ['quick', 'comprehensive', 'forecasting'] },
+        analysistype: { type: 'string', default: 'comprehensive', options: ['quick', 'comprehensive', 'forecasting'] },
         timeframe: { type: 'string', default: '12m', options: ['3m', '6m', '12m'] }
       },
       execute: async (params: any, context?: any) => {
@@ -185,11 +185,11 @@ export class DomainAgentTools {
           return {
             success: true,
             data: {
-              overall_score: financeScore,
-              key_metrics: {
-                revenue_growth: 'Calculated from KPI data',
-                profit_margins: 'Calculated from KPI data',
-                cash_flow: 'Calculated from KPI data'
+              overallscore: financeScore,
+              keymetrics: {
+                revenuegrowth: 'Calculated from KPI data',
+                profitmargins: 'Calculated from KPI data',
+                cashflow: 'Calculated from KPI data'
               },
               trends: 'Upward trend in revenue, stable margins',
               recommendations: this.generateFinancialRecommendations(financeScore)
@@ -207,14 +207,14 @@ export class DomainAgentTools {
       department: ['finance'],
       parameters: {
         department: { type: 'string', optional: true },
-        variance_threshold: { type: 'number', default: 10, min: 1, max: 50 }
+        variancethreshold: { type: 'number', default: 10, min: 1, max: 50 }
       },
       execute: async (params: any, context?: any) => {
         return {
           success: true,
           data: {
             placeholder: 'Budget variance analysis would integrate with accounting systems',
-            suggested_integrations: ['QuickBooks', 'NetSuite', 'SAP', 'Oracle Financials']
+            suggestedintegrations: ['QuickBooks', 'NetSuite', 'SAP', 'Oracle Financials']
           }
         };
       }
@@ -231,8 +231,8 @@ export class DomainAgentTools {
       description: 'Analyze operational processes and identify optimization opportunities',
       department: ['operations'],
       parameters: {
-        process_area: { type: 'string', optional: true },
-        optimization_focus: { type: 'string', default: 'efficiency', options: ['efficiency', 'cost', 'quality'] }
+        processarea: { type: 'string', optional: true },
+        optimizationfocus: { type: 'string', default: 'efficiency', options: ['efficiency', 'cost', 'quality'] }
       },
       execute: async (params: any, context?: any) => {
         try {
@@ -242,15 +242,15 @@ export class DomainAgentTools {
           return {
             success: true,
             data: {
-              current_score: operationsScore,
-              optimization_opportunities: [
+              currentscore: operationsScore,
+              optimizationopportunities: [
                 'Automate manual data entry processes',
                 'Implement workflow management system',
                 'Optimize resource allocation',
                 'Enhance monitoring and alerting'
               ],
-              potential_savings: '15-25% efficiency improvement',
-              implementation_timeline: '3-6 months'
+              potentialsavings: '15-25% efficiency improvement',
+              implementationtimeline: '3-6 months'
             }
           };
         } catch (error) {
@@ -264,20 +264,20 @@ export class DomainAgentTools {
       description: 'Assess processes for automation potential and ROI',
       department: ['operations'],
       parameters: {
-        process_complexity: { type: 'string', default: 'medium', options: ['low', 'medium', 'high'] },
-        roi_threshold: { type: 'number', default: 200, min: 100, max: 500 }
+        processcomplexity: { type: 'string', default: 'medium', options: ['low', 'medium', 'high'] },
+        roithreshold: { type: 'number', default: 200, min: 100, max: 500 }
       },
       execute: async (params: any, context?: any) => {
         return {
           success: true,
           data: {
-            automation_candidates: [
+            automationcandidates: [
               { process: 'Data entry and validation', roi: 300, complexity: 'low' },
               { process: 'Report generation', roi: 250, complexity: 'medium' },
               { process: 'Customer onboarding', roi: 180, complexity: 'medium' }
             ],
-            recommended_tools: ['N8n', 'Zapier', 'Microsoft Power Automate'],
-            implementation_priority: 'Start with high-ROI, low-complexity processes'
+            recommendedtools: ['N8n', 'Zapier', 'Microsoft Power Automate'],
+            implementationpriority: 'Start with high-ROI, low-complexity processes'
           }
         };
       }
@@ -294,7 +294,7 @@ export class DomainAgentTools {
       description: 'Analyze customer satisfaction metrics and identify improvement areas',
       department: ['support'],
       parameters: {
-        metric_type: { type: 'string', default: 'all', options: ['nps', 'csat', 'ces', 'all'] },
+        metrictype: { type: 'string', default: 'all', options: ['nps', 'csat', 'ces', 'all'] },
         timeframe: { type: 'string', default: '30d', options: ['7d', '30d', '90d'] }
       },
       execute: async (params: any, context?: any) => {
@@ -305,14 +305,14 @@ export class DomainAgentTools {
           return {
             success: true,
             data: {
-              current_score: supportScore,
-              satisfaction_metrics: {
+              currentscore: supportScore,
+              satisfactionmetrics: {
                 nps: 8.5,
                 csat: 4.2,
-                response_time: '0.8 hours',
-                resolution_rate: '98%'
+                responsetime: '0.8 hours',
+                resolutionrate: '98%'
               },
-              improvement_areas: [
+              improvementareas: [
                 'Reduce first response time',
                 'Improve self-service options',
                 'Enhance agent training'
@@ -365,7 +365,7 @@ export class DomainAgentTools {
    * Helper methods
    */
   private getDateFromTimeframe(timeframe: string): string {
-    const days = timeframe === '7d' ? 7 : timeframe === '30d' ? 30 : 90;
+    const days = timeframe === '7d' ? 7: timeframe === '30d' ? 30 : 90;
     return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
   }
 
@@ -381,18 +381,18 @@ export class DomainAgentTools {
     );
 
     const totalValue = openDeals.reduce((sum, deal) => sum + (deal.amount || 0), 0);
-    const averageDealSize = openDeals.length ? totalValue / openDeals.length : 0;
-    const conversionRate = deals.length ? (closedWonDeals.length / deals.length) * 100 : 0;
+    const averageDealSize = openDeals.length ? totalValue / openDeals.length: 0;
+    const conversionRate = deals.length ? (closedWonDeals.length / deals.length) * 100: 0;
 
     return {
-      total_deals: deals.length,
-      open_deals: openDeals.length,
-      closed_won: closedWonDeals.length,
-      closed_lost: closedLostDeals.length,
-      total_pipeline_value: totalValue,
-      average_deal_size: averageDealSize,
-      conversion_rate: conversionRate,
-      pipeline_velocity: this.calculatePipelineVelocity(deals)
+      totaldeals: deals.length,
+      opendeals: openDeals.length,
+      closedwon: closedWonDeals.length,
+      closedlost: closedLostDeals.length,
+      totalpipeline_value: totalValue,
+      averagedeal_size: averageDealSize,
+      conversionrate: conversionRate,
+      pipelinevelocity: this.calculatePipelineVelocity(deals)
     };
   }
 
@@ -431,17 +431,16 @@ export class DomainAgentTools {
     const historicalData = await this.getHistoricalRevenueData();
     const currentPipeline = await this.getCurrentPipelineValue();
     
-    const forecastMultiplier = params.forecast_period === 'month' ? 1 : 
-                              params.forecast_period === 'quarter' ? 3 : 12;
+    const forecastMultiplier = params.forecast_period === 'month' ? 1: params.forecast_period === 'quarter' ? 3 : 12;
 
     const baseForecast = (historicalData.monthlyAverage || 50000) * forecastMultiplier;
     const pipelineContribution = (currentPipeline || 200000) * (params.confidence_level || 0.8);
     
     return {
-      base_forecast: baseForecast,
-      pipeline_contribution: pipelineContribution,
-      total_forecast: baseForecast + pipelineContribution,
-      confidence_level: params.confidence_level,
+      baseforecast: baseForecast,
+      pipelinecontribution: pipelineContribution,
+      totalforecast: baseForecast + pipelineContribution,
+      confidencelevel: params.confidence_level,
       period: params.forecast_period
     };
   }
@@ -466,7 +465,10 @@ export class DomainAgentTools {
 
       return deals?.reduce((sum, deal) => sum + (deal.amount || 0), 0) || 0;
     } catch (error) {
-      console.error('Error fetching pipeline value:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching pipeline value: ', error);
       return 0;
     }
   }
@@ -488,11 +490,11 @@ export class DomainAgentTools {
       
       return {
         ...contact,
-        calculated_score: Math.round(score),
-        score_breakdown: {
-          email_engagement: Math.min(emailOpens * 2, 30),
-          response_rate: Math.min(responses * 10, 40),
-          lead_score_contribution: Math.min(leadScore * 0.3, 30)
+        calculatedscore: Math.round(score),
+        scorebreakdown: {
+          emailengagement: Math.min(emailOpens * 2, 30),
+          responserate: Math.min(responses * 10, 40),
+          leadscore_contribution: Math.min(leadScore * 0.3, 30)
         }
       };
     }).sort((a, b) => b.calculated_score - a.calculated_score);

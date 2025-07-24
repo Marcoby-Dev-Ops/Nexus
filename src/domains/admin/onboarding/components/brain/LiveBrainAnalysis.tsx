@@ -6,21 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Brain, 
-  TrendingUp, 
-  Lightbulb, 
-  Sparkles,
-  CheckCircle,
-  Clock,
-  BarChart3,
-  Activity,
-  Zap,
-  Target,
-  AlertCircle,
-  DollarSign
-} from 'lucide-react';
-
+import { Brain, TrendingUp, Lightbulb, Sparkles, CheckCircle, Clock, Activity, Zap, Target, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/Progress';
@@ -77,9 +63,9 @@ interface LiveRecommendation {
 }
 
 export const LiveBrainAnalysis: React.FC<LiveBrainAnalysisProps> = ({ 
-  userProfile: _userProfile, 
+  userProfile: userProfile, 
   systemIntelligence,
-  onAnalysisComplete: _onAnalysisComplete 
+  onAnalysisComplete: onAnalysisComplete 
 }) => {
   const [analysis, setAnalysis] = useState<BrainAnalysis>({
     id: 'live-analysis',
@@ -324,7 +310,7 @@ export const LiveBrainAnalysis: React.FC<LiveBrainAnalysisProps> = ({
       {analysis.status === 'complete' && (
         <>
           {/* Key Metrics */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid md: grid-cols-2 lg:grid-cols-4 gap-4">
             {analysis.metrics.map((metric) => (
               <Card key={metric.name}>
                 <CardContent className="p-4">

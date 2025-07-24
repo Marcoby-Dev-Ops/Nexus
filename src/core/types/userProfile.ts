@@ -52,6 +52,7 @@ export interface UserProfile {
   mobile?: string;
   work_phone?: string;
   personal_email?: string;
+  business_email?: string;
   
   // Work Information
   role: 'owner' | 'admin' | 'manager' | 'user';
@@ -118,23 +119,23 @@ export interface Integration {
   description?: string;
   icon_url?: string;
   config_schema?: Record<string, unknown>;
-  is_active: boolean;
-  created_at: string;
+  isactive: boolean;
+  createdat: string;
 }
 
 export interface UserIntegration {
   id: string;
-  user_id: string;
+  userid: string;
   company_id?: string;
-  integration_id: string;
+  integrationid: string;
   integration?: Integration;
   name?: string; // User-defined name for this integration instance
   config: Record<string, unknown>;
   status: 'active' | 'inactive' | 'error' | 'setup';
   last_sync?: string;
   error_message?: string;
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
 }
 
 export interface EnhancedUser {
@@ -173,3 +174,156 @@ export interface UserContextActions {
 }
 
 export type UserContextType = UserContextState & UserContextActions; 
+
+// Enhanced User Management Types
+export interface UserInvitation {
+  id: string;
+  email: string;
+  role: UserRole;
+  company_id: string;
+  invited_by: string;
+  status: 'pending' | 'accepted' | 'expired' | 'cancelled';
+  expires_at: string;
+  created_at: string;
+  accepted_at?: string;
+}
+
+export interface UserSession {
+  id: string;
+  user_id: string;
+  device_info: {
+    browser?: string;
+    os?: string;
+    device?: string;
+    ip_address?: string;
+    location?: string;
+  };
+  is_active: boolean;
+  created_at: string;
+  last_activity: string;
+  expires_at: string;
+}
+
+export interface UserActivity {
+  id: string;
+  user_id: string;
+  action: string;
+  resource_type?: string;
+  resource_id?: string;
+  metadata?: Record<string, unknown>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string;
+}
+
+export interface UserPermission {
+  id: string;
+  name: string;
+  description: string;
+  resource: string;
+  action: 'create' | 'read' | 'update' | 'delete' | 'manage';
+  conditions?: Record<string, unknown>;
+}
+
+export interface UserRole {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+  is_system_role: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Multi-factor Authentication
+export interface MFASetup {
+  id: string;
+  user_id: string;
+  type: 'totp' | 'sms' | 'email' | 'hardware';
+  status: 'pending' | 'active' | 'disabled';
+  secret?: string;
+  backup_codes?: string[];
+  created_at: string;
+  last_used?: string;
+}
+
+// User Security Settings
+export interface UserSecuritySettings {
+  user_id: string;
+  require_mfa: boolean;
+  session_timeout_minutes: number;
+  max_concurrent_sessions: number;
+  password_policy: {
+    min_length: number;
+    require_uppercase: boolean;
+    require_lowercase: boolean;
+    require_numbers: boolean;
+    require_special_chars: boolean;
+    prevent_common_passwords: boolean;
+  };
+  login_notifications: boolean;
+  suspicious_activity_alerts: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// User Onboarding Flow
+export interface UserOnboardingStep {
+  id: string;
+  user_id: string;
+  step_name: string;
+  status: 'pending' | 'completed' | 'skipped';
+  completed_at?: string;
+  data?: Record<string, unknown>;
+}
+
+export interface UserOnboardingFlow {
+  user_id: string;
+  current_step: string;
+  total_steps: number;
+  completed_steps: number;
+  started_at: string;
+  completed_at?: string;
+  steps: UserOnboardingStep[];
+}
+
+// User Analytics and Insights
+export interface UserAnalytics {
+  user_id: string;
+  login_count: number;
+  last_login: string;
+  average_session_duration: number;
+  most_used_features: string[];
+  productivity_score?: number;
+  engagement_level: 'high' | 'medium' | 'low';
+  created_at: string;
+  updated_at: string;
+}
+
+// User Preferences and Settings
+export interface UserPreferences {
+  user_id: string;
+  notifications: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    in_app: boolean;
+  };
+  privacy: {
+    profile_visibility: 'public' | 'company' | 'private';
+    show_online_status: boolean;
+    allow_contact_requests: boolean;
+  };
+  accessibility: {
+    high_contrast: boolean;
+    font_size: 'small' | 'medium' | 'large';
+    screen_reader: boolean;
+  };
+  integrations: {
+    calendar_sync: boolean;
+    email_sync: boolean;
+    slack_notifications: boolean;
+  };
+  created_at: string;
+  updated_at: string;
+} 

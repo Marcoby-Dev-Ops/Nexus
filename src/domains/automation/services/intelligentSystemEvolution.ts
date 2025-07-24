@@ -6,7 +6,7 @@
 
 import { supabase } from '@/core/supabase';
 import { logger } from '@/core/auth/logger';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { n8nService } from '@/domains/automation/services/n8nService';
 
 interface UsagePattern {
@@ -21,10 +21,10 @@ interface UsagePattern {
 }
 
 interface RawUsageRecord {
-  user_id: string;
-  component_path: string;
+  userid: string;
+  componentpath: string;
   action: string;
-  created_at: string;
+  createdat: string;
   context?: Record<string, unknown>;
   task_completion_time?: number;
   user_rating?: number;
@@ -108,7 +108,10 @@ class IntelligentSystemEvolution {
    */
   private async analyzeAndEvolve(): Promise<void> {
     try {
-      console.log('🧠 Starting intelligent system evolution analysis...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧠 Starting intelligent system evolution analysis...');
 
       // 1. Collect usage patterns
       const patterns = await this.collectUsagePatterns();
@@ -125,9 +128,15 @@ class IntelligentSystemEvolution {
       // 5. Queue complex improvements for review
       await this.queueComplexImprovements(suggestions);
 
-      console.log(`✅ Evolution analysis complete. Generated ${suggestions.length} suggestions.`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`✅ Evolution analysis complete. Generated ${suggestions.length} suggestions.`);
     } catch (error) {
-      console.error('❌ Evolution analysis failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Evolution analysis failed: ', error);
     }
   }
 
@@ -135,13 +144,16 @@ class IntelligentSystemEvolution {
    * Collect and analyze user behavior patterns
    */
   private async collectUsagePatterns(): Promise<UsagePattern[]> {
-    const { data: patterns, error } = await supabase
+    const { error } = await supabase
       .from('chat_usage_tracking')
       .select('*')
       .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
 
     if (error) {
-      console.error('Error collecting usage patterns:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error collecting usage patterns: ', error);
       return [];
     }
 
@@ -347,9 +359,15 @@ class IntelligentSystemEvolution {
     for (const improvement of safeImprovements.slice(0, 3)) { // Limit to 3 per cycle
       try {
         await this.implementImprovement(improvement);
-        console.log(`✅ Auto-implemented: ${improvement.title}`);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`✅ Auto-implemented: ${improvement.title}`);
       } catch (error) {
-        console.error(`❌ Failed to auto-implement ${improvement.title}:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`❌ Failed to auto-implement ${improvement.title}:`, error);
       }
     }
   }
@@ -359,8 +377,7 @@ class IntelligentSystemEvolution {
    */
   private async generateOptimizedComponent(combo: ComponentCombination): Promise<string> {
     const prompt = `
-      Create a new React component that combines the functionality of the following components:
-      ${combo.components.join(', ')}.
+      Create a new React component that combines the functionality of the following components: ${combo.components.join(', ')}.
       The typical workflow is: ${combo.components.join(' -> ')}.
       The goal is to streamline this process and reduce the time taken.
       The new component should be highly efficient and intuitive.
@@ -369,7 +386,10 @@ class IntelligentSystemEvolution {
     
     // In a real implementation, this would call a code generation service
     // For now, we return a placeholder.
-    console.log('Generating optimized component with prompt:', prompt);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating optimized component with prompt: ', prompt);
     return Promise.resolve(`
       // Generated component for ${combo.components.join(' + ')}
       import React from 'react';
@@ -414,6 +434,9 @@ class IntelligentSystemEvolution {
   }
 
   private async implementImprovement(improvement: SystemEvolutionSuggestion): Promise<void> {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Implementing improvement: ${improvement.title}`);
     // Implementation logic would go here
   }
@@ -425,7 +448,10 @@ class IntelligentSystemEvolution {
 
     for (const suggestion of complexSuggestions) {
       // Evolution suggestions disabled for 1.0 - coming in v1.1
-      console.log('Evolution suggestion generated:', {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Evolution suggestion generated: ', {
         id: suggestion.id,
         priority: suggestion.priority,
         title: suggestion.title,

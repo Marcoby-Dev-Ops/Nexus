@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Info, X, Loader2 } from "lucide-react";
 import { Progress } from '@/shared/components/ui/Progress';
 import Confetti from "react-confetti";
 import { Tooltip, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/Tooltip';
-import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 const onboardingSteps = [
   {
@@ -50,12 +50,12 @@ function getFirstName(profile: unknown): string {
 // Remove useUserProfile and useUserIntegrations hooks
 
 export const OnboardingChecklist: React.FC = () => {
-  const { profile, integrations, loading: authLoading, error: authError } = useZustandAuth();
+  const { profile, integrations } = useAuth();
   const [dismissed, setDismissed] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
   // Ensure integrations is always an array
-  const safeIntegrations = Array.isArray(integrations) ? integrations : [];
+  const safeIntegrations = Array.isArray(integrations) ? integrations: [];
 
   const steps = onboardingSteps.map((step) => ({
     ...step,
@@ -82,7 +82,7 @@ export const OnboardingChecklist: React.FC = () => {
   if (dismissed) return null;
 
   // Show loading state
-  if (authLoading) {
+  if (loading) {
     return (
       <Card className="mb-6">
         <CardHeader>

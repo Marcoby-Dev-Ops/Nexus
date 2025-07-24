@@ -191,7 +191,7 @@ class UserN8nConfigService {
       };
     } catch (error) {
       config.syncStatus = 'error';
-      config.errorMessage = error instanceof Error ? error.message : 'Sync failed';
+      config.errorMessage = error instanceof Error ? error.message: 'Sync failed';
       
       await this.saveConfigs();
 

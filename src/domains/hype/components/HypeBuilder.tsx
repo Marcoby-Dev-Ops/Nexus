@@ -6,33 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Share2,
-  Twitter,
-  Linkedin,
-  Facebook,
-  Copy,
-  Users,
-  Flame,
-  Zap,
-  Trophy,
-  Target,
-  TrendingUp,
-  Heart,
-  MessageCircle,
-  ArrowUp,
-  Gift,
-  Crown,
-  Rocket,
-  CheckCircle2,
-  ExternalLink,
-  Volume2,
-  VolumeX,
-  Star,
-  Sparkles,
-  Bolt,
-  Clock
-} from 'lucide-react';
+import { Share2, Twitter, Linkedin, Facebook, Copy, Users, Flame, Zap, Trophy, Target, MessageCircle, ArrowUp, Gift, Crown, Rocket, CheckCircle2, Volume2, VolumeX, Star, Bolt, Clock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -310,7 +284,7 @@ const HypeBuilder: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
             {/* Total Signups */}
             <motion.div
               key={totalSignups}
@@ -412,7 +386,7 @@ const HypeBuilder: React.FC = () => {
         <CardContent>
           {/* Viral Content Selector */}
           <div className="mb-6">
-            <h3 className="font-semibold mb-4">Choose what to share:</h3>
+            <h3 className="font-semibold mb-4">Choose what to share: </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {viralContent.map((content, index) => (
                 <motion.div
@@ -442,7 +416,7 @@ const HypeBuilder: React.FC = () => {
           </div>
 
           {/* Share Buttons */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
             {shareWidgets.map((widget) => {
               const Icon = widget.icon;
               return (

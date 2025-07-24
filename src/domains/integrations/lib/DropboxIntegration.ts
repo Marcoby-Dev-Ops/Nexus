@@ -7,7 +7,7 @@ export class DropboxIntegration extends BaseIntegration {
   name = 'Dropbox';
   dataFields = ['files', 'folders', 'users', 'activity'];
 
-  async fetchProviderData({ userId: _userId, fullSync: _fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
+  async fetchProviderData({ userId: userId, fullSync: fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
     // TODO: Implement actual Dropbox API fetch logic
     return {
       files: [],

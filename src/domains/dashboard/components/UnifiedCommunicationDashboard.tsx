@@ -11,26 +11,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { 
-  MessageSquare, 
-  Users, 
-  Calendar, 
-  Video, 
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Clock,
-  Target,
-  Zap,
-  AlertTriangle,
-  CheckCircle2,
-  ArrowRight,
-  Activity,
-  Lightbulb,
-  Settings,
-  RefreshCw,
-  ExternalLink
-} from 'lucide-react';
+import { MessageSquare, Users, Video, TrendingUp, TrendingDown, Clock, Target, Zap, ArrowRight, Activity, Lightbulb, Settings, RefreshCw, ExternalLink } from 'lucide-react';
 import { communicationAnalyticsService, type UnifiedCommunicationInsights, type CommunicationHealthScore } from '@/domains/analytics';
 
 interface PlatformStatus {
@@ -187,7 +168,10 @@ const UnifiedCommunicationDashboard: React.FC = () => {
       setHealthScore(healthData.overall);
       
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load dashboard data: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -216,6 +200,9 @@ const UnifiedCommunicationDashboard: React.FC = () => {
 
   const handleConnectPlatform = (platform: 'slack' | 'teams') => {
     // Would open integration setup modal
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Connecting ${platform}...`);
   };
 
@@ -288,7 +275,7 @@ const UnifiedCommunicationDashboard: React.FC = () => {
       </Card>
 
       {/* Platform Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
         {/* Slack Status */}
         <Card>
           <CardHeader>
@@ -462,7 +449,7 @@ const UnifiedCommunicationDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="patterns" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center space-x-2">

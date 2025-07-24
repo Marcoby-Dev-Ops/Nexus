@@ -17,21 +17,18 @@ import {
   Alert, AlertDescription,
   Progress
 } from '@/shared/components/ui';
-import { 
-  Activity, AlertTriangle, CheckCircle, FileText, Key, 
-  Lock, RefreshCw, Shield, User, XCircle, Eye 
-} from 'lucide-react';
-import { TrendingUp, Download, Settings } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle, FileText, Key, Shield, XCircle, Eye } from 'lucide-react';
+import { Download, Settings } from 'lucide-react';
 import { supabase } from "@/core/supabase";
 
 interface SecurityEvent {
   id: string;
-  user_id: string;
-  event_type: string;
-  event_details: any;
-  ip_address: string;
-  user_agent: string;
-  created_at: string;
+  userid: string;
+  eventtype: string;
+  eventdetails: any;
+  ipaddress: string;
+  useragent: string;
+  createdat: string;
 }
 
 interface SecurityMetrics {
@@ -85,7 +82,7 @@ export const SecurityDashboard: React.FC = () => {
       const startTime = timeRangeMap[timeRange];
 
       // Load security events
-      const { data: events, error: eventsError } = await supabase
+      const { data: events } = await supabase
         .from('security_audit_log')
         .select('*')
         .gte('created_at', startTime.toISOString())
@@ -115,7 +112,10 @@ export const SecurityDashboard: React.FC = () => {
       generateSecurityAlerts(events || []);
 
     } catch (error) {
-      console.error('Failed to load security data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load security data: ', error);
     } finally {
       setLoading(false);
     }
@@ -171,14 +171,14 @@ export const SecurityDashboard: React.FC = () => {
     const iconMap: Record<string, React.ReactNode> = {
       login: <CheckCircle className="h-4 w-4 text-success" />,
       logout: <XCircle className="h-4 w-4 text-muted-foreground" />,
-      failed_login: <XCircle className="h-4 w-4 text-destructive" />,
-      suspicious_activity: <AlertTriangle className="h-4 w-4 text-warning" />,
-      data_access: <Eye className="h-4 w-4 text-primary" />,
-      integration_added: <Settings className="h-4 w-4 text-success" />,
-      integration_removed: <Settings className="h-4 w-4 text-destructive" />,
-      data_modification: <FileText className="h-4 w-4 text-secondary" />,
-      permission_change: <Key className="h-4 w-4 text-warning" />,
-      data_export: <Download className="h-4 w-4 text-indigo-500" />,
+      failedlogin: <XCircle className="h-4 w-4 text-destructive" />,
+      suspiciousactivity: <AlertTriangle className="h-4 w-4 text-warning" />,
+      dataaccess: <Eye className="h-4 w-4 text-primary" />,
+      integrationadded: <Settings className="h-4 w-4 text-success" />,
+      integrationremoved: <Settings className="h-4 w-4 text-destructive" />,
+      datamodification: <FileText className="h-4 w-4 text-secondary" />,
+      permissionchange: <Key className="h-4 w-4 text-warning" />,
+      dataexport: <Download className="h-4 w-4 text-indigo-500" />,
     };
 
     return iconMap[eventType] || <Activity className="h-4 w-4 text-muted-foreground" />;
@@ -188,14 +188,14 @@ export const SecurityDashboard: React.FC = () => {
     const colorMap: Record<string, string> = {
       login: 'bg-success/10 text-success',
       logout: 'bg-muted text-foreground',
-      failed_login: 'bg-destructive/10 text-destructive',
-      suspicious_activity: 'bg-warning/10 text-orange-800',
-      data_access: 'bg-primary/10 text-primary',
-      integration_added: 'bg-success/10 text-success',
-      integration_removed: 'bg-destructive/10 text-destructive',
-      data_modification: 'bg-secondary/10 text-purple-800',
-      permission_change: 'bg-warning/10 text-warning/80',
-      data_export: 'bg-indigo-100 text-indigo-800',
+      failedlogin: 'bg-destructive/10 text-destructive',
+      suspiciousactivity: 'bg-warning/10 text-orange-800',
+      dataaccess: 'bg-primary/10 text-primary',
+      integrationadded: 'bg-success/10 text-success',
+      integrationremoved: 'bg-destructive/10 text-destructive',
+      datamodification: 'bg-secondary/10 text-purple-800',
+      permissionchange: 'bg-warning/10 text-warning/80',
+      dataexport: 'bg-indigo-100 text-indigo-800',
     };
 
     return colorMap[eventType] || 'bg-muted text-foreground';
@@ -293,7 +293,7 @@ export const SecurityDashboard: React.FC = () => {
         <CardContent>
           <div className="h-[400px] overflow-y-auto">
             {securityEvents.map(event => (
-              <div key={event.id} className="flex items-center space-x-4 p-2 hover:bg-muted/50 rounded-lg">
+              <div key={event.id} className="flex items-center space-x-4 p-2 hover: bg-muted/50 rounded-lg">
                 <div className="p-2 bg-muted rounded-full">
                   {getEventIcon(event.event_type)}
                 </div>
@@ -313,7 +313,7 @@ export const SecurityDashboard: React.FC = () => {
       </Card>
 
       {/* Security Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md: grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Events</CardTitle>
@@ -378,7 +378,7 @@ export const SecurityDashboard: React.FC = () => {
             <CardContent>
               <div className="h-[400px] overflow-y-auto">
                 {securityEvents.map((event) => (
-                  <div key={event.id} className="flex items-center space-x-4 p-2 hover:bg-muted/50 rounded-lg">
+                  <div key={event.id} className="flex items-center space-x-4 p-2 hover: bg-muted/50 rounded-lg">
                     <div className="p-2 bg-muted rounded-full">
                       {getEventIcon(event.event_type)}
                     </div>
@@ -397,7 +397,7 @@ export const SecurityDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md: grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle>Event Timeline</CardTitle>

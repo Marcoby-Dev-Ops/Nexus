@@ -28,7 +28,7 @@ const SourceDrawer: React.FC<Props> = ({ open, source, onClose }) => (
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeHighlight]}
-            className="prose prose-sm dark:prose-invert max-w-none"
+            className="prose prose-sm dark: prose-invert max-w-none"
           >
             {source.content}
           </ReactMarkdown>

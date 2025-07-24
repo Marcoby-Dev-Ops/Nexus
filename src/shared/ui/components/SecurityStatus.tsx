@@ -78,7 +78,10 @@ export const SecurityStatus: React.FC = () => {
         lastCheck: now,
       });
     } catch (error) {
-      console.error('Failed to load security status:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to load security status: ', error);
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,7 @@ export const SecurityStatus: React.FC = () => {
   const getStatusColor = (): string => {
     switch (status.level) {
       case 'secure':
-        return 'bg-success/10 text-success hover:bg-success/20';
+        return 'bg-success/10 text-success hover: bg-success/20';
       case 'warning':
         return 'bg-warning/10 text-warning hover:bg-warning/20';
       case 'critical':

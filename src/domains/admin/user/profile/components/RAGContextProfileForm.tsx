@@ -8,23 +8,8 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Checkbox } from '@/shared/components/ui/Checkbox';
 import { Progress } from '@/shared/components/ui/Progress';
-import { 
-  Brain, 
-  MessageSquare, 
-  Clock, 
-  Users, 
-  Target, 
-  Zap, 
-  TrendingUp,
-  CheckCircle2,
-  AlertCircle,
-  Save,
-  Sparkles,
-  Lightbulb,
-  Settings,
-  Building2
-} from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { Brain, Target, TrendingUp, CheckCircle2, Save, Sparkles, Building2 } from 'lucide-react';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { profileContextService, type RAGProfileContext, type ProfileContextUpdate } from '@/domains/admin';
 import { ButtonSpinner } from '@/shared/components/patterns/LoadingStates';
 
@@ -39,7 +24,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
   onCancel, 
   showPreview = true 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [context, setContext] = useState<Partial<RAGProfileContext>>({});
@@ -59,7 +44,10 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
           setCompletionPercentage(ragContext.profile_completion_percentage);
         }
       } catch (error) {
-        console.error('Error loading RAG context:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading RAG context: ', error);
       } finally {
         setLoading(false);
       }
@@ -91,7 +79,10 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
         }
       }
     } catch (error) {
-      console.error('Error saving RAG context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error saving RAG context: ', error);
     } finally {
       setSaving(false);
     }
@@ -199,7 +190,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-3 gap-6">
         {/* Navigation Sidebar */}
         <div className="lg:col-span-1">
           <Card>
@@ -215,7 +206,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
                   className={`w-full flex items-center gap-4 p-4 rounded-lg text-left transition-colors ${
                     activeSection === section.id 
                       ? 'bg-primary text-primary-foreground' 
-                      : 'hover:bg-muted'
+                      : 'hover: bg-muted'
                   }`}
                 >
                   {section.icon}
@@ -240,7 +231,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
               <CardContent>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Current Level:</span>
+                    <span className="text-sm font-medium">Current Level: </span>
                     <Badge variant="outline" className={aiImpact.color}>
                       {aiImpact.level}
                     </Badge>
@@ -261,7 +252,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
         </div>
 
         {/* Form Content */}
-        <div className="lg:col-span-2">
+        <div className="lg: col-span-2">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -276,7 +267,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
               {/* Identity & Role Section */}
               {activeSection === 'identity' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">Display Name *</Label>
                       <Input
@@ -297,7 +288,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="department">Department *</Label>
                       <Select value={context.department || ''} onValueChange={(value) => handleFieldChange('department', value)}>
@@ -337,7 +328,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
               {/* Work Context Section */}
               {activeSection === 'context' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="experience_level">Experience Level *</Label>
                       <Select value={context.experience_level || ''} onValueChange={(value) => handleFieldChange('experience_level', value)}>
@@ -366,7 +357,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="time_availability">Time Availability</Label>
                       <Select value={context.time_availability || ''} onValueChange={(value) => handleFieldChange('time_availability', value)}>
@@ -451,7 +442,7 @@ export const RAGContextProfileForm: React.FC<RAGContextProfileFormProps> = ({
               {/* Business Context Section */}
               {activeSection === 'business' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="automation_maturity">Automation Level</Label>
                       <Select value={context.automation_maturity || ''} onValueChange={(value) => handleFieldChange('automation_maturity', value)}>

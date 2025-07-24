@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/core/supabase';
-import { Loader2, AlertTriangle, Brain, Eye, Zap, TrendingUp, Plus, ExternalLink, RefreshCw } from 'lucide-react';
+import { Brain, Eye, Zap, Plus, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { PersonalMemoryCapture } from '../ai/PersonalMemoryCapture';
@@ -13,7 +13,7 @@ interface PersonalThought {
   content: string;
   category: string;
   tags: string[];
-  created_at: string;
+  createdat: string;
   businessContext?: any;
 }
 
@@ -31,7 +31,7 @@ interface PersonalAutomation {
   type: string;
   status: string;
   triggeredBy: string;
-  created_at: string;
+  createdat: string;
 }
 
 const fetchPersonalThoughts = async (): Promise<PersonalThought[]> => {
@@ -70,12 +70,7 @@ const fetchPersonalAutomations = async (): Promise<PersonalAutomation[]> => {
 };
 
 export const PersonalTrinityWidget: React.FC = () => {
-  const {
-    data: thoughts = [],
-    isLoading: loadingThoughts,
-    isError: errorThoughts,
-    refetch: refetchThoughts
-  } = useQuery<PersonalThought[]>({
+  const { isLoading: loadingThoughts, isError: errorThoughts } = useQuery<PersonalThought[]>({
     queryKey: ['personal_thoughts'],
     queryFn: fetchPersonalThoughts
   });
@@ -96,11 +91,7 @@ export const PersonalTrinityWidget: React.FC = () => {
     queryFn: fetchPersonalAnalytics
   });
 
-  const {
-    data: automations = [],
-    isLoading: loadingAutomations,
-    isError: errorAutomations
-  } = useQuery<PersonalAutomation[]>({
+  const { isLoading: loadingAutomations, isError: errorAutomations } = useQuery<PersonalAutomation[]>({
     queryKey: ['personal_automations'],
     queryFn: fetchPersonalAutomations
   });
@@ -120,7 +111,7 @@ export const PersonalTrinityWidget: React.FC = () => {
 
   return (
     <Card className="w-full max-w-3xl mx-auto my-8 bg-card rounded-2xl shadow-lg border border-border">
-      <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
+      <CardHeader className="flex flex-col md: flex-row items-center justify-between gap-4">
         <CardTitle className="flex items-center gap-2 text-2xl font-bold">
           <Brain className="text-primary" />
           Personal Trinity
@@ -128,7 +119,7 @@ export const PersonalTrinityWidget: React.FC = () => {
       </CardHeader>
       <CardContent>
         {/* Overview grid for THINK, SEE, ACT */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
           {/* THINK Overview */}
           <div className="flex flex-col h-full min-h-[180px] p-4 bg-muted rounded-xl">
             <div className="flex items-center gap-2 mb-2">

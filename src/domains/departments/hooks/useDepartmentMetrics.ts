@@ -19,7 +19,10 @@ export function useDepartmentMetrics(departmentId: DepartmentId) {
         .maybeSingle();
 
       if (error) {
-        console.warn(`[useDepartmentMetrics] error fetching ${departmentId}`, error.message);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`[useDepartmentMetrics] error fetching ${departmentId}`, error.message);
       }
 
       if (data && data.metrics) {

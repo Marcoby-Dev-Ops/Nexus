@@ -23,7 +23,7 @@ export const Spinner: React.FC<SpinnerProps> = React.memo(({ size = 24, classNam
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    xmlns="http://www.w3.org/2000/svg"
+    xmlns="http: //www.w3.org/2000/svg"
     role="status"
     aria-label="Loading"
   >

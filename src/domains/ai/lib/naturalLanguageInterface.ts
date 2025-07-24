@@ -392,7 +392,10 @@ export class NaturalLanguageInterface {
       return response;
       
     } catch (error) {
-      console.error('Error processing natural language query:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error processing natural language query: ', error);
       
       return {
         id: `error_${Date.now()}`,
@@ -439,8 +442,7 @@ export class NaturalLanguageInterface {
         return await this.handleRecommendationQuery(query);
       case 'action':
         return await this.handleActionQuery(query);
-      default:
-        return await this.handleGeneralQuery(query);
+      default: return await this.handleGeneralQuery(query);
     }
   }
 
@@ -621,7 +623,7 @@ export class NaturalLanguageInterface {
       (this.queryProcessingStats.averageProcessingTime * (this.queryProcessingStats.totalQueries - 1) + query.processingTime) / 
       this.queryProcessingStats.totalQueries;
     this.queryProcessingStats.successRate = 
-      (this.queryProcessingStats.successRate * (this.queryProcessingStats.totalQueries - 1) + (response.confidence > 0.5 ? 1 : 0)) / 
+      (this.queryProcessingStats.successRate * (this.queryProcessingStats.totalQueries - 1) + (response.confidence > 0.5 ? 1: 0)) / 
       this.queryProcessingStats.totalQueries;
   }
 
@@ -885,8 +887,7 @@ class ResponseGenerator {
         return this.generateExplanationResponse(query, brainResponse);
       case 'recommendation':
         return this.generateRecommendationResponse(query, brainResponse);
-      default:
-        return "I understand you're looking for information. Let me help you with that based on your business data.";
+      default: return "I understand you're looking for information. Let me help you with that based on your business data.";
     }
   }
   

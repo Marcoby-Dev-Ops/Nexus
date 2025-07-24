@@ -6,8 +6,6 @@
 
 import React from 'react';
 import { ActionCard } from '@/domains/ai/components/ActionCard';
-import { Mail, Crown, TrendingUp } from 'lucide-react';
-
 interface ProfessionalEmailActionCardProps {
   userId?: string;
   urgency?: 'low' | 'medium' | 'high';
@@ -21,7 +19,7 @@ export const ProfessionalEmailActionCard: React.FC<ProfessionalEmailActionCardPr
 }) => {
   const handleSetupEmail = () => {
     // Open Microsoft 365 setup
-    window.open('https://www.microsoft.com/en-us/microsoft-365/business/compare-all-microsoft-365-business-products', '_blank');
+    window.open('https: //www.microsoft.com/en-us/microsoft-365/business/compare-all-microsoft-365-business-products', '_blank');
     onComplete?.();
   };
 
@@ -69,7 +67,7 @@ export const ProfessionalEmailActionCard: React.FC<ProfessionalEmailActionCardPr
       card={cardData}
       onCompleted={(action) => {
         if (action.id === "setup_microsoft365") {
-          window.open("https://www.microsoft.com/en-us/microsoft-365/business", "_blank");
+          window.open("https: //www.microsoft.com/en-us/microsoft-365/business", "_blank");
         }
         onComplete?.();
       }}

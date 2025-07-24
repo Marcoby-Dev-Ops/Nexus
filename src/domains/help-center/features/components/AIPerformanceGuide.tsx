@@ -114,7 +114,7 @@ export const AIPerformanceGuide: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             {quickActions.map((action, index) => (
               <Button
                 key={index}
@@ -136,9 +136,9 @@ export const AIPerformanceGuide: React.FC = () => {
       </Card>
 
       {/* Feature Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
         {features.map((feature, index) => (
-          <Card key={index} className="hover:shadow-md transition-shadow">
+          <Card key={index} className="hover: shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {feature.icon}
@@ -235,7 +235,7 @@ export const AIPerformanceGuide: React.FC = () => {
           <CardTitle className="text-blue-900">Why Use These Features?</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             <div className="space-y-2">
               <h4 className="font-medium text-blue-900 flex items-center gap-2">
                 <DollarSign className="w-4 h-4" />

@@ -179,7 +179,7 @@ class CentralizedAppsOrchestrator {
         });
       } catch (error) {
         app.syncStatus = 'error';
-        app.errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        app.errorMessage = error instanceof Error ? error.message: 'Unknown error';
         
         results.push({
           appId: app.id,
@@ -283,7 +283,7 @@ class CentralizedAppsOrchestrator {
     const functions = this.getFunctions();
     
     const categories: Record<AppCategory, number> = {
-      crm: 0, marketing: 0, accounting: 0, project_management: 0,
+      crm: 0, marketing: 0, accounting: 0, projectmanagement: 0,
       communication: 0, analytics: 0, automation: 0, ecommerce: 0, hr: 0, other: 0
     };
     

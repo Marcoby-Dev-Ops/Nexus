@@ -30,11 +30,11 @@ export const IntegrationTracker = {
     // Upsert usage record
     await supabase.from('component_usages').upsert([
       {
-        component_name: usage.componentName,
+        componentname: usage.componentName,
         location: usage.location,
         timestamp: usage.timestamp,
-        usage_count: usage.usageCount,
-        performance_metrics: usage.performanceMetrics || null,
+        usagecount: usage.usageCount,
+        performancemetrics: usage.performanceMetrics || null,
       },
     ]);
   },

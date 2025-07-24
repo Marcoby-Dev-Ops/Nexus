@@ -1,22 +1,22 @@
 import { env } from "../environment";
 
 export interface PlaceAutocompleteResult {
-  place_id: string;
+  placeid: string;
   description: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
+  structuredformatting: {
+    maintext: string;
+    secondarytext: string;
   };
   types: string[];
 }
 
 export interface PlaceDetails {
-  place_id: string;
-  formatted_address: string;
+  placeid: string;
+  formattedaddress: string;
   name?: string;
-  address_components: Array<{
-    long_name: string;
-    short_name: string;
+  addresscomponents: Array<{
+    longname: string;
+    shortname: string;
     types: string[];
   }>;
   geometry: {
@@ -41,7 +41,7 @@ export interface ParsedAddress {
   administrative_area_level_2?: string;
   country?: string;
   postal_code?: string;
-  formatted_address: string;
+  formattedaddress: string;
   lat?: number;
   lng?: number;
 }
@@ -83,7 +83,7 @@ class GooglePlacesService {
       }
 
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.apiKey}&libraries=places&callback=initGooglePlaces`;
+      script.src = `https: //maps.googleapis.com/maps/api/js?key=${this.apiKey}&libraries=places&callback=initGooglePlaces`;
       script.async = true;
       script.defer = true;
 
@@ -124,11 +124,11 @@ class GooglePlacesService {
       service.getPlacePredictions(request, (results: any, status: any) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           resolve(results.map((result: any) => ({
-            place_id: result.place_id,
+            placeid: result.place_id,
             description: result.description,
-            structured_formatting: {
-              main_text: result.structured_formatting.main_text,
-              secondary_text: result.structured_formatting.secondary_text,
+            structuredformatting: {
+              maintext: result.structured_formatting.main_text,
+              secondarytext: result.structured_formatting.secondary_text,
             },
             types: result.types,
           })));
@@ -184,12 +184,12 @@ class GooglePlacesService {
       service.getDetails(request, (place: any, status: any) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
           resolve({
-            place_id: place.place_id!,
-            formatted_address: place.formatted_address!,
+            placeid: place.place_id!,
+            formattedaddress: place.formatted_address!,
             name: place.name,
-            address_components: place.address_components!.map((component: any) => ({
-              long_name: component.long_name,
-              short_name: component.short_name,
+            addresscomponents: place.address_components!.map((component: any) => ({
+              longname: component.long_name,
+              shortname: component.short_name,
               types: component.types,
             })),
             geometry: {
@@ -198,12 +198,12 @@ class GooglePlacesService {
                 lng: place.geometry!.location!.lng(),
               },
             },
-            business_status: place.business_status,
+            businessstatus: place.business_status,
             website: place.website,
-            formatted_phone_number: place.formatted_phone_number,
-            international_phone_number: place.international_phone_number,
+            formattedphone_number: place.formatted_phone_number,
+            internationalphone_number: place.international_phone_number,
             rating: place.rating,
-            user_ratings_total: place.user_ratings_total,
+            userratings_total: place.user_ratings_total,
           });
         } else {
           reject(new Error(`Google Places API error: ${status}`));
@@ -217,7 +217,7 @@ class GooglePlacesService {
    */
   parseAddressComponents(placeDetails: PlaceDetails): ParsedAddress {
     const components: ParsedAddress = {
-      formatted_address: placeDetails.formatted_address,
+      formattedaddress: placeDetails.formatted_address,
       lat: placeDetails.geometry.location.lat,
       lng: placeDetails.geometry.location.lng,
     };
@@ -292,7 +292,7 @@ declare global {
           PlacesService: any;
           PlacesServiceStatus: {
             OK: string;
-            ZERO_RESULTS: string;
+            ZERORESULTS: string;
           };
         };
         Map: any;

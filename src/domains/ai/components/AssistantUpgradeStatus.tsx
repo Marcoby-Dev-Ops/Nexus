@@ -11,7 +11,7 @@ import { Badge } from '@/shared/components/ui/Badge';
  */
 export const AssistantUpgradeStatus: React.FC = () => {
   return (
-    <Card className="w-full max-w-2xl mx-auto border-success/20 bg-success/5 dark:bg-green-950 dark:border-success/80">
+    <Card className="w-full max-w-2xl mx-auto border-success/20 bg-success/5 dark: bg-green-950 dark:border-success/80">
       <CardHeader>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-lg bg-success/10 dark:bg-success/20 flex items-center justify-center">
@@ -78,7 +78,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
 
         {/* Features List */}
         <div>
-          <h3 className="text-lg font-semibold text-success dark:text-success mb-3">
+          <h3 className="text-lg font-semibold text-success dark: text-success mb-3">
             🚀 Enhanced Features
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -94,7 +94,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
               'Accessibility Compliant',
               'Error Recovery'
             ].map((feature) => (
-              <Badge key={feature} className="bg-success/10 text-success dark:bg-success/80 dark:text-green-100">
+              <Badge key={feature} className="bg-success/10 text-success dark: bg-success/80 dark:text-green-100">
                 {feature}
               </Badge>
             ))}
@@ -102,7 +102,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
         </div>
 
         {/* Where to Find */}
-        <div className="bg-card dark:bg-success/20/50 rounded-lg p-4">
+        <div className="bg-card dark: bg-success/20/50 rounded-lg p-4">
           <h3 className="text-lg font-semibold text-success dark:text-success mb-3">
             📍 How to Access Your Enhanced Assistant
           </h3>
@@ -113,7 +113,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-success dark:text-success">Quick Chat (Floating Button)</p>
-                <p className="text-sm text-success dark:text-success">Look for the floating chat button in the bottom-right corner</p>
+                <p className="text-sm text-success dark: text-success">Look for the floating chat button in the bottom-right corner</p>
               </div>
             </div>
             
@@ -123,7 +123,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
               </div>
               <div>
                 <p className="font-medium text-success dark:text-success">Header Assistant (Sparkles Icon)</p>
-                <p className="text-sm text-success dark:text-success">Click the sparkles icon in the top header for the full assistant panel</p>
+                <p className="text-sm text-success dark: text-success">Click the sparkles icon in the top header for the full assistant panel</p>
               </div>
             </div>
             
@@ -143,7 +143,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
         <div className="flex gap-4 pt-2">
           <Button 
             onClick={() => window.location.href = '/chat'}
-            className="bg-success hover:bg-success/90 text-primary-foreground"
+            className="bg-success hover: bg-success/90 text-primary-foreground"
           >
             Try Full Chat Experience
           </Button>
@@ -156,7 +156,7 @@ export const AssistantUpgradeStatus: React.FC = () => {
                 quickChatTrigger.click();
               }
             }}
-            className="border-green-600 text-success hover:bg-success/5 dark:hover:bg-success/20/20"
+            className="border-green-600 text-success hover: bg-success/5 dark:hover:bg-success/20/20"
           >
             Open Quick Chat
           </Button>

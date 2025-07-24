@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { FireCycleLogicEngine, type UserContext, type FireAnalysis } from './fireCycleLogic';
-import type { FireCyclePhase } from '@/domains/fire-cycle/types';
+import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
 
 interface EnhancedFireCycleStore {
   // Current state

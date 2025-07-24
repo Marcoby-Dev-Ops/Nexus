@@ -1,11 +1,11 @@
 export const hubspotContactMap = {
   id: 'id',
   email: 'email',
-  first_name: 'firstname',
-  last_name: 'lastname',
+  firstname: 'firstname',
+  lastname: 'lastname',
   company: 'company',
   phone: 'phone',
-  lifecycle_stage: 'lifecyclestage',
-  lead_status: 'hs_lead_status',
+  lifecyclestage: 'lifecyclestage',
+  leadstatus: 'hs_lead_status',
   // Add more as needed
 }; 

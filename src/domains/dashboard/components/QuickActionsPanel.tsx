@@ -2,8 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
-import { CheckCircle2, Clock } from 'lucide-react';
-
+import { CheckCircle2 } from 'lucide-react';
 // Local starter config for demonstration
 export type QuickActionType = 'global' | 'department' | 'page';
 export type HandlerType = 'crud_create' | 'crud_read' | 'crud_update' | 'crud_delete' | 'ai_chat' | 'rag' | 'custom';
@@ -103,8 +102,7 @@ function handleQuickAction(action: QuickAction, { navigate }: { navigate: Return
     case 'team-recognition':
       navigate('/hr');
       break;
-    default:
-      alert(`Action: ${action.label}`);
+    default: alert(`Action: ${action.label}`);
   }
 }
 
@@ -154,11 +152,11 @@ export const QuickActionsPanel: React.FC = () => {
           {availableActions.map((action: QuickAction) => (
             <button
               key={action.id}
-              className="w-full flex items-start gap-4 p-4 bg-muted/50 border border-border rounded-lg hover:border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 text-left group"
+              className="w-full flex items-start gap-4 p-4 bg-muted/50 border border-border rounded-lg hover: border-primary hover:bg-primary/5 hover:shadow-md transition-all duration-200 text-left group"
               aria-label={action.label}
               onClick={() => handleQuickAction(action, { navigate })}
             >
-              <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/20 transition-colors duration-200">
+              <div className="p-2 bg-primary/10 rounded-lg group-hover: bg-primary/20 transition-colors duration-200">
                 <span className="text-lg" aria-hidden="true">{action.icon}</span>
               </div>
               <div className="flex-1 min-w-0">

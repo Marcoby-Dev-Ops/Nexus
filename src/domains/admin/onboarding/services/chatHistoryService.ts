@@ -6,13 +6,13 @@ type ChatConversation = Tables<'chat_conversations'>;
 type ChatMessage = Tables<'chat_messages'>;
 
 export interface CreateConversationParams {
-  user_id: string;
+  userid: string;
   title?: string;
   context?: Record<string, any>;
 }
 
 export interface AddMessageParams {
-  conversation_id: string;
+  conversationid: string;
   content: string;
   role: 'user' | 'assistant' | 'system';
   metadata?: Record<string, any>;
@@ -26,10 +26,10 @@ export const chatHistory = {
     const { data, error } = await supabase
       .from('chat_conversations')
       .insert({
-        user_id: params.user_id,
+        userid: params.user_id,
         title: params.title || 'Onboarding Chat',
         context: params.context || {},
-        created_at: new Date().toISOString(),
+        createdat: new Date().toISOString(),
       })
       .select()
       .single();
@@ -48,11 +48,11 @@ export const chatHistory = {
     const { data, error } = await supabase
       .from('chat_messages')
       .insert({
-        conversation_id: params.conversation_id,
+        conversationid: params.conversation_id,
         content: params.content,
         role: params.role,
         metadata: params.metadata || {},
-        created_at: new Date().toISOString(),
+        createdat: new Date().toISOString(),
       })
       .select()
       .single();

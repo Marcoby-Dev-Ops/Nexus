@@ -54,7 +54,7 @@ export const LazyModuleExample: React.FC = () => {
         <CardContent className="space-y-4">
           {/* Available Modules */}
           <div>
-            <h3 className="text-sm font-medium mb-2">Available Modules:</h3>
+            <h3 className="text-sm font-medium mb-2">Available Modules: </h3>
             <div className="flex flex-wrap gap-2">
               {availableModules.map(moduleId => (
                 <Badge key={moduleId} variant="outline">
@@ -66,7 +66,7 @@ export const LazyModuleExample: React.FC = () => {
 
           {/* Load Individual Modules */}
           <div>
-            <h3 className="text-sm font-medium mb-2">Load Individual Modules:</h3>
+            <h3 className="text-sm font-medium mb-2">Load Individual Modules: </h3>
             <div className="flex flex-wrap gap-2">
               <Button 
                 onClick={handleLoadSalesModule}
@@ -119,7 +119,7 @@ export const LazyModuleExample: React.FC = () => {
           {/* Loaded Modules Display */}
           {loadedModules.length > 0 && (
             <div>
-              <h3 className="text-sm font-medium mb-2">Loaded Modules:</h3>
+              <h3 className="text-sm font-medium mb-2">Loaded Modules: </h3>
               <div className="grid gap-3">
                 {loadedModules.map(module => (
                   <Card key={module.id} className="p-3">

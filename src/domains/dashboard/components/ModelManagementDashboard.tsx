@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useToast } from '@/shared/ui/components/Toast';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { modelManager } from '@/domains/ai/lib/modelManager';
 import {
   BarChart,
@@ -19,16 +19,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import {
-  DollarSign,
-  Activity,
-  AlertCircle,
-  TrendingUp,
-  TrendingDown,
-  Clock,
-  CheckCircle2,
-  XCircle
-} from 'lucide-react';
+import { DollarSign, Activity, AlertCircle, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { chartColors } from '@/shared/services/chartColors';
 
 interface ModelReport {
@@ -43,7 +34,7 @@ interface ModelReport {
 }
 
 export const ModelManagementDashboard: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { showToast } = useToast();
   const [report, setReport] = useState<ModelReport | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,7 +102,7 @@ export const ModelManagementDashboard: React.FC = () => {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Monthly Cost</CardTitle>
@@ -147,7 +138,7 @@ export const ModelManagementDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {report ? Object.keys(report.modelPerformance).length : 0}
+              {report ? Object.keys(report.modelPerformance).length: 0}
             </div>
             <p className="text-xs text-muted-foreground">
               Currently in use
@@ -179,7 +170,7 @@ export const ModelManagementDashboard: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
         {/* Performance Chart */}
         <Card>
           <CardHeader>

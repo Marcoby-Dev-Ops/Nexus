@@ -4,14 +4,14 @@ import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { ContextCompletionSuggestions } from '@/domains/ai/components/ContextCompletionSuggestions';
 import { useContextualDataCompletion } from '@/domains/ai/hooks/useContextualDataCompletion';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Brain, Zap, TrendingUp, CheckCircle2, AlertCircle } from 'lucide-react';
 
 /**
  * Demo component to showcase Contextual Data Completion functionality
  */
 export const ContextualDataCompletionDemo: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [demoMode, setDemoMode] = useState<'conversation' | 'proactive' | 'queryBased'>('conversation');
   const [selectedQuery, setSelectedQuery] = useState('');
   const [selectedResponse, setSelectedResponse] = useState('');
@@ -43,7 +43,7 @@ export const ContextualDataCompletionDemo: React.FC = () => {
     ],
     proactive: {
       title: "Proactive Context Suggestions",
-      description: "Based on your profile and usage patterns, here are suggestions to improve AI assistance:"
+      description: "Based on your profile and usage patterns, here are suggestions to improve AI assistance: "
     },
     queryBased: [
       {
@@ -79,7 +79,10 @@ export const ContextualDataCompletionDemo: React.FC = () => {
   };
 
   const handleContextCompleted = (completedGaps: any[]) => {
-    console.log('Context completed:', completedGaps);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Context completed: ', completedGaps);
   };
 
   return (
@@ -141,7 +144,7 @@ export const ContextualDataCompletionDemo: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+          <div className="grid grid-cols-2 md: grid-cols-4 gap-4 text-center">
             <div>
               <div className="text-2xl font-bold text-primary">{contextCompletion.totalGaps}</div>
               <div className="text-sm text-muted-foreground">Total Gaps</div>
@@ -171,7 +174,7 @@ export const ContextualDataCompletionDemo: React.FC = () => {
       </Card>
 
       {/* Demo Content based on selected mode */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg: grid-cols-2">
         {/* Demo Scenarios */}
         <Card>
           <CardHeader>
@@ -191,7 +194,7 @@ export const ContextualDataCompletionDemo: React.FC = () => {
                   <div key={index} className="p-4 border rounded-lg">
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <strong>User:</strong> {scenario.query}
+                        <strong>User: </strong> {scenario.query}
                       </div>
                       <div className="text-sm text-muted-foreground">
                         <strong>AI:</strong> {scenario.response}
@@ -230,13 +233,12 @@ export const ContextualDataCompletionDemo: React.FC = () => {
             {demoMode === 'queryBased' && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  See how different query types generate specific context suggestions:
-                </p>
+                  See how different query types generate specific context suggestions: </p>
                 {demoScenarios.queryBased.map((scenario, index) => (
                   <div key={index} className="p-4 border rounded-lg">
                     <div className="space-y-2">
                       <div className="text-sm">
-                        <strong>Query:</strong> {scenario.query}
+                        <strong>Query: </strong> {scenario.query}
                         {scenario.department && (
                           <Badge variant="outline" className="ml-2 text-xs">
                             {scenario.department}
@@ -301,7 +303,7 @@ export const ContextualDataCompletionDemo: React.FC = () => {
           <CardTitle className="text-base">Key Benefits</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md: grid-cols-3 gap-4">
             <div className="text-center p-4">
               <Brain className="w-8 h-8 text-primary mx-auto mb-2" />
               <h4 className="font-medium mb-1">Proactive Intelligence</h4>
@@ -341,7 +343,7 @@ export const ContextualDataCompletionDemo: React.FC = () => {
               <strong>2. Intelligent Suggestions:</strong> Generates specific, actionable suggestions based on query intent, user role, and department focus
             </div>
             <div>
-              <strong>3. Proactive Completion:</strong> Provides one-click fills for common fields and guided completion flows for complex data
+              <strong>3. Proactive Completion: </strong> Provides one-click fills for common fields and guided completion flows for complex data
             </div>
             <div>
               <strong>4. Learning & Adaptation:</strong> Tracks user behavior to improve suggestion quality and timing over time

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { persistentAuthService } from '@/shared/services/persistentAuthService';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
@@ -24,7 +24,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   showDetails = false, 
   className = '' 
 }) => {
-  const { user, session, signOut } = useAuthContext();
+  const { user, session, signOut } = useAuth();
   const [sessionInfo, setSessionInfo] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [timeUntilExpiry, setTimeUntilExpiry] = useState<number | null>(null);
@@ -39,7 +39,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
           setTimeUntilExpiry(info.timeUntilExpiry);
         }
       } catch (error) {
-        console.error('Failed to get session info:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to get session info: ', error);
       }
     };
 
@@ -54,7 +57,7 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   useEffect(() => {
     if (timeUntilExpiry !== null && timeUntilExpiry > 0) {
       const timer = setTimeout(() => {
-        setTimeUntilExpiry(prev => prev ? prev - 1000 : null);
+        setTimeUntilExpiry(prev => prev ? prev - 1000: null);
       }, 1000);
       
       return () => clearTimeout(timer);
@@ -72,7 +75,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
         setTimeUntilExpiry(info.timeUntilExpiry);
       }
     } catch (error) {
-      console.error('Failed to refresh session:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to refresh session: ', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -82,7 +88,10 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
     try {
       await signOut();
     } catch (error) {
-      console.error('Failed to sign out:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to sign out: ', error);
     }
   };
 

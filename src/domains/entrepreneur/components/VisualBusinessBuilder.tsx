@@ -1,23 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  Building2, 
-  Users, 
-  DollarSign, 
-  Target, 
-  Megaphone, 
-  Cog, 
-  TrendingUp, 
-  CheckCircle,
-  Plus,
-  ArrowRight,
-  Lightbulb,
-  Heart,
-  Zap,
-  Star,
-  Puzzle,
-  Rocket
-} from 'lucide-react';
-
+import { Users, DollarSign, Megaphone, Cog, TrendingUp, CheckCircle, ArrowRight, Lightbulb, Heart, Star, Puzzle, Rocket } from 'lucide-react';
 interface BusinessComponent {
   id: string;
   type: 'idea' | 'customers' | 'value' | 'marketing' | 'revenue' | 'operations' | 'growth';
@@ -123,7 +105,7 @@ export const VisualBusinessBuilder: React.FC = () => {
               </div>
               <button 
                 onClick={() => setShowGuidance(false)}
-                className="text-muted-foreground hover:text-muted-foreground"
+                className="text-muted-foreground hover: text-muted-foreground"
               >
                 ✕
               </button>
@@ -133,7 +115,7 @@ export const VisualBusinessBuilder: React.FC = () => {
 
         {/* Business Canvas */}
         <div className="bg-card rounded-2xl shadow-xl p-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-3 lg:grid-cols-4 gap-6">
             {canvas.components.map((component) => (
               <BusinessComponentCard
                 key={component.id}
@@ -155,7 +137,7 @@ export const VisualBusinessBuilder: React.FC = () => {
             <p className="text-xl mb-6">
               You've completed your business plan! You're ready to start building your dream business.
             </p>
-            <button className="bg-card text-primary px-8 py-3 rounded-lg font-semibold hover:bg-muted transition-colors">
+            <button className="bg-card text-primary px-8 py-3 rounded-lg font-semibold hover: bg-muted transition-colors">
               <div className="flex items-center space-x-2">
                 <Rocket className="w-5 h-5" />
                 <span>Launch Your Business</span>
@@ -185,7 +167,7 @@ const BusinessComponentCard: React.FC<{
     <div
       onClick={onClick}
       className={`
-        relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:scale-105 hover:shadow-lg
+        relative p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 hover: scale-105 hover:shadow-lg
         ${component.isCompleted 
           ? `border-${component.color}-500 bg-${component.color}-50` 
           : 'border-border bg-background hover:border-gray-400'
@@ -348,7 +330,7 @@ const ComponentDetailModal: React.FC<{
             </div>
             <button 
               onClick={onClose}
-              className="text-primary-foreground hover:text-gray-200 text-2xl"
+              className="text-primary-foreground hover: text-gray-200 text-2xl"
             >
               ✕
             </button>
@@ -364,7 +346,7 @@ const ComponentDetailModal: React.FC<{
                 {q.question}
               </label>
               <textarea
-                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-primary"
+                className="w-full px-4 py-3 border border-border rounded-lg focus: ring-2 focus:ring-blue-500 focus:border-primary"
                 rows={3}
                 placeholder={q.placeholder}
                 value={content}
@@ -393,7 +375,7 @@ const ComponentDetailModal: React.FC<{
               onClick={handleSave}
               className={`
                 flex-1 bg-gradient-to-r from-${component.color}-600 to-${component.color}-700 
-                text-primary-foreground px-6 py-3 rounded-lg font-semibold hover:from-${component.color}-700 
+                text-primary-foreground px-6 py-3 rounded-lg font-semibold hover: from-${component.color}-700 
                 hover:to-${component.color}-800 transition-all duration-200
               `}
             >

@@ -3,19 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
-import { 
-  Brain, 
-  Zap, 
-  Target, 
-  Workflow, 
-  BarChart3,
-  Users,
-  MessageSquare,
-  Settings,
-  Lightbulb,
-  Activity
-} from 'lucide-react';
-
+import { Brain, Zap, Target, Workflow, BarChart3, Users, Settings, Lightbulb, Activity } from 'lucide-react';
 // Lazy load all demo components
 const TrinityBrainDemo = React.lazy(() => import('./TrinityBrainDemo').then(module => ({ default: module.TrinityBrainDemo })));
 const UnifiedBrainDemo = React.lazy(() => import('./UnifiedBrainDemo').then(module => ({ default: module.UnifiedBrainDemo })));
@@ -38,7 +26,7 @@ interface DemoItem {
   featured?: boolean;
 }
 
-const DEMO_ITEMS: DemoItem[] = [
+const DEMOITEMS: DemoItem[] = [
   {
     id: 'trinity-brain',
     title: 'Trinity Brain System',
@@ -138,8 +126,7 @@ export const DemoShowcase: React.FC = () => {
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
 
   const filteredDemos = selectedCategory === 'all' 
-    ? DEMO_ITEMS 
-    : DEMO_ITEMS.filter(demo => demo.category === selectedCategory);
+    ? DEMOITEMS: DEMO_ITEMS.filter(demo => demo.category === selectedCategory);
 
   const featuredDemos = DEMO_ITEMS.filter(demo => demo.featured);
 
@@ -185,9 +172,9 @@ export const DemoShowcase: React.FC = () => {
       {/* Featured Demos */}
       <div className="space-y-4">
         <h2 className="text-2xl font-semibold text-foreground">Featured Demonstrations</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
           {featuredDemos.map((demo) => (
-            <Card key={demo.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+            <Card key={demo.id} className="hover: shadow-lg transition-shadow cursor-pointer">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
@@ -233,9 +220,9 @@ export const DemoShowcase: React.FC = () => {
         </TabsList>
 
         <TabsContent value={selectedCategory} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDemos.map((demo) => (
-              <Card key={demo.id} className="hover:shadow-lg transition-shadow">
+              <Card key={demo.id} className="hover: shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-4">
                     <div className="p-2 bg-primary/10 rounded-lg">

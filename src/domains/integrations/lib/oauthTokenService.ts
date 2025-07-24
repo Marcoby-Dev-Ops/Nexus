@@ -3,19 +3,19 @@ import { sessionUtils } from '@/core/supabase';
 
 export interface OAuthToken {
   id: string;
-  user_id: string;
-  integration_slug: string;
-  access_token: string;
+  userid: string;
+  integrationslug: string;
+  accesstoken: string;
   refresh_token?: string;
   expires_at?: string;
   scope?: string;
-  token_type: string;
-  created_at: string;
-  updated_at: string;
+  tokentype: string;
+  createdat: string;
+  updatedat: string;
 }
 
 export interface TokenResponse {
-  access_token: string;
+  accesstoken: string;
   refresh_token?: string;
   expires_in?: number;
   scope?: string;
@@ -31,37 +31,61 @@ export class OAuthTokenService {
       // Get the current session
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session) {
-        console.error('No active session found');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('No active session found');
         return null;
       }
 
-      console.log('OAuthTokenService: Session found, user ID:', session.user.id);
-      console.log('OAuthTokenService: Session access token present:', !!session.access_token);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('OAuthTokenService: Session found, user ID: ', session.user.id);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('OAuthTokenService: Session access token present:', !!session.access_token);
 
       // Use service client with user validation
-      console.log('OAuthTokenService: Using service client with user validation...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('OAuthTokenService: Using service client with user validation...');
       const { data: tokens, error: tokenError } = await supabase
         .from('oauth_tokens')
         .select('*')
         .eq('user_id', session.user.id)
         .eq('integration_slug', integrationSlug)
-        .single();
+        .maybeSingle();
 
-      console.log('OAuthTokenService: Service client result:', { 
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('OAuthTokenService: Service client result:', { 
         hasData: !!tokens, 
         error: tokenError?.message,
         code: tokenError?.code 
       });
 
       if (tokenError || !tokens) {
-        console.log('OAuthTokenService: No tokens found:', tokenError?.message);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('OAuthTokenService: No tokens found:', tokenError?.message);
         return null;
       }
 
-      console.log('OAuthTokenService: Successfully retrieved tokens');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('OAuthTokenService: Successfully retrieved tokens');
       return tokens as OAuthToken;
     } catch (error) {
-      console.error('Error in getTokens:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error in getTokens: ', error);
       return null;
     }
   }
@@ -81,13 +105,13 @@ export class OAuthTokenService {
         : null;
 
       const tokenData = {
-        user_id: userId,
-        integration_slug: integrationSlug,
-        access_token: tokenResponse.access_token,
-        refresh_token: tokenResponse.refresh_token || null,
-        expires_at: expiresAt,
+        userid: userId,
+        integrationslug: integrationSlug,
+        accesstoken: tokenResponse.access_token,
+        refreshtoken: tokenResponse.refresh_token || null,
+        expiresat: expiresAt,
         scope: tokenResponse.scope || '',
-        token_type: tokenResponse.token_type || 'Bearer',
+        tokentype: tokenResponse.token_type || 'Bearer',
       };
 
       // Try to insert first, if it fails due to unique constraint, update
@@ -100,13 +124,19 @@ export class OAuthTokenService {
         .single();
 
       if (error) {
-        console.error('Error storing tokens:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error storing tokens: ', error);
         return null;
       }
 
       return data as OAuthToken;
     } catch (error) {
-      console.error('Error in storeTokens:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error in storeTokens: ', error);
       return null;
     }
   }
@@ -133,7 +163,10 @@ export class OAuthTokenService {
 
       return expiresAt.getTime() > (now.getTime() + bufferTime);
     } catch (error) {
-      console.error('Error checking token validity:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error checking token validity: ', error);
       return false;
     }
   }
@@ -162,13 +195,19 @@ export class OAuthTokenService {
         .eq('integration_slug', integrationSlug);
 
       if (error) {
-        console.error('Error deleting OAuth tokens:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error deleting OAuth tokens: ', error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Error in deleteTokens:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error in deleteTokens: ', error);
       return false;
     }
   }
@@ -186,13 +225,19 @@ export class OAuthTokenService {
         .eq('user_id', userId);
 
       if (error) {
-        console.error('Error retrieving user integrations:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error retrieving user integrations: ', error);
         return [];
       }
 
       return data.map(row => row.integration_slug);
     } catch (error) {
-      console.error('Error in getUserIntegrations:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error in getUserIntegrations: ', error);
       return [];
     }
   }
@@ -215,18 +260,272 @@ export class OAuthTokenService {
         const bufferTime = 5 * 60 * 1000; // 5 minutes buffer
 
         if (expiresAt.getTime() <= (now.getTime() + bufferTime)) {
-          // Token is expired or will expire soon
-          // TODO: Implement token refresh logic here
-          console.warn(`Token for ${integrationSlug} is expired or will expire soon`);
-          return null;
+          // Token is expired or will expire soon - try to refresh
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Token for ${integrationSlug} is expired or will expire soon, attempting refresh`);
+          const refreshedTokens = await this.refreshTokens(integrationSlug, tokens);
+          return refreshedTokens?.access_token || null;
         }
       }
 
       return tokens.access_token;
     } catch (error) {
-      console.error('Error getting access token:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error getting access token: ', error);
       return null;
     }
+  }
+
+  /**
+   * Refresh OAuth tokens for an integration
+   */
+  static async refreshTokens(integrationSlug: string, currentTokens: OAuthToken): Promise<OAuthToken | null> {
+    try {
+      if (!currentTokens.refresh_token) {
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`No refresh token available for ${integrationSlug}`);
+        return null;
+      }
+
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Refreshing tokens for ${integrationSlug}`);
+
+      let tokenResponse: TokenResponse;
+
+      switch (integrationSlug) {
+        case 'microsoft':
+          tokenResponse = await this.refreshMicrosoftTokens(currentTokens.refresh_token);
+          break;
+        case 'google-workspace':
+          tokenResponse = await this.refreshGoogleTokens(currentTokens.refresh_token);
+          break;
+        case 'slack':
+          tokenResponse = await this.refreshSlackTokens(currentTokens.refresh_token);
+          break;
+        case 'hubspot':
+          tokenResponse = await this.refreshHubSpotTokens(currentTokens.refresh_token);
+          break;
+        case 'paypal':
+          tokenResponse = await this.refreshPayPalTokens(currentTokens.refresh_token);
+          break;
+        case 'google-analytics':
+          tokenResponse = await this.refreshGoogleAnalyticsTokens(currentTokens.refresh_token);
+          break;
+        default: // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Token refresh not implemented for ${integrationSlug}`);
+          return null;
+      }
+
+      // Store the refreshed tokens
+      const refreshedTokens = await this.storeTokens(integrationSlug, tokenResponse);
+      
+      if (refreshedTokens) {
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Successfully refreshed tokens for ${integrationSlug}`);
+      } else {
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Failed to store refreshed tokens for ${integrationSlug}`);
+      }
+
+      return refreshedTokens;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Error refreshing tokens for ${integrationSlug}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Refresh Microsoft 365 tokens
+   */
+  private static async refreshMicrosoftTokens(refreshToken: string): Promise<TokenResponse> {
+    const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+    
+    const response = await fetch('https: //login.microsoftonline.com/common/oauth2/v2.0/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        clientid: clientId,
+        granttype: 'refresh_token',
+        refreshtoken: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Microsoft token refresh failed: ${errorData.error_description || 'Unknown error'}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Refresh Google Workspace tokens
+   */
+  private static async refreshGoogleTokens(refreshToken: string): Promise<TokenResponse> {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
+    
+    const response = await fetch('https: //oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        clientid: clientId,
+        clientsecret: clientSecret,
+        granttype: 'refresh_token',
+        refreshtoken: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Google token refresh failed: ${errorData.error_description || 'Unknown error'}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Refresh Slack tokens
+   */
+  private static async refreshSlackTokens(refreshToken: string): Promise<TokenResponse> {
+    const clientId = import.meta.env.VITE_SLACK_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_SLACK_CLIENT_SECRET;
+    
+    const response = await fetch('https: //slack.com/api/oauth.v2.access', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        clientid: clientId,
+        clientsecret: clientSecret,
+        granttype: 'refresh_token',
+        refreshtoken: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Slack token refresh failed: ${errorData.error || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return {
+      accesstoken: data.access_token,
+      refreshtoken: data.refresh_token,
+      expiresin: data.expires_in,
+      scope: data.scope,
+      tokentype: data.token_type,
+    };
+  }
+
+  /**
+   * Refresh HubSpot tokens
+   */
+  private static async refreshHubSpotTokens(refreshToken: string): Promise<TokenResponse> {
+    const clientId = import.meta.env.VITE_HUBSPOT_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_HUBSPOT_CLIENT_SECRET;
+    
+    const response = await fetch('https: //api.hubapi.com/oauth/v1/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        granttype: 'refresh_token',
+        clientid: clientId,
+        clientsecret: clientSecret,
+        refreshtoken: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`HubSpot token refresh failed: ${errorData.message || 'Unknown error'}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Refresh PayPal tokens
+   */
+  private static async refreshPayPalTokens(refreshToken: string): Promise<TokenResponse> {
+    const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_PAYPAL_CLIENT_SECRET;
+    const environment = import.meta.env.VITE_PAYPAL_ENV || 'sandbox';
+    
+    const baseUrl = environment === 'live' 
+      ? 'https: //api.paypal.com' 
+      : 'https://api.sandbox.paypal.com';
+    
+    const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        granttype: 'refresh_token',
+        refreshtoken: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`PayPal token refresh failed: ${errorData.error_description || 'Unknown error'}`);
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Refresh Google Analytics tokens
+   */
+  private static async refreshGoogleAnalyticsTokens(refreshToken: string): Promise<TokenResponse> {
+    const clientId = import.meta.env.VITE_GOOGLE_ANALYTICS_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_GOOGLE_ANALYTICS_CLIENT_SECRET;
+    
+    const response = await fetch('https: //oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        clientid: clientId,
+        clientsecret: clientSecret,
+        granttype: 'refresh_token',
+        refreshtoken: refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Google Analytics token refresh failed: ${errorData.error_description || 'Unknown error'}`);
+    }
+
+    return await response.json();
   }
 
   /**

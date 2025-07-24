@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { dataConnectivityHealthService, type ConnectivityHealthData } from '../services/dataConnectivityHealthService';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { logger } from '../lib/security/logger';
 
 interface UseDataConnectivityHealthResult {
@@ -22,7 +22,7 @@ interface UseDataConnectivityHealthResult {
 }
 
 export function useLiveBusinessHealth(): UseDataConnectivityHealthResult {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [healthData, setHealthData] = useState<ConnectivityHealthData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

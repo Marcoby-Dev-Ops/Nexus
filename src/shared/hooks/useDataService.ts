@@ -4,9 +4,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { dataService } from '@/shared/services/dataService';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
-import { logger } from '@/core/auth/logger';
+import { dataService } from '@/core/services/dataService';
+import { useAuth } from '@/core/auth/AuthProvider';
+import { logger } from '@/shared/utils/logger';
 
 export interface UseDataServiceOptions {
   enabled?: boolean;
@@ -26,18 +26,14 @@ export function useDataService<T>(
   fetchFn: () => Promise<T>,
   options: UseDataServiceOptions = {}
 ): UseDataServiceReturn<T> {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const {
-    enabled = true,
-    refetchInterval,
-    cacheTime = 60000
-  } = options;
+  const { refetchInterval, enabled = true } = options;
 
   const fetchData = useCallback(async () => {
     if (!enabled || !user?.id) {
@@ -64,7 +60,7 @@ export function useDataService<T>(
       }
     } catch (err) {
       if (!abortControllerRef.current.signal.aborted) {
-        const error = err instanceof Error ? err : new Error('Unknown error');
+        const error = err instanceof Error ? err: new Error('Unknown error');
         setError(error);
         logger.error({ error }, 'Data service fetch failed');
       }
@@ -125,7 +121,7 @@ export function useDataService<T>(
 // Specific hooks for common data fetching patterns
 
 export function useUserProfile() {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
   return useDataService(
     () => dataService.fetchUserProfile(user!.id),
@@ -134,7 +130,7 @@ export function useUserProfile() {
 }
 
 export function useUserIntegrations() {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
   return useDataService(
     () => dataService.fetchUserIntegrations(user!.id),
@@ -143,7 +139,7 @@ export function useUserIntegrations() {
 }
 
 export function useNotifications(limit = 10) {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
   return useDataService(
     () => dataService.fetchNotifications(user!.id, limit),
@@ -155,7 +151,7 @@ export function useNotifications(limit = 10) {
 }
 
 export function useInboxItems(filters: any = {}, limit = 50, offset = 0) {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
   return useDataService(
     () => dataService.fetchInboxItems(user!.id, filters, limit, offset),
@@ -164,7 +160,7 @@ export function useInboxItems(filters: any = {}, limit = 50, offset = 0) {
 }
 
 export function useDashboardMetrics() {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
   return useDataService(
     () => dataService.fetchDashboardMetrics(user!.id),
@@ -176,7 +172,7 @@ export function useDashboardMetrics() {
 }
 
 export function useRecentActivities(limit = 20) {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
   return useDataService(
     () => dataService.fetchRecentActivities(user!.id, limit),

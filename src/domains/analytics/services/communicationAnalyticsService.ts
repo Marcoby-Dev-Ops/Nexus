@@ -25,7 +25,7 @@ export interface CommunicationMetrics {
 
 export interface CommunicationEvent {
   id: string;
-  event_type: string;
+  eventtype: string;
   user_id?: string;
   session_id?: string;
   properties: Record<string, any>;
@@ -54,7 +54,7 @@ class CommunicationAnalyticsService {
         query = query.eq('user_id', userId);
       }
 
-      const { data: events, error } = await query;
+      const { error } = await query;
 
       if (error) {
         logger.error({ startDate, endDate, userId, error }, 'Failed to get communication metrics');
@@ -92,10 +92,10 @@ class CommunicationAnalyticsService {
   ): Promise<void> {
     try {
       const event = {
-        event_type: eventType,
-        user_id: userId || '',
+        eventtype: eventType,
+        userid: userId || '',
         platform: 'web',
-        event_data: properties,
+        eventdata: properties,
         timestamp: new Date().toISOString()
       };
 
@@ -124,7 +124,7 @@ class CommunicationAnalyticsService {
   ): Promise<void> {
     await this.trackCommunicationEvent('message_sent', {
       channel,
-      recipient_type: recipientType,
+      recipienttype: recipientType,
       ...properties
     }, userId);
   }
@@ -139,7 +139,7 @@ class CommunicationAnalyticsService {
     userId?: string
   ): Promise<void> {
     await this.trackCommunicationEvent('response_time', {
-      response_time_ms: responseTimeMs,
+      responsetime_ms: responseTimeMs,
       channel,
       ...properties
     }, userId);
@@ -156,9 +156,9 @@ class CommunicationAnalyticsService {
     userId?: string
   ): Promise<void> {
     await this.trackCommunicationEvent('communication_session', {
-      session_type: sessionType,
-      duration_minutes: duration,
-      participant_count: participants,
+      sessiontype: sessionType,
+      durationminutes: duration,
+      participantcount: participants,
       ...properties
     }, userId);
   }

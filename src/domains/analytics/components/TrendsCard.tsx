@@ -1,6 +1,6 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import type { Trend } from '@/domains/fire-cycle/types';
+import type { Trend } from '@/domains/business/fire-cycle/types';
 
 interface TrendsCardProps {
   trends: Trend[];
@@ -13,8 +13,7 @@ export const TrendsCard: React.FC<TrendsCardProps> = ({ trends }) => {
         return <TrendingUp className="w-4 h-4 text-green-500" />;
       case 'down':
         return <TrendingDown className="w-4 h-4 text-red-500" />;
-      default:
-        return <Minus className="w-4 h-4 text-gray-500" />;
+      default: return <Minus className="w-4 h-4 text-gray-500" />;
     }
   };
 

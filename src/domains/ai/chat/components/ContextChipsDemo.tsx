@@ -40,7 +40,7 @@ export const ContextChipsDemo: React.FC = () => {
   // Sample AI response that would have context sources
   const sampleResponse = `Based on your current business performance, I can see that TechCorp Inc. is performing exceptionally well this quarter. 
 
-**Key Highlights:**
+**Key Highlights: **
 - 🚀 **Revenue Growth**: 23% increase in MRR bringing us to strong Q3 performance
 - 👥 **Customer Acquisition**: 156 new customers added this quarter  
 - 💯 **Retention**: Maintaining 94% customer retention rate
@@ -113,7 +113,7 @@ Would you like me to dive deeper into any of these metrics or help you create ac
           <CardTitle>How Context Chips Work</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md: grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold mb-2">🎯 Transparency</h3>
               <p className="text-sm text-muted-foreground">

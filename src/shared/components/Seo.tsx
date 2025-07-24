@@ -23,7 +23,7 @@ export const Seo: React.FC<SeoProps> = ({
         <meta name="description" content={description} />
         {canonical && <link rel="canonical" href={canonical} />}
         {/* Open Graph */}
-        <meta property="og:title" content={title} />
+        <meta property="og: title" content={title} />
         <meta property="og:description" content={description} />
         {image && <meta property="og:image" content={image} />}
         {canonical && <meta property="og:url" content={canonical} />}

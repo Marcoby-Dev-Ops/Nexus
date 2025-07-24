@@ -79,9 +79,9 @@ interface ExpertRecommendation {
 }
 
 export const GoalSettingWithExpert: React.FC<GoalSettingWithExpertProps> = ({ 
-  userProfile: _userProfile, 
+  userProfile: userProfile, 
   systemIntelligence,
-  onGoalsSet: _onGoalsSet 
+  onGoalsSet: onGoalsSet 
 }) => {
   const [goals, setGoals] = useState<BusinessGoals>({
     primary: {
@@ -292,14 +292,14 @@ export const GoalSettingWithExpert: React.FC<GoalSettingWithExpertProps> = ({
       )}
 
       {/* Goal Categories */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid md: grid-cols-2 lg:grid-cols-3 gap-4">
         {goalCategories.map((category) => (
           <Card 
             key={category.id}
             className={`cursor-pointer transition-all duration-300 ${
               goals.primary.category === category.id 
                 ? 'ring-2 ring-primary shadow-lg' 
-                : 'hover:shadow-md'
+                : 'hover: shadow-md'
             }`}
             onClick={() => handleGoalUpdate('category', category.id)}
           >
@@ -320,7 +320,7 @@ export const GoalSettingWithExpert: React.FC<GoalSettingWithExpertProps> = ({
               </p>
               
               <div className="space-y-1">
-                <div className="text-xs font-medium text-primary">Examples:</div>
+                <div className="text-xs font-medium text-primary">Examples: </div>
                 {category.examples.slice(0, 2).map((example, index) => (
                   <div key={index} className="text-xs text-foreground/70 flex items-center space-x-1">
                     <div className="w-1 h-1 bg-primary rounded-full" />
@@ -342,7 +342,7 @@ export const GoalSettingWithExpert: React.FC<GoalSettingWithExpertProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md: grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-medium text-foreground">Goal Title</label>
               <Input
@@ -378,7 +378,7 @@ export const GoalSettingWithExpert: React.FC<GoalSettingWithExpertProps> = ({
             />
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md: grid-cols-3 gap-4">
             <div>
               <label className="text-sm font-medium text-foreground">Current Value</label>
               <Input

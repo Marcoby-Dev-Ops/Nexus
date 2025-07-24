@@ -33,7 +33,7 @@ const TableComponent: React.FC<TableProps> = ({ columns, data, className }) => {
         </thead>
         <tbody className="bg-background divide-y divide-border">
           {data.map((row, rowIndex) => (
-            <tr key={rowIndex} className="hover:bg-muted/50">
+            <tr key={rowIndex} className="hover: bg-muted/50">
               {columns.map((column, colIndex) => (
                 <td 
                   key={colIndex}
@@ -79,7 +79,7 @@ export const TableBody = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tbody
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
+    className={cn("[&_tr: last-child]:border-0", className)}
     {...props}
   />
 ));
@@ -92,7 +92,7 @@ export const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b transition-colors hover: bg-muted/50 data-[state=selected]:bg-muted",
       className
     )}
     {...props}

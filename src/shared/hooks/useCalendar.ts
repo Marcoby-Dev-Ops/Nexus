@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { calendarService, type CalendarFilters } from '@/domains/services/calendarService';
+import { calendarService, type CalendarFilters } from '@/domains/tasks/services/calendarService';
 
 /**
  * Hook for fetching calendar events

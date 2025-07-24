@@ -14,12 +14,15 @@ interface EnhancedChatResponse {
 
 export class IntegrationIntelligenceService {
   async enhanceUserIntelligence(
-    _userId: string,
+    userId: string,
     userInput: string,
-    _currentContext: any
+    currentContext: any
   ): Promise<EnhancedChatResponse> {
     // Integration intelligence disabled for 1.0 - coming in v1.1
-    // console.log('Integration intelligence coming in v1.1');
+    // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Integration intelligence coming in v1.1');
     
     return {
       response: userInput,
@@ -32,12 +35,18 @@ export class IntegrationIntelligenceService {
   }
 
   async analyzeIntegrationData(): Promise<any> {
-    // console.log('Integration analysis coming in v1.1');
+    // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Integration analysis coming in v1.1');
     return {};
   }
 
   async generateBusinessInsights(): Promise<any[]> {
-    // console.log('Business insights coming in v1.1');
+    // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Business insights coming in v1.1');
     return [];
   }
 }

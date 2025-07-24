@@ -6,7 +6,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { AlertCircle, Check, ChevronRight, FileUp, DownloadCloud, Globe, Key, Lock } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { ApiIntegrationService, type ApiIntegrationData } from '@/domains/services/apiIntegrationService';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Progress } from '@/shared/components/ui/Progress';
@@ -44,7 +44,7 @@ interface ApiDocAnalysisResult {
 }
 
 const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onIntegrationCreated }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [apiUrl, setApiUrl] = useState<string>('');
   const [apiDoc, setApiDoc] = useState<string>('');
@@ -207,7 +207,7 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
       const progressInterval = setInterval(() => {
         setAnalysisProgress(prev => {
           const newProgress = prev + Math.random() * 15;
-          return newProgress > 90 ? 90 : newProgress;
+          return newProgress > 90 ? 90: newProgress;
         });
       }, 300);
       
@@ -323,7 +323,7 @@ const ApiDocIntegrationSetup: React.FC<ApiDocIntegrationSetupProps> = ({ onInteg
       const progressInterval = setInterval(() => {
         setGenerationProgress(prev => {
           const newProgress = prev + Math.random() * 10;
-          return newProgress > 90 ? 90 : newProgress;
+          return newProgress > 90 ? 90: newProgress;
         });
       }, 300);
       
@@ -384,7 +384,10 @@ ${analysisResult.patterns.map(pattern =>
       }, 500);
       
     } catch (err) {
-      console.error('Error generating integration:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error generating integration: ', err);
       setError(`Failed to generate integration: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setIsGenerating(false);
       setIsSaving(false);
@@ -402,8 +405,7 @@ ${analysisResult.patterns.map(pattern =>
   // Render different steps
   const renderStep = () => {
     switch (currentStep) {
-      case 1:
-        return (
+      case 1: return (
           <Card className="w-full">
             <CardHeader>
               <CardTitle>Upload API Documentation</CardTitle>
@@ -449,7 +451,7 @@ ${analysisResult.patterns.map(pattern =>
                       <div className="flex items-center space-x-2 mt-1.5">
                         <Input
                           id="api-url"
-                          placeholder="https://example.com/api-docs.json"
+                          placeholder="https: //example.com/api-docs.json"
                           value={apiUrl}
                           onChange={(e) => setApiUrl(e.target.value)}
                         />
@@ -475,8 +477,7 @@ ${analysisResult.patterns.map(pattern =>
           </Card>
         );
       
-      case 2:
-        return (
+      case 2: return (
           <Card className="w-full">
             <CardHeader>
               <CardTitle>Analyze API Documentation</CardTitle>
@@ -520,8 +521,7 @@ ${analysisResult.patterns.map(pattern =>
           </Card>
         );
       
-      case 3:
-        return (
+      case 3: return (
           <Card className="w-full">
             <CardHeader>
               <CardTitle>Configure Integration</CardTitle>
@@ -648,7 +648,7 @@ ${analysisResult.patterns.map(pattern =>
                                 <Label htmlFor="redirect-uri" className="text-xs">Redirect URI</Label>
                                 <Input
                                   id="redirect-uri"
-                                  placeholder="https://your-app.com/oauth/callback"
+                                  placeholder="https: //your-app.com/oauth/callback"
                                   value={integrationConfig.redirectUri || ''}
                                   onChange={(e) => handleConfigChange('redirectUri', e.target.value)}
                                   className="mt-1"
@@ -694,8 +694,7 @@ ${analysisResult.patterns.map(pattern =>
           </Card>
         );
       
-      case 4:
-        return (
+      case 4: return (
           <Card className="w-full">
             <CardHeader>
               <CardTitle>Integration Complete</CardTitle>
@@ -718,7 +717,7 @@ ${analysisResult.patterns.map(pattern =>
                     <p><span className="font-medium">Name:</span> {integrationName}</p>
                     <p><span className="font-medium">Status:</span> <Badge variant="outline">Pending Configuration</Badge></p>
                     <p><span className="font-medium">Authentication:</span> {analysisResult?.authMethods.join(', ')}</p>
-                    <p><span className="font-medium">Patterns:</span> {analysisResult?.patterns.length}</p>
+                    <p><span className="font-medium">Patterns: </span> {analysisResult?.patterns.length}</p>
                     <p><span className="font-medium">Endpoints:</span> {analysisResult?.endpointCount}</p>
                     {savedIntegrationId && (
                       <p><span className="font-medium">ID:</span> <code className="text-xs bg-muted px-1 rounded">{savedIntegrationId}</code></p>
@@ -726,7 +725,7 @@ ${analysisResult.patterns.map(pattern =>
                   </div>
                 </div>
                 
-                <div className="w-full max-w-md mt-4 p-4 bg-primary/5 dark:bg-blue-950/20 border border-border dark:border-blue-800 rounded-md">
+                <div className="w-full max-w-md mt-4 p-4 bg-primary/5 dark: bg-blue-950/20 border border-border dark:border-blue-800 rounded-md">
                   <p className="text-sm text-primary dark:text-blue-300">
                     <strong>Next Steps:</strong> Go to the Integrations Dashboard to complete the authentication setup and start using your new {integrationName} integration.
                   </p>
@@ -757,8 +756,7 @@ ${analysisResult.patterns.map(pattern =>
           </Card>
         );
       
-      default:
-        return null;
+      default: return null;
     }
   };
   
@@ -805,7 +803,7 @@ ${analysisResult.patterns.map(pattern =>
           <Alert variant="error" className="mb-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              <strong>Error:</strong> {error}
+              <strong>Error: </strong> {error}
             </AlertDescription>
           </Alert>
         )}

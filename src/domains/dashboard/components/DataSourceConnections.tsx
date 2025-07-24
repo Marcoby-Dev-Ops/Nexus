@@ -35,7 +35,10 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
     try {
       // TODO: Implement actual connection logic
       // This would typically open OAuth flows or connection wizards
-      console.log(`Connecting to ${sourceId}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Connecting to ${sourceId}`);
       
       // For now, just simulate a connection
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -44,7 +47,10 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
       await refresh();
       
     } catch (error) {
-      console.error('Failed to connect:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to connect: ', error);
     } finally {
       setConnectingTo(null);
     }
@@ -62,8 +68,7 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
         return <Star className="w-5 h-5 text-warning" />;
       case 'operations':
         return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-      default:
-        return <Link className="w-5 h-5 text-muted-foreground" />;
+      default: return <Link className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -105,8 +110,7 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
         return 'Operations';
       case 'marketing':
         return 'Marketing & Analytics';
-      default:
-        return category;
+      default: return category;
     }
   };
 
@@ -159,7 +163,7 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
                 return (
                   <div
                     key={source.id}
-                    className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover:border-border transition-colors"
+                    className="flex items-center justify-between p-4 rounded-lg border border-border/50 hover: border-border transition-colors"
                   >
                     <div className="flex items-center gap-4">
                       {getSourceIcon(source.category)}
@@ -221,7 +225,7 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
         ))}
         
         {healthData?.recommendations && healthData.recommendations.length > 0 && (
-          <div className="mt-6 p-4 bg-primary/5 dark:bg-blue-900/20 rounded-lg">
+          <div className="mt-6 p-4 bg-primary/5 dark: bg-blue-900/20 rounded-lg">
             <h4 className="font-semibold text-sm mb-2 text-blue-900 dark:text-blue-100">
               Recommendations to Improve Your Score
             </h4>

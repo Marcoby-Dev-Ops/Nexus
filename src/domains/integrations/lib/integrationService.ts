@@ -41,7 +41,10 @@ export class IntegrationService {
    */
   async checkUserIntegrations(userId: string): Promise<IntegrationCheckResult> {
     try {
-      console.log('🔍 [IntegrationService] Checking integrations for user:', userId);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 [IntegrationService] Checking integrations for user: ', userId);
       
       const { data, error } = await supabase.functions.invoke('check-user-integrations', {
         body: {
@@ -51,15 +54,24 @@ export class IntegrationService {
       });
 
       if (error) {
-        console.error('❌ [IntegrationService] Function error:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Function error: ', error);
         throw error;
       }
 
-      console.log('✅ [IntegrationService] Integration check result:', data);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ [IntegrationService] Integration check result: ', data);
       return data as IntegrationCheckResult;
 
     } catch (error) {
-      console.error('❌ [IntegrationService] Check error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Check error: ', error);
       throw error;
     }
   }
@@ -69,7 +81,10 @@ export class IntegrationService {
    */
   async addHubSpotIntegration(userId: string): Promise<IntegrationActionResult> {
     try {
-      console.log('🔧 [IntegrationService] Adding HubSpot integration for user:', userId);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 [IntegrationService] Adding HubSpot integration for user: ', userId);
       
       const { data, error } = await supabase.functions.invoke('check-user-integrations', {
         body: {
@@ -79,15 +94,24 @@ export class IntegrationService {
       });
 
       if (error) {
-        console.error('❌ [IntegrationService] Function error:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Function error: ', error);
         throw error;
       }
 
-      console.log('✅ [IntegrationService] HubSpot integration result:', data);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ [IntegrationService] HubSpot integration result: ', data);
       return data as IntegrationActionResult;
 
     } catch (error) {
-      console.error('❌ [IntegrationService] Add HubSpot error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Add HubSpot error: ', error);
       throw error;
     }
   }
@@ -97,7 +121,10 @@ export class IntegrationService {
    */
   async listAllIntegrations(userId: string): Promise<IntegrationCheckResult> {
     try {
-      console.log('📋 [IntegrationService] Listing all integrations for user:', userId);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📋 [IntegrationService] Listing all integrations for user: ', userId);
       
       const { data, error } = await supabase.functions.invoke('check-user-integrations', {
         body: {
@@ -107,15 +134,24 @@ export class IntegrationService {
       });
 
       if (error) {
-        console.error('❌ [IntegrationService] Function error:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Function error: ', error);
         throw error;
       }
 
-      console.log('✅ [IntegrationService] List integrations result:', data);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ [IntegrationService] List integrations result: ', data);
       return data as IntegrationCheckResult;
 
     } catch (error) {
-      console.error('❌ [IntegrationService] List error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] List error: ', error);
       throw error;
     }
   }
@@ -125,7 +161,10 @@ export class IntegrationService {
    */
   async clearUserIntegrations(userId: string): Promise<IntegrationActionResult> {
     try {
-      console.log('🗑️ [IntegrationService] Clearing integrations for user:', userId);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🗑️ [IntegrationService] Clearing integrations for user: ', userId);
       
       const { data, error } = await supabase.functions.invoke('check-user-integrations', {
         body: {
@@ -135,15 +174,24 @@ export class IntegrationService {
       });
 
       if (error) {
-        console.error('❌ [IntegrationService] Function error:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Function error: ', error);
         throw error;
       }
 
-      console.log('✅ [IntegrationService] Clear integrations result:', data);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ [IntegrationService] Clear integrations result: ', data);
       return data as IntegrationActionResult;
 
     } catch (error) {
-      console.error('❌ [IntegrationService] Clear error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Clear error: ', error);
       throw error;
     }
   }
@@ -153,7 +201,10 @@ export class IntegrationService {
    */
   async forceRefreshIntegrations(userId: string): Promise<IntegrationActionResult> {
     try {
-      console.log('🔄 [IntegrationService] Force refreshing integrations for user:', userId);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 [IntegrationService] Force refreshing integrations for user: ', userId);
       
       // First clear all integrations
       await this.clearUserIntegrations(userId);
@@ -161,11 +212,17 @@ export class IntegrationService {
       // Then add HubSpot integration
       const result = await this.addHubSpotIntegration(userId);
       
-      console.log('✅ [IntegrationService] Force refresh completed');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ [IntegrationService] Force refresh completed');
       return result;
 
     } catch (error) {
-      console.error('❌ [IntegrationService] Force refresh error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [IntegrationService] Force refresh error: ', error);
       throw error;
     }
   }

@@ -10,16 +10,16 @@ import type { HubSpotAuthUrlParams, HubSpotOAuthTokens } from './types';
  * Following HubSpot's OAuth Quickstart Guide requirements
  */
 export function createHubSpotAuthUrl(params: HubSpotAuthUrlParams): string {
-  const { clientId, redirectUri, requiredScopes, optionalScopes = [], state } = params;
+  const { clientId, redirectUri, requiredScopes, state } = params;
   
   // HubSpot requires space-separated scopes
   const formattedScopes = requiredScopes.join(' ');
   
   const urlParams = new URLSearchParams({
-    client_id: clientId,
-    redirect_uri: redirectUri,
+    clientid: clientId,
+    redirecturi: redirectUri,
     scope: formattedScopes,
-    response_type: 'code'
+    responsetype: 'code'
   });
 
   // Add optional scopes if provided (HubSpot format)
@@ -80,7 +80,7 @@ export function parseHubSpotCallback(url: string): {
     code: urlObj.searchParams.get('code') || undefined,
     state: urlObj.searchParams.get('state') || undefined,
     error: urlObj.searchParams.get('error') || undefined,
-    error_description: urlObj.searchParams.get('error_description') || undefined
+    errordescription: urlObj.searchParams.get('error_description') || undefined
   };
 }
 

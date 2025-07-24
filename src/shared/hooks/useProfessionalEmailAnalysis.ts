@@ -5,8 +5,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
-import { domainAnalysisService } from '@/domains/services/domainAnalysisService';
+import { useAuth } from '@/core/auth/AuthProvider';
+import { domainAnalysisService } from '@/domains/analytics/services/analyticsService';
 import { logger } from '@/shared/lib/security/logger';
 
 export interface ProfessionalEmailStatus {
@@ -22,7 +22,7 @@ export interface ProfessionalEmailStatus {
 }
 
 export const useProfessionalEmailAnalysis = (autoUpdate = true) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [status, setStatus] = useState<ProfessionalEmailStatus>({
     isAnalyzed: false,
     hasProfessionalEmail: false,
@@ -80,7 +80,7 @@ export const useProfessionalEmailAnalysis = (autoUpdate = true) => {
       }, 'Professional email analysis completed');
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage = error instanceof Error ? error.message: 'Unknown error';
       setStatus(prev => ({ 
         ...prev, 
         loading: false, 

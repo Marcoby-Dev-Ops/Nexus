@@ -7,33 +7,9 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { toast } from 'sonner';
-import {
-  Palette,
-  Monitor,
-  Smartphone,
-  Tablet,
-  Sun,
-  Moon,
-  MonitorIcon,
-  Layout,
-  Type,
-  Eye,
-  EyeOff,
-  RefreshCw,
-  Save,
-  Settings,
-  Globe,
-  Zap,
-  Users,
-  BarChart3,
-  Calendar,
-  FileText,
-  Bell,
-  CheckCircle2
-} from 'lucide-react';
-
+import { Palette, Monitor, Sun, Moon, MonitorIcon, Layout, Eye, RefreshCw, Save, Settings, Globe, Users, BarChart3, Calendar, Bell, CheckCircle2 } from 'lucide-react';
 interface AppearanceSettings {
   theme: 'light' | 'dark' | 'system';
   colorScheme: 'green' | 'blue' | 'purple' | 'orange' | 'red';
@@ -58,7 +34,7 @@ interface LayoutPreview {
 }
 
 const AppearanceSettings: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [settings, setSettings] = useState<AppearanceSettings>({
     theme: 'system',
     colorScheme: 'green',
@@ -90,7 +66,10 @@ const AppearanceSettings: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
     } catch (error) {
-      console.error('Error fetching appearance settings:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching appearance settings: ', error);
       toast.error('Failed to load appearance settings');
     } finally {
       setLoading(false);
@@ -193,7 +172,7 @@ const AppearanceSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Appearance & Theme</h3>
           <p className="text-sm text-muted-foreground">
@@ -275,7 +254,7 @@ const AppearanceSettings: React.FC = () => {
                     className={`p-3 rounded-lg border-2 transition-all ${
                       settings.colorScheme === scheme
                         ? 'border-primary ring-2 ring-primary/20'
-                        : 'border-border hover:border-primary/50'
+                        : 'border-border hover: border-primary/50'
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-full ${getColorSchemePreview(scheme)} mb-2`} />
@@ -303,7 +282,7 @@ const AppearanceSettings: React.FC = () => {
           {/* Layout Preview */}
           <div className="space-y-4">
             <Label>Layout Style</Label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
               {layoutPreviews.map((layout) => (
                 <button
                   key={layout.id}
@@ -311,7 +290,7 @@ const AppearanceSettings: React.FC = () => {
                   className={`p-4 border rounded-lg text-left transition-all ${
                     settings.layout === layout.id
                       ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
+                      : 'border-border hover: border-primary/50'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -481,7 +460,7 @@ const AppearanceSettings: React.FC = () => {
               </Badge>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
               <div className="p-3 border rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <BarChart3 className="w-4 h-4" />
@@ -542,7 +521,7 @@ const AppearanceSettings: React.FC = () => {
                   <kbd className="px-2 py-1 bg-muted rounded">Ctrl + ,</kbd>
                 </div>
                 <div className="flex justify-between">
-                  <span>Help:</span>
+                  <span>Help: </span>
                   <kbd className="px-2 py-1 bg-muted rounded">F1</kbd>
                 </div>
               </div>

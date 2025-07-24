@@ -6,25 +6,14 @@
 
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Building2, 
-  Users, 
-  Target, 
-  TrendingUp, 
-  Lightbulb,
-  Sparkles,
-  BarChart3,
-  Brain,
-  ArrowRight
-} from 'lucide-react';
-
+import { Building2, Users, Target, Lightbulb, Sparkles, BarChart3, Brain, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface BusinessContextCollectorProps {
   userProfile?: any;
@@ -74,11 +63,11 @@ interface ContextField {
 }
 
 export const BusinessContextCollector: React.FC<BusinessContextCollectorProps> = ({ 
-  userProfile: _userProfile, 
+  userProfile: userProfile, 
   systemIntelligence,
   onContextUpdated 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [context, setContext] = useState<BusinessContext>({
     company: { name: '', industry: '', size: '', description: '', challenges: [], goals: [] },
     user: { role: '', experience: '', responsibilities: [], goals: [] },
@@ -210,8 +199,8 @@ export const BusinessContextCollector: React.FC<BusinessContextCollectorProps> =
 
     setIntelligence(prev => {
       const newScore = prev.contextScore + field.weight;
-      const newInsights = prev.insightsGenerated + (field.weight > 15 ? 1 : 0);
-      const newRecommendations = prev.recommendationsCount + (field.weight > 20 ? 1 : 0);
+      const newInsights = prev.insightsGenerated + (field.weight > 15 ? 1: 0);
+      const newRecommendations = prev.recommendationsCount + (field.weight > 20 ? 1: 0);
 
       return {
         contextScore: Math.min(100, newScore),
@@ -297,7 +286,7 @@ export const BusinessContextCollector: React.FC<BusinessContextCollectorProps> =
       </div>
 
       {/* Intelligence Status */}
-      <div className="grid md:grid-cols-4 gap-4">
+      <div className="grid md: grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
@@ -357,9 +346,9 @@ export const BusinessContextCollector: React.FC<BusinessContextCollectorProps> =
       )}
 
       {/* Context Collection Form */}
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md: grid-cols-2 gap-6">
         {contextFields.map((field) => (
-          <Card key={field.id} className="hover:shadow-md transition-shadow">
+          <Card key={field.id} className="hover: shadow-md transition-shadow">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center space-x-2 text-lg">
                 {getCategoryIcon(field.category)}
@@ -382,7 +371,7 @@ export const BusinessContextCollector: React.FC<BusinessContextCollectorProps> =
               {field.type === 'select' && (
                 <select
                   onChange={(e) => handleFieldUpdate(field.id, e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file: border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <option value="">{field.placeholder}</option>
                   {field.options?.map((option) => (

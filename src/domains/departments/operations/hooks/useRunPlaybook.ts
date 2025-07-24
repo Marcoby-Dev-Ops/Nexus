@@ -4,16 +4,16 @@ import { supabase } from '@/core/supabase';
 import { logger } from '@/shared/lib/security/logger';
 
 interface InsertPayload {
-  org_id: string;
-  kpi_key: string;
-  action_slug: string;
-  requested_by: string;
+  orgid: string;
+  kpikey: string;
+  actionslug: string;
+  requestedby: string;
 }
 
 // Mapping of KPI keys to n8n action workflow slugs
-const KPI_ACTION_MAP: Record<string, string> = {
-  deploy_frequency: 'deploy_frequency_audit',
-  change_failure: 'change_failure_review',
+const KPIACTIONMAP: Record<string, string> = {
+  deployfrequency: 'deploy_frequency_audit',
+  changefailure: 'change_failure_review',
   mttr: 'mttr_reduction_workflow',
 };
 
@@ -35,10 +35,10 @@ export function useRunPlaybook() {
       const actionSlug = KPI_ACTION_MAP[kpiKey] ?? 'generic_ops_playbook';
 
       const payload: InsertPayload = {
-        org_id: user.user_metadata?.org_id as string,
-        kpi_key: kpiKey,
-        action_slug: actionSlug,
-        requested_by: user.id,
+        orgid: user.user_metadata?.org_id as string,
+        kpikey: kpiKey,
+        actionslug: actionSlug,
+        requestedby: user.id,
       };
 
       const { error } = await (supabase as any)
@@ -55,9 +55,9 @@ export function useRunPlaybook() {
       }
       return { previousScore };
     },
-    onError: (error: Error, _kpiKey: string, context?: { previousScore?: number }) => {
+    onError: (error: Error, kpiKey: string, context?: { previousScore?: number }) => {
       logger.error({ err: error }, 'Failed to queue Ops playbook');
-      toast.error(error instanceof Error ? error.message : 'Failed to queue playbook');
+      toast.error(error instanceof Error ? error.message: 'Failed to queue playbook');
       if (context?.previousScore !== undefined) {
         queryClient.setQueryData(['ops-score'], context.previousScore);
       }

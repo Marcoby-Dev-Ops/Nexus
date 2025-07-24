@@ -3,19 +3,8 @@ import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Badge } from '@/shared/components/ui/Badge';
-import { 
-  User, 
-  Brain, 
-  Zap, 
-  TrendingUp, 
-  X, 
-  ChevronRight,
-  Sparkles,
-  Target,
-  Clock,
-  Users
-} from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { User, Brain, X, ChevronRight, Sparkles, Target, Clock } from 'lucide-react';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 
 interface ProfileCompletionBannerProps {
@@ -27,7 +16,7 @@ export const ProfileCompletionBanner: React.FC<ProfileCompletionBannerProps> = (
   onDismiss, 
   showDetailed = false 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
 
@@ -153,7 +142,7 @@ export const ProfileCompletionBanner: React.FC<ProfileCompletionBannerProps> = (
               <div className="bg-background/30 rounded-lg p-4 space-y-4">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="h-4 w-4 text-warning" />
-                  <span className="text-sm font-medium">See the difference:</span>
+                  <span className="text-sm font-medium">See the difference: </span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div className="space-y-2">

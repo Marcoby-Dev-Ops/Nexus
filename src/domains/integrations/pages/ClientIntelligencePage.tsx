@@ -6,32 +6,8 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert } from '@/shared/components/ui/Alert';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
-import {
-  Users,
-  Search,
-  TrendingUp,
-  AlertCircle,
-  Mail,
-  Phone,
-  MapPin,
-  Building,
-  Calendar,
-  DollarSign,
-  Activity,
-  Zap,
-  Brain,
-  Target,
-  // Clock,
-  Star,
-  RefreshCw,
-  Download,
-  BarChart3,
-  MessageSquare,
-  Lightbulb,
-  ArrowLeft
-} from 'lucide-react';
-
+import { useAuth } from '@/core/auth/AuthProvider';
+import { Users, Search, TrendingUp, AlertCircle, Mail, Phone, MapPin, Building, Calendar, DollarSign, Activity, Zap, Brain, Target, Star, RefreshCw, Download, BarChart3, MessageSquare, Lightbulb, ArrowLeft } from 'lucide-react';
 /**
  * @name ClientIntelligencePage
  * @description Dedicated page for unified client intelligence dashboard
@@ -41,8 +17,8 @@ import {
 
 interface UnifiedClientProfile {
   id: string;
-  client_id: string;
-  profile_data: {
+  clientid: string;
+  profiledata: {
     name?: string;
     email?: string;
     phone?: string;
@@ -60,16 +36,16 @@ interface UnifiedClientProfile {
       role?: string;
     };
   };
-  source_integrations: string[];
-  primary_source: string;
-  completeness_score: number;
-  engagement_score: number;
-  estimated_value: number;
-  last_interaction: string;
-  last_enrichment_at: string;
+  sourceintegrations: string[];
+  primarysource: string;
+  completenessscore: number;
+  engagementscore: number;
+  estimatedvalue: number;
+  lastinteraction: string;
+  lastenrichmentat: string;
   insights: ClientInsight[];
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
 }
 
 interface ClientInsight {
@@ -80,25 +56,25 @@ interface ClientInsight {
 
 interface ClientInteraction {
   id: string;
-  client_profile_id: string;
-  interaction_type: 'email' | 'call' | 'meeting' | 'transaction' | 'support' | 'website_visit';
+  clientprofileid: string;
+  interactiontype: 'email' | 'call' | 'meeting' | 'transaction' | 'support' | 'website_visit';
   channel: string;
   summary: string;
   sentiment: 'positive' | 'neutral' | 'negative';
   value: number;
   metadata: Record<string, unknown>;
-  occurred_at: string;
+  occurredat: string;
 }
 
 interface ClientIntelligenceAlert {
   id: string;
-  client_profile_id: string;
-  alert_type: 'opportunity' | 'risk' | 'milestone' | 'anomaly';
+  clientprofileid: string;
+  alerttype: 'opportunity' | 'risk' | 'milestone' | 'anomaly';
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
-  is_resolved: boolean;
-  created_at: string;
+  isresolved: boolean;
+  createdat: string;
 }
 
 interface AnalyticsData {
@@ -115,7 +91,7 @@ interface AnalyticsData {
 
 
 const ClientIntelligencePage: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [profiles, setProfiles] = useState<UnifiedClientProfile[]>([]);
   const [interactions, setInteractions] = useState<ClientInteraction[]>([]);
   const [alerts, setAlerts] = useState<ClientIntelligenceAlert[]>([]);
@@ -160,8 +136,8 @@ const ClientIntelligencePage: React.FC = () => {
       const mockProfiles: UnifiedClientProfile[] = [
         {
           id: '1',
-          client_id: 'client_001',
-          profile_data: {
+          clientid: 'client_001',
+          profiledata: {
             name: 'John Smith',
             email: 'john@techcorp.com',
             phone: '+1-555-0123',
@@ -170,53 +146,56 @@ const ClientIntelligencePage: React.FC = () => {
             industry: 'Technology',
             website: 'https://techcorp.com',
             demographics: {
-              company_size: '50-200',
-              revenue_range: '$10M-$50M',
+              companysize: '50-200',
+              revenuerange: '$10M-$50M',
               role: 'CTO'
             }
           },
-          source_integrations: ['office-365', 'paypal', 'hubspot'],
-          primary_source: 'hubspot',
-          completeness_score: 85,
-          engagement_score: 78,
-          estimated_value: 45000,
-          last_interaction: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          last_enrichment_at: new Date().toISOString(),
+          sourceintegrations: ['office-365', 'paypal', 'hubspot'],
+          primarysource: 'hubspot',
+          completenessscore: 85,
+          engagementscore: 78,
+          estimatedvalue: 45000,
+          lastinteraction: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          lastenrichment_at: new Date().toISOString(),
           insights: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          createdat: new Date().toISOString(),
+          updatedat: new Date().toISOString()
         },
         {
           id: '2',
-          client_id: 'client_002',
-          profile_data: {
+          clientid: 'client_002',
+          profiledata: {
             name: 'Sarah Johnson',
             email: 'sarah@innovatetech.com',
             company: 'InnovateTech Inc',
             location: 'Austin, TX',
             industry: 'SaaS',
             demographics: {
-              company_size: '10-50',
-              revenue_range: '$1M-$10M',
+              companysize: '10-50',
+              revenuerange: '$1M-$10M',
               role: 'CEO'
             }
           },
-          source_integrations: ['office-365', 'stripe'],
-          primary_source: 'stripe',
-          completeness_score: 72,
-          engagement_score: 92,
-          estimated_value: 78000,
-          last_interaction: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          last_enrichment_at: new Date().toISOString(),
+          sourceintegrations: ['office-365', 'stripe'],
+          primarysource: 'stripe',
+          completenessscore: 72,
+          engagementscore: 92,
+          estimatedvalue: 78000,
+          lastinteraction: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          lastenrichment_at: new Date().toISOString(),
           insights: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          createdat: new Date().toISOString(),
+          updatedat: new Date().toISOString()
         }
       ];
 
       setProfiles(mockProfiles);
     } catch {
-      // console.error('Error fetching client profiles:', error);
+      // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching client profiles: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -227,25 +206,25 @@ const ClientIntelligencePage: React.FC = () => {
     const mockInteractions: ClientInteraction[] = [
       {
         id: '1',
-        client_profile_id: '1',
-        interaction_type: 'email',
+        clientprofile_id: '1',
+        interactiontype: 'email',
         channel: 'Microsoft 365',
         summary: 'Discussed project requirements and timeline',
         sentiment: 'positive',
         value: 5000,
         metadata: {},
-        occurred_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+        occurredat: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         id: '2',
-        client_profile_id: '2',
-        interaction_type: 'transaction',
+        clientprofile_id: '2',
+        interactiontype: 'transaction',
         channel: 'Stripe',
         summary: 'Monthly subscription payment processed',
         sentiment: 'positive',
         value: 2500,
         metadata: {},
-        occurred_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        occurredat: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
       }
     ];
 
@@ -257,23 +236,23 @@ const ClientIntelligencePage: React.FC = () => {
     const mockAlerts: ClientIntelligenceAlert[] = [
       {
         id: '1',
-        client_profile_id: '1',
-        alert_type: 'opportunity',
+        clientprofile_id: '1',
+        alerttype: 'opportunity',
         title: 'Upsell Opportunity Detected',
         description: 'Client has been actively using advanced features. Consider proposing enterprise plan.',
         priority: 'high',
-        is_resolved: false,
-        created_at: new Date().toISOString()
+        isresolved: false,
+        createdat: new Date().toISOString()
       },
       {
         id: '2',
-        client_profile_id: '2',
-        alert_type: 'risk',
+        clientprofile_id: '2',
+        alerttype: 'risk',
         title: 'Engagement Drop',
         description: 'Client engagement has decreased by 30% over the last week.',
         priority: 'medium',
-        is_resolved: false,
-        created_at: new Date().toISOString()
+        isresolved: false,
+        createdat: new Date().toISOString()
       }
     ];
 
@@ -282,13 +261,13 @@ const ClientIntelligencePage: React.FC = () => {
 
   const triggerClientUnification = async (clientId: string) => {
     try {
-      const response = await fetch('https://automate.marcoby.net/webhook/client-data-unification', {
+      const response = await fetch('https: //automate.marcoby.net/webhook/client-data-unification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          client_id: clientId,
-          user_id: user?.id,
-          company_id: user?.company_id,
+          clientid: clientId,
+          userid: user?.id,
+          companyid: user?.company_id,
           type: 'profile_refresh'
         })
       });
@@ -297,7 +276,10 @@ const ClientIntelligencePage: React.FC = () => {
         await fetchClientProfiles();
       }
     } catch {
-      // console.error('Error triggering client unification:', error);
+      // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error triggering client unification: ', error);
     }
   };
 
@@ -395,7 +377,7 @@ const ClientIntelligencePage: React.FC = () => {
 
         <TabsContent value="overview" className="space-y-6">
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -519,7 +501,7 @@ const ClientIntelligencePage: React.FC = () => {
 
         <TabsContent value="clients" className="space-y-6">
           {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm: flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -558,7 +540,7 @@ const ClientIntelligencePage: React.FC = () => {
           {/* Client Profiles Grid */}
           <div className="grid gap-6">
             {filteredProfiles.map((profile) => (
-              <Card key={profile.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+              <Card key={profile.id} className="overflow-hidden hover: shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4 flex-1">
@@ -598,7 +580,7 @@ const ClientIntelligencePage: React.FC = () => {
                         </div>
 
                         {/* Metrics */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
                           <div>
                             <p className="text-xs text-muted-foreground">Engagement Score</p>
                             <div className="flex items-center gap-2">
@@ -629,7 +611,7 @@ const ClientIntelligencePage: React.FC = () => {
 
                         {/* Data Sources */}
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground">Sources:</span>
+                          <span className="text-xs text-muted-foreground">Sources: </span>
                           <div className="flex gap-1">
                             {profile.source_integrations.map((source, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">
@@ -748,7 +730,7 @@ const ClientIntelligencePage: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle>Engagement Trends</CardTitle>

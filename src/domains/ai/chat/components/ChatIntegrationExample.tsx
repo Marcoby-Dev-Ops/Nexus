@@ -28,7 +28,7 @@ export const ChatIntegrationExample: React.FC = () => {
             <div className="flex items-center gap-4">
               <Link 
                 to="/" 
-                className="text-foreground hover:text-primary transition-colors"
+                className="text-foreground hover: text-primary transition-colors"
               >
                 Home
               </Link>
@@ -73,7 +73,7 @@ const HomePage: React.FC = () => {
           Experience our two-tier AI chat system
         </p>
         
-        <div className="grid md:grid-cols-2 gap-8 mt-12">
+        <div className="grid md: grid-cols-2 gap-8 mt-12">
           {/* Quick Chat Feature */}
           <div className="p-6 border border-border rounded-xl">
             <h2 className="text-2xl font-semibold mb-4">Quick Chat</h2>
@@ -110,7 +110,7 @@ const HomePage: React.FC = () => {
             </ul>
             <Link
               to="/chat"
-              className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover: bg-primary/90 transition-colors"
             >
               Open Full Chat
             </Link>

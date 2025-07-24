@@ -2,7 +2,7 @@
  * Central route map for title / breadcrumb generation
  * Extend as new routes are added.
  */
-export const ROUTE_LABELS: Record<string, string> = {
+export const ROUTELABELS: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/chat': 'Chat',
   '/workspace': 'Workspace',

@@ -54,8 +54,7 @@ export class ExpertPromptEngine {
     
     return `You are ${agent.name}, ${title} with ${personality.years_experience}+ years of specialized experience in ${knowledgeBase.domain}.
 
-PROFESSIONAL BACKGROUND:
-${personality.background}
+PROFESSIONAL BACKGROUND: ${personality.background}
 
 EXPERTISE CREDENTIALS:
 - Certifications: ${knowledgeBase.certifications?.join(', ') || 'Domain Expert'}
@@ -63,8 +62,7 @@ EXPERTISE CREDENTIALS:
 - Expertise Level: ${personality.expertise_level}
 - Industry Experience: ${knowledgeBase.industries?.join(', ') || 'Cross-industry'}
 
-CORE SPECIALIZATIONS:
-${agent.specialties?.map(specialty => `• ${specialty}`).join('\n') || '• General expertise'}`;
+CORE SPECIALIZATIONS: ${agent.specialties?.map(specialty => `• ${specialty}`).join('\n') || '• General expertise'}`;
   }
 
   /**
@@ -73,19 +71,14 @@ ${agent.specialties?.map(specialty => `• ${specialty}`).join('\n') || '• Gen
   private static addDomainExpertise(basePrompt: string, knowledgeBase: ExpertKnowledgeBase): string {
     return `${basePrompt}
 
-DEEP DOMAIN KNOWLEDGE:
-
-Proven Frameworks & Methodologies:
+DEEP DOMAIN KNOWLEDGE: Proven Frameworks & Methodologies:
 ${knowledgeBase.frameworks?.map(framework => `• ${framework} - Applied in real-world scenarios`).join('\n') || '• Industry best practices'}
 
-Expert Tools & Technologies:
-${knowledgeBase.tools?.map(tool => `• ${tool} - Advanced proficiency and implementation experience`).join('\n') || '• Standard industry tools'}
+Expert Tools & Technologies: ${knowledgeBase.tools?.map(tool => `• ${tool} - Advanced proficiency and implementation experience`).join('\n') || '• Standard industry tools'}
 
-Specialized Methodologies:
-${knowledgeBase.methodologies?.map(method => `• ${method} - Hands-on implementation and optimization`).join('\n') || '• Proven methodologies'}
+Specialized Methodologies: ${knowledgeBase.methodologies?.map(method => `• ${method} - Hands-on implementation and optimization`).join('\n') || '• Proven methodologies'}
 
-Industry-Specific Expertise:
-${knowledgeBase.specializations?.map(spec => `• ${spec} - Deep specialization with measurable outcomes`).join('\n') || '• Cross-functional expertise'}`;
+Industry-Specific Expertise: ${knowledgeBase.specializations?.map(spec => `• ${spec} - Deep specialization with measurable outcomes`).join('\n') || '• Cross-functional expertise'}`;
   }
 
   /**
@@ -98,9 +91,7 @@ ${knowledgeBase.specializations?.map(spec => `• ${spec} - Deep specialization 
 
     return `${domainPrompt}
 
-PROFESSIONAL PERSONALITY & APPROACH:
-
-Communication Style - ${personality.communicationStyle.toUpperCase()}:
+PROFESSIONAL PERSONALITY & APPROACH: Communication Style - ${personality.communicationStyle.toUpperCase()}:
 ${communicationGuidance}
 
 Decision-Making Approach - ${personality.decision_making.toUpperCase()}:
@@ -119,8 +110,7 @@ ${expertiseTone}`;
 
     return `${personalizedPrompt}
 
-EXPERT RESPONSE FRAMEWORK:
-${responseFramework}
+EXPERT RESPONSE FRAMEWORK: ${responseFramework}
 
 PROFESSIONAL CONSTRAINTS:
 ${expertConstraints}

@@ -26,7 +26,7 @@ export function useRealtimeChat(conversationId: string) {
         if (error) throw error;
         setMessages(data);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to fetch messages'));
+        setError(err instanceof Error ? err: new Error('Failed to fetch messages'));
       } finally {
         setLoading(false);
       }
@@ -36,7 +36,7 @@ export function useRealtimeChat(conversationId: string) {
 
     // Subscribe to new messages
     const subscription = supabase
-      .channel(`chat:${conversationId}`)
+      .channel(`chat: ${conversationId}`)
       .on(
         'postgres_changes',
         {

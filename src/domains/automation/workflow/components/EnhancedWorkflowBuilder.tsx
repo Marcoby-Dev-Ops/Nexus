@@ -69,7 +69,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
       </div>
 
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
               Workflow Name
@@ -79,7 +79,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
               value={workflowName}
               onChange={(e) => setWorkflowName(e.target.value)}
               placeholder="Enter workflow name..."
-              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus: outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
           <div>
@@ -89,7 +89,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
             <select
               value={triggerType}
               onChange={(e) => setTriggerType(e.target.value as any)}
-              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus: outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="webhook">Webhook</option>
               <option value="schedule">Schedule</option>
@@ -108,7 +108,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
             onChange={(e) => setWorkflowDescription(e.target.value)}
             placeholder="Describe what this workflow should do..."
             rows={4}
-            className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full px-4 py-2 border border-border rounded-md bg-background text-foreground focus: outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -130,7 +130,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
                 className={`px-4 py-2 rounded-md transition-colors ${
                   integrations.includes(integration)
                     ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    : 'bg-muted text-muted-foreground hover: bg-muted/80'
                 }`}
               >
                 {integration}
@@ -163,7 +163,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
           {onClose && (
             <button
               onClick={onClose}
-              className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="px-4 py-2 text-muted-foreground hover: text-foreground transition-colors"
             >
               Cancel
             </button>
@@ -171,7 +171,7 @@ export const EnhancedWorkflowBuilder: React.FC<EnhancedWorkflowBuilderProps> = (
           <button
             onClick={generateWorkflow}
             disabled={isBuilding || !workflowName.trim() || !workflowDescription.trim()}
-            className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover: bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isBuilding ? <Spinner size={16} /> : <Play className="h-4 w-4" />}
             <span>{isBuilding ? 'Generating...' : 'Generate Workflow'}</span>

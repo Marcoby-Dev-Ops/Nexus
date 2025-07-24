@@ -57,7 +57,7 @@ export interface HubSpotAppSettings {
 /**
  * Default HubSpot app configuration for Nexus
  */
-export const HUBSPOT_APP_CONFIG: HubSpotAppConfig = {
+export const HUBSPOTAPPCONFIG: HubSpotAppConfig = {
   appId: 'nexus-business-platform',
   appName: 'Nexus Business Platform',
   appDescription: 'Comprehensive business management platform that integrates with HubSpot CRM for enhanced sales, marketing, and customer service capabilities.',

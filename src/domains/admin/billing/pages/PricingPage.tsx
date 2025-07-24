@@ -30,7 +30,7 @@ interface PricingTier {
   roiHighlight?: string;
 }
 
-const PRICING_TIERS: PricingTier[] = [
+const PRICINGTIERS: PricingTier[] = [
   {
     id: 'free',
     name: 'Free',
@@ -160,7 +160,7 @@ export const PricingPage: React.FC = () => {
       window.location.href = '/signup';
     } else if (tier.id === 'enterprise') {
       // Contact sales
-      window.location.href = 'mailto:sales@nexus.com?subject=Enterprise Inquiry';
+      window.location.href = 'mailto: sales@nexus.com?subject=Enterprise Inquiry';
     } else {
       // Start trial flow
       window.location.href = '/signup?plan=pro&trial=14';
@@ -186,7 +186,7 @@ export const PricingPage: React.FC = () => {
       <Seo
         title="Nexus Pricing – Plans for Founders & Teams | Marcoby"
         description="Choose the right Nexus plan for your business. Compare Free, Pro, and Enterprise options. Early access pricing."
-        canonical="https://nexus.marcoby.com/pricing"
+        canonical="https: //nexus.marcoby.com/pricing"
         image="https://nexus.marcoby.com/og-image.png"
         structuredData={faqStructuredData}
       />
@@ -234,7 +234,7 @@ export const PricingPage: React.FC = () => {
       </div>
 
       {/* Billing Toggle */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
+      <div className="max-w-7xl mx-auto px-4 sm: px-6 lg:px-8 mb-12">
         <div className="text-center">
           <div className="inline-flex items-center p-1 bg-muted rounded-lg">
             <button
@@ -242,7 +242,7 @@ export const PricingPage: React.FC = () => {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 billingCycle === 'month'
                   ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover: text-foreground'
               }`}
             >
               Monthly
@@ -252,7 +252,7 @@ export const PricingPage: React.FC = () => {
               className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                 billingCycle === 'year'
                   ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover: text-foreground'
               }`}
             >
               Yearly
@@ -267,8 +267,7 @@ export const PricingPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {PRICING_TIERS.map((tier) => {
             const price = billingCycle === 'year' && tier.price > 0 
-              ? tier.price - calculateAnnualSavings(tier.price) / 12 
-              : tier.price;
+              ? tier.price - calculateAnnualSavings(tier.price) / 12: tier.price;
             const annualPrice = price * 12;
 
             return (
@@ -299,7 +298,7 @@ export const PricingPage: React.FC = () => {
                       /{billingCycle === 'year' ? 'month' : 'month'}
                     </span>
                     {billingCycle === 'year' && tier.price > 0 && (
-                      <div className="text-sm text-success dark:text-success mt-1">
+                      <div className="text-sm text-success dark: text-success mt-1">
                         ${annualPrice}/year (save ${calculateAnnualSavings(tier.price)})
                       </div>
                     )}
@@ -330,13 +329,13 @@ export const PricingPage: React.FC = () => {
 
                   <div className="space-y-4">
                     <h4 className="font-semibold flex items-center">
-                      <Check className="h-4 w-4 text-success dark:text-success mr-2" />
+                      <Check className="h-4 w-4 text-success dark: text-success mr-2" />
                       What's included:
                     </h4>
                     <ul className="space-y-2">
                       {tier.features.map((feature, index) => (
                         <li key={index} className="flex items-start">
-                          <Check className="h-4 w-4 text-success dark:text-success mr-2 mt-0.5 flex-shrink-0" />
+                          <Check className="h-4 w-4 text-success dark: text-success mr-2 mt-0.5 flex-shrink-0" />
                           <span className="text-sm text-muted-foreground">{feature}</span>
                         </li>
                       ))}
@@ -364,7 +363,7 @@ export const PricingPage: React.FC = () => {
 
       {/* Early User Feedback */}
       <div className="bg-muted/50 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm: px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Early User Feedback</h2>
             <p className="text-muted-foreground">What our beta testers and early adopters are saying</p>
@@ -401,7 +400,7 @@ export const PricingPage: React.FC = () => {
       </div>
 
       {/* FAQ Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-4xl mx-auto px-4 sm: px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Frequently Asked Questions</h2>
           <p className="text-muted-foreground">Everything you need to know about Nexus pricing and features</p>
@@ -409,11 +408,11 @@ export const PricingPage: React.FC = () => {
 
         <div className="space-y-4">
           {FAQ_ITEMS.map((item, index) => (
-            <Card key={index} className="transition-all duration-200 hover:shadow-md">
+            <Card key={index} className="transition-all duration-200 hover: shadow-md">
               <CardContent className="p-0">
                 <button
-                  onClick={() => setExpandedFaq(expandedFaq === index ? null : index)}
-                  className="w-full p-6 text-left flex items-center justify-between hover:bg-accent/50 transition-colors"
+                  onClick={() => setExpandedFaq(expandedFaq === index ? null: index)}
+                  className="w-full p-6 text-left flex items-center justify-between hover: bg-accent/50 transition-colors"
                 >
                   <h3 className="font-semibold">{item.question}</h3>
                   <ArrowRight
@@ -435,7 +434,7 @@ export const PricingPage: React.FC = () => {
 
       {/* Final CTA */}
       <div className="bg-primary text-primary-foreground py-16">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center px-4 sm: px-6 lg:px-8">
           <h2 className="text-3xl font-bold mb-4">
             Ready to automate your business operations?
           </h2>
@@ -455,7 +454,7 @@ export const PricingPage: React.FC = () => {
               onClick={() => window.location.href = '/signup'}
               variant="outline"
               size="lg"
-              className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10"
+              className="border-primary-foreground/20 text-primary-foreground hover: bg-primary-foreground/10"
             >
               Start Free Forever
             </Button>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Flag, Clock, CheckCircle, AlertCircle } from 'lucide-react';
-import type { Priority } from '@/domains/fire-cycle/types';
+import type { Priority } from '@/domains/business/fire-cycle/types';
 
 interface PrioritiesCardProps {
   priorities: Priority[];
@@ -15,8 +15,7 @@ export const PrioritiesCard: React.FC<PrioritiesCardProps> = ({ priorities }) =>
         return <Clock className="w-4 h-4 text-blue-500" />;
       case 'blocked':
         return <AlertCircle className="w-4 h-4 text-red-500" />;
-      default:
-        return <Flag className="w-4 h-4 text-gray-500" />;
+      default: return <Flag className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -26,8 +25,7 @@ export const PrioritiesCard: React.FC<PrioritiesCardProps> = ({ priorities }) =>
         return 'text-red-600 bg-red-100';
       case 'medium':
         return 'text-yellow-600 bg-yellow-100';
-      default:
-        return 'text-green-600 bg-green-100';
+      default: return 'text-green-600 bg-green-100';
     }
   };
 

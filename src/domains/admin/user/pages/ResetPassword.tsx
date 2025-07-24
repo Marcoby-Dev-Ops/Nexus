@@ -15,19 +15,48 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [searchParams] = useSearchParams();
+  const [hasValidSession, setHasValidSession] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  // Get the access token from URL parameters
-  const accessToken = searchParams.get('access_token');
-  const refreshToken = searchParams.get('refresh_token');
-
+  // Check for valid session or reset token on mount
   useEffect(() => {
-    // If no tokens are present, show error but don't redirect immediately
-    if (!accessToken) {
-      setError('Invalid or missing reset token. Please request a new password reset.');
-    }
-  }, [accessToken]);
+    const checkSession = async () => {
+      try {
+        // Check if we have a session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          setHasValidSession(true);
+        } else {
+          // Check if we have a reset token in the URL
+          const accessToken = searchParams.get('access_token');
+          const refreshToken = searchParams.get('refresh_token');
+          
+          if (accessToken && refreshToken) {
+            // Try to set the session with the tokens from the URL
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            
+            if (!error && data.session) {
+              setHasValidSession(true);
+            } else {
+              console.warn('Failed to set session from reset tokens:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking session:', error);
+      } finally {
+        setIsCheckingSession(false);
+      }
+    };
+    
+    checkSession();
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,48 +73,62 @@ export default function ResetPassword() {
       return;
     }
 
-    if (!accessToken) {
-      setError('Invalid or missing reset token. Please request a new password reset.');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      // Set the session with the reset tokens
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken || '',
-      });
-
-      if (sessionError) {
-        throw sessionError;
-      }
-
-      // Update password via Supabase Auth
+      // Update password
       const { error } = await supabase.auth.updateUser({ password });
       
       if (error) {
         throw error;
       }
-
-      // Success
-      setSuccess(true);
       
-      // Redirect to login after 3 seconds
-      setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 3000);
+      console.log('✅ Password updated successfully');
+      
+      // Try to get the current session after password update
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        console.log('✅ User has active session after password reset');
+        setSuccess(true);
+        
+        // Redirect to dashboard after 2 seconds
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 2000);
+      } else {
+        console.log('⚠️ No active session after password reset, redirecting to login');
+        setSuccess(true);
+        
+        // Redirect to login after 2 seconds
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 2000);
+      }
     } catch (err) {
-      console.error('Error resetting password:', err);
+      console.error('❌ Password reset error:', err);
       setError(err instanceof Error ? err.message : 'Failed to reset password');
     } finally {
       setLoading(false);
     }
   };
 
-  // If no tokens, show error message with link to request reset
-  if (!accessToken) {
+  // Show loading while checking session
+  if (isCheckingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md p-8 bg-card shadow-xl border-0">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Verifying reset link...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  // If no valid session, show error message
+  if (!hasValidSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-md p-8 bg-card shadow-xl border-0">
@@ -97,7 +140,7 @@ export default function ResetPassword() {
           </div>
 
           <Alert variant="error" className="mb-6">
-            Invalid or missing reset token. Please request a new password reset.
+            Please request a new password reset link.
           </Alert>
 
           <div className="space-y-4">
@@ -186,7 +229,7 @@ export default function ResetPassword() {
                 />
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                   </svg>
                 </div>
               </div>

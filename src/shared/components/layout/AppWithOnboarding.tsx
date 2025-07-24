@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
+import { useAuth } from '@/core/auth/AuthProvider';
+import { useCompanyProvisioning } from '@/shared/hooks/useCompanyProvisioning';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -46,17 +47,44 @@ interface OnboardingStepProps {
 
 // Step 1: Basic Information (Slack-inspired)
 const BasicInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data, currentStep, totalSteps }) => {
+  const { user } = useAuth();
+  const { createDefaultCompany } = useCompanyProvisioning();
   const [firstName, setFirstName] = useState(data.firstName || '');
   const [lastName, setLastName] = useState(data.lastName || '');
   const [displayName, setDisplayName] = useState(data.displayName || '');
   const [jobTitle, setJobTitle] = useState(data.jobTitle || '');
   const [company, setCompany] = useState(data.company || '');
+  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
 
   // Debug logging
-  console.log('[BasicInfoStep] Form state:', { firstName, lastName, displayName, jobTitle, company });
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[BasicInfoStep] Form state: ', { firstName, lastName, displayName, jobTitle, company });
 
-  const handleNext = () => {
-    console.log('[BasicInfoStep] Submitting form with data:', { firstName, lastName, displayName, jobTitle, company });
+  const handleNext = async () => {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[BasicInfoStep] Submitting form with data: ', { firstName, lastName, displayName, jobTitle, company });
+    
+    // Create company if user doesn't have one
+    if (user?.id && !isCreatingCompany) {
+      setIsCreatingCompany(true);
+      try {
+        const result = await createDefaultCompany();
+        if (result.success) {
+          console.log('[BasicInfoStep] Company created successfully:', result.companyId);
+        } else {
+          console.warn('[BasicInfoStep] Failed to create company:', result.error);
+        }
+      } catch (error) {
+        console.error('[BasicInfoStep] Error creating company:', error);
+      } finally {
+        setIsCreatingCompany(false);
+      }
+    }
+    
     onNext({
       firstName,
       lastName,
@@ -93,17 +121,20 @@ const BasicInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data, cu
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">First Name *</label>
               <input
                 type="text"
                 value={firstName}
                 onChange={(e) => {
-                  console.log('[BasicInfoStep] First name changed:', e.target.value);
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[BasicInfoStep] First name changed: ', e.target.value);
                   setFirstName(e.target.value);
                 }}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-foreground"
+                className="w-full p-3 border rounded-lg focus: ring-2 focus:ring-primary bg-background text-foreground"
                 placeholder="John"
                 required
               />
@@ -115,10 +146,13 @@ const BasicInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data, cu
                 type="text"
                 value={lastName}
                 onChange={(e) => {
-                  console.log('[BasicInfoStep] Last name changed:', e.target.value);
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[BasicInfoStep] Last name changed: ', e.target.value);
                   setLastName(e.target.value);
                 }}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-foreground"
+                className="w-full p-3 border rounded-lg focus: ring-2 focus:ring-primary bg-background text-foreground"
                 placeholder="Smith"
                 required
               />
@@ -131,10 +165,13 @@ const BasicInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data, cu
               type="text"
               value={displayName}
               onChange={(e) => {
-                console.log('[BasicInfoStep] Display name changed:', e.target.value);
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[BasicInfoStep] Display name changed: ', e.target.value);
                 setDisplayName(e.target.value);
               }}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-foreground"
+              className="w-full p-3 border rounded-lg focus: ring-2 focus:ring-primary bg-background text-foreground"
               placeholder="How you'd like to be called"
             />
           </div>
@@ -145,10 +182,13 @@ const BasicInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data, cu
               type="text"
               value={jobTitle}
               onChange={(e) => {
-                console.log('[BasicInfoStep] Job title changed:', e.target.value);
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[BasicInfoStep] Job title changed: ', e.target.value);
                 setJobTitle(e.target.value);
               }}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-foreground"
+              className="w-full p-3 border rounded-lg focus: ring-2 focus:ring-primary bg-background text-foreground"
               placeholder="e.g., CEO, Manager, Developer"
             />
           </div>
@@ -159,10 +199,13 @@ const BasicInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data, cu
               type="text"
               value={company}
               onChange={(e) => {
-                console.log('[BasicInfoStep] Company changed:', e.target.value);
+                // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[BasicInfoStep] Company changed: ', e.target.value);
                 setCompany(e.target.value);
               }}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary bg-background text-foreground"
+              className="w-full p-3 border rounded-lg focus: ring-2 focus:ring-primary bg-background text-foreground"
               placeholder="Your company name"
             />
           </div>
@@ -173,8 +216,8 @@ const BasicInfoStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data, cu
         <Button variant="outline" onClick={onSkip}>
           Skip for now
         </Button>
-        <Button onClick={handleNext} disabled={!canProceed}>
-          Continue
+        <Button onClick={handleNext} disabled={!canProceed || isCreatingCompany}>
+          {isCreatingCompany ? 'Setting up...' : 'Continue'}
         </Button>
       </div>
     </div>
@@ -263,7 +306,7 @@ const BusinessContextStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, da
             <select
               value={industry}
               onChange={(e) => setIndustry(e.target.value)}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary"
+              className="w-full p-3 border rounded-lg focus: ring-2 focus:ring-primary"
             >
               <option value="">Select your industry</option>
               {industries.map(ind => (
@@ -277,7 +320,7 @@ const BusinessContextStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, da
             <select
               value={companySize}
               onChange={(e) => setCompanySize(e.target.value)}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-primary"
+              className="w-full p-3 border rounded-lg focus: ring-2 focus:ring-primary"
             >
               <option value="">Select company size</option>
               {companySizes.map(size => (
@@ -296,7 +339,7 @@ const BusinessContextStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, da
                   className={`p-3 text-left rounded-lg border transition-colors ${
                     primaryGoals.includes(goal)
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50'
+                      : 'border-border hover: border-primary/50'
                   }`}
                 >
                   {goal}
@@ -315,7 +358,7 @@ const BusinessContextStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, da
                   className={`p-3 text-left rounded-lg border transition-colors ${
                     businessChallenges.includes(challenge)
                       ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:border-primary/50'
+                      : 'border-border hover: border-primary/50'
                   }`}
                 >
                   {challenge}
@@ -329,7 +372,7 @@ const BusinessContextStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, da
       <div className="flex justify-between items-center">
         <button
           onClick={onSkip}
-          className="px-6 py-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="px-6 py-2 text-muted-foreground hover: text-foreground transition-colors"
         >
           Skip for now
         </button>
@@ -433,15 +476,15 @@ const IntegrationDiscoveryStep: React.FC<OnboardingStepProps> = ({ onNext, onSki
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             {availableIntegrations.map(integration => (
               <button
                 key={integration.id}
                 onClick={() => handleIntegrationToggle(integration.id)}
-                className={`p-4 text-left rounded-lg border transition-all hover:shadow-md ${
+                className={`p-4 text-left rounded-lg border transition-all hover: shadow-md ${
                   selectedIntegrations.includes(integration.id)
                     ? 'border-primary bg-primary/10 text-primary shadow-md'
-                    : 'border-border hover:border-primary/50'
+                    : 'border-border hover: border-primary/50'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -466,7 +509,7 @@ const IntegrationDiscoveryStep: React.FC<OnboardingStepProps> = ({ onNext, onSki
       <div className="flex justify-between items-center">
         <button
           onClick={onSkip}
-          className="px-6 py-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="px-6 py-2 text-muted-foreground hover: text-foreground transition-colors"
         >
           Skip for now
         </button>
@@ -556,15 +599,15 @@ const AICapabilityStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data,
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             {useCases.map(useCase => (
               <button
                 key={useCase.id}
                 onClick={() => handleUseCaseToggle(useCase.id)}
-                className={`p-4 text-left rounded-lg border transition-all hover:shadow-md ${
+                className={`p-4 text-left rounded-lg border transition-all hover: shadow-md ${
                   selectedUseCases.includes(useCase.id)
                     ? 'border-primary bg-primary/10 text-primary shadow-md'
-                    : 'border-border hover:border-primary/50'
+                    : 'border-border hover: border-primary/50'
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -596,7 +639,7 @@ const AICapabilityStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip, data,
       <div className="flex justify-between items-center">
         <button
           onClick={onSkip}
-          className="px-6 py-2 text-muted-foreground hover:text-foreground transition-colors"
+          className="px-6 py-2 text-muted-foreground hover: text-foreground transition-colors"
         >
           Skip for now
         </button>
@@ -699,7 +742,6 @@ const SuccessStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip: _onSkip, d
 const OnboardingFlow: React.FC<{ onComplete: (data: any) => void }> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<any>({});
-  const { profile, updateProfile } = useZustandAuth();
 
   const steps: OnboardingStep[] = [
     {
@@ -708,31 +750,31 @@ const OnboardingFlow: React.FC<{ onComplete: (data: any) => void }> = ({ onCompl
       description: 'Tell us about yourself',
       component: BasicInfoStep,
       icon: <User className="w-5 h-5" />,
-      estimatedTime: '2 minutes'
+      estimatedTime: '2 min'
     },
     {
       id: 'business-context',
       title: 'Business Context',
-      description: 'Tell us about your business',
+      description: 'Help us understand your business',
       component: BusinessContextStep,
       icon: <Building2 className="w-5 h-5" />,
-      estimatedTime: '3 minutes'
+      estimatedTime: '3 min'
     },
     {
-      id: 'integrations',
-      title: 'Connect Tools',
-      description: 'Choose your business tools',
+      id: 'integration-discovery',
+      title: 'Connect Your Tools',
+      description: 'Discover available integrations',
       component: IntegrationDiscoveryStep,
       icon: <Zap className="w-5 h-5" />,
-      estimatedTime: '2 minutes'
+      estimatedTime: '2 min'
     },
     {
       id: 'ai-capabilities',
       title: 'AI Capabilities',
-      description: 'Discover AI features',
+      description: 'Explore AI use cases',
       component: AICapabilityStep,
       icon: <Brain className="w-5 h-5" />,
-      estimatedTime: '2 minutes'
+      estimatedTime: '2 min'
     },
     {
       id: 'success',
@@ -740,79 +782,51 @@ const OnboardingFlow: React.FC<{ onComplete: (data: any) => void }> = ({ onCompl
       description: 'Welcome to Nexus',
       component: SuccessStep,
       icon: <CheckCircle2 className="w-5 h-5" />,
-      estimatedTime: '1 minute'
+      estimatedTime: '1 min'
     }
   ];
 
   const handleStepComplete = (data: any) => {
-    const newData = { ...formData, ...data };
-    setFormData(newData);
+    setFormData((prev: any) => ({ ...prev, ...data }));
     
     if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
+      setCurrentStep((prev: number) => prev + 1);
     } else {
-      // Complete onboarding
-      completeOnboarding(newData);
+      onComplete(data);
     }
   };
 
   const handleSkip = () => {
-    completeOnboarding(formData);
-  };
-
-  const completeOnboarding = async (data: any) => {
-    try {
-      // Update profile with collected data
-      if (profile) {
-        await updateProfile({
-          first_name: data.firstName,
-          last_name: data.lastName,
-          display_name: data.displayName,
-          job_title: data.jobTitle,
-          onboarding_completed: true,
-          profile_completion_percentage: 90, // Comprehensive onboarding
-          preferences: {
-            industry: data.industry,
-            company_size: data.companySize,
-            primary_goals: data.primaryGoals,
-            business_challenges: data.businessChallenges,
-            selected_integrations: data.selectedIntegrations,
-            ai_use_cases: data.selectedUseCases
-          }
-        });
-      }
-      
-      onComplete(data);
-    } catch (error) {
-      console.error('Error completing onboarding:', error);
-      onComplete(data); // Continue anyway
-    }
+    onComplete(formData);
   };
 
   const CurrentStepComponent = steps[currentStep].component;
-  const progress = ((currentStep + 1) / steps.length) * 100;
+  const currentStepData = steps[currentStep];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Progress Bar */}
-      <div className="fixed top-0 left-0 right-0 z-50">
-        <div className="bg-background border-b">
-          <div className="max-w-4xl mx-auto px-4 py-2">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">
-                Step {currentStep + 1} of {steps.length}
-              </span>
-              <span className="text-sm text-muted-foreground">
-                {steps[currentStep].estimatedTime}
-              </span>
+      <div className="max-w-4xl mx-auto py-8">
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold">Nexus Setup</h1>
             </div>
-            <Progress value={progress} className="h-1" />
+            <Badge variant="outline">
+              {currentStep + 1} of {steps.length}
+            </Badge>
+          </div>
+          
+          <Progress value={(currentStep / (steps.length - 1)) * 100} className="mb-4" />
+          
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{currentStepData.title}</span>
+            <span>{currentStepData.estimatedTime}</span>
           </div>
         </div>
-      </div>
-      
-      {/* Main Content */}
-      <div className="pt-20">
+
         <CurrentStepComponent
           onNext={handleStepComplete}
           onSkip={handleSkip}
@@ -829,68 +843,58 @@ const OnboardingFlow: React.FC<{ onComplete: (data: any) => void }> = ({ onCompl
  * AppWithOnboarding
  * 
  * Checks if user needs onboarding and shows appropriate flow
+ * Only used on protected routes where user is authenticated
  */
 export const AppWithOnboarding: React.FC<AppWithOnboardingProps> = ({ children }) => {
-  const { user, session, profile, loading: authLoading, initialized } = useZustandAuth();
+  const { user, session, initialized, loading } = useAuth();
+  const { createDefaultCompany } = useCompanyProvisioning();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
 
-  // Check if onboarding is needed - optimized to prevent multiple calls
+  // Check if user needs onboarding
   useEffect(() => {
     // Skip if still loading or not initialized
-    if (authLoading || !initialized) {
-      console.log('[AppWithOnboarding] Auth still initializing, skipping onboarding check');
+    if (loading || !initialized) {
       return;
     }
 
     // TEMPORARY: Force onboarding for testing (remove this later)
     const forceOnboarding = window.location.search.includes('force-onboarding=true');
     if (forceOnboarding) {
-      console.log('[AppWithOnboarding] Force triggering onboarding for testing');
       setShowOnboarding(true);
       return;
     }
 
     // If user is not authenticated, don't show onboarding
     if (!user || !session) {
-      console.log('[AppWithOnboarding] User not authenticated, not showing onboarding');
       return;
     }
 
-    // If user is authenticated but profile is still loading, wait
-    if (!profile) {
-      console.log('[AppWithOnboarding] User authenticated but profile still loading');
-      return;
-    }
+    // For now, we'll skip the profile check since profile doesn't exist in the new auth system
+    // This can be re-implemented when we add profile support back
+  }, [user?.id, session?.access_token, loading, initialized, onboardingCompleted]);
 
-    // User is authenticated and has a profile - check onboarding needs
-    const completionPercentage = profile.profile_completion_percentage ?? 0;
-    const needsOnboarding = !profile.onboarding_completed || completionPercentage < 50;
-    
-    console.log('[AppWithOnboarding] Profile check:', {
-      profileId: profile.id,
-      onboardingCompleted: profile.onboarding_completed,
-      profileCompletionPercentage: completionPercentage,
-      needsOnboarding,
-      currentShowOnboarding: showOnboarding,
-      currentOnboardingCompleted: onboardingCompleted
-    });
-    
-    if (needsOnboarding && !onboardingCompleted) {
-      console.log('[AppWithOnboarding] Setting showOnboarding to true');
-      setShowOnboarding(true);
-    } else {
-      console.log('[AppWithOnboarding] Onboarding not needed or already completed');
+  const handleOnboardingComplete = async (_data: any) => {
+    // Ensure user has a company association after onboarding
+    if (user?.id) {
+      try {
+        const result = await createDefaultCompany();
+        if (result.success) {
+          console.log('[AppWithOnboarding] Company association ensured after onboarding');
+        } else {
+          console.warn('[AppWithOnboarding] Failed to ensure company association:', result.error);
+        }
+      } catch (error) {
+        console.error('[AppWithOnboarding] Error ensuring company association:', error);
+      }
     }
-  }, [user?.id, session?.access_token, profile?.id, authLoading, initialized, onboardingCompleted]);
-
-  const handleOnboardingComplete = (_data: any) => {
+    
     setShowOnboarding(false);
     setOnboardingCompleted(true);
   };
 
   // Show loading while auth is initializing
-  if (authLoading || !initialized) {
+  if (loading || !initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex flex-col items-center space-y-4">
@@ -907,5 +911,12 @@ export const AppWithOnboarding: React.FC<AppWithOnboardingProps> = ({ children }
   }
 
   // Render main app
+  return <>{children}</>;
+};
+
+/**
+ * Simple wrapper for public routes that doesn't trigger auth context
+ */
+export const PublicRouteWrapper: React.FC<AppWithOnboardingProps> = ({ children }) => {
   return <>{children}</>;
 }; 

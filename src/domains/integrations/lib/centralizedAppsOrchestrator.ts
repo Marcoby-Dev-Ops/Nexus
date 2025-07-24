@@ -276,8 +276,8 @@ class CentralizedAppsOrchestrator {
    */
   async executeBusinessFunction(
     functionId: string, 
-    _parameters: Record<string, any>,
-    _userId: string
+    parameters: Record<string, any>,
+    userId: string
   ): Promise<{
     success: boolean;
     results: any[];
@@ -316,7 +316,10 @@ class CentralizedAppsOrchestrator {
         workflowsToTrigger.add(workflowId);
 
         if (workflowResult.error) {
-          // console.error(`Error in workflow ${workflowId}:`, workflowResult.error);
+          // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Error in workflow ${workflowId}:`, workflowResult.error);
           // const primaryAgent = this.getAgentById(businessFunction.supportingAgents[0]);
         }
       }
@@ -333,7 +336,10 @@ class CentralizedAppsOrchestrator {
       };
 
     } catch (error) {
-      // console.error(`Failed to execute business function ${functionId}:`, error);
+      // // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Failed to execute business function ${functionId}:`, error);
       return {
         success: false,
         results: [],
@@ -389,9 +395,9 @@ class CentralizedAppsOrchestrator {
    * Execute unified command across multiple apps through AI orchestration
    */
   async executeUnifiedCommand(
-    _command: string,
-    _targetApps: string[],
-    _userId: string
+    command: string,
+    targetApps: string[],
+    userId: string
   ): Promise<{
     success: boolean;
     results: Record<string, any>;
@@ -409,7 +415,7 @@ class CentralizedAppsOrchestrator {
   /**
    * Get business insights from centralized app data
    */
-  async getBusinessInsights(_userId: string): Promise<{
+  async getBusinessInsights(userId: string): Promise<{
     kpis: Array<{ name: string; value: string; trend: 'up' | 'down' | 'stable'; source: string[] }>;
     recommendations: string[];
     crossAppOpportunities: string[];
@@ -454,12 +460,12 @@ class CentralizedAppsOrchestrator {
     return null;
   }
 
-  private shouldInvolveAgent(_businessFunction: BusinessFunction, agentId: string, _parameters: Record<string, any>): boolean {
+  private shouldInvolveAgent(businessFunction: BusinessFunction, agentId: string, parameters: Record<string, any>): boolean {
     // Logic to determine if agent should be involved based on function requirements and parameters
     return _businessFunction.supportingAgents.includes(agentId);
   }
 
-  private getAgentRole(agentId: string, _businessFunction: BusinessFunction): string {
+  private getAgentRole(agentId: string, businessFunction: BusinessFunction): string {
     const agent = this.getAgentById(agentId);
     return agent ? `${agent.name} - ${agent.description}` : 'Supporting role';
   }

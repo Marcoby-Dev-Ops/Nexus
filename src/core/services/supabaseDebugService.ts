@@ -4,16 +4,17 @@
  */
 
 import { supabase } from '@/core/supabase';
-import { logger } from '@/core/auth/logger';
+import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
+import { logger } from '@/shared/utils/logger';
 
 export interface DebugInfo {
-  connectionStatus: 'connected' | 'disconnected' | 'error';
+  connectionStatus: 'connected' | 'error';
   lastError?: string;
   tables: string[];
   userCount: number;
   sessionInfo?: {
-    userId?: string;
-    email?: string;
+    userId: string;
+    email: string;
     role?: string;
   };
 }
@@ -30,26 +31,36 @@ export interface DebugLog {
 }
 
 class SupabaseDebugService {
+  private queryWrapper = new DatabaseQueryWrapper();
+
   /**
    * Get debug information about Supabase connection
    */
   async getDebugInfo(): Promise<DebugInfo> {
     try {
-      // Test connection
-      const { error: testError } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .limit(1);
+      // Test connection using enhanced utilities
+      const { error: testError } = await this.queryWrapper.query(
+        async () => supabase
+          .from('user_profiles')
+          .select('id')
+          .limit(1),
+        { context: 'debug-connection-test' }
+      );
 
       const connectionStatus = testError ? 'error' : 'connected';
 
       // Get available tables (this is a simplified approach)
       const tables = ['user_profiles', 'companies', 'user_activity', 'chat_conversations'];
 
-      // Get user count
-      const { count: userCount } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true });
+      // Get user count using enhanced utilities
+      const { data: userData } = await this.queryWrapper.query(
+        async () => supabase
+          .from('user_profiles')
+          .select('*', { count: 'exact', head: true }),
+        { context: 'debug-user-count' }
+      );
+
+      const userCount = userData?.length || 0;
 
       // Get session info
       const { data: { user } } = await supabase.auth.getUser();
@@ -77,48 +88,85 @@ class SupabaseDebugService {
   }
 
   /**
-   * Test database operations
+   * Test authentication flow
    */
-  async testDatabaseOperations(): Promise<{
-    read: boolean;
-    write: boolean;
-    auth: boolean;
-  }> {
-    const results = {
-      read: false,
-      write: false,
-      auth: false
-    };
-
+  async testAuthFlow(): Promise<any> {
     try {
-      // Test read operation
-      const { error: readError } = await supabase
-        .from('user_profiles')
-        .select('id')
-        .limit(1);
-      results.read = !readError;
-
-      // Test write operation (create a test record)
-      const { error: writeError } = await supabase
-        .from('debug_logs')
-        .insert({
-          level: 'info',
-          message: 'Debug test',
-          context: { test: true },
-          timestamp: new Date().toISOString(),
-          source: 'debug_service'
-        });
-      results.write = !writeError;
-
-      // Test auth operation
-      const { data: { user } } = await supabase.auth.getUser();
-      results.auth = !!user;
-
+      const sessionManager = await import('@/core/auth/sessionManager').then(m => m.SessionManager.getInstance());
+      const session = await sessionManager.ensureSession();
+      
+      return {
+        success: true,
+        session: {
+          userId: session.user.id,
+          email: session.user.email,
+          hasAccessToken: !!session.access_token
+        }
+      };
     } catch (error) {
-      logger.error({ error }, 'Database operation test failed');
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
+  }
 
-    return results;
+  /**
+   * Test database queries with authentication
+   */
+  async testDatabaseQueries(): Promise<any> {
+    try {
+      const { data: profile, error: profileError } = await this.queryWrapper.query(
+        async () => supabase
+          .from('user_profiles')
+          .select('id, email')
+          .limit(1),
+        { context: 'debug-db-test' }
+      );
+
+      if (profileError) {
+        return {
+          success: false,
+          error: profileError.message,
+          test: 'profile-query'
+        };
+      }
+
+      return {
+        success: true,
+        data: profile,
+        test: 'profile-query'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        test: 'profile-query'
+      };
+    }
+  }
+
+  /**
+   * Get detailed connection information
+   */
+  async getConnectionDetails(): Promise<any> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      return {
+        hasSession: !!session,
+        sessionValid: session ? !!session.access_token : false,
+        userId: session?.user?.id,
+        email: session?.user?.email,
+        expiresAt: session?.expires_at,
+        tokenLength: session?.access_token?.length || 0
+      };
+    } catch (error) {
+      return {
+        hasSession: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
   }
 
   /**
@@ -135,8 +183,8 @@ class SupabaseDebugService {
         level,
         message,
         context,
-        user_id: userId,
-        session_id: this.generateSessionId(),
+        userid: userId,
+        sessionid: this.generateSessionId(),
         timestamp: new Date().toISOString(),
         source: 'debug_service'
       };
@@ -190,8 +238,8 @@ class SupabaseDebugService {
         level: log.level,
         message: log.message,
         context: log.context || {},
-        user_id: log.user_id,
-        session_id: log.session_id,
+        userid: log.user_id,
+        sessionid: log.session_id,
         timestamp: new Date(log.timestamp),
         source: log.source
       }));

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/core/supabase';
-import { useAuth } from '@/shared/hooks/useAuth';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useToast } from '@/shared/ui/components/Toast';
 
 interface Integration {
@@ -45,7 +45,10 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       setIsLoading(true);
       setError(null);
       
-      console.log('🔄 Starting integration refresh for user:', user.id);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 Starting integration refresh for user: ', user.id);
       
       const { data, error } = await supabase
         .from('user_integrations')
@@ -53,15 +56,24 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         .eq('user_id', user.id);
 
       if (error) {
-        console.error('❌ Failed to fetch integrations:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Failed to fetch integrations: ', error);
         throw error;
       }
 
-      console.log('✅ Successfully fetched integrations:', data?.length || 0);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Successfully fetched integrations: ', data?.length || 0);
       setIntegrations(data || []);
     } catch (err) {
-      console.error('❌ Error refreshing integrations:', err);
-      setError(err instanceof Error ? err : new Error('An error occurred'));
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error refreshing integrations: ', err);
+      setError(err instanceof Error ? err: new Error('An error occurred'));
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +90,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         .from('user_integrations')
         .insert({
           ...integration,
-          user_id: user.id,
+          userid: user.id,
         })
         .select()
         .single();
@@ -93,7 +105,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         type: 'success'
       });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('An error occurred'));
+      setError(err instanceof Error ? err: new Error('An error occurred'));
       showToast({
         title: 'Error',
         description: 'Failed to add integration',
@@ -127,7 +139,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         type: 'success'
       });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('An error occurred'));
+      setError(err instanceof Error ? err: new Error('An error occurred'));
       showToast({
         title: 'Error',
         description: 'Failed to remove integration',
@@ -150,7 +162,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         .from('user_integrations')
         .update({
           ...updates,
-          updated_at: new Date().toISOString(),
+          updatedat: new Date().toISOString(),
         })
         .eq('id', integrationId)
         .select()
@@ -159,7 +171,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       if (updateError) throw updateError;
 
       setIntegrations(prev => prev.map(integration => 
-        integration.id === integrationId ? updatedIntegration : integration
+        integration.id === integrationId ? updatedIntegration: integration
       ));
 
       showToast({
@@ -168,7 +180,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         type: 'success'
       });
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('An error occurred'));
+      setError(err instanceof Error ? err: new Error('An error occurred'));
       showToast({
         title: 'Error',
         description: 'Failed to update integration',

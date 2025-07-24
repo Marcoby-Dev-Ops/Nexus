@@ -10,7 +10,7 @@ export interface NextBestActionWidgetProps {
  */
 const NextBestActionWidget: React.FC<NextBestActionWidgetProps> = ({ className = '' }) => (
   <section
-    className={`rounded-lg bg-white dark:bg-gray-900 shadow p-4 ${className}`}
+    className={`rounded-lg bg-white dark: bg-gray-900 shadow p-4 ${className}`}
     aria-label="Next Best Action"
   >
     <h3 className="text-lg font-semibold mb-2">Next Best Action</h3>

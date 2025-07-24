@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Settings, Shield, Activity, Database, Server, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Users, Settings, Shield, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 import { PageTemplates } from '@/shared/components/patterns/PageTemplates';
 import { ContentCard } from '@/shared/components/patterns/ContentCard';
 import { KpiCard } from '@/domains/dashboard/components/KpiCard';
@@ -51,10 +51,22 @@ const systemAlerts = [
 ];
 
 const quickActions = [
-  { label: 'User Management', icon: <Users className="w-5 h-5" />, onClick: () => console.log('User Management') },
-  { label: 'System Settings', icon: <Settings className="w-5 h-5" />, onClick: () => console.log('System Settings') },
-  { label: 'Security Center', icon: <Shield className="w-5 h-5" />, onClick: () => console.log('Security Center') },
-  { label: 'System Logs', icon: <Activity className="w-5 h-5" />, onClick: () => console.log('System Logs') },
+  { label: 'User Management', icon: <Users className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('User Management') },
+  { label: 'System Settings', icon: <Settings className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('System Settings') },
+  { label: 'Security Center', icon: <Shield className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Security Center') },
+  { label: 'System Logs', icon: <Activity className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('System Logs') },
 ];
 
 const AdminHome: React.FC = () => {
@@ -65,12 +77,12 @@ const AdminHome: React.FC = () => {
     >
       {/* Quick Actions */}
       <ContentCard title="Quick Actions" variant="elevated" className="mb-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
           {quickActions.map((action, index) => (
             <button
               key={index}
               onClick={action.onClick}
-              className="flex flex-col items-center p-4 rounded-lg border border-border hover:border-primary hover:bg-primary/5 transition-all duration-200 group"
+              className="flex flex-col items-center p-4 rounded-lg border border-border hover: border-primary hover:bg-primary/5 transition-all duration-200 group"
             >
               <div className="p-4 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 mb-3">
                 {action.icon}
@@ -84,14 +96,14 @@ const AdminHome: React.FC = () => {
       </ContentCard>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {adminKpiData.map((kpi, index) => (
           <KpiCard key={index} {...kpi} />
         ))}
       </div>
 
       {/* System Health and User Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg: grid-cols-2 gap-8 mb-8">
         <ContentCard 
           title="User Activity" 
           variant="elevated"
@@ -106,7 +118,7 @@ const AdminHome: React.FC = () => {
         <ContentCard 
           title="System Health" 
           variant="elevated"
-          className="hover:shadow-xl transition-all duration-300"
+          className="hover: shadow-xl transition-all duration-300"
         >
           <div className="mb-6">
             <p className="text-sm text-muted-foreground">Resource utilization percentage</p>
@@ -128,7 +140,7 @@ const AdminHome: React.FC = () => {
         >
           <div className="space-y-4">
             {recentUsers.map((user, index) => (
-              <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
+              <div key={index} className="flex items-center justify-between p-4 rounded-lg hover: bg-muted/50 transition-colors duration-200">
                 <div className="flex items-center space-x-4">
                   <div className="p-4 rounded-lg bg-primary/10">
                     <Users className="w-5 h-5 text-primary" />
@@ -155,7 +167,7 @@ const AdminHome: React.FC = () => {
           title="System Alerts" 
           variant="elevated"
           action={
-            <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+            <button className="px-4 py-4 bg-primary/5 text-primary hover: bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
               View All Alerts
             </button>
           }

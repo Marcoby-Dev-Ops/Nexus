@@ -22,7 +22,7 @@ export const PageTemplates = {
    * Dashboard page template - reference implementation
    */
   Dashboard: ({ children }: { children: React.ReactNode }) => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark: from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="p-8 space-y-8">
         {children}
       </div>
@@ -33,7 +33,7 @@ export const PageTemplates = {
    * Department page template - consistent structure
    */
   Department: ({ title, subtitle, children }: DepartmentPageProps) => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark: from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="p-8 space-y-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">{title}</h1>
@@ -48,7 +48,7 @@ export const PageTemplates = {
    * Settings page template - constrained width
    */
   Settings: ({ children }: SettingsPageProps) => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/50 dark: from-gray-900 dark:via-gray-900 dark:to-gray-800">
       <div className="p-8 max-w-4xl mx-auto space-y-8">
         {children}
       </div>

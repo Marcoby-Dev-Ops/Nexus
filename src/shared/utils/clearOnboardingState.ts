@@ -21,10 +21,16 @@ export const clearOnboardingState = () => {
       sessionStorage.removeItem(key);
     });
     
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Onboarding state cleared successfully');
     return true;
   } catch (error) {
-    console.error('Failed to clear onboarding state:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to clear onboarding state: ', error);
     return false;
   }
 };
@@ -56,10 +62,16 @@ export const isOnboardingActive = (): boolean => {
 export const forceCompleteOnboarding = () => {
   try {
     localStorage.setItem('nexus_onboarding_complete', 'true');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Onboarding forced to complete');
     return true;
   } catch (error) {
-    console.error('Failed to force complete onboarding:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to force complete onboarding: ', error);
     return false;
   }
 }; 

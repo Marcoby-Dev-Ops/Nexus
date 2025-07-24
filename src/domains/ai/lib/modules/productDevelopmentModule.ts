@@ -30,11 +30,11 @@ export const productDevelopmentAgent: Agent = {
   },
   personality: {
     communicationStyle: 'collaborative',
-    expertise_level: 'expert',
-    decision_making: 'collaborative',
+    expertiselevel: 'expert',
+    decisionmaking: 'collaborative',
     tone: 'innovative',
     background: 'VP of Product who has launched 15+ successful products and scaled product teams',
-    years_experience: 12
+    yearsexperience: 12
   },
   systemPrompt: `You are a VP of Product with 12+ years of experience building and scaling successful products. You're known for user-centric design and data-driven product decisions.
 
@@ -70,38 +70,38 @@ Communication Style:
 // Product Development Data Structure
 export interface ProductDevelopmentData {
   roadmap: {
-    active_features: number;
-    completed_features: number;
-    feature_completion_rate: number;
-    sprint_velocity: number;
-    backlog_size: number;
+    activefeatures: number;
+    completedfeatures: number;
+    featurecompletionrate: number;
+    sprintvelocity: number;
+    backlogsize: number;
   };
-  user_metrics: {
-    monthly_active_users: number;
-    user_retention_rate: number;
-    feature_adoption_rate: number;
-    user_satisfaction_score: number;
-    churn_rate: number;
+  usermetrics: {
+    monthlyactiveusers: number;
+    userretentionrate: number;
+    featureadoptionrate: number;
+    usersatisfactionscore: number;
+    churnrate: number;
   };
   development: {
-    development_velocity: number;
-    bug_resolution_time: number;
-    code_quality_score: number;
-    deployment_frequency: number;
-    lead_time: number;
+    developmentvelocity: number;
+    bugresolutiontime: number;
+    codequalityscore: number;
+    deploymentfrequency: number;
+    leadtime: number;
   };
-  market_fit: {
-    product_market_fit_score: number;
-    customer_feedback_score: number;
-    competitive_position: number;
-    market_share: number;
-    nps_score: number;
+  marketfit: {
+    productmarketfit_score: number;
+    customerfeedbackscore: number;
+    competitiveposition: number;
+    marketshare: number;
+    npsscore: number;
   };
   trends: {
-    user_growth: number;
-    feature_usage_trend: number;
-    development_efficiency: number;
-    market_position_trend: number;
+    usergrowth: number;
+    featureusagetrend: number;
+    developmentefficiency: number;
+    marketpositiontrend: number;
   };
 }
 
@@ -327,38 +327,38 @@ export const generateProductDevelopmentInsights = (
 // Demo data for Product Development
 export const getProductDevelopmentDemoData = (): ProductDevelopmentData => ({
   roadmap: {
-    active_features: 12,
-    completed_features: 8,
-    feature_completion_rate: 0.67,
-    sprint_velocity: 42,
-    backlog_size: 156
+    activefeatures: 12,
+    completedfeatures: 8,
+    featurecompletion_rate: 0.67,
+    sprintvelocity: 42,
+    backlogsize: 156
   },
-  user_metrics: {
-    monthly_active_users: 15420,
-    user_retention_rate: 0.78,
-    feature_adoption_rate: 0.58,
-    user_satisfaction_score: 3.8,
-    churn_rate: 0.12
+  usermetrics: {
+    monthlyactiveusers: 15420,
+    userretention_rate: 0.78,
+    featureadoption_rate: 0.58,
+    usersatisfaction_score: 3.8,
+    churnrate: 0.12
   },
   development: {
-    development_velocity: 0.82,
-    bug_resolution_time: 2.3,
-    code_quality_score: 0.87,
-    deployment_frequency: 3.2,
-    lead_time: 8.5
+    developmentvelocity: 0.82,
+    bugresolution_time: 2.3,
+    codequality_score: 0.87,
+    deploymentfrequency: 3.2,
+    leadtime: 8.5
   },
-  market_fit: {
-    product_market_fit_score: 0.74,
-    customer_feedback_score: 4.1,
-    competitive_position: 0.68,
-    market_share: 0.12,
-    nps_score: 32
+  marketfit: {
+    productmarketfit_score: 0.74,
+    customerfeedback_score: 4.1,
+    competitiveposition: 0.68,
+    marketshare: 0.12,
+    npsscore: 32
   },
   trends: {
-    user_growth: 0.18,
-    feature_usage_trend: 0.05,
-    development_efficiency: 0.12,
-    market_position_trend: 0.08
+    usergrowth: 0.18,
+    featureusage_trend: 0.05,
+    developmentefficiency: 0.12,
+    marketposition_trend: 0.08
   }
 });
 
@@ -367,11 +367,26 @@ export const integrateProductDevelopmentModule = () => {
   // This function would be called to register the Product Development module
   // with the existing cross-departmental intelligence system
   
-  console.log('🚀 Product Development Module integrated with Cross-Departmental Intelligence');
-  console.log('✅ Impact maps configured for 6 departments');
-  console.log('✅ Cascade effects mapped for 3 key scenarios');
-  console.log('✅ Contextual insights generator ready');
-  console.log('✅ Demo data available for testing');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🚀 Product Development Module integrated with Cross-Departmental Intelligence');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Impact maps configured for 6 departments');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Cascade effects mapped for 3 key scenarios');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Contextual insights generator ready');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Demo data available for testing');
   
   return {
     agent: productDevelopmentAgent,

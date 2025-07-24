@@ -131,11 +131,11 @@ export const FeatureExplorer: React.FC = () => {
       {featureCategories.map((category) => (
         <div key={category.name} className="space-y-4">
           <h2 className="text-xl font-semibold">{category.name}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
             {category.features.map((feature) => (
               <Card 
                 key={feature.name} 
-                className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                className="overflow-hidden hover: shadow-md transition-shadow cursor-pointer"
                 onClick={() => navigate(feature.path)}
               >
                 <div className={`h-1 ${feature.color}`}></div>
@@ -154,7 +154,7 @@ export const FeatureExplorer: React.FC = () => {
                   <CardDescription>{feature.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="ghost" className="pl-0 hover:pl-2 transition-all">
+                  <Button variant="ghost" className="pl-0 hover: pl-2 transition-all">
                     Explore <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </CardContent>

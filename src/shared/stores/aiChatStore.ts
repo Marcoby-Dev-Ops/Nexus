@@ -105,22 +105,25 @@ export const useAIChatStore = create<AIChatStoreState>()(
             // Fire-and-forget, no need to await
             supabase.functions.invoke('trigger-n8n-workflow', {
               body: {
-                workflow_id: 'living_assessment_agent',
+                workflowid: 'living_assessment_agent',
                 payload: {
-                  company_id: companyId,
-                  user_id: userId,
-                  conversation_text: conversationText,
+                  companyid: companyId,
+                  userid: userId,
+                  conversationtext: conversationText,
                 }
               }
             });
 
           } catch (e) {
-            console.warn('Failed to trigger n8n workflow', e);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to trigger n8n workflow', e);
           }
         }
 
       } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : 'Failed to send message';
+        const errorMessage = e instanceof Error ? e.message: 'Failed to send message';
         set({ error: errorMessage });
       } finally {
         set({ loading: false });
@@ -164,7 +167,7 @@ export const useAIChatStore = create<AIChatStoreState>()(
           throw new Error(err.error || `Conversation ${conversationId} not found`);
         }
       } catch (e: unknown) {
-        const errorMessage = e instanceof Error ? e.message : 'Failed to load conversation';
+        const errorMessage = e instanceof Error ? e.message: 'Failed to load conversation';
         set({ error: errorMessage });
       } finally {
         set({ loading: false });

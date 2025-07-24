@@ -38,7 +38,7 @@ interface ModelUsage {
 }
 
 // Enhanced model configurations with OpenRouter options
-const MODEL_CONFIGS: Record<string, ModelConfig> = {
+const MODELCONFIGS: Record<string, ModelConfig> = {
   // Simple tasks - prioritize cost efficiency
   simple: {
     model: 'mistralai/mistral-7b-instruct:free',
@@ -49,7 +49,7 @@ const MODEL_CONFIGS: Record<string, ModelConfig> = {
     fallbackModels: [
       'gpt-3.5-turbo',
       'anthropic/claude-3-haiku',
-      'google/gemma-2-9b-it:free'
+      'google/gemma-2-9b-it: free'
     ],
     minConfidence: 0.6,
     maxRetries: 2,
@@ -97,7 +97,7 @@ const MODEL_CONFIGS: Record<string, ModelConfig> = {
   },
   
   // Domain agents - specialized for assistant profiles
-  domain_agent: {
+  domainagent: {
     model: 'gpt-4o',
     provider: 'openai',
     maxTokens: 1500,
@@ -159,10 +159,7 @@ export class ModelManager {
   private async initializePerformanceTracking(): Promise<void> {
     // Initialize performance tracking from database
     try {
-      const { data: metrics } = await supabase
-        .from('ai_model_performance')
-        .select('*')
-        .gte('created_at', `${this.currentMonth}-01`);
+      
       
       metrics?.forEach(metric => {
         this.performanceCache.set(metric.model, {
@@ -174,7 +171,10 @@ export class ModelManager {
         });
       });
     } catch (error) {
-      console.warn('Failed to initialize performance tracking:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to initialize performance tracking: ', error);
     }
   }
 
@@ -296,7 +296,7 @@ export class ModelManager {
         model,
         messages,
         temperature: options.temperature ?? config.temperature,
-        max_tokens: options.maxTokens ?? config.maxTokens,
+        maxtokens: options.maxTokens ?? config.maxTokens,
       };
 
       if (options.tools) {
@@ -310,12 +310,12 @@ export class ModelManager {
         response = await this.openaiClient.chat.completions.create(requestParams);
       } else {
         // OpenRouter request
-        response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        response = await fetch('https: //openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${this.openrouterClient.apiKey}`,
             'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://nexus.marcoby.com',
+            'HTTP-Referer': 'https: //nexus.marcoby.com',
             'X-Title': 'Nexus AI'
           },
           body: JSON.stringify(requestParams)
@@ -375,15 +375,18 @@ export class ModelManager {
         .from('ai_model_performance')
         .upsert({
           model,
-          success_rate: updated.successRate,
-          average_latency: updated.averageLatency,
-          average_cost: updated.averageCost,
-          last_used: updated.lastUsed.toISOString(),
-          error_count: updated.errorCount,
-          updated_at: new Date().toISOString()
+          successrate: updated.successRate,
+          averagelatency: updated.averageLatency,
+          averagecost: updated.averageCost,
+          lastused: updated.lastUsed.toISOString(),
+          errorcount: updated.errorCount,
+          updatedat: new Date().toISOString()
         });
     } catch (error) {
-      console.warn('Failed to persist performance metrics:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to persist performance metrics: ', error);
     }
   }
 
@@ -421,8 +424,7 @@ export class ModelManager {
         return ['gpt-4o-mini', 'anthropic/claude-3-haiku', 'mistralai/mistral-7b-instruct'];
       case 'marketing':
         return ['anthropic/claude-3-sonnet', 'gpt-4o', 'mistralai/mistral-large'];
-      default:
-        return ['gpt-4o-mini', 'anthropic/claude-3-haiku'];
+      default: return ['gpt-4o-mini', 'anthropic/claude-3-haiku'];
     }
   }
 
@@ -453,15 +455,18 @@ export class ModelManager {
     // Store in database via Supabase
     try {
       await supabase.from('ai_model_usage').insert({
-        model_name: usage.model,
-        tokens_used: usage.tokensUsed,
+        modelname: usage.model,
+        tokensused: usage.tokensUsed,
         cost: usage.cost,
         latency: usage.latency,
         success: usage.success,
-        task_type: usage.taskType
+        tasktype: usage.taskType
       });
     } catch (error) {
-      console.warn('Failed to store model usage:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Failed to store model usage: ', error);
     }
   }
 
@@ -541,7 +546,10 @@ export class ModelManager {
         suggestions
       };
     } catch (error) {
-      console.error('Error generating report:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error generating report: ', error);
       throw new Error('Failed to generate model usage report');
     }
   }

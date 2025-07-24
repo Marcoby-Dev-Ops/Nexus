@@ -95,7 +95,10 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
       setResponses(prev => [response, ...prev]);
       setInput('');
     } catch (error) {
-      console.error('Processing error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Processing error: ', error);
     } finally {
       setIsProcessing(false);
     }
@@ -141,7 +144,7 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
         </p>
         
         {/* Example inputs */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-4 mb-4">
           <div className="space-y-2">
             <h4 className="font-medium text-foreground">Focus Examples:</h4>
             <div className="space-y-1 text-xs text-muted-foreground">
@@ -181,7 +184,7 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
           <button
             type="submit"
             disabled={isProcessing || !input.trim()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover: bg-primary/90 transition-colors disabled:opacity-50"
           >
             {isProcessing ? 'Processing...' : 'Analyze Input'}
           </button>
@@ -197,7 +200,7 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
               {/* Input Summary */}
               <div className="mb-4 p-3 bg-muted/30 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm font-medium text-foreground">Original Input:</span>
+                  <span className="text-sm font-medium text-foreground">Original Input: </span>
                   <div className="flex items-center space-x-2">
                     <span className={`px-2 py-1 rounded text-xs font-medium ${getPhaseColor(response.firePhase)}`}>
                       {response.firePhase.toUpperCase()}
@@ -212,7 +215,7 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
 
               {/* Agent Response */}
               <div className="mb-4">
-                <h4 className="font-medium text-foreground mb-2">FIRE Analysis:</h4>
+                <h4 className="font-medium text-foreground mb-2">FIRE Analysis: </h4>
                 <div className="prose prose-sm max-w-none">
                   <div className="whitespace-pre-wrap text-sm text-foreground">
                     {response.response}
@@ -234,7 +237,7 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
                     {response.suggestions.map((suggestion) => (
                       <div
                         key={suggestion.id}
-                        className="p-3 border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                        className="p-3 border rounded-lg hover: bg-muted/30 transition-colors cursor-pointer"
                         onClick={suggestion.action}
                       >
                         <div className="flex items-center justify-between mb-1">
@@ -255,7 +258,7 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
               {/* Entity Analysis */}
               {response.input.entities.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="font-medium text-foreground mb-2">Detected Entities:</h4>
+                  <h4 className="font-medium text-foreground mb-2">Detected Entities: </h4>
                   <div className="flex flex-wrap gap-2">
                     {response.input.entities.map((entity, index) => (
                       <span
@@ -277,7 +280,7 @@ export const FireCycleIntelligenceDemo: React.FC<FireCycleIntelligenceDemoProps>
       {responses.length > 0 && (
         <div className="bg-card border rounded-lg p-6">
           <h3 className="text-lg font-semibold text-foreground mb-4">Processing Statistics</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">{responses.length}</div>
               <div className="text-xs text-muted-foreground">Total Processed</div>

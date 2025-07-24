@@ -20,17 +20,17 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/shared/ui/components/Toast';
 import { supabase } from '@/core/supabase';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface SuccessOutcome {
   id: string;
-  message_id: string;
-  conversation_id: string;
+  messageid: string;
+  conversationid: string;
   recommendation: string;
-  expected_outcome: string;
+  expectedoutcome: string;
   actual_outcome?: string;
   status: 'pending' | 'in_progress' | 'completed' | 'failed' | 'not_applicable';
-  impact_type: 'time_savings' | 'cost_reduction' | 'revenue_increase' | 'efficiency_gain' | 'quality_improvement';
+  impacttype: 'time_savings' | 'cost_reduction' | 'revenue_increase' | 'efficiency_gain' | 'quality_improvement';
   quantified_impact?: {
     metric: string;
     before: number;
@@ -38,7 +38,7 @@ interface SuccessOutcome {
     unit: string;
     timeframe: string;
   };
-  follow_up_date: string;
+  followupdate: string;
   completed_at?: string;
   user_notes?: string;
 }
@@ -76,7 +76,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -116,13 +116,13 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
       followUpDate.setDate(followUpDate.getDate() + followUpDays);
 
       const newOutcome: Partial<SuccessOutcome> = {
-        message_id: messageId,
-        conversation_id: conversationId,
+        messageid: messageId,
+        conversationid: conversationId,
         recommendation,
-        expected_outcome: expectedOutcome,
+        expectedoutcome: expectedOutcome,
         status: 'pending',
-        impact_type: impactType,
-        follow_up_date: followUpDate.toISOString(),
+        impacttype: impactType,
+        followup_date: followUpDate.toISOString(),
       };
 
       const { data, error } = await supabase
@@ -138,20 +138,23 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
 
       // Schedule follow-up notification
       await supabase.from('ai_audit_logs').insert({
-        user_id: user.id,
+        userid: user.id,
         action: 'success_outcome_created',
-        table_name: 'ai_success_outcomes',
-        record_id: data.id,
+        tablename: 'ai_success_outcomes',
+        recordid: data.id,
         details: {
           recommendation,
-          expected_outcome: expectedOutcome,
-          follow_up_date: followUpDate.toISOString(),
-          impact_type: impactType
+          expectedoutcome: expectedOutcome,
+          followup_date: followUpDate.toISOString(),
+          impacttype: impactType
         }
       });
 
     } catch (error) {
-      console.error('Error creating success outcome:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error creating success outcome: ', error);
     }
   };
 
@@ -163,8 +166,8 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
     try {
       const updates: Partial<SuccessOutcome> = {
         status,
-        actual_outcome: actualOutcome.trim() || undefined,
-        user_notes: userNotes.trim() || undefined,
+        actualoutcome: actualOutcome.trim() || undefined,
+        usernotes: userNotes.trim() || undefined,
       };
 
       if (status === 'completed' || status === 'failed') {
@@ -189,14 +192,14 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
 
       // Track in analytics
       await supabase.from('ai_audit_logs').insert({
-        user_id: user.id,
+        userid: user.id,
         action: 'success_outcome_updated',
-        table_name: 'ai_success_outcomes',
-        record_id: outcome.id,
+        tablename: 'ai_success_outcomes',
+        recordid: outcome.id,
         details: {
           status,
-          has_quantified_impact: !!updates.quantified_impact,
-          impact_type: impactType
+          hasquantified_impact: !!updates.quantified_impact,
+          impacttype: impactType
         }
       });
 
@@ -207,7 +210,10 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
       });
 
     } catch (error) {
-      console.error('Error updating outcome:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating outcome: ', error);
       showToast({
         title: 'Update Failed',
         description: 'Unable to save outcome. Please try again.',
@@ -226,8 +232,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
         return <Clock className="h-4 w-4 text-primary" />;
       case 'failed':
         return <AlertTriangle className="h-4 w-4 text-destructive" />;
-      default:
-        return <Target className="h-4 w-4 text-muted-foreground" />;
+      default: return <Target className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -239,8 +244,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
         return 'bg-primary/10 text-primary border-primary/20';
       case 'failed':
         return 'bg-destructive/10 text-destructive border-destructive/20';
-      default:
-        return 'bg-muted/10 text-muted-foreground border-border';
+      default: return 'bg-muted/10 text-muted-foreground border-border';
     }
   };
 
@@ -254,8 +258,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
         return <TrendingUp className="h-4 w-4" />;
       case 'efficiency_gain':
         return <Zap className="h-4 w-4" />;
-      default:
-        return <Target className="h-4 w-4" />;
+      default: return <Target className="h-4 w-4" />;
     }
   };
 
@@ -315,7 +318,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
         <CardContent className="space-y-4">
           {/* Expected vs Actual */}
           <div className="space-y-2">
-            <div className="text-xs text-muted-foreground">Expected outcome:</div>
+            <div className="text-xs text-muted-foreground">Expected outcome: </div>
             <div className="text-sm bg-background/50 p-2 rounded border">
               {expectedOutcome}
             </div>
@@ -392,7 +395,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
 
           {/* Notes */}
           <div className="space-y-2">
-            <label className="text-xs font-medium">Additional notes:</label>
+            <label className="text-xs font-medium">Additional notes: </label>
             <Textarea
               placeholder="Any additional context or learnings..."
               value={userNotes}

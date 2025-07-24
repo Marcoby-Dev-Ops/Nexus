@@ -9,7 +9,7 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-30 bg-background/95 border-b border-border shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm: px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img 
@@ -47,7 +47,7 @@ export function PublicHeader() {
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="p-2 rounded-full text-muted-foreground hover: text-foreground hover:bg-muted transition-colors"
           >
             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>

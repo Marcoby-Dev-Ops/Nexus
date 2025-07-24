@@ -5,20 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  Brain, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  Zap, 
-  X, 
-  ChevronRight,
-  Lightbulb,
-  Target,
-  Rocket,
-  Settings
-} from 'lucide-react';
+import { Brain, TrendingUp, AlertTriangle, CheckCircle, Clock, Zap, ChevronRight, Lightbulb, Target, Rocket, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -209,8 +196,7 @@ export function ProgressiveIntelligence({
         case 'quick_action':
           await executeGenericAction(action);
           break;
-        default:
-          // Generic action execution
+        default: // Generic action execution
           await executeGenericAction(action);
       }
 
@@ -222,7 +208,10 @@ export function ProgressiveIntelligence({
       });
       
     } catch (error: any) {
-      console.error('Action execution failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Action execution failed: ', error);
       showToast({
         title: 'Action Failed',
         description: `Failed to execute action: ${error.message}`,
@@ -233,7 +222,7 @@ export function ProgressiveIntelligence({
     }
   };
 
-  const executeAutomationAction = async (action: any) => {
+  const executeAutomationAction = async (_action: any) => {
     // For automation actions, call the appropriate API or service
     const response = await fetch('/api/ai/execute-automation', {
       method: 'POST',
@@ -252,7 +241,7 @@ export function ProgressiveIntelligence({
     return response.json();
   };
 
-  const executeGuidedWorkflow = async (action: any) => {
+  const executeGuidedWorkflow = async (_action: any) => {
     // For guided workflows, navigate to the workflow page or open modal
     if (action.steps && action.steps.length > 0) {
       // Open workflow modal or navigate to dedicated workflow page
@@ -262,7 +251,7 @@ export function ProgressiveIntelligence({
     }
   };
 
-  const executeApiCall = async (action: any) => {
+  const executeApiCall = async (_action: any) => {
     // Execute API calls based on action configuration
     const { endpoint, method = 'POST', headers = {}, body } = action.apiConfig || {};
     
@@ -286,9 +275,9 @@ export function ProgressiveIntelligence({
     return response.json();
   };
 
-  const executeNavigation = (action: any) => {
+  const executeNavigation = (_action: any) => {
     // For navigation actions, redirect to the specified URL
-    const { url, target = '_self' } = action.navigationConfig || {};
+    const { url } = action.navigationConfig || {};
     
     if (!url) {
       throw new Error('No navigation URL configured');
@@ -301,7 +290,7 @@ export function ProgressiveIntelligence({
     }
   };
 
-  const executeGenericAction = async (action: any) => {
+  const executeGenericAction = async (_action: any) => {
     // For generic actions, simulate execution with realistic delay
     const delay = Math.min(action.estimatedTime * 100, 3000); // Max 3 seconds
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -310,7 +299,7 @@ export function ProgressiveIntelligence({
   if (compact) {
     return (
       <div className="fixed bottom-4 right-4 z-50">
-        <div className="bg-card rounded-full p-4 shadow-lg border cursor-pointer hover:shadow-xl transition-shadow">
+        <div className="bg-card rounded-full p-4 shadow-lg border cursor-pointer hover: shadow-xl transition-shadow">
           <Brain className="h-6 w-6 text-secondary" />
           <Badge className="absolute -top-2 -right-2 px-1 min-w-[20px] h-5 text-xs">
             {mockInsights.length}
@@ -382,7 +371,7 @@ export function ProgressiveIntelligence({
                     variant="ghost"
                     size="sm"
                     onClick={() => setExpandedInsight(
-                      expandedInsight === insight.id ? null : insight.id
+                      expandedInsight === insight.id ? null: insight.id
                     )}
                   >
                     <ChevronRight className={`h-4 w-4 transition-transform ${
@@ -395,10 +384,10 @@ export function ProgressiveIntelligence({
                 {expandedInsight === insight.id && (
                   <div className="pt-2 border-t space-y-2">
                     <div className="text-xs text-muted-foreground">
-                      <strong>Data Sources:</strong> {insight.dataSource.join(', ')}
+                      <strong>Data Sources: </strong> {insight.dataSource.join(', ')}
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      <strong>Confidence:</strong> {(insight.metrics.confidence * 100).toFixed(0)}%
+                      <strong>Confidence: </strong> {(insight.metrics.confidence * 100).toFixed(0)}%
                     </div>
                     {insight.automationPotential && (
                       <div className="text-xs text-secondary">
@@ -451,7 +440,7 @@ export function ProgressiveIntelligence({
 
                   <div className="space-y-2">
                     <div className="text-xs text-muted-foreground">
-                      <strong>Expected Outcome:</strong> {action.expectedOutcome}
+                      <strong>Expected Outcome: </strong> {action.expectedOutcome}
                     </div>
                     
                     <Button
@@ -505,7 +494,7 @@ export function ProgressiveIntelligence({
 
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Setup Time:</span>
+                    <span className="text-muted-foreground">Setup Time: </span>
                     <div className="font-medium">{automation.estimatedSetupTime}m</div>
                   </div>
                   <div>
@@ -517,7 +506,7 @@ export function ProgressiveIntelligence({
                 </div>
 
                 <div className="text-xs text-muted-foreground">
-                  <strong>Required:</strong> {automation.requiredIntegrations.join(', ')}
+                  <strong>Required: </strong> {automation.requiredIntegrations.join(', ')}
                 </div>
 
                 <Button size="sm" variant="outline" className="w-full">

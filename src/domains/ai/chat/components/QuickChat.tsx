@@ -1,19 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { 
-  Send, 
-  Bot, 
-  Maximize2, 
-  X,
-  ChevronDown,
-  MessageSquare,
-  Zap,
-  Plus,
-  Mic,
-  Paperclip,
-  Clipboard
-} from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { Send, Bot, Maximize2, X, Plus, Mic, Paperclip, Clipboard } from 'lucide-react';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { useAIChatStore, useActiveConversation } from '@/shared/stores/useAIChatStore';
 import { executiveAgent } from '@/domains/ai/lib/agentRegistry';
@@ -81,7 +69,7 @@ const QuickActions: React.FC<{ onAction: (prompt: string) => void }> = ({ onActi
           <button
             key={action.label}
             onClick={() => onAction(action.prompt)}
-            className="p-2 text-xs rounded-md bg-muted/50 hover:bg-muted transition-colors text-left"
+            className="p-2 text-xs rounded-md bg-muted/50 hover: bg-muted transition-colors text-left"
           >
             {action.label}
           </button>
@@ -145,7 +133,7 @@ const ExecutiveAssistantWidget: React.FC<ExecutiveAssistantWidgetProps> = ({
       const decoder = new TextDecoder();
       let done = false;
       while (!done) {
-        const { value, done: doneReading } = await reader.read();
+        const { value } = await reader.read();
         done = doneReading;
         if (value) {
           assistantMsg += decoder.decode(value, { stream: true });
@@ -196,7 +184,7 @@ const ExecutiveAssistantWidget: React.FC<ExecutiveAssistantWidgetProps> = ({
           <span className="font-semibold text-foreground">Executive Assistant</span>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={onExpandToFullChat} title="Expand to full chat" className="p-2 rounded hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
+          <button onClick={onExpandToFullChat} title="Expand to full chat" className="p-2 rounded hover: bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
             <Maximize2 className="w-4 h-4" />
           </button>
           <button onClick={onClose} title="Close" className="p-2 rounded hover:bg-muted transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
@@ -237,7 +225,7 @@ const ExecutiveAssistantWidget: React.FC<ExecutiveAssistantWidgetProps> = ({
         <div className="relative">
           <button
             onClick={() => setShowInputMenu((v) => !v)}
-            className="p-2 rounded-full bg-muted hover:bg-muted/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="p-2 rounded-full bg-muted hover: bg-muted/70 focus:outline-none focus:ring-2 focus:ring-primary/20"
             aria-label="More input options"
           >
             <Plus className="w-5 h-5" />
@@ -247,10 +235,10 @@ const ExecutiveAssistantWidget: React.FC<ExecutiveAssistantWidgetProps> = ({
               <button className="flex items-center gap-2 px-4 py-2 hover:bg-muted focus:outline-none" aria-label="Voice input (coming soon)" disabled>
                 <Mic className="w-4 h-4" /> Voice (soon)
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 hover:bg-muted focus:outline-none" aria-label="Attach file (coming soon)" disabled>
+              <button className="flex items-center gap-2 px-4 py-2 hover: bg-muted focus:outline-none" aria-label="Attach file (coming soon)" disabled>
                 <Paperclip className="w-4 h-4" /> File (soon)
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 hover:bg-muted focus:outline-none" aria-label="Paste from clipboard (coming soon)" disabled>
+              <button className="flex items-center gap-2 px-4 py-2 hover: bg-muted focus:outline-none" aria-label="Paste from clipboard (coming soon)" disabled>
                 <Clipboard className="w-4 h-4" /> Clipboard (soon)
               </button>
             </div>
@@ -258,7 +246,7 @@ const ExecutiveAssistantWidget: React.FC<ExecutiveAssistantWidgetProps> = ({
         </div>
         <textarea
           ref={inputRef}
-          className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 min-h-[36px] max-h-20"
+          className="flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder: text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 min-h-[36px] max-h-20"
           placeholder="Type your message..."
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -268,7 +256,7 @@ const ExecutiveAssistantWidget: React.FC<ExecutiveAssistantWidgetProps> = ({
         />
         <button
           onClick={handleSend}
-          className="ml-2 p-2 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+          className="ml-2 p-2 rounded-full bg-primary text-primary-foreground hover: bg-primary/90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
           disabled={!input.trim() || isStreaming}
           aria-label="Send"
         >

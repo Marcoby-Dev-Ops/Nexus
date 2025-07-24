@@ -25,7 +25,7 @@ export const ContentCard: React.FC<ContentCardProps> = ({
   const getVariantClasses = () => {
     switch (variant) {
       case 'elevated':
-        return 'bg-card dark:bg-background rounded-2xl p-8 shadow-lg border border-border/50 dark:border-border/50 hover:shadow-xl transition-all duration-300';
+        return 'bg-card dark: bg-background rounded-2xl p-8 shadow-lg border border-border/50 dark:border-border/50 hover:shadow-xl transition-all duration-300';
       case 'outlined':
         return 'bg-transparent border-2 border-border rounded-xl p-6 hover:bg-muted/5 transition-colors duration-200';
       default:

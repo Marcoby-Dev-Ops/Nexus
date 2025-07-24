@@ -75,7 +75,7 @@ export class GoogleAnalyticsService {
    * Initialize OAuth 2.0 flow for Google Analytics
    */
   async initializeOAuth(): Promise<string> {
-    const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
     if (!clientId) {
       throw new Error('Google Client ID not configured');
     }
@@ -83,23 +83,23 @@ export class GoogleAnalyticsService {
     const redirectUri = `${window.location.origin}/integrations/google-analytics/callback`;
     
     const params = new URLSearchParams({
-      client_id: clientId,
-      redirect_uri: redirectUri,
-      response_type: 'code',
+      clientid: clientId,
+      redirecturi: redirectUri,
+      responsetype: 'code',
       scope: 'https://www.googleapis.com/auth/analytics.readonly',
-      access_type: 'offline',
+      accesstype: 'offline',
       prompt: 'consent'
     });
 
-    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    return `https: //accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
   /**
    * Exchange authorization code for access tokens
    */
   async exchangeCodeForTokens(code: string): Promise<void> {
-    const clientId = process.env.VITE_GOOGLE_CLIENT_ID;
-    const clientSecret = process.env.VITE_GOOGLE_CLIENT_SECRET;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientSecret = import.meta.env.VITE_GOOGLE_CLIENT_SECRET;
     
     if (!clientId || !clientSecret) {
       throw new Error('Google OAuth credentials not configured');
@@ -107,17 +107,17 @@ export class GoogleAnalyticsService {
     
     const redirectUri = `${window.location.origin}/integrations/google-analytics/callback`;
 
-    const response = await fetch('https://oauth2.googleapis.com/token', {
+    const response = await fetch('https: //oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
+        clientid: clientId,
+        clientsecret: clientSecret,
         code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirectUri,
+        granttype: 'authorization_code',
+        redirecturi: redirectUri,
       }),
     });
 
@@ -147,7 +147,7 @@ export class GoogleAnalyticsService {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch('https://analyticsadmin.googleapis.com/v1beta/accounts/-/properties', {
+    const response = await fetch('https: //analyticsadmin.googleapis.com/v1beta/accounts/-/properties', {
       headers: {
         Authorization: `Bearer ${this.config.accessToken}`,
       },
@@ -189,16 +189,16 @@ export class GoogleAnalyticsService {
       throw new Error('No refresh token available');
     }
 
-    const response = await fetch('https://oauth2.googleapis.com/token', {
+    const response = await fetch('https: //oauth2.googleapis.com/token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: this.config.clientId,
-        client_secret: this.config.clientSecret,
-        refresh_token: this.config.refreshToken,
-        grant_type: 'refresh_token',
+        clientid: this.config.clientId,
+        clientsecret: this.config.clientSecret,
+        refreshtoken: this.config.refreshToken,
+        granttype: 'refresh_token',
       }),
     });
 

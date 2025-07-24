@@ -194,6 +194,9 @@ export class AdvancedAIRecommendationEngine {
       this.predictiveModels.set(model.id, model);
     });
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🤖 AI Engine: Initialized', models.length, 'predictive models');
   }
 
@@ -221,6 +224,9 @@ export class AdvancedAIRecommendationEngine {
       await this.generatePersonalizedRecommendations();
     }, 120000);
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🧠 AI Engine: Started continuous learning pipeline');
   }
 
@@ -252,6 +258,9 @@ export class AdvancedAIRecommendationEngine {
     // Update user profile
     await this.updateUserProfile(userId, interaction);
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`📝 AI Engine: Captured interaction for user ${userId}: ${action}`);
     return interaction;
   }
@@ -347,6 +356,9 @@ export class AdvancedAIRecommendationEngine {
       this.learningPatterns.set(pattern.id, pattern);
     });
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`🔍 AI Engine: Learned ${patterns.length} new patterns from ${recentInteractions.length} interactions`);
   }
 
@@ -482,10 +494,16 @@ export class AdvancedAIRecommendationEngine {
           model.predictions = await this.generatePredictions(model, relevantData);
         }
       } catch (error) {
-        console.error(`❌ Error updating model ${modelId}:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`❌ Error updating model ${modelId}:`, error);
       }
     }
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`🔄 AI Engine: Updated ${this.predictiveModels.size} predictive models`);
   }
 
@@ -499,6 +517,9 @@ export class AdvancedAIRecommendationEngine {
     // Update model accuracy based on recent performance
     model.accuracy = (model.accuracy * 0.9) + (trainingAccuracy * 0.1);
     
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`🎯 Trained model ${model.name} with ${data.length} data points, accuracy: ${(model.accuracy * 100).toFixed(1)}%`);
   }
 
@@ -531,7 +552,7 @@ export class AdvancedAIRecommendationEngine {
    */
   private async generateTimeSeriesForecast(model: PredictiveModel, data: any[]): Promise<any> {
     // Simulate time series forecasting
-    const currentValue = data.length > 0 ? Object.values(data[0].data)[0] as number : 1000;
+    const currentValue = data.length > 0 ? Object.values(data[0].data)[0] as number: 1000;
     const trend = (Math.random() - 0.5) * 0.2; // -10% to +10% trend
     
     return {
@@ -562,7 +583,7 @@ export class AdvancedAIRecommendationEngine {
    */
   private async generateRegressionPredictions(model: PredictiveModel, data: any[]): Promise<any> {
     // Simulate regression predictions
-    const baseValue = data.length > 0 ? Object.values(data[0].data)[0] as number : 100;
+    const baseValue = data.length > 0 ? Object.values(data[0].data)[0] as number: 100;
     const prediction = baseValue * (0.8 + Math.random() * 0.4); // 80-120% of base
     
     return {
@@ -599,9 +620,15 @@ export class AdvancedAIRecommendationEngine {
     for (const userId of activeUsers) {
       try {
         const recommendations = await this.generateUserRecommendations(userId);
-        console.log(`💡 Generated ${recommendations.length} personalized recommendations for user ${userId}`);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`💡 Generated ${recommendations.length} personalized recommendations for user ${userId}`);
       } catch (error) {
-        console.error(`❌ Error generating recommendations for user ${userId}:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`❌ Error generating recommendations for user ${userId}:`, error);
       }
     }
   }
@@ -1100,6 +1127,9 @@ export class AdvancedAIRecommendationEngine {
    */
   stopLearning(): void {
     this.isLearning = false;
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🛑 AI Engine: Stopped continuous learning');
   }
 }

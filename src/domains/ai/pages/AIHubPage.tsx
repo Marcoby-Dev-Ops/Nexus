@@ -1,26 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { 
-  Brain, 
-  MessageSquare, 
-  Zap, 
-  TrendingUp, 
-  Users, 
-  Settings, 
-  BarChart3,
-  Lightbulb,
-  Target,
-  Activity,
-  Sparkles,
-  ArrowUpRight,
-  CheckCircle,
-  Clock,
-  AlertCircle
-} from 'lucide-react';
+import { Brain, MessageSquare, Zap, TrendingUp, Users, Settings, Target, Activity, Sparkles, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { getAllAgents, getAgentsByType, type Agent } from '@/domains/ai/lib/agentRegistry';
 import { continuousImprovementService } from '@/domains/ai/lib/continuousImprovementService';
 import { ProgressiveIntelligence } from '@/domains/ai/components/ProgressiveIntelligence';
@@ -48,7 +32,7 @@ interface AIFeature {
 }
 
 export default function AIHubPage() {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [stats, setStats] = useState<AIHubStats>({
     totalAgents: 0,
@@ -89,7 +73,10 @@ export default function AIHubPage() {
         automationRate: 68
       });
     } catch (error) {
-      console.error('Error loading AI Hub data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading AI Hub data: ', error);
     } finally {
       setLoading(false);
     }
@@ -175,7 +162,7 @@ export default function AIHubPage() {
       <div className="container mx-auto p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
@@ -205,7 +192,7 @@ export default function AIHubPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total AI Agents</CardTitle>
@@ -298,13 +285,19 @@ export default function AIHubPage() {
           {/* AI Features Grid */}
           <div>
             <h2 className="text-xl font-semibold mb-4">AI Capabilities</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
               {aiFeatures.map((feature) => (
                 <AIFeatureCard
                   key={feature.id}
                   feature={feature}
-                  onLearnMore={(feature) => console.log('Learn more:', feature.id)}
-                  onDemo={(feature) => console.log('Demo:', feature.id)}
+                  onLearnMore={(feature) => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Learn more: ', feature.id)}
+                  onDemo={(feature) => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Demo: ', feature.id)}
                 />
               ))}
             </div>
@@ -326,9 +319,9 @@ export default function AIHubPage() {
         <TabsContent value="agents" className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4">AI Agents</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
               {agents.map((agent) => (
-                <Card key={agent.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                <Card key={agent.id} className="cursor-pointer hover: shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{agent.name}</CardTitle>
@@ -345,7 +338,7 @@ export default function AIHubPage() {
                     <div className="space-y-2">
                       {agent.specialties && agent.specialties.length > 0 && (
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground">Specialties:</p>
+                          <p className="text-sm font-medium text-muted-foreground">Specialties: </p>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {agent.specialties.slice(0, 3).map((specialty, index) => (
                               <Badge key={index} variant="secondary" className="text-xs">

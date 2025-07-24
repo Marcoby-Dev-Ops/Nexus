@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
@@ -11,20 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/shared/components/ui/Separator';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Switch } from '@/shared/components/ui/Switch';
-import { 
-  Building2, 
-  Camera,
-  X,
-  Plus,
-  AlertCircle,
-  Save,
-  Edit,
-  CheckCircle,
-  Settings,
-  Activity,
-  Users,
-  UserPlus
-} from 'lucide-react';
+import { Building2, Camera, X, AlertCircle, Save, Edit, CheckCircle, Settings, Activity, Users, UserPlus } from 'lucide-react';
 import { supabase } from '@/core/supabase';
 
 interface CompanyData {
@@ -52,7 +39,7 @@ interface CompanySettings {
 }
 
 const CompanySettings: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -187,7 +174,7 @@ const CompanySettings: React.FC = () => {
           <Separator />
 
           {/* Company Form Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="companyName">Company Name</Label>
               <Input
@@ -249,7 +236,7 @@ const CompanySettings: React.FC = () => {
                 value={companyData.website}
                 onChange={(e) => handleCompanyInputChange('website', e.target.value)}
                 disabled={!isEditing}
-                placeholder="https://company.com"
+                placeholder="https: //company.com"
               />
             </div>
 

@@ -33,14 +33,23 @@ export const AuthDebugPanel: React.FC = () => {
     try {
       const result = await auth.signUp(testEmail, testPassword);
       if (result.success) {
-        console.log('Test user signed up successfully');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Test user signed up successfully');
         setDebugReport(`✅ Test signup successful! Check your email for confirmation.`);
       } else {
-        console.error('Failed to sign up test user:', result.error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to sign up test user: ', result.error);
         setDebugReport(`❌ Signup failed: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error signing up test user:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error signing up test user: ', error);
       setDebugReport(`❌ Signup error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
@@ -51,14 +60,23 @@ export const AuthDebugPanel: React.FC = () => {
     try {
       const result = await auth.signIn(testEmail, testPassword);
       if (result.success) {
-        console.log('Test user signed in successfully');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Test user signed in successfully');
         setDebugReport(`✅ Test signin successful!`);
       } else {
-        console.error('Failed to sign in test user:', result.error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to sign in test user: ', result.error);
         setDebugReport(`❌ Signin failed: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error signing in test user:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error signing in test user: ', error);
       setDebugReport(`❌ Signin error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
@@ -70,7 +88,10 @@ export const AuthDebugPanel: React.FC = () => {
       await auth.signOut();
       setDebugReport(`✅ Signed out successfully`);
     } catch (error) {
-      console.error('Error signing out:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error signing out: ', error);
       setDebugReport(`❌ Sign out error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
     setLoading(false);
@@ -84,7 +105,7 @@ export const AuthDebugPanel: React.FC = () => {
         {/* Current Auth State */}
         <div className="space-y-4">
           <div>
-            <strong>Status:</strong> {auth.isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}
+            <strong>Status: </strong> {auth.isAuthenticated ? '✅ Authenticated' : '❌ Not Authenticated'}
           </div>
           
           {auth.user && (
@@ -103,7 +124,7 @@ export const AuthDebugPanel: React.FC = () => {
 
       {/* Action Buttons */}
       <div className="space-y-4">
-        <h4 className="font-medium">Quick Actions:</h4>
+        <h4 className="font-medium">Quick Actions: </h4>
         
         <div className="space-y-2">
           {/* Test Credentials Input */}
@@ -171,7 +192,7 @@ export const AuthDebugPanel: React.FC = () => {
       {/* Debug Report */}
       {debugReport && (
         <div>
-          <h4 className="font-medium mb-2">Debug Report:</h4>
+          <h4 className="font-medium mb-2">Debug Report: </h4>
           <pre className="bg-muted dark:bg-background p-4 rounded text-xs overflow-auto max-h-96">
             {debugReport}
           </pre>
@@ -181,7 +202,7 @@ export const AuthDebugPanel: React.FC = () => {
       {/* Instructions */}
       <Alert>
         <div className="space-y-2">
-          <p className="font-medium">🎯 To Fix Your Conversations 406 Error:</p>
+          <p className="font-medium">🎯 To Fix Your Conversations 406 Error: </p>
           <ol className="list-decimal list-inside space-y-1 text-sm">
             <li>Use "Test Sign Up" to create a new Supabase user account</li>
             <li>Check your email and confirm the account</li>

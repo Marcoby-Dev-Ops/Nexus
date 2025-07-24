@@ -26,6 +26,9 @@ function safeGetLocalStorage<T>(key: string, defaultValue: T): T {
     
     return item as unknown as T;
   } catch (error) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.warn(`Failed to parse localStorage item "${key}":`, error);
     // Remove the corrupted item
     localStorage.removeItem(key);
@@ -46,6 +49,9 @@ function safeSetLocalStorage<T>(key: string, value: T): boolean {
     localStorage.setItem(key, stringValue);
     return true;
   } catch (error) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.warn(`Failed to set localStorage item "${key}":`, error);
     return false;
   }
@@ -58,6 +64,9 @@ function safeRemoveLocalStorage(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch (error) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.error(`Error removing localStorage key "${key}":`, error);
   }
 }
@@ -85,7 +94,10 @@ function cleanupLocalStorage(keysToCheck: string[] = [
         if (value) {
           // Check for common problematic values
           if (value === '[object Object]' || value === 'undefined' || value === 'null') {
-            console.warn(`Removing invalid localStorage value for key: ${key}`);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Removing invalid localStorage value for key: ${key}`);
             localStorage.removeItem(key);
             cleanedCount++;
             return;
@@ -100,17 +112,26 @@ function cleanupLocalStorage(keysToCheck: string[] = [
           }
         }
       } catch {
-        console.warn(`Removing corrupted localStorage key: ${key}`);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Removing corrupted localStorage key: ${key}`);
         localStorage.removeItem(key);
         cleanedCount++;
       }
     });
 
     if (cleanedCount > 0) {
-      console.log(`Cleaned up ${cleanedCount} corrupted localStorage items`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Cleaned up ${cleanedCount} corrupted localStorage items`);
     }
   } catch (error) {
-    console.warn('Error during localStorage cleanup:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Error during localStorage cleanup: ', error);
   }
 }
 
@@ -128,7 +149,10 @@ function aggressiveCleanup(): void {
         if (value) {
           // Remove any "[object Object]" values immediately
           if (value === '[object Object]' || value === 'undefined' || value === 'null' || value === '') {
-            console.warn(`Aggressive cleanup removing: ${key} = "${value}"`);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Aggressive cleanup removing: ${key} = "${value}"`);
             localStorage.removeItem(key);
             cleanedCount++;
             return;
@@ -140,24 +164,36 @@ function aggressiveCleanup(): void {
           } catch {
             // If it's not valid JSON and not a simple string, remove it
             if (value.includes('{') || value.includes('[') || value.includes('object')) {
-              console.warn(`Aggressive cleanup removing invalid JSON: ${key}`);
+              // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Aggressive cleanup removing invalid JSON: ${key}`);
               localStorage.removeItem(key);
               cleanedCount++;
             }
           }
         }
       } catch (e) {
-        console.warn(`Aggressive cleanup error for key ${key}:`, e);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Aggressive cleanup error for key ${key}:`, e);
         localStorage.removeItem(key);
         cleanedCount++;
       }
     });
 
     if (cleanedCount > 0) {
-      console.log(`Aggressive cleanup removed ${cleanedCount} problematic localStorage items`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Aggressive cleanup removed ${cleanedCount} problematic localStorage items`);
     }
   } catch (error) {
-    console.warn('Error during aggressive localStorage cleanup:', error);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('Error during aggressive localStorage cleanup: ', error);
   }
 }
 
@@ -179,7 +215,10 @@ function initializeStorageCleanup(): void {
         JSON.parse(value); // This will throw if invalid
       }
     } catch {
-      console.warn(`Removing invalid JSON from localStorage key "${key}"`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Removing invalid JSON from localStorage key "${key}"`);
       localStorage.removeItem(key);
     }
   });

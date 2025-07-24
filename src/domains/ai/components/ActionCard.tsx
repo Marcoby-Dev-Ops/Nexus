@@ -88,7 +88,10 @@ export const ActionCard: React.FC<ActionCardProps> = ({
         setModalOpen(false);
         onCompleted?.(action);
       } catch (err: any) {
-        console.error('[ActionCard] Execution failed', err);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('[ActionCard] Execution failed', err);
         toast.error(err?.message ?? 'Failed to execute action');
       } finally {
         setExecutingActionId(null);
@@ -99,7 +102,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({
 
   return (
     <div
-      className={`bg-card text-card-foreground border border-border rounded-lg shadow-sm p-4 cursor-pointer hover:shadow-md transition-shadow ${className}`}
+      className={`bg-card text-card-foreground border border-border rounded-lg shadow-sm p-4 cursor-pointer hover: shadow-md transition-shadow ${className}`}
       onClick={() => setModalOpen(true)}
       role="button"
       tabIndex={0}

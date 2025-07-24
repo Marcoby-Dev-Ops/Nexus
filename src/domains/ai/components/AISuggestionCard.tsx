@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/sha
 import { Lightbulb, AlertTriangle, Loader2 } from 'lucide-react';
 import type { DepartmentId } from '@/shared/constants/departments';
 import { Button } from '@/shared/components/ui/Button';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { API_CONFIG } from '@/core/constants';
 
 interface AISuggestionCardProps {
@@ -20,7 +20,7 @@ export const AISuggestionCard: React.FC<AISuggestionCardProps> = ({ departmentId
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { session } = useAuthContext();
+  const { session } = useAuth();
 
   useEffect(() => {
     const fetchSuggestions = async () => {

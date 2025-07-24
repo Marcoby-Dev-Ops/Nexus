@@ -24,7 +24,7 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
 
   if (compact) {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 dark:bg-amber-900/10 dark:border-amber-800">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 dark: bg-amber-900/10 dark:border-amber-800">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-warning dark:text-amber-400 flex-shrink-0" />
           <div className="flex-1">
@@ -48,7 +48,7 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
   }
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 dark:bg-amber-900/10 dark:border-amber-800">
+    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 dark: bg-amber-900/10 dark:border-amber-800">
       <div className="flex items-start gap-4">
         <AlertTriangle className="w-5 h-5 text-warning dark:text-amber-400 mt-0.5 flex-shrink-0" />
         <div className="flex-1">
@@ -92,7 +92,7 @@ export const MVPScopeIndicator: React.FC<MVPScopeIndicatorProps> = ({
           variant="ghost"
           size="sm"
           onClick={handleDismiss}
-          className="text-warning hover:text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
+          className="text-warning hover: text-amber-800 dark:text-amber-400 dark:hover:text-amber-200"
         >
           <X className="w-4 h-4" />
         </Button>

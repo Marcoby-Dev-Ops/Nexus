@@ -58,7 +58,7 @@ interface KnowledgeDomain {
 }
 
 export const ExpertKnowledgePreview: React.FC<ExpertKnowledgePreviewProps> = ({ 
-  userProfile: _userProfile, 
+  userProfile: userProfile, 
   systemIntelligence = {
     understandingLevel: 0,
     personalizedInsights: 0,
@@ -267,7 +267,7 @@ export const ExpertKnowledgePreview: React.FC<ExpertKnowledgePreviewProps> = ({
             className={`cursor-pointer transition-all duration-300 ${
               activeDomains.includes(domain.name) 
                 ? 'ring-2 ring-primary shadow-lg' 
-                : 'hover:shadow-md'
+                : 'hover: shadow-md'
             }`}
           >
             <CardHeader className="pb-3">

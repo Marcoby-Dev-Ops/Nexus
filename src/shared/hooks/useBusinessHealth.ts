@@ -1,6 +1,6 @@
 import React from 'react';
 import { supabase } from "@/core/supabase";
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 async function fetchHealth() {
   // The useAuth hook now ensures we have a valid session,
@@ -13,7 +13,7 @@ async function fetchHealth() {
 }
 
 export function useBusinessHealth() {
-  const { session, loading: authLoading } = useAuthContext();
+  const { session } = useAuth();
   const [data, setData] = React.useState<any>(null);
   const [error, setError] = React.useState<Error | null>(null);
   const [loading, setLoading] = React.useState<boolean>(true);
@@ -23,7 +23,7 @@ export function useBusinessHealth() {
     if (!session) {
       // Don't start loading if there's no session.
       // When auth is done loading and there's still no session, stop loading.
-      if (!authLoading) {
+      if (!loading) {
         setLoading(false);
         setData(null);
       }
@@ -42,15 +42,18 @@ export function useBusinessHealth() {
       } else {
         setData(null);
       }
-      console.error('Failed to fetch business health:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to fetch business health: ', err);
     } finally {
       setLoading(false);
     }
-  }, [session?.access_token, authLoading]); // Only depend on session token, not entire session object
+  }, [session?.access_token, loading]); // Only depend on session token, not entire session object
 
   React.useEffect(() => {
     // Only run the effect if auth has initialized and the initial load hasn't been triggered.
-    if (!authLoading && !initialLoadDone) {
+    if (!loading && !initialLoadDone) {
       load();
       setInitialLoadDone(true);
     }
@@ -60,8 +63,8 @@ export function useBusinessHealth() {
       const interval = setInterval(load, 30000);
       return () => clearInterval(interval);
     }
-  }, [load, authLoading, initialLoadDone, session?.access_token]); // Only depend on session token
+  }, [load, loading, initialLoadDone, session?.access_token]); // Only depend on session token
 
   // The hook is loading if auth is loading or if data is being fetched.
-  return { health: data, isLoading: loading || authLoading, error };
+  return { health: data, isLoading: loading || loading, error };
 } 

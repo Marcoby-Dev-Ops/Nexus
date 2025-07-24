@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card } from '@/shared/components/ui/Card';
 import { Input } from '@/shared/components/ui/Input';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 import { useToast } from '@/shared/ui/components/Toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/shared/components/ui/Dialog';
@@ -54,16 +54,16 @@ interface ExistingCompany {
   size?: string | null;
   description?: string | null;
   website?: string | null;
-  created_at: string;
+  createdat: string;
 }
 
 interface OrganizationSetupStepProps {
-  onNext: (data: { enriched_data: OrganizationData }) => void;
+  onNext: (data: { enricheddata: OrganizationData }) => void;
   onBack: () => void;
 }
 
 export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ onNext, onBack }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const company = user?.company;
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -86,9 +86,9 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
     size: company?.size || '',
     tagline: '',
     motto: '',
-    mission_statement: '',
-    vision_statement: '',
-    about_md: '',
+    missionstatement: '',
+    visionstatement: '',
+    aboutmd: '',
   });
 
   // Validation helpers
@@ -98,7 +98,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
   function isValidUrl(url: string): boolean {
     try {
       const u = new URL(url);
-      return u.protocol === 'http:' || u.protocol === 'https:';
+      return u.protocol === 'http: ' || u.protocol === 'https:';
     } catch {
       return false;
     }
@@ -137,7 +137,10 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
       return null;
     } catch (error) {
-      console.error('Error checking existing company:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error checking existing company: ', error);
       return null;
     }
   };
@@ -153,9 +156,9 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
         .from('user_profiles')
         .upsert({
           id: user.id,
-          company_id: existingCompany.id,
+          companyid: existingCompany.id,
           role: 'user', // Default role when joining existing company
-          updated_at: new Date().toISOString(),
+          updatedat: new Date().toISOString(),
         });
 
       if (profileError) throw profileError;
@@ -172,9 +175,12 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
       }
 
       setShowJoinDialog(false);
-      onNext({ enriched_data: data });
+      onNext({ enricheddata: data });
     } catch (error) {
-      console.error('Error joining company:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error joining company: ', error);
       toast({
         title: 'Error',
         description: 'Failed to join company. Please try again.',
@@ -280,22 +286,37 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('=== FORM SUBMITTED ===');
-    console.log('Form submitted, data:', data);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Form submitted, data: ', data);
 
     // Make domain optional - only validate if provided
     if (data.domain && !isValidDomain(data.domain)) {
       setDomainError("Enter a valid domain (e.g. marcoby.com)");
-      console.log('Domain validation failed');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Domain validation failed');
       return;
     }
     // Make website optional - only validate if provided
     if (data.website && !isValidUrl(safeString(data.website))) {
-      setWebsiteError("Enter a valid URL (e.g. https://marcoby.com)");
-      console.log('Website validation failed');
+      setWebsiteError("Enter a valid URL (e.g. https: //marcoby.com)");
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Website validation failed');
       return;
     }
     
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Validation passed, checking for existing company');
     setLoading(true);
 
@@ -313,7 +334,10 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
       // No existing company found, proceed with creation
       await createNewCompany();
     } catch (error) {
-      console.error('Error in handleSubmit:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error in handleSubmit: ', error);
       toast({
         title: 'Error',
         description: 'Failed to update organization information',
@@ -336,13 +360,13 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
           description: data.description,
           logo: data.logo,
           website: data.website || null, // Allow null website
-          social_profiles: data.social_profiles,
+          socialprofiles: data.social_profiles,
           founded: data.founded,
           headquarters: data.headquarters,
           specialties: data.specialties,
-          employee_count: data.employee_count,
-          followers_count: data.followers_count,
-          microsoft_365: data.microsoft_365,
+          employeecount: data.employee_count,
+          followerscount: data.followers_count,
+          microsoft365: data.microsoft_365,
           owner_id: user?.id,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -351,7 +375,10 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
         .single();
       if (createError) throw createError;
 
-      console.log('Company created:', newCompany);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Company created: ', newCompany);
 
       // Update user profile with new company info
       if (!user) throw new Error('No authenticated user');
@@ -359,35 +386,38 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
         .from('user_profiles')
         .upsert({
           id: user.id,
-          company_id: newCompany.id,
+          companyid: newCompany.id,
           role: 'owner',
           department: data.industry || null,
-          job_title: data.size || null,
-          updated_at: new Date().toISOString(),
+          jobtitle: data.size || null,
+          updatedat: new Date().toISOString(),
         });
       if (profileError) throw profileError;
 
-      console.log('User profile updated');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('User profile updated');
 
       // Upsert AI company profile details
       await supabase
         .from('ai_company_profiles')
         .upsert({
-          company_id: newCompany.id,
-          user_id: user.id,
-          profile_data: {
+          companyid: newCompany.id,
+          userid: user.id,
+          profiledata: {
             tagline: data.tagline,
             motto: data.motto,
-            mission_statement: data.mission_statement,
-            vision_statement: data.vision_statement,
-            about_md: data.about_md,
+            missionstatement: data.mission_statement,
+            visionstatement: data.vision_statement,
+            aboutmd: data.about_md,
           },
         });
 
       // Trigger embedding generation (fire & forget)
       try {
         await supabase.functions.invoke('ai_embed_company_profile', {
-          body: { company_id: newCompany.id },
+          body: { companyid: newCompany.id },
         });
       } catch {
         // Embedding failed but not critical
@@ -404,10 +434,16 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
         localStorage.removeItem('pending_company_name');
       }
 
-      console.log('Calling onNext with data:', { enriched_data: data });
-      onNext({ enriched_data: data });
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Calling onNext with data: ', { enricheddata: data });
+      onNext({ enricheddata: data });
     } catch (error) {
-      console.error('Error creating company:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error creating company: ', error);
       toast({
         title: 'Error',
         description: 'Failed to create organization',
@@ -420,7 +456,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
   // Helper to ensure string value for input fields
   function safeString(val: string | undefined): string {
-    return typeof val === 'string' ? val : '';
+    return typeof val === 'string' ? val: '';
   }
 
   // Helper to get pending company name from signup
@@ -489,7 +525,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
                   onChange={(e) => {
                     const value = e.target.value;
                     setData({ ...data, domain: value });
-                    setDomainError(isValidDomain(value) ? null : "Enter a valid domain (e.g. marcoby.com)");
+                    setDomainError(isValidDomain(value) ? null: "Enter a valid domain (e.g. marcoby.com)");
                   }}
                   placeholder="e.g., marcoby.com"
                   className="flex-1"
@@ -544,7 +580,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
                 Industry (Optional)
               </label>
               <Select
-                value={typeof data.industry === 'string' ? data.industry : ''}
+                value={typeof data.industry === 'string' ? data.industry: ''}
                 onValueChange={(value) => setData({ ...data, industry: value })}
                 disabled={false}
               >
@@ -569,7 +605,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
                 Company Size (Optional)
               </label>
               <Select
-                value={typeof data.size === 'string' ? data.size : ''}
+                value={typeof data.size === 'string' ? data.size: ''}
                 onValueChange={(value) => setData({ ...data, size: value })}
                 disabled={false}
               >
@@ -613,9 +649,9 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
                 onChange={(e) => {
                   const value = e.target.value;
                   setData({ ...data, website: value });
-                  setWebsiteError(isValidUrl(safeString(value)) ? null : "Enter a valid URL (e.g. https://marcoby.com)");
+                  setWebsiteError(isValidUrl(safeString(value)) ? null: "Enter a valid URL (e.g. https://marcoby.com)");
                 }}
-                placeholder="e.g., https://marcoby.com"
+                placeholder="e.g., https: //marcoby.com"
                 className="flex-1"
               />
               {websiteError && <p className="text-xs text-destructive mt-1">{websiteError}</p>}
@@ -679,7 +715,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
               <Button 
                 type="submit" 
                 disabled={loading}
-                className="min-w-[120px] bg-primary hover:bg-primary/90"
+                className="min-w-[120px] bg-primary hover: bg-primary/90"
               >
                 {loading ? (
                   <>
@@ -700,7 +736,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
 
       {/* Join Existing Company Dialog */}
       <Dialog open={showJoinDialog} onOpenChange={setShowJoinDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm: max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BuildingOfficeIcon className="h-5 w-5" />
@@ -742,7 +778,7 @@ export const OrganizationSetupStep: React.FC<OrganizationSetupStepProps> = ({ on
             </div>
           )}
           
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm: flex-row gap-2">
             <Button
               variant="outline"
               onClick={handleCreateNewCompany}

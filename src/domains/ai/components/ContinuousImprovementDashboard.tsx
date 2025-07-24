@@ -5,21 +5,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { 
-  TrendingUp, 
-  TrendingDown, 
-  Star, 
-  DollarSign, 
-  Users, 
-  Activity,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Target,
-  BarChart3,
-  PieChart,
-  LineChart
-} from 'lucide-react';
+import { TrendingUp, TrendingDown, Star, DollarSign, Activity, AlertTriangle, CheckCircle, Clock, Target, BarChart3, PieChart, LineChart } from 'lucide-react';
 import { continuousImprovementService } from '@/domains/ai/lib/continuousImprovementService';
 import { aiUsageBillingService } from '@/domains/admin/billing/services/aiUsageBillingService';
 
@@ -60,7 +46,10 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
       setBillingStatus(billingData);
       setRecommendations(recommendationData);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading dashboard data: ', error);
     } finally {
       setLoading(false);
     }
@@ -82,7 +71,10 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
       // Refresh dashboard data
       loadDashboardData();
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error submitting feedback: ', error);
     }
   };
 
@@ -111,7 +103,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -182,7 +174,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Billing Alerts:</strong>
+            <strong>Billing Alerts: </strong>
             <ul className="list-disc list-inside mt-1">
               {billingStatus.alerts.map((alert: string, index: number) => (
                 <li key={index} className="text-sm">{alert}</li>
@@ -203,7 +195,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             {/* Performance Metrics */}
             <Card>
               <CardHeader>
@@ -349,7 +341,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
 
         {/* Billing Tab */}
         <TabsContent value="billing" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -437,7 +429,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
                   <div className="text-center p-4 bg-success/5 rounded-lg">
                     <div className="flex items-center justify-center mb-2">
                       <TrendingUp className="w-6 h-6 text-success" />

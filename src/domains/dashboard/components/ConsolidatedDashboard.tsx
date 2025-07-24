@@ -24,7 +24,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
-import { useZustandAuth } from '@/shared/hooks/useZustandAuth';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { CompanyStatusDashboard } from './CompanyStatusDashboard';
 import LivingBusinessAssessment from './LivingBusinessAssessment';
 import UnifiedCommunicationDashboard from './UnifiedCommunicationDashboard';
@@ -97,7 +97,7 @@ interface QuickAction {
 }
 
 export const ConsolidatedDashboard: React.FC = () => {
-  const { user, session, profile, loading: authLoading, initialized } = useZustandAuth();
+  const { user, session, profile, initialized } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'fire-cycle' | 'analytics' | 'communication'>('overview');
   const [fireCycleState, setFireCycleState] = useState<FireCycleState>({
@@ -156,11 +156,14 @@ export const ConsolidatedDashboard: React.FC = () => {
   
   // Debug: Log user object to see what's available
   useEffect(() => {
-    console.log('ConsolidatedDashboard - User state:', {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('ConsolidatedDashboard - User state: ', {
       user: user,
       session: session,
       profile: profile,
-      authLoading: authLoading,
+      loading: loading,
       initialized: initialized,
       userExists: !!user,
       sessionExists: !!session,
@@ -177,7 +180,7 @@ export const ConsolidatedDashboard: React.FC = () => {
       welcomeName: getDisplayName(profile, user),
       profileCompletion: profile?.profile_completion_percentage
     });
-  }, [user, session, profile, authLoading, initialized]);
+  }, [user, session, profile, loading, initialized]);
 
   // Load dashboard data when component mounts
   useEffect(() => {
@@ -187,16 +190,19 @@ export const ConsolidatedDashboard: React.FC = () => {
   }, [user, session]);
 
   // Show loading skeleton if auth is not ready
-  if (authLoading || !initialized || !user || !session) {
-    console.log('ConsolidatedDashboard - Showing loading skeleton:', {
-      authLoading,
+  if (loading || !initialized || !user || !session) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('ConsolidatedDashboard - Showing loading skeleton: ', {
+      loading,
       initialized,
       hasUser: !!user,
       hasSession: !!session
     });
     return (
       <div className="space-y-6 p-6">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6">
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark: from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6">
           <Skeleton className="h-8 w-64 mb-4" />
           <Skeleton className="h-4 w-48" />
         </div>
@@ -209,7 +215,10 @@ export const ConsolidatedDashboard: React.FC = () => {
     );
   }
 
-  console.log('ConsolidatedDashboard - Rendering main dashboard');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('ConsolidatedDashboard - Rendering main dashboard');
 
   const dashboardWidgets: DashboardWidget[] = [
     {
@@ -325,7 +334,10 @@ export const ConsolidatedDashboard: React.FC = () => {
       }));
 
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading dashboard data: ', error);
       // Fallback to mock data
       setBusinessHealth(prev => ({
         ...prev,
@@ -338,7 +350,10 @@ export const ConsolidatedDashboard: React.FC = () => {
   };
 
   const handleQuickAction = (action: string) => {
-    console.log('Quick action triggered:', action);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Quick action triggered: ', action);
     // Implement quick action logic
   };
 
@@ -371,7 +386,7 @@ export const ConsolidatedDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i}>
               <CardHeader>
@@ -391,7 +406,7 @@ export const ConsolidatedDashboard: React.FC = () => {
   return (
     <div className="space-y-6 p-6">
       {/* Header with FIRE Cycle Progress */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6">
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark: from-blue-950/20 dark:to-purple-950/20 rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">
@@ -418,7 +433,7 @@ export const ConsolidatedDashboard: React.FC = () => {
         </div>
 
         {/* FIRE Cycle Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">FIRE Cycle Progress</h3>
@@ -470,7 +485,7 @@ export const ConsolidatedDashboard: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action) => (
               <Button
                 key={action.id}

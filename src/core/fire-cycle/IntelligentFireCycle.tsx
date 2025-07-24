@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Target, Lightbulb, Map, Play, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { useEnhancedFireCycle } from './enhancedFireCycleStore';
-import type { FireCyclePhase } from '@/domains/fire-cycle/types';
+import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
 
 interface IntelligentFireCycleProps {
   variant?: 'compact' | 'expanded' | 'contextual';
@@ -40,7 +40,10 @@ export const IntelligentFireCycle: React.FC<IntelligentFireCycleProps> = ({
     try {
       await triggerAnalysis();
     } catch (error) {
-      console.error('Analysis failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Analysis failed: ', error);
     } finally {
       setIsAnalyzing(false);
     }
@@ -94,7 +97,7 @@ export const IntelligentFireCycle: React.FC<IntelligentFireCycleProps> = ({
             ) : (
               <button
                 onClick={handleAnalysis}
-                className="p-1 rounded hover:bg-muted transition-colors"
+                className="p-1 rounded hover: bg-muted transition-colors"
                 title="Refresh Analysis"
               >
                 <TrendingUp className="w-4 h-4" />
@@ -138,7 +141,7 @@ export const IntelligentFireCycle: React.FC<IntelligentFireCycleProps> = ({
             </div>
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="ml-2 p-1 rounded hover:bg-muted transition-colors"
+              className="ml-2 p-1 rounded hover: bg-muted transition-colors"
             >
               <CheckCircle className="w-4 h-4 text-primary" />
             </button>
@@ -277,7 +280,7 @@ export const IntelligentFireCycle: React.FC<IntelligentFireCycleProps> = ({
                 <p className="text-sm text-muted-foreground mb-3">{rec.description}</p>
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div>
-                    <span className="font-medium">Effort:</span> {rec.effort}
+                    <span className="font-medium">Effort: </span> {rec.effort}
                   </div>
                   <div>
                     <span className="font-medium">Expected Outcome:</span> {rec.expectedOutcome}
@@ -308,7 +311,7 @@ export const IntelligentFireCycle: React.FC<IntelligentFireCycleProps> = ({
                     )}
                   </div>
                 </div>
-                <button className="ml-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+                <button className="ml-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover: bg-primary/90 transition-colors">
                   Start
                 </button>
               </div>
@@ -322,7 +325,7 @@ export const IntelligentFireCycle: React.FC<IntelligentFireCycleProps> = ({
         <button
           onClick={handleAnalysis}
           disabled={isAnalyzing}
-          className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover: bg-primary/90 transition-colors disabled:opacity-50"
         >
           {isAnalyzing ? 'Analyzing...' : 'Refresh Analysis'}
         </button>

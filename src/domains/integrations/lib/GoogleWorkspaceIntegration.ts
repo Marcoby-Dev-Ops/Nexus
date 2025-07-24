@@ -7,7 +7,7 @@ export class GoogleWorkspaceIntegration extends BaseIntegration {
   name = 'Google Workspace';
   dataFields = ['emails', 'calendarEvents', 'files', 'contacts', 'analytics', 'docs', 'tasks'];
 
-  async fetchProviderData({ userId: _userId, fullSync: _fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
+  async fetchProviderData({ userId: userId, fullSync: fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
     // TODO: Implement actual Google Workspace API fetch logic
     return {
       emails: [],

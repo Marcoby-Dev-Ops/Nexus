@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { Bot, X } from 'lucide-react';
 import { ExecutiveAssistantWidget } from './QuickChat';
 import { useNavigate } from 'react-router-dom';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 /**
  * Floating Quick Chat Trigger Button
@@ -25,7 +25,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [hasUnread, setHasUnread] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const onboardingCompleted = user?.onboardingCompleted ?? false;
 
   // Wire up 'open-executive-assistant' event
@@ -81,7 +81,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
           className={`
             relative w-14 h-14 rounded-full shadow-lg transition-all duration-300 
             ${themeClasses[theme]}
-            ${isOpen ? 'rotate-180' : 'hover:scale-110'}
+            ${isOpen ? 'rotate-180' : 'hover: scale-110'}
             focus:outline-none focus:ring-4 focus:ring-primary/20
           `}
           aria-label={isOpen ? 'Close chat' : 'Open chat'}
@@ -110,7 +110,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
 
         {/* Tooltip */}
         {!isOpen && (
-          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover: opacity-100 transition-opacity">
             <div className="bg-background text-primary-foreground text-sm px-4 py-1 rounded-lg whitespace-nowrap">
               Executive Assistant
               <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900" />
@@ -122,7 +122,7 @@ export const QuickChatTrigger: React.FC<QuickChatTriggerProps> = ({
       {/* Backdrop for mobile */}
       {isOpen && (
         <div 
-          className="fixed inset-0 bg-black/20 z-overlay md:hidden"
+          className="fixed inset-0 bg-black/20 z-overlay md: hidden"
           onClick={() => setIsOpen(false)}
         />
       )}

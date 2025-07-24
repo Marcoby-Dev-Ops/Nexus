@@ -79,13 +79,13 @@ export const Calendar: React.FC<CalendarProps> = ({ selected, onSelect, disabled
   return (
     <div className={cn('p-4 rounded-md border bg-card min-w-[24rem] w-full', className)}>
       <div className="flex items-center justify-between mb-2">
-        <button onClick={handlePrevMonth} className="p-1 rounded hover:bg-accent" aria-label="Previous Month">
+        <button onClick={handlePrevMonth} className="p-1 rounded hover: bg-accent" aria-label="Previous Month">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="font-medium text-sm">
           {new Date(view.year, view.month).toLocaleString(undefined, { month: 'long', year: 'numeric' })}
         </span>
-        <button onClick={handleNextMonth} className="p-1 rounded hover:bg-accent" aria-label="Next Month">
+        <button onClick={handleNextMonth} className="p-1 rounded hover: bg-accent" aria-label="Next Month">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
@@ -116,7 +116,7 @@ export const Calendar: React.FC<CalendarProps> = ({ selected, onSelect, disabled
                           isSelected && 'bg-primary text-primary-foreground',
                           isToday && !isSelected && 'bg-accent text-accent-foreground',
                           isDisabled && 'opacity-50 pointer-events-none',
-                          !isSelected && !isToday && !isDisabled && 'hover:bg-accent hover:text-accent-foreground'
+                          !isSelected && !isToday && !isDisabled && 'hover: bg-accent hover:text-accent-foreground'
                         )}
                         onClick={() => !isDisabled && onSelect?.(date)}
                         disabled={isDisabled}

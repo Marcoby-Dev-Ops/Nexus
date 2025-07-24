@@ -1,8 +1,8 @@
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Button } from '@/shared/components/ui/Button';
 
 export default function EmailNotVerified() {
-  const { signOut } = useAuthContext();
+  const { signOut } = useAuth();
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

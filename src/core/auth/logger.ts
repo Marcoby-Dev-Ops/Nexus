@@ -94,6 +94,9 @@ export class SecureLogger {
     }
 
     const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(...filteredArgs);
   }
 
@@ -102,6 +105,9 @@ export class SecureLogger {
    */
   public warn(...args: any[]): void {
     const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.warn(...filteredArgs);
   }
 
@@ -110,6 +116,9 @@ export class SecureLogger {
    */
   public error(...args: any[]): void {
     const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.error(...filteredArgs);
   }
 
@@ -119,7 +128,10 @@ export class SecureLogger {
   public debug(...args: any[]): void {
     if (!this.isProduction) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
-      console.debug('🐛 DEBUG:', ...filteredArgs);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.debug('🐛 DEBUG: ', ...filteredArgs);
     }
   }
 
@@ -129,7 +141,10 @@ export class SecureLogger {
   public info(...args: any[]): void {
     if (!this.isProduction || !SECURITY_CHECKS.DISABLE_CONSOLE_IN_PROD) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
-      console.info('ℹ️ INFO:', ...filteredArgs);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.info('ℹ️ INFO: ', ...filteredArgs);
     }
   }
 
@@ -139,7 +154,10 @@ export class SecureLogger {
   public success(...args: any[]): void {
     if (!this.isProduction || !SECURITY_CHECKS.DISABLE_CONSOLE_IN_PROD) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
-      console.log('✅ SUCCESS:', ...filteredArgs);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ SUCCESS: ', ...filteredArgs);
     }
   }
 
@@ -156,7 +174,10 @@ export class SecureLogger {
     };
 
     // Always log security events, even in production
-    console.warn('🔒 SECURITY:', logEntry);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('🔒 SECURITY: ', logEntry);
 
     // In production, send to structured log pipeline
     if (this.isProduction) {

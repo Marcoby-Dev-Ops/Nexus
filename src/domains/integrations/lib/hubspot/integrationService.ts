@@ -135,7 +135,7 @@ export class HubSpotIntegrationService {
       }, 0);
 
       const averageCustomerValue = companies.length > 0 ? 
-        totalRevenue / companies.length : 0;
+        totalRevenue / companies.length: 0;
 
       const topCustomers = companies
         .map(company => ({
@@ -150,7 +150,7 @@ export class HubSpotIntegrationService {
           totalDeals: deals.length,
           totalValue: totalDealValue,
           averageDealSize: deals.length > 0 ? totalDealValue / deals.length : 0,
-          conversionRate: deals.length > 0 ? (closedWonDeals.length / deals.length) * 100 : 0,
+          conversionRate: deals.length > 0 ? (closedWonDeals.length / deals.length) * 100: 0,
           dealsByStage
         },
         customerInsights: {
@@ -243,7 +243,7 @@ export class HubSpotIntegrationService {
       };
     } catch (error) {
       const duration = Date.now() - startTime;
-      errors.push(error instanceof Error ? error.message : String(error));
+      errors.push(error instanceof Error ? error.message: String(error));
 
       logger.error({
         userId: this.userId,

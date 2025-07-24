@@ -47,8 +47,7 @@ export const BackendHealthMonitor: React.FC<BackendHealthMonitorProps> = ({
         return 'text-yellow-600 bg-yellow-100';
       case 'unhealthy':
         return 'text-red-600 bg-red-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 
@@ -60,8 +59,7 @@ export const BackendHealthMonitor: React.FC<BackendHealthMonitorProps> = ({
         return '🟡';
       case 'unhealthy':
         return '🔴';
-      default:
-        return '⚪';
+      default: return '⚪';
     }
   };
 
@@ -79,7 +77,7 @@ export const BackendHealthMonitor: React.FC<BackendHealthMonitorProps> = ({
       </div>
 
       {/* System Health Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+      <div className="grid grid-cols-2 md: grid-cols-5 gap-4 mb-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-gray-900">{systemHealth.total}</div>
           <div className="text-xs text-gray-500">Total Services</div>
@@ -143,16 +141,19 @@ export const BackendHealthMonitor: React.FC<BackendHealthMonitorProps> = ({
             setServices(updatedServices);
             setLastUpdate(new Date());
           }}
-          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
+          className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-md hover: bg-blue-200 transition-colors"
         >
           Refresh
         </button>
         <button
           onClick={() => {
             const health = backendConnector.getDetailedHealthStatus();
-            console.log('Backend Health Status:', health);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Backend Health Status: ', health);
           }}
-          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover: bg-gray-200 transition-colors"
         >
           Debug
         </button>

@@ -7,12 +7,11 @@ import App from './App';
 import { ThemeProvider } from '@/shared/components/ui/theme-provider';
 import { ToastProvider } from '@/shared/ui/components/Toast';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/domains/admin/user/hooks/AuthContext';
+import { AuthProvider } from '@/core/auth/AuthProvider';
 
 // Core services initialization
 import { logger } from '@/core/auth/logger';
 import { validateEnvironment } from '@/core/environment';
-import { initializeAuth } from '@/shared/services/authService';
 
 // Callback system
 import { initializeCallbackSystem } from '@/shared/callbacks';
@@ -48,14 +47,15 @@ const initializeCoreServices = async () => {
     // Set global guard
     globalCoreServicesGuard = true;
     
-    // Step 1: Initialize authentication service
-    await initializeAuth();
-    logger.info('Authentication service initialized successfully');
+    // Step 1: Initialize callback system (only if not already initialized)
+    try {
+      await initializeCallbackSystem();
+      logger.info('Callback system initialized successfully');
+    } catch (error) {
+      logger.warn('Callback system already initialized or failed to initialize', { error });
+    }
     
-    // Step 2: Initialize callback system
-    await initializeCallbackSystem();
-    
-    // Step 3: Initialize module registry (core only)
+    // Step 2: Initialize module registry (core only)
     initializeModuleRegistry(); // Only loads core modules, others loaded on-demand
     
     logger.info('All app services initialized successfully');
@@ -116,7 +116,7 @@ console.warn = (...args) => {
 const meta = import.meta as ImportMeta & { env: { PROD: boolean } };
 if (meta.env && meta.env.PROD) {
   // Set production environment for Lit components
-  (window as Window & typeof globalThis).process = { env: { NODE_ENV: 'production' } } as unknown as NodeJS.Process;
+  (window as Window & typeof globalThis).process = { env: { NODEENV: 'production' } } as unknown as NodeJS.Process;
 } else {
   // In development, suppress Lit warnings but keep functionality
   console.warn = (...args) => {

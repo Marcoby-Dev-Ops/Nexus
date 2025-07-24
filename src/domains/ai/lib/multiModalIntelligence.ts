@@ -6,7 +6,7 @@
 
 import { supabase } from '@/core/supabase';
 import { logger } from '@/core/auth/logger';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { n8nService } from '@/domains/automation/services/n8nService';
 
 interface DocumentIntelligence {
@@ -79,7 +79,7 @@ class MultiModalIntelligence {
     
     try {
       // Upload file to Supabase storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { data: uploadData } = await supabase.storage
         .from('documents')
         .upload(`processing/${processingId}`, file);
 
@@ -119,7 +119,10 @@ class MultiModalIntelligence {
 
       return intelligence;
     } catch (error) {
-      console.error('Document processing failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Document processing failed: ', error);
       throw new Error(`Failed to process document: ${error}`);
     }
   }
@@ -161,7 +164,10 @@ class MultiModalIntelligence {
 
       return intelligence;
     } catch (error) {
-      console.error('Voice processing failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Voice processing failed: ', error);
       throw new Error(`Failed to process voice: ${error}`);
     }
   }
@@ -201,7 +207,10 @@ class MultiModalIntelligence {
         anomalies
       };
     } catch (error) {
-      console.error('Image processing failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Image processing failed: ', error);
       throw new Error(`Failed to process image: ${error}`);
     }
   }
@@ -243,7 +252,10 @@ class MultiModalIntelligence {
         predictiveModels
       };
     } catch (error) {
-      console.error('Data analysis failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Data analysis failed: ', error);
       throw new Error(`Failed to analyze data: ${error}`);
     }
   }
@@ -285,7 +297,10 @@ class MultiModalIntelligence {
         automations
       };
     } catch (error) {
-      console.error('Dashboard generation failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Dashboard generation failed: ', error);
       throw new Error(`Failed to generate dashboard: ${error}`);
     }
   }
@@ -310,12 +325,18 @@ class MultiModalIntelligence {
 
   private async extractDocumentData(file: File, type: string): Promise<Record<string, unknown>> {
     // Placeholder for actual data extraction logic (e.g., calling a cloud AI service)
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Extracting data from ${type}:`, file.name);
     return { text: 'Sample extracted text from document.', confidence: 0.95 };
   }
 
   private async extractEntities(text: string, documentType: string): Promise<EntityExtraction[]> {
-    console.log('Extracting entities from text for document type:', documentType);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Extracting entities from text for document type: ', documentType);
     if (!text) return [];
     // Placeholder for entity extraction
     return [{ type: 'person', value: 'John Doe', confidence: 0.9, location: { x: 10, y: 20, width: 50, height: 10 } }];
@@ -326,7 +347,10 @@ class MultiModalIntelligence {
     entities: EntityExtraction[], 
     context?: Record<string, unknown>
   ): Promise<string[]> {
-    console.log('Generating business insights from data:', data, entities, context);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating business insights from data: ', data, entities, context);
     // Placeholder for insights generation
     return ['This report indicates a 15% increase in Q3 sales.'];
   }
@@ -336,6 +360,9 @@ class MultiModalIntelligence {
     entities: EntityExtraction[], 
     type: string
   ): Promise<ActionItem[]> {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Identifying action items for ${type}:`, data, entities);
     // Placeholder for action item identification
     return [{
@@ -349,19 +376,28 @@ class MultiModalIntelligence {
   }
 
   private async speechToText(audioBlob: Blob): Promise<string> {
-    console.log('Converting speech to text for blob size:', audioBlob.size);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Converting speech to text for blob size: ', audioBlob.size);
     // Placeholder for speech-to-text conversion
     return "User said: schedule a meeting with the marketing team for tomorrow at 2 PM to discuss the new campaign.";
   }
 
   private async extractIntent(text: string): Promise<string> {
-    console.log('Extracting intent from:', text);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Extracting intent from: ', text);
     // Placeholder
     return 'schedule_meeting';
   }
 
   private async extractVoiceEntities(text: string): Promise<Record<string, string>> {
-    console.log('Extracting voice entities from:', text);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Extracting voice entities from: ', text);
     // Placeholder
     return {
       topic: 'new campaign',
@@ -371,12 +407,18 @@ class MultiModalIntelligence {
   }
 
   private async analyzeSentiment(text: string): Promise<'positive' | 'neutral' | 'negative'> {
-    console.log('Analyzing sentiment for:', text);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Analyzing sentiment for: ', text);
     return 'neutral';
   }
 
   private async determineUrgency(text: string, intent: string): Promise<'low' | 'medium' | 'high'> {
-    console.log('Determining urgency for:', text, intent);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Determining urgency for: ', text, intent);
     return 'medium';
   }
 
@@ -385,7 +427,10 @@ class MultiModalIntelligence {
     intent: string, 
     entities: Record<string, string>
   ): Promise<ActionItem[]> {
-    console.log('Generating voice action items from:', text, intent, entities);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating voice action items from: ', text, intent, entities);
     if (intent === 'schedule_meeting') {
       return [{
         id: `v_action_${Date.now()}`,
@@ -404,21 +449,33 @@ class MultiModalIntelligence {
     intent: string, 
     context?: Record<string, unknown>
   ): Promise<string> {
-    console.log('Generating response for:', text, intent, context);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating response for: ', text, intent, context);
     return "I've scheduled the meeting with the marketing team for tomorrow at 2 PM.";
   }
 
   private async performOCR(imageFile: File): Promise<string> {
-    console.log('Performing OCR on:', imageFile.name);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Performing OCR on: ', imageFile.name);
     return "Extracted text from image.";
   }
 
   private async detectImageType(imageFile: File): Promise<ImageIntelligence['type']> {
-    console.log('Detecting image type for:', imageFile.name);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Detecting image type for: ', imageFile.name);
     return 'chart';
   }
 
   private async extractDataPoints(imageFile: File, type: string): Promise<DataPoint[]> {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Extracting data points from ${type}:`, imageFile.name);
     return [{ label: 'Q1', value: 100, category: 'Sales' }];
   }
@@ -429,7 +486,10 @@ class MultiModalIntelligence {
   private async storeDocumentIntelligence(intelligence: DocumentIntelligence): Promise<void> {
     const { error } = await supabase.from('document_intelligence').insert([intelligence]);
     if (error) {
-      console.error('Failed to store document intelligence:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to store document intelligence: ', error);
     }
   }
 
@@ -439,7 +499,10 @@ class MultiModalIntelligence {
   private async autoExecuteActions(actionItems: ActionItem[]): Promise<void> {
     for (const item of actionItems) {
       if (item.automatable && item.suggestedWorkflow && item.priority !== 'low') {
-        console.log(`Executing workflow ${item.suggestedWorkflow} for action: ${item.description}`);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Executing workflow ${item.suggestedWorkflow} for action: ${item.description}`);
         await n8nService.triggerWorkflow(item.suggestedWorkflow, { actionItem: item });
       }
     }
@@ -466,67 +529,106 @@ class MultiModalIntelligence {
   }
 
   private async identifyDataPatterns(data: Record<string, unknown>[]): Promise<string[]> {
-    console.log('Identifying patterns in data count:', data.length);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Identifying patterns in data count: ', data.length);
     return ['Trend A', 'Pattern B'];
   }
 
   private async detectDataAnomalies(data: Record<string, unknown>[]): Promise<string[]> {
-    console.log('Detecting anomalies in data count:', data.length);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Detecting anomalies in data count: ', data.length);
     return ['Anomaly X'];
   }
 
   private async generateDataInsights(data: unknown, patterns: string[], anomalies: string[]): Promise<string[]> {
-    console.log('Generating insights from:', { data, patterns, anomalies });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating insights from: ', { data, patterns, anomalies });
     return ['Insight 1'];
   }
 
   private async generateDataRecommendations(insights: string[], patterns: string[]): Promise<string[]> {
-    console.log('Generating recommendations from:', { insights, patterns });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating recommendations from: ', { insights, patterns });
     return ['Recommendation 1'];
   }
 
   private async buildPredictiveModels(data: unknown, patterns: string[]): Promise<unknown[]> {
-    console.log('Building models from:', { data, patterns });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Building models from: ', { data, patterns });
     return [{ model: 'model_A', accuracy: 0.9 }];
   }
 
   private async analyzeDataSource(source: { type: string; data: unknown }): Promise<unknown> {
-    console.log('Analyzing data source:', source.type);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Analyzing data source: ', source.type);
     return { analysis: `Results for ${source.type}` };
   }
 
   private async generateDashboardLayout(analysisResults: unknown[], requirements?: string): Promise<unknown> {
-    console.log('Generating layout from:', { analysisResults, requirements });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating layout from: ', { analysisResults, requirements });
     return { layout: 'grid' };
   }
 
   private async generateDashboardComponents(analysisResults: unknown[], layout: unknown): Promise<unknown[]> {
-    console.log('Generating components from:', { analysisResults, layout });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating components from: ', { analysisResults, layout });
     return [{ component: 'chart', data: 'analysis_A' }];
   }
 
   private consolidateInsights(analysisResults: unknown[]): string[] {
-    console.log('Consolidating insights from:', analysisResults);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Consolidating insights from: ', analysisResults);
     return ['Consolidated Insight'];
   }
 
   private async suggestDashboardAutomations(analysisResults: unknown[]): Promise<string[]> {
-    console.log('Suggesting automations from:', analysisResults);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Suggesting automations from: ', analysisResults);
     return ['Automation Suggestion 1'];
   }
 
   private async generateImageContext(text: string, dataPoints: DataPoint[], context?: unknown): Promise<string> {
-    console.log('Generating image context from:', { text, dataPoints, context });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating image context from: ', { text, dataPoints, context });
     return "Context for the image";
   }
 
   private async generateImageInsights(dataPoints: DataPoint[], context: string): Promise<string[]> {
-    console.log('Generating image insights from:', { dataPoints, context });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Generating image insights from: ', { dataPoints, context });
     return ["Image insight 1"];
   }
 
   private async detectImageAnomalies(dataPoints: DataPoint[], context: string): Promise<string[]> {
-    console.log('Detecting image anomalies from:', { dataPoints, context });
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Detecting image anomalies from: ', { dataPoints, context });
     return ["Image anomaly 1"];
   }
 }

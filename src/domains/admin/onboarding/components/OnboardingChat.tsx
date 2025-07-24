@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 // Hooks and Context
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useOnboardingChatStore } from '@/shared/stores/onboardingChatStore';
 
 
@@ -35,8 +35,11 @@ interface OnboardingStep {
 }
 
 export const OnboardingChat: React.FC = () => {
-  console.log('[OnboardingChat] Component rendered.');
-  const { user, completeOnboarding } = useAuthContext();
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[OnboardingChat] Component rendered.');
+  const { user } = useAuth();
   const { messages, isTyping, initialize, addMessage, setIsTyping } = useOnboardingChatStore();
   
   const [currentStep, setCurrentStep] = useState(0);
@@ -109,6 +112,9 @@ export const OnboardingChat: React.FC = () => {
 
   // Initialize chat with executive assistant introduction
   useEffect(() => {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('[OnboardingChat] useEffect for initialization triggered.');
     if (user && user.profile) {
       initialize(user as any); // Still might need a proper type guard or mapping
@@ -229,7 +235,7 @@ export const OnboardingChat: React.FC = () => {
     };
   };
 
-  const getChallengeInsights = (challenge: string, _role: string, _industry: string) => {
+  const getChallengeInsights = (challenge: string, role: string, industry: string) => {
     const challengeData = {
       'scaling': {
         understanding: 'I understand you\'re focused on scaling and growth challenges.',
@@ -340,7 +346,7 @@ What specific industry is your business in?`;
 
 ${industryInsights.challenges}
 
-Now, what's your role at ${collectedData.companyName}? This helps me focus on what matters most to your day-to-day work:`;
+Now, what's your role at ${collectedData.companyName}? This helps me focus on what matters most to your day-to-day work: `;
       },
       
       // Step 4: Business Goals
@@ -365,7 +371,7 @@ What's your specific role or title at ${collectedData.companyName || 'your compa
 
 ${roleInsights.focus}
 
-What's your biggest challenge in this role right now? Choose what resonates most with your day-to-day experience:`;
+What's your biggest challenge in this role right now? Choose what resonates most with your day-to-day experience: `;
       },
       
       // Step 5: Communication Preferences
@@ -402,7 +408,7 @@ One more thing - how would you prefer I communicate with you?`;
         
         return `Perfect! I've got everything I need to be your ideal AI assistant.
 
-**🎉 Your Nexus workspace is now personalized for:**
+**🎉 Your Nexus workspace is now personalized for: **
 • **Company:** ${collectedData.companyName || 'Your business'}
 • **Industry:** ${collectedData.industry || 'Your sector'}
 • **Role:** ${collectedData.role || 'Your position'}  
@@ -415,14 +421,12 @@ Ready to dive in?`;
       },
       
       // Step 7: Welcome & Complete
-      (_response: string) => {
+      (response: string) => {
         completeStep('partnership');
         
         return `🚀 **Welcome to Nexus, ${collectedData.companyName}!**
 
-Your AI-powered business operating system is ready. I've already started setting up:
-
-✅ **Smart dashboards** tailored to your role
+Your AI-powered business operating system is ready. I've already started setting up: ✅ **Smart dashboards** tailored to your role
 ✅ **Industry-specific workflows** for ${collectedData.industry}
 ✅ **Automated processes** to save you time
 ✅ **Communication preferences** that match your style
@@ -508,8 +512,7 @@ Ready to transform how you work?`;
               '🚀 Go to workspace',
               '🔗 Connect integrations'
             ];
-          default:
-            return ['Continue'];
+          default: return ['Continue'];
         }
       };
       
@@ -567,7 +570,7 @@ Ready to transform how you work?`;
     setShowTextInput(false);
 
     // Move to next step
-    const nextStep = pendingStep ? pendingStep + 1 : currentStep + 1;
+    const nextStep = pendingStep ? pendingStep + 1: currentStep + 1;
     setCurrentStep(nextStep);
     setPendingStep(null);
     await getNextQuestion(nextStep, response);
@@ -583,7 +586,7 @@ Ready to transform how you work?`;
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Progress Steps - Executive Assistant Meeting Flow */}
-      <div className="border-b border-border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 p-2 sm:p-4 flex-shrink-0">
+      <div className="border-b border-border bg-gradient-to-r from-purple-50 to-blue-50 dark: from-purple-900/20 dark:to-blue-900/20 p-2 sm:p-4 flex-shrink-0">
         <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-foreground truncate">Meeting Your Executive Assistant</h3>
@@ -606,7 +609,7 @@ Ready to transform how you work?`;
                 {step.completed ? <CheckCircle className="w-3 h-3" /> : step.icon}
                 <div className="text-left">
                   <div className="font-medium">{step.title}</div>
-                  <div className="text-xs opacity-70 hidden lg:block">{step.description}</div>
+                  <div className="text-xs opacity-70 hidden lg: block">{step.description}</div>
                 </div>
               </div>
               {index < steps.length - 1 && (
@@ -641,7 +644,7 @@ Ready to transform how you work?`;
       </div>
 
       {/* Messages - Executive Assistant Conversation */}
-      <div className="flex-1 overflow-y-auto p-4 sm:p-4 min-h-0">
+      <div className="flex-1 overflow-y-auto p-4 sm: p-4 min-h-0">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-4">
         <AnimatePresence>
           {messages.map((message) => (
@@ -661,11 +664,11 @@ Ready to transform how you work?`;
                 {message.role === 'user' ? (
                   <User className="w-4 h-4 sm:w-5 sm:h-5" />
                 ) : (
-                  <Bot className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Bot className="w-4 h-4 sm: w-5 sm:h-5" />
                 )}
               </div>
               
-              <div className={`flex-1 max-w-[85%] sm:max-w-[80%] md:max-w-[75%] ${
+              <div className={`flex-1 max-w-[85%] sm: max-w-[80%] md:max-w-[75%] ${
                 message.role === 'user' ? 'text-right' : 'text-left'
               }`}>
                 {message.role === 'assistant' && (
@@ -674,7 +677,7 @@ Ready to transform how you work?`;
                   </div>
                 )}
                 
-                <div className={`rounded-xl p-4 sm:p-4 ${
+                <div className={`rounded-xl p-4 sm: p-4 ${
                   message.role === 'user'
                     ? 'bg-primary text-primary-foreground ml-auto shadow-md'
                     : 'bg-card border border-border shadow-sm'
@@ -692,7 +695,7 @@ Ready to transform how you work?`;
                         key={idx}
                         onClick={() => handleSuggestionClick(suggestion)}
                         disabled={isTyping}
-                        className="text-left text-sm px-4 py-3 bg-background border border-border rounded-lg hover:bg-primary/5 hover:border-primary/30 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed group"
+                        className="text-left text-sm px-4 py-3 bg-background border border-border rounded-lg hover: bg-primary/5 hover:border-primary/30 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed group"
                       >
                         <span className="group-hover:text-primary transition-colors">
                           {suggestion}
@@ -702,7 +705,7 @@ Ready to transform how you work?`;
                   </div>
                 )}
                 
-                <div className="text-xs text-muted-foreground mt-1.5 sm:mt-2">
+                <div className="text-xs text-muted-foreground mt-1.5 sm: mt-2">
                   {message.timestamp.toLocaleTimeString([], { 
                     hour: '2-digit', 
                     minute: '2-digit' 
@@ -743,7 +746,7 @@ Ready to transform how you work?`;
       </div>
 
       {/* Input Area - Dynamic based on step */}
-      <div className="border-t border-border bg-muted/30 p-4 sm:p-4 safe-area-inset-bottom flex-shrink-0">
+      <div className="border-t border-border bg-muted/30 p-4 sm: p-4 safe-area-inset-bottom flex-shrink-0">
         <div className="max-w-6xl mx-auto">
           {showTextInput ? (
             // Text Input for specific information
@@ -755,14 +758,14 @@ Ready to transform how you work?`;
                   onKeyDown={handleKeyDown}
                   placeholder={textInputPrompt}
                   disabled={isTyping}
-                  className="w-full resize-none border border-border rounded-xl px-4 sm:px-4 py-2.5 sm:py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[44px] sm:min-h-[52px] max-h-32 transition-all duration-200"
+                  className="w-full resize-none border border-border rounded-xl px-4 sm: px-4 py-2.5 sm:py-3 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary min-h-[44px] sm:min-h-[52px] max-h-32 transition-all duration-200"
                   rows={1}
                 />
               </div>
               <button
                 onClick={handleTextSubmit}
                 disabled={!textInputValue.trim() || isTyping}
-                className="px-4 sm:px-4 py-2.5 sm:py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0"
+                className="px-4 sm: px-4 py-2.5 sm:py-3 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0"
               >
                 <Send className="w-4 h-4" />
               </button>

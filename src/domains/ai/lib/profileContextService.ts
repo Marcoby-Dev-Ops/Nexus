@@ -35,7 +35,7 @@ export class ProfileContextService {
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', userId)
+        .eq('id', userId)
         .single();
 
       if (error || !data) {
@@ -43,20 +43,23 @@ export class ProfileContextService {
       }
 
       return {
-        userId: data.user_id,
-        businessName: data.business_name,
-        industry: data.industry,
-        department: data.department,
-        role: data.role,
-        businessSize: data.business_size,
-        goals: data.goals || [],
-        challenges: data.challenges || [],
-        integrations: data.integrations || [],
-        preferences: data.preferences || {},
-        lastUpdated: data.updated_at
+        userId: data.id,
+        businessName: undefined, // Not available in user_profiles
+        industry: undefined, // Not available in user_profiles
+        department: data.department || undefined,
+        role: data.role || undefined,
+        businessSize: undefined, // Not available in user_profiles
+        goals: [], // Not available in user_profiles
+        challenges: [], // Not available in user_profiles
+        integrations: [], // Not available in user_profiles
+        preferences: data.preferences as Record<string, any> || {},
+        lastUpdated: data.updated_at || new Date().toISOString()
       };
     } catch (error) {
-      console.error('Error fetching user RAG context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching user RAG context: ', error);
       return null;
     }
   }
@@ -90,14 +93,17 @@ export class ProfileContextService {
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
-          user_id: userId,
+          id: userId,
           ...updates,
           updated_at: new Date().toISOString()
         });
 
       return !error;
     } catch (error) {
-      console.error('Error updating user context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating user context: ', error);
       return false;
     }
   }

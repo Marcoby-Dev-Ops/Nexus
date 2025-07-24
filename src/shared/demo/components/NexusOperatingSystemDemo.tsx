@@ -10,19 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { 
-  Brain, 
-  Eye, 
-  Zap, 
-  TrendingUp, 
-  Activity, 
-  Network,
-  Sparkles,
-  Clock,
-  Target,
-  AlertTriangle
-} from 'lucide-react';
-
+import { Brain, Eye, Zap, TrendingUp, Activity, Sparkles, Target, AlertTriangle } from 'lucide-react';
 interface SystemStatus {
   thinking: boolean;
   seeing: boolean;
@@ -277,7 +265,7 @@ export const NexusOperatingSystemDemo: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-5 gap-4">
             <div className="text-center">
               <div className={`text-2xl font-bold ${systemStatus.thinking ? 'text-primary' : 'text-muted-foreground'}`}>
                 {systemStatus.thinking ? '🧠' : '💤'}
@@ -518,7 +506,7 @@ export const NexusOperatingSystemDemo: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
             <div className="text-center p-4 bg-card rounded-lg">
               <div className="text-2xl font-bold text-success">+{systemStatus.wowMoments * 35}%</div>
               <div className="text-sm text-muted-foreground">Revenue Growth</div>

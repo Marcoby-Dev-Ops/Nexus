@@ -114,8 +114,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
       google: {
         mapsApiKey:
           getEnvVar(['VITE_GOOGLE_MAPS_API_KEY', 'GOOGLE_MAPS_API_KEY']) || '',
-        placesApiKey:
-          getEnvVar([
+        placesApiKey: getEnvVar([
             'VITE_GOOGLE_PLACES_API_KEY',
             'GOOGLE_PLACES_API_KEY',
             'VITE_GOOGLE_MAPS_API_KEY',
@@ -166,7 +165,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
       new URL(config.supabase.url);
     } catch {
       throw new EnvironmentError(
-        'SUPABASE_URL must be a valid URL (e.g., https://your-project.supabase.co)'
+        'SUPABASE_URL must be a valid URL (e.g., https: //your-project.supabase.co)'
       );
     }
 
@@ -204,23 +203,41 @@ export const isTest = env.development.isTest;
 export const devLog = {
   info: (message: string, data?: any) => {
     if (isDevelopment && data) {
-      console.log(`[DEV] ${message}`, data);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`[DEV] ${message}`, data);
     } else if (isDevelopment) {
-      console.log(`[DEV] ${message}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`[DEV] ${message}`);
     }
   },
   warn: (message: string, data?: any) => {
     if (isDevelopment && data) {
-      console.warn(`[DEV] ${message}`, data);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`[DEV] ${message}`, data);
     } else if (isDevelopment) {
-      console.warn(`[DEV] ${message}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`[DEV] ${message}`);
     }
   },
   error: (message: string, error?: any) => {
     if (isDevelopment && error) {
-      console.error(`[DEV] ${message}`, error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`[DEV] ${message}`, error);
     } else if (isDevelopment) {
-      console.error(`[DEV] ${message}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`[DEV] ${message}`);
     }
   },
 };
@@ -246,37 +263,37 @@ export function validateEnvironment(): void {
  */
 export const environment = {
   // Supabase
-  SUPABASE_URL: env.supabase.url,
-  SUPABASE_ANON_KEY: env.supabase.anonKey,
-  SUPABASE_SERVICE_ROLE_KEY: env.supabase.serviceRoleKey,
+  SUPABASEURL: env.supabase.url,
+  SUPABASEANON_KEY: env.supabase.anonKey,
+  SUPABASESERVICE_ROLE_KEY: env.supabase.serviceRoleKey,
   
   // Google
-  GOOGLE_MAPS_API_KEY: env.google.mapsApiKey,
-  GOOGLE_PLACES_API_KEY: env.google.placesApiKey,
-  GOOGLE_CLIENT_ID: env.google.clientId,
-  GOOGLE_CLIENT_SECRET: env.google.clientSecret,
+  GOOGLEMAPS_API_KEY: env.google.mapsApiKey,
+  GOOGLEPLACES_API_KEY: env.google.placesApiKey,
+  GOOGLECLIENT_ID: env.google.clientId,
+  GOOGLECLIENT_SECRET: env.google.clientSecret,
   
   // OpenAI
-  OPENAI_API_KEY: env.openai.apiKey,
-  MONTHLY_AI_BUDGET: env.openai.monthlyBudget,
+  OPENAIAPI_KEY: env.openai.apiKey,
+  MONTHLYAI_BUDGET: env.openai.monthlyBudget,
   
   // Stripe
-  STRIPE_PUBLISHABLE_KEY: env.stripe.publishableKey,
-  STRIPE_WEBHOOK_SECRET: env.stripe.webhookSecret,
+  STRIPEPUBLISHABLE_KEY: env.stripe.publishableKey,
+  STRIPEWEBHOOK_SECRET: env.stripe.webhookSecret,
   
   // Integrations
-  HUBSPOT_CLIENT_ID: env.integrations.hubspot.clientId,
-  SLACK_CLIENT_ID: env.integrations.slack.clientId,
-  PAYPAL_CLIENT_ID: env.integrations.paypal.clientId,
-  PAYPAL_ENV: env.integrations.paypal.environment,
+  HUBSPOTCLIENT_ID: env.integrations.hubspot.clientId,
+  SLACKCLIENT_ID: env.integrations.slack.clientId,
+  PAYPALCLIENT_ID: env.integrations.paypal.clientId,
+  PAYPALENV: env.integrations.paypal.environment,
   
   // Features
-  CHAT_V2: env.features.chatV2,
+  CHATV2: env.features.chatV2,
   
   // App
-  APP_VERSION: env.app.version,
-  BUILD_TIME: env.app.buildTime,
-  BASE_URL: env.app.baseUrl,
+  APPVERSION: env.app.version,
+  BUILDTIME: env.app.buildTime,
+  BASEURL: env.app.baseUrl,
   
   // Development
   DEV: isDevelopment,

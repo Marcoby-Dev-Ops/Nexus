@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { billingService } from '@/domains/admin';
 import { quotaService } from '@/shared/services/quotaService';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import type { BillingStatus } from '@/core/types/billing';
 import type { ChatQuotas, UsageTracking } from '@/core/types/licensing';
 import { LoadingSkeleton } from '@/shared/components/patterns/LoadingStates';
@@ -25,7 +25,7 @@ interface BillingDashboardProps {
 }
 
 export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [billingStatus, setBillingStatus] = useState<BillingStatus | null>(null);
   const [quotaStatus, setQuotaStatus] = useState<ChatQuotas | null>(null);
   const [usageData, setUsageData] = useState<UsageTracking | null>(null);
@@ -63,7 +63,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
 
   const handleUpgrade = (plan: 'pro' | 'enterprise') => {
     const paymentLinks = billingService.getPaymentLinks();
-    const url = plan === 'pro' ? paymentLinks.pro : paymentLinks.enterprise;
+    const url = plan === 'pro' ? paymentLinks.pro: paymentLinks.enterprise;
     window.open(url, '_blank');
   };
 
@@ -95,8 +95,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
         return 'bg-secondary/10 text-secondary';
       case 'enterprise':
         return 'bg-warning/10 text-warning';
-      default:
-        return 'bg-muted text-foreground';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -113,7 +112,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
         <LoadingSkeleton />
         <div>
           <div className="h-32 bg-gray-200 rounded-lg mb-4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             <div className="h-48 bg-gray-200 rounded-lg"></div>
             <div className="h-48 bg-gray-200 rounded-lg"></div>
           </div>
@@ -171,7 +170,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-primary">
                 {quotaStatus.max_messages_per_day}
@@ -217,7 +216,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
         {/* Usage Statistics */}
         <Card>
           <CardHeader>

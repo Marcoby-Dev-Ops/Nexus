@@ -3,7 +3,6 @@ import {
   Card, CardContent, CardHeader, CardTitle,
   Button,
   Badge,
-  Separator,
   Alert, AlertDescription
 } from '@/shared/components/ui';
 import { 
@@ -19,10 +18,10 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
-import { googleAnalyticsService } from '@/domains/services/googleAnalyticsService';
+import { googleAnalyticsService } from '@/domains/analytics/lib/googleAnalyticsService';
 import { supabase } from "@/core/supabase";
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
-import { useNotifications } from '@/shared/core/hooks/NotificationContext';
+import { useAuth } from '@/core/auth/AuthProvider';
+import { useNotifications } from '@/core/hooks/NotificationContext';
 
 interface GoogleAnalyticsSetupProps {
   onComplete?: () => void;
@@ -39,7 +38,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
   onComplete, 
   onClose 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
   const [currentStep, setCurrentStep] = useState<'connect' | 'properties' | 'test' | 'complete'>('connect');
   const [isConnecting, setIsConnecting] = useState(false);
@@ -47,14 +46,13 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [testResults, setTestResults] = useState<{ success: boolean; message: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Check if already authenticated
-    setIsAuthenticated(googleAnalyticsService.isAuthenticated());
+    const authenticated = googleAnalyticsService.isAuthenticated();
     
     // If authenticated, skip to properties step
-    if (googleAnalyticsService.isAuthenticated()) {
+    if (authenticated) {
       setCurrentStep('properties');
       loadProperties();
     }
@@ -82,7 +80,6 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
             
             // Check if authentication succeeded
             if (googleAnalyticsService.isAuthenticated()) {
-              setIsAuthenticated(true);
               setCurrentStep('properties');
               await loadProperties();
             } else {
@@ -90,7 +87,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
             }
             setIsConnecting(false);
           }
-        } catch (err) {
+        } catch {
           clearInterval(checkOAuth);
           setError('Authentication failed');
           setIsConnecting(false);
@@ -160,22 +157,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
 
     try {
       // Save to user_integrations table
-      const { error: dbError } = await supabase
-        .from('user_integrations')
-        .upsert({
-          user_id: user.id,
-          integration_id: '59c9e3cd-9e51-4632-a2c1-656450fd7294', // Google Analytics integration UUID
-          status: 'active',
-          configuration: {
-            propertyId: selectedProperty.id,
-            propertyName: selectedProperty.name,
-            websiteUrl: selectedProperty.websiteUrl
-          },
-          metadata: {
-            connectedAt: new Date().toISOString(),
-            propertyDetails: selectedProperty
-          }
-        });
+      
 
       if (dbError) throw dbError;
 
@@ -276,7 +258,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
           {properties.map((property) => (
             <Card 
               key={property.id}
-              className={`cursor-pointer transition-colors hover:bg-muted ${
+              className={`cursor-pointer transition-colors hover: bg-muted ${
                 selectedProperty?.id === property.id ? 'ring-2 ring-primary' : ''
               }`}
               onClick={() => handlePropertySelect(property)}

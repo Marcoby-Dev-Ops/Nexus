@@ -143,8 +143,7 @@ export class WorkflowService {
       case 'analytics_processing':
         return this.executeAnalyticsProcessingWorkflow(workflow, initialData);
       
-      default:
-        throw new Error(`Unknown workflow: ${workflowName}`);
+      default: throw new Error(`Unknown workflow: ${workflowName}`);
     }
   }
 
@@ -208,9 +207,9 @@ export class WorkflowService {
           .from('business_profiles')
           .insert({
             org_id: workflow.userId,
-            name: 'My Company',
+            company_name: 'My Company',
             industry: 'Technology',
-            size: '1-10',
+            company_size: '1-10',
             created_at: new Date().toISOString(),
           })
           .select()
@@ -227,10 +226,10 @@ export class WorkflowService {
         const { error } = await supabase
           .from('integration_status')
           .insert({
-            user_id: workflow.userId,
-            integration_type: 'manual',
+            userid: workflow.userId,
+            integrationtype: 'manual',
             status: 'pending',
-            created_at: new Date().toISOString(),
+            createdat: new Date().toISOString(),
           });
 
         if (error) throw error;
@@ -243,10 +242,10 @@ export class WorkflowService {
         const { error } = await supabase
           .from('analytics_events')
           .insert({
-            user_id: workflow.userId,
-            event_type: 'onboarding_completed',
-            event_data: { workflow: 'user_onboarding' },
-            occurred_at: new Date().toISOString(),
+            userid: workflow.userId,
+            eventtype: 'onboarding_completed',
+            eventdata: { workflow: 'user_onboarding' },
+            occurredat: new Date().toISOString(),
           });
 
         if (error) throw error;
@@ -265,7 +264,7 @@ export class WorkflowService {
 
     } catch (error) {
       workflow.status = 'failed';
-      errors.push(error instanceof Error ? error.message : String(error));
+      errors.push(error instanceof Error ? error.message: String(error));
       
       return {
         success: false,
@@ -335,10 +334,10 @@ export class WorkflowService {
             const { error } = await supabase
               .from('integration_sync_logs')
               .insert({
-                user_integration_id: integration.id,
-                sync_type: 'manual',
+                userintegration_id: integration.id,
+                synctype: 'manual',
                 status: 'completed',
-                created_at: new Date().toISOString(),
+                createdat: new Date().toISOString(),
               });
 
             if (error) throw error;
@@ -355,10 +354,10 @@ export class WorkflowService {
         const { error } = await supabase
           .from('analytics_events')
           .insert({
-            user_id: workflow.userId,
-            event_type: 'data_sync_completed',
-            event_data: { integrationsCount: integrations?.length || 0 },
-            occurred_at: new Date().toISOString(),
+            userid: workflow.userId,
+            eventtype: 'data_sync_completed',
+            eventdata: { integrationsCount: integrations?.length || 0 },
+            occurredat: new Date().toISOString(),
           });
 
         if (error) throw error;
@@ -377,7 +376,7 @@ export class WorkflowService {
 
     } catch (error) {
       workflow.status = 'failed';
-      errors.push(error instanceof Error ? error.message : String(error));
+      errors.push(error instanceof Error ? error.message: String(error));
       
       return {
         success: false,
@@ -434,7 +433,7 @@ export class WorkflowService {
           .single();
 
         if (error && error.code !== 'PGRST116') throw error;
-        return data || { user_id: workflow.userId, health_score: 0 };
+        return data || { userid: workflow.userId, healthscore: 0 };
       });
       completedSteps++;
 
@@ -443,10 +442,10 @@ export class WorkflowService {
         // Simulate health calculation
         const score = Math.floor(Math.random() * 100) + 1;
         return {
-          overall_score: score,
-          financial_health: Math.floor(Math.random() * 100) + 1,
-          operational_efficiency: Math.floor(Math.random() * 100) + 1,
-          market_position: Math.floor(Math.random() * 100) + 1,
+          overallscore: score,
+          financialhealth: Math.floor(Math.random() * 100) + 1,
+          operationalefficiency: Math.floor(Math.random() * 100) + 1,
+          marketposition: Math.floor(Math.random() * 100) + 1,
         };
       });
       completedSteps++;
@@ -456,9 +455,9 @@ export class WorkflowService {
         const { error } = await supabase
           .from('business_health')
           .insert({
-            user_id: workflow.userId,
+            userid: workflow.userId,
             ...healthMetrics,
-            created_at: new Date().toISOString(),
+            createdat: new Date().toISOString(),
           });
 
         if (error) throw error;
@@ -477,7 +476,7 @@ export class WorkflowService {
 
     } catch (error) {
       workflow.status = 'failed';
-      errors.push(error instanceof Error ? error.message : String(error));
+      errors.push(error instanceof Error ? error.message: String(error));
       
       return {
         success: false,
@@ -537,11 +536,11 @@ export class WorkflowService {
         const { data, error } = await supabase
           .from('user_integrations')
           .insert({
-            user_id: workflow.userId,
-            integration_type: config.integrationType,
+            userid: workflow.userId,
+            integrationtype: config.integrationType,
             config: config.config,
             status: 'pending',
-            created_at: new Date().toISOString(),
+            createdat: new Date().toISOString(),
           })
           .select()
           .single();
@@ -560,7 +559,7 @@ export class WorkflowService {
           .from('user_integrations')
           .update({
             status: 'active',
-            updated_at: new Date().toISOString(),
+            updatedat: new Date().toISOString(),
           })
           .eq('id', integration.id);
 
@@ -580,7 +579,7 @@ export class WorkflowService {
 
     } catch (error) {
       workflow.status = 'failed';
-      errors.push(error instanceof Error ? error.message : String(error));
+      errors.push(error instanceof Error ? error.message: String(error));
       
       return {
         success: false,
@@ -660,10 +659,10 @@ export class WorkflowService {
         const { error } = await supabase
           .from('analytics_events')
           .insert({
-            user_id: workflow.userId,
-            event_type: 'analytics_processed',
-            event_data: processedData,
-            occurred_at: new Date().toISOString(),
+            userid: workflow.userId,
+            eventtype: 'analytics_processed',
+            eventdata: processedData,
+            occurredat: new Date().toISOString(),
           });
 
         if (error) throw error;
@@ -682,7 +681,7 @@ export class WorkflowService {
 
     } catch (error) {
       workflow.status = 'failed';
-      errors.push(error instanceof Error ? error.message : String(error));
+      errors.push(error instanceof Error ? error.message: String(error));
       
       return {
         success: false,
@@ -709,7 +708,7 @@ export class WorkflowService {
     } catch (error) {
       step.status = 'failed';
       step.completedAt = new Date();
-      step.error = error instanceof Error ? error.message : String(error);
+      step.error = error instanceof Error ? error.message: String(error);
       throw error;
     }
   }

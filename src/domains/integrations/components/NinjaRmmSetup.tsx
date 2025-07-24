@@ -4,7 +4,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink, Shield, Monitor } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNotifications } from '@/shared/core/hooks/NotificationContext';
 import { NinjaRmmService } from '@/domains/services/ninjaRmmService';
 
@@ -13,7 +13,7 @@ interface NinjaRmmSetupProps {
 }
 
 export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
   
   const [isConnected, setIsConnected] = useState(false);
@@ -43,7 +43,10 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
       setConnectionData(status.config);
       onConnectionChange?.(status.isConnected);
     } catch (err) {
-      console.error('Error checking connection status:', err);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error checking connection status: ', err);
       setError('Failed to check connection status');
     } finally {
       setIsLoading(false);
@@ -64,8 +67,11 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
       window.location.href = authUrl;
       
     } catch (err) {
-      console.error('Error initiating NinjaRMM connection:', err);
-      setError(err instanceof Error ? err.message : 'Failed to connect to NinjaRMM');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error initiating NinjaRMM connection: ', err);
+      setError(err instanceof Error ? err.message: 'Failed to connect to NinjaRMM');
       setIsConnecting(false);
     }
   };
@@ -92,7 +98,7 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
         });
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Connection test failed';
+      const errorMessage = err instanceof Error ? err.message: 'Connection test failed';
       setError(errorMessage);
       addNotification({
         type: 'error',
@@ -124,7 +130,7 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
         setError(result.error || 'Failed to disconnect');
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to disconnect';
+      const errorMessage = err instanceof Error ? err.message: 'Failed to disconnect';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -242,11 +248,11 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
             {connectionData && (
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="font-medium">Scopes:</span> {connectionData.scope || 'monitoring, management'}
+                  <span className="font-medium">Scopes: </span> {connectionData.scope || 'monitoring, management'}
                 </div>
                 {connectionData.expires_at && (
                   <div>
-                    <span className="font-medium">Token expires:</span> {new Date(connectionData.expires_at).toLocaleDateString()}
+                    <span className="font-medium">Token expires: </span> {new Date(connectionData.expires_at).toLocaleDateString()}
                   </div>
                 )}
               </div>

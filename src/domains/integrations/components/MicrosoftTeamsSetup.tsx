@@ -28,7 +28,7 @@ import {
   FileText,
   FolderOpen
 } from 'lucide-react';
-import { microsoftTeamsService } from '@/domains/services/microsoftTeamsService';
+import { microsoftTeamsService } from '@/domains/integrations/lib/microsoftTeamsService';
 
 interface TeamsSetupProps {
   onComplete?: (data: unknown) => void;
@@ -247,7 +247,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
 
     } catch (err) {
       setConnectionStatus('error');
-      setError(err instanceof Error ? err.message : 'Failed to connect to Microsoft Teams');
+      setError(err instanceof Error ? err.message: 'Failed to connect to Microsoft Teams');
     } finally {
       setIsConnecting(false);
     }
@@ -277,8 +277,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 0:
-        return (
+      case 0: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -350,8 +349,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           </div>
         );
 
-      case 1:
-        return (
+      case 1: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -401,8 +399,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           </div>
         );
 
-      case 2:
-        return (
+      case 2: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -456,8 +453,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           </div>
         );
 
-      case 3:
-        return (
+      case 3: return (
           <div className="space-y-6">
             <div className="text-center space-y-4">
               <div className="flex justify-center">
@@ -500,7 +496,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
             <Alert>
               <Zap className="h-4 w-4" />
               <AlertDescription>
-                <strong>Pro Tip:</strong> Combine with Slack integration for comprehensive 
+                <strong>Pro Tip: </strong> Combine with Slack integration for comprehensive 
                 cross-platform communication insights and optimization recommendations.
               </AlertDescription>
             </Alert>
@@ -512,8 +508,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
           </div>
         );
 
-      default:
-        return null;
+      default: return null;
     }
   };
 
@@ -551,7 +546,7 @@ const MicrosoftTeamsSetup: React.FC<TeamsSetupProps> = ({
                     step.current ? 'border-blue-600 bg-primary' : 'border-muted-foreground'
                   }`} />
                 )}
-                <span className="hidden sm:inline">{step.title}</span>
+                <span className="hidden sm: inline">{step.title}</span>
               </div>
               {index < setupSteps.length - 1 && (
                 <div className="w-8 h-px bg-muted" />

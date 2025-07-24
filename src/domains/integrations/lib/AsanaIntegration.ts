@@ -7,7 +7,7 @@ export class AsanaIntegration extends BaseIntegration {
   name = 'Asana';
   dataFields = ['tasks', 'projects', 'users', 'teams', 'stories', 'tags', 'attachments'];
 
-  async fetchProviderData({ userId: _userId, fullSync: _fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
+  async fetchProviderData({ userId: userId, fullSync: fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
     // TODO: Implement actual Asana API fetch logic
     // Return an object with keys matching dataFields and values as arrays of records
     return {

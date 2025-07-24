@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Shield } from 'lucide-react';
-import type { Risk } from '@/domains/fire-cycle/types';
+import type { Risk } from '@/domains/business/fire-cycle/types';
 
 interface RisksCardProps {
   risks: Risk[];
@@ -15,8 +15,7 @@ export const RisksCard: React.FC<RisksCardProps> = ({ risks }) => {
         return 'text-orange-600 bg-orange-100';
       case 'medium':
         return 'text-yellow-600 bg-yellow-100';
-      default:
-        return 'text-green-600 bg-green-100';
+      default: return 'text-green-600 bg-green-100';
     }
   };
 
@@ -26,8 +25,7 @@ export const RisksCard: React.FC<RisksCardProps> = ({ risks }) => {
         return 'text-blue-600 bg-blue-100';
       case 'resolved':
         return 'text-green-600 bg-green-100';
-      default:
-        return 'text-yellow-600 bg-yellow-100';
+      default: return 'text-yellow-600 bg-yellow-100';
     }
   };
 

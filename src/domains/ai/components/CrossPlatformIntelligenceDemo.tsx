@@ -6,7 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Brain, Zap, TrendingUp, AlertTriangle, CheckCircle, ArrowRight, Activity, Database, Network } from 'lucide-react';
+import { Brain, Zap, CheckCircle, ArrowRight, Activity, Database, Network } from 'lucide-react';
 import { 
   Card, CardContent, CardDescription, CardHeader, CardTitle,
   Button,
@@ -191,7 +191,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
 
       {/* Platform Overview */}
       {selectedDemo === 'overview' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           {platformData.map((platform, index) => (
             <Card key={index} className="relative overflow-hidden">
               <CardHeader className="pb-3">
@@ -281,7 +281,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
               <CardContent className="space-y-4">
                 <p className="text-lg font-medium">{currentInsight.description}</p>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Confidence:</span>
+                  <span className="text-sm text-muted-foreground">Confidence: </span>
                   <Progress value={currentInsight.confidence} className="flex-1 max-w-32" />
                   <span className="text-sm font-medium">{currentInsight.confidence}%</span>
                 </div>
@@ -303,7 +303,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
 
           <div className="grid gap-4">
             {aiInsights.map((insight, index) => (
-              <Card key={index} className="hover:shadow-md transition-shadow">
+              <Card key={index} className="hover: shadow-md transition-shadow">
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2 flex-1">
@@ -350,7 +350,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
                 {routingExamples.map((example, index) => (
                   <div key={index} className="border rounded-lg p-4 space-y-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-muted-foreground">User Query:</span>
+                      <span className="text-sm font-medium text-muted-foreground">User Query: </span>
                       <span className="font-medium">"{example.query}"</span>
                     </div>
                     
@@ -365,7 +365,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
                     
                     <div className="bg-background rounded p-4 space-y-2">
                       <div className="text-sm">
-                        <span className="font-medium">AI Reasoning:</span> {example.reasoning}
+                        <span className="font-medium">AI Reasoning: </span> {example.reasoning}
                       </div>
                       <div className="text-sm">
                         <span className="font-medium">Context Used:</span>
@@ -398,7 +398,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid md: grid-cols-2 gap-6">
                 {/* Before */}
                 <div className="space-y-4">
                   <h4 className="font-medium text-destructive">❌ Without Cross-Platform Context</h4>
@@ -444,7 +444,7 @@ export const CrossPlatformIntelligenceDemo: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="bg-primary/5 border border-border rounded-lg p-4">
-                  <h5 className="font-medium mb-2">Enhanced System Prompt Includes:</h5>
+                  <h5 className="font-medium mb-2">Enhanced System Prompt Includes: </h5>
                   <ul className="text-sm space-y-1">
                     <li>• Real-time data from all connected platforms</li>
                     <li>• AI-discovered correlations and patterns</li>

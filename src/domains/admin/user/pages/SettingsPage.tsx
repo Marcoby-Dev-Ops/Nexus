@@ -1,6 +1,5 @@
 import React, { lazy } from 'react';
 import { UnifiedSettingsPage } from '@/shared/components/patterns/UnifiedPages';
-import AccountSettings from '@/domains/admin/user/pages/AccountSettings';
 import SecuritySettings from '@/domains/admin/user/pages/SecuritySettings';
 import NotificationsSettings from '@/domains/admin/user/pages/NotificationsSettings';
 import IntegrationsSettings from '@/domains/admin/user/pages/IntegrationsSettings';
@@ -10,11 +9,11 @@ import AdvancedSettings from '@/domains/admin/user/pages/AdvancedSettings';
 import AIModelSettings from '@/domains/admin/user/pages/AIModelSettings';
 import BillingSettings from '@/domains/admin/user/pages/BillingSettings';
 import { ContinuousImprovementDashboard } from '@/domains/ai/components/ContinuousImprovementDashboard';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 // AI Performance Settings Component
 const AIPerformanceSettings = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
   return (
     <div className="space-y-6">
@@ -38,12 +37,6 @@ const settingsConfig = {
   title: 'Settings',
   description: 'Manage your account and application preferences',
   sections: [
-    {
-      id: 'profile',
-      title: 'Profile & Preferences',
-      description: 'Manage your personal information and preferences',
-      component: AccountSettings,
-    },
     {
       id: 'company-profile',
       title: 'Company Profile',

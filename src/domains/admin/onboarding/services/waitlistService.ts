@@ -15,24 +15,24 @@ export interface WaitlistMetadata {
 export interface WaitlistSignup {
   id?: string;
   email: string;
-  first_name: string;
+  firstname: string;
   company_name?: string;
   referral_code?: string;
   referred_by_code?: string;
   position: number;
   tier: 'early-bird' | 'vip' | 'founder';
-  referral_count: number;
+  referralcount: number;
   metadata?: WaitlistMetadata;
   created_at?: string;
   updated_at?: string;
 }
 
 export interface WaitlistStats {
-  total_signups: number;
-  founder_spots_taken: number;
-  vip_spots_taken: number;
-  early_bird_signups: number;
-  last_signup_at: string | null;
+  totalsignups: number;
+  founderspotstaken: number;
+  vipspotstaken: number;
+  earlybirdsignups: number;
+  lastsignupat: string | null;
 }
 
 export interface SignupResult {
@@ -63,9 +63,9 @@ class WaitlistService {
         .insert([
           {
             email: signupData.email.toLowerCase().trim(),
-            first_name: signupData.firstName.trim(),
-            company_name: signupData.company?.trim() || null,
-            referred_by_code: signupData.referredByCode?.toUpperCase() || null,
+            firstname: signupData.firstName.trim(),
+            companyname: signupData.company?.trim() || null,
+            referredby_code: signupData.referredByCode?.toUpperCase() || null,
           }
         ])
         .select()
@@ -91,16 +91,16 @@ class WaitlistService {
       const waitlistData = {
         id: data.id,
         email: data.email,
-        first_name: data.first_name,
-        company_name: data.company_name,
-        referral_code: data.referral_code,
-        referred_by_code: data.referred_by_code,
+        firstname: data.first_name,
+        companyname: data.company_name,
+        referralcode: data.referral_code,
+        referredby_code: data.referred_by_code,
         position: data.position,
         tier: data.tier as 'early-bird' | 'vip' | 'founder',
-        referral_count: data.referral_count,
+        referralcount: data.referral_count,
         metadata: data.metadata,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
+        createdat: data.created_at,
+        updatedat: data.updated_at,
       };
 
       // Sync to HubSpot CRM for lead management
@@ -157,11 +157,11 @@ class WaitlistService {
       return {
         success: true,
         data: {
-          total_signups: data.total_signups || 0,
-          founder_spots_taken: data.founder_spots_taken || 0,
-          vip_spots_taken: data.vip_spots_taken || 0,
-          early_bird_signups: data.early_bird_signups || 0,
-          last_signup_at: data.last_signup_at
+          totalsignups: data.total_signups || 0,
+          founderspots_taken: data.founder_spots_taken || 0,
+          vipspots_taken: data.vip_spots_taken || 0,
+          earlybird_signups: data.early_bird_signups || 0,
+          lastsignup_at: data.last_signup_at
         }
       };
     } catch (error) {
@@ -196,20 +196,20 @@ class WaitlistService {
         data: {
           id: data.id,
           email: data.email,
-          first_name: data.first_name,
-          company_name: data.company_name,
-          referral_code: data.referral_code,
-          referred_by_code: data.referred_by_code,
+          firstname: data.first_name,
+          companyname: data.company_name,
+          referralcode: data.referral_code,
+          referredby_code: data.referred_by_code,
           position: data.position,
           tier: data.tier as 'early-bird' | 'vip' | 'founder',
-          referral_count: data.referral_count,
+          referralcount: data.referral_count,
           metadata: data.metadata,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          createdat: data.created_at,
+          updatedat: data.updated_at,
         }
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message: String(error);
       logger.error({ err: error }, 'Get signup by referral code error');
       return {
         success: false,
@@ -240,23 +240,23 @@ class WaitlistService {
           signup: {
             id: data.id,
             email: data.email,
-            first_name: data.first_name,
-            company_name: data.company_name,
-            referral_code: data.referral_code,
-            referred_by_code: data.referred_by_code,
+            firstname: data.first_name,
+            companyname: data.company_name,
+            referralcode: data.referral_code,
+            referredby_code: data.referred_by_code,
             position: data.position,
             tier: data.tier as 'early-bird' | 'vip' | 'founder',
-            referral_count: data.referral_count,
+            referralcount: data.referral_count,
             metadata: data.metadata,
-            created_at: data.created_at,
-            updated_at: data.updated_at,
+            createdat: data.created_at,
+            updatedat: data.updated_at,
           }
         };
       }
 
       return { exists: false };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message: String(error);
       logger.error({ err: error }, 'Check email exists service error');
       return { exists: false };
     }
@@ -271,7 +271,7 @@ class WaitlistService {
         .from('waitlist_signups')
         .update({ 
           metadata: metadata,
-          updated_at: new Date().toISOString()
+          updatedat: new Date().toISOString()
         })
         .eq('email', email.toLowerCase().trim())
         .select()
@@ -290,20 +290,20 @@ class WaitlistService {
         data: {
           id: data.id,
           email: data.email,
-          first_name: data.first_name,
-          company_name: data.company_name,
-          referral_code: data.referral_code,
-          referred_by_code: data.referred_by_code,
+          firstname: data.first_name,
+          companyname: data.company_name,
+          referralcode: data.referral_code,
+          referredby_code: data.referred_by_code,
           position: data.position,
           tier: data.tier as 'early-bird' | 'vip' | 'founder',
-          referral_count: data.referral_count,
+          referralcount: data.referral_count,
           metadata: data.metadata,
-          created_at: data.created_at,
-          updated_at: data.updated_at,
+          createdat: data.created_at,
+          updatedat: data.updated_at,
         }
       };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message: String(error);
       logger.error({ err: error }, 'Update metadata service error');
       return {
         success: false,

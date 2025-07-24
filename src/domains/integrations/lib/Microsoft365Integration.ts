@@ -4,6 +4,7 @@ import { syncIntegration } from '@/domains/integrations/lib/syncService';
 import { OAuthTokenService } from '@/domains/integrations/lib/oauthTokenService';
 import { supabase } from '@/core/supabase';
 import { logger } from '@/core/auth/logger';
+import type { AuthType } from './authTypes';
 
 interface MicrosoftGraphResponse<T> {
   value: T[];
@@ -86,11 +87,12 @@ interface Note {
 }
 
 export class Microsoft365Integration extends BaseIntegration {
-  id = 'microsoft-365';
+  id = 'microsoft365';
   name = 'Microsoft 365';
-  dataFields = ['emails', 'calendarEvents', 'files', 'contacts', 'teams', 'tasks', 'notes'];
+  dataFields = ['emails', 'calendar', 'files', 'teams'];
+  authType: AuthType = 'oauth';
 
-  private async getAccessToken(_userId: string): Promise<string> {
+  private async getAccessToken(userId: string): Promise<string> {
     const token = await OAuthTokenService.getTokens('microsoft');
     if (!token?.access_token) {
       throw new Error('No valid Microsoft 365 access token found. Please reconnect your account.');
@@ -99,7 +101,7 @@ export class Microsoft365Integration extends BaseIntegration {
   }
 
   private async makeGraphRequest<T>(endpoint: string, accessToken: string): Promise<T[]> {
-    const baseUrl = 'https://graph.microsoft.com/v1.0';
+    const baseUrl = 'https: //graph.microsoft.com/v1.0';
     const url = `${baseUrl}${endpoint}`;
     
     const response = await fetch(url, {
@@ -172,7 +174,7 @@ export class Microsoft365Integration extends BaseIntegration {
     }
   }
 
-  private async fetchEmails(accessToken: string, _fullSync: boolean): Promise<EmailMessage[]> {
+  private async fetchEmails(accessToken: string, fullSync: boolean): Promise<EmailMessage[]> {
     try {
       const endpoint = '/me/messages?$top=50&$filter=receivedDateTime ge 2024-01-01&$orderby=receivedDateTime desc';
       
@@ -200,7 +202,7 @@ export class Microsoft365Integration extends BaseIntegration {
 
   private async fetchFiles(accessToken: string, fullSync: boolean): Promise<DriveItem[]> {
     try {
-      const endpoint = fullSync 
+      const endpoint = _fullSync 
         ? '/me/drive/root/children?$top=100'
         : '/me/drive/root/children?$top=50&$orderby=lastModifiedDateTime desc';
       
@@ -213,7 +215,7 @@ export class Microsoft365Integration extends BaseIntegration {
 
   private async fetchContacts(accessToken: string, fullSync: boolean): Promise<Contact[]> {
     try {
-      const endpoint = fullSync 
+      const endpoint = _fullSync 
         ? '/me/contacts?$top=100'
         : '/me/contacts?$top=50&$orderby=displayName';
       
@@ -242,7 +244,7 @@ export class Microsoft365Integration extends BaseIntegration {
       }
 
       const channelId = channels[0].id;
-      const endpoint = fullSync 
+      const endpoint = _fullSync 
         ? `/teams/${teamId}/channels/${channelId}/messages?$top=50`
         : `/teams/${teamId}/channels/${channelId}/messages?$top=25&$orderby=createdDateTime desc`;
       
@@ -256,7 +258,7 @@ export class Microsoft365Integration extends BaseIntegration {
   private async fetchTasks(accessToken: string, fullSync: boolean): Promise<Task[]> {
     try {
       // Microsoft To Do tasks
-      const endpoint = fullSync 
+      const endpoint = _fullSync 
         ? '/me/todo/lists/tasks/tasks?$top=100'
         : '/me/todo/lists/tasks/tasks?$top=50&$filter=status ne \'completed\'';
       
@@ -284,7 +286,7 @@ export class Microsoft365Integration extends BaseIntegration {
       }
 
       const sectionId = sections[0].id;
-      const endpoint = fullSync 
+      const endpoint = _fullSync 
         ? `/me/onenote/sections/${sectionId}/pages?$top=100`
         : `/me/onenote/sections/${sectionId}/pages?$top=50&$orderby=lastModifiedDateTime desc`;
       
@@ -305,7 +307,7 @@ export class Microsoft365Integration extends BaseIntegration {
       await this.updateSyncMetadata(options.userId, {
         lastSync: new Date().toISOString(),
         syncType: options.fullSync ? 'full' : 'incremental',
-        dataPoints: Object.values(result.data || {}).reduce((sum: number, items: any[]) => sum + (Array.isArray(items) ? items.length : 0), 0)
+        dataPoints: Object.values(result).reduce((sum: number, items: any[]) => sum + (Array.isArray(items) ? items.length: 0), 0)
       });
 
       logger.info({ userId: options.userId, result }, 'Microsoft 365 sync completed');
@@ -321,11 +323,12 @@ export class Microsoft365Integration extends BaseIntegration {
       await supabase
         .from('user_integrations')
         .upsert({
-          user_id: userId,
-          integration_id: this.id,
-          last_sync: metadata.lastSync,
-          sync_metadata: metadata,
-          updated_at: new Date().toISOString()
+          userid: userId,
+          integrationid: this.id,
+          integrationname: this.name,
+          integrationtype: 'oauth',
+          lastsync_at: metadata.lastSync,
+          updatedat: new Date().toISOString()
         }, { onConflict: 'user_id,integration_id' });
     } catch (error) {
       logger.error({ userId, error }, 'Failed to update sync metadata');
@@ -359,19 +362,88 @@ export class Microsoft365Integration extends BaseIntegration {
       // Get sync metadata
       const { data: integration } = await supabase
         .from('user_integrations')
-        .select('last_sync')
+        .select('last_sync_at')
         .eq('user_id', userId)
         .eq('integration_id', this.id)
         .single();
 
       return {
         connected: true,
-        lastSync: integration?.last_sync,
+        lastSync: integration?.last_sync_at || undefined,
         dataPoints: 0 // Will be calculated from actual data
       };
     } catch (error) {
       logger.error({ userId, error }, 'Failed to get Microsoft 365 connection status');
       return { connected: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
+  /**
+   * Test the integration with a simple API call
+   */
+  async testIntegration(userId: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: any;
+    error?: string;
+  }> {
+    try {
+      logger.info({ userId }, 'Testing Microsoft 365 integration');
+      
+      // Test connection
+      const connected = await this.testConnection(userId);
+      if (!connected) {
+        return {
+          success: false,
+          message: 'Connection test failed',
+          error: 'Unable to connect to Microsoft Graph API'
+        };
+      }
+
+      // Test a simple API call
+      const accessToken = await this.getAccessToken(userId);
+      if (!accessToken) {
+        return {
+          success: false,
+          message: 'No valid access token',
+          error: 'OAuth token not found or expired'
+        };
+      }
+
+      // Test user info endpoint
+      const userInfo = await this.makeGraphRequest<any>('/me', accessToken);
+      
+      if (userInfo.length === 0) {
+        return {
+          success: false,
+          message: 'User info not accessible',
+          error: 'Insufficient permissions or API error'
+        };
+      }
+
+      const user = userInfo[0];
+      
+      return {
+        success: true,
+        message: 'Microsoft 365 integration is working correctly',
+        data: {
+          user: {
+            id: user.id,
+            displayName: user.displayName,
+            mail: user.mail,
+            userPrincipalName: user.userPrincipalName
+          },
+          scopes: user.scopes || [],
+          lastTested: new Date().toISOString()
+        }
+      };
+    } catch (error) {
+      logger.error({ userId, error }, 'Microsoft 365 integration test failed');
+      return {
+        success: false,
+        message: 'Integration test failed',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
     }
   }
 } 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useOnboarding } from '@/domains/admin/onboarding/hooks/useOnboarding';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
@@ -18,7 +18,7 @@ const companyProfileSchema = z.object({
   size: z.string().min(1, 'Company size is required'),
   website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
   description: z.string().max(500, 'Description must be 500 characters or less').optional(),
-  client_base_description: z.string().max(500, 'Client description must be 500 characters or less').optional(),
+  clientbase_description: z.string().max(500, 'Client description must be 500 characters or less').optional(),
 });
 
 type CompanyProfileFormData = z.infer<typeof companyProfileSchema>;
@@ -27,7 +27,7 @@ const industryOptions = ["Technology", "Healthcare", "Finance", "Retail", "Manuf
 const sizeOptions = ["1-10 employees", "11-50 employees", "51-200 employees", "201-500 employees", "501-1000 employees", "1000+ employees"];
 
 export function CompanyProfilePage() {
-  const { user, updateCompany } = useAuthContext();
+  const { user, updateCompany } = useAuth();
   const { completeStep } = useOnboarding();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ export function CompanyProfilePage() {
       size: '',
       website: '',
       description: '',
-      client_base_description: '',
+      clientbase_description: '',
     }
   });
 
@@ -52,7 +52,7 @@ export function CompanyProfilePage() {
         size: user.company.size || '',
         website: user.company.website || '',
         description: user.company.description || '',
-        client_base_description: user.company.client_base_description || '',
+        clientbase_description: user.company.client_base_description || '',
       });
     }
   }, [user, reset]);
@@ -67,7 +67,10 @@ export function CompanyProfilePage() {
       });
       navigate('/dashboard');
     } catch (error) {
-      console.error("Failed to update company profile:", error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error("Failed to update company profile: ", error);
       toast({
         title: 'Error',
         description: 'Failed to save your information. Please try again.',
@@ -87,7 +90,7 @@ export function CompanyProfilePage() {
         </CardHeader>
         <form onSubmit={handleSubmit(onSubmit)}>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium mb-1">Company Name</label>
                 <Controller
@@ -102,7 +105,7 @@ export function CompanyProfilePage() {
                 <Controller
                   name="website"
                   control={control}
-                  render={({ field }) => <Input id="website" {...field} placeholder="https://www.example.com" />}
+                  render={({ field }) => <Input id="website" {...field} placeholder="https: //www.example.com" />}
                 />
                 {errors.website && <p className="text-sm text-destructive mt-1">{errors.website.message}</p>}
               </div>

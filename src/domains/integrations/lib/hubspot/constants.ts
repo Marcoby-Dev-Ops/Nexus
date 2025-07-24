@@ -1,8 +1,7 @@
 /**
  * HubSpot OAuth Scopes Constants
  * 
- * Following OAuth 2.0 best practices:
- * - Minimal required scopes for initial connection
+ * Following OAuth 2.0 best practices: * - Minimal required scopes for initial connection
  * - Progressive scope requests based on user needs
  * - Clear separation between read/write permissions
  */
@@ -91,14 +90,14 @@ export const HUBSPOT_LEGACY_SCOPES = [
 
 // HubSpot API endpoints
 export const HUBSPOT_API_ENDPOINTS = {
-  AUTH_URL: 'https://app.hubspot.com/oauth/authorize',
-  TOKEN_URL: 'https://api.hubapi.com/oauth/v1/token',
-  API_BASE_URL: 'https://api.hubapi.com',
-  CONTACTS_ENDPOINT: '/crm/v3/objects/contacts',
-  COMPANIES_ENDPOINT: '/crm/v3/objects/companies',
-  DEALS_ENDPOINT: '/crm/v3/objects/deals',
-  LISTS_ENDPOINT: '/crm/v3/lists',
-  PIPELINES_ENDPOINT: '/crm/v3/pipelines'
+  AUTHURL: 'https://app.hubspot.com/oauth/authorize',
+  TOKENURL: 'https://api.hubapi.com/oauth/v1/token',
+  APIBASE_URL: 'https://api.hubapi.com',
+  CONTACTSENDPOINT: '/crm/v3/objects/contacts',
+  COMPANIESENDPOINT: '/crm/v3/objects/companies',
+  DEALSENDPOINT: '/crm/v3/objects/deals',
+  LISTSENDPOINT: '/crm/v3/lists',
+  PIPELINESENDPOINT: '/crm/v3/pipelines'
 } as const;
 
 // HubSpot integration metadata

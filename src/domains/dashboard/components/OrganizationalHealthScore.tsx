@@ -28,7 +28,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
 }) => {
   const [viewMode, setViewMode] = useState<'simple' | 'comprehensive'>('simple');
   
-  const { healthData, loading, error, refresh, isLiveDataActive, dataCompletion, connectedCount, totalCount } = useLiveBusinessHealth();
+  const { healthData, loading, error, refresh, isLiveDataActive, connectedCount, totalCount } = useLiveBusinessHealth();
   const quickHealth = useQuickBusinessHealth();
   
   const overallScore = healthData?.overallScore || 0;
@@ -85,15 +85,14 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
         return <TrendingUp className="h-3 w-3 text-emerald-500" />;
       case 'down':
         return <TrendingDown className="h-3 w-3 text-destructive" />;
-      default:
-        return <Minus className="h-3 w-3 text-amber-500" />;
+      default: return <Minus className="h-3 w-3 text-amber-500" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'excellent':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800';
+        return 'bg-emerald-100 text-emerald-800 border-emerald-200 dark: bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800';
       case 'good':
         return 'bg-primary/10 text-primary border-border dark:bg-primary/20/20 dark:text-primary dark:border-primary/80';
       case 'warning':
@@ -104,9 +103,9 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
   };
 
   const getScoreColor = () => {
-    if (overallScore >= 90) return 'text-success dark:text-emerald-400';
-    if (overallScore >= 75) return 'text-primary dark:text-primary';
-    if (overallScore >= 60) return 'text-warning dark:text-amber-400';
+    if (overallScore >= 90) return 'text-success dark: text-emerald-400';
+    if (overallScore >= 75) return 'text-primary dark: text-primary';
+    if (overallScore >= 60) return 'text-warning dark: text-amber-400';
     return 'text-destructive dark:text-destructive';
   };
 
@@ -147,7 +146,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-foreground dark:text-primary-foreground">
+            <h2 className="text-2xl font-bold text-foreground dark: text-primary-foreground">
               Business Health
             </h2>
             <p className="text-sm text-muted-foreground dark:text-muted-foreground mt-1">
@@ -214,7 +213,7 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
         {viewMode === 'simple' ? (
           <>
             {/* Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
               {healthMetrics.map((metric, index) => (
                 <div
                   key={index}
@@ -222,14 +221,14 @@ const OrganizationalHealthScore: React.FC<OrganizationalHealthScoreProps> = ({
                   className="rounded-lg p-4 border border-border/50"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-muted-foreground dark:text-muted-foreground">
+                    <span className="text-sm font-medium text-muted-foreground dark: text-muted-foreground">
                       {metric.label}
                     </span>
                     {getTrendIcon(metric.trend)}
                   </div>
                   
                   <div className="space-y-1">
-                    <div className="text-lg font-bold text-foreground dark:text-primary-foreground">
+                    <div className="text-lg font-bold text-foreground dark: text-primary-foreground">
                       {metric.value}
                     </div>
                     <div className="flex items-center justify-between">

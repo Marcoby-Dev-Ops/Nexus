@@ -25,7 +25,10 @@ import {
 import GoogleWorkspaceSetup from '@/domains/integrations/components/GoogleWorkspaceSetup';
 import MicrosoftTeamsSetup from '@/domains/integrations/components/MicrosoftTeamsSetup';
 import { HubSpotSetup } from '@/domains/integrations/components/HubSpotSetup';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import PayPalSetup from '@/domains/integrations/components/PayPalSetup';
+import GoogleAnalyticsSetup from '@/domains/integrations/components/GoogleAnalyticsSetup';
+import SlackSetup from '@/domains/integrations/components/SlackSetup';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 
 interface MarketplaceIntegration {
@@ -83,17 +86,7 @@ const marketplaceIntegrations: MarketplaceIntegration[] = [
     setupTime: '3 minutes',
     features: ['File Access', 'Storage Analytics', 'Team Collaboration', 'Version History']
   },
-  {
-    id: 'slack',
-    name: 'Slack',
-    provider: 'Slack',
-    description: 'Integrate with your Slack workspace for communication insights and automation.',
-    category: 'Communication',
-    icon: <MessageSquare className="h-8 w-8 text-purple-600" />,
-    difficulty: 'Medium',
-    setupTime: '10 minutes',
-    features: ['Message Analytics', 'Channel Insights', 'Bot Integration', 'Workflow Automation']
-  },
+
   {
     id: 'salesforce',
     name: 'Salesforce',
@@ -117,6 +110,45 @@ const marketplaceIntegrations: MarketplaceIntegration[] = [
     features: ['Marketing Analytics', 'Lead Tracking', 'Email Campaigns', 'Customer Journey'],
     isPopular: true,
     setupComponent: HubSpotSetup
+  },
+  {
+    id: 'paypal',
+    name: 'PayPal',
+    provider: 'PayPal',
+    description: 'Connect your PayPal account to manage transactions and track payment history.',
+    category: 'Finance',
+    icon: <Zap className="h-8 w-8 text-green-600" />,
+    difficulty: 'Easy',
+    setupTime: '5 minutes',
+    features: ['Transaction History', 'Payment Analytics', 'Invoice Management', 'Webhook Integration'],
+    isPopular: true,
+    setupComponent: PayPalSetup
+  },
+  {
+    id: 'google-analytics',
+    name: 'Google Analytics',
+    provider: 'Google',
+    description: 'Connect your Google Analytics account to track website traffic, user behavior, and conversion data.',
+    category: 'Analytics',
+    icon: <BarChart3 className="h-8 w-8 text-blue-600" />,
+    difficulty: 'Easy',
+    setupTime: '5 minutes',
+    features: ['Real-time Analytics', 'Event Tracking', 'Custom Reports', 'User Segmentation'],
+    isPopular: true,
+    setupComponent: GoogleAnalyticsSetup
+  },
+  {
+    id: 'slack',
+    name: 'Slack',
+    provider: 'Slack',
+    description: 'Integrate with your Slack workspace for communication insights and automation.',
+    category: 'Communication',
+    icon: <MessageSquare className="h-8 w-8 text-purple-600" />,
+    difficulty: 'Medium',
+    setupTime: '10 minutes',
+    features: ['Message Analytics', 'Channel Insights', 'Bot Integration', 'Workflow Automation'],
+    isPopular: true,
+    setupComponent: SlackSetup
   }
 ];
 
@@ -124,7 +156,7 @@ const categories = ['All', 'Productivity', 'Storage', 'Communication', 'CRM', 'A
 
 const IntegrationMarketplacePage: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -146,14 +178,17 @@ const IntegrationMarketplacePage: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data: userIntegrations, error } = await supabase
+      const { error } = await supabase
         .from('user_integrations')
         .select('integration_name, status')
         .eq('user_id', user?.id || '')
         .eq('status', 'active');
 
       if (error) {
-        console.error('Error fetching connected integrations:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching connected integrations: ', error);
         setConnectedIntegrations([]);
       } else {
         const connectedNames = (userIntegrations || []).map(integration => 
@@ -162,7 +197,10 @@ const IntegrationMarketplacePage: React.FC = () => {
         setConnectedIntegrations(connectedNames);
       }
     } catch (error) {
-      console.error('Error fetching connected integrations:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching connected integrations: ', error);
       setConnectedIntegrations([]);
     } finally {
       setLoading(false);
@@ -215,7 +253,7 @@ const IntegrationMarketplacePage: React.FC = () => {
     }
   };
 
-  const handleSetupComplete = (_integrationData: any) => {
+  const handleSetupComplete = (___integrationData: any) => {
     setShowSetup(false);
     setSelectedIntegration(null);
     // Refresh connected integrations
@@ -293,7 +331,7 @@ const IntegrationMarketplacePage: React.FC = () => {
               variant="ghost" 
               size="sm" 
               onClick={() => navigate('/integrations')}
-              className="h-auto p-1 hover:bg-transparent"
+              className="h-auto p-1 hover: bg-transparent"
             >
               Integrations
             </Button>
@@ -367,13 +405,13 @@ const IntegrationMarketplacePage: React.FC = () => {
             <Star className="h-5 w-5 text-yellow-500" />
             <h2 className="text-xl font-semibold">Popular Integrations</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
             {filteredIntegrations
               .filter(integration => integration.isPopular)
               .map((integration) => (
                 <Card 
                   key={integration.id} 
-                  className={`hover:shadow-md transition-shadow cursor-pointer ${
+                  className={`hover: shadow-md transition-shadow cursor-pointer ${
                     integration.isConnected ? 'border-green-200 bg-green-50/50' : ''
                   }`}
                   onClick={() => handleIntegrationSelect(integration)}
@@ -427,11 +465,11 @@ const IntegrationMarketplacePage: React.FC = () => {
             </div>
           ) : (
             <div className={viewMode === 'grid' 
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+              ? "grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4"
               : "space-y-4"
             }>
               {filteredIntegrations.map((integration) => {
-                const cardClassName = `hover:shadow-md transition-shadow cursor-pointer ${
+                const cardClassName = `hover: shadow-md transition-shadow cursor-pointer ${
                   viewMode === 'list' ? 'flex flex-row' : ''
                 } ${
                   integration.isConnected ? 'border-green-200 bg-green-50/50' : ''

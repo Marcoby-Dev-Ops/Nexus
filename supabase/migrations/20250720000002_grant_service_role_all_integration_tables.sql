@@ -2,45 +2,174 @@
 -- This ensures n8n workflows can access all necessary tables for data sync and management
 
 -- Core integration tables
-GRANT ALL PRIVILEGES ON TABLE public.user_integrations TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.integrations TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_integrations') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.user_integrations TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integrations') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integrations TO service_role';
+    END IF;
+END $$;
 
 -- Integration data tables
-GRANT ALL PRIVILEGES ON TABLE public.integration_data TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.integration_ninjarmm_device_data TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.integration_sync_logs TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.integration_webhooks TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.integration_data_mappings TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.integration_sync_status TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integration_data') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integration_data TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integration_ninjarmm_device_data') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integration_ninjarmm_device_data TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integration_sync_logs') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integration_sync_logs TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integration_webhooks') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integration_webhooks TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integration_data_mappings') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integration_data_mappings TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integration_sync_status') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integration_sync_status TO service_role';
+    END IF;
+END $$;
 
 -- n8n workflow configuration tables
-GRANT ALL PRIVILEGES ON TABLE public.n8n_configurations TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.n8n_workflow_configs TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'n8n_configurations') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.n8n_configurations TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'n8n_workflow_configs') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.n8n_workflow_configs TO service_role';
+    END IF;
+END $$;
 
 -- Analytics and monitoring tables that n8n might need
-GRANT ALL PRIVILEGES ON TABLE public.analytics_events TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.model_usage TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'analytics_events') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.analytics_events TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'model_usage') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.model_usage TO service_role';
+    END IF;
+END $$;
 
 -- User and company tables for context
-GRANT ALL PRIVILEGES ON TABLE public.user_profiles TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.companies TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_profiles') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.user_profiles TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'companies') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.companies TO service_role';
+    END IF;
+END $$;
 
 -- AI-related tables that might be used by n8n workflows
-GRANT ALL PRIVILEGES ON TABLE public.ai_agents TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.ai_insights TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.ai_action_card_templates TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ai_agents') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.ai_agents TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ai_insights') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.ai_insights TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ai_action_card_templates') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.ai_action_card_templates TO service_role';
+    END IF;
+END $$;
 
 -- Business health and KPI tables
-GRANT ALL PRIVILEGES ON TABLE public.business_health TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.ai_kpi_snapshots TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'business_health') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.business_health TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'ai_kpi_snapshots') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.ai_kpi_snapshots TO service_role';
+    END IF;
+END $$;
 
 -- Billing and usage tracking
-GRANT ALL PRIVILEGES ON TABLE public.user_billing_plans TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.billing_plans TO service_role;
-GRANT ALL PRIVILEGES ON TABLE public.chat_usage_tracking TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_billing_plans') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.user_billing_plans TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'billing_plans') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.billing_plans TO service_role';
+    END IF;
+END $$;
+
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'chat_usage_tracking') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.chat_usage_tracking TO service_role';
+    END IF;
+END $$;
 
 -- Integration status and configuration
-GRANT ALL PRIVILEGES ON TABLE public.integration_status TO service_role;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'integration_status') THEN
+        EXECUTE 'GRANT ALL PRIVILEGES ON TABLE public.integration_status TO service_role';
+    END IF;
+END $$;
 
 -- Legacy integration tables (if they exist)
 DO $$

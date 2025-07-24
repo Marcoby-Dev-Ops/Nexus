@@ -6,40 +6,38 @@
  * Thought Model Documentation (Marcoby Nexus Thought Framework):
  *
  * - id: Unique identifier for the thought.
- * - user_id: The user who owns or is responsible for the thought.
- * - created_by: The user who created the thought (may differ from user_id if created on behalf of another).
- * - updated_by: The user who last updated the thought.
- * - creation_date: When the thought was first created (immutable).
- * - last_updated: When the thought was last updated.
+ * - userid: The user who owns or is responsible for the thought.
+ * - createdby: The user who created the thought (may differ from user_id if created on behalf of another).
+ * - updatedby: The user who last updated the thought.
+ * - creationdate: When the thought was first created (immutable).
+ * - lastupdated: When the thought was last updated.
  *
  * Content and Core Properties:
  * - content: The main text or description of the thought.
  * - category: The type of thought (idea, task, reminder, update).
  * - status: The current lifecycle state (future_goals, concept, in_progress, completed, etc.).
  *
- * Classification:
- * - personal_or_professional: Whether the thought is personal or professional.
- * - main_sub_categories: Sub-categories for further classification.
+ * Classification: * - personalorprofessional: Whether the thought is personal or professional.
+ * - mainsubcategories: Sub-categories for further classification.
  * - initiative: Whether this thought is an initiative (true/false).
  * - impact: Qualitative or quantitative impact assessment.
  *
  * Workflow and Relationships:
- * - parent_idea_id: If this thought is a child of another idea.
- * - workflow_stage: The current workflow stage (create_idea, update_idea, implement_idea, achievement).
+ * - parentideaid: If this thought is a child of another idea.
+ * - workflowstage: The current workflow stage (create_idea, update_idea, implement_idea, achievement).
  *
  * Workspace Integration Fields (now fully implemented in backend):
  * - department: Department or team associated with the thought.
  * - priority: Priority level (low, medium, high).
- * - estimated_effort: Estimated effort required (string, e.g., '2h', '1d').
- * - ai_clarification_data: Additional AI-generated clarifications or metadata.
+ * - estimatedeffort: Estimated effort required (string, e.g., '2h', '1d').
+ * - aiclarification_data: Additional AI-generated clarifications or metadata.
  *
  * AI and Interaction Metadata:
- * - ai_insights: AI-generated insights, suggestions, or analysis.
- * - interaction_method: How the thought was captured (text, speech, copy_paste, upload).
+ * - aiinsights: AI-generated insights, suggestions, or analysis.
+ * - interactionmethod: How the thought was captured (text, speech, copy_paste, upload).
  *
- * Timestamps:
- * - created_at: Timestamp when the thought was created (for DB sync).
- * - updated_at: Timestamp when the thought was last updated (for DB sync).
+ * Timestamps: * - createdat: Timestamp when the thought was created (for DB sync).
+ * - updatedat: Timestamp when the thought was last updated (for DB sync).
  *
  *
  * Allowed Status Values (ThoughtStatus):
@@ -94,11 +92,11 @@ export type AIInteractionType = 'insight' | 'suggestion' | 'reminder' | 'analysi
 // Main Thought interface matching database schema
 export interface Thought {
   id: string;
-  user_id: string;
+  userid: string;
   created_by?: string;
   updated_by?: string;
-  creation_date: Date;
-  last_updated: Date;
+  creationdate: Date;
+  lastupdated: Date;
   
   // Content and core properties
   content: string;
@@ -107,7 +105,7 @@ export interface Thought {
   
   // Classification
   personal_or_professional?: PersonalOrProfessional;
-  main_sub_categories: string[];
+  mainsubcategories: string[];
   initiative: boolean;
   impact?: string;
   
@@ -122,33 +120,36 @@ export interface Thought {
   ai_clarification_data?: Record<string, unknown>;
   
   // AI and interaction metadata
-  ai_insights: Record<string, unknown>;
+  aiinsights: Record<string, unknown>;
   interaction_method?: InteractionMethod;
   
+  // Company association
+  company_id?: string;
+  
   // Timestamps
-  created_at: Date;
-  updated_at: Date;
+  createdat: Date;
+  updatedat: Date;
 }
 
 // Thought relationship interface
 export interface ThoughtRelationship {
   id: string;
-  source_thought_id: string;
-  target_thought_id: string;
-  relationship_type: RelationshipType;
-  created_at: Date;
+  sourcethoughtid: string;
+  targetthoughtid: string;
+  relationshiptype: RelationshipType;
+  createdat: Date;
 }
 
 // AI interaction interface
 export interface AIInteraction {
   id: string;
-  user_id: string;
+  userid: string;
   thought_id?: string;
   prompt_text?: string;
   ai_response?: string;
-  interaction_type: AIInteractionType;
-  context_data: Record<string, unknown>;
-  created_at: Date;
+  interactiontype: AIInteractionType;
+  contextdata: Record<string, unknown>;
+  createdat: Date;
 }
 
 // Create thought request (for API calls)
@@ -180,25 +181,25 @@ export interface UpdateThoughtRequest extends Partial<CreateThoughtRequest> {
 export interface ThoughtWithRelationships extends Thought {
   children: Thought[];
   parents: Thought[];
-  related_thoughts: Thought[];
-  ai_interactions: AIInteraction[];
+  relatedthoughts: Thought[];
+  aiinteractions: AIInteraction[];
 }
 
 // Workflow progress tracking
 export interface WorkflowProgress {
-  idea_id: string;
-  current_stage: WorkflowStage;
-  completed_stages: WorkflowStage[];
-  next_actions: string[];
-  progress_percentage: number;
+  ideaid: string;
+  currentstage: WorkflowStage;
+  completedstages: WorkflowStage[];
+  nextactions: string[];
+  progresspercentage: number;
 }
 
 // AI insights structure
 export interface AIInsights {
   suggestions: string[];
-  next_steps: string[];
-  related_ideas: string[];
-  potential_tasks: string[];
+  nextsteps: string[];
+  relatedideas: string[];
+  potentialtasks: string[];
   reminders: string[];
   risk_assessment?: string;
   priority_score?: number;
@@ -207,29 +208,29 @@ export interface AIInsights {
 // Interactive prompt data
 export interface InteractivePrompt {
   id: string;
-  user_id: string;
-  prompt_text: string;
-  prompt_type: 'question' | 'suggestion' | 'reminder' | 'insight';
+  userid: string;
+  prompttext: string;
+  prompttype: 'question' | 'suggestion' | 'reminder' | 'insight';
   context: {
-    related_thoughts: string[];
+    relatedthoughts: string[];
     trigger_event?: string;
     urgency_level?: 'low' | 'medium' | 'high';
   };
   response_options?: string[];
-  auto_generated: boolean;
-  created_at: Date;
+  autogenerated: boolean;
+  createdat: Date;
 }
 
 // Thought analytics and metrics
 export interface ThoughtMetrics {
-  total_thoughts: number;
-  thoughts_by_category: Record<ThoughtCategory, number>;
-  thoughts_by_status: Record<ThoughtStatus, number>;
-  completion_rate: number;
-  active_ideas: number;
-  pending_tasks: number;
-  overdue_items: number;
-  productivity_score: number;
+  totalthoughts: number;
+  thoughtsbycategory: Record<ThoughtCategory, number>;
+  thoughtsby_status: Record<ThoughtStatus, number>;
+  completionrate: number;
+  activeideas: number;
+  pendingtasks: number;
+  overdueitems: number;
+  productivityscore: number;
 }
 
 // Search and filter options
@@ -250,15 +251,15 @@ export interface ThoughtFilters {
 
 // Bulk operations
 export interface BulkUpdateRequest {
-  thought_ids: string[];
+  thoughtids: string[];
   updates: Partial<UpdateThoughtRequest>;
 }
 
 // Export response types for API
 export interface ThoughtsResponse {
   thoughts: Thought[];
-  total_count: number;
-  has_more: boolean;
+  totalcount: number;
+  hasmore: boolean;
 }
 
 export interface ThoughtResponse {

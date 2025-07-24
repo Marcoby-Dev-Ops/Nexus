@@ -1,11 +1,14 @@
 import { supabase } from '@/core/supabase';
-import { useAuthStore } from '@/shared/stores/authStore';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 // Enhanced logging utility
 const logSignOut = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
   const timestamp = new Date().toISOString();
   const logData = data ? ` | Data: ${JSON.stringify(data)}` : '';
-  console.log(`[SignOut:${timestamp}] ${level.toUpperCase()}: ${message}${logData}`);
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`[SignOut: ${timestamp}] ${level.toUpperCase()}: ${message}${logData}`);
 };
 
 /**
@@ -16,10 +19,9 @@ export const performSignOut = async (): Promise<void> => {
   try {
     logSignOut('info', 'Starting comprehensive sign out process');
     
-    // Step 1: Clear Zustand store state
-    const store = useAuthStore.getState();
-    store.clearAuth();
-    logSignOut('info', 'Zustand store cleared');
+    // Step 1: Auth state is now handled by AuthProvider
+    // No need to clear Zustand store as it's managed by React Context
+    logSignOut('info', 'Auth state will be cleared by AuthProvider');
     
     // Step 2: Call Supabase sign out
     const { error } = await supabase.auth.signOut();
@@ -113,8 +115,8 @@ export const forceSignOut = (redirectTo: string = '/login'): void => {
   
   // Clear everything immediately
   try {
-    const store = useAuthStore.getState();
-    store.clearAuth();
+    // Auth state is now handled by AuthProvider
+    // No need to clear store as it's managed by React Context
     localStorage.clear();
     sessionStorage.clear();
   } catch (error) {

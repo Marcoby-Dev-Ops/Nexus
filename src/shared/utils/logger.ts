@@ -5,49 +5,73 @@ class Logger {
 
   log(...args: any[]) {
     if (this.isEnabled) {
-      console.log(...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(...args);
     }
   }
 
   warn(...args: any[]) {
     if (this.isEnabled) {
-      console.warn(...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(...args);
     }
   }
 
   error(...args: any[]) {
     if (this.isEnabled) {
-      console.error(...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(...args);
     }
   }
 
   debug(...args: any[]) {
     if (this.isEnabled) {
-      console.log('🔍', ...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍', ...args);
     }
   }
 
   info(...args: any[]) {
     if (this.isEnabled) {
-      console.log('ℹ️', ...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('ℹ️', ...args);
     }
   }
 
   success(...args: any[]) {
     if (this.isEnabled) {
-      console.log('✅', ...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅', ...args);
     }
   }
 
   warning(...args: any[]) {
     if (this.isEnabled) {
-      console.warn('⚠️', ...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('⚠️', ...args);
     }
   }
 
   failure(...args: any[]) {
     if (this.isEnabled) {
-      console.error('❌', ...args);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌', ...args);
     }
   }
 

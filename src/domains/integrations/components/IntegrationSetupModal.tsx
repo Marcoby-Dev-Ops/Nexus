@@ -167,7 +167,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-primary/10 dark: bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
                 {integration.icon}
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -197,7 +197,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 {integration.features.map((feature, index) => (
                   <li key={index} className="flex items-center space-x-4">
                     <Check className="w-4 h-4 text-success flex-shrink-0" />
-                    <span className="text-sm text-muted-foreground dark:text-muted-foreground">{feature}</span>
+                    <span className="text-sm text-muted-foreground dark: text-muted-foreground">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -209,7 +209,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-primary/10 dark:bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-primary/10 dark: bg-primary/20/20 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-primary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -253,7 +253,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-success/10 dark: bg-success/20 rounded-full flex items-center justify-center mb-4">
                 <Key className="w-8 h-8 text-success" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -279,7 +279,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
 
               {integration.name === 'QuickBooks' && (
                 <div>
-                  <label className="block text-sm font-medium text-foreground/90 dark:text-muted-foreground/60 mb-2">
+                  <label className="block text-sm font-medium text-foreground/90 dark: text-muted-foreground/60 mb-2">
                     Company ID
                   </label>
                   <input
@@ -291,7 +291,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 </div>
               )}
 
-              <div className="bg-warning/5 dark:bg-warning/20/20 border border-warning/20 dark:border-warning/80 rounded-lg p-4">
+              <div className="bg-warning/5 dark: bg-warning/20/20 border border-warning/20 dark:border-warning/80 rounded-lg p-4">
                 <div className="flex items-start space-x-4">
                   <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
                   <div>
@@ -310,7 +310,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-secondary/10 dark:bg-secondary/20/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-secondary/10 dark: bg-secondary/20/20 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-secondary" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -323,7 +323,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
 
             <div className="space-y-4">
               {integration.features.map((feature, index) => (
-                <label key={index} className="flex items-center space-x-4 p-4 border border-border dark:border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer">
+                <label key={index} className="flex items-center space-x-4 p-4 border border-border dark: border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer">
                   <input
                     type="checkbox"
                     id={feature}
@@ -338,14 +338,14 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                       }));
                     }}
                   />
-                  <label htmlFor={feature} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  <label htmlFor={feature} className="text-sm font-medium leading-none peer-disabled: cursor-not-allowed peer-disabled:opacity-70">
                     {feature}
                   </label>
                 </label>
               ))}
             </div>
 
-            <div className="bg-primary/5 dark:bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
+            <div className="bg-primary/5 dark: bg-primary/20/20 border border-border dark:border-primary/80 rounded-lg p-4">
               <p className="text-sm text-primary dark:text-primary">
                 You can change these permissions later in the integration settings.
               </p>
@@ -357,7 +357,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-success/10 dark:bg-success/20 rounded-full flex items-center justify-center mb-4">
+              <div className="mx-auto w-16 h-16 bg-success/10 dark: bg-success/20 rounded-full flex items-center justify-center mb-4">
                 <Zap className="w-8 h-8 text-success" />
               </div>
               <h3 className="text-xl font-semibold text-foreground dark:text-primary-foreground mb-2">
@@ -405,8 +405,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
           </div>
         );
 
-      default:
-        return null;
+      default: return null;
     }
   };
 
@@ -442,7 +441,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
                   index <= currentStep 
                     ? 'bg-primary text-primary-foreground' 
-                    : 'bg-gray-200 dark:bg-background text-muted-foreground'
+                    : 'bg-gray-200 dark: bg-background text-muted-foreground'
                 }`}>
                   {index < currentStep ? <Check className="w-4 h-4" /> : index + 1}
                 </div>
@@ -458,7 +457,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
           {/* Step Content */}
           <div className="min-h-[400px]">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold text-foreground dark:text-primary-foreground">
+              <h3 className="text-lg font-semibold text-foreground dark: text-primary-foreground">
                 {currentStepData.title}
               </h3>
               <p className="text-sm text-muted-foreground dark:text-muted-foreground">
@@ -484,7 +483,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
               <Button
                 onClick={handleComplete}
                 disabled={isConnecting}
-                className="bg-success hover:bg-success/90"
+                className="bg-success hover: bg-success/90"
               >
                 {isConnecting ? (
                   <ButtonSpinner />

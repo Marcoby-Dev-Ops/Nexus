@@ -3,7 +3,7 @@ import { Database, Search, Download, Upload, BarChart2, RefreshCw, AlertCircle, 
 import { ContentCard } from '@/shared/components/patterns/ContentCard';
 import { KpiCard } from '@/domains/dashboard/components/KpiCard';
 import { SimpleBarChart } from '@/domains/dashboard/components/SimpleBarChart';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 
 /**
@@ -14,43 +14,43 @@ import { supabase } from '@/core/supabase';
  */
 
 interface IntegrationAnalytics {
-  total_integrations: number;
-  active_integrations: number;
-  total_data_points: number;
-  last_sync: string | null;
-  avg_sync_duration: number;
+  totalintegrations: number;
+  activeintegrations: number;
+  totaldatapoints: number;
+  lastsync: string | null;
+  avgsyncduration: number;
 }
 
 interface DataSource {
   id: string;
   name: string;
-  integration_name: string;
+  integrationname: string;
   status: string;
-  last_sync_at: string | null;
-  total_syncs: number;
-  data_record_count: number;
-  auth_type: string;
+  lastsyncat: string | null;
+  totalsyncs: number;
+  datarecordcount: number;
+  authtype: string;
   error_message?: string;
 }
 
 interface DataUsageByCategory {
   category: string;
-  record_count: number;
-  integration_count: number;
+  recordcount: number;
+  integrationcount: number;
 }
 
 interface RecentSyncActivity {
-  integration_name: string;
-  sync_type: string;
+  integrationname: string;
+  synctype: string;
   status: string;
-  started_at: string;
-  duration_ms: number | null;
-  processed_records: number;
+  startedat: string;
+  durationms: number | null;
+  processedrecords: number;
   user_name?: string;
 }
 
 const DataWarehouseHome: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +70,7 @@ const DataWarehouseHome: React.FC = () => {
       
       // Get integration analytics using the database function
       const { data: analyticsData, error: analyticsError } = await supabase
-        .rpc('get_user_integration_analytics', { user_uuid: user.id });
+        .rpc('get_user_integration_analytics', { useruuid: user.id });
 
       if (analyticsError) throw analyticsError;
       
@@ -112,13 +112,13 @@ const DataWarehouseHome: React.FC = () => {
         return {
           id: source.id,
           name: source.name || integration?.name || 'Unknown',
-          integration_name: integration?.name || 'Unknown',
+          integrationname: integration?.name || 'Unknown',
           status: source.status,
-          last_sync_at: source.last_sync_at,
-          total_syncs: source.total_syncs || 0,
-          data_record_count: count || 0,
-          auth_type: integration?.auth_type || 'unknown',
-          error_message: source.error_message
+          lastsync_at: source.last_sync_at,
+          totalsyncs: source.total_syncs || 0,
+          datarecord_count: count || 0,
+          authtype: integration?.auth_type || 'unknown',
+          errormessage: source.error_message
         };
       }) || [];
 
@@ -171,8 +171,8 @@ const DataWarehouseHome: React.FC = () => {
 
         const categoryUsage = Array.from(categoryMap.entries()).map(([category, data]) => ({
           category: category.charAt(0).toUpperCase() + category.slice(1),
-          record_count: data.count,
-          integration_count: data.integrations
+          recordcount: data.count,
+          integrationcount: data.integrations
         }));
 
         setUsageByCategory(categoryUsage);
@@ -206,12 +206,12 @@ const DataWarehouseHome: React.FC = () => {
             userIntegration.integrations[0] : userIntegration?.integrations;
           
           return {
-            integration_name: integration?.name || userIntegration?.name || 'Unknown',
-            sync_type: item.sync_type,
+            integrationname: integration?.name || userIntegration?.name || 'Unknown',
+            synctype: item.sync_type,
             status: item.status,
-            started_at: item.started_at,
-            duration_ms: item.duration_ms,
-            processed_records: item.processed_records || 0
+            startedat: item.started_at,
+            durationms: item.duration_ms,
+            processedrecords: item.processed_records || 0
           };
         });
         setRecentActivity(formattedActivity);
@@ -255,8 +255,11 @@ const DataWarehouseHome: React.FC = () => {
       }
 
     } catch (err) {
-      console.error('Error fetching analytics:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load analytics data');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching analytics: ', err);
+      setError(err instanceof Error ? err.message: 'Failed to load analytics data');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -310,8 +313,7 @@ const DataWarehouseHome: React.FC = () => {
       case 'inactive':
       case 'paused':
         return 'bg-muted/50 text-muted-foreground';
-      default:
-        return 'bg-muted/50 text-muted-foreground';
+      default: return 'bg-muted/50 text-muted-foreground';
     }
   };
 
@@ -378,7 +380,7 @@ const DataWarehouseHome: React.FC = () => {
           </div>
           <button 
             onClick={handleRefresh}
-            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover: bg-primary/90 transition-colors"
           >
             Retry
           </button>
@@ -397,7 +399,7 @@ const DataWarehouseHome: React.FC = () => {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="flex items-center space-x-2 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50"
+          className="flex items-center space-x-2 px-4 py-2 bg-primary/10 text-primary hover: bg-primary/20 rounded-lg transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
@@ -453,7 +455,7 @@ const DataWarehouseHome: React.FC = () => {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+      <div className="grid grid-cols-1 lg: grid-cols-2 gap-8 mb-8">
         <ContentCard 
           title="Data Usage by Category" 
           variant="elevated"
@@ -475,7 +477,7 @@ const DataWarehouseHome: React.FC = () => {
         <ContentCard 
           title="Sync Activity" 
           variant="elevated"
-          className="hover:shadow-xl transition-all duration-300"
+          className="hover: shadow-xl transition-all duration-300"
         >
           <div className="mb-6">
             <p className="text-sm text-muted-foreground">Successful syncs (last 7 days)</p>
@@ -492,7 +494,7 @@ const DataWarehouseHome: React.FC = () => {
       </div>
 
       {/* Data Sources and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg: grid-cols-2 gap-8">
         <ContentCard 
           title="Connected Data Sources" 
           variant="elevated"
@@ -505,7 +507,7 @@ const DataWarehouseHome: React.FC = () => {
           <div className="space-y-4">
             {dataSources.length > 0 ? (
               dataSources.map((source) => (
-                <div key={source.id} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
+                <div key={source.id} className="flex items-center justify-between p-4 rounded-lg hover: bg-muted/50 transition-colors duration-200">
                   <div className="flex items-center space-x-4">
                     <div className="p-4 rounded-lg bg-primary/10">
                       <Database className="w-5 h-5 text-primary" />
@@ -541,7 +543,7 @@ const DataWarehouseHome: React.FC = () => {
           title="Recent Sync Activity" 
           variant="elevated"
           action={
-            <button className="px-4 py-4 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
+            <button className="px-4 py-4 bg-primary/5 text-primary hover: bg-primary/10 hover:text-primary/90 rounded-lg transition-all duration-200 text-sm font-medium border border-border">
               View All Logs
             </button>
           }
@@ -549,7 +551,7 @@ const DataWarehouseHome: React.FC = () => {
           <div className="space-y-4">
             {recentActivity.length > 0 ? (
               recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center justify-between p-4 rounded-lg hover:bg-muted/50 transition-colors duration-200">
+                <div key={index} className="flex items-center justify-between p-4 rounded-lg hover: bg-muted/50 transition-colors duration-200">
                   <div className="flex items-center space-x-4">
                     <div className="p-4 rounded-lg bg-primary/10">
                       <RefreshCw className="w-5 h-5 text-primary" />

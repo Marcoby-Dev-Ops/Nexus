@@ -7,7 +7,7 @@ export class NotionIntegration extends BaseIntegration {
   name = 'Notion';
   dataFields = ['pages', 'databases', 'users', 'comments', 'tasks', 'files'];
 
-  async fetchProviderData({ userId: _userId, fullSync: _fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
+  async fetchProviderData({ userId: userId, fullSync: fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
     // TODO: Implement actual Notion API fetch logic
     return {
       pages: [],

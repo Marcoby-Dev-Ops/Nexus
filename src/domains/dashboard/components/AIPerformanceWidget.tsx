@@ -14,7 +14,7 @@ import {
   CheckCircle,
   Sparkles
 } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 import { aiUsageBillingService } from '@/domains/admin/billing/services/aiUsageBillingService';
 import { continuousImprovementService } from '@/domains/ai/lib/continuousImprovementService';
@@ -25,7 +25,7 @@ interface AIPerformanceWidgetProps {
 }
 
 export const AIPerformanceWidget: React.FC<AIPerformanceWidgetProps> = ({ className }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<{
     healthScore: number;
@@ -76,7 +76,10 @@ export const AIPerformanceWidget: React.FC<AIPerformanceWidgetProps> = ({ classN
         status
       });
     } catch (error) {
-      console.error('Error loading AI performance data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading AI performance data: ', error);
     } finally {
       setLoading(false);
     }

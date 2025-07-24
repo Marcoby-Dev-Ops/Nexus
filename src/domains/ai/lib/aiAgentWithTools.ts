@@ -2,8 +2,7 @@
  * aiAgentWithTools.ts
  * Tool-Enabled AI Agent System
  * 
- * Combines OpenAI function calling with n8n workflows to give Nex:
- * - Real business data access
+ * Combines OpenAI function calling with n8n workflows to give Nex: * - Real business data access
  * - Action execution capabilities
  * - Knowledge from integrated systems
  * - Workflow automation powers
@@ -15,12 +14,12 @@ import type { Agent } from '@/domains/ai/lib/agentRegistry';
 
 // Mock services for now
 const n8nService = {
-  salesAction: async (_action: string, _params: any) => ({ success: false, error: 'Service not implemented' }),
-  financeAction: async (_action: string, _params: any) => ({ success: false, error: 'Service not implemented' }),
-  triggerWorkflow: async (_workflow: string, _params: any) => ({ success: false, error: 'Service not implemented' })
+  salesAction: async (action: string, params: any) => ({ success: false, error: 'Service not implemented' }),
+  financeAction: async (action: string, params: any) => ({ success: false, error: 'Service not implemented' }),
+  triggerWorkflow: async (workflow: string, params: any) => ({ success: false, error: 'Service not implemented' })
 };
 
-const listPayPalTxns = async (_params: any) => [];
+const listPayPalTxns = async (params: any) => [];
 
 // Tool definitions for OpenAI function calling
 export interface AITool {
@@ -56,7 +55,7 @@ export const businessIntelligenceTools: AITool[] = [
           enum: ["today", "week", "month", "quarter", "year"],
           description: "The time period for the metrics"
         },
-        metric_type: {
+        metrictype: {
           type: "string",
           enum: ["pipeline", "closed_deals", "revenue", "forecast", "team_performance"],
           description: "Specific type of sales metric to retrieve"
@@ -68,7 +67,7 @@ export const businessIntelligenceTools: AITool[] = [
       // Trigger n8n workflow to get sales data from CRM
       const result = await n8nService.salesAction('pipeline', {
         timeframe: args.timeframe,
-        metric_type: args.metric_type,
+        metrictype: args.metric_type,
         userId: context.userId
       });
       
@@ -92,7 +91,7 @@ export const businessIntelligenceTools: AITool[] = [
     parameters: {
       type: "object",
       properties: {
-        report_type: {
+        reporttype: {
           type: "string",
           enum: ["revenue", "expenses", "cash_flow", "profit_loss", "balance_sheet"],
           description: "Type of financial report to generate"
@@ -107,7 +106,7 @@ export const businessIntelligenceTools: AITool[] = [
     },
     handler: async (args, context) => {
       const result = await n8nService.financeAction('report', {
-        report_type: args.report_type,
+        reporttype: args.report_type,
         period: args.period,
         userId: context.userId
       });
@@ -132,7 +131,7 @@ export const businessIntelligenceTools: AITool[] = [
           },
           description: "List of metrics to analyze"
         },
-        comparison_period: {
+        comparisonperiod: {
           type: "string",
           enum: ["month_over_month", "quarter_over_quarter", "year_over_year"],
           description: "Comparison timeframe for analysis"
@@ -144,7 +143,7 @@ export const businessIntelligenceTools: AITool[] = [
       // Use n8n workflow to aggregate data from multiple sources
       const result = await n8nService.triggerWorkflow('data-analysis-webhook', {
         metrics: args.metrics,
-        comparison_period: args.comparison_period || 'month_over_month',
+        comparisonperiod: args.comparison_period || 'month_over_month',
         userId: context.userId
       });
       
@@ -201,7 +200,7 @@ export const actionTools: AITool[] = [
           enum: ["sales", "marketing", "finance", "operations", "general"],
           description: "Responsible department"
         },
-        due_date: {
+        duedate: {
           type: "string",
           description: "Due date in YYYY-MM-DD format"
         }
@@ -211,12 +210,12 @@ export const actionTools: AITool[] = [
     handler: async (args, context) => {
       const result = await n8nService.operationsAction('automate', {
         action: 'create_task',
-        task_data: args,
-        created_by: context.userId
+        taskdata: args,
+        createdby: context.userId
       });
       
       return result.success 
-        ? { task_id: result.data?.task_id, summary: `Created ${args.priority || 'medium'} priority task: ${args.title}` }
+        ? { taskid: result.data?.task_id, summary: `Created ${args.priority || 'medium'} priority task: ${args.title}` }
         : { error: "Failed to create task", fallback: "I've noted this for manual follow-up." };
     }
   },
@@ -254,11 +253,11 @@ export const actionTools: AITool[] = [
         subject: args.subject,
         message: args.message,
         urgency: args.urgency || 'normal',
-        sent_by: context.userId
+        sentby: context.userId
       });
       
       return result.success 
-        ? { message_id: result.data?.message_id, summary: `Sent notification to ${args.recipients.length} recipients` }
+        ? { messageid: result.data?.message_id, summary: `Sent notification to ${args.recipients.length} recipients` }
         : { error: "Failed to send notification", fallback: "Please send this manually through your communication platform." };
     }
   },
@@ -282,11 +281,11 @@ export const actionTools: AITool[] = [
           type: "string",
           description: "Meeting agenda or description"
         },
-        duration_minutes: {
+        durationminutes: {
           type: "number",
           description: "Meeting duration in minutes"
         },
-        preferred_time: {
+        preferredtime: {
           type: "string",
           description: "Preferred time in natural language (e.g., 'tomorrow 2pm', 'next week')"
         }
@@ -295,13 +294,13 @@ export const actionTools: AITool[] = [
     },
     handler: async (args, context) => {
       const result = await n8nService.triggerWorkflow('calendar-integration-webhook', {
-        meeting_data: args,
+        meetingdata: args,
         organizer: context.userId,
         action: 'schedule_meeting'
       });
       
       return result.success 
-        ? { meeting_id: result.data?.meeting_id, summary: `Scheduled meeting: ${args.title}` }
+        ? { meetingid: result.data?.meeting_id, summary: `Scheduled meeting: ${args.title}` }
         : { error: "Failed to schedule meeting", fallback: "Please schedule this manually in your calendar." };
     }
   }
@@ -315,7 +314,7 @@ export const contentTools: AITool[] = [
     parameters: {
       type: "object",
       properties: {
-        content_type: {
+        contenttype: {
           type: "string",
           enum: ["email", "proposal", "report", "blog_post", "social_media", "presentation"],
           description: "Type of content to generate"
@@ -329,7 +328,7 @@ export const contentTools: AITool[] = [
           enum: ["professional", "friendly", "persuasive", "informative", "creative"],
           description: "Desired tone of the content"
         },
-        target_audience: {
+        targetaudience: {
           type: "string",
           description: "Target audience (e.g., 'customers', 'investors', 'team')"
         },
@@ -347,7 +346,7 @@ export const contentTools: AITool[] = [
         `Create ${args.content_type} about: ${args.topic}`,
         {
           tone: args.tone || 'professional',
-          target_audience: args.target_audience,
+          targetaudience: args.target_audience,
           length: args.length || 'medium'
         }
       );
@@ -368,7 +367,7 @@ export const contentTools: AITool[] = [
           type: "string",
           description: "Search query or question"
         },
-        document_types: {
+        documenttypes: {
           type: "array",
           items: {
             type: "string",
@@ -404,7 +403,7 @@ export const contentTools: AITool[] = [
     parameters: {
       type: "object",
       properties: {
-        focus_area: {
+        focusarea: {
           type: "string",
           description: "Optional specific area to work on (e.g., 'mission', 'vision', 'goals'). Leave blank for full plan."
         }
@@ -418,7 +417,7 @@ export const contentTools: AITool[] = [
       }
 
       const { data, error } = await (supabase as any).functions.invoke('ai_generate_business_plan', {
-        body: { company_id: context.orgId, focus_area: args.focus_area }
+        body: { companyid: context.orgId, focusarea: args.focus_area }
       });
 
       if (error) {
@@ -426,7 +425,7 @@ export const contentTools: AITool[] = [
       }
 
       return {
-        business_plan: data?.business_plan_md,
+        businessplan: data?.business_plan_md,
         summary: 'Business plan generated and stored.'
       };
     }
@@ -441,16 +440,16 @@ export const automationTools: AITool[] = [
     parameters: {
       type: "object",
       properties: {
-        workflow_description: {
+        workflowdescription: {
           type: "string",
           description: "Detailed description of what the workflow should do"
         },
-        trigger_type: {
+        triggertype: {
           type: "string",
           enum: ["webhook", "schedule", "email", "form_submission", "chat_command"],
           description: "How the workflow should be triggered"
         },
-        integrations_needed: {
+        integrationsneeded: {
           type: "array",
           items: { type: "string" },
           description: "List of systems to integrate (e.g., 'hubspot', 'slack', 'gmail')"
@@ -465,7 +464,7 @@ export const automationTools: AITool[] = [
       );
       
       return result.success 
-        ? { workflow_id: result.data?.workflow_id, summary: `Created workflow: ${args.workflow_description}` }
+        ? { workflowid: result.data?.workflow_id, summary: `Created workflow: ${args.workflow_description}` }
         : { error: "Workflow creation failed", fallback: "I can help you plan this workflow manually." };
     }
   }
@@ -515,8 +514,7 @@ export class ToolEnabledAgent {
       // Enhanced system prompt with tool awareness and cross-platform context
       const toolAwareSystemPrompt = `${agent.systemPrompt}
 
-CROSS-PLATFORM BUSINESS CONTEXT:
-You have access to real-time data from all connected business platforms. This gives you unprecedented insight into:
+CROSS-PLATFORM BUSINESS CONTEXT: You have access to real-time data from all connected business platforms. This gives you unprecedented insight into:
 
 INTEGRATED INTELLIGENCE:
 - HubSpot CRM: Live sales pipeline, deal velocity, customer interactions
@@ -525,14 +523,11 @@ INTEGRATED INTELLIGENCE:
 - Marcoby Cloud: Infrastructure utilization, cost optimization, system health
 - PayPal: Transaction patterns, revenue trends, payment analytics
 
-AI CORRELATION INSIGHTS:
-- Cross-platform pattern recognition (e.g., "High email volume → 23% increase in deal velocity")
+AI CORRELATION INSIGHTS: - Cross-platform pattern recognition (e.g., "High email volume → 23% increase in deal velocity")
 - Predictive analytics (e.g., "Current trends suggest 34% Q1 lead increase")
 - Proactive recommendations (e.g., "Infrastructure scaling needed by month-end")
 
-CONTEXTUAL DECISION MAKING:
-When responding to queries, consider:
-1. Current business state across all platforms
+CONTEXTUAL DECISION MAKING: When responding to queries, consider: 1. Current business state across all platforms
 2. Historical patterns and correlations
 3. Predictive insights and trends
 4. Resource utilization and capacity
@@ -553,8 +548,7 @@ BUSINESS INTELLIGENCE:
 - Analyze performance trends and provide data-driven insights
 - Access live data from CRM, accounting, and other business systems
 
-ACTIONS:
-- Create tasks and projects in your project management system
+ACTIONS: - Create tasks and projects in your project management system
 - Schedule meetings and send team notifications
 - Execute business processes and workflows
 
@@ -563,8 +557,7 @@ CONTENT & KNOWLEDGE:
 - Search company knowledge base and documents
 - Create marketing materials and communications
 
-AUTOMATION:
-- Build custom workflows for specific business needs
+AUTOMATION: - Build custom workflows for specific business needs
 - Integrate different business systems
 - Automate repetitive processes
 
@@ -589,7 +582,7 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
           description: tool.description,
           parameters: tool.parameters
         })),
-        function_call: 'auto'
+        functioncall: 'auto'
       };
 
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -611,7 +604,10 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
         const tool = this.tools.get(toolName);
 
         if (tool) {
-          console.log(`🔧 Executing tool: ${toolName}`, toolArgs);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`🔧 Executing tool: ${toolName}`, toolArgs);
           
           try {
             const toolResult = await tool.handler(toolArgs, toolContext);
@@ -631,7 +627,7 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
               ]
             };
 
-            const followUpResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            const followUpResponse = await fetch('https: //api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
                 'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
@@ -651,7 +647,10 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
               model: 'gpt-4-with-tools'
             };
           } catch (toolError) {
-            console.error(`Tool execution failed: ${toolName}`, toolError);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Tool execution failed: ${toolName}`, toolError);
             return {
               success: true,
               content: `I attempted to ${tool.description.toLowerCase()} but encountered an issue. Let me help you with this manually instead. ${assistantMessage.content || ''}`,
@@ -671,7 +670,10 @@ Available tools: ${Array.from(this.tools.keys()).join(', ')}`;
       };
 
     } catch (error) {
-      console.error('Tool-enabled agent error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Tool-enabled agent error: ', error);
       throw error;
     }
   }

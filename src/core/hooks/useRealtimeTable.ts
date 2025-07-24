@@ -4,7 +4,7 @@ import { supabase } from "@/core/supabase";
 export function useRealtimeTable(table: "Recent" | "Pin", onChange: () => void) {
   useEffect(() => {
     const channel = supabase
-      .channel(`realtime:${table}`)
+      .channel(`realtime: ${table}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table },

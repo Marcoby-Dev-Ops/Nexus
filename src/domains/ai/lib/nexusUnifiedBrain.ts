@@ -244,6 +244,9 @@ export class NexusUnifiedBrain {
       this.expertiseDatabase.set(domain, knowledge);
     });
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🧠 Nexus Unified Brain: Expertise database initialized with seasoned business knowledge');
   }
 
@@ -263,6 +266,9 @@ export class NexusUnifiedBrain {
       // Provide seasoned business advice
       await this.provideBusinessGuidance();
     }, 10000); // Analyze every 10 seconds
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🧠 Nexus Unified Brain: Continuous analysis started - every action will be considered');
   }
 
@@ -291,9 +297,21 @@ export class NexusUnifiedBrain {
     const analysis = await this.analyzeSingleAction(userAction);
     this.brainAnalyses.push(analysis);
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`🧠 Brain analyzed action: ${action}`);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Business intent: ${userAction.businessIntent}`);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Expert insights: ${analysis.expertInsights.length}`);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Recommendations: ${analysis.recommendations.length}`);
 
     return analysis;
@@ -431,8 +449,7 @@ export class NexusUnifiedBrain {
           { domain: 'Customer Success', knowledge: this.expertiseDatabase.get('customer_success') }
         );
         break;
-      default:
-        // Provide general business expertise
+      default: // Provide general business expertise
         expertise.push(
           { domain: 'Operations Excellence', knowledge: this.expertiseDatabase.get('operations_excellence') },
           { domain: 'Financial Management', knowledge: this.expertiseDatabase.get('financial_management') }
@@ -570,9 +587,21 @@ export class NexusUnifiedBrain {
     const learningGaps = this.identifyLearningGaps(recentActions);
     const businessOpportunities = this.identifyBusinessOpportunities(recentActions);
 
-    console.log('🧠 Brain pattern analysis:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🧠 Brain pattern analysis: ');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Intent patterns: ${Object.keys(intentPatterns).join(', ')}`);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Learning gaps identified: ${learningGaps.length}`);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Business opportunities: ${businessOpportunities.length}`);
   }
 
@@ -872,17 +901,38 @@ export class NexusUnifiedBrain {
 
     const guidance = this.generateSeasonedAdvice(this.businessIntelligence);
     
-    console.log('\n🎓 SEASONED BUSINESS GUIDANCE:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('\n🎓 SEASONED BUSINESS GUIDANCE: ');
     guidance.advice.forEach((advice, index) => {
-      console.log(`\n${index + 1}. ${advice.category}:`);
-      console.log(`   Recommendation: ${advice.recommendation}`);
-      console.log(`   Business Principle: ${advice.businessPrinciple}`);
-      console.log(`   Expected Results: ${advice.expectedResults}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`\n${index + 1}. ${advice.category}:`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`   Recommendation: ${advice.recommendation}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`   Business Principle: ${advice.businessPrinciple}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`   Expected Results: ${advice.expectedResults}`);
     });
 
-    console.log('\n💡 MENTORING TIPS:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('\n💡 MENTORING TIPS: ');
     guidance.mentoringTips.forEach((tip, index) => {
-      console.log(`   ${index + 1}. ${tip}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`   ${index + 1}. ${tip}`);
     });
   }
 
@@ -983,6 +1033,9 @@ export class NexusUnifiedBrain {
    */
   stopAnalysis(): void {
     this.isAnalyzing = false;
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🧠 Nexus Unified Brain: Analysis stopped');
   }
 }

@@ -5,7 +5,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Badge } from '@/shared/components/ui/Badge';
 import { useToast } from '@/shared/ui/components/Toast';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { businessProfileService } from '@/shared/lib/business/businessProfileService';
 import type { BusinessProfile } from '@/shared/lib/business/businessProfileService';
 import {
@@ -25,7 +25,7 @@ interface BusinessProfileSetupProps {
 }
 
 export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onComplete }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<Partial<BusinessProfile>>({});
@@ -103,7 +103,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
                 <label className="block text-sm font-medium mb-2">Company Name</label>
                 <Input
                   value={profile.company_name || ''}
-                  onChange={(e) => setProfile(prev => ({ ...prev, company_name: e.target.value }))}
+                  onChange={(e) => setProfile(prev => ({ ...prev, companyname: e.target.value }))}
                   placeholder="e.g., Marcoby"
                 />
               </div>
@@ -120,7 +120,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
                 <select
                   className="w-full p-2 border rounded-md"
                   value={profile.business_model || ''}
-                  onChange={(e) => setProfile(prev => ({ ...prev, business_model: e.target.value }))}
+                  onChange={(e) => setProfile(prev => ({ ...prev, businessmodel: e.target.value }))}
                 >
                   <option value="">Select business model</option>
                   <option value="B2B">B2B</option>
@@ -136,7 +136,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
                 <select
                   className="w-full p-2 border rounded-md"
                   value={profile.company_size || ''}
-                  onChange={(e) => setProfile(prev => ({ ...prev, company_size: e.target.value as any }))}
+                  onChange={(e) => setProfile(prev => ({ ...prev, companysize: e.target.value as any }))}
                 >
                   <option value="">Select size</option>
                   <option value="solopreneur">Solopreneur</option>
@@ -152,7 +152,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
               <label className="block text-sm font-medium mb-2">Mission Statement</label>
               <Textarea
                 value={profile.mission_statement || ''}
-                onChange={(e) => setProfile(prev => ({ ...prev, mission_statement: e.target.value }))}
+                onChange={(e) => setProfile(prev => ({ ...prev, missionstatement: e.target.value }))}
                 placeholder="What is your company's purpose and mission?"
                 rows={3}
               />
@@ -177,7 +177,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
               <label className="block text-sm font-medium mb-2">Unique Value Proposition</label>
               <Textarea
                 value={profile.unique_value_proposition || ''}
-                onChange={(e) => setProfile(prev => ({ ...prev, unique_value_proposition: e.target.value }))}
+                onChange={(e) => setProfile(prev => ({ ...prev, uniquevalue_proposition: e.target.value }))}
                 placeholder="What makes your business unique? Why do clients choose you?"
                 rows={3}
               />
@@ -257,7 +257,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
               <label className="block text-sm font-medium mb-2">Revenue Model</label>
               <Input
                 value={profile.revenue_model || ''}
-                onChange={(e) => setProfile(prev => ({ ...prev, revenue_model: e.target.value }))}
+                onChange={(e) => setProfile(prev => ({ ...prev, revenuemodel: e.target.value }))}
                 placeholder="e.g., Subscription, Project-based, Retainer"
               />
             </div>
@@ -266,7 +266,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
               <label className="block text-sm font-medium mb-2">Pricing Strategy</label>
               <Input
                 value={profile.pricing_strategy || ''}
-                onChange={(e) => setProfile(prev => ({ ...prev, pricing_strategy: e.target.value }))}
+                onChange={(e) => setProfile(prev => ({ ...prev, pricingstrategy: e.target.value }))}
                 placeholder="e.g., Value-based, Competitive, Premium"
               />
             </div>
@@ -298,8 +298,7 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
           </div>
         );
 
-      default:
-        return null;
+      default: return null;
     }
   };
 
@@ -428,7 +427,7 @@ const ArrayInput: React.FC<{
               {item}
               <button
                 onClick={() => onRemove(index)}
-                className="ml-1 hover:text-destructive"
+                className="ml-1 hover: text-destructive"
               >
                 <X className="w-3 h-3" />
               </button>

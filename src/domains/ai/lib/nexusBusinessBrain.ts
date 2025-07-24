@@ -328,6 +328,9 @@ export class NexusBusinessBrain {
     ];
 
     smes.forEach(sme => this.smes.set(sme.id, sme));
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`🧠 Nexus Brain initialized with ${smes.length} Subject Matter Experts`);
   }
 
@@ -336,6 +339,9 @@ export class NexusBusinessBrain {
    */
   async startThinking(businessContext: any): Promise<void> {
     this.isThinking = true;
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🧠 Nexus Business Brain: Starting unified thinking process...');
 
     // Continuous thinking loop
@@ -568,26 +574,62 @@ export class NexusBusinessBrain {
    * Output key insights from the brain
    */
   private outputKeyInsights(unifiedIntel: UnifiedIntelligence): void {
-    console.log('\n🧠 NEXUS BRAIN UNIFIED INTELLIGENCE:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('\n🧠 NEXUS BRAIN UNIFIED INTELLIGENCE: ');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Business Health: ${(unifiedIntel.businessHealth * 100).toFixed(1)}%`);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Growth Trajectory: ${unifiedIntel.growthTrajectory}`);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`   Opportunity Score: ${(unifiedIntel.opportunityScore * 100).toFixed(1)}%`);
     
-    console.log('\n💡 SYNTHESIZED INSIGHTS:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('\n💡 SYNTHESIZED INSIGHTS: ');
     unifiedIntel.synthesizedInsights.forEach((insight, index) => {
-      console.log(`   ${index + 1}. ${insight}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`   ${index + 1}. ${insight}`);
     });
 
-    console.log('\n🔮 PREDICTIVE FORECASTS:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('\n🔮 PREDICTIVE FORECASTS: ');
     unifiedIntel.predictiveForecasts.forEach((forecast, index) => {
-      console.log(`   ${index + 1}. ${forecast.prediction} (${(forecast.probability * 100).toFixed(1)}% confidence)`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`   ${index + 1}. ${forecast.prediction} (${(forecast.probability * 100).toFixed(1)}% confidence)`);
     });
 
-    console.log('\n⚡ RECOMMENDED ACTIONS:');
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('\n⚡ RECOMMENDED ACTIONS: ');
     unifiedIntel.recommendedActions.forEach((action, index) => {
-      console.log(`   ${index + 1}. ${action.action}`);
-      console.log(`      SMEs involved: ${action.involvedSMEs.join(', ')}`);
-      console.log(`      Expected impact: ${(action.expectedImpact * 100).toFixed(1)}%`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`   ${index + 1}. ${action.action}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`      SMEs involved: ${action.involvedSMEs.join(', ')}`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`      Expected impact: ${(action.expectedImpact * 100).toFixed(1)}%`);
     });
   }
 
@@ -629,6 +671,9 @@ export class NexusBusinessBrain {
    */
   stopThinking(): void {
     this.isThinking = false;
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🧠 Nexus Brain: Thinking process stopped');
   }
 }

@@ -6,39 +6,13 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
-import {
-  Users,
-  Search,
-  Filter,
-  TrendingUp,
-  AlertCircle,
-  Mail,
-  Phone,
-  MapPin,
-  Building,
-  Calendar,
-  DollarSign,
-  Activity,
-  Zap,
-  Brain,
-  Target,
-  Clock,
-  Star,
-  ExternalLink,
-  RefreshCw,
-  Download,
-  BarChart3,
-  Eye,
-  MessageSquare,
-  Lightbulb
-} from 'lucide-react';
-
+import { Users, Search, TrendingUp, AlertCircle, Mail, Phone, MapPin, Building, Calendar, DollarSign, Activity, Zap, Brain, Target, Star, RefreshCw, Download, Eye, MessageSquare, Lightbulb } from 'lucide-react';
 interface UnifiedClientProfile {
   id: string;
-  client_id: string;
-  profile_data: {
+  clientid: string;
+  profiledata: {
     name?: string;
     email?: string;
     phone?: string;
@@ -56,43 +30,43 @@ interface UnifiedClientProfile {
       role?: string;
     };
   };
-  source_integrations: string[];
-  primary_source: string;
-  completeness_score: number;
-  engagement_score: number;
-  estimated_value: number;
-  last_interaction: string;
-  last_enrichment_at: string;
+  sourceintegrations: string[];
+  primarysource: string;
+  completenessscore: number;
+  engagementscore: number;
+  estimatedvalue: number;
+  lastinteraction: string;
+  lastenrichmentat: string;
   insights: any[];
-  created_at: string;
-  updated_at: string;
+  createdat: string;
+  updatedat: string;
 }
 
 interface ClientInteraction {
   id: string;
-  client_profile_id: string;
-  interaction_type: 'email' | 'call' | 'meeting' | 'transaction' | 'support' | 'website_visit';
+  clientprofileid: string;
+  interactiontype: 'email' | 'call' | 'meeting' | 'transaction' | 'support' | 'website_visit';
   channel: string;
   summary: string;
   sentiment: 'positive' | 'neutral' | 'negative';
   value: number;
   metadata: any;
-  occurred_at: string;
+  occurredat: string;
 }
 
 interface ClientIntelligenceAlert {
   id: string;
-  client_profile_id: string;
-  alert_type: 'opportunity' | 'risk' | 'milestone' | 'anomaly';
+  clientprofileid: string;
+  alerttype: 'opportunity' | 'risk' | 'milestone' | 'anomaly';
   title: string;
   description: string;
   priority: 'low' | 'medium' | 'high' | 'critical';
-  is_resolved: boolean;
-  created_at: string;
+  isresolved: boolean;
+  createdat: string;
 }
 
 const UnifiedClientProfilesView: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [profiles, setProfiles] = useState<UnifiedClientProfile[]>([]);
   const [interactions, setInteractions] = useState<ClientInteraction[]>([]);
   const [alerts, setAlerts] = useState<ClientIntelligenceAlert[]>([]);
@@ -144,7 +118,10 @@ const UnifiedClientProfilesView: React.FC = () => {
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
-      console.error('Error fetching client profiles:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching client profiles: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -161,7 +138,10 @@ const UnifiedClientProfilesView: React.FC = () => {
       if (error) throw error;
       setInteractions(data || []);
     } catch (error) {
-      console.error('Error fetching interactions:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching interactions: ', error);
     }
   };
 
@@ -177,19 +157,22 @@ const UnifiedClientProfilesView: React.FC = () => {
       if (error) throw error;
       setAlerts(data || []);
     } catch (error) {
-      console.error('Error fetching alerts:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching alerts: ', error);
     }
   };
 
   const triggerClientUnification = async (clientId: string) => {
     try {
-      const response = await fetch('https://automate.marcoby.net/webhook/client-data-unification', {
+      const response = await fetch('https: //automate.marcoby.net/webhook/client-data-unification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          client_id: clientId,
-          user_id: user?.id,
-          company_id: user?.company_id,
+          clientid: clientId,
+          userid: user?.id,
+          companyid: user?.company_id,
           type: 'profile_refresh'
         })
       });
@@ -198,7 +181,10 @@ const UnifiedClientProfilesView: React.FC = () => {
         await fetchClientProfiles();
       }
     } catch (error) {
-      console.error('Error triggering client unification:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error triggering client unification: ', error);
     }
   };
 
@@ -255,7 +241,7 @@ const UnifiedClientProfilesView: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Brain className="w-6 h-6 text-primary" />
@@ -333,7 +319,7 @@ const UnifiedClientProfilesView: React.FC = () => {
       </div>
 
       {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm: flex-row gap-4">
         <div className="flex-1">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
@@ -416,7 +402,7 @@ const UnifiedClientProfilesView: React.FC = () => {
       {/* Client Profiles */}
       <div className="grid gap-6">
         {filteredProfiles.map((profile) => (
-          <Card key={profile.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+          <Card key={profile.id} className="overflow-hidden hover: shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start space-x-4 flex-1">
@@ -456,7 +442,7 @@ const UnifiedClientProfilesView: React.FC = () => {
                     </div>
 
                     {/* Metrics */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
                       <div>
                         <p className="text-xs text-muted-foreground">Engagement Score</p>
                         <div className="flex items-center gap-2">
@@ -487,7 +473,7 @@ const UnifiedClientProfilesView: React.FC = () => {
 
                     {/* Data Sources */}
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">Sources:</span>
+                      <span className="text-xs text-muted-foreground">Sources: </span>
                       <div className="flex gap-1">
                         {profile.source_integrations.map((source, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
@@ -505,7 +491,7 @@ const UnifiedClientProfilesView: React.FC = () => {
                     {/* Recent Interactions */}
                     {interactions.filter(i => i.client_profile_id === profile.id).length > 0 && (
                       <div>
-                        <p className="text-xs text-muted-foreground mb-2">Recent Activity:</p>
+                        <p className="text-xs text-muted-foreground mb-2">Recent Activity: </p>
                         <div className="flex gap-2">
                           {interactions
                             .filter(i => i.client_profile_id === profile.id)

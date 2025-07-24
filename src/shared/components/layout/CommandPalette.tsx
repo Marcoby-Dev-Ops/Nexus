@@ -41,7 +41,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
           const slashCommands = await getSlashCommands();
           setCommands(slashCommands);
         } catch (error) {
-          console.error("Failed to load slash commands:", error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error("Failed to load slash commands: ", error);
           setCommands([]);
         }
       };
@@ -50,13 +53,13 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
   }, [open]);
 
   const navResults = [
-    ...navItems.filter(item => item.name.toLowerCase().includes(query.toLowerCase())),
-    ...featureRegistry.filter(f => f.name.toLowerCase().includes(query.toLowerCase())),
+    ...navItems.filter(item => item.name?.toLowerCase?.()?.includes(query.toLowerCase())),
+    ...featureRegistry.filter(f => f.name?.toLowerCase?.()?.includes(query.toLowerCase())),
   ];
 
   const commandResults = commands.filter(c =>
-    c.title.toLowerCase().includes(query.toLowerCase()) ||
-    c.slug.toLowerCase().includes(query.toLowerCase())
+    c.title?.toLowerCase?.()?.includes(query.toLowerCase()) ||
+    c.slug?.toLowerCase?.()?.includes(query.toLowerCase())
   );
 
   const results: (NavItem | FeatureItem | SlashCommand)[] = [...navResults, ...commandResults];
@@ -64,6 +67,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
   const handleSelect = (item: NavItem | FeatureItem | SlashCommand) => {
     if (isCommand(item)) {
       // Basic command execution - can be expanded
+      // eslint-disable-next-line no-console
       console.log(`Executing command: /${item.slug}`);
       // You might want to pass this to a global command handler
     } else {
@@ -109,7 +113,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
         )}
         {results.map((item, i) => (
           <li
-            key={isCommand(item) ? item.slug : item.path}
+            key={isCommand(item) ? item.slug: item.path || `item-${i}`}
             role="option"
             aria-selected={i === searchIndex}
             className={`flex items-center justify-between px-4 py-3 rounded-md cursor-pointer ${
@@ -122,7 +126,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
               <span className="mr-3 text-muted-foreground">
                 {isCommand(item) ? <Terminal className="w-4 h-4" /> : item.icon || <ArrowRight className="w-4 h-4" />}
               </span>
-              <span>{isCommand(item) ? item.title : item.name}</span>
+              <span>{isCommand(item) ? item.title: item.name || 'Unnamed Item'}</span>
             </div>
             <Badge variant="secondary">{isCommand(item) ? 'Command' : 'Navigate'}</Badge>
           </li>

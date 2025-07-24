@@ -7,7 +7,7 @@ export class GitHubIntegration extends BaseIntegration {
   name = 'GitHub';
   dataFields = ['repos', 'issues', 'pullRequests', 'commits', 'users', 'projects', 'comments', 'releases'];
 
-  async fetchProviderData({ userId: _userId, fullSync: _fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
+  async fetchProviderData({ userId: userId, fullSync: fullSync }: { userId: string; fullSync?: boolean }): Promise<Record<string, any[]>> {
     // TODO: Implement actual GitHub API fetch logic
     return {
       repos: [],

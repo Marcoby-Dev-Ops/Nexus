@@ -81,7 +81,7 @@ export function Recents() {
             </span>
           </span>
           <button
-            className="ml-4 text-primary hover:underline"
+            className="ml-4 text-primary hover: underline"
             onClick={() => logWidgetEvent(widgetId, "click", { itemId: item.id })}
           >
             Open

@@ -116,7 +116,10 @@ export class CallbackHandlers {
       }
 
     } catch (error) {
-      console.error('OAuth callback error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('OAuth callback error: ', error);
       
       await CallbackHandlers.trackEvent(CallbackEvent.OAUTH_FAILED, {
         integration: config.integrationSlug,
@@ -195,7 +198,10 @@ export class CallbackHandlers {
       };
 
     } catch (error) {
-      console.error('Webhook processing error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Webhook processing error: ', error);
       
       await CallbackHandlers.trackEvent(CallbackEvent.WEBHOOK_FAILED, {
         integration: config.integrationSlug,
@@ -276,7 +282,10 @@ export class CallbackHandlers {
       }
 
     } catch (error) {
-      console.error('API key validation error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('API key validation error: ', error);
       return {
         status: 500,
         body: { error: 'API key validation failed' }
@@ -352,7 +361,10 @@ export class CallbackHandlers {
       };
 
     } catch (error) {
-      console.error('Supabase redirect callback error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Supabase redirect callback error: ', error);
       
       await CallbackHandlers.trackEvent(CallbackEvent.CALLBACK_FAILED, {
         integration: config.integrationSlug,
@@ -375,6 +387,9 @@ export class CallbackHandlers {
     request: CallbackRequest,
     config: CallbackConfig
   ): Promise<CallbackResponse> {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.warn(`Custom callback handler not implemented for ${config.integrationSlug}`);
     return {
       status: 501,
@@ -386,9 +401,9 @@ export class CallbackHandlers {
    * Exchange OAuth code for tokens
    */
   private static async exchangeOAuthCode(
-    _integrationSlug: string,
-    _code: string,
-    _state: string,
+    integrationSlug: string,
+    code: string,
+    state: string,
     _userId?: string
   ): Promise<any> {
     // This would typically make an API call to exchange the code for tokens
@@ -396,11 +411,11 @@ export class CallbackHandlers {
     
     // For now, return a mock response
     return {
-      access_token: 'mock_access_token',
-      refresh_token: 'mock_refresh_token',
-      expires_in: 3600,
+      accesstoken: 'mock_access_token',
+      refreshtoken: 'mock_refresh_token',
+      expiresin: 3600,
       scopes: ['read', 'write'],
-      token_type: 'Bearer'
+      tokentype: 'Bearer'
     };
   }
 
@@ -423,9 +438,9 @@ export class CallbackHandlers {
    * Process webhook payload
    */
   private static async processWebhookPayload(
-    _integrationSlug: string,
-    _payload: any,
-    _headers: Record<string, string>
+    integrationSlug: string,
+    payload: any,
+    headers: Record<string, string>
   ): Promise<{ eventType: string; recordsProcessed: number }> {
     // This would typically process the webhook payload based on the integration
     // For now, return a mock response
@@ -439,7 +454,7 @@ export class CallbackHandlers {
    * Validate API key
    */
   private static async validateApiKey(
-    _integrationSlug: string,
+    integrationSlug: string,
     apiKey: string,
     _validationEndpoint?: string
   ): Promise<boolean> {
@@ -454,12 +469,18 @@ export class CallbackHandlers {
   static async trackEvent(event: CallbackEvent, properties: Record<string, any>): Promise<void> {
     try {
       // This would typically send to an analytics service
-      console.log(`Callback Event: ${event}`, properties);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log(`Callback Event: ${event}`, properties);
       
       // TODO: Store in database when callback_events table is created
       // For now, just log the event
     } catch (error) {
-      console.error('Failed to track callback event:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to track callback event: ', error);
     }
   }
 }
@@ -561,7 +582,10 @@ export class CallbackProcessor {
       return response;
 
     } catch (error) {
-      console.error('Callback processing error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Callback processing error: ', error);
       
       // Track failure
       await CallbackHandlers.trackEvent(CallbackEvent.CALLBACK_FAILED, {
@@ -593,8 +617,7 @@ export class CallbackProcessor {
         return CallbackHandlers.handleApiKeyValidation;
       case 'handleCustomCallback':
         return CallbackHandlers.handleCustomCallback;
-      default:
-        // Default handler based on type
+      default: // Default handler based on type
         switch (type) {
           case 'oauth':
             return CallbackHandlers.handleOAuthCallback;
@@ -602,8 +625,7 @@ export class CallbackProcessor {
             return CallbackHandlers.handleWebhook;
           case 'api_key':
             return CallbackHandlers.handleApiKeyValidation;
-          default:
-            return CallbackHandlers.handleCustomCallback;
+          default: return CallbackHandlers.handleCustomCallback;
         }
     }
   }

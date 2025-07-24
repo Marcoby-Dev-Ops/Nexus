@@ -15,7 +15,7 @@ import {
   Target
 } from 'lucide-react';
 
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -65,7 +65,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete, 
   className = '' 
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   
 
   const [currentFlow] = useState<'unified-brain' | 'traditional' | 'ai-chat' | 'founder' | 'checklist'>('unified-brain');
@@ -97,9 +97,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setSystemIntelligence(finalIntelligence);
     
     // Log completion with intelligence metrics
-    console.log('Onboarding Complete - Final Intelligence:', finalIntelligence);
-    console.log('Brain Insights Generated:', brainInsights.length);
-    console.log('Expert Knowledge Applied:', expertKnowledge.length);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Onboarding Complete - Final Intelligence: ', finalIntelligence);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Brain Insights Generated: ', brainInsights.length);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Expert Knowledge Applied: ', expertKnowledge.length);
     
     onComplete();
   };

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, Play, Clock, Target, Lightbulb, Map, Zap, ChevronRight, ChevronDown } from 'lucide-react';
 import { useFireCyclePlaybooks, type PlaybookRecommendation, type SolutionsPlaybook } from './fireCyclePlaybooks';
 import type { UserContext } from './fireCycleLogic';
-import type { FireCyclePhase } from '@/domains/fire-cycle/types';
+import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
 
 interface SolutionsPlaybookUIProps {
   userContext: UserContext;
@@ -23,7 +23,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
 
-  const { recommendPlaybook, getPlaybook } = useFireCyclePlaybooks();
+  const { recommendPlaybook } = useFireCyclePlaybooks();
 
   useEffect(() => {
     const loadRecommendations = async () => {
@@ -32,7 +32,10 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
         const recs = await recommendPlaybook(userContext, currentPhase, detectedProblem);
         setRecommendations(recs);
       } catch (error) {
-        console.error('Error loading playbook recommendations:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading playbook recommendations: ', error);
       } finally {
         setIsLoading(false);
       }
@@ -126,7 +129,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
 
         {detectedProblem && (
           <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <h3 className="font-medium text-blue-900 mb-1">Detected Challenge:</h3>
+            <h3 className="font-medium text-blue-900 mb-1">Detected Challenge: </h3>
             <p className="text-sm text-blue-800">{detectedProblem}</p>
           </div>
         )}
@@ -162,7 +165,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
                   </div>
                   <p className="text-sm text-muted-foreground mb-3">{rec.playbook.description}</p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-1 md: grid-cols-3 gap-4 text-sm">
                     <div className="flex items-center space-x-2">
                       <Clock className="w-4 h-4 text-muted-foreground" />
                       <span>{rec.playbook.estimatedTime} min</span>
@@ -180,7 +183,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
                 
                 <button
                   onClick={() => handlePlaybookSelect(rec.playbook)}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover: bg-primary/90 transition-colors"
                 >
                   Start Playbook
                 </button>
@@ -225,7 +228,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
           </div>
 
           {/* FIRE Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md: grid-cols-4 gap-4 mb-6">
             <div className="p-3 border rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
                 <Target className="w-4 h-4 text-blue-600" />
@@ -265,7 +268,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
             {selectedPlaybook.roadmap.map((step) => (
               <div key={step.id} className="border rounded-lg">
                 <div 
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="flex items-center justify-between p-4 cursor-pointer hover: bg-muted/30 transition-colors"
                   onClick={() => toggleStepExpansion(step.id)}
                 >
                   <div className="flex items-center space-x-3">
@@ -296,7 +299,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
                   <div className="px-4 pb-4 space-y-3">
                     {step.resources.length > 0 && (
                       <div>
-                        <h6 className="font-medium text-foreground mb-2">Resources:</h6>
+                        <h6 className="font-medium text-foreground mb-2">Resources: </h6>
                         <div className="space-y-2">
                           {step.resources.map((resource, index) => (
                             <div key={index} className="flex items-center space-x-2 text-sm">
@@ -311,7 +314,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
                     
                     {step.checkpoints.length > 0 && (
                       <div>
-                        <h6 className="font-medium text-foreground mb-2">Checkpoints:</h6>
+                        <h6 className="font-medium text-foreground mb-2">Checkpoints: </h6>
                         <div className="space-y-2">
                           {step.checkpoints.map((checkpoint) => (
                             <div key={checkpoint.id} className="text-sm">
@@ -328,7 +331,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
                     <div className="flex space-x-2">
                       <button
                         onClick={() => markStepComplete(step.id)}
-                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                        className="px-3 py-1 text-sm bg-green-600 text-white rounded hover: bg-green-700 transition-colors"
                       >
                         Mark Complete
                       </button>
@@ -345,7 +348,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
           {/* Execute Actions */}
           <div className="mt-6">
             <h4 className="text-lg font-semibold text-foreground mb-4">Execute Actions</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               {selectedPlaybook.execute.map((action) => (
                 <div key={action.id} className="p-4 border rounded-lg">
                   <div className="flex items-start justify-between mb-2">
@@ -367,7 +370,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
                     <span className="text-xs text-muted-foreground">
                       {action.estimatedEffort} min • {action.type}
                     </span>
-                    <button className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors">
+                    <button className="px-3 py-1 text-sm bg-primary text-primary-foreground rounded hover: bg-primary/90 transition-colors">
                       {action.canAutomate ? 'Auto-Execute' : 'Start Action'}
                     </button>
                   </div>

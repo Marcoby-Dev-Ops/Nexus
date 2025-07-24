@@ -28,7 +28,7 @@ export const ColorPalette: React.FC = () => {
         </p>
         
         <h3 className="text-lg font-bold mb-3">Primary Green Palette</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md: grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           <ColorSample name="Primary" color="#006837" />
           <ColorSample name="Secondary" color="#00a651" />
           <ColorSample name="Tertiary" color="#008f4c" />

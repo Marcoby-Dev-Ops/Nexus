@@ -150,7 +150,10 @@ class IntegrationDataAggregator {
               integrations: integrationDetails || { name: 'Unknown', slug: 'unknown', category: 'general' }
             };
           } catch (error) {
-            console.error('Error fetching integration details:', error);
+            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching integration details: ', error);
             return {
               ...userIntegration,
               integrations: { name: 'Unknown', slug: 'unknown', category: 'general' }
@@ -237,16 +240,19 @@ class IntegrationDataAggregator {
           
           return {
             ...item,
-            user_integrations: {
+            userintegrations: {
               ...item.user_integrations,
               integrations: integrationDetails || { name: 'Unknown', slug: 'unknown', category: 'general' }
             }
           };
         } catch (error) {
-          console.error('Error fetching integration details:', error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching integration details: ', error);
           return {
             ...item,
-            user_integrations: {
+            userintegrations: {
               ...item.user_integrations,
               integrations: { name: 'Unknown', slug: 'unknown', category: 'general' }
             }
@@ -521,9 +527,9 @@ class IntegrationDataAggregator {
     
     // Store alert in database
     await supabase.from('ai_integration_alerts').insert({
-      alert_type: alertType,
+      alerttype: alertType,
       source: dataPoint.source,
-      data_point_id: dataPoint.id,
+      datapoint_id: dataPoint.id,
       severity: this.getAlertSeverity(alertType),
       message: this.getAlertMessage(alertType, dataPoint),
       metadata: dataPoint.metadata
@@ -558,8 +564,7 @@ class IntegrationDataAggregator {
         return Math.min(100, (rawItem.processed_data?.amount || 0) / 1000);
       case 'analytics-bi':
         return rawItem.processed_data?.score || 50;
-      default:
-        return 50;
+      default: return 50;
     }
   }
 
@@ -567,11 +572,11 @@ class IntegrationDataAggregator {
     const tags = [integration.category, rawItem.data_type];
     
     if (rawItem.processed_data?.priority) {
-      tags.push(`priority:${rawItem.processed_data.priority}`);
+      tags.push(`priority: ${rawItem.processed_data.priority}`);
     }
     
     if (rawItem.processed_data?.status) {
-      tags.push(`status:${rawItem.processed_data.status}`);
+      tags.push(`status: ${rawItem.processed_data.status}`);
     }
     
     return tags;
@@ -601,7 +606,7 @@ class IntegrationDataAggregator {
     }
     
     const denominator = Math.sqrt(denominator1 * denominator2);
-    return denominator === 0 ? 0 : numerator / denominator;
+    return denominator === 0 ? 0: numerator / denominator;
   }
 
   private estimateRevenueImpact(data: AggregatedDataPoint[]): number {
@@ -623,7 +628,7 @@ class IntegrationDataAggregator {
       new Date(d.timestamp) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     );
     const recentTotal = recentData.reduce((sum, d) => sum + (d.businessImpact.revenue || 0), 0);
-    const growth = recentData.length > 0 ? (recentTotal / total) * 100 - 100 : 0;
+    const growth = recentData.length > 0 ? (recentTotal / total) * 100 - 100: 0;
     
     // Group by source
     const sources: Record<string, number> = {};
@@ -642,8 +647,7 @@ class IntegrationDataAggregator {
   private calculateUnifiedEfficiency(data: AggregatedDataPoint[]) {
     const efficiencyData = data.filter(d => d.businessImpact.efficiency !== undefined);
     const score = efficiencyData.length > 0 
-      ? efficiencyData.reduce((sum, d) => sum + (d.businessImpact.efficiency || 0), 0) / efficiencyData.length
-      : 0;
+      ? efficiencyData.reduce((sum, d) => sum + (d.businessImpact.efficiency || 0), 0) / efficiencyData.length: 0;
     
     const lowEfficiencyPoints = efficiencyData.filter(d => (d.businessImpact.efficiency || 0) < score * 0.8);
     const bottlenecks = [...new Set(lowEfficiencyPoints.map(d => d.source))];
@@ -658,8 +662,7 @@ class IntegrationDataAggregator {
   private calculateUnifiedSatisfaction(data: AggregatedDataPoint[]) {
     const satisfactionData = data.filter(d => d.businessImpact.satisfaction !== undefined);
     const score = satisfactionData.length > 0
-      ? satisfactionData.reduce((sum, d) => sum + (d.businessImpact.satisfaction || 0), 0) / satisfactionData.length
-      : 0;
+      ? satisfactionData.reduce((sum, d) => sum + (d.businessImpact.satisfaction || 0), 0) / satisfactionData.length: 0;
     
     const sources: Record<string, number> = {};
     satisfactionData.forEach(d => {
@@ -675,15 +678,14 @@ class IntegrationDataAggregator {
 
   private calculateOperationalHealth(data: AggregatedDataPoint[]) {
     const healthData = data.filter(d => d.category === 'operations');
-    const score = healthData.length > 0 ? 85 : 0; // Simplified calculation
+    const score = healthData.length > 0 ? 85: 0; // Simplified calculation
     
     const alertData = data.filter(d => d.tags.includes('alert') || d.tags.includes('error'));
     const alerts = alertData.length;
     
     const uptimeData = data.filter(d => d.type === 'uptime');
     const uptime = uptimeData.length > 0 
-      ? uptimeData.reduce((sum, d) => sum + (d.normalizedValue || 0), 0) / uptimeData.length
-      : 99;
+      ? uptimeData.reduce((sum, d) => sum + (d.normalizedValue || 0), 0) / uptimeData.length: 99;
     
     return { score, alerts, uptime };
   }

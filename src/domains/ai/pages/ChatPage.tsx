@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -31,7 +31,7 @@ interface ChatStats {
 }
 
 export default function ChatPage() {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('');
   const [conversationId, setConversationId] = useState<string | null>(null);
@@ -72,7 +72,10 @@ export default function ChatPage() {
         automationRate: 72
       });
     } catch (error) {
-      console.error('Error loading chat data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error loading chat data: ', error);
     } finally {
       setLoading(false);
     }
@@ -128,7 +131,7 @@ export default function ChatPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Conversations</CardTitle>
@@ -260,7 +263,7 @@ export default function ChatPage() {
         </div>
 
         {/* Main Chat Area */}
-        <div className="lg:col-span-3">
+        <div className="lg: col-span-3">
           <Card className="h-[600px]">
             <CardHeader>
               <div className="flex items-center justify-between">

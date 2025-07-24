@@ -51,7 +51,10 @@ export const useOrganizationStore = create<OrgStoreState>()(
           })
         );
       } catch (err) {
-        console.error('Failed loading org memberships', err);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed loading org memberships', err);
         set({ loading: false });
       }
     },

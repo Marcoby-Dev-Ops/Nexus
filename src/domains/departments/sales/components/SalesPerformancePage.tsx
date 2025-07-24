@@ -1,35 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowUpRight, 
-  ArrowDownRight, 
-  DollarSign, 
-  Users, 
-  LineChart, 
-  BarChart3, 
-  Filter,
-  Calendar,
-  Download,
-  Search,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  RefreshCw,
-  ChevronDown,
-  Percent,
-  UserPlus,
-  Phone,
-  AlertCircle,
-  Activity,
-  Lightbulb,
-  Zap,
-  TrendingUp,
-  Brain
-} from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, LineChart, BarChart3, Filter, Download, Search, CheckCircle2, Clock, AlertTriangle, RefreshCw, AlertCircle, Activity, Lightbulb, Zap } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { Separator } from '@/shared/components/ui/Separator';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Input } from '@/shared/components/ui/Input';
 import { 
@@ -42,47 +15,28 @@ import {
   SelectValue,
 } from '@/shared/components/ui/Select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
-import { useSystemContext } from '@/core/hooks/SystemContext';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
-import { API_CONFIG } from '@/core/constants';
+import { useData } from '@/shared/contexts/DataContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import Modal from '@/shared/components/ui/Modal';
-
-interface PerformanceMetric {
-  id: string;
-  title: string;
-  value: string;
-  change: string;
-  trend: 'up' | 'down';
-}
-
-interface TopOpportunity {
-  id: string;
-  company: string;
-  probability: number;
-  value: number;
-  stage: string;
-  nextAction: string;
-  nextActionDate: string;
-  rep: {
-    name: string;
-    avatar: string;
-  };
-}
+import { hubspotSalesService } from '../services/hubspotService';
+import type { SalesMetrics, PipelineStage, TeamMember, RecentDeal, TopOpportunity } from '../services/hubspotService';
 
 /**
  * SalesPerformancePage - Sales dashboard with leads, pipeline, and performance metrics
  */
 const SalesPerformancePage: React.FC = () => {
   const [activeTimeframe, setActiveTimeframe] = useState<string>('month');
-  const [activeTab, setActiveTab] = useState<string>('overview');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetric[]>([]);
+  const [salesMetrics, setSalesMetrics] = useState<SalesMetrics | null>(null);
+  const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
+  const [teamPerformance, setTeamPerformance] = useState<TeamMember[]>([]);
+  const [recentDeals, setRecentDeals] = useState<RecentDeal[]>([]);
+  const [topOpportunities, setTopOpportunities] = useState<TopOpportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { session } = useAuthContext();
+  const { session } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedOpportunity, setSelectedOpportunity] = useState<TopOpportunity | null>(null);
   const [generatedEmail, setGeneratedEmail] = useState<string>('');
   const [generatingEmail, setGeneratingEmail] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -92,10 +46,10 @@ const SalesPerformancePage: React.FC = () => {
   const [talkingPointsError, setTalkingPointsError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchMetrics = async () => {
+    const fetchSalesData = async () => {
       if (!session) {
         setLoading(false);
-        setError('Authentication is required to get performance metrics.');
+        setError('Authentication is required to get sales data.');
         return;
       }
 
@@ -103,21 +57,22 @@ const SalesPerformancePage: React.FC = () => {
       setError(null);
 
       try {
-        const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/get_sales_performance`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-        });
+        const userId = session.user.id;
+        
+        // Fetch all sales data from HubSpot
+        const [metrics, pipeline, team, deals, opportunities] = await Promise.all([
+          hubspotSalesService.getSalesMetrics(userId),
+          hubspotSalesService.getPipelineStages(userId),
+          hubspotSalesService.getTeamPerformance(userId),
+          hubspotSalesService.getRecentDeals(userId),
+          hubspotSalesService.getTopOpportunities(userId)
+        ]);
 
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.error || 'Failed to fetch performance metrics');
-        }
-
-        const data = await res.json();
-        setPerformanceMetrics(data.metrics || []);
+        setSalesMetrics(metrics);
+        setPipelineStages(pipeline);
+        setTeamPerformance(team);
+        setRecentDeals(deals);
+        setTopOpportunities(opportunities);
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -125,7 +80,7 @@ const SalesPerformancePage: React.FC = () => {
       }
     };
 
-    fetchMetrics();
+    fetchSalesData();
   }, [session]);
 
   // Performance Metrics
@@ -139,7 +94,7 @@ const SalesPerformancePage: React.FC = () => {
   */
 
   // Pipeline Stages
-  const pipelineStages = [
+  const mockPipelineStages = [
     { id: 'lead', name: 'Lead', count: 76, value: 541200, color: 'bg-info/20' },
     { id: 'qualified', name: 'Qualified', count: 42, value: 312600, color: 'bg-info/30' },
     { id: 'proposal', name: 'Proposal', count: 24, value: 189300, color: 'bg-info/40' },
@@ -148,7 +103,7 @@ const SalesPerformancePage: React.FC = () => {
   ];
 
   // Sales Team Performance
-  const teamPerformance = [
+  const mockTeamPerformance = [
     { 
       id: 'alex', 
       name: 'Alex Rodriguez', 
@@ -188,7 +143,7 @@ const SalesPerformancePage: React.FC = () => {
   ];
 
   // Recent Deals
-  const recentDeals = [
+  const mockRecentDeals = [
     {
       id: 'deal1',
       company: 'Acme Corporation',
@@ -237,7 +192,7 @@ const SalesPerformancePage: React.FC = () => {
   ];
 
   // Top Opportunities
-  const topOpportunities = [
+  const mockTopOpportunities = [
     {
       id: 'opp1',
       company: 'Mega Industries',
@@ -296,8 +251,7 @@ const SalesPerformancePage: React.FC = () => {
         return <AlertCircle className="w-4 h-4 text-destructive" />;
       case 'paused':
         return <Clock className="w-4 h-4 text-warning" />;
-      default:
-        return <Activity className="w-4 h-4 text-muted-foreground" />;
+      default: return <Activity className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -311,134 +265,12 @@ const SalesPerformancePage: React.FC = () => {
     }
   };
 
-  const SystemSalesCards: React.FC = () => {
-    const { integrationStatus, businessHealth, aiInsights, loading: systemLoading, refresh } = useSystemContext();
-    return (
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4 mb-8">
-        {/* System Health Card */}
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              System Health
-            </CardTitle>
-            <CardDescription>Business health score and trend</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-between">
-            <div className="mb-4">
-              <div className="text-4xl font-bold flex items-center gap-2">
-                {systemLoading ? '...' : businessHealth.score}
-                <span className={`text-base font-medium ${businessHealth.trend === 'up' ? 'text-success' : businessHealth.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}>({businessHealth.trend})</span>
-              </div>
-              <div className="text-sm text-muted-foreground mt-2">
-                {businessHealth.summary}
-              </div>
-            </div>
-            <Button variant="outline" size="sm" onClick={refresh} disabled={systemLoading}>
-              <RefreshCw className="w-4 h-4 mr-2" /> Refresh
-            </Button>
-          </CardContent>
-        </Card>
-        {/* AI Opportunities Card */}
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-warning" />
-              AI Opportunities
-            </CardTitle>
-            <CardDescription>AI-generated insights and recommendations</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-between">
-            <div className="space-y-2 mb-4">
-              {systemLoading ? (
-                <div className="text-muted-foreground">Loading...</div>
-              ) : aiInsights.length === 0 ? (
-                <div className="text-muted-foreground">No insights available</div>
-              ) : (
-                aiInsights.slice(0, 3).map((insight) => (
-                  <div key={insight.id} className={`p-2 rounded border-l-4 ${
-                    insight.impact === 'high' ? 'border-destructive bg-destructive/5' :
-                    insight.impact === 'medium' ? 'border-warning bg-warning/5' :
-                    'border-muted bg-muted/5'
-                  }`}>
-                    <div className="font-semibold flex items-center gap-2">
-                      {insight.type === 'opportunity' && <Zap className="w-4 h-4 text-success" />}
-                      {insight.type === 'alert' && <AlertCircle className="w-4 h-4 text-destructive" />}
-                      {insight.type === 'trend' && <TrendingUp className="w-4 h-4 text-primary" />}
-                      {insight.type === 'optimization' && <Lightbulb className="w-4 h-4 text-warning" />}
-                      {insight.title}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">{insight.description}</div>
-                  </div>
-                ))
-              )}
-            </div>
-            <Button variant="outline" size="sm" onClick={() => window.location.href = '/ai-hub'}>
-              <Brain className="w-4 h-4 mr-2" /> Explore AI Hub
-            </Button>
-          </CardContent>
-        </Card>
-        {/* Integrations Status Card */}
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <RefreshCw className="w-5 h-5 text-primary" />
-              Integrations
-            </CardTitle>
-            <CardDescription>Status of connected services</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-between">
-            <div className="space-y-2 mb-4">
-              {systemLoading ? (
-                <div className="text-muted-foreground">Loading...</div>
-              ) : integrationStatus.length === 0 ? (
-                <div className="text-muted-foreground">No integrations connected</div>
-              ) : (
-                integrationStatus.slice(0, 3).map((integration) => (
-                  <div key={integration.id} className="flex items-center gap-2 p-2 rounded border border-border">
-                    {getStatusIcon(integration.status)}
-                    <span className="font-medium">{integration.name}</span>
-                    <span className={`text-xs ml-auto px-2 py-0.5 rounded ${getStatusColor(integration.status)}`}>{integration.status}</span>
-                  </div>
-                ))
-              )}
-            </div>
-            <Button variant="outline" size="sm" onClick={() => window.location.href = '/integrations'}>
-              <RefreshCw className="w-4 h-4 mr-2" /> Manage Integrations
-            </Button>
-          </CardContent>
-        </Card>
-        {/* Quick Actions Card */}
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-success" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>Jump to key workflows</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1 flex flex-col justify-between">
-            <div className="space-y-2 mb-4">
-              <Button variant="secondary" size="sm" className="w-full" onClick={() => window.location.href = '/sales/performance'}>
-                View Sales Performance
-              </Button>
-              <Button variant="secondary" size="sm" className="w-full" onClick={() => window.location.href = '/sales/pipeline'}>
-                View Pipeline
-              </Button>
-              <Button variant="secondary" size="sm" className="w-full" onClick={() => window.location.href = '/ai-hub'}>
-                Ask AI for Sales Insight
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  };
+
 
   const renderPerformanceMetrics = () => {
     if (loading) {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <Card key={index}>
               <CardContent className="p-6">
@@ -460,9 +292,48 @@ const SalesPerformancePage: React.FC = () => {
       );
     }
 
+    if (!salesMetrics) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">No sales data available. Connect your HubSpot account to see metrics.</p>
+        </div>
+      );
+    }
+
+    const metrics = [
+      {
+        id: 'revenue',
+        title: 'Total Revenue',
+        value: formatCurrency(salesMetrics.totalRevenue),
+        change: `${salesMetrics.revenueChange > 0 ? '+' : ''}${salesMetrics.revenueChange}%`,
+        trend: salesMetrics.revenueChange >= 0 ? 'up' as const : 'down' as const
+      },
+      {
+        id: 'deals',
+        title: 'Total Deals',
+        value: salesMetrics.totalDeals.toString(),
+        change: `${salesMetrics.dealsChange > 0 ? '+' : ''}${salesMetrics.dealsChange}%`,
+        trend: salesMetrics.dealsChange >= 0 ? 'up' as const : 'down' as const
+      },
+      {
+        id: 'winRate',
+        title: 'Win Rate',
+        value: `${salesMetrics.winRate.toFixed(1)}%`,
+        change: `${salesMetrics.winRateChange > 0 ? '+' : ''}${salesMetrics.winRateChange}%`,
+        trend: salesMetrics.winRateChange >= 0 ? 'up' as const : 'down' as const
+      },
+      {
+        id: 'avgDeal',
+        title: 'Avg Deal Size',
+        value: formatCurrency(salesMetrics.averageDealSize),
+        change: `${salesMetrics.dealSizeChange > 0 ? '+' : ''}${salesMetrics.dealSizeChange}%`,
+        trend: salesMetrics.dealSizeChange >= 0 ? 'up' as const : 'down' as const
+      }
+    ];
+
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {performanceMetrics.map(metric => (
+        {metrics.map(metric => (
           <Card key={metric.id}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between space-y-0 pb-2">
@@ -471,15 +342,11 @@ const SalesPerformancePage: React.FC = () => {
               <div className="text-2xl font-bold">{metric.value}</div>
               <div className="flex items-center pt-1">
                 {metric.trend === 'up' ? (
-                  <ArrowUpRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-destructive' : 'text-success'}`} />
+                  <ArrowUpRight className="h-4 w-4 mr-1 text-success" />
                 ) : (
-                  <ArrowDownRight className={`h-4 w-4 mr-1 ${metric.id === 'leads' ? 'text-success' : 'text-destructive'}`} />
+                  <ArrowDownRight className="h-4 w-4 mr-1 text-destructive" />
                 )}
-                <p className={`text-sm ${
-                  (metric.trend === 'up' && metric.id !== 'leads') || (metric.trend === 'down' && metric.id === 'leads')
-                    ? 'text-success'
-                    : 'text-destructive'
-                }`}>
+                <p className={`text-sm ${metric.trend === 'up' ? 'text-success' : 'text-destructive'}`}>
                   {metric.change} from previous {activeTimeframe}
                 </p>
               </div>
@@ -627,7 +494,7 @@ const SalesPerformancePage: React.FC = () => {
           
           <TabsContent value="overview" className="space-y-6">
             {/* Pipeline Summary & Team Performance */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
@@ -784,7 +651,7 @@ const SalesPerformancePage: React.FC = () => {
           <TabsContent value="deals" className="space-y-6">
             <Card>
               <CardHeader>
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-col md: flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <CardTitle className="text-lg">Recent Deals</CardTitle>
                     <CardDescription>
@@ -807,7 +674,7 @@ const SalesPerformancePage: React.FC = () => {
                 <div className="space-y-2">
                   {filteredDeals.length > 0 ? (
                     filteredDeals.map(deal => (
-                      <div key={deal.id} className="flex items-center justify-between p-4 rounded-md hover:bg-muted/50">
+                      <div key={deal.id} className="flex items-center justify-between p-4 rounded-md hover: bg-muted/50">
                         <div className="flex items-center space-x-4">
                           <div>
                             <div className="font-medium">{deal.company}</div>

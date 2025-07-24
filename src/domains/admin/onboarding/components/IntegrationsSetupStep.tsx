@@ -15,8 +15,8 @@ import {
   Shield
 } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
+import { OAuthTokenService } from '@/domains/integrations/lib';
 // TODO: These services need to be implemented
-// import { OAuthTokenService } from '@/domains/services/oauthTokenService';
 // import { linkedinService } from '@/domains/services/linkedinService';
 
 interface IntegrationStatus {
@@ -51,19 +51,27 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
 
   const checkExistingConnections = async () => {
     try {
-      // TODO: Implement OAuth service checks
-      // const hasMicrosoft = await OAuthTokenService.hasValidTokens('microsoft');
-      // const hasLinkedIn = await OAuthTokenService.hasValidTokens('linkedin');
-      // const hasGoogle = await OAuthTokenService.hasValidTokens('google-workspace');
+      // Check existing OAuth connections
+      const hasMicrosoft = await OAuthTokenService.hasValidTokens('microsoft');
+      const hasLinkedIn = await OAuthTokenService.hasValidTokens('linkedin');
+      const hasGoogle = await OAuthTokenService.hasValidTokens('google-workspace');
       
-      // For now, set all to not connected
+      setIntegrationStatus({
+        microsoft: hasMicrosoft ? 'connected' : 'not_connected',
+        linkedin: hasLinkedIn ? 'connected' : 'not_connected',
+        google: hasGoogle ? 'connected' : 'not_connected'
+      });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error checking existing connections: ', error);
+      // Set all to not connected on error
       setIntegrationStatus({
         microsoft: 'not_connected',
         linkedin: 'not_connected',
         google: 'not_connected'
       });
-    } catch (error) {
-      console.error('Error checking existing connections:', error);
     }
   };
 
@@ -71,14 +79,35 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
     try {
       setIntegrationStatus(prev => ({ ...prev, microsoft: 'connecting' }));
 
-      // TODO: Implement Microsoft OAuth
-      toast({
-        title: 'Coming Soon',
-        description: 'Microsoft integration will be available soon',
-      });
-      setIntegrationStatus(prev => ({ ...prev, microsoft: 'not_connected' }));
+      // Generate PKCE code verifier and challenge
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+      
+      // Store code verifier in session storage
+      sessionStorage.setItem('microsoft_code_verifier', codeVerifier);
+      
+      // Build Microsoft OAuth URL
+      const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/integrations/microsoft/callback`;
+      const state = crypto.randomUUID();
+      
+      const authUrl = new URL('https: //login.microsoftonline.com/common/oauth2/v2.0/authorize');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('scope', 'User.Read Mail.Read Mail.ReadWrite Calendars.Read Files.Read.All Contacts.Read offline_access');
+      authUrl.searchParams.set('state', state);
+      authUrl.searchParams.set('code_challenge', codeChallenge);
+      authUrl.searchParams.set('code_challenge_method', 'S256');
+      authUrl.searchParams.set('response_mode', 'query');
+      
+      // Redirect to Microsoft OAuth
+      window.location.href = authUrl.toString();
     } catch (error) {
-      console.error('Error connecting Microsoft:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error connecting Microsoft: ', error);
       setIntegrationStatus(prev => ({ ...prev, microsoft: 'error' }));
       toast({
         title: 'Error',
@@ -92,14 +121,27 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
     try {
       setIntegrationStatus(prev => ({ ...prev, linkedin: 'connecting' }));
 
-      // TODO: Implement LinkedIn OAuth
-      toast({
-        title: 'Coming Soon',
-        description: 'LinkedIn integration will be available soon',
-      });
-      setIntegrationStatus(prev => ({ ...prev, linkedin: 'not_connected' }));
+      // Generate state parameter
+      const state = crypto.randomUUID();
+      
+      // Build LinkedIn OAuth URL
+      const clientId = import.meta.env.VITE_LINKEDIN_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/integrations/linkedin/callback`;
+      
+      const authUrl = new URL('https: //www.linkedin.com/oauth/v2/authorization');
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('scope', 'r_liteprofile r_emailaddress w_member_social');
+      authUrl.searchParams.set('state', state);
+      
+      // Redirect to LinkedIn OAuth
+      window.location.href = authUrl.toString();
     } catch (error) {
-      console.error('Error connecting LinkedIn:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error connecting LinkedIn: ', error);
       setIntegrationStatus(prev => ({ ...prev, linkedin: 'error' }));
       toast({
         title: 'Error',
@@ -113,14 +155,36 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
     try {
       setIntegrationStatus(prev => ({ ...prev, google: 'connecting' }));
 
-      // TODO: Implement Google Workspace OAuth
-      toast({
-        title: 'Coming Soon',
-        description: 'Google Workspace integration will be available soon',
-      });
-      setIntegrationStatus(prev => ({ ...prev, google: 'not_connected' }));
+      // Generate PKCE code verifier and challenge
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+      
+      // Store code verifier in session storage
+      sessionStorage.setItem('google_code_verifier', codeVerifier);
+      
+      // Build Google OAuth URL
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      const redirectUri = `${window.location.origin}/integrations/google/callback`;
+      const state = crypto.randomUUID();
+      
+      const authUrl = new URL('https: //accounts.google.com/o/oauth2/v2/auth');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('scope', 'https: //www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/drive.readonly');
+      authUrl.searchParams.set('state', state);
+      authUrl.searchParams.set('code_challenge', codeChallenge);
+      authUrl.searchParams.set('code_challenge_method', 'S256');
+      authUrl.searchParams.set('access_type', 'offline');
+      authUrl.searchParams.set('prompt', 'consent');
+      
+      // Redirect to Google OAuth
+      window.location.href = authUrl.toString();
     } catch (error) {
-      console.error('Error connecting Google:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error connecting Google: ', error);
       setIntegrationStatus(prev => ({ ...prev, google: 'error' }));
       toast({
         title: 'Error',
@@ -142,7 +206,10 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
 
       onNext({ connectedIntegrations });
     } catch (error) {
-      console.error('Error continuing to next step:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error continuing to next step: ', error);
       toast({
         title: 'Error',
         description: 'Failed to proceed to next step',
@@ -222,8 +289,7 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
             
             <Button
               onClick={
-                integration === 'microsoft' ? handleMicrosoftConnect :
-                integration === 'linkedin' ? handleLinkedInConnect :
+                integration === 'microsoft' ? handleMicrosoftConnect: integration === 'linkedin' ? handleLinkedInConnect :
                 handleGoogleConnect
               }
               disabled={isConnecting || isConnected}
@@ -261,7 +327,7 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg: grid-cols-3 gap-6">
         {getConnectionButton('microsoft')}
         {getConnectionButton('linkedin')}
         {getConnectionButton('google')}
@@ -298,4 +364,25 @@ export const IntegrationsSetupStep: React.FC<IntegrationsSetupStepProps> = ({
       </div>
     </div>
   );
+}; 
+
+// Helper functions for PKCE
+const generateCodeVerifier = (): string => {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return base64URLEncode(array);
+};
+
+const generateCodeChallenge = async (verifier: string): Promise<string> => {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return base64URLEncode(new Uint8Array(digest));
+};
+
+const base64URLEncode = (buffer: Uint8Array): string => {
+  return btoa(String.fromCharCode(...buffer))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
 }; 

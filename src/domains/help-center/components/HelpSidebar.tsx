@@ -52,7 +52,7 @@ const HelpTreeItemComponent: React.FC<{ item: HelpTreeItem; depth?: number }> = 
       <div className="flex items-center">
         {hasChildren ? (
           <button
-            className="mr-1 focus:outline-none"
+            className="mr-1 focus: outline-none"
             onClick={() => setOpen((o) => !o)}
             aria-label={open ? 'Collapse' : 'Expand'}
           >
@@ -66,7 +66,7 @@ const HelpTreeItemComponent: React.FC<{ item: HelpTreeItem; depth?: number }> = 
             to={item.path}
             className={({ isActive }) =>
               `flex items-center space-x-2 text-sm py-1 px-2 rounded transition-colors ${
-                isActive ? 'bg-accent text-accent-foreground' : 'hover:bg-muted'
+                isActive ? 'bg-accent text-accent-foreground' : 'hover: bg-muted'
               }`
             }
           >

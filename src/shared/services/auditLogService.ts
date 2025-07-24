@@ -3,13 +3,13 @@
  * Handles logging of user actions and system events for compliance and debugging
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase, supabaseService } from '@/core/supabase';
 
 export interface AuditLogEntry {
   id?: string;
-  user_id: string;
+  userid: string;
   action: string;
-  resource_type: string;
+  resourcetype: string;
   resource_id?: string;
   details: Record<string, any>;
   ip_address?: string;
@@ -34,7 +34,7 @@ export class AuditLogService {
    */
   async sendAuditLog(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { error } = await smartClient
         .from('audit_logs')
         .insert({
           ...entry,
@@ -42,13 +42,19 @@ export class AuditLogService {
         });
 
       if (error) {
-        console.error('Failed to send audit log:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to send audit log: ', error);
         return false;
       }
 
       return true;
     } catch (error) {
-      console.error('Audit log service error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Audit log service error: ', error);
       return false;
     }
   }
@@ -58,7 +64,7 @@ export class AuditLogService {
    */
   async getAuditLogs(filter: AuditLogFilter = {}, limit = 100): Promise<AuditLogEntry[]> {
     try {
-      let query = supabase
+      let query = smartClient
         .from('audit_logs')
         .select('*')
         .order('timestamp', { ascending: false })
@@ -86,13 +92,19 @@ export class AuditLogService {
       const { data, error } = await query;
 
       if (error) {
-        console.error('Failed to get audit logs:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to get audit logs: ', error);
         return [];
       }
 
       return data || [];
     } catch (error) {
-      console.error('Audit log service error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Audit log service error: ', error);
       return [];
     }
   }
@@ -109,14 +121,14 @@ export class AuditLogService {
     severity: AuditLogEntry['severity'] = 'info'
   ): Promise<boolean> {
     return this.sendAuditLog({
-      user_id: userId,
+      userid: userId,
       action,
-      resource_type: resourceType,
-      resource_id: resourceId,
+      resourcetype: resourceType,
+      resourceid: resourceId,
       details,
       severity,
-      ip_address: this.getClientIP(),
-      user_agent: this.getUserAgent()
+      ipaddress: this.getClientIP(),
+      useragent: this.getUserAgent()
     });
   }
 
@@ -130,13 +142,13 @@ export class AuditLogService {
     severity: AuditLogEntry['severity'] = 'info'
   ): Promise<boolean> {
     return this.sendAuditLog({
-      user_id: 'system',
+      userid: 'system',
       action,
-      resource_type: resourceType,
+      resourcetype: resourceType,
       details,
       severity,
-      ip_address: 'system',
-      user_agent: 'system'
+      ipaddress: 'system',
+      useragent: 'system'
     });
   }
 

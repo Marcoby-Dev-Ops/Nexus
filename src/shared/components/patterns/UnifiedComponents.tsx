@@ -78,8 +78,7 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
         return <TrendingUp className="w-4 h-4 text-success" />;
       case 'down':
         return <TrendingDown className="w-4 h-4 text-destructive" />;
-      default:
-        return <Minus className="w-4 h-4 text-muted-foreground" />;
+      default: return <Minus className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -89,8 +88,7 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
         return 'text-success';
       case 'down':
         return 'text-destructive';
-      default:
-        return 'text-muted-foreground';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -98,7 +96,7 @@ export const UnifiedMetricCard: React.FC<UnifiedMetricCardProps> = ({
 
   return (
     <Card className={cn(
-      'relative overflow-hidden transition-all duration-200 hover:shadow-md',
+      'relative overflow-hidden transition-all duration-200 hover: shadow-md',
       badge && 'border-l-4',
       badge === 'AI' && 'border-l-primary bg-gradient-to-br from-primary-subtle/50 to-background',
       badge === 'Auto' && 'border-l-success bg-gradient-to-br from-success-subtle/50 to-background',
@@ -355,7 +353,7 @@ export const TableCard: React.FC<TableCardProps> = ({
             </thead>
             <tbody className="divide-y divide-border">
               {data.map((row, rowIndex) => (
-                <tr key={rowIndex} className="hover:bg-muted transition-colors">
+                <tr key={rowIndex} className="hover: bg-muted transition-colors">
                   {headers.map((header, colIndex) => (
                     <td key={colIndex} className="py-3 px-4 text-sm text-foreground">
                       {row[header.toLowerCase().replace(/\s+/g, '_')] || '-'}

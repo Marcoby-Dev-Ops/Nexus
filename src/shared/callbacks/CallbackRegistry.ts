@@ -11,7 +11,13 @@ import type {
 } from '@/core/types/callbacks';
 
 // Global initialization guard to prevent multiple initializations in React StrictMode
+// Use sessionStorage to persist across page refreshes
 let globalInitializationGuard = false;
+
+// Check if already initialized in this session
+if (typeof window !== 'undefined' && window.sessionStorage) {
+  globalInitializationGuard = window.sessionStorage.getItem('callbackRegistryInitialized') === 'true';
+}
 
 /**
  * Implementation of the callback registry
@@ -23,39 +29,62 @@ export class CallbackRegistryImpl implements CallbackRegistry {
   
   private templates: Map<string, CallbackTemplate> = new Map();
   private isInitialized = false;
+  private isPersistent = false; // Track if callbacks are already loaded
 
   /**
    * Initialize the registry with built-in configurations
+   * This should only be called once per app lifecycle
    */
   public async initialize(): Promise<void> {
     // Global guard to prevent multiple initializations
     if (globalInitializationGuard) {
-      console.log('✅ Callback registry already initialized globally, skipping...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Callback registry already initialized globally, skipping...');
       return;
     }
     
     if (this.isInitialized) {
-      console.log('✅ Callback registry already initialized, skipping...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Callback registry already initialized, skipping...');
       return;
     }
     
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('🔄 Initializing callback registry...');
     
     // Set global guard
     globalInitializationGuard = true;
     
-    // Load built-in templates
+    // Persist to sessionStorage to prevent re-initialization on refresh
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      window.sessionStorage.setItem('callbackRegistryInitialized', 'true');
+    }
+    
+    // Load built-in templates (only once)
     await this.loadBuiltInTemplates();
     
-    // Load existing callback configurations
-    await this.loadExistingCallbacks();
+    // Load existing callback configurations (only if not already loaded)
+    if (!this.isPersistent) {
+      await this.loadExistingCallbacks();
+      this.isPersistent = true;
+    }
     
     this.isInitialized = true;
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('✅ Callback registry initialized successfully');
   }
 
   /**
    * Register a new callback configuration
+   * This should only be called for dynamic callbacks, not built-in ones
    */
   public register(config: CallbackConfig): void {
     // Validate configuration
@@ -81,7 +110,10 @@ export class CallbackRegistryImpl implements CallbackRegistry {
       this.integrationMap.set(config.integrationSlug, integrationCallbacks);
     }
 
-    console.log(`Registered callback: ${config.id} for ${config.integrationSlug}`);
+    // Only log in development and only for new registrations
+    if (import.meta.env.DEV) {
+      console.log(`✅ Registered callback: ${config.id} for ${config.integrationSlug}`);
+    }
   }
 
   /**
@@ -90,7 +122,10 @@ export class CallbackRegistryImpl implements CallbackRegistry {
   public unregister(id: string): void {
     const config = this.callbacks.get(id);
     if (!config) {
-      console.warn(`Callback ${id} not found for unregistration`);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Callback ${id} not found for unregistration`);
       return;
     }
 
@@ -107,6 +142,9 @@ export class CallbackRegistryImpl implements CallbackRegistry {
       this.integrationMap.delete(config.integrationSlug);
     }
 
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Unregistered callback: ${id}`);
   }
 
@@ -297,7 +335,10 @@ export class CallbackRegistryImpl implements CallbackRegistry {
       try {
         this.register(config);
       } catch (error) {
-        console.error(`Failed to import callback ${config.id}:`, error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Failed to import callback ${config.id}:`, error);
       }
     });
 
@@ -409,16 +450,39 @@ export class CallbackRegistryImpl implements CallbackRegistry {
 
   /**
    * Load existing callback configurations (from database/storage)
+   * This should only be called once per app lifecycle
    */
   private async loadExistingCallbacks(): Promise<void> {
+    // Check if callbacks are already loaded
+    if (this.callbacks.size > 0) {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+      console.log('✅ Callbacks already loaded, skipping re-registration');
+      return;
+    }
+
     // Load built-in callback configurations
     try {
       const { registerAllCallbacks } = await import('./configs/integrationCallbacks');
       await registerAllCallbacks();
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
       console.log('✅ Loaded all callback configurations');
     } catch (error) {
-      console.error('❌ Failed to load callback configurations:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+      console.error('❌ Failed to load callback configurations: ', error);
     }
+  }
+
+  /**
+   * Check if callbacks are already loaded and persistent
+   */
+  public isCallbacksLoaded(): boolean {
+    return this.isPersistent && this.callbacks.size > 0;
   }
 
   /**
@@ -445,6 +509,15 @@ export const callbackRegistry = new CallbackRegistryImpl();
  * Initialize the callback registry
  */
 export const initializeCallbackRegistry = async (): Promise<void> => {
+  // Check if already initialized
+  if (callbackRegistry.isCallbacksLoaded()) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Callback registry already loaded, skipping initialization');
+    return;
+  }
+  
   await callbackRegistry.initialize();
 };
 

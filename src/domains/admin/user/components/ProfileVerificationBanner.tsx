@@ -81,7 +81,7 @@ export const ProfileVerificationBanner: React.FC<ProfileVerificationBannerProps>
               onClick={handleVerify}
               disabled={isVerifying}
               variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-100"
+              className="border-blue-300 text-blue-700 hover: bg-blue-100"
             >
               {isVerifying ? (
                 <>
@@ -101,7 +101,7 @@ export const ProfileVerificationBanner: React.FC<ProfileVerificationBannerProps>
             <Alert className="bg-blue-50 border-blue-200">
               <AlertTriangle className="h-4 w-4 text-blue-600" />
               <AlertDescription className="text-blue-800">
-                <strong>Issues found:</strong> {verificationResult.checks
+                <strong>Issues found: </strong> {verificationResult.checks
                   .filter(check => check.status === 'fail')
                   .map(check => check.name)
                   .join(', ')

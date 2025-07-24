@@ -25,7 +25,7 @@ export const DashboardOnboarding: React.FC<DashboardOnboardingProps> = ({ onComp
       <p className="mt-3 text-base text-muted-foreground max-w-2xl mx-auto">
         This is your new home for organizational intelligence. Connect data, gain insights, and automate workflows to propel your business forward.
       </p>
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+      <div className="mt-6 grid grid-cols-1 md: grid-cols-3 gap-6 text-left">
         <div className="p-4 rounded-lg bg-card/60 dark:bg-background/40">
           <Sparkles className="w-6 h-6 text-warning mb-2" />
           <h3 className="font-semibold">AI-Powered Insights</h3>

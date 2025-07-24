@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, XCircle, CheckCircle } from 'lucide-react';
-import type { Blocker } from '@/domains/fire-cycle/types';
+import type { Blocker } from '@/domains/business/fire-cycle/types';
 
 interface BlockersCardProps {
   blockers: Blocker[];
@@ -15,8 +15,7 @@ export const BlockersCard: React.FC<BlockersCardProps> = ({ blockers }) => {
         return 'text-orange-600 bg-orange-100 border-orange-200';
       case 'medium':
         return 'text-yellow-600 bg-yellow-100 border-yellow-200';
-      default:
-        return 'text-green-600 bg-green-100 border-green-200';
+      default: return 'text-green-600 bg-green-100 border-green-200';
     }
   };
 

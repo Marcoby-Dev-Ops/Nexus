@@ -115,7 +115,7 @@ export async function testInsertDebugLog(): Promise<{
       .from('debug_logs')
       .insert([
         {
-          user_id: session.user.id,
+          userid: session.user.id,
           message: 'Test log entry from authentication test',
           level: 'info',
           metadata: { test: true, timestamp: new Date().toISOString() }

@@ -10,7 +10,7 @@ export interface ProactiveAlertsWidgetProps {
  */
 const ProactiveAlertsWidget: React.FC<ProactiveAlertsWidgetProps> = ({ className = '' }) => (
   <section
-    className={`rounded-lg bg-white dark:bg-gray-900 shadow p-4 ${className}`}
+    className={`rounded-lg bg-white dark: bg-gray-900 shadow p-4 ${className}`}
     aria-label="Proactive Alerts"
   >
     <h3 className="text-lg font-semibold mb-2">Proactive Alerts</h3>

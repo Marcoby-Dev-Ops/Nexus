@@ -1,19 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  Lightbulb, 
-  Rocket, 
-  Heart, 
-  Users, 
-  TrendingUp, 
-  CheckCircle, 
-  ArrowRight, 
-  Sparkles,
-  Target,
-  Zap,
-  Brain,
-  Star
-} from 'lucide-react';
-
+import { Lightbulb, Rocket, Heart, TrendingUp, CheckCircle, ArrowRight, Sparkles, Target, Zap, Brain, Star } from 'lucide-react';
 interface InnovatorProfile {
   name: string;
   idea: string;
@@ -82,7 +68,7 @@ const WelcomeScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-4 gap-6">
             <div className="text-center">
               <div className="bg-primary/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Lightbulb className="w-8 h-8 text-primary" />
@@ -131,7 +117,7 @@ const WelcomeScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
             ✨ Real People, Real Success Stories
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
             <div className="bg-card rounded-lg p-6 shadow-sm">
               <div className="flex items-center mb-4">
                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
@@ -249,7 +235,7 @@ const WelcomeScreen: React.FC<{ onStart: () => void }> = ({ onStart }) => {
         <div className="text-center">
           <button
             onClick={onStart}
-            className="bg-gradient-to-r from-blue-600 to-purple-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-4 mx-auto"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg hover: from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-4 mx-auto"
           >
             <Rocket className="w-6 h-6" />
             <span>Start Building Your Business</span>
@@ -326,7 +312,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
               </label>
               <input
                 type="text"
-                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-primary"
+                className="w-full px-4 py-3 border border-border rounded-lg focus: ring-2 focus:ring-blue-500 focus:border-primary"
                 placeholder="Your first name"
                 value={profile.name || ''}
                 onChange={(e) => setProfile({ ...profile, name: e.target.value })}
@@ -338,7 +324,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
                 What's your business idea? (Don't worry, keep it simple!)
               </label>
               <textarea
-                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-primary"
+                className="w-full px-4 py-3 border border-border rounded-lg focus: ring-2 focus:ring-blue-500 focus:border-primary"
                 rows={3}
                 placeholder="e.g., I want to sell handmade jewelry online, or I have an idea for a dog walking service"
                 value={profile.idea || ''}
@@ -351,7 +337,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
                 What makes you passionate about this idea?
               </label>
               <textarea
-                className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-primary"
+                className="w-full px-4 py-3 border border-border rounded-lg focus: ring-2 focus:ring-blue-500 focus:border-primary"
                 rows={2}
                 placeholder="e.g., I love creating beautiful things, or I want to help busy pet owners"
                 value={profile.passion || ''}
@@ -365,7 +351,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
             <label className="block text-sm font-medium text-foreground/90 mb-4">
               How would you describe your business experience?
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
               {[
                 { value: 'first-time', label: 'First-Time Entrepreneur', desc: 'This is my first business' },
                 { value: 'some-experience', label: 'Some Experience', desc: 'I\'ve tried before or have some knowledge' },
@@ -377,7 +363,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
                   className={`p-4 rounded-lg border-2 text-left transition-all ${
                     profile.experience === option.value
                       ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-border'
+                      : 'border-border hover: border-border'
                   }`}
                 >
                   <div className="font-medium text-foreground">{option.label}</div>
@@ -392,7 +378,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
             <label className="block text-sm font-medium text-foreground/90 mb-4">
               What are your main goals? (Select all that apply)
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               {[
                 'Make money from my passion',
                 'Replace my current job income',
@@ -409,7 +395,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
                   className={`p-4 rounded-lg border text-left transition-all ${
                     profile.goals?.includes(goal)
                       ? 'border-success bg-success/5 text-success'
-                      : 'border-border hover:border-border'
+                      : 'border-border hover: border-border'
                   }`}
                 >
                   <div className="flex items-center space-x-2">
@@ -426,7 +412,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
             <label className="block text-sm font-medium text-foreground/90 mb-4">
               What are your biggest concerns? (Select all that apply)
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               {[
                 'I don\'t know where to start',
                 'I\'m worried about money/funding',
@@ -443,7 +429,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
                   className={`p-4 rounded-lg border text-left transition-all ${
                     profile.challenges?.includes(challenge)
                       ? 'border-orange-500 bg-orange-50 text-warning'
-                      : 'border-border hover:border-border'
+                      : 'border-border hover: border-border'
                   }`}
                 >
                   <div className="flex items-center space-x-2">
@@ -460,7 +446,7 @@ const ProfileBuilder: React.FC<{ onComplete: (profile: Partial<InnovatorProfile>
             <button
               onClick={handleSubmit}
               disabled={!profile.name || !profile.idea || !profile.experience}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-4 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg hover: from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-4 mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Sparkles className="w-6 h-6" />
               <span>Get My Personalized Plan</span>
@@ -541,7 +527,7 @@ const PersonalizedGuidance: React.FC<{ profile: Partial<InnovatorProfile> }> = (
             🚀 Your Business Idea
           </h2>
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
-            <h3 className="font-semibold text-foreground mb-2">The Idea:</h3>
+            <h3 className="font-semibold text-foreground mb-2">The Idea: </h3>
             <p className="text-foreground/90 mb-4">{profile.idea}</p>
             
             <h3 className="font-semibold text-foreground mb-2">Your Passion:</h3>
@@ -566,7 +552,7 @@ const PersonalizedGuidance: React.FC<{ profile: Partial<InnovatorProfile> }> = (
                     Step {index + 1}: {step.title}
                   </h3>
                   <p className="text-muted-foreground mb-3">{step.description}</p>
-                  <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-primary-foreground px-6 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-200">
+                  <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-primary-foreground px-6 py-2 rounded-lg font-medium hover: from-blue-700 hover:to-purple-700 transition-all duration-200">
                     Start This Step
                   </button>
                 </div>
@@ -582,8 +568,7 @@ const PersonalizedGuidance: React.FC<{ profile: Partial<InnovatorProfile> }> = (
               💪 We've Got Your Back
             </h2>
             <p className="text-muted-foreground mb-6">
-              You mentioned these concerns. Here's how Nexus helps with each one:
-            </p>
+              You mentioned these concerns. Here's how Nexus helps with each one: </p>
             
             <div className="space-y-4">
               {profile.challenges.map((challenge, index) => (
@@ -603,7 +588,7 @@ const PersonalizedGuidance: React.FC<{ profile: Partial<InnovatorProfile> }> = (
 
         {/* Call to Action */}
         <div className="text-center">
-          <button className="bg-gradient-to-r from-green-600 to-blue-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg hover:from-green-700 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-4 mx-auto">
+          <button className="bg-gradient-to-r from-green-600 to-blue-600 text-primary-foreground px-8 py-4 rounded-xl font-semibold text-lg hover: from-green-700 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-4 mx-auto">
             <Rocket className="w-6 h-6" />
             <span>Let's Start Building Your Business!</span>
             <ArrowRight className="w-6 h-6" />

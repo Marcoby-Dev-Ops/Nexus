@@ -5,27 +5,8 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/Dialog';
-import { 
-  PlayCircle, 
-  CheckCircle, 
-  Clock, 
-  ArrowRight, 
-  BookOpen, 
-  Video, 
-  Users, 
-  Target,
-  Lightbulb,
-  TrendingUp,
-  Settings,
-  Zap,
-  Brain,
-  BarChart2,
-  FileText,
-  Calendar,
-  CheckSquare,
-  Inbox
-} from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { PlayCircle, CheckCircle, Clock, ArrowRight, BookOpen, Users, Target, TrendingUp, Settings, Zap, Brain, BarChart2, Calendar, CheckSquare } from 'lucide-react';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNavigate } from 'react-router-dom';
 
 interface UserJourney {
@@ -59,7 +40,7 @@ interface UserGuideSystemProps {
 }
 
 export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedJourney, setSelectedJourney] = useState<UserJourney | null>(null);
   const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
@@ -379,7 +360,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
   // Get difficulty color
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Beginner': return 'bg-success/10 text-success dark:bg-green-900 dark:text-green-200';
+      case 'Beginner': return 'bg-success/10 text-success dark: bg-green-900 dark:text-green-200';
       case 'Intermediate': return 'bg-warning/10 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'Advanced': return 'bg-destructive/10 text-destructive dark:bg-red-900 dark:text-red-200';
       default: return 'bg-muted text-foreground dark:bg-background dark:text-foreground';
@@ -422,11 +403,11 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
         </TabsList>
 
         <TabsContent value={activeCategory} className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredJourneys.map((journey) => {
               const progress = getJourneyProgress(journey);
               return (
-                <Card key={journey.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card key={journey.id} className="hover: shadow-lg transition-shadow cursor-pointer">
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center space-x-4">
@@ -457,7 +438,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
                     {/* Prerequisites */}
                     {journey.prerequisites && (
                       <div className="mb-4">
-                        <p className="text-xs font-medium text-muted-foreground mb-1">Prerequisites:</p>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Prerequisites: </p>
                         <ul className="text-xs text-muted-foreground">
                           {journey.prerequisites.map((req, idx) => (
                             <li key={idx}>• {req}</li>
@@ -479,7 +460,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
                     
                     {/* Outcomes */}
                     <div className="mb-4">
-                      <p className="text-xs font-medium text-muted-foreground mb-2">You'll learn:</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">You'll learn: </p>
                       <ul className="text-xs text-muted-foreground space-y-1">
                         {journey.outcomes.slice(0, 3).map((outcome, idx) => (
                           <li key={idx} className="flex items-center">
@@ -567,8 +548,7 @@ export const UserGuideSystem: React.FC<UserGuideSystemProps> = ({ onClose }) => 
                                       {step.tips && (
                                         <div className="mb-3">
                                           <p className="text-xs font-medium text-muted-foreground mb-1">
-                                            💡 Tips:
-                                          </p>
+                                            💡 Tips: </p>
                                           <ul className="text-xs text-muted-foreground space-y-1">
                                             {step.tips.map((tip, tipIdx) => (
                                               <li key={tipIdx}>• {tip}</li>

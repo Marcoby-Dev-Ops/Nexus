@@ -12,10 +12,10 @@ export interface PasskeyAuthenticationOptions {
 }
 
 export interface PasskeyRecord {
-  credential_id: string;
-  friendly_name: string | null;
-  created_at: string;
-  device_type: 'single_device' | 'multi_device';
+  credentialid: string;
+  friendlyname: string | null;
+  createdat: string;
+  devicetype: 'single_device' | 'multi_device';
 }
 
 /**
@@ -95,7 +95,7 @@ export async function authenticateWithPasskey(options: PasskeyAuthenticationOpti
     throw new Error(challengeErr.message || 'Failed to get authentication challenge');
   }
 
-  const { userId, ...publicKeyOptions } = challengeData;
+  const { userId } = challengeData;
 
   // Step 2: Browser authentication prompt
   const assertionResponse = await startAuthentication({ optionsJSON: publicKeyOptions });
@@ -123,6 +123,9 @@ export async function fetchUserPasskeys(): Promise<PasskeyRecord[]> {
     .order('created_at', { ascending: false });
   
   if (error) {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.error('[Passkey] Failed to fetch passkeys', error);
     throw new Error('Failed to load passkeys');
   }
@@ -159,8 +162,8 @@ export async function establishPasskeySession(authResult: {
   if (authResult.access_token && authResult.refresh_token) {
     // Set session with returned tokens
     const { error: sessionErr } = await supabase.auth.setSession({
-      access_token: authResult.access_token,
-      refresh_token: authResult.refresh_token,
+      accesstoken: authResult.access_token,
+      refreshtoken: authResult.refresh_token,
     });
     
     if (sessionErr) {
@@ -179,7 +182,7 @@ export async function establishPasskeySession(authResult: {
  * Helper to show appropriate error messages for passkey operations
  */
 export function handlePasskeyError(error: unknown, operation: 'registration' | 'authentication'): void {
-  const errorMessage = error instanceof Error ? error.message : `Passkey ${operation} failed`;
+  const errorMessage = error instanceof Error ? error.message: `Passkey ${operation} failed`;
   
   // Handle specific error cases
   if (errorMessage.includes('User cancelled') || errorMessage.includes('NotAllowedError')) {
@@ -192,7 +195,10 @@ export function handlePasskeyError(error: unknown, operation: 'registration' | '
     toast.error(errorMessage);
   }
   
-  console.error(`[Passkey] ${operation} failed:`, error);
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`[Passkey] ${operation} failed: `, error);
 }
 
 /**

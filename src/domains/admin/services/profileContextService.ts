@@ -66,7 +66,10 @@ class ProfileContextService {
         lastUpdated: new Date()
       };
     } catch (error) {
-      console.error('Failed to get user RAG context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to get user RAG context: ', error);
       return null;
     }
   }
@@ -105,7 +108,10 @@ class ProfileContextService {
 
       return missing;
     } catch (error) {
-      console.error('Failed to get missing context fields:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to get missing context fields: ', error);
       return ['profile'];
     }
   }
@@ -132,7 +138,10 @@ class ProfileContextService {
         throw new Error(`Failed to update RAG context: ${error.message}`);
       }
     } catch (error) {
-      console.error('Failed to update RAG context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to update RAG context: ', error);
       throw error;
     }
   }

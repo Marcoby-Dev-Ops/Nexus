@@ -18,7 +18,7 @@ export interface UserProfile {
 
 export interface UpsertOnboardingProfileParams {
   profile: UserProfile;
-  user_id: string;
+  userid: string;
 }
 
 export const profileService = {
@@ -29,19 +29,15 @@ export const profileService = {
     const { profile, user_id } = params;
 
     // Check if profile already exists
-    const { data: existingProfile } = await supabase
-      .from('ai_onboarding_profiles')
-      .select('*')
-      .eq('user_id', user_id)
-      .single();
+    
 
     if (existingProfile) {
       // Update existing profile
       const { data, error } = await supabase
         .from('ai_onboarding_profiles')
         .update({
-          profile_data: profile,
-          updated_at: new Date().toISOString(),
+          profiledata: profile,
+          updatedat: new Date().toISOString(),
         })
         .eq('user_id', user_id)
         .select()
@@ -58,9 +54,9 @@ export const profileService = {
         .from('ai_onboarding_profiles')
         .insert({
           user_id,
-          profile_data: profile,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          profiledata: profile,
+          createdat: new Date().toISOString(),
+          updatedat: new Date().toISOString(),
         })
         .select()
         .single();
@@ -106,8 +102,8 @@ export const profileService = {
     const { data, error } = await supabase
       .from('ai_onboarding_profiles')
       .update({
-        profile_data: updatedProfileData,
-        updated_at: new Date().toISOString(),
+        profiledata: updatedProfileData,
+        updatedat: new Date().toISOString(),
       })
       .eq('user_id', userId)
       .select()
@@ -138,7 +134,7 @@ export const profileService = {
     }
 
     await this.updateOnboardingProfile(userId, {
-      completed_steps: completedSteps,
+      completedsteps: completedSteps,
     });
   },
 }; 

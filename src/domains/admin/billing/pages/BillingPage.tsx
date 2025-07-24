@@ -6,8 +6,7 @@ import { CreditCard } from 'lucide-react';
 /**
  * Billing Page Component
  * 
- * Provides comprehensive billing management including:
- * - Current subscription status
+ * Provides comprehensive billing management including: * - Current subscription status
  * - Usage tracking and analytics
  * - Plan upgrades and downgrades
  * - Payment history and invoices
@@ -36,7 +35,7 @@ export const BillingPage: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
             <div>
               <h4 className="font-medium mb-2">Billing Questions</h4>
               <ul className="space-y-1 text-sm text-muted-foreground">
@@ -60,7 +59,7 @@ export const BillingPage: React.FC = () => {
           <div className="pt-4 border-t">
             <p className="text-sm text-muted-foreground">
               For billing support, contact us at{' '}
-              <a href="mailto:billing@nexus.com" className="text-primary underline">
+              <a href="mailto: billing@nexus.com" className="text-primary underline">
                 billing@nexus.com
               </a>{' '}
               or visit our{' '}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Check, Star, Zap, Shield, Globe, BarChart3, Bolt, Brain, Workflow, Play } from 'lucide-react';
+import { ArrowRight, Sparkles, Check, Star, Zap, Shield, BarChart3, Bolt, Brain, Workflow } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -65,7 +65,7 @@ const MarketingLanding: React.FC = () => {
       <Seo
         title="Nexus Marketing – Automate Your Business | Marcoby"
         description="Automate the 20% that eats 80% of your day with Nexus. Unify your business tools, automate repetitive work, and get AI-powered insights."
-        canonical="https://nexus.marcoby.com/marketing-landing"
+        canonical="https: //nexus.marcoby.com/marketing-landing"
         image="https://nexus.marcoby.com/og-image.png"
         structuredData={{
           '@context': 'https://schema.org',
@@ -75,7 +75,7 @@ const MarketingLanding: React.FC = () => {
           logo: 'https://nexus.marcoby.com/nexus-horizontal-160x48-transparent.png',
           sameAs: [
             'https://www.linkedin.com/company/marcoby',
-            'https://twitter.com/marcobyhq'
+            'https: //twitter.com/marcobyhq'
           ]
         }}
       />
@@ -156,7 +156,7 @@ const MarketingLanding: React.FC = () => {
 
         {/* PILLARS: PRODUCTIVITY, SECURITY, SCALABILITY */}
         <section className="max-w-5xl mx-auto py-12 px-4">
-          <div className="grid gap-8 grid-cols-1 md:grid-cols-3">
+          <div className="grid gap-8 grid-cols-1 md: grid-cols-3">
             <div className="flex flex-col items-center text-center">
               <div className="bg-primary/10 rounded-full p-4 mb-4">
                 <Zap className="w-8 h-8 text-primary" />
@@ -184,14 +184,14 @@ const MarketingLanding: React.FC = () => {
         {/* Features (keep as is, but update intro) */}
         <div className="py-24">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-3xl md: text-4xl font-bold tracking-tight mb-4">
               A Modular System for Every Department
             </h2>
             <p className="text-lg text-muted-foreground">
               Nexus replaces dozens of disconnected tools with a unified, intelligent system.
             </p>
           </div>
-          <div className="grid gap-8 md:grid-cols-3">
+          <div className="grid gap-8 md: grid-cols-3">
             {/* Feature Screenshot Placeholders */}
             {features.map((feature, index) => (
               <Card key={index} className="h-full">
@@ -222,7 +222,7 @@ const MarketingLanding: React.FC = () => {
         {/* Testimonials (keep as is) */}
         <div className="py-24">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+            <h2 className="text-3xl md: text-4xl font-bold tracking-tight mb-4">
               Loved by leaders at growing companies
             </h2>
           </div>
@@ -255,7 +255,7 @@ const MarketingLanding: React.FC = () => {
         {/* CTA */}
         <div className="py-24 text-center">
           <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
+            <h2 className="text-3xl md: text-4xl font-bold tracking-tight mb-6">
               Ready to run your business on Nexus?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
@@ -290,7 +290,7 @@ const MarketingLanding: React.FC = () => {
 
         {/* Footer (update tagline) */}
         <footer className="border-t border-border/50 py-12">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md: flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4">
               <Bolt className="w-6 h-6 text-primary" />
               <span className="text-lg font-bold">Nexus</span>

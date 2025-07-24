@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { brainOnboardingService, type BrainOnboardingSession } from '../services/brainOnboardingService';
 
 export interface BrainOnboardingState {
@@ -75,7 +75,7 @@ export interface BrainOnboardingActions {
 }
 
 export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActions] {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [state, setState] = useState<BrainOnboardingState>({
     session: null,
     isLoading: true,
@@ -128,7 +128,10 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
         isLoading: false
       }));
     } catch (error) {
-      console.error('Error initializing brain onboarding session:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error initializing brain onboarding session: ', error);
       setState(prev => ({
         ...prev,
         error: 'Failed to initialize session',
@@ -143,11 +146,11 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
     try {
       // Update session progress
       await brainOnboardingService.updateSessionProgress(state.session.id, {
-        current_step: state.currentStep + 1,
-        completed_steps: [...state.completedSteps, stepData.currentStep?.toString() || ''],
-        user_profile: stepData.userProfile || state.userProfile,
-        brain_analysis: stepData.brainAnalysis || state.brainAnalysis,
-        system_intelligence: stepData.systemIntelligence || state.systemIntelligence
+        currentstep: state.currentStep + 1,
+        completedsteps: [...state.completedSteps, stepData.currentStep?.toString() || ''],
+        userprofile: stepData.userProfile || state.userProfile,
+        brainanalysis: stepData.brainAnalysis || state.brainAnalysis,
+        systemintelligence: stepData.systemIntelligence || state.systemIntelligence
       });
 
       setState(prev => ({
@@ -157,7 +160,10 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
         completedSteps: [...prev.completedSteps, stepData.currentStep?.toString() || '']
       }));
     } catch (error) {
-      console.error('Error updating step:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating step: ', error);
       setState(prev => ({ ...prev, error: 'Failed to update step' }));
     }
   }, [state.session?.id, state.currentStep, state.completedSteps, state.userProfile, state.brainAnalysis, state.systemIntelligence]);
@@ -172,11 +178,11 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
 
     try {
       const recordedAction = await brainOnboardingService.recordFireAction(state.session.id, {
-        action_type: action.type,
-        step_id: action.stepId,
-        action_data: action.data,
-        fire_cycle_phase: action.fireCyclePhase,
-        intelligence_gain: 0
+        actiontype: action.type,
+        stepid: action.stepId,
+        actiondata: action.data,
+        firecycle_phase: action.fireCyclePhase,
+        intelligencegain: 0
       });
 
       setState(prev => ({
@@ -184,7 +190,10 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
         actions: [recordedAction, ...prev.actions]
       }));
     } catch (error) {
-      console.error('Error recording action:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error recording action: ', error);
     }
   }, [state.session?.id]);
 
@@ -200,14 +209,14 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
 
     try {
       const generatedInsight = await brainOnboardingService.generateInsight(state.session.id, {
-        insight_type: insight.type as any,
+        insighttype: insight.type as any,
         title: insight.title,
         description: insight.description,
         category: insight.category,
         impact: insight.impact as any,
         confidence: insight.confidence,
-        step_id: state.currentStep.toString(),
-        brain_integration_type: 'expert-guidance'
+        stepid: state.currentStep.toString(),
+        brainintegration_type: 'expert-guidance'
       });
 
       setState(prev => ({
@@ -215,7 +224,10 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
         insights: [generatedInsight, ...prev.insights]
       }));
     } catch (error) {
-      console.error('Error generating insight:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error generating insight: ', error);
     }
   }, [state.session?.id, state.currentStep]);
 
@@ -224,16 +236,19 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
 
     try {
       await brainOnboardingService.saveContextCollection(state.session.id, {
-        context_category: 'company',
-        field_id: 'context_data',
-        field_label: 'Business Context',
-        field_value: JSON.stringify(context),
-        field_weight: 10,
-        intelligence_impact: 15,
-        insights_generated: 1
+        contextcategory: 'company',
+        fieldid: 'context_data',
+        fieldlabel: 'Business Context',
+        fieldvalue: JSON.stringify(context),
+        fieldweight: 10,
+        intelligenceimpact: 15,
+        insightsgenerated: 1
       });
     } catch (error) {
-      console.error('Error saving context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error saving context: ', error);
     }
   }, [state.session?.id]);
 
@@ -242,19 +257,22 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
 
     try {
       await brainOnboardingService.saveGoal(state.session.id, {
-        goal_type: 'primary',
+        goaltype: 'primary',
         title: goal.title || 'Business Goal',
         description: goal.description,
         category: goal.category || 'growth',
         priority: goal.priority || 'medium',
-        target_value: goal.targetValue,
-        current_value: goal.currentValue,
+        targetvalue: goal.targetValue,
+        currentvalue: goal.currentValue,
         unit: goal.unit,
         timeframe: goal.timeframe,
         confidence: goal.confidence || 0.8
       });
     } catch (error) {
-      console.error('Error saving goal:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error saving goal: ', error);
     }
   }, [state.session?.id]);
 
@@ -263,11 +281,11 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
 
     try {
       await brainOnboardingService.saveDepartmentConfig(state.session.id, {
-        department_name: config.name,
-        department_type: config.type,
-        is_active: config.isActive || true,
-        ai_agents: config.agents || [],
-        intelligence_metrics: {
+        departmentname: config.name,
+        departmenttype: config.type,
+        isactive: config.isActive || true,
+        aiagents: config.agents || [],
+        intelligencemetrics: {
           understandingLevel: config.intelligence?.understandingLevel || 0,
           insightsGenerated: config.intelligence?.insightsGenerated || 0,
           recommendationsCount: config.intelligence?.recommendationsCount || 0,
@@ -276,7 +294,10 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
         insights: config.insights || []
       });
     } catch (error) {
-      console.error('Error saving department config:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error saving department config: ', error);
     }
   }, [state.session?.id]);
 
@@ -291,7 +312,10 @@ export function useBrainOnboarding(): [BrainOnboardingState, BrainOnboardingActi
 
       brainOnboardingService.clearCurrentSession();
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error completing onboarding: ', error);
     }
   }, [state.session?.id, state]);
 

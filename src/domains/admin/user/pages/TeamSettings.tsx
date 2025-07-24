@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Users, UserPlus, Mail, Shield, MoreHorizontal, User, Check, X } from 'lucide-react';
-
+import { Users, UserPlus, Mail, Shield, MoreHorizontal, Check, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Separator } from '../../components/ui/Separator';
 import { Badge } from '../../components/ui/Badge';
 import { Avatar } from '../../components/ui/Avatar';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 // Mock team member data
 const teamMembers = [
@@ -31,14 +30,13 @@ const teamRoles = [
 /**
  * TeamSettings - Team management settings page
  * 
- * Allows administrators to:
- * - View and manage team members
+ * Allows administrators to: * - View and manage team members
  * - Invite new team members
  * - Set roles and permissions
  * - Remove team members
  */
 const TeamSettings: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
   
@@ -48,6 +46,9 @@ const TeamSettings: React.FC = () => {
   // Handle invitation submission
   const handleInvite = (e: React.FormEvent) => {
     e.preventDefault();
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Inviting ${inviteEmail} as ${inviteRole}`);
     // Implementation would send invitation
     setInviteEmail('');
@@ -72,7 +73,7 @@ const TeamSettings: React.FC = () => {
           <CardDescription>Add new people to your team</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleInvite} className="flex flex-col sm:flex-row gap-4">
+          <form onSubmit={handleInvite} className="flex flex-col sm: flex-row gap-4">
             <div className="flex-1 relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -90,7 +91,7 @@ const TeamSettings: React.FC = () => {
               onValueChange={setInviteRole}
               disabled={!canManageTeam}
             >
-              <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectTrigger className="w-full sm: w-[180px]">
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
@@ -118,7 +119,7 @@ const TeamSettings: React.FC = () => {
         <CardContent>
           <div className="space-y-4">
             {teamMembers.map((member) => (
-              <div key={member.id} className="flex items-center justify-between p-4 rounded-md hover:bg-muted transition-colors">
+              <div key={member.id} className="flex items-center justify-between p-4 rounded-md hover: bg-muted transition-colors">
                 <div className="flex items-center space-x-4">
                   <Avatar>
                     <span>{member.name.charAt(0)}</span>
@@ -191,7 +192,7 @@ const TeamSettings: React.FC = () => {
                 </div>
                 <p className="text-sm text-muted-foreground">{role.description}</p>
                 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+                <div className="grid grid-cols-2 md: grid-cols-4 gap-2 mt-3">
                   {[
                     { permission: 'View content', owner: true, admin: true, member: true, guest: true },
                     { permission: 'Create content', owner: true, admin: true, member: true, guest: false },

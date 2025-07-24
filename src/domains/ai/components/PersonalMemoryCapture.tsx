@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Brain, Lightbulb, Target, BookOpen, Tag } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
-import { thoughtsService } from '@/domains/knowledge/lib/services/thoughtsService';
+import { thoughtsService } from '@/domains/help-center/knowledge/lib/services/thoughtsService';
 
 /**
  * PersonalMemoryCapture
@@ -40,7 +40,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   const [category, setCategory] = useState<PersonalThought['category']>('idea');
   const [tags, setTags] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const { user } = useAuthContext();
+  const { user } = useAuth();
 
   const categories = [
     { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-warning/10 text-warning-foreground' },
@@ -57,10 +57,10 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       // ---- Check for similar thoughts first (Smart Deduplication) ----
       await supabase.functions.invoke('trigger-n8n-workflow', {
         body: {
-          workflow_name: 'smart_thought_deduplication',
+          workflowname: 'smart_thought_deduplication',
           content: content.trim(),
-          user_id: user.id,
-          company_id: user.company_id,
+          userid: user.id,
+          companyid: user.company_id,
           category: category,
           context: currentContext
         },
@@ -81,15 +81,20 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         content: content.trim(),
         category: categoryMap[category],
         status: 'concept' as const,
-        main_sub_categories: tags.split(',').map(t => t.trim()).filter(Boolean),
-        personal_or_professional: 'personal' as const,
-        interaction_method: 'text' as const,
+        mainsub_categories: tags.split(',').map(t => t.trim()).filter(Boolean),
+        personalor_professional: 'personal' as const,
+        interactionmethod: 'text' as const,
         // Put department/page context into impact field for now (future structured)
         impact: currentContext?.department ? `Dept:${currentContext.department}` : undefined,
       };
 
-      if (!user?.company_id) throw new Error('No company_id in user context');
-      const inserted = await thoughtsService.createThought({ ...createReq, company_id: user.company_id });
+      // Get company_id from user profile
+      
+
+      const inserted = await thoughtsService.createThought({ 
+        ...createReq, 
+        companyid: userProfile?.company_id || undefined 
+      });
 
       // Reset form
       setContent('');
@@ -104,7 +109,10 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       };
       onThoughtSaved?.(savedThought);
       
-      console.log('Personal thought saved with business context:', currentContext);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Personal thought saved with business context: ', currentContext);
 
       // Fire-and-forget AI processing (no await to keep UI snappy)
       if (inserted?.id) {
@@ -115,32 +123,44 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
             content: inserted.content,
           },
         }).catch((err) => {
-          console.error('Failed to invoke ai_embed_thought:', err);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to invoke aiembed_thought: ', err);
         });
 
         // Trigger n8n Intelligent Thought Processor workflow
         supabase.functions.invoke('trigger-n8n-workflow', {
           body: {
-            workflow_name: 'intelligent_thought_processor',
-            thought_id: inserted.id,
-            user_id: user.id,
-            company_id: user.company_id,
-            trigger_source: 'thought_creation',
+            workflowname: 'intelligent_thought_processor',
+            thoughtid: inserted.id,
+            userid: user.id,
+            companyid: user.company_id,
+            triggersource: 'thought_creation',
             context: currentContext
           },
         }).catch((err) => {
-          console.error('Failed to trigger intelligent thought processor:', err);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to trigger intelligent thought processor: ', err);
         });
 
         // Legacy: Trigger suggestion generation (integration-aware) - will be replaced by n8n
         supabase.functions.invoke('ai_generate_thought_suggestions', {
           body: { thoughtId: inserted.id },
         }).catch((err) => {
-          console.error('Failed to invoke ai_generate_thought_suggestions:', err);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to invoke aigenerate_thought_suggestions: ', err);
         });
       }
     } catch (error) {
-      console.error('Failed to save personal thought:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to save personal thought: ', error);
     } finally {
       setLoading(false);
     }
@@ -150,7 +170,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 px-4 py-2 text-sm bg-muted hover:bg-muted/80 rounded-lg border text-foreground transition-all"
+        className="flex items-center gap-2 px-4 py-2 text-sm bg-muted hover: bg-muted/80 rounded-lg border text-foreground transition-all"
       >
         <Brain className="w-4 h-4" />
         <span>Capture Thought</span>
@@ -178,8 +198,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
             onClick={() => setCategory(value as PersonalThought['category'])}
             className={`flex flex-col items-center gap-1 p-4 rounded-lg text-xs transition-all ${
               category === value
-                ? color
-                : 'bg-card hover:bg-background text-muted-foreground'
+                ? color: 'bg-card hover:bg-background text-muted-foreground'
             }`}
           >
             <Icon className="w-4 h-4" />
@@ -193,7 +212,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={`What's on your mind? This will be remembered and connected to your ${currentContext?.department || 'work'} context...`}
-        className="w-full p-2 border bg-background border-border rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+        className="w-full p-2 border bg-background border-border rounded-lg resize-none text-sm focus: ring-2 focus:ring-primary focus:border-transparent"
         rows={3}
         autoFocus
       />
@@ -206,7 +225,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
           value={tags}
           onChange={(e) => setTags(e.target.value)}
           placeholder="Tags (comma separated)"
-          className="flex-1 p-2 border bg-background border-border rounded text-sm focus:ring-2 focus:ring-primary focus:border-transparent"
+          className="flex-1 p-2 border bg-background border-border rounded text-sm focus: ring-2 focus:ring-primary focus:border-transparent"
         />
       </div>
 
@@ -238,14 +257,14 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       <div className="flex items-center justify-between">
         <button
           onClick={() => setIsOpen(false)}
-          className="px-4 py-4 text-sm text-muted-foreground hover:text-foreground"
+          className="px-4 py-4 text-sm text-muted-foreground hover: text-foreground"
         >
           Cancel
         </button>
         <button
           onClick={handleSave}
           disabled={!content.trim() || loading}
-          className="px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-primary text-primary-foreground text-sm rounded-lg hover: bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? 'Saving...' : 'Save Thought'}
         </button>

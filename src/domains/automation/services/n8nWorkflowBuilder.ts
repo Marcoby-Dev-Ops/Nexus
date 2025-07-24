@@ -38,7 +38,7 @@ export class N8nWorkflowBuilder {
   }
 
   async generateFromDescription(
-    _requirements: string, 
+    requirements: string, 
     _department?: string
   ): Promise<{
     success: boolean;

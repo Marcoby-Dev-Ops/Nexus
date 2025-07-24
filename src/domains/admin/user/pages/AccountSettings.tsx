@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
-import { useAuthActions } from '@/shared/stores/authStore';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { integrationService } from '@/domains/integrations/lib/integrationService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -45,6 +44,10 @@ interface ProfileFormData {
   displayName: string;
   jobTitle: string;
   company: string;
+  role: string;
+  department: string;
+  businessEmail: string;
+  personalEmail: string;
   bio: string;
   location: string;
   website: string;
@@ -54,8 +57,8 @@ interface ProfileFormData {
 
 
 const AccountSettings: React.FC = () => {
-  const { user, updateProfile, refreshIntegrations } = useAuthContext();
-  const { setIntegrations: setAuthIntegrations } = useAuthActions();
+  const { user, updateProfile, refreshIntegrations } = useAuth();
+  
   const [searchParams] = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +75,10 @@ const AccountSettings: React.FC = () => {
     displayName: '',
     jobTitle: '',
     company: '',
+    role: '',
+    department: '',
+    businessEmail: '',
+    personalEmail: '',
     bio: '',
     location: '',
     website: '',
@@ -98,6 +105,10 @@ const AccountSettings: React.FC = () => {
         displayName: user.profile.display_name || '',
         jobTitle: user.profile.job_title || '',
         company: user.profile.company || '', // Now using the actual company field
+        role: user.profile.role || '',
+        department: user.profile.department || '',
+        businessEmail: user.profile.business_email || '',
+        personalEmail: user.profile.personal_email || '',
         bio: user.profile.bio || '',
         location: user.profile.location || '',
         website: user.profile.linkedin_url || '',
@@ -115,7 +126,10 @@ const AccountSettings: React.FC = () => {
           // Force refresh integrations to get the latest data
           await refreshIntegrations(true);
         } catch (error) {
-          console.error('Failed to refresh integrations:', error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to refresh integrations: ', error);
         } finally {
           setLoadingIntegrations(false);
         }
@@ -146,22 +160,41 @@ const AccountSettings: React.FC = () => {
     setMessage(null);
 
     try {
+      // Calculate full_name from first_name and last_name
+      const fullName = formData.firstName && formData.lastName 
+        ? `${formData.firstName} ${formData.lastName}`.trim()
+        : formData.firstName || formData.lastName || null;
+
       const updates = {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        display_name: formData.displayName,
-        job_title: formData.jobTitle,
+        firstname: formData.firstName,
+        lastname: formData.lastName,
+        displayname: formData.displayName,
+        fullname: fullName, // Add calculated full_name
+        jobtitle: formData.jobTitle,
         company: formData.company, // Add company field
+        role: formData.role, // Add role field
+        department: formData.department, // Add department field
+        businessemail: formData.businessEmail, // Add business email
+        personalemail: formData.personalEmail, // Add personal email
         bio: formData.bio,
         location: formData.location,
-        linkedin_url: formData.website, // Using linkedin_url as website
+        linkedinurl: formData.website, // Using linkedin_url as website
         phone: formData.phone,
-        updated_at: new Date().toISOString(),
+        updatedat: new Date().toISOString(),
       };
 
-      console.log('[AccountSettings] Updating profile with:', updates);
-      console.log('[AccountSettings] User ID:', user.id);
-      console.log('[AccountSettings] Current form data:', formData);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[AccountSettings] Updating profile with: ', updates);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[AccountSettings] User ID: ', user.id);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('[AccountSettings] Current form data: ', formData);
       
       // Use the auth context updateProfile function
       await updateProfile(updates);
@@ -169,7 +202,10 @@ const AccountSettings: React.FC = () => {
       setMessage({ type: 'success', text: 'Profile updated successfully!' });
       setIsEditing(false);
     } catch (error) {
-      console.error('Error updating profile:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating profile: ', error);
       setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
     } finally {
       setIsLoading(false);
@@ -183,6 +219,10 @@ const AccountSettings: React.FC = () => {
       formData.displayName,
       formData.jobTitle,
       formData.company,
+      formData.role,
+      formData.department,
+      formData.businessEmail,
+      formData.personalEmail,
     ];
     const filledFields = fields.filter(field => field.trim() !== '').length;
     return Math.round((filledFields / fields.length) * 100);
@@ -212,7 +252,7 @@ const AccountSettings: React.FC = () => {
                   .select('expires_at, updated_at')
                   .eq('user_id', session.user.id)
                   .eq('integration_slug', integration.integration_type || '')
-                  .single();
+                  .maybeSingle();
                 
                 if (tokens && tokens.expires_at) {
                   const expiresAt = new Date(tokens.expires_at);
@@ -228,10 +268,20 @@ const AccountSettings: React.FC = () => {
                   }
                   
                   lastRefresh = tokens.updated_at;
+                } else {
+                  // No tokens found, but hasTokens was true - this is inconsistent
+                  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('hasTokens was true but no tokens found in database');
+                  tokenStatus = 'not_connected';
                 }
               }
             } catch (error) {
-              console.error('Error checking token status:', error);
+              // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error checking token status: ', error);
               tokenStatus = 'error';
             }
           }
@@ -243,7 +293,10 @@ const AccountSettings: React.FC = () => {
             hasTokens
           };
         } catch (error) {
-          console.error('Error checking integration health:', error);
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error checking integration health: ', error);
           return {
             ...integration,
             tokenStatus: 'error',
@@ -267,8 +320,7 @@ const AccountSettings: React.FC = () => {
         return <AlertCircle className="w-4 h-4 text-red-500" />;
       case 'not_connected':
         return <X className="w-4 h-4 text-gray-400" />;
-      default:
-        return <AlertCircle className="w-4 h-4 text-gray-400" />;
+      default: return <AlertCircle className="w-4 h-4 text-gray-400" />;
     }
   };
 
@@ -282,8 +334,7 @@ const AccountSettings: React.FC = () => {
         return 'Token Expired';
       case 'not_connected':
         return 'Not Connected';
-      default:
-        return 'Unknown Status';
+      default: return 'Unknown Status';
     }
   };
 
@@ -297,8 +348,7 @@ const AccountSettings: React.FC = () => {
         return 'bg-red-100 text-red-800 border-red-200';
       case 'not_connected':
         return 'bg-gray-100 text-gray-600 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-600 border-gray-200';
+      default: return 'bg-gray-100 text-gray-600 border-gray-200';
     }
   };
 
@@ -377,7 +427,7 @@ const AccountSettings: React.FC = () => {
               <span className="text-sm text-muted-foreground">{calculateProfileCompletion()}%</span>
             </div>
             <Progress value={calculateProfileCompletion()} className="w-full" />
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+            <div className="grid grid-cols-2 md: grid-cols-5 gap-2 text-xs">
               {[
                 { label: 'Name', value: formData.firstName && formData.lastName },
                 { label: 'Display Name', value: formData.displayName },
@@ -457,7 +507,7 @@ const AccountSettings: React.FC = () => {
               <Separator />
 
               {/* Form Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
                   <Input
@@ -514,6 +564,64 @@ const AccountSettings: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)} disabled={!isEditing}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="owner">Owner/Founder</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="user">Team Member</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select value={formData.department} onValueChange={(value) => handleInputChange('department', value)} disabled={!isEditing}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select your department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="executive">Executive</SelectItem>
+                      <SelectItem value="sales">Sales</SelectItem>
+                      <SelectItem value="marketing">Marketing</SelectItem>
+                      <SelectItem value="operations">Operations</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="hr">Human Resources</SelectItem>
+                      <SelectItem value="it">IT</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="businessEmail">Business Email</Label>
+                  <Input
+                    id="businessEmail"
+                    type="email"
+                    value={formData.businessEmail}
+                    onChange={(e) => handleInputChange('businessEmail', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="you@company.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="personalEmail">Personal Email</Label>
+                  <Input
+                    id="personalEmail"
+                    type="email"
+                    value={formData.personalEmail}
+                    onChange={(e) => handleInputChange('personalEmail', e.target.value)}
+                    disabled={!isEditing}
+                    placeholder="you@gmail.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
                   <Input
                     id="location"
@@ -536,13 +644,13 @@ const AccountSettings: React.FC = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="website">Website</Label>
+                  <Label htmlFor="website">Website or LinkedIn URL</Label>
                   <Input
                     id="website"
                     value={formData.website}
                     onChange={(e) => handleInputChange('website', e.target.value)}
                     disabled={!isEditing}
-                    placeholder="https://yourwebsite.com"
+                    placeholder="https: //yourwebsite.com or https://linkedin.com/in/yourprofile"
                   />
                 </div>
               </div>
@@ -626,11 +734,20 @@ const AccountSettings: React.FC = () => {
                       setLoadingIntegrations(true);
                       try {
                         // Force clear integrations and reload
-                        console.log('🔄 Force refreshing integrations...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 Force refreshing integrations...');
                         await refreshIntegrations(true);
-                        console.log('✅ Integrations refreshed');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Integrations refreshed');
                       } catch (error) {
-                        console.error('❌ Failed to refresh integrations:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Failed to refresh integrations: ', error);
                       } finally {
                         setLoadingIntegrations(false);
                       }
@@ -648,7 +765,10 @@ const AccountSettings: React.FC = () => {
                       try {
                         await refreshIntegrations(true);
                       } catch (error) {
-                        console.error('Failed to refresh integrations:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to refresh integrations: ', error);
                       } finally {
                         setLoadingIntegrations(false);
                       }
@@ -664,7 +784,7 @@ const AccountSettings: React.FC = () => {
             <CardContent>
               {/* Debug Information */}
               <div className="mb-4 p-3 bg-muted/50 rounded-lg">
-                <h4 className="font-medium mb-2">Debug Info:</h4>
+                <h4 className="font-medium mb-2">Debug Info: </h4>
                 <div className="text-sm space-y-1">
                   <div>User ID: {user?.id}</div>
                   <div>Integrations loaded: {integrations.length}</div>
@@ -677,19 +797,28 @@ const AccountSettings: React.FC = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        console.log('🔍 Checking server-side integrations...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 Checking server-side integrations...');
                         const result = await integrationService.checkUserIntegrations(user?.id || '');
-                        console.log('📊 Server-side integrations:', result);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📊 Server-side integrations: ', result);
                         
                         // Show detailed results
-                        const message = `Found ${result.count} integrations:\n` +
+                        const message = `Found ${result.count} integrations: \n` +
                           result.integrations.map((integration: any) => 
                             `- ${integration.integration_name} (${integration.status})`
                           ).join('\n');
                         
                         alert(message);
                       } catch (error) {
-                        console.error('❌ Error checking server-side:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error checking server-side: ', error);
                         alert('Error checking integrations. See console for details.');
                       }
                     }}
@@ -702,9 +831,15 @@ const AccountSettings: React.FC = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        console.log('🔧 Adding HubSpot integration server-side...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 Adding HubSpot integration server-side...');
                         const result = await integrationService.addHubSpotIntegration(user?.id || '');
-                        console.log('✅ HubSpot integration result:', result);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ HubSpot integration result: ', result);
                         
                         if (result.success) {
                           alert(`✅ HubSpot connected successfully!\n\n${result.message}`);
@@ -714,7 +849,10 @@ const AccountSettings: React.FC = () => {
                           alert(`❌ Failed to add HubSpot: ${result.message}`);
                         }
                       } catch (error) {
-                        console.error('❌ Error adding HubSpot:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error adding HubSpot: ', error);
                         alert('Error adding HubSpot integration. See console for details.');
                       }
                     }}
@@ -727,9 +865,15 @@ const AccountSettings: React.FC = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        console.log('🔄 Force refreshing integrations server-side...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 Force refreshing integrations server-side...');
                         const result = await integrationService.forceRefreshIntegrations(user?.id || '');
-                        console.log('✅ Force refresh result:', result);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Force refresh result: ', result);
                         
                         if (result.success) {
                           alert(`✅ Force refresh completed!\n\n${result.message}`);
@@ -739,7 +883,10 @@ const AccountSettings: React.FC = () => {
                           alert(`❌ Force refresh failed: ${result.message}`);
                         }
                       } catch (error) {
-                        console.error('❌ Error force refreshing:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error force refreshing: ', error);
                         alert('Error force refreshing integrations. See console for details.');
                       }
                     }}
@@ -752,18 +899,27 @@ const AccountSettings: React.FC = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        console.log('📋 Listing all integrations with details...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📋 Listing all integrations with details...');
                         const result = await integrationService.listAllIntegrations(user?.id || '');
-                        console.log('📋 List integrations result:', result);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📋 List integrations result: ', result);
                         
-                        const message = `Found ${result.count} integrations:\n` +
+                        const message = `Found ${result.count} integrations: \n` +
                           result.integrations.map((integration: any) => 
                             `- ${integration.integration_name} (${integration.status})\n  Type: ${integration.integration_type}\n  Updated: ${new Date(integration.updated_at).toLocaleString()}`
                           ).join('\n\n');
                         
                         alert(message);
                       } catch (error) {
-                        console.error('❌ Error listing integrations:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error listing integrations: ', error);
                         alert('Error listing integrations. See console for details.');
                       }
                     }}
@@ -776,12 +932,21 @@ const AccountSettings: React.FC = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        console.log('🔄 Clearing auth store integrations...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 Clearing auth store integrations...');
                         setAuthIntegrations([]);
-                        console.log('✅ Auth store cleared');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ Auth store cleared');
                         alert('Auth store cleared. Click "Force Refresh" to reload.');
                       } catch (error) {
-                        console.error('❌ Error clearing auth store:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error clearing auth store: ', error);
                       }
                     }}
                   >
@@ -793,10 +958,16 @@ const AccountSettings: React.FC = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        console.log('🔍 Debugging session state...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔍 Debugging session state...');
                         const { sessionUtils } = await import('@/core/supabase');
                         const result = await sessionUtils.getSession();
-                        console.log('📊 Session debug result:', result);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📊 Session debug result: ', result);
                         
                         if (result.session) {
                           alert(`✅ Session is valid!\n\nUser: ${result.session?.user?.email}\nExpires: ${result.session?.expires_at ? new Date(result.session.expires_at * 1000).toLocaleString() : 'Unknown'}`);
@@ -804,7 +975,10 @@ const AccountSettings: React.FC = () => {
                           alert(`❌ Session issue: ${result.error || 'Unknown error'}`);
                         }
                       } catch (error) {
-                        console.error('❌ Error debugging session:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error debugging session: ', error);
                         alert('Error debugging session. See console for details.');
                       }
                     }}
@@ -817,10 +991,16 @@ const AccountSettings: React.FC = () => {
                     size="sm"
                     onClick={async () => {
                       try {
-                        console.log('🔄 Force refreshing session...');
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 Force refreshing session...');
                         const { sessionUtils } = await import('@/core/supabase');
                         const result = await sessionUtils.getSession(3); // Retry 3 times
-                        console.log('📊 Force refresh result:', result);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('📊 Force refresh result: ', result);
                         
                         if (result.session) {
                           alert(`✅ Session refreshed!\n\nUser: ${result.session?.user?.email}\nNew expires: ${result.session?.expires_at ? new Date(result.session.expires_at * 1000).toLocaleString() : 'Unknown'}`);
@@ -828,7 +1008,10 @@ const AccountSettings: React.FC = () => {
                           alert(`❌ Force refresh failed: ${result.error || 'Unknown error'}`);
                         }
                       } catch (error) {
-                        console.error('❌ Error force refreshing session:', error);
+                        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ Error force refreshing session: ', error);
                         alert('Error force refreshing session. See console for details.');
                       }
                     }}
@@ -865,18 +1048,18 @@ const AccountSettings: React.FC = () => {
                           const { error } = await supabase
                             .from('user_integrations')
                             .upsert({
-                              user_id: user?.id || '',
-                              integration_id: '550e8400-e29b-41d4-a716-446655440001',
-                              integration_name: 'HubSpot',
-                              integration_type: 'oauth',
+                              userid: user?.id || '',
+                              integrationid: '550e8400-e29b-41d4-a716-446655440001',
+                              integrationname: 'HubSpot',
+                              integrationtype: 'oauth',
                               status: 'active',
                               credentials: {
-                                client_id: import.meta.env.VITE_HUBSPOT_CLIENT_ID
+                                clientid: import.meta.env.VITE_HUBSPOT_CLIENT_ID
                               },
                               settings: {
-                                redirect_uri: `${window.location.origin}/integrations/hubspot/callback`,
-                                features_enabled: ['contacts', 'deals', 'companies', 'marketing', 'analytics'],
-                                setup_completed_at: new Date().toISOString(),
+                                redirecturi: `${window.location.origin}/integrations/hubspot/callback`,
+                                featuresenabled: ['contacts', 'deals', 'companies', 'marketing', 'analytics'],
+                                setupcompleted_at: new Date().toISOString(),
                                 capabilities: [
                                   'CRM Data Sync',
                                   'Sales Pipeline Tracking',
@@ -890,13 +1073,19 @@ const AccountSettings: React.FC = () => {
                             });
                           
                           if (error) {
-                            console.error('Failed to add HubSpot integration:', error);
+                            // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to add HubSpot integration: ', error);
                           } else {
                             // Refresh integrations
                             await refreshIntegrations(true);
                           }
                         } catch (error) {
-                          console.error('Error adding HubSpot integration:', error);
+                          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error adding HubSpot integration: ', error);
                         }
                       }}
                     >

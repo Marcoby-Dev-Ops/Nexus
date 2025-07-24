@@ -15,7 +15,7 @@ export interface QuestionnaireProps {
  * Renders a list of assessment questions and a button to simulate answering.
  */
 const Questionnaire: React.FC<QuestionnaireProps> = ({ questions, onAnswered, className = '' }) => (
-  <section className={`rounded-lg bg-white dark:bg-gray-900 shadow p-4 ${className}`} aria-label="Questionnaire">
+  <section className={`rounded-lg bg-white dark: bg-gray-900 shadow p-4 ${className}`} aria-label="Questionnaire">
     <h3 className="text-lg font-semibold mb-2">Questionnaire</h3>
     {questions.length === 0 ? (
       <p className="text-gray-500 dark:text-gray-300">No questions available.</p>

@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/shared/ui/components/Toast';
 import { supabase } from '@/core/supabase';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface MessageFeedbackProps {
   messageId: string;
@@ -56,7 +56,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { showToast } = useToast();
 
   const feedbackCategories = [
@@ -99,31 +99,31 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
 
       // Store feedback in database
       await supabase.from('ai_message_feedback').insert({
-        message_id: messageId,
-        conversation_id: conversationId,
-        user_id: user.id,
-        agent_id: agentId,
+        messageid: messageId,
+        conversationid: conversationId,
+        userid: user.id,
+        agentid: agentId,
         rating: feedbackRating,
-        feedback_category: feedback.category,
+        feedbackcategory: feedback.category,
         comment: feedback.comment,
-        follow_up_needed: feedback.followUpNeeded,
-        improvement_suggestion: feedback.improvementSuggestion,
-        message_content_hash: btoa(messageContent).slice(0, 50), // For analysis
-        created_at: new Date().toISOString()
+        followup_needed: feedback.followUpNeeded,
+        improvementsuggestion: feedback.improvementSuggestion,
+        messagecontent_hash: btoa(messageContent).slice(0, 50), // For analysis
+        createdat: new Date().toISOString()
       });
 
       // Track in analytics
       await supabase.from('ai_audit_logs').insert({
-        user_id: user.id,
+        userid: user.id,
         action: 'message_feedback_submitted',
-        table_name: 'ai_message_feedback',
-        record_id: messageId,
+        tablename: 'ai_message_feedback',
+        recordid: messageId,
         details: {
           rating: feedbackRating,
           category: feedback.category,
-          has_comment: !!feedback.comment,
-          follow_up_needed: feedback.followUpNeeded,
-          agent_id: agentId
+          hascomment: !!feedback.comment,
+          followup_needed: feedback.followUpNeeded,
+          agentid: agentId
         }
       });
 
@@ -144,7 +144,10 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
       }, 2000);
 
     } catch (error) {
-      console.error('Error submitting feedback:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error submitting feedback: ', error);
       showToast({
         title: 'Feedback Failed',
         description: 'Unable to submit feedback. Please try again.',
@@ -231,7 +234,7 @@ export const MessageFeedback: React.FC<MessageFeedbackProps> = ({
 
       {/* Detailed Feedback Form */}
       {showDetailedFeedback && (
-        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-900/10">
+        <Card className="border-amber-200 bg-amber-50/50 dark: bg-amber-900/10">
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Help us improve</h4>

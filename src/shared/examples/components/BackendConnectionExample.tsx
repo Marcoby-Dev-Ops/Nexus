@@ -28,7 +28,7 @@ export const BackendConnectionExample: React.FC = () => {
   
   // Example of using specific data hooks
   const { data: notifications, loading: notificationsLoading, error: notificationsError, refetch: refetchNotifications } = useNotifications(5);
-  const { data: inboxItems, loading: inboxLoading, error: inboxError, refetch: refetchInbox } = useInboxItems({ is_read: false }, 10);
+  const { data: inboxItems, loading: inboxLoading, error: inboxError, refetch: refetchInbox } = useInboxItems({ isread: false }, 10);
   const { data: dashboardMetrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useDashboardMetrics();
 
   // Example of using the generic data service hook
@@ -68,7 +68,7 @@ export const BackendConnectionExample: React.FC = () => {
             <div className="space-y-4">
               {/* Connection Status Indicator */}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">System Health:</span>
+                <span className="text-sm font-medium">System Health: </span>
                 <ConnectionStatusIndicator showDetails={false} />
               </div>
 
@@ -133,7 +133,7 @@ export const BackendConnectionExample: React.FC = () => {
         </Card>
 
         {/* Data Examples */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Notifications */}
           <Card>
             <CardHeader>
@@ -220,11 +220,11 @@ export const BackendConnectionExample: React.FC = () => {
                   {dashboardMetrics && typeof dashboardMetrics === 'object' ? (
                     <div className="text-sm">
                       <div className="flex justify-between">
-                        <span>Total Activities:</span>
+                        <span>Total Activities: </span>
                         <span>{(dashboardMetrics as any).totalActivities || 0}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Active Projects:</span>
+                        <span>Active Projects: </span>
                         <span>{(dashboardMetrics as any).activeProjects || 0}</span>
                       </div>
                     </div>

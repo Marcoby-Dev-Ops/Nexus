@@ -3,17 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/shared/components/ui/Dialog';
-import { 
-  HelpCircle, 
-  BookOpen, 
-  Video, 
-  ExternalLink, 
-  Lightbulb, 
-  ArrowRight,
-  X,
-  PlayCircle,
-  MessageCircle
-} from 'lucide-react';
+import { HelpCircle, BookOpen, Lightbulb, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface ContextualHelpProps {
@@ -188,7 +178,7 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+            className="h-6 w-6 p-0 text-muted-foreground hover: text-foreground"
           >
             <HelpCircle className="h-4 w-4" />
           </Button>
@@ -295,7 +285,7 @@ export const ContextualHelp: React.FC<ContextualHelpProps> = ({
           
           {content.tips.length > 0 && (
             <div className="mb-3">
-              <h5 className="font-medium text-xs mb-1">Quick Tips:</h5>
+              <h5 className="font-medium text-xs mb-1">Quick Tips: </h5>
               <ul className="text-xs text-muted-foreground space-y-1">
                 {content.tips.slice(0, 2).map((tip, idx) => (
                   <li key={idx}>• {tip}</li>

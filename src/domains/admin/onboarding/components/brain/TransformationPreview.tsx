@@ -6,23 +6,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Brain, 
-  TrendingUp, 
-  Lightbulb, 
-  Sparkles,
-  CheckCircle,
-  Clock,
-  BarChart3,
-  Users,
-  DollarSign,
-  Zap,
-  Target,
-  Award,
-  Rocket,
-  Star
-} from 'lucide-react';
-
+import { Brain, Lightbulb, Sparkles, CheckCircle, Clock, BarChart3, Users, Target, Award, Rocket, Star } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/Progress';
@@ -82,9 +66,9 @@ interface TimelinePhase {
 }
 
 export const TransformationPreview: React.FC<TransformationPreviewProps> = ({ 
-  userProfile: _userProfile, 
+  userProfile: userProfile, 
   systemIntelligence,
-  onTransformationComplete: _onTransformationComplete 
+  onTransformationComplete: onTransformationComplete 
 }) => {
   const [transformation, setTransformation] = useState<UserTransformation>({
     id: 'user-transformation',
@@ -352,7 +336,7 @@ export const TransformationPreview: React.FC<TransformationPreviewProps> = ({
       {/* Transformation Overview */}
       {transformation.capabilities.length > 0 && (
         <>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md: grid-cols-3 gap-4">
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-primary mb-2">
@@ -389,9 +373,9 @@ export const TransformationPreview: React.FC<TransformationPreviewProps> = ({
               <span>Your Capabilities</span>
             </h4>
             
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid md: grid-cols-2 gap-4">
               {transformation.capabilities.map((capability) => (
-                <Card key={capability.id} className="hover:shadow-md transition-shadow">
+                <Card key={capability.id} className="hover: shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-start space-x-3">
                       {getCapabilityIcon(capability.category)}
@@ -444,7 +428,7 @@ export const TransformationPreview: React.FC<TransformationPreviewProps> = ({
                           {phase.description}
                         </p>
                         <div className="space-y-1">
-                          <div className="text-xs font-medium text-primary">Capabilities:</div>
+                          <div className="text-xs font-medium text-primary">Capabilities: </div>
                           <div className="flex flex-wrap gap-1">
                             {phase.capabilities.map((capability, capIndex) => (
                               <Badge key={capIndex} variant="outline" className="text-xs">

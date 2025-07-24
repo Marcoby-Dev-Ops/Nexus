@@ -70,6 +70,9 @@ export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
   const disconnectGoogle = async () => {
     // Note: googleWorkspaceService does not have a disconnect method yet.
     // This would need to be implemented to revoke token and clear localStorage.
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log("Disconnecting from Google is not yet implemented.");
   };
 

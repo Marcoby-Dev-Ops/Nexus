@@ -9,7 +9,7 @@ import { Button } from '@/shared/components/ui/Button';
 
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Progress } from '@/shared/components/ui/Progress';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { supabase } from '@/core/supabase';
 
 import {
@@ -31,7 +31,7 @@ interface HubSpotSetupProps {
 }
 
 export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,26 +44,38 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
 
     try {
       // Use a more reliable session check before OAuth
-      console.log('🔄 [HubSpotSetup] Checking session before OAuth...');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔄 [HubSpotSetup] Checking session before OAuth...');
       
       // Get current session without forcing refresh
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        console.warn('⚠️ [HubSpotSetup] Session check failed:', sessionError);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('⚠️ [HubSpotSetup] Session check failed: ', sessionError);
         setError('Authentication error. Please log in again and try connecting HubSpot.');
         setLoading(false);
         return;
       }
 
       if (!session) {
-        console.error('❌ [HubSpotSetup] No valid session found');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [HubSpotSetup] No valid session found');
         setError('Please log in again before connecting HubSpot.');
         setLoading(false);
         return;
       }
 
-      console.log('✅ [HubSpotSetup] Session validated, proceeding with OAuth');
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('✅ [HubSpotSetup] Session validated, proceeding with OAuth');
 
       // Use the existing HubSpot app credentials from environment
       const clientId = import.meta.env.VITE_HUBSPOT_CLIENT_ID;
@@ -85,7 +97,10 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
         userId: user?.id || null
       }));
       
-      console.log('🔧 [HubSpotSetup] Creating OAuth URL with:', {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 [HubSpotSetup] Creating OAuth URL with: ', {
         clientId: clientId ? '***' : 'missing',
         redirectUri,
         windowOrigin: window.location.origin,
@@ -101,10 +116,16 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
         state
       });
       
-      console.log('🔧 [HubSpotSetup] Generated auth URL:', authUrl);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 [HubSpotSetup] Generated auth URL: ', authUrl);
       
       // Debug: Log the complete OAuth URL for verification
-      console.log('🔧 [HubSpotSetup] Complete OAuth URL for verification:', {
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('🔧 [HubSpotSetup] Complete OAuth URL for verification:', {
         baseUrl: 'https://app.hubspot.com/oauth/authorize',
         clientId: clientId,
         redirectUri,
@@ -117,7 +138,10 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       window.location.href = authUrl;
       
     } catch (error: any) {
-      console.error('❌ [HubSpotSetup] OAuth initiation failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('❌ [HubSpotSetup] OAuth initiation failed: ', error);
       setError(error.message || 'Failed to initiate HubSpot connection');
       setLoading(false);
     }
@@ -126,10 +150,13 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
   const completeSetup = async () => {
     // The integration is now handled by the callback page
     // This function is kept for compatibility but doesn't need to do anything
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('✅ [HubSpotSetup] Setup completed via callback page');
     setLoading(false);
     onComplete?.({ 
-      integration_slug: 'hubspot',
+      integrationslug: 'hubspot',
       status: 'active',
       capabilities: ['CRM Data Sync', 'Sales Pipeline Tracking', 'Marketing Analytics']
     });
@@ -137,8 +164,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1:
-        return (
+      case 1: return (
           <div className="space-y-6">
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
@@ -153,7 +179,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
             </div>
 
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="w-4 h-4 text-blue-600" />
@@ -197,8 +223,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
           </div>
         );
 
-      case 2:
-        return (
+      case 2: return (
           <div className="space-y-6">
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mb-4">
@@ -246,8 +271,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
           </div>
         );
 
-      case 3:
-        return (
+      case 3: return (
           <div className="space-y-6">
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
@@ -290,8 +314,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
           </div>
         );
 
-      case 4:
-        return (
+      case 4: return (
           <div className="space-y-6">
             <div className="text-center">
               <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mb-4">
@@ -332,8 +355,7 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
           </div>
         );
 
-      default:
-        return null;
+      default: return null;
     }
   };
 

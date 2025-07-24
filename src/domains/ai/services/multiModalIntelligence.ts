@@ -169,7 +169,7 @@ class MultiModalIntelligence {
   /**
    * Extract text from video
    */
-  async extractVideoText(_video: File | string): Promise<{
+  async extractVideoText(video: File | string): Promise<{
     text: string;
     timestamps: Array<{
       time: number;
@@ -211,7 +211,7 @@ class MultiModalIntelligence {
 
     return {
       totalItems: this.processingQueue.length,
-      averageWaitTime: waitTimes.length > 0 ? waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length : 0,
+      averageWaitTime: waitTimes.length > 0 ? waitTimes.reduce((a, b) => a + b, 0) / waitTimes.length: 0,
       priorityDistribution
     };
   }
@@ -282,10 +282,10 @@ class MultiModalIntelligence {
     if (input.audio) models.push('whisper-1');
     if (input.video) models.push('gpt-4-vision', 'whisper-1');
     
-    return models.length > 0 ? models : ['gpt-4-vision'];
+    return models.length > 0 ? models: ['gpt-4-vision'];
   }
 
-  private calculateCost(models: string[], _input: MultiModalInput): number {
+  private calculateCost(models: string[], input: MultiModalInput): number {
     let cost = 0;
     const baseTokens = 100; // Base tokens for any request
     
@@ -299,7 +299,7 @@ class MultiModalIntelligence {
     return cost;
   }
 
-  private async simulateProcessing(_input: MultiModalInput): Promise<void> {
+  private async simulateProcessing(input: MultiModalInput): Promise<void> {
     const processingTime = 1000 + Math.random() * 3000;
     await new Promise(resolve => setTimeout(resolve, processingTime));
   }

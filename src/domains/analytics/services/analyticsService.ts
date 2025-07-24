@@ -8,7 +8,7 @@ import { logger } from '@/core/auth/logger';
 
 export interface AnalyticsEvent {
   id: string;
-  event_type: string;
+  eventtype: string;
   user_id?: string;
   session_id?: string;
   properties: Record<string, any>;
@@ -25,7 +25,7 @@ export interface AnalyticsMetrics {
     start: Date;
     end: Date;
   };
-  topEvents: Array<{ event_type: string; count: number }>;
+  topEvents: Array<{ eventtype: string; count: number }>;
   userEngagement: {
     activeUsers: number;
     averageEventsPerUser: number;
@@ -118,13 +118,13 @@ class AnalyticsService {
         const { error } = await supabase
           .from('analytics_events')
           .insert(eventsToFlush.map(event => ({
-            user_id: event.user_id || null,
-            event_type: event.event_type,
-            event_data: event.properties,
-            occurred_at: event.timestamp.toISOString(),
-            session_id: event.session_id,
-            page_url: typeof window !== 'undefined' ? window.location.href : '',
-            user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+            userid: event.user_id || null,
+            eventtype: event.event_type,
+            eventdata: event.properties,
+            occurredat: event.timestamp.toISOString(),
+            sessionid: event.session_id,
+            pageurl: typeof window !== 'undefined' ? window.location.href : '',
+            useragent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
           })));
 
         if (error) {
@@ -137,13 +137,13 @@ class AnalyticsService {
         const { error } = await supabase
           .from('activities')
           .insert(eventsToFlush.map(event => ({
-            user_id: event.user_id || '',
+            userid: event.user_id || '',
             type: event.event_type,
             title: event.event_type,
             source: event.source || 'web',
             description: JSON.stringify(event.properties),
             metadata: event.properties,
-            occurred_at: event.timestamp.toISOString(),
+            occurredat: event.timestamp.toISOString(),
           })));
 
         if (error) {
@@ -170,9 +170,9 @@ class AnalyticsService {
   ): Promise<void> {
     try {
       const event: Omit<AnalyticsEvent, 'id'> = {
-        event_type: eventType,
-        user_id: userId,
-        session_id: this.sessionId,
+        eventtype: eventType,
+        userid: userId,
+        sessionid: this.sessionId,
         properties,
         timestamp: new Date(),
         source: source || 'web',
@@ -197,9 +197,9 @@ class AnalyticsService {
   ): Promise<void> {
     try {
       const event: Omit<AnalyticsEvent, 'id'> = {
-        event_type: eventType,
-        user_id: userId,
-        session_id: this.sessionId,
+        eventtype: eventType,
+        userid: userId,
+        sessionid: this.sessionId,
         properties,
         timestamp: new Date(),
         source: source || 'web',
@@ -211,13 +211,13 @@ class AnalyticsService {
         const { error } = await supabase
           .from('analytics_events')
           .insert({
-            user_id: event.user_id || null,
-            event_type: event.event_type,
-            event_data: event.properties,
-            occurred_at: event.timestamp.toISOString(),
-            session_id: event.session_id,
-            page_url: typeof window !== 'undefined' ? window.location.href : '',
-            user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+            userid: event.user_id || null,
+            eventtype: event.event_type,
+            eventdata: event.properties,
+            occurredat: event.timestamp.toISOString(),
+            sessionid: event.session_id,
+            pageurl: typeof window !== 'undefined' ? window.location.href : '',
+            useragent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
           });
 
         if (error) {
@@ -262,7 +262,7 @@ class AnalyticsService {
       const uniqueUsers = new Set<string>();
       const eventCounts: Record<string, number> = {};
 
-      events?.forEach((event: any) => {
+      events?.forEach((__event: any) => {
         const eventType = event.type || event.event_type || 'unknown';
         eventTypes[eventType] = (eventTypes[eventType] || 0) + 1;
         eventCounts[eventType] = (eventCounts[eventType] || 0) + 1;
@@ -279,7 +279,7 @@ class AnalyticsService {
 
       const totalEvents = events?.length || 0;
       const uniqueUsersCount = uniqueUsers.size;
-      const averageEventsPerUser = uniqueUsersCount > 0 ? totalEvents / uniqueUsersCount : 0;
+      const averageEventsPerUser = uniqueUsersCount > 0 ? totalEvents / uniqueUsersCount: 0;
 
       return {
         totalEvents,
@@ -338,7 +338,7 @@ class AnalyticsService {
   async trackFeatureUsage(feature: string, properties: Record<string, any> = {}, userId?: string): Promise<void> {
     await this.trackEvent('feature_usage', { 
       feature, 
-      usage_count: properties.usage_count || 1,
+      usagecount: properties.usage_count || 1,
       ...properties 
     }, userId);
   }
@@ -385,9 +385,9 @@ class AnalyticsService {
       // Transform activities to AnalyticsEvent format
       return (events || []).map((event: any) => ({
         id: event.id,
-        event_type: event.type || event.event_type || 'unknown',
-        user_id: event.user_id,
-        session_id: event.source || 'web', // Use source as session_id
+        eventtype: event.type || event.event_type || 'unknown',
+        userid: event.user_id,
+        sessionid: event.source || 'web', // Use source as session_id
         properties: event.metadata || event.properties || {},
         timestamp: new Date(event.occurred_at || event.timestamp),
         source: event.source || 'web',

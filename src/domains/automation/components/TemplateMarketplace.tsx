@@ -7,30 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useNotifications } from '@/shared/components/ui/NotificationContext';
 import { automationTemplateImporter, type AutomationTemplate } from '@/domains/automation/templateImporter';
-import {
-  Search,
-  Download,
-  Star,
-  Clock,
-  Zap,
-  Upload,
-  AlertCircle,
-  TrendingUp,
-  Users,
-  Sparkles,
-  Play,
-  Settings,
-  Eye,
-  Heart,
-  Share,
-  Tag,
-  Calendar,
-  BarChart3
-} from 'lucide-react';
-
+import { Search, Download, Star, Clock, Zap, Upload, AlertCircle, TrendingUp, Users, Sparkles, Play, Settings, Eye, Heart, Tag, BarChart3 } from 'lucide-react';
 interface TemplateMarketplaceProps {
   onTemplateSelected?: (template: AutomationTemplate) => void;
   onClose?: () => void;
@@ -66,7 +46,7 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
   onTemplateSelected,
   onClose
 }) => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const { addNotification } = useNotifications();
   
   const [templates, setTemplates] = useState<AutomationTemplate[]>([]);
@@ -149,8 +129,7 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
           return b.rating - a.rating;
         case 'recent':
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-        default:
-          return 0;
+        default: return 0;
       }
     });
 
@@ -241,7 +220,7 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-success/10 text-success dark:bg-green-900 dark:text-green-200';
+      case 'beginner': return 'bg-success/10 text-success dark: bg-green-900 dark:text-green-200';
       case 'intermediate': return 'bg-warning/10 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'advanced': return 'bg-destructive/10 text-destructive dark:bg-red-900 dark:text-red-200';
       default: return 'bg-muted text-foreground dark:bg-background dark:text-foreground';
@@ -250,7 +229,7 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
 
   const getSourceColor = (source: string) => {
     switch (source) {
-      case 'nexus': return 'bg-primary/10 text-primary dark:bg-blue-900 dark:text-blue-200';
+      case 'nexus': return 'bg-primary/10 text-primary dark: bg-blue-900 dark:text-blue-200';
       case 'zapier': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
       case 'make': return 'bg-secondary/10 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
       case 'n8n': return 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200';
@@ -399,7 +378,7 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
 
       {/* Templates Grid */}
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
@@ -416,9 +395,9 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTemplates.map((template) => (
-            <Card key={template.id} className="hover:shadow-lg transition-shadow">
+            <Card key={template.id} className="hover: shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -519,7 +498,7 @@ export const TemplateMarketplace: React.FC<TemplateMarketplaceProps> = ({
                   <p className="text-muted-foreground">{selectedTemplate.description}</p>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md: grid-cols-4 gap-4">
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
                     <div className="text-2xl font-bold">{selectedTemplate.rating.toFixed(1)}</div>
                     <div className="text-sm text-muted-foreground">Rating</div>

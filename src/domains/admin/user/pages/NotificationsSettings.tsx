@@ -7,31 +7,9 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { toast } from 'sonner';
-import {
-  Bell,
-  Mail,
-  Smartphone,
-  MessageSquare,
-  Settings,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  RefreshCw,
-  Save,
-  XCircle,
-  Zap,
-  Users,
-  BarChart3,
-  Shield,
-  Globe,
-  Calendar,
-  FileText,
-  DollarSign,
-  TrendingUp
-} from 'lucide-react';
-
+import { Bell, Mail, Smartphone, MessageSquare, Settings, RefreshCw, Save, XCircle, Zap, Users, BarChart3, Shield, Globe, Calendar, FileText, DollarSign, TrendingUp } from 'lucide-react';
 interface NotificationChannel {
   id: string;
   name: string;
@@ -49,7 +27,7 @@ interface NotificationCategory {
     email: boolean;
     push: boolean;
     sms: boolean;
-    in_app: boolean;
+    inapp: boolean;
   };
   frequency: 'immediate' | 'daily' | 'weekly' | 'never';
 }
@@ -66,7 +44,7 @@ interface NotificationPreferences {
 }
 
 const NotificationsSettings: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     globalEnabled: true,
     quietHours: {
@@ -114,7 +92,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: true,
           sms: true,
-          in_app: true
+          inapp: true
         },
         frequency: 'immediate'
       },
@@ -127,7 +105,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: false,
           sms: false,
-          in_app: true
+          inapp: true
         },
         frequency: 'daily'
       },
@@ -140,7 +118,7 @@ const NotificationsSettings: React.FC = () => {
           email: false,
           push: true,
           sms: false,
-          in_app: true
+          inapp: true
         },
         frequency: 'immediate'
       },
@@ -153,7 +131,7 @@ const NotificationsSettings: React.FC = () => {
           email: false,
           push: false,
           sms: false,
-          in_app: true
+          inapp: true
         },
         frequency: 'daily'
       },
@@ -166,7 +144,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: true,
           sms: false,
-          in_app: true
+          inapp: true
         },
         frequency: 'immediate'
       },
@@ -179,7 +157,7 @@ const NotificationsSettings: React.FC = () => {
           email: false,
           push: false,
           sms: false,
-          in_app: true
+          inapp: true
         },
         frequency: 'daily'
       },
@@ -192,7 +170,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: false,
           sms: false,
-          in_app: true
+          inapp: true
         },
         frequency: 'immediate'
       },
@@ -205,7 +183,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: false,
           sms: false,
-          in_app: true
+          inapp: true
         },
         frequency: 'weekly'
       }
@@ -229,7 +207,10 @@ const NotificationsSettings: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
     } catch (error) {
-      console.error('Error fetching notification preferences:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching notification preferences: ', error);
       toast.error('Failed to load notification preferences');
     } finally {
       setLoading(false);
@@ -332,7 +313,7 @@ const NotificationsSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Notification Preferences</h3>
           <p className="text-sm text-muted-foreground">
@@ -517,7 +498,7 @@ const NotificationsSettings: React.FC = () => {
                     </Select>
                   </div>
                   
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md: grid-cols-4 gap-3">
                     {preferences.channels.map((channel) => (
                       <div key={channel.id} className="flex items-center space-x-2">
                         <Switch

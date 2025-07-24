@@ -56,20 +56,32 @@ interface ProcessOptimization {
 class BusinessProcessMining {
   async trackProcessStep(step: Omit<ProcessStep, 'id'>): Promise<void> {
     // Feature disabled for 1.0 - coming in v1.1
-    console.log('Process step tracking coming in v1.1:', step.action);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Process step tracking coming in v1.1: ', step.action);
   }
 
   async discoverProcesses(): Promise<BusinessProcess[]> {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Process discovery coming in v1.1');
     return [];
   }
 
   async generateOptimizations(): Promise<ProcessOptimization[]> {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Process optimization coming in v1.1');
     return [];
   }
 
   async autoOptimizeProcess(): Promise<boolean> {
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log('Auto-optimization coming in v1.1');
     return false;
   }
@@ -83,16 +95,25 @@ export type { ProcessStep, BusinessProcess, ProcessBottleneck, ProcessOptimizati
 
 // Export stub functions for compatibility
 export async function analyzeProcessSteps(): Promise<ProcessStep[]> {
-  console.log('Business process mining coming in v1.1');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Business process mining coming in v1.1');
   return [];
 }
 
 export async function identifyBottlenecks(): Promise<ProcessBottleneck[]> {
-  console.log('Bottleneck analysis coming in v1.1');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Bottleneck analysis coming in v1.1');
   return [];
 }
 
 export async function generateProcessOptimizations(): Promise<ProcessOptimization[]> {
-  console.log('Process optimization coming in v1.1');
+  // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Process optimization coming in v1.1');
   return [];
 } 

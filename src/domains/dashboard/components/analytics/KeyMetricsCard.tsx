@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart3, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import type { KeyMetric } from '@/domains/fire-cycle/types';
+import type { KeyMetric } from '@/domains/business/fire-cycle/types';
 
 interface KeyMetricsCardProps {
   metrics: KeyMetric[];
@@ -13,8 +13,7 @@ export const KeyMetricsCard: React.FC<KeyMetricsCardProps> = ({ metrics }) => {
         return <TrendingUp className="w-4 h-4 text-green-500" />;
       case 'down':
         return <TrendingDown className="w-4 h-4 text-red-500" />;
-      default:
-        return <Minus className="w-4 h-4 text-gray-500" />;
+      default: return <Minus className="w-4 h-4 text-gray-500" />;
     }
   };
 
@@ -28,8 +27,7 @@ export const KeyMetricsCard: React.FC<KeyMetricsCardProps> = ({ metrics }) => {
         return 'text-purple-600 bg-purple-100';
       case 'health':
         return 'text-orange-600 bg-orange-100';
-      default:
-        return 'text-gray-600 bg-gray-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
   };
 

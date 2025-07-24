@@ -7,37 +7,11 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { useSubscription } from '@/domains/admin/user/hooks/useSubscription';
 import { supabase } from '@/core/supabase';
 import { toast } from 'sonner';
-import {
-  CreditCard,
-  DollarSign,
-  Calendar,
-  Users,
-  Zap,
-  Shield,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  ExternalLink,
-  Download,
-  Eye,
-  EyeOff,
-  Plus,
-  Edit,
-  Trash2,
-  RefreshCw,
-  TrendingUp,
-  BarChart3,
-  Settings,
-  Star,
-  Crown,
-  Sparkles,
-  XCircle
-} from 'lucide-react';
-
+import { CreditCard, Calendar, CheckCircle2, AlertCircle, ExternalLink, Download, Eye, EyeOff, Plus, Edit, Trash2, RefreshCw, Crown, Sparkles, XCircle } from 'lucide-react';
 interface BillingInfo {
   plan: 'free' | 'pro' | 'enterprise';
   status: 'active' | 'past_due' | 'canceled' | 'trialing';
@@ -77,8 +51,8 @@ interface Invoice {
 }
 
 const BillingSettings: React.FC = () => {
-  const { user } = useAuthContext();
-  const { hasAIFeatures, plan, isLoading } = useSubscription();
+  const { user } = useAuth();
+  const { plan } = useSubscription();
   const [billingInfo, setBillingInfo] = useState<BillingInfo | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -142,7 +116,10 @@ const BillingSettings: React.FC = () => {
       setPaymentMethods(mockPaymentMethods);
       setInvoices(mockInvoices);
     } catch (error) {
-      console.error('Error fetching billing data:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching billing data: ', error);
       toast.error('Failed to load billing information');
     } finally {
       setLoading(false);
@@ -181,7 +158,7 @@ const BillingSettings: React.FC = () => {
     }
   };
 
-  const handleAddPaymentMethod = async (paymentData: any) => {
+  const handleAddPaymentMethod = async (__paymentData: any) => {
     try {
       setLoading(true);
       
@@ -244,8 +221,7 @@ const BillingSettings: React.FC = () => {
           'SLA guarantees',
           'On-premise options'
         ];
-      default:
-        return [
+      default: return [
           'Basic AI features',
           'Standard analytics',
           'Community support',
@@ -267,7 +243,7 @@ const BillingSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h3 className="text-lg font-medium">Billing & Subscription</h3>
           <p className="text-sm text-muted-foreground">
@@ -298,7 +274,7 @@ const BillingSettings: React.FC = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
             <div>
               <h4 className="font-medium mb-2">Plan Details</h4>
               <div className="space-y-2">
@@ -389,7 +365,7 @@ const BillingSettings: React.FC = () => {
           <CardDescription>Choose the plan that best fits your needs</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
             {/* Free Plan */}
             <div className="border rounded-lg p-6">
               <div className="text-center mb-4">

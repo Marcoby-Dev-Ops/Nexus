@@ -24,7 +24,7 @@ const getCssVariableValue = (variableName: string): string => {
     '--muted': '#64748b',
   };
   
-  const key = variableName.startsWith('--') ? variableName : `--${variableName}`;
+  const key = variableName.startsWith('--') ? variableName: `--${variableName}`;
   return fallbackColors[key] || '#006837'; // Default to primary if not found
 };
 

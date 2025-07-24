@@ -9,17 +9,17 @@ import {
   Target, 
   Zap
 } from 'lucide-react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import type { Json } from '@/core/types/database.types';
 
 interface UserContextData {
   role: string;
-  experience_level: 'beginner' | 'intermediate' | 'advanced';
-  biggest_challenge: string;
-  daily_frustration: string;
-  ideal_outcome: string;
-  time_availability: 'minimal' | 'some' | 'focused';
-  working_style: 'quick-wins' | 'deep-dive' | 'collaborative';
+  experiencelevel: 'beginner' | 'intermediate' | 'advanced';
+  biggestchallenge: string;
+  dailyfrustration: string;
+  idealoutcome: string;
+  timeavailability: 'minimal' | 'some' | 'focused';
+  workingstyle: 'quick-wins' | 'deep-dive' | 'collaborative';
 }
 
 interface UserContextStepProps {
@@ -29,15 +29,15 @@ interface UserContextStepProps {
 }
 
 export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip, onBack }) => {
-  const { updateProfile } = useAuthContext();
+  const { updateProfile } = useAuth();
   const [contextData, setContextData] = useState<UserContextData>({
     role: '',
-    experience_level: 'intermediate',
-    biggest_challenge: '',
-    daily_frustration: '',
-    ideal_outcome: '',
-    time_availability: 'some',
-    working_style: 'quick-wins'
+    experiencelevel: 'intermediate',
+    biggestchallenge: '',
+    dailyfrustration: '',
+    idealoutcome: '',
+    timeavailability: 'some',
+    workingstyle: 'quick-wins'
   });
 
   // Simplified, conversational role options
@@ -61,11 +61,14 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
           theme: 'system',
           notifications: true,
           language: 'en',
-          user_context: contextData as unknown as Json
+          usercontext: contextData as unknown as Json
         }
       });
     } catch (error) {
-      console.error('Error updating user context:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error updating user context: ', error);
     }
     
     onNext(contextData);
@@ -91,11 +94,11 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
             <p className="text-sm text-muted-foreground">This helps us show you the most relevant features</p>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
               {roleOptions.map((role) => (
                 <div
                   key={role.id}
-                  className={`p-4 border rounded-lg cursor-pointer transition-all hover:border-primary/50 ${
+                  className={`p-4 border rounded-lg cursor-pointer transition-all hover: border-primary/50 ${
                     contextData.role === role.id 
                       ? 'border-primary bg-primary/5 ring-1 ring-primary/20' 
                       : 'border-border hover:bg-muted/50'
@@ -121,11 +124,11 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
               value={contextData.experience_level}
               onValueChange={(value) => setContextData(prev => ({ 
                 ...prev, 
-                experience_level: value as 'beginner' | 'intermediate' | 'advanced' 
+                experiencelevel: value as 'beginner' | 'intermediate' | 'advanced' 
               }))}
               className="space-y-4"
             >
-              <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-muted/50">
+              <div className="flex items-center space-x-4 p-4 rounded-lg hover: bg-muted/50">
                 <RadioGroupItem value="beginner" id="beginner" />
                 <Label htmlFor="beginner" className="flex-1 cursor-pointer">
                   <div className="font-medium">I like things simple</div>
@@ -160,7 +163,7 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
             <Textarea
               placeholder="e.g., I spend too much time creating reports instead of analyzing them, or our team uses 5 different tools and nothing talks to each other..."
               value={contextData.biggest_challenge}
-              onChange={(e) => setContextData(prev => ({ ...prev, biggest_challenge: e.target.value }))}
+              onChange={(e) => setContextData(prev => ({ ...prev, biggestchallenge: e.target.value }))}
               className="min-h-[100px] text-base"
             />
           </CardContent>
@@ -176,7 +179,7 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
             <Textarea
               placeholder="e.g., I wake up to a smart dashboard that already shows me what needs my attention, my team is automatically updated on progress, and I have time to focus on strategy instead of busy work..."
               value={contextData.ideal_outcome}
-              onChange={(e) => setContextData(prev => ({ ...prev, ideal_outcome: e.target.value }))}
+              onChange={(e) => setContextData(prev => ({ ...prev, idealoutcome: e.target.value }))}
               className="min-h-[100px] text-base"
             />
           </CardContent>
@@ -193,11 +196,11 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
               value={contextData.working_style}
               onValueChange={(value) => setContextData(prev => ({ 
                 ...prev, 
-                working_style: value as 'quick-wins' | 'deep-dive' | 'collaborative' 
+                workingstyle: value as 'quick-wins' | 'deep-dive' | 'collaborative' 
               }))}
               className="space-y-4"
             >
-              <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-muted/50">
+              <div className="flex items-center space-x-4 p-4 rounded-lg hover: bg-muted/50">
                 <RadioGroupItem value="quick-wins" id="quick-wins" />
                 <Label htmlFor="quick-wins" className="flex-1 cursor-pointer">
                   <div className="flex items-center gap-2">
@@ -207,7 +210,7 @@ export const UserContextStep: React.FC<UserContextStepProps> = ({ onNext, onSkip
                   <div className="text-sm text-muted-foreground">Show me immediate value, keep it simple</div>
                 </Label>
               </div>
-              <div className="flex items-center space-x-4 p-4 rounded-lg hover:bg-muted/50">
+              <div className="flex items-center space-x-4 p-4 rounded-lg hover: bg-muted/50">
                 <RadioGroupItem value="deep-dive" id="deep-dive" />
                 <Label htmlFor="deep-dive" className="flex-1 cursor-pointer">
                   <div className="flex items-center gap-2">

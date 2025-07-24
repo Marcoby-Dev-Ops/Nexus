@@ -167,10 +167,10 @@ export class SalesContextualAgent {
     return {
       score: Math.max(0, Math.min(100, healthScore)),
       trends: {
-        pipeline_growth: 0.15,
-        conversion_rate: 0.08,
-        deal_velocity: -0.05,
-        team_capacity: 0.78
+        pipelinegrowth: 0.15,
+        conversionrate: 0.08,
+        dealvelocity: -0.05,
+        teamcapacity: 0.78
       },
       risks: response.riskWarnings.slice(0, 3),
       opportunities: response.opportunityHighlights.slice(0, 3)
@@ -196,11 +196,11 @@ export class SalesContextualAgent {
 
     const conversionAlignment = marketingInsights.some(
       insight => insight.insight.includes('conversion')
-    ) ? 90 : 70;
+    ) ? 90: 70;
 
     const campaignEffectiveness = marketingInsights.some(
       insight => insight.insight.includes('campaign')
-    ) ? 85 : 75;
+    ) ? 85: 75;
 
     const recommendations = [
       ...response.organizationalRecommendations.filter(rec => rec.includes('marketing')),
@@ -235,7 +235,7 @@ export class SalesContextualAgent {
     // Calculate readiness scores
     const deliveryCapacity = operationalInsights.some(
       insight => insight.insight.includes('capacity')
-    ) ? 60 : 85;
+    ) ? 60: 85;
 
     const onboardingEfficiency = 80;
     const supportReadiness = 85;
@@ -274,7 +274,7 @@ export class SalesContextualAgent {
     const revenueProjection = 2500000; // Base projection
     const marginAnalysis = 73; // Base margin
     const cashFlowImpact = 240000; // Base cash flow
-    const budgetAlignment = financialInsights.length > 0 ? 85 : 75;
+    const budgetAlignment = financialInsights.length > 0 ? 85: 75;
 
     return {
       revenueProjection,
@@ -402,8 +402,7 @@ export class SalesContextualAgent {
         return '2-4 weeks';
       case 'low':
         return '1-2 months';
-      default:
-        return '2-4 weeks';
+      default: return '2-4 weeks';
     }
   }
 

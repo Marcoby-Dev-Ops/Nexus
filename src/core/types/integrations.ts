@@ -53,7 +53,7 @@ export interface Integration {
   };
   
   // Timestamps
-  created_at: string;
+  createdat: string;
   updated_at?: string;
 }
 

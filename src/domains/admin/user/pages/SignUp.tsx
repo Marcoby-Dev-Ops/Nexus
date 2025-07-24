@@ -19,7 +19,7 @@ export const SignUp = () => {
   return (
     <div className="min-h-screen flex">
       {/* Left Side - Branding & Info */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-secondary to-primary/80 relative overflow-hidden">
+      <div className="hidden lg: flex lg:w-1/2 bg-gradient-to-br from-primary via-secondary to-primary/80 relative overflow-hidden">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 -left-4 w-72 h-72 bg-card rounded-full mix-blend-multiply filter blur-xl animate-pulse"></div>
@@ -108,7 +108,7 @@ export const SignUp = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background dark:bg-background">
         <div className="max-w-md w-full">
           {/* Mobile Header (visible only on small screens) */}
-          <div className="lg:hidden text-center mb-8">
+          <div className="lg: hidden text-center mb-8">
             <img
               src="/Nexus/nexus-square-40x40-transparent.svg"
               alt="NEXUS Logo"
@@ -126,11 +126,14 @@ export const SignUp = () => {
           <AuthForm
             initialMode="signup"
             onSuccess={handleSuccess}
-            onError={(error) => console.error('Sign up error:', error)}
+            onError={(error) => // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Sign up error: ', error)}
           />
 
           {/* Additional Info */}
-          <div className="mt-6 p-4 bg-primary/5 dark:bg-primary/10 border border-border dark:border-primary/20 rounded-lg">
+          <div className="mt-6 p-4 bg-primary/5 dark: bg-primary/10 border border-border dark:border-primary/20 rounded-lg">
             <div className="flex items-start space-x-4">
               <svg className="w-5 h-5 text-primary dark:text-primary mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
@@ -149,7 +152,7 @@ export const SignUp = () => {
           {/* Footer Links */}
           <div className="mt-8 text-center">
                           <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
-                <Link to="/legal/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+                <Link to="/legal/privacy" className="hover: text-primary transition-colors">Privacy Policy</Link>
                 <span>•</span>
                 <Link to="/legal/terms" className="hover:text-primary transition-colors">Terms of Service</Link>
                 <span>•</span>

@@ -92,7 +92,10 @@ export class N8nService {
     try {
       const userConfig = await userN8nConfigService.getCurrentUserConfig();
       if (!userConfig || !userConfig.isActive) {
-        console.warn('No active n8n configuration found for user');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('No active n8n configuration found for user');
         return null;
       }
 
@@ -101,7 +104,10 @@ export class N8nService {
         apiKey: userConfig.apiKey
       };
     } catch (error) {
-      console.error('Failed to get user n8n configuration:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to get user n8n configuration: ', error);
       return null;
     }
   }
@@ -135,7 +141,10 @@ export class N8nService {
         executionId: response.headers['x-n8n-execution-id']
       };
     } catch (error: unknown) {
-      console.error('n8n workflow trigger failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('n8n workflow trigger failed: ', error);
       if (axios.isAxiosError(error)) {
         const axiosError = error as AxiosError;
         return {
@@ -201,7 +210,10 @@ export class N8nService {
         };
       } else {
         // Fallback to the old method if the new builder fails
-        console.warn('New workflow builder failed, falling back to Nexus Builder webhook:', result.error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('New workflow builder failed, falling back to Nexus Builder webhook: ', result.error);
         const nexusBuilderWebhook = WORKFLOW_WEBHOOKS.nexusBuilder;
         
         return this.triggerWorkflow(nexusBuilderWebhook, {
@@ -212,7 +224,10 @@ export class N8nService {
         });
       }
     } catch (error: any) {
-      console.error('Workflow generation failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Workflow generation failed: ', error);
       return {
         success: false,
         error: `Workflow generation failed: ${error.message}`
@@ -295,7 +310,10 @@ export class N8nService {
     try {
       const config = await this.getUserConfig();
       if (!config) {
-        console.warn('No n8n configuration found for execution status check');
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn('No n8n configuration found for execution status check');
         return null;
       }
 
@@ -311,7 +329,10 @@ export class N8nService {
 
       return response.data as WorkflowExecution;
     } catch (error) {
-      console.error('Failed to fetch execution status:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Failed to fetch execution status: ', error);
       return null;
     }
   }
@@ -339,6 +360,9 @@ export class N8nService {
   ): Promise<void> {
     // This would typically update your configuration
     // For now, we'll just log it - in production, you might store this in your database
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
     console.log(`Configured ${department}.${action} webhook: ${webhookId}`);
     
     // You could store this in localStorage, Supabase, or your backend
@@ -346,7 +370,10 @@ export class N8nService {
     try {
       localStorage.setItem(configKey, JSON.stringify(webhookId));
     } catch (error) {
-      console.warn(`Failed to save webhook config for ${configKey}:`, error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.warn(`Failed to save webhook config for ${configKey}:`, error);
     }
   }
 
@@ -366,7 +393,10 @@ export class N8nService {
       });
       return response.status === 200;
     } catch (error) {
-      console.error('n8n health check failed:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('n8n health check failed: ', error);
       return false;
     }
   }

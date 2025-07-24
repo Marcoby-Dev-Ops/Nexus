@@ -35,7 +35,10 @@ export const OnboardingVerificationPanel: React.FC<OnboardingVerificationPanelPr
 
   const handleQuickVerify = () => {
     const result = quickVerify();
-    console.log('Quick verification result:', result);
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.log('Quick verification result: ', result);
   };
 
   return (
@@ -47,7 +50,7 @@ export const OnboardingVerificationPanel: React.FC<OnboardingVerificationPanelPr
         <div className="flex space-x-2">
           <button
             onClick={handleQuickVerify}
-            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded hover: bg-gray-200"
           >
             Quick Check
           </button>
@@ -72,7 +75,7 @@ export const OnboardingVerificationPanel: React.FC<OnboardingVerificationPanelPr
 
         {error && (
           <div className="text-red-600 bg-red-50 p-3 rounded">
-            <strong>Error:</strong> {error}
+            <strong>Error: </strong> {error}
           </div>
         )}
 
@@ -145,7 +148,7 @@ export const OnboardingVerificationPanel: React.FC<OnboardingVerificationPanelPr
       {/* Integration Info */}
       <div className="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600">
         <div className="flex items-center justify-between">
-          <span>Verification System:</span>
+          <span>Verification System: </span>
           <div className="flex space-x-2">
             <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
               Codebase

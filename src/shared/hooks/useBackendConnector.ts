@@ -47,7 +47,7 @@ export function useBackendConnector(): UseBackendConnectorReturn {
       setError(null);
       return await backendConnector.request<T>(serviceName, endpoint, options);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Unknown error');
+      const error = err instanceof Error ? err: new Error('Unknown error');
       setError(error);
       logger.error({ serviceName, endpoint, error }, 'Backend request failed');
       throw error;
@@ -62,7 +62,7 @@ export function useBackendConnector(): UseBackendConnectorReturn {
       // Trigger health check by making a simple request
       await backendConnector.request('supabase', '/health');
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Health check failed');
+      const error = err instanceof Error ? err: new Error('Health check failed');
       setError(error);
       logger.error({ error }, 'Health check failed');
     } finally {

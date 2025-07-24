@@ -221,8 +221,8 @@ class SlashCommandService {
       const { error: updateError } = await supabase
         .from('ai_action_card_templates')
         .update({
-          usage_count: supabase.sql`usage_count + 1`,
-          last_used: new Date().toISOString()
+          usagecount: supabase.sql`usage_count + 1`,
+          lastused: new Date().toISOString()
         })
         .eq('slug', usage.commandSlug);
 

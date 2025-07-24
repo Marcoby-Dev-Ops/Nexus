@@ -10,7 +10,7 @@ export interface QuickActionsWidgetProps {
  */
 const QuickActionsWidget: React.FC<QuickActionsWidgetProps> = ({ className = '' }) => (
   <section
-    className={`rounded-lg bg-white dark:bg-gray-900 shadow p-4 ${className}`}
+    className={`rounded-lg bg-white dark: bg-gray-900 shadow p-4 ${className}`}
     aria-label="Quick Actions"
   >
     <h3 className="text-lg font-semibold mb-2">Quick Actions</h3>

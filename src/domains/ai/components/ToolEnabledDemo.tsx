@@ -5,23 +5,11 @@
  */
 
 import React, { useState } from 'react';
-import { 
-  Zap, 
-  Database, 
-  Send, 
-  Bot, 
-  User, 
-  CheckCircle, 
-  ExternalLink,
-  BarChart3,
-  Calendar,
-  FileText,
-  Settings
-} from 'lucide-react';
+import { Zap, Database, Send, Bot, User, CheckCircle, BarChart3, Calendar, FileText, Settings } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toolEnabledAgent } from '@/domains/ai/lib/aiAgentWithTools';
 import { executiveAgent } from '@/domains/ai/lib/agentRegistry';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 
 interface DemoMessage {
   id: string;
@@ -33,7 +21,7 @@ interface DemoMessage {
 }
 
 export const ToolEnabledDemo: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<DemoMessage[]>([
     {
       id: '1',
@@ -106,7 +94,10 @@ export const ToolEnabledDemo: React.FC = () => {
       setMessages(prev => [...prev, aiMessage]);
 
     } catch (error) {
-      console.error('Demo error:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Demo error: ', error);
       const errorMessage: DemoMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -128,7 +119,7 @@ export const ToolEnabledDemo: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 mb-6">
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark: from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 mb-6">
         <div className="flex items-center gap-4 mb-4">
           <div className="p-2 bg-primary/20 rounded-lg">
             <Zap className="w-6 h-6 text-primary" />
@@ -174,7 +165,7 @@ export const ToolEnabledDemo: React.FC = () => {
               key={index}
               onClick={() => handleSendMessage(query.text)}
               disabled={isLoading}
-              className="p-4 text-left border border-border rounded-lg hover:bg-primary/5 hover:border-primary/30 transition-all disabled:opacity-50"
+              className="p-4 text-left border border-border rounded-lg hover: bg-primary/5 hover:border-primary/30 transition-all disabled:opacity-50"
             >
               <div className="flex items-start gap-4">
                 <div className="p-1 bg-primary/10 rounded">
@@ -289,12 +280,12 @@ export const ToolEnabledDemo: React.FC = () => {
               onKeyDown={handleKeyDown}
               placeholder="Ask Nex to access business data or perform actions..."
               disabled={isLoading}
-              className="flex-1 px-4 py-2 text-sm bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+              className="flex-1 px-4 py-2 text-sm bg-background border border-border rounded-lg focus: outline-none focus:ring-2 focus:ring-primary focus:border-primary"
             />
             <button
               onClick={() => handleSendMessage()}
               disabled={!input.trim() || isLoading}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-all"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover: bg-primary/90 disabled:opacity-50 transition-all"
             >
               <Send className="w-4 h-4" />
             </button>

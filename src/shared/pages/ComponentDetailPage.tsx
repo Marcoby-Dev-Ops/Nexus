@@ -1,23 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Activity, 
-  MapPin, 
-  Clock, 
-  Users, 
-  Network, 
-  AlertTriangle,
-  CheckCircle,
-  TrendingUp,
-  TrendingDown,
-  BarChart3,
-  Eye,
-  Code,
-  FileText,
-  Layers
-} from 'lucide-react';
-
+import { ArrowLeft, Activity, MapPin, Clock, Users, Network, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, BarChart3, Code, FileText, Layers } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
@@ -271,7 +254,7 @@ const ComponentDetailPage: React.FC = () => {
         </Card>
 
         {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
@@ -376,7 +359,7 @@ const ComponentDetailPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="dependencies" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -457,7 +440,7 @@ const ComponentDetailPage: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md: grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">Popularity Score</span>

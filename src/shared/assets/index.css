@@ -7,6 +7,7 @@
   @media (forced-colors: active) {
     /* Modern forced-colors mode support */
     :root {
+      -webkit-forced-color-adjust: auto;
       forced-color-adjust: auto;
     }
   }
@@ -174,6 +175,10 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-user-select: none;
+    user-select: none;
   }
   
   html {

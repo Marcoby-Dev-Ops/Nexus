@@ -15,7 +15,7 @@ interface AuthUser {
   full_name?: string | null;
   initials?: string;
   avatar_url?: string | null;
-  created_at: string;
+  createdat: string;
   last_sign_in_at?: string | null;
   role?: string | null;
   department?: string | null;
@@ -104,7 +104,10 @@ export class UserContextBridge {
       
       return enhancedContext;
     } catch (error) {
-      console.error('Error initializing user context bridge:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error initializing user context bridge: ', error);
       throw error;
     }
   }
@@ -168,8 +171,7 @@ export class UserContextBridge {
     const { user, aiPreferences, businessContext } = this.userContext;
     
     return `
-USER CONTEXT FOR AI:
-Name: ${user.name}
+USER CONTEXT FOR AI: Name: ${user.name}
 Role: ${user.role || 'Team Member'}
 Department: ${businessContext.department}
 Company: ${businessContext.company?.name || 'Unknown'}
@@ -245,7 +247,10 @@ PERMISSIONS:
         excludedFeatures: preferences?.excluded_features || []
       };
     } catch (error) {
-      console.error('Error fetching user preferences:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching user preferences: ', error);
       return {
         communicationStyle: 'direct',
         responseLength: 'standard',
@@ -309,7 +314,10 @@ PERMISSIONS:
         department: user.department || 'General'
       })) || [];
     } catch (error) {
-      console.error('Error fetching team members:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching team members: ', error);
       return [];
     }
   }
@@ -329,7 +337,10 @@ PERMISSIONS:
         satisfaction: { current: 4.2, previous: 4.1, trend: 'up' }
       };
     } catch (error) {
-      console.error('Error fetching KPIs:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error fetching KPIs: ', error);
       return {};
     }
   }
@@ -344,14 +355,17 @@ PERMISSIONS:
       await supabase
         .from('user_activity')
         .insert({
-          user_id: this.userContext.user.id,
+          userid: this.userContext.user.id,
           action,
           details,
           timestamp: new Date().toISOString(),
           page: window.location.pathname
         });
     } catch (error) {
-      console.error('Error saving user activity:', error);
+      // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error saving user activity: ', error);
     }
   }
 
@@ -413,7 +427,10 @@ PERMISSIONS:
       try {
         listener(context);
       } catch (error) {
-        console.error('Error in context listener:', error);
+        // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error('Error in context listener: ', error);
       }
     });
   }

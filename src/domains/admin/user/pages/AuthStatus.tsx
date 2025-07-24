@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAuthContext } from '@/domains/admin/user/hooks/AuthContext';
+import { useAuth } from '@/core/auth/AuthProvider';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { CheckCircle, XCircle, Clock, AlertCircle, User } from 'lucide-react';
@@ -10,30 +10,26 @@ interface AuthStatusProps {
 }
 
 export function AuthStatus({ showDetails = false, className = '' }: AuthStatusProps) {
-  const { user, session, loading, error, status, initialized } = useAuthContext();
+  const { user, session, loading, error, isAuthenticated } = useAuth();
 
   const getStatusIcon = () => {
     if (loading) return <Clock className="w-4 h-4 text-primary animate-spin" />;
     if (error) return <XCircle className="w-4 h-4 text-destructive" />;
-    if (user && session) return <CheckCircle className="w-4 h-4 text-success" />;
-    if (status === 'timeout') return <AlertCircle className="w-4 h-4 text-warning" />;
+    if (isAuthenticated && user && session) return <CheckCircle className="w-4 h-4 text-success" />;
     return <User className="w-4 h-4 text-muted-foreground" />;
   };
 
   const getStatusText = () => {
     if (loading) return 'Loading...';
     if (error) return 'Error';
-    if (user && session) return 'Authenticated';
-    if (status === 'timeout') return 'Timeout';
-    if (initialized) return 'Not Authenticated';
-    return 'Initializing...';
+    if (isAuthenticated && user && session) return 'Authenticated';
+    return 'Not Authenticated';
   };
 
   const getStatusColor = () => {
     if (loading) return 'bg-primary/10 text-primary border-primary/20';
     if (error) return 'bg-destructive/10 text-destructive border-destructive/20';
-    if (user && session) return 'bg-success/10 text-success border-success/20';
-    if (status === 'timeout') return 'bg-warning/10 text-warning border-warning/20';
+    if (isAuthenticated && user && session) return 'bg-success/10 text-success border-success/20';
     return 'bg-muted text-muted-foreground border-muted';
   };
 
@@ -65,8 +61,8 @@ export function AuthStatus({ showDetails = false, className = '' }: AuthStatusPr
           {error && (
             <div className="text-destructive">Error: {error.message}</div>
           )}
-          <div>Status: {status}</div>
-          <div>Initialized: {initialized ? 'Yes' : 'No'}</div>
+          <div>Authenticated: {isAuthenticated ? 'Yes' : 'No'}</div>
+          <div>Has Session: {session ? 'Yes' : 'No'}</div>
         </div>
       )}
     </div>
