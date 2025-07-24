@@ -14,6 +14,7 @@
     "VITE_SUPABASE_URL": "https://kqclbpimkraenvbffnpk.supabase.co",
     "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxY2xicGlta3JhZW52YmZmbnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NTk4NzQsImV4cCI6MjA2NDAzNTg3NH0.yMdMBpXIFXnyx74mgKAhFDvaZTnckEnOtYNvULsLlms",
     "VITE_NEXT_PUBLIC_APP_URL": "https://nexus.marcoby.net",
+    "VITE_APP_URL": "https://nexus.marcoby.net",
     "VITE_OPENROUTER_API_KEY": "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"
   },
   "deployment": {
@@ -31,8 +32,10 @@
     "nexus.marcoby.net"
   ],
   "ssl": {
+    "enabled": true,
     "provider": "letsencrypt",
-    "email": "admin@marcoby.net"
+    "email": "admin@marcoby.net",
+    "redirectHttpToHttps": true
   },
   "monitoring": {
     "enabled": true,
