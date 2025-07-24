@@ -3,13 +3,15 @@ node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 
-# Production build
+# Build outputs
 dist
 build
+.next
+out
 
 # Environment files
-.env
 .env.local
 .env.development.local
 .env.test.local
@@ -20,7 +22,6 @@ build
 .idea
 *.swp
 *.swo
-*~
 
 # OS files
 .DS_Store
@@ -30,9 +31,21 @@ Thumbs.db
 .git
 .gitignore
 
-# Testing
+# Documentation
+README.md
+docs
+*.md
+
+# Tests
 coverage
 .nyc_output
+__tests__
+test
+tests
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
 
 # Logs
 logs
@@ -44,18 +57,76 @@ pids
 *.seed
 *.pid.lock
 
-# Documentation
-docs
-*.md
-!README.md
+# Coverage directory used by tools like istanbul
+coverage
 
-# Scripts that aren't needed in production
-scripts
+# Dependency directories
+jspm_packages/
 
-# Backup files
-backups
+# Optional npm cache directory
+.npm
 
-# Development tools
-.eslintrc.js
-jest.config.cjs
-jest.setup.js
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+
+# Nuxt.js build / generate output
+.nuxt
+
+# Storybook build outputs
+.out
+.storybook-out
+
+# Temporary folders
+tmp/
+temp/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local development
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Supabase
+.supabase
+
+# Cypress
+cypress/videos
+cypress/screenshots
+
+# Storybook
+storybook-static
+
+# TypeScript
+*.tsbuildinfo
