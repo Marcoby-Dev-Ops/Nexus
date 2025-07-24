@@ -24,17 +24,17 @@ COPY . .
 # Build the application
 RUN pnpm run build
 
-# Production stage
-FROM nginx:alpine
+# Production stage - use a simple HTTP server
+FROM node:20-alpine
+
+# Install serve
+RUN npm install -g serve
 
 # Copy built application
-COPY --from=builder /app/dist /usr/share/nginx/html
-
-# Create simple nginx config
-RUN echo 'server { listen 80; root /usr/share/nginx/html; index index.html; location / { try_files $uri $uri/ /index.html; } }' > /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /app/dist
 
 # Expose port
-EXPOSE 80
+EXPOSE 3000
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# Start the server
+CMD ["serve", "-s", "/app/dist", "-l", "3000"] 
