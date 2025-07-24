@@ -1,0 +1,46 @@
+{
+  "name": "Nexus Business Intelligence Platform",
+  "description": "Comprehensive business intelligence platform for innovators and entrepreneurs",
+  "repository": "https://github.com/Marcoby-Dev-Ops/Nexus",
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": "vite",
+  "nodeVersion": "20",
+  "healthCheckPath": "/",
+  "healthCheckTimeout": 30,
+  "environmentVariables": {
+    "NODE_ENV": "production",
+    "VITE_SUPABASE_URL": "https://kqclbpimkraenvbffnpk.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxY2xicGlta3JhZW52YmZmbnBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NTk4NzQsImV4cCI6MjA2NDAzNTg3NH0.yMdMBpXIFXnyx74mgKAhFDvaZTnckEnOtYNvULsLlms",
+    "VITE_NEXT_PUBLIC_APP_URL": "https://nexus.marcoby.net",
+    "VITE_OPENROUTER_API_KEY": "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"
+  },
+  "deployment": {
+    "type": "dockerfile",
+    "dockerfile": "Dockerfile",
+    "port": 3000,
+    "healthCheck": {
+      "path": "/",
+      "interval": 30,
+      "timeout": 3,
+      "retries": 3
+    }
+  },
+  "domains": [
+    "nexus.marcoby.net"
+  ],
+  "ssl": {
+    "provider": "letsencrypt",
+    "email": "admin@marcoby.net"
+  },
+  "monitoring": {
+    "enabled": true,
+    "metrics": ["cpu", "memory", "disk", "network"]
+  },
+  "backup": {
+    "enabled": true,
+    "schedule": "0 2 * * *",
+    "retention": 7
+  }
+} 
