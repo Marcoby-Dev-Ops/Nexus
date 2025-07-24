@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'https://nexus.marcoby.com';
+const BASE_URL = 'https://nexus.marcoby.net';
 const pages = [
   { loc: '/', changefreq: 'weekly', priority: 1.0 },
   { loc: '/marketing-landing', changefreq: 'weekly', priority: 0.8 },

@@ -114,7 +114,7 @@ async function addHubSpotIntegration(supabase: any, userId: string) {
   console.log(`🔧 [addHubSpotIntegration] Adding HubSpot integration for user: ${userId}`)
   
   // Get app URL from environment
-  const appUrl = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://nexus.marcoby.com'
+  const appUrl = Deno.env.get('NEXT_PUBLIC_APP_URL') || 'https://nexus.marcoby.net'
   
   try {
     // Check if HubSpot integration already exists

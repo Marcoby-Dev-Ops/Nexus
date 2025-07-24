@@ -1,36 +1,40 @@
+# Nexus Robots.txt
+# This file tells search engines how to crawl the Nexus website
+
 User-agent: *
-Disallow: /dashboard
-Disallow: /workspace
-Disallow: /ai-hub
-Disallow: /chat
-Disallow: /ai-performance
-Disallow: /business-setup
-Disallow: /business-chat
-Disallow: /analytics
-Disallow: /data-warehouse
-Disallow: /assessment
-Disallow: /company-status
-Disallow: /think
-Disallow: /see
-Disallow: /act
-Disallow: /sales
-Disallow: /finance
-Disallow: /marketing
-Disallow: /operations
-Disallow: /support
-Disallow: /hr
-Disallow: /it
-Disallow: /product
-Disallow: /customer-success
-Disallow: /legal
-Disallow: /maturity
-Disallow: /sales-performance
-Disallow: /financial-operations
-Disallow: /integrations
-Disallow: /settings
-Disallow: /profile
-Disallow: /onboarding
-Disallow: /documents
-Disallow: /admin
-Disallow: /component
-Sitemap: https://nexus.marcoby.com/sitemap.xml
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_supabase/
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /billing/
+Disallow: /integrations/
+Disallow: /help-center/
+Disallow: /analytics/
+Disallow: /automation/
+Disallow: /ai/
+Disallow: /marketplace/
+Disallow: /tasks/
+Disallow: /business/
+Disallow: /departments/
+Disallow: /entrepreneur/
+Disallow: /hype/
+Disallow: /waitlist/
+Disallow: /development/
+
+# Allow public pages
+Allow: /marketing-landing
+Allow: /pricing
+Allow: /login
+Allow: /signup
+Allow: /help/privacy-policy
+Allow: /help/terms-of-service
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://nexus.marcoby.net/sitemap.xml

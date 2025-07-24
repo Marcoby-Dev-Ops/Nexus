@@ -45,7 +45,7 @@ const protectedRoutes = [
 const lines = [
   'User-agent: *',
   ...protectedRoutes.map((route) => `Disallow: ${route}`),
-  'Sitemap: https://nexus.marcoby.com/sitemap.xml',
+  'Sitemap: https://nexus.marcoby.net/sitemap.xml',
 ];
 
 const outputPath = path.join(__dirname, '../public/robots.txt');

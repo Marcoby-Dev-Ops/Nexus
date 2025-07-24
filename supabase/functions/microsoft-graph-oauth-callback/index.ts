@@ -82,7 +82,7 @@ serve(async (req) => {
     }
 
     const clientId = Deno.env.get('MICROSOFT_CLIENT_ID')!;
-    const redirectUri = Deno.env.get('MICROSOFT_REDIRECT_URI') || 'http://localhost:5173/integrations/microsoft/callback';
+    const redirectUri = Deno.env.get('MICROSOFT_REDIRECT_URI') || 'https://nexus.marcoby.net/integrations/microsoft/callback';
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 

@@ -66,7 +66,7 @@ export const HUBSPOTAPPCONFIG: HubSpotAppConfig = {
   
   clientId: process.env.HUBSPOT_CLIENT_ID || '',
   clientSecret: process.env.HUBSPOT_CLIENT_SECRET || '',
-  redirectUri: `${typeof window !== 'undefined' ? window.location.origin : 'https://nexus.marcoby.com'}/integrations/hubspot/callback`,
+  redirectUri: `${typeof window !== 'undefined' ? window.location.origin : 'https://nexus.marcoby.net'}/integrations/hubspot/callback`,
   
   capabilities: [
     {
@@ -188,8 +188,21 @@ export const HUBSPOTAPPCONFIG: HubSpotAppConfig = {
 /**
  * Get HubSpot app configuration
  */
-export function getHubSpotAppConfig(): HubSpotAppConfig {
-  return HUBSPOT_APP_CONFIG;
+export function getHubspotAppConfig(): HubSpotAppConfig {
+  const clientId = process.env.HUBSPOT_CLIENT_ID;
+  const clientSecret = process.env.HUBSPOT_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error('HubSpot Client ID or Secret is not configured in environment variables.');
+  }
+
+  return {
+    baseUrl: HUBSPOT_API_ENDPOINTS.API_BASE_URL,
+    clientId,
+    clientSecret,
+    redirectUri: `${typeof window !== 'undefined' ? window.location.origin : 'https://nexus.marcoby.net'}/integrations/hubspot/callback`,
+    // Note: Scopes are now managed in constants.ts and should be used via utils.ts
+  };
 }
 
 /**

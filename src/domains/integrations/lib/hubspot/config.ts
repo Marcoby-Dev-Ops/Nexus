@@ -5,8 +5,14 @@
  * All OAuth scopes and settings are managed here to ensure consistency.
  */
 
-import { HUBSPOT_API_ENDPOINTS, HUBSPOT_REQUIRED_SCOPES, HUBSPOT_OPTIONAL_SCOPES } from './constants';
-import type { HubSpotConfig } from './types';
+import { HUBSPOT_API_ENDPOINTS } from './constants';
+
+export interface HubSpotConfig {
+  baseUrl: string;
+  clientId: string;
+  clientSecret: string;
+  redirectUri: string;
+}
 
 /**
  * Retrieves the HubSpot API key from environment variables.
@@ -42,7 +48,7 @@ export function getHubspotConfig(): HubSpotConfig {
     baseUrl: HUBSPOT_API_ENDPOINTS.API_BASE_URL,
     clientId,
     clientSecret,
-    redirectUri: `${typeof window !== 'undefined' ? window.location.origin : 'https://nexus.marcoby.com'}/integrations/hubspot/callback`,
+    redirectUri: `${typeof window !== 'undefined' ? window.location.origin : 'https://nexus.marcoby.net'}/integrations/hubspot/callback`,
     // Note: Scopes are now managed in constants.ts and should be used via utils.ts
   };
 }

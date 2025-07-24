@@ -1,9 +1,8 @@
 name: Lighthouse CI
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch:
+  pull_request:
+    branches: [ main, develop ]
 
 jobs:
   lighthouse:
@@ -12,31 +11,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Lighthouse CI
-        run: npm install -g @lhci/cli@0.13.x
-
       - name: Run Lighthouse CI
-        run: |
-          lhci autorun \
-            --collect.url=https://nexus.marcoby.com/ \
-            --collect.url=https://nexus.marcoby.com/marketing-landing \
-            --collect.url=https://nexus.marcoby.com/pricing \
-            --collect.url=https://nexus.marcoby.com/login \
-            --collect.url=https://nexus.marcoby.com/signup \
-            --collect.url=https://nexus.marcoby.com/help/privacy-policy \
-            --assert.assertions.performance=80 \
-            --assert.assertions.accessibility=80 \
-            --assert.assertions.seo=80 \
-            --upload.target=filesystem \
-            --upload.outputDir=./lhci-report
-
-      - name: Upload Lighthouse Report
-        uses: actions/upload-artifact@v4
+        uses: treosh/lighthouse-ci-action@v10
         with:
-          name: lighthouse-report
-          path: ./lhci-report 
+          configPath: './lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+          runs: |
+            --collect.url=https://nexus.marcoby.net/ \
+            --collect.url=https://nexus.marcoby.net/marketing-landing \
+            --collect.url=https://nexus.marcoby.net/pricing \
+            --collect.url=https://nexus.marcoby.net/login \
+            --collect.url=https://nexus.marcoby.net/signup \
+            --collect.url=https://nexus.marcoby.net/help/privacy-policy \
+            --assert.assertions="categories:performance:>=0.8" \
+            --assert.assertions="categories:accessibility:>=0.9" \
+            --assert.assertions="categories:best-practices:>=0.8" \
+            --assert.assertions="categories:seo:>=0.8" 
