@@ -27,14 +27,18 @@ RUN pnpm run build
 # Production stage - use a simple HTTP server
 FROM node:20-alpine
 
-# Install serve
-RUN npm install -g serve
+# Install serve and curl for health check
+RUN npm install -g serve && apk add --no-cache curl
 
 # Copy built application
 COPY --from=builder /app/dist /app/dist
 
 # Expose port
 EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/ || exit 1
 
 # Start the server
 CMD ["serve", "-s", "/app/dist", "-l", "3000"] 
