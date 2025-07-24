@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   
   return {
+    base: '/',
     plugins: [react(), visualizer({ filename: 'dist/bundle-analysis.html', open: true })],
     resolve: {
       alias: {
@@ -46,6 +47,13 @@ export default defineConfig(({ mode }) => {
       // Inject environment variables
       __VUE_OPTIONS_API__: true,
       __VUE_PROD_DEVTOOLS__: false,
+      // Inject all VITE_ environment variables
+      ...Object.keys(env).reduce((acc, key) => {
+        if (key.startsWith('VITE_')) {
+          acc[`import.meta.env.${key}`] = JSON.stringify(env[key]);
+        }
+        return acc;
+      }, {} as Record<string, string>),
     },
     server: {
       proxy: {
