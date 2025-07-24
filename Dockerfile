@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the application with explicit environment
+# Build the application with explicit environment and mode
 RUN NODE_ENV=production pnpm run build
 
 # Install curl for health check
