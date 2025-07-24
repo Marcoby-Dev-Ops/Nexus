@@ -33,21 +33,13 @@ COPY . .
 RUN pnpm run build
 
 # Production stage
-FROM nginx:1.27.0-alpine AS production
+FROM nginx:alpine
 
-# Copy built application from builder stage
+# Copy built application
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Create a simple nginx config
-RUN echo 'server { \
-    listen 80; \
-    server_name _; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Copy a simple nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 80
