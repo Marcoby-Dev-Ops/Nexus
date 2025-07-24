@@ -8,6 +8,9 @@ export const corsHeaders = {
 
 export const allowedOrigins = [
   'http://localhost:5173',
+  'https://localhost:5173',
+  'http://nexus.marcoby.net',
   'https://nexus.marcoby.net',
+  'http://nexus.marcoby.com',
   'https://nexus.marcoby.com'
 ]; 

@@ -29,7 +29,9 @@ site_url = "https://nexus.marcoby.net"
 additional_redirect_urls = [
   "http://localhost:5173", 
   "https://localhost:5173",
+  "http://nexus.marcoby.net",
   "https://nexus.marcoby.net",
+  "http://nexus.marcoby.com",
   "https://nexus.marcoby.com"
 ]
 jwt_expiry = 86400

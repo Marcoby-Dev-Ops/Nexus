@@ -84,9 +84,9 @@ COPY --from=builder /app/dist /app/dist
 # Expose port
 EXPOSE 3000
 
-# Health check
+# Health check (works with both HTTP and HTTPS)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/ || exit 1
 
-# Start the server
-CMD ["serve", "-s", "/app/dist", "-l", "3000"] 
+# Start the server (bind to all interfaces for Traefik)
+CMD ["serve", "-s", "/app/dist", "-l", "tcp://0.0.0.0:3000"] 
