@@ -38,9 +38,9 @@ FROM nginx:1.27.0-alpine AS production
 # Labels for traceability
 LABEL org.opencontainers.image.title="Nexus Web" \
       org.opencontainers.image.description="Nexus — AI-powered business OS (static SPA)" \
-      org.opencontainers.image.version="${BUILD_VERSION:-latest}" \
-      org.opencontainers.image.revision="${GIT_COMMIT:-local}" \
-      org.opencontainers.image.created="${BUILD_DATE:-unknown}"
+      org.opencontainers.image.version="latest" \
+      org.opencontainers.image.revision="local" \
+      org.opencontainers.image.created="unknown"
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
@@ -79,13 +79,9 @@ EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
-# Fix permissions for Nginx cache directories
-RUN mkdir -p /var/cache/nginx /var/run /var/log/nginx && \
-    chown -R nginx:nginx /var/cache/nginx /var/run /var/log/nginx && \
-    chown -R nginx:nginx /etc/nginx/conf.d
+# Ensure proper permissions for nginx
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
 
-# Note: Running as root for now to avoid permission issues
-# In production, you might want to use a more sophisticated setup
-
-# Start nginx
+# Start nginx as root (simpler for now)
 CMD ["nginx", "-g", "daemon off;"] 
