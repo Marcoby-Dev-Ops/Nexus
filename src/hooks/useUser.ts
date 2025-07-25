@@ -1,5 +1,5 @@
 import { useAuth } from '@/hooks/useAuth';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
 
@@ -228,7 +228,7 @@ export function useUser(): UseUserReturn {
   }, []);
 
   // Auto-refresh profile when user changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (user?.id) {
       refreshProfile();
     } else {
