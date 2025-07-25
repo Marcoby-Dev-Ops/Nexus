@@ -9,12 +9,12 @@ interface UnifiedLayoutProps {
 }
 
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // Changed to true for large screens
   const { user, session, loading, initialized } = useAuth();
   const { isPublicRoute, redirectInProgress } = useRedirectManager();
 
   // For public routes, render children without auth context
-  if (isPublicRoute) {
+  if (isPublicRoute()) {
     return <>{children}</>;
   }
 

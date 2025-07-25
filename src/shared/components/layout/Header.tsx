@@ -59,7 +59,7 @@ export function Header({ onSidebarToggle }: { onSidebarToggle: () => void; }) {
         {/* Left Section: Menu, Title */}
         <div className="flex items-center gap-2">
           <button
-            className="lg: hidden mr-2 p-2"
+            className="lg:hidden mr-2 p-2"
             onClick={onSidebarToggle}
           >
             <Menu className="h-6 w-6" />

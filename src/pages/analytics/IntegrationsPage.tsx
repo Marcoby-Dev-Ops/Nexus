@@ -7,8 +7,7 @@ import { Input } from '@/shared/components/ui/Input.tsx';
 import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
 import { useAuth } from '@/hooks/index';
-import { dbService } from '@/lib/supabase';
-import { supabase } from '@/lib/supabase';
+import { dbService, supabase, testAuthenticationFlow } from '@/lib/supabase';
 import { integrationDataService, type IntegrationDataSummary } from '@/core/services/integrationDataService';
 import { dataPointDictionaryService, type DataPointDefinition, type DataPointSummary } from '@/core/services/dataPointDictionary';
 import { toast } from 'sonner';
@@ -628,7 +627,6 @@ const IntegrationsPage: React.FC = () => {
   // Debug authentication
   const handleTestAuth = async () => {
     try {
-      const { testAuthenticationFlow } = await import('@/lib/supabase');
       const result = await testAuthenticationFlow();
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console

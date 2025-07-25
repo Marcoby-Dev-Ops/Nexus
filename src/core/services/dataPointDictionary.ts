@@ -4,7 +4,9 @@
  * Now integrated with API discovery tools and data storage/analysis
  */
 
-// import { dbService as databaseService } from '@/lib/supabase';
+import { sessionUtils } from '@/lib/supabase';
+import { APIDocAnalyzer } from '@/services/integrations/apiDocAnalyzer';
+import { logger } from '@/shared/utils/logger.ts';
 
 // Mock database service
 const databaseService = {
@@ -21,8 +23,6 @@ const databaseService = {
     return { data: null, error: null };
   }
 };
-import { APIDocAnalyzer } from '@/services/integrations/apiDocAnalyzer';
-import { logger } from '@/shared/utils/logger.ts';
 
 // Core data point types
 export interface DataPointDefinition {
@@ -140,7 +140,6 @@ class DataPointDictionaryService {
    */
   async discoverDataPoints(userIntegrationId: string): Promise<DataPointDiscoveryLog> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -214,7 +213,6 @@ class DataPointDictionaryService {
     metadata?: any
   ): Promise<IntegrationDataRecord> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -248,7 +246,6 @@ class DataPointDictionaryService {
     limit: number = 100
   ): Promise<IntegrationDataRecord[]> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -315,7 +312,6 @@ class DataPointDictionaryService {
    */
   async createEnhancementRule(rule: Omit<DataEnhancementRule, 'id' | 'createdAt' | 'updatedAt'>): Promise<DataEnhancementRule> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -347,7 +343,6 @@ class DataPointDictionaryService {
     data: IntegrationDataRecord[]
   ): Promise<IntegrationDataRecord[]> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -394,7 +389,6 @@ class DataPointDictionaryService {
    */
   async getDataPointByName(dataPointName: string, userIntegrationId: string): Promise<DataPointDefinition | null> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -453,7 +447,6 @@ class DataPointDictionaryService {
    */
   async getDataPointSummary(userId: string): Promise<DataPointSummary> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -542,7 +535,6 @@ class DataPointDictionaryService {
    */
   async trackUsage(dataPointDefinitionId: string, userId: string): Promise<void> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -844,7 +836,6 @@ class DataPointDictionaryService {
    */
   private async getCachedAPIDiscovery(userIntegrationId: string): Promise<APIDiscoveryCache[]> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -997,7 +988,6 @@ class DataPointDictionaryService {
     dataPoints: any[]
   ): Promise<void> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {
@@ -1124,7 +1114,6 @@ class DataPointDictionaryService {
    */
   private async storeAnalysisResult(result: Omit<DataAnalysisResult, 'id'>): Promise<void> {
     // Ensure session is valid before making the request
-    const { sessionUtils } = await import('@/lib/supabase');
     const hasValidSession = await sessionUtils.ensureSession();
     
     if (!hasValidSession) {

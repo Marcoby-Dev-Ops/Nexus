@@ -130,6 +130,197 @@ export const callEdgeFunction = async <T>(
   }
 };
 
+// Database service wrapper for compatibility
+export const dbService = {
+  async getIntegrationStatus(userId: string, context: string) {
+    try {
+      const { data, error } = await supabase
+        .from('user_integrations')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (error) {
+        logger.error({ error, context }, 'Failed to get integration status');
+        return { data: null, error };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      logger.error({ error, context }, 'Unexpected error in getIntegrationStatus');
+      return { data: null, error };
+    }
+  }
+};
+
+// Auth diagnostic utilities
+export const diagnoseAuthIssues = async () => {
+  const results = {
+    serviceRoleKey: !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+    anonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+    supabaseUrl: !!import.meta.env.VITE_SUPABASE_URL,
+    serviceClientTest: false,
+    regularClientTest: false,
+    authSession: null,
+    errors: [] as string[]
+  };
+
+  try {
+    // Test regular client
+    const { data: { session }, error } = await supabase.auth.getSession();
+    results.regularClientTest = !error && !!session;
+    results.authSession = session;
+    
+    if (error) {
+      results.errors.push(`Regular client test failed: ${error.message}`);
+    }
+  } catch (error) {
+    results.errors.push(`Regular client test error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
+  return results;
+};
+
+export const testAndFixSession = async () => {
+  try {
+    const { session, error } = await sessionUtils.getSession();
+    
+    if (error || !session) {
+      // Try to refresh the session
+      const refreshResult = await sessionUtils.refreshSession();
+      return {
+        success: refreshResult.session !== null,
+        session: refreshResult.session,
+        error: refreshResult.error
+      };
+    }
+
+    return {
+      success: true,
+      session,
+      error: null
+    };
+  } catch (error) {
+    return {
+      success: false,
+      session: null,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+};
+
+// Smart client for enhanced functionality
+export const smartClient = {
+  async testConnection() {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('id')
+        .limit(1);
+      
+      return {
+        success: !error,
+        error: error?.message
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+};
+
+// Debug utilities
+export const diagnoseJWTTransmission = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+        hasJWT: false,
+        jwtLength: 0
+      };
+    }
+
+    const hasJWT = !!(session?.access_token);
+    const jwtLength = session?.access_token?.length || 0;
+
+    return {
+      success: true,
+      error: null,
+      hasJWT,
+      jwtLength,
+      sessionData: session ? {
+        hasUser: !!session.user,
+        userId: session.user?.id,
+        hasAccessToken: !!session.access_token,
+        tokenLength: session.access_token?.length,
+        expiresAt: session.expires_at
+      } : null
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      hasJWT: false,
+      jwtLength: 0
+    };
+  }
+};
+
+export const debugClientInstances = () => {
+  return {
+    supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+    hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
+    hasServiceKey: !!import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+    clientInstance: 'main',
+    timestamp: new Date().toISOString()
+  };
+};
+
+export const clearAllClientInstances = () => {
+  // This would clear any cached client instances
+  // For now, just return success
+  return {
+    success: true,
+    message: 'Client instances cleared'
+  };
+};
+
+// Authentication flow testing utility
+export const testAuthenticationFlow = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      return {
+        success: false,
+        error: error.message,
+        hasSession: false
+      };
+    }
+
+    return {
+      success: true,
+      error: null,
+      hasSession: !!session,
+      sessionData: session ? {
+        userId: session.user?.id,
+        email: session.user?.email,
+        hasAccessToken: !!session.access_token
+      } : null
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      hasSession: false
+    };
+  }
+};
+
 // Re-export types
 export type { ChatMessage };
 

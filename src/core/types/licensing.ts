@@ -144,4 +144,8 @@ export const RATELIMITS: Record<string, RateLimitConfig> = {
     message: 'Daily file upload limit reached.',
     retryafter_ms: 60 * 60 * 1000,
   },
-}; 
+};
+
+// Export aliases for compatibility
+export const LICENSE_TIERS = LICENSETIERS;
+export const RATE_LIMITS = RATELIMITS; 

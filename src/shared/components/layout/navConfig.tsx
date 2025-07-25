@@ -281,7 +281,24 @@ export const navItems: NavItem[] = [
     path: '/settings',
     icon: <Settings className="h-5 w-5" />,
     description: 'Account and system configuration',
-    category: 'core'
+    category: 'core',
+    children: [
+      {
+        name: 'Account Settings',
+        path: '/admin/account-settings',
+        description: 'Update your profile and personal information'
+      },
+      {
+        name: 'Preferences',
+        path: '/settings/preferences',
+        description: 'Customize your experience'
+      },
+      {
+        name: 'Security',
+        path: '/settings/security',
+        description: 'Manage security settings and authentication'
+      }
+    ]
   }
 ];
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { EmailIntelligenceDashboard } from '../components/EmailIntelligenceDashboard';
+import { EmailIntelligenceDashboard } from '@/components/email/EmailIntelligenceDashboard';
 
 export const EmailIntelligencePage: React.FC = () => {
   return (

@@ -161,8 +161,8 @@ export function useRedirectManager(config: Partial<RedirectConfig> = {}) {
 
   return {
     // State
-    isPublicRoute: isPublicRoute(),
-    isProtectedRoute: isProtectedRoute(),
+    isPublicRoute,
+    isProtectedRoute,
     redirectInProgress: redirectInProgress.current,
     
     // Actions

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Users, UserPlus, Mail, Shield, MoreHorizontal, Check, X } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Label } from '../../components/ui/Label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/Select';
-import { Separator } from '../../components/ui/Separator';
-import { Badge } from '../../components/ui/Badge';
-import { Avatar } from '../../components/ui/Avatar';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Input } from '@/shared/components/ui/Input.tsx';
+import { Label } from '@/shared/components/ui/Label.tsx';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select.tsx';
+import { Separator } from '@/shared/components/ui/Separator.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Avatar } from '@/shared/components/ui/Avatar.tsx';
 import { useAuth } from '@/hooks/index';
 
 // Mock team member data

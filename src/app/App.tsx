@@ -200,6 +200,17 @@ function App() {
           } 
         />
         
+        <Route 
+          path="/dashboard/home" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <Dashboard />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
 
 
         
@@ -426,10 +437,7 @@ function App() {
           element={
             <ProtectedRoute>
               <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Integration Hub</h1>
-                  <p className="text-muted-foreground">Connect your business tools</p>
-                </div>
+                <IntegrationsPage />
               </UnifiedLayout>
             </ProtectedRoute>
           } 
@@ -521,6 +529,17 @@ function App() {
             <ProtectedRoute>
               <UnifiedLayout>
                 <AIModelPage />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/ai-performance/models" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <AIModelSettings />
               </UnifiedLayout>
             </ProtectedRoute>
           } 
@@ -719,7 +738,7 @@ function App() {
           element={
             <ProtectedRoute>
               <UnifiedLayout>
-                <IntegrationsDashboardPage />
+                <IntegrationsPage />
               </UnifiedLayout>
             </ProtectedRoute>
           } 
@@ -1175,6 +1194,17 @@ function App() {
         
         {/* Help Center routes */}
         <Route 
+          path="/help/user-guide" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <UserGuidePage />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
           path="/help" 
           element={
             <ProtectedRoute>
@@ -1183,17 +1213,6 @@ function App() {
                   <h1 className="text-2xl font-bold mb-4">Help Center</h1>
                   <p className="text-muted-foreground">Support and troubleshooting</p>
                 </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help/user-guide" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <UserGuidePage />
               </UnifiedLayout>
             </ProtectedRoute>
           } 
@@ -1233,6 +1252,48 @@ function App() {
         />
         
         <Route 
+          path="/help-center/knowledge/center" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold mb-4">Knowledge Center</h1>
+                  <p className="text-muted-foreground">Review truths and insights we're uncovering</p>
+                </div>
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/help-center/knowledge/thoughts" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold mb-4">Thoughts & Ideas</h1>
+                  <p className="text-muted-foreground">Capture and organize your thoughts</p>
+                </div>
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/integrations/knowledge" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold mb-4">Knowledge Enhancer</h1>
+                  <p className="text-muted-foreground">AI-powered knowledge management</p>
+                </div>
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
           path="/features" 
           element={
             <ProtectedRoute>
@@ -1252,6 +1313,31 @@ function App() {
             <ProtectedRoute>
               <UnifiedLayout>
                 <SettingsPage />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/settings/preferences" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold mb-4">Preferences</h1>
+                  <p className="text-muted-foreground">Customize your experience</p>
+                </div>
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/settings/security" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <SecuritySettings />
               </UnifiedLayout>
             </ProtectedRoute>
           } 
@@ -1302,7 +1388,7 @@ function App() {
           } 
         />
         
-        {/* Business Departments routes */}
+        {/* Business Department routes */}
         <Route 
           path="/sales" 
           element={

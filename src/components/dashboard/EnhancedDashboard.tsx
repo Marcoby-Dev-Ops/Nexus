@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
-import { Brain, Eye, Zap, TrendingUp, AlertCircle, Users, Target, Activity, BarChart3, Database, Settings, Eye as EyeIcon, RefreshCw, Building2, DollarSign, Globe, Shield, Calendar, CheckCircle } from 'lucide-react';
+import { Brain, Eye, Zap, TrendingUp, AlertCircle, Users, Activity, BarChart3, RefreshCw, Building2, DollarSign, Globe, Shield, Calendar, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Button } from '@/shared/components/ui/Button.tsx';
@@ -7,6 +7,7 @@ import { dashboardService, type DashboardMetrics, type DashboardActivity } from 
 import { motion, AnimatePresence } from 'framer-motion';
 import ErrorBoundary from '@/shared/ui/components/ErrorBoundary';
 import { useAuth } from '@/hooks/index';
+import { useUser } from '@/hooks/useUser';
 import { DashboardOnboarding } from '@/components/dashboard/DashboardOnboarding';
 import { analyticsService } from '@/services/analytics/index.ts';
 import { BusinessInsightsPanel } from '@/components/dashboard/BusinessInsightsPanel';
@@ -55,6 +56,33 @@ const DashboardSuspenseFallback = () => (
 
 const EnhancedDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { data: userProfile } = useUser(user?.id);
+  
+  // Debug logging to see what data is available
+  console.log('[Dashboard Debug]', {
+    user: user?.id,
+    userProfile,
+    userMetadata: user?.user_metadata,
+    email: user?.email
+  });
+  
+  // Helper function to get display name
+  const getDisplayName = () => {
+    if (userProfile?.first_name) {
+      return userProfile.first_name;
+    }
+    if (userProfile?.display_name) {
+      return userProfile.display_name.split(' ')[0];
+    }
+    if (user?.user_metadata?.full_name) {
+      return user.user_metadata.full_name.split(' ')[0];
+    }
+    if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
   const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics>({
     think: {
       ideasCaptured: 0,
@@ -117,15 +145,11 @@ const EnhancedDashboard: React.FC = () => {
         setLoading(true);
       }
 
-      const { data, error } = await dashboardService.getEnhancedDashboardData();
+      const result = await dashboardService.getEnhancedDashboardData();
       
-      if (error) {
-        throw error;
-      }
-
-      if (data) {
-        setDashboardMetrics(data.metrics);
-        setRecentActivities(data.activities);
+      if (result) {
+        setDashboardMetrics(result.metrics);
+        setRecentActivities(result.activities);
       }
 
       setLastUpdated(new Date());
@@ -226,7 +250,7 @@ const EnhancedDashboard: React.FC = () => {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              Welcome back, {user?.profile?.first_name || user?.name?.split(' ')[0] || 'User'}
+              Welcome back, {getDisplayName()}
             </p>
           </div>
           <div className="flex items-center gap-2">

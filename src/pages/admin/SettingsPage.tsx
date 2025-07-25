@@ -1,13 +1,13 @@
 import React, { lazy } from 'react';
 import { UnifiedSettingsPage } from '@/shared/components/patterns/UnifiedPages';
-import SecuritySettings from '@/components/admin/user/pages/SecuritySettings';
-import NotificationsSettings from '@/components/admin/user/pages/NotificationsSettings';
-import IntegrationsSettings from '@/components/admin/user/pages/IntegrationsSettings';
-import DataPrivacySettings from '@/components/admin/user/pages/DataPrivacySettings';
-import AppearanceSettings from '@/components/admin/user/pages/AppearanceSettings';
-import AdvancedSettings from '@/components/admin/user/pages/AdvancedSettings';
-import AIModelSettings from '@/components/admin/user/pages/AIModelSettings';
-import BillingSettings from '@/components/admin/user/pages/BillingSettings';
+import SecuritySettings from './SecuritySettings';
+import NotificationsSettings from './NotificationsSettings';
+import IntegrationsSettings from './IntegrationsSettings';
+import DataPrivacySettings from './DataPrivacySettings';
+import AppearanceSettings from './AppearanceSettings';
+import AdvancedSettings from './AdvancedSettings';
+import AIModelSettings from './AIModelSettings';
+import BillingSettings from './BillingSettings';
 import { ContinuousImprovementDashboard } from '@/components/ai/ContinuousImprovementDashboard';
 import { useAuth } from '@/hooks/index';
 
@@ -31,7 +31,7 @@ const AIPerformanceSettings = () => {
 // Placeholder components for new sections
 const TeamSettings = () => <div>Team & access management coming soon.</div>;
 
-const CompanyProfilePage = lazy(() => import('@/domains/admin/user/pages/CompanyProfilePage').then(m => ({ default: m.default })));
+const CompanyProfilePage = lazy(() => import('./CompanyProfilePage').then(m => ({ default: m.default })));
 
 const settingsConfig = {
   title: 'Settings',

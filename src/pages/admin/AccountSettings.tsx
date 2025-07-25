@@ -33,7 +33,7 @@ import {
   List,
   Shield
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { supabase, sessionUtils } from '@/lib/supabase';
 import { tokenManager } from '@/services/tokenManager';
 import { useSearchParams } from 'react-router-dom';
 
@@ -962,7 +962,6 @@ const AccountSettings: React.FC = () => {
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.log('🔍 Debugging session state...');
-                        const { sessionUtils } = await import('@/lib/supabase');
                         const result = await sessionUtils.getSession();
                         // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -995,7 +994,6 @@ const AccountSettings: React.FC = () => {
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.log('🔄 Force refreshing session...');
-                        const { sessionUtils } = await import('@/lib/supabase');
                         const result = await sessionUtils.getSession(3); // Retry 3 times
                         // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
