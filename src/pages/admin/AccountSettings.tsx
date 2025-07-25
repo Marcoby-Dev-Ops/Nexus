@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
+import { useUserProfile } from '@/shared/hooks/useUserProfile';
+import { useIntegrations } from '@/hooks/integrations/useIntegrations';
 import { integrationService } from '@/services/integrations/integrationService.ts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Button } from '@/shared/components/ui/Button.tsx';
@@ -57,7 +59,9 @@ interface ProfileFormData {
 
 
 const AccountSettings: React.FC = () => {
-  const { user, updateProfile, refreshIntegrations } = useAuth();
+  const { user } = useAuth();
+  const { updateProfile } = useUserProfile();
+  const { refreshIntegrations } = useIntegrations();
   
   const [searchParams] = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
@@ -124,7 +128,7 @@ const AccountSettings: React.FC = () => {
         setLoadingIntegrations(true);
         try {
           // Force refresh integrations to get the latest data
-          await refreshIntegrations(true);
+          await refreshIntegrations();
         } catch (error) {
           // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -160,27 +164,19 @@ const AccountSettings: React.FC = () => {
     setMessage(null);
 
     try {
-      // Calculate full_name from first_name and last_name
-      const fullName = formData.firstName && formData.lastName 
-        ? `${formData.firstName} ${formData.lastName}`.trim()
-        : formData.firstName || formData.lastName || null;
-
       const updates = {
-        firstname: formData.firstName,
-        lastname: formData.lastName,
-        displayname: formData.displayName,
-        fullname: fullName, // Add calculated full_name
-        jobtitle: formData.jobTitle,
-        company: formData.company, // Add company field
-        role: formData.role, // Add role field
-        department: formData.department, // Add department field
-        businessemail: formData.businessEmail, // Add business email
-        personalemail: formData.personalEmail, // Add personal email
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        display_name: formData.displayName,
+        job_title: formData.jobTitle,
+        role: formData.role,
+        department: formData.department,
+        business_email: formData.businessEmail,
+        personal_email: formData.personalEmail,
         bio: formData.bio,
         location: formData.location,
-        linkedinurl: formData.website, // Using linkedin_url as website
+        linkedin_url: formData.website,
         phone: formData.phone,
-        updatedat: new Date().toISOString(),
       };
 
       // eslint-disable-next-line no-console
@@ -196,11 +192,15 @@ const AccountSettings: React.FC = () => {
     // eslint-disable-next-line no-console
     console.log('[AccountSettings] Current form data: ', formData);
       
-      // Use the auth context updateProfile function
-      await updateProfile(updates);
-
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      setIsEditing(false);
+      // Use the userProfile hook updateProfile function
+      const result = await updateProfile(updates);
+      
+      if (result.success) {
+        setMessage({ type: 'success', text: 'Profile updated successfully!' });
+        setIsEditing(false);
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to update profile. Please try again.' });
+      }
     } catch (error) {
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -738,7 +738,7 @@ const AccountSettings: React.FC = () => {
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.log('🔄 Force refreshing integrations...');
-                        await refreshIntegrations(true);
+                        await refreshIntegrations();
                         // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -763,7 +763,7 @@ const AccountSettings: React.FC = () => {
                     onClick={async () => {
                       setLoadingIntegrations(true);
                       try {
-                        await refreshIntegrations(true);
+                        await refreshIntegrations();
                       } catch (error) {
                         // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -844,7 +844,7 @@ const AccountSettings: React.FC = () => {
                         if (result.success) {
                           alert(`✅ HubSpot connected successfully!\n\n${result.message}`);
                           // Refresh integrations after adding
-                          await refreshIntegrations(true);
+                          await refreshIntegrations();
                         } else {
                           alert(`❌ Failed to add HubSpot: ${result.message}`);
                         }
@@ -878,7 +878,7 @@ const AccountSettings: React.FC = () => {
                         if (result.success) {
                           alert(`✅ Force refresh completed!\n\n${result.message}`);
                           // Refresh integrations after force refresh
-                          await refreshIntegrations(true);
+                          await refreshIntegrations();
                         } else {
                           alert(`❌ Force refresh failed: ${result.message}`);
                         }
@@ -1077,7 +1077,7 @@ const AccountSettings: React.FC = () => {
     console.error('Failed to add HubSpot integration: ', error);
                           } else {
                             // Refresh integrations
-                            await refreshIntegrations(true);
+                            await refreshIntegrations();
                           }
                         } catch (error) {
                           // eslint-disable-next-line no-console

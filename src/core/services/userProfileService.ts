@@ -4,7 +4,6 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
 import { logger } from '@/shared/utils/logger.ts';
 
 export interface CreateUserProfileParams {
@@ -20,6 +19,7 @@ export interface CreateUserProfileParams {
 export interface UpdateUserProfileParams {
   first_name?: string;
   last_name?: string;
+  full_name?: string;
   display_name?: string;
   avatar_url?: string;
   bio?: string;
@@ -37,7 +37,6 @@ export interface UpdateUserProfileParams {
 }
 
 export class UserProfileService {
-  private queryWrapper = new DatabaseQueryWrapper();
 
   /**
    * Create a new user profile with proper validation
@@ -77,17 +76,11 @@ export class UserProfileService {
         updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await this.queryWrapper.query(
-        async () => {
-          const result = await supabase
-            .from('user_profiles')
-            .insert(profileData)
-            .select()
-            .single();
-          return result;
-        },
-        { context: `create-user-profile-${id}` }
-      );
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert(profileData)
+        .select()
+        .single();
 
       if (error) {
         logger.error(`Failed to create user profile for ${id}:`, error);
@@ -119,7 +112,7 @@ export class UserProfileService {
       // Calculate full_name if first_name or last_name are updated
       let full_name = updates.full_name;
       if (updates.first_name || updates.last_name) {
-        const currentProfile = await this.getUserProfile(userId);
+        const { data: currentProfile } = await this.getUserProfile(userId);
         const firstName = updates.first_name || currentProfile?.first_name;
         const lastName = updates.last_name || currentProfile?.last_name;
         
@@ -136,7 +129,12 @@ export class UserProfileService {
         updated_at: new Date().toISOString()
       };
 
-      const { data, error } = await this.queryWrapper.updateUserProfile(userId, updateData);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .update(updateData)
+        .eq('id', userId)
+        .select()
+        .single();
 
       if (error) {
         logger.error(`Failed to update user profile for ${userId}:`, error);
@@ -156,7 +154,11 @@ export class UserProfileService {
    */
   async getUserProfile(userId: string) {
     try {
-      const { data, error } = await this.queryWrapper.getUserProfile(userId);
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
       if (error) {
         logger.error(`Failed to fetch user profile for ${userId}:`, error);

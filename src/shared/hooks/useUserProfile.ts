@@ -5,7 +5,8 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth.ts';
-import { userProfileService, CreateUserProfileParams, UpdateUserProfileParams } from '@/core/services/userProfileService';
+import { userProfileService } from '@/core/services/userProfileService';
+import type { CreateUserProfileParams, UpdateUserProfileParams } from '@/core/services/userProfileService';
 import { logger } from '@/shared/utils/logger.ts';
 
 export interface UseUserProfileReturn {
