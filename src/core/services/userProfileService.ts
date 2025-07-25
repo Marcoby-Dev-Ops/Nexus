@@ -32,7 +32,7 @@ export interface UpdateUserProfileParams {
   phone?: string;
   location?: string;
   timezone?: string;
-  preferences?: Record<string, unknown>;
+  preferences?: any; // Changed from Record<string, unknown> to any to match Json type
   onboarding_completed?: boolean;
 }
 
@@ -248,22 +248,25 @@ export class UserProfileService {
   validateProfileData(data: any): { isValid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    // Required field validation
-    if (!data.id) errors.push('User ID is required');
-    if (!data.email) errors.push('Email is required');
+    // Only validate fields that are present in the data
+    // This allows for partial updates without requiring all fields
+
+    // Email validation - only if email is being updated
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
       errors.push('Invalid email format');
     }
 
-    // Role validation
+    // Role validation - only if role is being updated
     if (data.role && !['owner', 'admin', 'manager', 'user'].includes(data.role)) {
       errors.push('Invalid role value');
     }
 
-    // Email validation
+    // Business email validation - only if business_email is being updated
     if (data.business_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.business_email)) {
       errors.push('Invalid business email format');
     }
+
+    // Personal email validation - only if personal_email is being updated
     if (data.personal_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.personal_email)) {
       errors.push('Invalid personal email format');
     }

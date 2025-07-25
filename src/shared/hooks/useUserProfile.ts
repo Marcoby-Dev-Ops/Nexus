@@ -118,8 +118,8 @@ export function useUserProfile(): UseUserProfileReturn {
     setError(null);
 
     try {
-      // Validate updates
-      const validation = userProfileService.validateProfileData({ id: user.id, ...updates });
+      // For updates, only validate the fields being updated
+      const validation = userProfileService.validateProfileData(updates);
       if (!validation.isValid) {
         return { success: false, error: validation.errors.join(', ') };
       }
