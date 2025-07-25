@@ -250,11 +250,11 @@ export default function AICapabilitiesPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'text-green-600 bg-green-50';
-      case 'demo': return 'text-blue-600 bg-blue-50';
-      case 'development': return 'text-orange-600 bg-orange-50';
-      case 'planned': return 'text-purple-600 bg-purple-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'available': return 'text-success bg-success/5';
+      case 'demo': return 'text-primary bg-primary/5';
+      case 'development': return 'text-warning bg-orange-50';
+      case 'planned': return 'text-secondary bg-secondary/5';
+      default: return 'text-muted-foreground bg-background';
     }
   };
 
@@ -281,13 +281,12 @@ export default function AICapabilitiesPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+        <LoadingStates.Skeleton />
+        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+          ))}
         </div>
       </div>
     );
@@ -331,9 +330,9 @@ export default function AICapabilitiesPage() {
                   <h2 className="text-xl font-semibold">{category.title}</h2>
                 </div>
                 <p className="text-muted-foreground mb-4">{category.description}</p>
-                <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {category.capabilities.map((capability) => (
-                    <Card key={capability.id} className="cursor-pointer hover: shadow-md transition-shadow">
+                    <Card key={capability.id} className="cursor-pointer hover:shadow-md transition-shadow">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -350,7 +349,7 @@ export default function AICapabilitiesPage() {
                         <CardDescription>{capability.description}</CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Usage</span>
@@ -370,7 +369,7 @@ export default function AICapabilitiesPage() {
                             </div>
                             <div className="w-full bg-gray-200 rounded-full h-2">
                               <div 
-                                className="bg-green-500 h-2 rounded-full" 
+                                className="bg-success h-2 rounded-full" 
                                 style={{ width: `${capability.potential}%` }}
                               ></div>
                             </div>
@@ -415,7 +414,7 @@ export default function AICapabilitiesPage() {
         <TabsContent value="capabilities" className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4">Detailed Capabilities</h2>
-            <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AdvancedAICapabilitiesDemo />
               <ContextualDataCompletionDemo />
             </div>

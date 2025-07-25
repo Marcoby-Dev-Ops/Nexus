@@ -62,8 +62,8 @@ const FIRE_PHASES: FireCyclePhase[] = [
     id: 'focus',
     label: 'Focus',
     icon: Target,
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100',
+    color: 'text-primary',
+    bgColor: 'bg-primary/10',
     description: 'Clarifying the core idea or goal',
     progress: 0,
     count: 0
@@ -72,8 +72,8 @@ const FIRE_PHASES: FireCyclePhase[] = [
     id: 'insight',
     label: 'Insight',
     icon: Lightbulb,
-    color: 'text-yellow-600',
-    bgColor: 'bg-yellow-100',
+    color: 'text-warning',
+    bgColor: 'bg-warning/10',
     description: 'Gaining deeper understanding and context',
     progress: 0,
     count: 0
@@ -82,8 +82,8 @@ const FIRE_PHASES: FireCyclePhase[] = [
     id: 'roadmap',
     label: 'Roadmap',
     icon: Map,
-    color: 'text-green-600',
-    bgColor: 'bg-green-100',
+    color: 'text-success',
+    bgColor: 'bg-success/10',
     description: 'Planning the path forward',
     progress: 0,
     count: 0
@@ -92,8 +92,8 @@ const FIRE_PHASES: FireCyclePhase[] = [
     id: 'execute',
     label: 'Execute',
     icon: Play,
-    color: 'text-purple-600',
-    bgColor: 'bg-purple-100',
+    color: 'text-secondary',
+    bgColor: 'bg-secondary/10',
     description: 'Taking action and implementing',
     progress: 0,
     count: 0
@@ -353,33 +353,32 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'focus': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'insight': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'roadmap': return 'bg-green-100 text-green-800 border-green-200';
-      case 'execute': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'focus': return 'bg-primary/10 text-primary border-border';
+      case 'insight': return 'bg-warning/10 text-yellow-800 border-yellow-200';
+      case 'roadmap': return 'bg-success/10 text-success border-green-200';
+      case 'execute': return 'bg-secondary/10 text-purple-800 border-purple-200';
+      default: return 'bg-muted text-foreground border-border';
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'in_progress': return 'bg-blue-100 text-blue-800';
-      case 'concept': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'completed': return 'bg-success/10 text-success';
+      case 'in_progress': return 'bg-primary/10 text-primary';
+      case 'concept': return 'bg-warning/10 text-yellow-800';
+      default: return 'bg-muted text-foreground';
     }
   };
 
   if (loading) {
     return (
       <div className={`space-y-6 ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-8 bg-muted rounded mb-4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 bg-muted rounded"></div>
-            ))}
-          </div>
+        <LoadingStates.Skeleton />
+        <div className="h-8 bg-muted rounded mb-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-32 bg-muted rounded"></div>
+          ))}
         </div>
       </div>
     );
@@ -524,10 +523,10 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
               <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {thoughts.slice(0, 5).map((thought) => (
-                  <div key={thought.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-3">
+                  <div key={thought.id} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                    <div className="flex items-center gap-4">
                       {React.createElement(getPhaseIcon(thought.firePhase), {
                         className: 'w-4 h-4'
                       })}
@@ -598,7 +597,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
                 }`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         {React.createElement(getPhaseIcon(thought.firePhase), {
                           className: 'w-5 h-5'
                         })}

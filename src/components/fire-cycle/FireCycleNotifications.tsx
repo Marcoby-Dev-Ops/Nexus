@@ -350,12 +350,12 @@ export const FireCycleNotifications: React.FC<FireCycleNotificationsProps> = ({
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'stuck': return 'border-red-200 bg-red-50';
-      case 'achievement': return 'border-green-200 bg-green-50';
-      case 'milestone': return 'border-blue-200 bg-blue-50';
-      case 'suggestion': return 'border-yellow-200 bg-yellow-50';
+      case 'stuck': return 'border-red-200 bg-destructive/5';
+      case 'achievement': return 'border-green-200 bg-success/5';
+      case 'milestone': return 'border-border bg-primary/5';
+      case 'suggestion': return 'border-yellow-200 bg-warning/5';
       case 'reminder': return 'border-orange-200 bg-orange-50';
-      default: return 'border-gray-200 bg-gray-50';
+      default: return 'border-border bg-background';
     }
   };
 
@@ -371,23 +371,22 @@ export const FireCycleNotifications: React.FC<FireCycleNotificationsProps> = ({
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-destructive/10 text-destructive';
+      case 'medium': return 'bg-warning/10 text-yellow-800';
+      case 'low': return 'bg-success/10 text-success';
+      default: return 'bg-muted text-foreground';
     }
   };
 
   if (loading) {
     return (
       <div className={`space-y-4 ${className}`}>
-        <div className="animate-pulse">
-          <div className="h-6 bg-muted rounded mb-2"></div>
-          <div className="space-y-2">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-20 bg-muted rounded"></div>
-            ))}
-          </div>
+        <LoadingStates.Skeleton />
+        <div className="h-6 bg-muted rounded mb-2"></div>
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 bg-muted rounded"></div>
+          ))}
         </div>
       </div>
     );
@@ -438,7 +437,7 @@ export const FireCycleNotifications: React.FC<FireCycleNotificationsProps> = ({
             <Card className={`transition-all hover:shadow-md ${getNotificationColor(notification.type)}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-4">
                     <div className="p-2 rounded-full bg-primary/10">
                       {React.createElement(getNotificationIcon(notification.type), {
                         className: 'w-4 h-4 text-primary'

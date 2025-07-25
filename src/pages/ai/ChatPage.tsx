@@ -52,12 +52,12 @@ export default function ChatPage() {
   const loadChatData = async () => {
     setLoading(true);
     try {
-      // Load all agents
-      const allAgents = getAllAgents();
+      // Load all agents - make this async since getAllAgents returns a Promise
+      const allAgents = await getAllAgents();
       setAgents(allAgents);
 
-      // Set default agent (Executive Assistant)
-      const executiveAgents = getAgentsByType('executive');
+      // Set default agent (Executive Assistant) - make this async too
+      const executiveAgents = await getAgentsByType('executive');
       if (executiveAgents.length > 0) {
         setSelectedAgentId(executiveAgents[0].id);
       }
@@ -97,10 +97,9 @@ export default function ChatPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
-        </div>
+        <LoadingStates.Skeleton />
+        <div className="h-8 bg-muted rounded w-1/4"></div>
+        <div className="h-96 bg-muted rounded"></div>
       </div>
     );
   }
@@ -128,7 +127,7 @@ export default function ChatPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Conversations</CardTitle>
@@ -230,7 +229,7 @@ export default function ChatPage() {
               />
               
               {getSelectedAgent() && (
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <DomainAgentIndicator
                     agentId={selectedAgentId}
                     showDetails={true}

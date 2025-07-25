@@ -200,19 +200,19 @@ export default function AIPerformancePage() {
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'improving': return <TrendingUp className="w-4 h-4 text-green-600" />;
-      case 'stable': return <Activity className="w-4 h-4 text-blue-600" />;
-      case 'declining': return <TrendingUp className="w-4 h-4 text-red-600 rotate-180" />;
-      default: return <Activity className="w-4 h-4 text-gray-600" />;
+      case 'improving': return <TrendingUp className="w-4 h-4 text-success" />;
+      case 'stable': return <Activity className="w-4 h-4 text-primary" />;
+      case 'declining': return <TrendingUp className="w-4 h-4 text-destructive rotate-180" />;
+      default: return <Activity className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-600 bg-green-50';
-      case 'idle': return 'text-yellow-600 bg-yellow-50';
-      case 'error': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
+      case 'active': return 'text-success bg-success/5';
+      case 'idle': return 'text-warning bg-warning/5';
+      case 'error': return 'text-destructive bg-destructive/5';
+      default: return 'text-muted-foreground bg-background';
     }
   };
 
@@ -228,13 +228,12 @@ export default function AIPerformancePage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+        <LoadingStates.Skeleton />
+        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+          ))}
         </div>
       </div>
     );
@@ -287,7 +286,7 @@ export default function AIPerformancePage() {
               variant={timeRange === range ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setTimeRange(range)}
-              className="rounded-none first: rounded-l-md last:rounded-r-md"
+              className="rounded-none first:rounded-l-md last:rounded-r-md"
             >
               {range.charAt(0).toUpperCase() + range.slice(1)}
             </Button>
@@ -296,7 +295,7 @@ export default function AIPerformancePage() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
@@ -364,7 +363,7 @@ export default function AIPerformancePage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 lg: grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Response Time Distribution */}
             <Card>
               <CardHeader>
@@ -406,7 +405,7 @@ export default function AIPerformancePage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-4">
                   {Object.entries(metrics.accuracy.byModel).map(([model, accuracy]) => (
                     <div key={model} className="flex justify-between items-center">
                       <span className="text-sm capitalize">{model.replace('-', ' ')}</span>
@@ -438,7 +437,7 @@ export default function AIPerformancePage() {
         <TabsContent value="agents" className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4">Agent Performance</h2>
-            <div className="grid grid-cols-1 lg: grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {agentPerformance.map((agent) => (
                 <Card key={agent.id}>
                   <CardHeader>
@@ -516,7 +515,7 @@ export default function AIPerformancePage() {
         <TabsContent value="costs" className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4">Cost Analysis</h2>
-            <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -536,7 +535,7 @@ export default function AIPerformancePage() {
                     </div>
                     <div className="flex justify-between">
                       <span>Cost Savings</span>
-                      <span className="font-medium text-green-600">${metrics.cost.costSavings.toLocaleString()}</span>
+                      <span className="font-medium text-success">${metrics.cost.costSavings.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Efficiency</span>
@@ -565,7 +564,7 @@ export default function AIPerformancePage() {
                     </div>
                     <div className="flex justify-between">
                       <span>ROI</span>
-                      <span className="font-medium text-green-600">{(metrics.cost.costSavings / metrics.cost.totalCost * 100).toFixed(1)}%</span>
+                      <span className="font-medium text-success">{(metrics.cost.costSavings / metrics.cost.totalCost * 100).toFixed(1)}%</span>
                     </div>
                   </div>
                 </CardContent>

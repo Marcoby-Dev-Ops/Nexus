@@ -52,17 +52,17 @@ export default function AIHubPage() {
   const loadAIHubData = async () => {
     setLoading(true);
     try {
-      // Load all agents
-      const allAgents = getAllAgents();
+      // Load all agents - make this async since getAllAgents returns a Promise
+      const allAgents = await getAllAgents();
       setAgents(allAgents);
 
       // Load performance metrics
       const dashboard = await continuousImprovementService.getImprovementDashboard('week');
       
-      // Calculate stats
-      const executiveAgents = getAgentsByType('executive');
-      const departmentalAgents = getAgentsByType('departmental');
-      const specialistAgents = getAgentsByType('specialist');
+      // Calculate stats - make these async too
+      const executiveAgents = await getAgentsByType('executive');
+      const departmentalAgents = await getAgentsByType('departmental');
+      const specialistAgents = await getAgentsByType('specialist');
 
       setStats({
         totalAgents: allAgents.length,
@@ -138,10 +138,10 @@ export default function AIHubPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'text-green-600';
-      case 'demo': return 'text-blue-600';
-      case 'development': return 'text-orange-600';
-      default: return 'text-gray-600';
+      case 'available': return 'text-success';
+      case 'demo': return 'text-primary';
+      case 'development': return 'text-warning';
+      default: return 'text-muted-foreground';
     }
   };
 
@@ -157,13 +157,12 @@ export default function AIHubPage() {
   if (loading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="animate-pulse space-y-6">
-          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-32 bg-gray-200 rounded"></div>
-            ))}
-          </div>
+        <LoadingStates.Skeleton />
+        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+          ))}
         </div>
       </div>
     );
@@ -189,7 +188,7 @@ export default function AIHubPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total AI Agents</CardTitle>
@@ -282,7 +281,7 @@ export default function AIHubPage() {
           {/* AI Features Grid */}
           <div>
             <h2 className="text-xl font-semibold mb-4">AI Capabilities</h2>
-            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {aiFeatures.map((feature) => (
                 <AIFeatureCard
                   key={feature.id}
@@ -316,9 +315,9 @@ export default function AIHubPage() {
         <TabsContent value="agents" className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold mb-4">AI Agents</h2>
-            <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {agents.map((agent) => (
-                <Card key={agent.id} className="cursor-pointer hover: shadow-md transition-shadow">
+                <Card key={agent.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{agent.name}</CardTitle>
