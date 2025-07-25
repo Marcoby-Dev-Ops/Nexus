@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { navItems } from '@/shared/components/layout/navConfig';
-import { features as featureRegistry } from '@/shared/components/ui/featureRegistry';
-import { getSlashCommands, type SlashCommand } from '@/domains/ai/services/slashCommandService';
-import Modal from '@/shared/components/ui/Modal';
-import { Input } from '@/shared/components/ui/Input';
-import { Badge } from '@/shared/components/ui/Badge';
+import { navItems } from '@/shared/components/layout/navConfig.tsx';
+import { features as featureRegistry } from '@/shared/components/ui/featureRegistry.tsx';
+import { getSlashCommands, type SlashCommand } from '@/services/ai/slashCommandService';
+import Modal from '@/shared/components/ui/Modal.tsx';
+import { Input } from '@/shared/components/ui/Input.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Search, Terminal, ArrowRight } from 'lucide-react';
 
 type NavItem = import('./navConfig').NavItem;

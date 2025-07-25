@@ -3,9 +3,9 @@
  * Handles all user profile creation, provisioning, and update operations
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
-import { logger } from '@/shared/utils/logger';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface CreateUserProfileParams {
   id: string;

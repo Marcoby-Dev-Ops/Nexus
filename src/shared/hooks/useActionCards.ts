@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { supabase } from "@/core/supabase";
-import type { ActionCardRecord } from '@/domains/ai/components/ActionCard';
+import { supabase } from "@/lib/supabase";
+import type { ActionCardRecord } from '@/components/ai/ActionCard';
 
 export function useActionCards(conversationId?: string) {
   const [cards, setCards] = useState<ActionCardRecord[]>([]);

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/core/supabase';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/index';
+import { authErrorHandler } from '@/core/services/authErrorHandler';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface FireCycleLog {
   id: string;
@@ -60,102 +62,207 @@ export const useFireCycleLogs = () => {
   const [error, setError] = useState<string | null>(null);
   const [metrics, setMetrics] = useState<FireCycleLogMetrics | null>(null);
 
+  // Validate authentication before operations
+  const validateAuth = useCallback(async (): Promise<string> => {
+    if (!user?.id) {
+      throw new Error('User not authenticated');
+    }
+
+    // Check authentication status with more detailed logging
+    const authStatus = await authErrorHandler.getAuthStatus();
+    logger.debug('Auth status check', { 
+      userId: user.id, 
+      authStatus,
+      sessionExpires: authStatus.sessionExpires,
+      currentTime: new Date().toISOString()
+    });
+
+    // Be more lenient - only check if we have a session and user
+    if (!authStatus.hasSession || !authStatus.hasUser) {
+      throw new Error('Authentication session invalid or expired');
+    }
+
+    return user.id;
+  }, [user?.id]);
+
+  // Safe database operation with error handling
+  const safeOperation = useCallback(async <T>(
+    operation: () => Promise<T>,
+    context: string
+  ): Promise<T> => {
+    return authErrorHandler.handleWithRetry(
+      operation,
+      {
+        operation: context,
+        table: 'fire_cycle_logs',
+        userId: user?.id
+      }
+    );
+  }, [user?.id]);
+
   // Fetch FIRE cycle logs with filters
   const fetchLogs = useCallback(async (
     filters: Partial<FireCycleLogFilters> = {},
     limit = 100,
     offset = 0
   ): Promise<FireCycleLogsResponse> => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      let query = supabase
-        .from('fire_cycle_logs')
-        .select('*', { count: 'exact' })
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const userId = await validateAuth();
 
-      // Apply filters
-      if (filters.phase) {
-        query = query.eq('phase', filters.phase);
-      }
-      if (filters.priority) {
-        query = query.eq('priority', filters.priority);
-      }
-      if (filters.date_from) {
-        query = query.gte('created_at', filters.date_from.toISOString());
-      }
-      if (filters.date_to) {
-        query = query.lte('created_at', filters.date_to.toISOString());
-      }
+      const response = await safeOperation(async () => {
+        let query = supabase
+          .from('fire_cycle_logs')
+          .select('*', { count: 'exact' })
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
-      // Apply pagination
-      if (limit) {
-        query = query.limit(limit);
-      }
-      if (offset) {
-        query = query.range(offset, offset + limit - 1);
-      }
+        // Apply filters
+        if (filters.phase) {
+          query = query.eq('phase', filters.phase);
+        }
+        if (filters.priority) {
+          query = query.eq('priority', filters.priority);
+        }
+        if (filters.date_from) {
+          query = query.gte('created_at', filters.date_from.toISOString());
+        }
+        if (filters.date_to) {
+          query = query.lte('created_at', filters.date_to.toISOString());
+        }
 
-      const { data, count, error: queryError } = await query;
+        // Apply pagination
+        if (limit) {
+          query = query.limit(limit);
+        }
+        if (offset) {
+          query = query.range(offset, offset + limit - 1);
+        }
 
-      if (queryError) {
-        throw queryError;
-      }
+        const { data, count, error } = await query;
 
-      const response: FireCycleLogsResponse = {
-        logs: (data as FireCycleLog[]) || [],
-        totalcount: count || 0,
-        hasmore: !!(count && offset + limit < count)
-      };
+        if (error) {
+          throw error;
+        }
+
+        return {
+          logs: (data as FireCycleLog[]) || [],
+          totalcount: count || 0,
+          hasmore: !!(count && offset + limit < count)
+        };
+      }, 'fetchLogs');
 
       setLogs(response.logs);
       return response;
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message: 'Failed to fetch FIRE cycle logs';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch FIRE cycle logs';
       setError(errorMessage);
+      logger.error('Error fetching FIRE cycle logs', { error: err, filters });
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [validateAuth, safeOperation]);
+
+  // Fetch metrics - moved after fetchLogs to avoid circular dependency
+  const fetchMetrics = useCallback(async (): Promise<FireCycleLogMetrics> => {
+    try {
+      const userId = await validateAuth();
+
+      const metrics = await safeOperation(async () => {
+        const { data, error } = await supabase
+          .from('fire_cycle_logs')
+          .select('phase, priority, confidence, created_at')
+          .eq('user_id', userId);
+
+        if (error) {
+          throw error;
+        }
+
+        const logs = data as FireCycleLog[];
+        
+        // Calculate metrics
+        const byphase: Record<string, number> = {};
+        const bypriority: Record<string, number> = {};
+        let total_confidence = 0;
+        
+        logs.forEach(log => {
+          byphase[log.phase] = (byphase[log.phase] || 0) + 1;
+          bypriority[log.priority] = (bypriority[log.priority] || 0) + 1;
+          total_confidence += log.confidence;
+        });
+
+        // Calculate recent activity (last 7 days)
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const recent_activity = logs.filter(log => 
+          new Date(log.created_at) > sevenDaysAgo
+        ).length;
+
+        // Calculate average confidence
+        const average_confidence = logs.length > 0 ? total_confidence / logs.length : 0;
+
+        // Calculate phase progression (how many times each phase was completed)
+        const phaseprogression: Record<string, number> = {};
+        logs.forEach(log => {
+          phaseprogression[log.phase] = (phaseprogression[log.phase] || 0) + 1;
+        });
+
+        return {
+          totallogs: logs.length,
+          byphase,
+          bypriority,
+          average_confidence,
+          recent_activity,
+          phaseprogression
+        };
+      }, 'fetchMetrics');
+
+      setMetrics(metrics);
+      return metrics;
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch metrics';
+      setError(errorMessage);
+      logger.error('Error fetching metrics', { error: err });
+      throw err;
+    }
+  }, [validateAuth, safeOperation]);
 
   // Create a new FIRE cycle log
   const createLog = useCallback(async (logData: CreateFireCycleLogRequest): Promise<FireCycleLog> => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const newLog = {
-        ...logData,
-        userid: user.id,
-        insights: logData.insights || [],
-        actions: logData.actions || [],
-        priority: logData.priority || 'medium',
-        confidence: logData.confidence || 0.5
-      };
+      const userId = await validateAuth();
 
-      const { data, error: insertError } = await supabase
-        .from('fire_cycle_logs')
-        .insert(newLog)
-        .select()
-        .single();
+      const createdLog = await safeOperation(async () => {
+        const newLog = {
+          ...logData,
+          userid: userId,
+          insights: logData.insights || [],
+          actions: logData.actions || [],
+          priority: logData.priority || 'medium',
+          confidence: logData.confidence || 0.5
+        };
 
-      if (insertError) {
-        throw insertError;
-      }
+        const { data, error } = await supabase
+          .from('fire_cycle_logs')
+          .insert(newLog)
+          .select()
+          .single();
 
-      const createdLog = data as FireCycleLog;
+        if (error) {
+          throw error;
+        }
+
+        return data as FireCycleLog;
+      }, 'createLog');
+
       setLogs(prev => [createdLog, ...prev]);
       
       // Refresh metrics
@@ -164,39 +271,41 @@ export const useFireCycleLogs = () => {
       return createdLog;
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message: 'Failed to create FIRE cycle log';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create FIRE cycle log';
       setError(errorMessage);
+      logger.error('Error creating FIRE cycle log', { error: err, logData });
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [validateAuth, safeOperation]);
 
   // Update a FIRE cycle log
   const updateLog = useCallback(async (logId: string, updates: UpdateFireCycleLogRequest): Promise<FireCycleLog> => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error: updateError } = await supabase
-        .from('fire_cycle_logs')
-        .update(updates)
-        .eq('id', logId)
-        .eq('user_id', user.id)
-        .select()
-        .single();
+      const userId = await validateAuth();
 
-      if (updateError) {
-        throw updateError;
-      }
+      const updatedLog = await safeOperation(async () => {
+        const { data, error } = await supabase
+          .from('fire_cycle_logs')
+          .update(updates)
+          .eq('id', logId)
+          .eq('user_id', userId)
+          .select()
+          .single();
 
-      const updatedLog = data as FireCycleLog;
+        if (error) {
+          throw error;
+        }
+
+        return data as FireCycleLog;
+      }, 'updateLog');
+
       setLogs(prev => prev.map(log => 
-        log.id === logId ? updatedLog: log
+        log.id === logId ? updatedLog : log
       ));
       
       // Refresh metrics
@@ -205,33 +314,34 @@ export const useFireCycleLogs = () => {
       return updatedLog;
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message: 'Failed to update FIRE cycle log';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update FIRE cycle log';
       setError(errorMessage);
+      logger.error('Error updating FIRE cycle log', { error: err, logId, updates });
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [validateAuth, safeOperation]);
 
   // Delete a FIRE cycle log
   const deleteLog = useCallback(async (logId: string): Promise<void> => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     setLoading(true);
     setError(null);
 
     try {
-      const { error: deleteError } = await supabase
-        .from('fire_cycle_logs')
-        .delete()
-        .eq('id', logId)
-        .eq('user_id', user.id);
+      const userId = await validateAuth();
 
-      if (deleteError) {
-        throw deleteError;
-      }
+      await safeOperation(async () => {
+        const { error } = await supabase
+          .from('fire_cycle_logs')
+          .delete()
+          .eq('id', logId)
+          .eq('user_id', userId);
+
+        if (error) {
+          throw error;
+        }
+      }, 'deleteLog');
 
       setLogs(prev => prev.filter(log => log.id !== logId));
       
@@ -239,105 +349,45 @@ export const useFireCycleLogs = () => {
       await fetchMetrics();
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message: 'Failed to delete FIRE cycle log';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete FIRE cycle log';
       setError(errorMessage);
+      logger.error('Error deleting FIRE cycle log', { error: err, logId });
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [validateAuth, safeOperation]);
 
   // Get current phase log
   const getCurrentPhaseLog = useCallback(async (): Promise<FireCycleLog | null> => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
     try {
-      const { data, error } = await supabase
-        .from('fire_cycle_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      const userId = await validateAuth();
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+      const currentLog = await safeOperation(async () => {
+        const { data, error } = await supabase
+          .from('fire_cycle_logs')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
 
-      return data as FireCycleLog || null;
+        if (error && error.code !== 'PGRST116') {
+          throw error;
+        }
+
+        return data as FireCycleLog || null;
+      }, 'getCurrentPhaseLog');
+
+      return currentLog;
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message: 'Failed to get current phase log';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to get current phase log';
       setError(errorMessage);
+      logger.error('Error getting current phase log', { error: err });
       throw err;
     }
-  }, [user?.id]);
-
-  // Fetch metrics
-  const fetchMetrics = useCallback(async (): Promise<FireCycleLogMetrics> => {
-    if (!user?.id) {
-      throw new Error('User not authenticated');
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('fire_cycle_logs')
-        .select('phase, priority, confidence, created_at')
-        .eq('user_id', user.id);
-
-      if (error) {
-        throw error;
-      }
-
-      const logs = data as FireCycleLog[];
-      
-      // Calculate metrics
-      const byphase: Record<string, number> = {};
-      const bypriority: Record<string, number> = {};
-      let total_confidence = 0;
-      
-      logs.forEach(log => {
-        by_phase[log.phase] = (by_phase[log.phase] || 0) + 1;
-        by_priority[log.priority] = (by_priority[log.priority] || 0) + 1;
-        total_confidence += log.confidence;
-      });
-
-      // Calculate recent activity (last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const recent_activity = logs.filter(log => 
-        new Date(log.created_at) > sevenDaysAgo
-      ).length;
-
-      // Calculate average confidence
-      const average_confidence = logs.length > 0 ? total_confidence / logs.length: 0;
-
-      // Calculate phase progression (how many times each phase was completed)
-      const phaseprogression: Record<string, number> = {};
-      logs.forEach(log => {
-        phase_progression[log.phase] = (phase_progression[log.phase] || 0) + 1;
-      });
-
-      const metrics: FireCycleLogMetrics = {
-        totallogs: logs.length,
-        by_phase,
-        by_priority,
-        average_confidence,
-        recent_activity,
-        phase_progression
-      };
-
-      setMetrics(metrics);
-      return metrics;
-
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message: 'Failed to fetch metrics';
-      setError(errorMessage);
-      throw err;
-    }
-  }, [user?.id]);
+  }, [validateAuth, safeOperation]);
 
   // Load initial data
   useEffect(() => {
@@ -345,7 +395,7 @@ export const useFireCycleLogs = () => {
       fetchLogs();
       fetchMetrics();
     }
-  }, [user?.id, fetchLogs, fetchMetrics]);
+  }, [user?.id, fetchLogs]);
 
   return {
     // State

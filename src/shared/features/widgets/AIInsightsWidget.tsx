@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Brain, TrendingUp, Target } from 'lucide-react';
 
 export interface AIInsightsWidgetProps {
@@ -40,9 +40,9 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ className = '' }) =
   ];
 
   return (
-    <Card className={`${className}`}>
+    <Card className={`${className} bg-card/50 border-border/60`}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <CardTitle className="flex items-center gap-2 text-foreground">
           <Brain className="w-5 h-5 text-primary" />
           AI Insights
         </CardTitle>
@@ -53,21 +53,21 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ className = '' }) =
           return (
             <div
               key={insight.id}
-              className={`p-3 rounded-lg border-l-4 ${
+              className={`p-3 rounded-lg border-l-4 shadow-sm ${
                 insight.priority === 'high' 
-                  ? 'border-l-primary bg-primary/5' 
+                  ? 'border-l-primary bg-primary/25 text-primary-foreground' 
                   : insight.priority === 'medium'
-                  ? 'border-l-secondary bg-secondary/5'
-                  : 'border-l-muted bg-muted/5'
+                  ? 'border-l-secondary bg-secondary/25 text-secondary-foreground'
+                  : 'border-l-muted bg-muted/20 text-foreground'
               }`}
             >
               <div className="flex items-start gap-3">
-                <IconComponent className="w-4 h-4 mt-0.5 text-muted-foreground" />
+                <IconComponent className="w-4 h-4 mt-0.5 opacity-90" />
                 <div className="flex-1">
-                  <h4 className="font-medium text-sm text-foreground mb-1">
+                  <h4 className="font-medium text-sm text-current mb-1">
                     {insight.title}
                   </h4>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-foreground">
                     {insight.description}
                   </p>
                 </div>
@@ -77,7 +77,7 @@ const AIInsightsWidget: React.FC<AIInsightsWidgetProps> = ({ className = '' }) =
         })}
         
         <div className="text-center pt-2">
-          <button className="text-xs text-primary hover: text-primary/80 transition-colors">
+          <button className="text-xs text-primary hover:text-primary/80 transition-colors">
             View more insights
           </button>
         </div>

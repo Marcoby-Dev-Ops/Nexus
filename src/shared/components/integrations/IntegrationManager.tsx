@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { integrationService } from '@/domains/integrations/services/integrationService';
-import { logger } from '@/shared/utils/logger';
+import { useAuth } from '@/hooks/index';
+import { integrationService } from '@/services/integrations/integrationService.ts';
+import { logger } from '@/shared/utils/logger.ts';
 
 interface Integration {
   id: string;
@@ -212,16 +212,16 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
                 className="border rounded-lg p-4 flex items-center justify-between"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <span className="text-sm font-medium">
+                  <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                    <span className="text-sm font-medium text-muted-foreground">
                       {integration.platform.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">
+                    <h4 className="font-medium text-foreground">
                       {integration.platform.charAt(0).toUpperCase() + integration.platform.slice(1)}
                     </h4>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       Status: {integration.status}
                       {integration.last_sync && (
                         <span className="ml-2">
@@ -270,14 +270,14 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
                 className="border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-8 h-8 bg-gray-200 rounded flex items-center justify-center">
-                    <span className="text-xs font-medium">
+                  <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
+                    <span className="text-xs font-medium text-muted-foreground">
                       {platform.icon.charAt(0).toUpperCase()}
                     </span>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900">{platform.displayName}</h4>
-                    <p className="text-xs text-gray-500">{platform.description}</p>
+                    <h4 className="font-medium text-foreground">{platform.displayName}</h4>
+                    <p className="text-xs text-muted-foreground">{platform.description}</p>
                   </div>
                 </div>
                 
@@ -286,7 +286,7 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
                     {platform.features.map((feature) => (
                       <span
                         key={feature}
-                        className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+                        className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded"
                       >
                         {feature}
                       </span>

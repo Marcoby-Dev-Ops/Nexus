@@ -3,9 +3,31 @@
  * Handles business logic workflows and ensures proper data flow
  */
 
-import { supabase } from '@/core/supabase';
-import { logger } from '@/core/auth/logger';
+import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/core/types/supabase';
+import { logger } from '@/shared/utils/logger.ts';
 import { environment } from '@/core/environment';
+
+// Service role client for server-side operations (created lazily)
+let supabaseServiceRole: any = null;
+
+const getServiceRoleClient = () => {
+  if (!supabaseServiceRole && typeof window === 'undefined') {
+    // Only create service role client on server-side
+    supabaseServiceRole = createClient<Database>(
+      import.meta.env.VITE_SUPABASE_URL,
+      import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+  }
+  return supabaseServiceRole;
+};
 
 export interface WorkflowStep {
   id: string;
@@ -242,10 +264,12 @@ export class WorkflowService {
         const { error } = await supabase
           .from('analytics_events')
           .insert({
-            userid: workflow.userId,
+            user_id: workflow.userId,
             eventtype: 'onboarding_completed',
-            eventdata: { workflow: 'user_onboarding' },
-            occurredat: new Date().toISOString(),
+            properties: { workflow: 'user_onboarding' },
+            timestamp: new Date().toISOString(),
+            source: 'workflow',
+            version: '1.0.0'
           });
 
         if (error) throw error;
@@ -354,10 +378,12 @@ export class WorkflowService {
         const { error } = await supabase
           .from('analytics_events')
           .insert({
-            userid: workflow.userId,
+            user_id: workflow.userId,
             eventtype: 'data_sync_completed',
-            eventdata: { integrationsCount: integrations?.length || 0 },
-            occurredat: new Date().toISOString(),
+            properties: { integrationsCount: integrations?.length || 0 },
+            timestamp: new Date().toISOString(),
+            source: 'workflow',
+            version: '1.0.0'
           });
 
         if (error) throw error;
@@ -597,30 +623,7 @@ export class WorkflowService {
     workflow: Workflow,
     initialData?: any
   ): Promise<Omit<WorkflowExecutionResult, 'workflowId' | 'executionTime'>> {
-    const steps: WorkflowStep[] = [
-      {
-        id: 'fetch_analytics_data',
-        name: 'Fetch Analytics Data',
-        type: 'data_fetch',
-        status: 'pending',
-      },
-      {
-        id: 'process_analytics',
-        name: 'Process Analytics',
-        type: 'data_transform',
-        status: 'pending',
-      },
-      {
-        id: 'store_processed_data',
-        name: 'Store Processed Data',
-        type: 'data_store',
-        status: 'pending',
-      },
-    ];
-
-    workflow.steps = steps;
-    workflow.status = 'running';
-
+    const steps = workflow.steps;
     let completedSteps = 0;
     const errors: string[] = [];
 
@@ -631,7 +634,7 @@ export class WorkflowService {
           .from('analytics_events')
           .select('*')
           .eq('user_id', workflow.userId)
-          .order('occurred_at', { ascending: false })
+          .order('timestamp', { ascending: false })
           .limit(100);
 
         if (error) throw error;
@@ -642,14 +645,14 @@ export class WorkflowService {
       // Step 2: Process analytics
       const processedData = await this.executeStep(steps[1], async () => {
         // Simulate analytics processing
-        const eventTypes = analyticsData.map(event => event.event_type);
+        const eventTypes = analyticsData.map(event => event.eventtype);
         const uniqueEvents = [...new Set(eventTypes)];
         
         return {
           totalEvents: analyticsData.length,
           uniqueEventTypes: uniqueEvents.length,
           eventTypes: uniqueEvents,
-          lastEvent: analyticsData[0]?.occurred_at,
+          lastEvent: analyticsData[0]?.timestamp,
         };
       });
       completedSteps++;
@@ -659,10 +662,12 @@ export class WorkflowService {
         const { error } = await supabase
           .from('analytics_events')
           .insert({
-            userid: workflow.userId,
+            user_id: workflow.userId,
             eventtype: 'analytics_processed',
-            eventdata: processedData,
-            occurredat: new Date().toISOString(),
+            properties: processedData,
+            timestamp: new Date().toISOString(),
+            source: 'workflow',
+            version: '1.0.0'
           });
 
         if (error) throw error;

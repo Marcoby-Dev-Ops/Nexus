@@ -1,4 +1,4 @@
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useAuth } from '@/hooks/index';
 
 /**
  * Hook for accessing user data from the auth context

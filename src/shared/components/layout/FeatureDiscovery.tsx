@@ -15,10 +15,10 @@ import {
   MessageSquare,
   CreditCard
 } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Input } from '@/shared/components/ui/Input';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Input } from '@/shared/components/ui/Input.tsx';
 
 interface Feature {
   id: string;

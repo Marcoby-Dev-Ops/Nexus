@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
 import { Brain, Zap, Target, Workflow, BarChart3, Users, Settings, Lightbulb, Activity } from 'lucide-react';
 // Lazy load all demo components
 const TrinityBrainDemo = React.lazy(() => import('./TrinityBrainDemo').then(module => ({ default: module.TrinityBrainDemo })));
@@ -30,7 +30,7 @@ const DEMOITEMS: DemoItem[] = [
   {
     id: 'trinity-brain',
     title: 'Trinity Brain System',
-    description: 'Advanced AI orchestration with Think-See-Act methodology',
+    description: 'Advanced AI orchestration with See-Act-Think methodology',
     category: 'ai',
     icon: <Brain className="w-5 h-5" />,
     component: TrinityBrainDemo,

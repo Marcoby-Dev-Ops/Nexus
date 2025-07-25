@@ -4,7 +4,7 @@
  * Tools for debugging session state and persistence issues
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
 
 export interface SessionDebugInfo {
   hasLocalStorage: boolean;

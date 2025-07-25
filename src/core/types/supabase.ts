@@ -62,6 +62,45 @@ export type Database = {
         }
         Relationships: []
       }
+      analytics_events: {
+        Row: {
+          created_at: string | null
+          deleted_at: string | null
+          eventtype: string
+          id: string
+          properties: Json | null
+          session_id: string | null
+          source: string | null
+          timestamp: string | null
+          user_id: string | null
+          version: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deleted_at?: string | null
+          eventtype: string
+          id?: string
+          properties?: Json | null
+          session_id?: string | null
+          source?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+          version?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deleted_at?: string | null
+          eventtype?: string
+          id?: string
+          properties?: Json | null
+          session_id?: string | null
+          source?: string | null
+          timestamp?: string | null
+          user_id?: string | null
+          version?: string | null
+        }
+        Relationships: []
+      }
       ai_inbox_items: {
         Row: {
           ai_action_items: string[] | null

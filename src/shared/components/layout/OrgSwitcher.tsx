@@ -1,6 +1,6 @@
 import React from 'react';
-import { useOrganizationStore } from '@/shared/stores/organizationStore';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useOrganizationStore } from '@/shared/stores/organizationStore.ts';
+import { useAuth } from '@/hooks/index';
 import { ChevronDown } from 'lucide-react';
 
 export const OrgSwitcher: React.FC = () => {

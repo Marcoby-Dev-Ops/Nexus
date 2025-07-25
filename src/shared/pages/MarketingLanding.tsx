@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Sparkles, Check, Star, Zap, Shield, BarChart3, Bolt, Brain, Workflow } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent } from '@/shared/components/ui/Card.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Seo } from '@/shared/components/Seo';
 
 const MarketingLanding: React.FC = () => {

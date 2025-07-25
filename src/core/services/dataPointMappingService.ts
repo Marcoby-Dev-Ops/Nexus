@@ -3,8 +3,9 @@
  * Ensures all data points in dictionaries have proper database landing spots
  */
 
-import { databaseService } from './DatabaseService';
-import { logger } from '@/shared/utils/logger';
+import { supabase } from '@/lib/supabase';
+
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface DataPointMapping {
   dataPointId: string;
@@ -48,12 +49,7 @@ export class DataPointMappingService {
   async generateMappingReport(userId: string): Promise<MappingReport> {
     try {
       // Get all user integrations
-      const { data: userIntegrations } = await databaseService.select(
-        'user_integrations',
-        '*',
-        { userid: userId },
-        { retries: 2 }
-      );
+      const { data: userIntegrations } = await supabase.from('user_integrations').select('*').eq('userid', userId);
 
       if (!userIntegrations?.length) {
         return {
@@ -80,12 +76,7 @@ export class DataPointMappingService {
       for (const integration of userIntegrations) {
         try {
           // Get data point definitions for this integration
-          const { data: dataPoints } = await databaseService.select(
-            'data_point_definitions',
-            '*',
-            { userintegration_id: integration.id },
-            { retries: 2 }
-          );
+          const { data: dataPoints } = await supabase.from('data_point_definitions').select('*').eq('user_integration_id', integration.id);
 
           if (!dataPoints?.length) {
             issues.push(`No data points found for integration: ${integration.integration_name}`);
@@ -96,15 +87,7 @@ export class DataPointMappingService {
             totalDataPoints++;
 
             // Check if this data point has data
-            const { data: dataRecords } = await databaseService.select(
-              'integration_data',
-              'id, created_at',
-              { 
-                userintegration_id: integration.id,
-                datapoint_definition_id: dataPoint.id 
-              },
-              { retries: 2 }
-            );
+            const { data: dataRecords } = await supabase.from('integration_data').select('id, created_at').eq('user_integration_id', integration.id).eq('datapoint_definition_id', dataPoint.id);
 
             const hasData = Boolean(dataRecords && dataRecords.length > 0);
             const dataCount = dataRecords?.length || 0;
@@ -134,7 +117,7 @@ export class DataPointMappingService {
               dataPointId: dataPoint.id,
               dataPointName: dataPoint.data_point_name,
               category: dataPoint.category,
-              businessValue: dataPoint.business_value,
+              businessValue: dataPoint.business_value as 'high' | 'medium' | 'low',
               hasData,
               dataCount,
               lastUpdate,
@@ -177,45 +160,30 @@ export class DataPointMappingService {
   ): Promise<{ success: boolean; error?: string }> {
     try {
       // Check if data already exists
-      const { data: existingData } = await databaseService.select(
-        'integration_data',
-        'id',
-        { 
-          userintegration_id: userIntegrationId,
-          datapoint_definition_id: dataPointDefinitionId 
-        },
-        { limit: 1 }
-      );
+      const { data: existingData } = await supabase.from('integration_data').select('id').eq('user_integration_id', userIntegrationId).eq('datapoint_definition_id', dataPointDefinitionId).single();
 
-      if (existingData && existingData.length > 0) {
+      if (existingData) {
         return { success: true };
       }
 
       // Get the data point definition
-      const { data: dataPoints } = await databaseService.select(
-        'data_point_definitions',
-        '*',
-        { id: dataPointDefinitionId },
-        { retries: 2 }
-      );
+      const { data: dataPoints } = await supabase.from('data_point_definitions').select('*').eq('id', dataPointDefinitionId).single();
 
-      if (!dataPoints || dataPoints.length === 0) {
+      if (!dataPoints) {
         return { 
           success: false, 
           error: `Data point definition not found: ${dataPointDefinitionId}` 
         };
       }
 
-      const dataPoint = dataPoints[0];
+      const dataPoint = dataPoints;
 
       // Insert sample data
-      const { error } = await databaseService.insert(
-        'integration_data',
-        {
-          userintegration_id: userIntegrationId,
-          datatype: dataPoint.data_point_name,
-          rawdata: sampleData,
-          processeddata: sampleData,
+      const { error } = await supabase.from('integration_data').insert({
+          user_integration_id: userIntegrationId,
+          data_type: dataPoint.data_point_name,
+          data_content: sampleData,
+          processed_data: sampleData,
           datapoint_definition_id: dataPoint.id,
           datacategory: dataPoint.category,
           businessvalue: dataPoint.business_value,
@@ -223,9 +191,7 @@ export class DataPointMappingService {
           isrequired: dataPoint.is_required,
           validationrules: dataPoint.validation_rules,
           samplevalue: dataPoint.sample_value
-        },
-        { retries: 2 }
-      );
+        });
 
       if (error) throw error;
 

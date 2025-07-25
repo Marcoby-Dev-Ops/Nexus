@@ -1,6 +1,6 @@
 import React from 'react';
-import { supabase } from "@/core/supabase";
-import { useAuth } from '@/core/auth/AuthProvider';
+import { supabase } from "@/lib/supabase";
+import { useAuth } from '@/hooks/useAuth.ts';
 
 async function fetchHealth() {
   // The useAuth hook now ensures we have a valid session,

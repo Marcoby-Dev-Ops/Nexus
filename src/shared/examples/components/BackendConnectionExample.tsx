@@ -4,14 +4,14 @@
  */
 
 import React from 'react';
-import { useBackendConnector } from '@/shared/hooks/useBackendConnector';
-import { useDataService, useNotifications, useInboxItems, useDashboardMetrics } from '@/shared/hooks/useDataService';
+import { useBackendConnector } from '@/shared/hooks/useBackendConnector.ts';
+import { useDataService, useNotifications, useInboxItems, useDashboardMetrics } from '@/shared/hooks/useDataService.ts';
 import { ConnectionStatusIndicator } from '@/shared/components/ui/ConnectionStatusIndicator';
 import { BackendErrorBoundary } from '@/shared/components/ui/BackendErrorBoundary';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { 
   Activity, 
   Bell, 

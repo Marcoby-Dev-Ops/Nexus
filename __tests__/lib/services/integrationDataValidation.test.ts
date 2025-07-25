@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/core/lib/supabase';
 
 const STANDARD_COLUMNS = [
   'id',

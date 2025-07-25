@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { X, ChevronRight, Users, Brain } from 'lucide-react';
-import { getCoreNavItems, getNavItemsByCategory } from './navConfig';
-import { Badge } from '@/shared/components/ui/Badge';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { getCoreNavItems, getNavItemsByCategory } from './navConfig.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { useAuth } from '@/hooks/index';
 
 export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const location = useLocation();

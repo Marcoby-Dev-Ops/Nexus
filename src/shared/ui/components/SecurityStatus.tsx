@@ -4,11 +4,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Button } from '@/shared/components/ui/Button';
-import Modal from '@/shared/components/ui/Modal';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import Modal from '@/shared/components/ui/Modal.tsx';
 import { Shield, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { supabase } from "@/core/supabase";
+import { supabase } from "@/lib/supabase";
 
 interface SecurityStatus {
   level: 'secure' | 'warning' | 'critical';

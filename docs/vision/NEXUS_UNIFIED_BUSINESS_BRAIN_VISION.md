@@ -20,7 +20,7 @@
 │                  NEXUS UNIFIED BUSINESS BRAIN                   │
 │                                                                 │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────┐ │
-│  │   THINK     │  │     SEE     │  │     ACT     │  │ LEARN   │ │
+│  │     SEE     │  │     ACT     │  │   THINK     │  │ LEARN   │ │
 │  │ Predictive  │  │ Real-time   │  │ Autonomous  │  │ Evolve  │ │
 │  │ Analytics   │  │ Monitoring  │  │ Execution   │  │ Adapt   │ │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────┘ │

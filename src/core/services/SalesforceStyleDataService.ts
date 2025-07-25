@@ -8,9 +8,9 @@
  * - Record-level security
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
 import { salesforcePermissions } from '@/core/permissions/SalesforceStylePermissions';
-import { logger } from '@/shared/utils/logger';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface QueryOptions {
   userId: string;

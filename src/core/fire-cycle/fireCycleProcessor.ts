@@ -1,5 +1,5 @@
 import { FireCycleLogicEngine, type UserContext, type FireAnalysis } from './fireCycleLogic';
-import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
+import type { FireCyclePhase } from '@/types/business/fire-cycle';
 
 export interface ProcessedInput {
   id: string;

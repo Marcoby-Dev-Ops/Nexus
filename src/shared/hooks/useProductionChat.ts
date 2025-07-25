@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useAuth } from '@/hooks/useAuth.ts';
 import { supabase } from '../core/supabase';
 import { quotaService } from '../services/quotaService';
 import type { ChatMessage, ChatState, ChatActions } from '../types/chat';

@@ -1,7 +1,7 @@
 import React from 'react';
-import { useTheme } from '@/shared/components/ui/theme-provider';
-import { Button } from '@/shared/components/ui/Button';
-import { COLORS } from '@/shared/components/ui/theme-provider';
+import { useTheme } from '@/shared/components/ui/theme-provider.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { COLORS } from '@/shared/components/ui/theme-provider.tsx';
 
 export const ThemePanel: React.FC = () => {
   const { theme, setTheme, primaryColor, setPrimaryColor } = useTheme();

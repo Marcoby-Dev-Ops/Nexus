@@ -1,5 +1,5 @@
-import { supabase } from '@/core/supabase';
-import { logger } from '@/core/auth/logger';
+import { supabase } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface BusinessProfile {
   id?: string;

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { supabase } from "@/core/supabase";
-import { API_CONFIG } from '@/core/constants';
+import { supabase } from "@/lib/supabase";
+import { API_CONFIG } from '@/core/constants.ts';
 
 export interface AIMessage {
   id: string;

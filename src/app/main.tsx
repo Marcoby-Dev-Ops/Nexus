@@ -2,13 +2,21 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { ThemeProvider } from '@/shared/ui/components/ThemeProvider';
+import { ThemeProvider } from '@/shared/components/ui/theme-provider.tsx';
 import { ToastProvider } from '@/shared/ui/components/Toast';
+import { NotificationProvider } from '@/core/hooks/NotificationContext.tsx';
 import App from './App';
-import { logger } from '@/shared/utils/logger';
+import { logger } from '@/shared/utils/logger.ts';
+import { initializeStorageCleanup } from '@/shared/utils/storageUtils.ts';
+
+// Import global styles
+import '@/shared/assets/index.css';
 
 // Initialize i18n
 import '@/shared/services/i18n';
+
+// Initialize storage cleanup to fix potential localStorage corruption
+initializeStorageCleanup();
 
 // Create a client
 const queryClient = new QueryClient({
@@ -131,10 +139,12 @@ const initializeApp = () => {
         <RootErrorBoundary>
           <QueryClientProvider client={queryClient}>
             <Router>
-              <ThemeProvider defaultTheme="light">
-                <ToastProvider>
-                  <App />
-                </ToastProvider>
+              <ThemeProvider defaultTheme="system">
+                <NotificationProvider>
+                  <ToastProvider>
+                    <App />
+                  </ToastProvider>
+                </NotificationProvider>
               </ThemeProvider>
             </Router>
           </QueryClientProvider>

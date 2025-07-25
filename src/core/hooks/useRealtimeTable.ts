@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { supabase } from "@/core/supabase";
+import { supabase } from "@/lib/supabase";
 
 export function useRealtimeTable(table: "Recent" | "Pin", onChange: () => void) {
   useEffect(() => {

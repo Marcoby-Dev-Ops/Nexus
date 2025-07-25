@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { chatService } from '@/domains/ai/services/chatService';
-import { logger } from '@/shared/utils/logger';
+import { useAuth } from '@/hooks/index';
+import { chatService } from '@/services/ai/chatService.ts';
+import { logger } from '@/shared/utils/logger.ts';
 
 interface Message {
   id: string;

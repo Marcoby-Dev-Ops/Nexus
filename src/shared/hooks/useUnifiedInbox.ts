@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { owaInboxService } from '@/domains/email/services/owaInboxService';
-import type { OWAInboxFilters, OWAEmailItem } from '@/domains/email/services/owaInboxService';
+import { owaInboxService } from '@/services/email/owaInboxService';
+import type { OWAInboxFilters, OWAEmailItem } from '@/services/email/owaInboxService';
 
 export interface UseUnifiedInboxOptions {
   filters?: OWAInboxFilters;

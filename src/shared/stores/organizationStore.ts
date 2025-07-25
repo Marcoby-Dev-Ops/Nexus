@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
-import { supabase } from "@/core/supabase";
+import { supabase } from "@/lib/supabase";
 
 export interface Organization {
   id: string;

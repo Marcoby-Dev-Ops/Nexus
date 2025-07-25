@@ -5,9 +5,9 @@
  * Provides graceful fallbacks instead of throwing errors.
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
-import { logger } from '@/shared/utils/logger';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface CompanyProvisioningOptions {
   createDefaultCompany?: boolean;

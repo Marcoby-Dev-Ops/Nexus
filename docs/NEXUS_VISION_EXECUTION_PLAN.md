@@ -34,7 +34,7 @@ This document outlines the strategic vision and execution roadmap for Nexus. To 
 4. **Enterprise-Ready & Personal-Ready:** Security, compliance, reliability, and privacy from day one.
 5. **Startup- and User-Friendly:** Easy onboarding, fast value, fair pricing, and personal enablement.
 6. **Continuous Improvement:** Learns and gets better with every user (data flywheel).
-7. **Trinity Architecture:** THINK (generate ideas/deliverables), SEE (analyze business health), ACT (automate execution)—the core loop for all workflows.
+7. **Trinity Architecture:** SEE (analyze business health), ACT (automate execution), THINK (generate ideas/deliverables)—the core loop for all workflows.
 
 ---
 
@@ -290,19 +290,19 @@ To ensure smooth database migrations and avoid duplicate key errors or migration
     > - All major sections are present as modular config entries  
     > - Profile & Security sections are fully functional  
     > - Other sections are scaffolded with placeholders, ready for business logic/UI implementation  
-    > - UI/UX follows the THINK/SEE/ACT structure for all settings modules  
+    > - UI/UX follows the SEE/ACT/THINK structure for all settings modules  
     > - Automated tests and Storybook coverage  
     > - Analytics/event tracking where relevant  
     > - Documentation updated
 
-- [x] **Department Module Unification:** All department modules are now config-driven, use a single unified page/component, and explicitly follow the THINK/SEE/ACT structure.
+- [x] **Department Module Unification:** All department modules are now config-driven, use a single unified page/component, and explicitly follow the SEE/ACT/THINK structure.
     > **Prompt:**  
-    > Refactor all department pages to use a unified, config-driven architecture. Remove legacy/duplicate files. Ensure every department module (Sales, Finance, Operations, etc.) uses a type-safe config and the UnifiedDepartmentPage component. Enforce the THINK/SEE/ACT structure in every department module.
+    > Refactor all department pages to use a unified, config-driven architecture. Remove legacy/duplicate files. Ensure every department module (Sales, Finance, Operations, etc.) uses a type-safe config and the UnifiedDepartmentPage component. Enforce the SEE/ACT/THINK structure in every department module.
     > 
     > **Acceptance Criteria:**  
     > - All department pages use UnifiedDepartmentPage and a config object  
     > - No legacy or duplicate department page files remain  
-    > - THINK/SEE/ACT structure is present in every department module  
+    > - SEE/ACT/THINK structure is present in every department module  
     > - Consistent UI/UX and rapid scalability across departments  
     > - Automated tests and Storybook coverage  
     > - Analytics/event tracking where relevant  
@@ -578,9 +578,9 @@ To ensure smooth database migrations and avoid duplicate key errors or migration
     > - Load testing and capacity planning
 
 #### F. Advanced Trinity Implementation
-- [ ] **Personal Trinity:** Individual THINK/SEE/ACT workflows for personal productivity optimization.
+- [ ] **Personal Trinity:** Individual SEE/ACT/THINK workflows for personal productivity optimization.
     > **Prompt:**  
-    > Implement personal-level Trinity workflows where individual thoughts (THINK) inform personal analytics (SEE) which trigger personal automations (ACT). Include personal goal tracking, individual performance analytics, and automated personal workflow optimization.
+    > Implement personal-level Trinity workflows where individual analytics (SEE) trigger personal automations (ACT) which inform individual thoughts (THINK). Include personal goal tracking, individual performance analytics, and automated personal workflow optimization.
     >
     > **Acceptance Criteria:**  
     > - Personal THINK: Individual idea capture and goal setting
@@ -733,7 +733,7 @@ The Trinity is the core, dynamic workflow of Nexus, defining how users interact 
     -   This is our analytical lens. SEE provides a clear, data-driven understanding of the health of the company, its departments, and its workflows. It's the engine for objective insight.
 -   **ACT: The Automation Engine**
     -   This is our operational force. ACT is used to implement the creative ideas from THINK and execute on the factual insights from SEE through powerful, automated workflows. It's the engine for execution.
--   **Continuous Learning:** Every cycle of THINK, SEE, and ACT feeds back into the Nexus Brain, making the entire system smarter, more proactive, and more valuable for all users (the data flywheel).
+-   **Continuous Learning:** Every cycle of SEE, ACT, and THINK feeds back into the Nexus Brain, making the entire system smarter, more proactive, and more valuable for all users (the data flywheel).
 
 ### Personal & Team Workspace Trinity:
 This Trinity is applied at every level:

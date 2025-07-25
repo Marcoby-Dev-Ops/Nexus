@@ -5,11 +5,11 @@
  */
 
 import React, { useState } from 'react';
-import { useCompanyProvisioning } from '@/shared/hooks/useCompanyProvisioning';
-import { Button } from '@/shared/components/ui/Button';
-import { Card } from '@/shared/components/ui/Card';
-import { Modal } from '@/shared/components/ui/Modal';
-import { Spinner } from '@/shared/components/ui/Spinner';
+import { useCompanyProvisioning } from '@/shared/hooks/useCompanyProvisioning.ts';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card } from '@/shared/components/ui/Card.tsx';
+import { Modal } from '@/shared/components/ui/Modal.tsx';
+import { Spinner } from '@/shared/components/ui/Spinner.tsx';
 
 interface CompanyProvisioningModalProps {
   isOpen: boolean;

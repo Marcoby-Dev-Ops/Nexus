@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
+import { useAuth } from '@/hooks/index';
+import { useRedirectManager } from '@/shared/hooks/useRedirectManager.ts';
 
 interface ProtectedRouteProps {
   children: ReactNode;

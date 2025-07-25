@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Target, Lightbulb, Map, Play, ChevronRight, CheckCircle, Circle } from 'lucide-react';
-import { useData } from '@/shared/contexts/DataContext';
-import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
+import { useFireCycleLogs } from '@/shared/hooks/useFireCycleLogs';
+import type { FireCyclePhase } from '@/types/business/fire-cycle';
 
 const PHASES: FireCyclePhase[] = [
   {
@@ -103,7 +103,7 @@ export const FireCycleOverlay: React.FC<FireCycleOverlayProps> = ({
   variant = 'compact',
   className = ''
 }) => {
-  const { systemStatus } = useData();
+  const { logs, loading, error, metrics } = useFireCycleLogs();
   const [phase, setPhase] = useState<FireCyclePhase['id']>('focus');
   const [showActions, setShowActions] = useState(false);
 
@@ -120,7 +120,7 @@ export const FireCycleOverlay: React.FC<FireCycleOverlayProps> = ({
     setPhase(PHASES[nextIndex].id);
   };
 
-  const handleActionClick = (__action: any) => {
+  const handleActionClick = (action: any) => {
     action.onClick();
     setShowActions(false);
   };

@@ -1,3 +1,0 @@
-[33m91b8021[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m feat: update domain configuration for nexus.marcoby.net development environment
-[33me5eccaf[m Switch to Node.js serve for simpler deployment
-[33m3621055[m Add inline nginx config for maximum compatibility

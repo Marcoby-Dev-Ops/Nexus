@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/utils/styles.ts';
 
 interface HubSpotIconProps extends React.SVGProps<SVGSVGElement> {
   className?: string;

@@ -1,4 +1,4 @@
-import { cn, isValidUUID } from '@/lib/utils';
+import { cn, isValidUUID } from '@/shared/lib/utils';
 
 describe('utils.ts', () => {
   describe('cn()', () => {

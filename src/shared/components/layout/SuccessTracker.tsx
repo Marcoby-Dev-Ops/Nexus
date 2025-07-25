@@ -16,11 +16,11 @@ import {
   Circle,
   Clock
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Progress } from '@/shared/components/ui/Progress';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Progress } from '@/shared/components/ui/Progress.tsx';
 
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useAuth } from '@/hooks/index';
 
 interface Achievement {
   id: string;

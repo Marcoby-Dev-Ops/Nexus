@@ -4,9 +4,8 @@
  * Enhanced with real-time processing, predictive intelligence, and automated workflows
  */
 
-import { databaseService } from './DatabaseService';
-import { logger } from '@/shared/utils/logger';
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface EmailAnalysis {
   id: string;

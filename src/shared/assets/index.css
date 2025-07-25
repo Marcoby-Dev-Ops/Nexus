@@ -20,61 +20,61 @@
 
 @layer base {
   :root {
-    /* Base colors */
-    --background: 150 40% 97%;  /* #f5f9f5 */
-    --foreground: 160 25% 5%;   /* #0a0a0a - Much darker for better contrast */
-    --card: 0 0% 100%;
-    --card-foreground: 160 25% 5%;  /* #0a0a0a - Much darker for better contrast */
-    --popover: 0 0% 100%;
-    --popover-foreground: 160 25% 5%;  /* #0a0a0a - Much darker for better contrast */
+    /* Enhanced Base Colors - Light Mode */
+    --background: 150 40% 98%;  /* #fafdfa - Lighter, cleaner background */
+    --foreground: 160 25% 8%;   /* #141414 - Much darker for excellent contrast */
+    --card: 150 30% 99%;        /* #fefefe - Subtle green-tinted white */
+    --card-foreground: 160 25% 8%;  /* #141414 - Much darker for excellent contrast */
+    --popover: 150 30% 99%;     /* #fefefe - Subtle green-tinted white */
+    --popover-foreground: 160 25% 8%;  /* #141414 - Much darker for excellent contrast */
     
-    /* Brand-aligned colors */
-    --primary: 145 100% 20%;    /* #006837 */
+    /* Enhanced Brand-Aligned Colors - Green-Based Palette */
+    --primary: 145 100% 22%;    /* #006837 - Your favorite green, slightly adjusted */
     --primary-foreground: 0 0% 100%;
-    --secondary: 148 100% 33%;  /* #00a651 */
+    --secondary: 148 100% 35%;  /* #00a651 - Brighter secondary green */
     --secondary-foreground: 0 0% 100%;
-    --accent: 211 100% 50%;     /* #007aff */
+    --accent: 211 100% 50%;     /* #007aff - Complementary blue */
     --accent-foreground: 0 0% 100%;
     
-    /* Semantic colors */
-    --success: 142 72% 29%;     /* #10b981 - Green */
+    /* Enhanced Semantic Colors with Better Contrast */
+    --success: 142 72% 29%;     /* #10b981 - Green success */
     --success-foreground: 0 0% 100%;
-    --info: 217 92% 51%;        /* #3b82f6 - Blue */
+    --info: 217 92% 51%;        /* #3b82f6 - Blue info */
     --info-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;      /* #f59e0b - Amber */
+    --warning: 38 92% 50%;      /* #f59e0b - Amber warning */
     --warning-foreground: 0 0% 100%;
-    --danger: 0 84% 60%;        /* #ef4444 - Red */
+    --danger: 0 84% 60%;        /* #ef4444 - Red danger */
     --danger-foreground: 0 0% 100%;
     
-    /* Supporting UI colors */
-    --muted: 160 30% 92%;      /* #e4f0ec */
-    --muted-foreground: 160 5% 25%;  /* Much darker for better contrast */
+    /* Enhanced Supporting UI Colors */
+    --muted: 160 30% 94%;      /* #f0f7f4 - Lighter muted for better contrast */
+    --muted-foreground: 160 5% 30%;  /* #4a4a4a - Much darker for excellent contrast */
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 145 20% 85%;
-    --input: 145 20% 85%;
-    --ring: 145 100% 20%;       /* #006837 */
+    --border: 145 20% 88%;      /* #e8f3ed - Lighter border */
+    --input: 145 20% 88%;       /* #e8f3ed - Lighter input */
+    --ring: 145 100% 22%;       /* #006837 - Your primary green */
     --radius: 0.5rem;
     
-    /* Extended UI state colors */
-    --primary-subtle: 145 100% 96%;    /* Very light primary for backgrounds */
-    --primary-hover: 145 100% 18%;     /* Slightly darker primary for hover */
-    --secondary-subtle: 148 100% 95%;  /* Very light secondary for backgrounds */
-    --muted-subtle: 160 30% 96%;       /* Even lighter muted for subtle backgrounds */
-    --muted-hover: 160 30% 88%;        /* Darker muted for hover states */
+    /* Enhanced Extended UI State Colors */
+    --primary-subtle: 145 100% 97%;    /* Very light primary for backgrounds */
+    --primary-hover: 145 100% 20%;     /* Slightly darker primary for hover */
+    --secondary-subtle: 148 100% 96%;  /* Very light secondary for backgrounds */
+    --muted-subtle: 160 30% 97%;       /* Even lighter muted for subtle backgrounds */
+    --muted-hover: 160 30% 90%;        /* Darker muted for hover states */
     --unread-bg: 145 100% 98%;         /* Unread item background */
-    --unread-border: 145 100% 20%;     /* Unread item border */
-    --selected-bg: 160 30% 90%;        /* Selected item background */
-    --hover-bg: 160 20% 94%;           /* General hover background */
+    --unread-border: 145 100% 22%;     /* Unread item border */
+    --selected-bg: 160 30% 92%;        /* Selected item background */
+    --hover-bg: 160 20% 96%;           /* General hover background */
 
-    /* Additional CSS variables for better dark mode support */
-    --success-subtle: 142 72% 95%;
+    /* Enhanced Additional CSS Variables for Better Dark Mode Support */
+    --success-subtle: 142 72% 96%;
     --success-hover: 142 72% 25%;
-    --destructive-subtle: 0 84% 95%;
+    --destructive-subtle: 0 84% 96%;
     --destructive-hover: 0 84% 55%;
-    --warning-subtle: 38 92% 95%;
+    --warning-subtle: 38 92% 96%;
     --warning-hover: 38 92% 45%;
-    --secondary-subtle: 148 100% 95%;
+    --secondary-subtle: 148 100% 96%;
     --secondary-hover: 148 100% 30%;
 
     /* Z-Index System - Proper layering hierarchy */
@@ -89,6 +89,7 @@
     --z-critical: 80;                  /* Critical overlays */
     --z-maximum: 9999;                 /* Absolute top layer */
 
+    /* Enhanced Color Palette */
     --purple: 262 84% 72%;      /* #8b5cf6 */
     --purple-foreground: 0 0% 100%;
     --gray-alt: 222 9% 46%;     /* #6b7280 */
@@ -104,23 +105,23 @@
   }
 
   .dark {
-    /* Base colors - dark mode */
-    --background: 160 25% 10%;  /* #1a1a1a */
-    --foreground: 0 0% 98%;     /* #fafafa - Brighter for better contrast */
-    --card: 160 20% 15%;        /* #232323 */
-    --card-foreground: 0 0% 98%;  /* #fafafa - Brighter for better contrast */
-    --popover: 160 20% 15%;     /* #232323 */
-    --popover-foreground: 0 0% 98%;  /* #fafafa - Brighter for better contrast */
+    /* Enhanced Base Colors - Dark Mode */
+    --background: 160 25% 8%;   /* #141414 - Much darker for better contrast */
+    --foreground: 0 0% 98%;     /* #fafafa - Brighter for excellent contrast */
+    --card: 160 20% 12%;        /* #1e1e1e - Darker cards */
+    --card-foreground: 0 0% 98%;  /* #fafafa - Brighter for excellent contrast */
+    --popover: 160 20% 12%;     /* #1e1e1e - Darker popovers */
+    --popover-foreground: 0 0% 98%;  /* #fafafa - Brighter for excellent contrast */
     
-    /* Brand-aligned colors - dark mode */
-    --primary: 148 100% 33%;    /* #00a651 */
+    /* Enhanced Brand-Aligned Colors - Dark Mode */
+    --primary: 148 100% 35%;    /* #00a651 - Brighter green for dark mode */
     --primary-foreground: 0 0% 100%;
-    --secondary: 145 100% 20%;  /* #006837 */
+    --secondary: 145 100% 22%;  /* #006837 - Your primary green */
     --secondary-foreground: 0 0% 100%;
-    --accent: 211 100% 50%;     /* #007aff */
+    --accent: 211 100% 50%;     /* #007aff - Complementary blue */
     --accent-foreground: 0 0% 100%;
     
-    /* Semantic colors - dark mode */
+    /* Enhanced Semantic Colors - Dark Mode */
     --success: 142 70% 45%;     /* #22c55e - Brighter green for dark mode */
     --success-foreground: 0 0% 100%;
     --info: 217 90% 60%;        /* #60a5fa - Brighter blue for dark mode */
@@ -130,35 +131,35 @@
     --danger: 0 90% 65%;        /* #f87171 - Brighter red for dark mode */
     --danger-foreground: 0 0% 100%;
     
-    /* Supporting UI colors - dark mode */
-    --muted: 160 20% 15%;
-    --muted-foreground: 215 20% 75%;  /* Brighter for better contrast */
+    /* Enhanced Supporting UI Colors - Dark Mode */
+    --muted: 160 20% 12%;       /* #1e1e1e - Darker muted */
+    --muted-foreground: 215 20% 80%;  /* #cccccc - Much brighter for excellent contrast */
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
-    --border: 160 15% 20%;
+    --border: 160 15% 18%;      /* #2a2a2a - Darker border */
     --input: 214.3 31.8% 91.4%;
     --ring: 215 20.2% 65.1%;
     
-    /* Extended UI state colors - dark mode */
-    --primary-subtle: 145 100% 8%;     /* Very dark primary for backgrounds */
-    --primary-hover: 148 100% 35%;     /* Brighter primary for hover */
-    --secondary-subtle: 148 100% 6%;   /* Very dark secondary for backgrounds */
-    --muted-subtle: 160 20% 12%;       /* Even darker muted for subtle backgrounds */
-    --muted-hover: 160 20% 18%;        /* Lighter muted for hover states */
-    --unread-bg: 145 100% 5%;          /* Unread item background */
-    --unread-border: 148 100% 33%;     /* Unread item border */
-    --selected-bg: 160 20% 18%;        /* Selected item background */
-    --hover-bg: 160 15% 17%;           /* General hover background */
+    /* Enhanced Extended UI State Colors - Dark Mode */
+    --primary-subtle: 145 100% 6%;     /* Very dark primary for backgrounds */
+    --primary-hover: 148 100% 38%;     /* Brighter primary for hover */
+    --secondary-subtle: 148 100% 5%;   /* Very dark secondary for backgrounds */
+    --muted-subtle: 160 20% 10%;       /* Even darker muted for subtle backgrounds */
+    --muted-hover: 160 20% 16%;        /* Lighter muted for hover states */
+    --unread-bg: 145 100% 4%;          /* Unread item background */
+    --unread-border: 148 100% 35%;     /* Unread item border */
+    --selected-bg: 160 20% 16%;        /* Selected item background */
+    --hover-bg: 160 15% 14%;           /* General hover background */
 
-    /* Additional CSS variables for better dark mode support */
-    --success-subtle: 142 70% 8%;
-    --success-hover: 142 70% 50%;
-    --destructive-subtle: 0 90% 8%;
-    --destructive-hover: 0 90% 70%;
-    --warning-subtle: 38 95% 8%;
-    --warning-hover: 38 95% 65%;
-    --secondary-subtle: 145 100% 6%;
-    --secondary-hover: 145 100% 35%;
+    /* Enhanced Additional CSS Variables for Better Dark Mode Support */
+    --success-subtle: 142 70% 6%;
+    --success-hover: 142 70% 52%;
+    --destructive-subtle: 0 90% 6%;
+    --destructive-hover: 0 90% 72%;
+    --warning-subtle: 38 95% 6%;
+    --warning-hover: 38 95% 67%;
+    --secondary-subtle: 145 100% 5%;
+    --secondary-hover: 145 100% 38%;
 
     --purple: 262 84% 72%;      /* #8b5cf6 */
     --purple-foreground: 0 0% 100%;
@@ -173,16 +174,40 @@
   }
 
   body {
+    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
     -webkit-user-select: none;
     user-select: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
   }
   
   html {
     background-color: hsl(var(--background));
+  }
+
+  /* Enhanced Typography */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.02em;
+  }
+
+  /* Enhanced Focus States for Better Accessibility */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /* Enhanced Selection Colors */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+    color: hsl(var(--foreground));
   }
 
   /* Z-Index Utility Classes */
@@ -198,7 +223,7 @@
   .z-maximum { z-index: 9999; }
 }
 
-/* Dark mode utility classes for common hardcoded colors */
+/* Enhanced Dark Mode Utility Classes for Common Hardcoded Colors */
 @layer utilities {
   /* Background colors */
   .bg-gray-50 { background-color: hsl(var(--muted)); }
@@ -234,7 +259,7 @@
   .bg-white { background-color: hsl(var(--card)); }
   .dark .bg-white { background-color: hsl(var(--card)); }
   
-  /* Text colors */
+  /* Enhanced Text colors with better contrast */
   .text-gray-300 { color: hsl(var(--muted-foreground)); }
   .dark .text-gray-300 { color: hsl(var(--muted-foreground)); }
   
@@ -262,7 +287,7 @@
   .text-black { color: hsl(var(--foreground)); }
   .dark .text-black { color: hsl(var(--foreground)); }
   
-  /* Blue colors */
+  /* Enhanced Blue colors (now using your green theme) */
   .bg-blue-50 { background-color: hsl(var(--primary-subtle)); }
   .dark .bg-blue-50 { background-color: hsl(var(--primary-subtle)); }
   
@@ -293,7 +318,7 @@
   .text-blue-800 { color: hsl(var(--primary)); }
   .dark .text-blue-800 { color: hsl(var(--primary)); }
   
-  /* Green colors */
+  /* Enhanced Green colors */
   .bg-green-50 { background-color: hsl(var(--success-subtle)); }
   .dark .bg-green-50 { background-color: hsl(var(--success-subtle)); }
   
@@ -305,6 +330,9 @@
   
   .bg-green-600 { background-color: hsl(var(--success)); }
   .dark .bg-green-600 { background-color: hsl(var(--success)); }
+  
+  .bg-green-700 { background-color: hsl(var(--success-hover)); }
+  .dark .bg-green-700 { background-color: hsl(var(--success-hover)); }
   
   .text-green-400 { color: hsl(var(--success)); }
   .dark .text-green-400 { color: hsl(var(--success)); }
@@ -320,114 +348,4 @@
   
   .text-green-800 { color: hsl(var(--success)); }
   .dark .text-green-800 { color: hsl(var(--success)); }
-  
-  /* Red colors */
-  .bg-red-50 { background-color: hsl(var(--destructive-subtle)); }
-  .dark .bg-red-50 { background-color: hsl(var(--destructive-subtle)); }
-  
-  .bg-red-100 { background-color: hsl(var(--destructive-subtle)); }
-  .dark .bg-red-100 { background-color: hsl(var(--destructive-subtle)); }
-  
-  .bg-red-500 { background-color: hsl(var(--destructive)); }
-  .dark .bg-red-500 { background-color: hsl(var(--destructive)); }
-  
-  .bg-red-600 { background-color: hsl(var(--destructive)); }
-  .dark .bg-red-600 { background-color: hsl(var(--destructive)); }
-  
-  .text-red-500 { color: hsl(var(--destructive)); }
-  .dark .text-red-500 { color: hsl(var(--destructive)); }
-  
-  .text-red-600 { color: hsl(var(--destructive)); }
-  .dark .text-red-600 { color: hsl(var(--destructive)); }
-  
-  .text-red-700 { color: hsl(var(--destructive)); }
-  .dark .text-red-700 { color: hsl(var(--destructive)); }
-  
-  .text-red-800 { color: hsl(var(--destructive)); }
-  .dark .text-red-800 { color: hsl(var(--destructive)); }
-  
-  /* Yellow/Orange colors */
-  .bg-yellow-50 { background-color: hsl(var(--warning-subtle)); }
-  .dark .bg-yellow-50 { background-color: hsl(var(--warning-subtle)); }
-  
-  .bg-yellow-100 { background-color: hsl(var(--warning-subtle)); }
-  .dark .bg-yellow-100 { background-color: hsl(var(--warning-subtle)); }
-  
-  .bg-yellow-500 { background-color: hsl(var(--warning)); }
-  .dark .bg-yellow-500 { background-color: hsl(var(--warning)); }
-  
-  .text-yellow-500 { color: hsl(var(--warning)); }
-  .dark .text-yellow-500 { color: hsl(var(--warning)); }
-  
-  .text-yellow-600 { color: hsl(var(--warning)); }
-  .dark .text-yellow-600 { color: hsl(var(--warning)); }
-  
-  .text-yellow-700 { color: hsl(var(--warning)); }
-  .dark .text-yellow-700 { color: hsl(var(--warning)); }
-  
-  .text-yellow-800 { color: hsl(var(--warning)); }
-  .dark .text-yellow-800 { color: hsl(var(--warning)); }
-  
-  /* Purple colors */
-  .bg-purple-50 { background-color: hsl(var(--secondary-subtle)); }
-  .dark .bg-purple-50 { background-color: hsl(var(--secondary-subtle)); }
-  
-  .bg-purple-100 { background-color: hsl(var(--secondary-subtle)); }
-  .dark .bg-purple-100 { background-color: hsl(var(--secondary-subtle)); }
-  
-  .bg-purple-500 { background-color: hsl(var(--secondary)); }
-  .dark .bg-purple-500 { background-color: hsl(var(--secondary)); }
-  
-  .bg-purple-600 { background-color: hsl(var(--secondary)); }
-  .dark .bg-purple-600 { background-color: hsl(var(--secondary)); }
-  
-  .text-purple-400 { color: hsl(var(--secondary)); }
-  .dark .text-purple-400 { color: hsl(var(--secondary)); }
-  
-  .text-purple-500 { color: hsl(var(--secondary)); }
-  .dark .text-purple-500 { color: hsl(var(--secondary)); }
-  
-  .text-purple-600 { color: hsl(var(--secondary)); }
-  .dark .text-purple-600 { color: hsl(var(--secondary)); }
-  
-  .text-purple-700 { color: hsl(var(--secondary)); }
-  .dark .text-purple-700 { color: hsl(var(--secondary)); }
-  
-  /* Border colors */
-  .border-gray-200 { border-color: hsl(var(--border)); }
-  .dark .border-gray-200 { border-color: hsl(var(--border)); }
-  
-  .border-gray-300 { border-color: hsl(var(--border)); }
-  .dark .border-gray-300 { border-color: hsl(var(--border)); }
-  
-  .border-blue-200 { border-color: hsl(var(--primary-subtle)); }
-  .dark .border-blue-200 { border-color: hsl(var(--primary-subtle)); }
-  
-  .border-blue-300 { border-color: hsl(var(--primary-subtle)); }
-  .dark .border-blue-300 { border-color: hsl(var(--primary-subtle)); }
-  
-  .border-green-200 { border-color: hsl(var(--success-subtle)); }
-  .dark .border-green-200 { border-color: hsl(var(--success-subtle)); }
-  
-  .border-red-200 { border-color: hsl(var(--destructive-subtle)); }
-  .dark .border-red-200 { border-color: hsl(var(--destructive-subtle)); }
-  
-  .border-yellow-200 { border-color: hsl(var(--warning-subtle)); }
-  .dark .border-yellow-200 { border-color: hsl(var(--warning-subtle)); }
-  
-  .border-purple-200 { border-color: hsl(var(--secondary-subtle)); }
-  .dark .border-purple-200 { border-color: hsl(var(--secondary-subtle)); }
-  
-  /* Hover states */
-  .hover\:bg-blue-700:hover { background-color: hsl(var(--primary-hover)); }
-  .dark .hover\:bg-blue-700:hover { background-color: hsl(var(--primary-hover)); }
-  
-  .hover\:bg-blue-800:hover { background-color: hsl(var(--primary-hover)); }
-  .dark .hover\:bg-blue-800:hover { background-color: hsl(var(--primary-hover)); }
-  
-  .hover\:bg-green-700:hover { background-color: hsl(var(--success-hover)); }
-  .dark .hover\:bg-green-700:hover { background-color: hsl(var(--success-hover)); }
-  
-  .hover\:bg-purple-700:hover { background-color: hsl(var(--secondary-hover)); }
-  .dark .hover\:bg-purple-700:hover { background-color: hsl(var(--secondary-hover)); }
 } 

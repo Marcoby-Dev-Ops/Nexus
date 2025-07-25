@@ -6,10 +6,10 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { logger } from '@/shared/utils/logger';
+import { useAuth } from '@/hooks/useAuth.ts';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface Company {
   id: string;

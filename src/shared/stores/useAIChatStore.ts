@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
-import type { AgentResponse } from '@/domains/ai/lib/assistant/types';
-import { supabase } from '@/core/supabase';
+import type { AgentResponse } from '@/services/ai/assistant/types';
+import { supabase } from '@/lib/supabase';
 import { immer } from 'zustand/middleware/immer';
 
 export type AIRole = 'user' | 'assistant' | 'system';

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { useBackendConnector } from '@/shared/hooks/useBackendConnector';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { useBackendConnector } from '@/shared/hooks/useBackendConnector.ts';
 import { RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 export const BackendHealthTest: React.FC = () => {

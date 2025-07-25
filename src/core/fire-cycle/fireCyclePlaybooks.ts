@@ -1,4 +1,4 @@
-import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
+import type { FireCyclePhase } from '@/types/business/fire-cycle';
 import type { UserContext } from './fireCycleLogic';
 
 export interface SolutionsPlaybook {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle, Play, Clock, Target, Lightbulb, Map, Zap, ChevronRight, ChevronDown } from 'lucide-react';
 import { useFireCyclePlaybooks, type PlaybookRecommendation, type SolutionsPlaybook } from './fireCyclePlaybooks';
 import type { UserContext } from './fireCycleLogic';
-import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
+import type { FireCyclePhase } from '@/types/business/fire-cycle';
 
 interface SolutionsPlaybookUIProps {
   userContext: UserContext;

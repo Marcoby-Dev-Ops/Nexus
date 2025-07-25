@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Activity, MapPin, Clock, Users, Network, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, BarChart3, Code, FileText, Layers } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Progress } from '@/shared/components/ui/Progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Progress } from '@/shared/components/ui/Progress.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
 import { Separator } from '@/shared/components/ui/Separator';
 

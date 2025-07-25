@@ -266,7 +266,7 @@ async function performVerification(supabase: SupabaseClient, userId: string) {
       .from('analytics_events')
       .select('*')
       .eq('user_id', userId)
-      .eq('event_type', 'onboarding_completed')
+      .eq('eventtype', 'onboarding_completed')
       .limit(1);
 
     if (eventsError) {
@@ -361,14 +361,16 @@ async function logVerificationEvent(supabase: SupabaseClient, userId: string, re
       .from('analytics_events')
       .insert({
         user_id: userId,
-        event_type: 'onboarding_verification',
-        event_data: {
+        eventtype: 'onboarding_verification',
+        properties: {
           success: result.success,
           checks_count: result.checks.length,
           passed_checks: result.checks.filter((c: VerificationCheck) => c.status === 'pass').length,
           summary: result.summary
         },
-        occurred_at: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        source: 'edge_function',
+        version: '1.0.0'
       });
   } catch (error) {
     console.error('Failed to log verification event:', error);

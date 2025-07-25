@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Zap, Download, Star, Clock, TrendingUp, Users, BarChart3, Settings, Heart, Sparkles, Upload, Code, CheckCircle2, ArrowRight, Play, Eye, Tag, DollarSign, Shield, Rocket, Target, Globe, Cpu, GitBranch, Workflow, ExternalLink } from 'lucide-react';
 interface DemoTemplate {
   id: string;

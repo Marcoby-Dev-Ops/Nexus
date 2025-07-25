@@ -1,5 +1,5 @@
 import { ProductionSupervisorAgent, supervisorAgent } from '@/lib/ai/assistant/supervisor';
-import type { Agent } from '../../../src/lib/agentRegistry';
+import type { Agent } from '../../../src/services/ai/agentRegistry';
 
 describe('Production Supervisor Agent', () => {
   const mockSpecialists: Agent[] = [

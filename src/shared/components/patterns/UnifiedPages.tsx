@@ -7,11 +7,11 @@
  */
 
 import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Button } from '@/shared/components/ui/Button';
-import { Alert } from '@/shared/components/ui/Alert';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Alert } from '@/shared/components/ui/Alert.tsx';
 import { 
   Brain, 
   Zap, 
@@ -24,7 +24,7 @@ import {
   CheckCircle, 
   Globe 
 } from 'lucide-react';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useAuth } from '@/hooks/index';
 
 // Type definitions
 interface UnifiedMetricCardProps {

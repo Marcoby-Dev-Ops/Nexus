@@ -5,13 +5,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
 import { Loader2, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { callbackRegistry } from '@/shared/callbacks/CallbackRegistry';
 import { CallbackProcessor } from '@/shared/callbacks/CallbackHandler';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { useNotifications } from '@/core/hooks/NotificationContext';
+import { useAuth } from '@/hooks/index';
+import { useNotifications } from '@/core/hooks/NotificationContext.tsx';
 import type { CallbackConfig, CallbackResponse } from '@/core/types/callbacks';
 
 type CallbackStatus = 'processing' | 'success' | 'error' | 'timeout';

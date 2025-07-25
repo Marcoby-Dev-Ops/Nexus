@@ -3,9 +3,9 @@
  * Provides debugging utilities for Supabase operations
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
-import { logger } from '@/shared/utils/logger';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface DebugInfo {
   connectionStatus: 'connected' | 'error';

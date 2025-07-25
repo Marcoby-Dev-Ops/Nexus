@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
 import { Brain, Eye, Zap, TrendingUp, Target, Clock, CheckCircle } from 'lucide-react';
 
 export const TrinityBrainDemo: React.FC = () => {
-  const [activePhase, setActivePhase] = useState<'think' | 'see' | 'act' | null>(null);
+  const [activePhase, setActivePhase] = useState<'see' | 'act' | 'think' | null>(null);
   const [cycleCount, setCycleCount] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [insights, setInsights] = useState<string[]>([]);
@@ -17,13 +17,13 @@ export const TrinityBrainDemo: React.FC = () => {
       interval = setInterval(() => {
         // Simulate Trinity Brain cycle
         if (activePhase === null) {
-          setActivePhase('think');
-        } else if (activePhase === 'think') {
           setActivePhase('see');
         } else if (activePhase === 'see') {
           setActivePhase('act');
-        } else {
+        } else if (activePhase === 'act') {
           setActivePhase('think');
+        } else {
+          setActivePhase('see');
           setCycleCount(prev => prev + 1);
           
           // Add insight
@@ -54,7 +54,7 @@ export const TrinityBrainDemo: React.FC = () => {
 
   const startTrinityBrain = () => {
     setIsRunning(true);
-    setActivePhase('think');
+    setActivePhase('see');
   };
 
   const stopTrinityBrain = () => {
@@ -78,7 +78,7 @@ export const TrinityBrainDemo: React.FC = () => {
           <h1 className="text-3xl font-bold">Trinity Brain System</h1>
         </div>
         <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-          The core intelligence framework that powers Nexus: <strong>THINK → SEE → ACT</strong>
+          The core intelligence framework that powers Nexus: <strong>SEE → ACT → THINK</strong>
         </p>
         <div className="flex items-center justify-center gap-4">
           <Button 

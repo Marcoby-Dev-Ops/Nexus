@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useAuth } from '@/hooks/index';
 
 interface RedirectConfig {
   // Auth redirects
@@ -56,6 +56,7 @@ export function useRedirectManager(config: Partial<RedirectConfig> = {}) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, session, loading, initialized, isAuthenticated } = useAuth();
+  const isAuthenticatedUser = !!user;
   const redirectInProgress = useRef(false);
 
   // Check if current route is public
@@ -130,7 +131,7 @@ export function useRedirectManager(config: Partial<RedirectConfig> = {}) {
     if (loading || !initialized) return;
 
     // If user is authenticated and on a public route, redirect to dashboard
-    if (isAuthenticated && isPublicRoute() && location.pathname !== '/') {
+    if (isAuthenticatedUser && isPublicRoute() && location.pathname !== '/') {
       if (finalConfig.debug) {
         console.log('[RedirectManager] Authenticated user on public route, redirecting to dashboard');
       }
@@ -139,7 +140,7 @@ export function useRedirectManager(config: Partial<RedirectConfig> = {}) {
     }
 
     // If user is not authenticated and on a protected route, redirect to login
-    if (!isAuthenticated && isProtectedRoute()) {
+    if (!isAuthenticatedUser && isProtectedRoute()) {
       if (finalConfig.debug) {
         console.log('[RedirectManager] Unauthenticated user on protected route, redirecting to login');
       }
@@ -147,7 +148,7 @@ export function useRedirectManager(config: Partial<RedirectConfig> = {}) {
       return;
     }
   }, [
-    isAuthenticated,
+    isAuthenticatedUser,
     loading,
     initialized,
     location.pathname,

@@ -1,4 +1,4 @@
-import { logger } from '@/core/auth/logger';
+import { logger } from '@/shared/utils/logger.ts';
 import { 
   DATA_PRINCIPLES, 
   COMPLIANCE_REQUIREMENTS, 

@@ -24,7 +24,7 @@ The onboarding flow should introduce users to the **Unified Business Brain** con
 
 ### **Trinity Architecture Integration**
 
-Each onboarding step should demonstrate the **THINK → SEE → ACT** cycle:
+Each onboarding step should demonstrate the **SEE → ACT → THINK** cycle:
 
 - **THINK**: Brainstorm business goals and challenges
 - **SEE**: Analyze current business state and opportunities  

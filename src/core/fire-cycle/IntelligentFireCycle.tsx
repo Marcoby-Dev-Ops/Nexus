@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Target, Lightbulb, Map, Play, AlertTriangle, CheckCircle, Clock, TrendingUp } from 'lucide-react';
 import { useEnhancedFireCycle } from './enhancedFireCycleStore';
-import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
+import type { FireCyclePhase } from '@/types/business/fire-cycle';
 
 interface IntelligentFireCycleProps {
   variant?: 'compact' | 'expanded' | 'contextual';

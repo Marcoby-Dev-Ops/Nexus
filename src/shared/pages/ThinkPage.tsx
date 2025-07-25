@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Textarea } from '@/shared/components/ui/Textarea';
 
 const sampleThoughts = [

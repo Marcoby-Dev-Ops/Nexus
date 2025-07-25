@@ -1,4 +1,4 @@
-import { HelpSidebar } from '@/domains/help-center/components/HelpSidebar';
+import { HelpSidebar } from '@/components/help-center/HelpSidebar';
 import { Outlet } from 'react-router-dom';
 
 export function HelpLayout() {

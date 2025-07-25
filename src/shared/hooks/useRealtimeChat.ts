@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { supabase } from "@/core/supabase";
-import type { ChatMessage } from "@/core/supabase";
+import { supabase } from "@/lib/supabase";
+import type { ChatMessage } from "@/core/types/chat";
 
 export function useRealtimeChat(conversationId: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);

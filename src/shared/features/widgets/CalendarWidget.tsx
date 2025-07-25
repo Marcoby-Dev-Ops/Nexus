@@ -1,11 +1,11 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Calendar, AlertCircle, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/core/supabase';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/index';
 
 interface CalendarWidgetProps {
   className?: string;

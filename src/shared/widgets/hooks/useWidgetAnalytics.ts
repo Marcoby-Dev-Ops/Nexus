@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { supabase } from '@/core/supabase';
+import { useAuth } from '@/hooks/useAuth.ts';
+import { supabase } from '@/lib/supabase';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
-import { logger } from '@/shared/utils/logger';
+import { logger } from '@/shared/utils/logger.ts';
 
 interface WidgetEvent {
   widget_id: string;

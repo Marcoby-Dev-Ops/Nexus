@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input } from '@/shared/components/ui/Input';
-import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent } from '@/shared/components/ui/Card';
+import { Input } from '@/shared/components/ui/Input.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent } from '@/shared/components/ui/Card.tsx';
 import { Label } from '@/shared/components/ui/Label';
-import { Badge } from '@/shared/components/ui/Badge';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Loader2, MapPin, Building, Navigation } from 'lucide-react';
-import { googlePlacesService, type PlaceAutocompleteResult, type ParsedAddress } from '@/domains/integrations';
-import { cn } from '@/shared/utils/styles';
+import { googlePlacesService, type PlaceAutocompleteResult, type ParsedAddress } from '@/services/integrations';
+import { cn } from '@/shared/utils/styles.ts';
 
 interface AddressAutocompleteProps {
   label?: string;

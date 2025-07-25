@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Lightbulb, Target, Brain, Zap, TrendingUp, MessageSquare, Database, Users, Settings, HelpCircle, X, Play, BookOpen, Star } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Progress } from '@/shared/components/ui/Progress';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Progress } from '@/shared/components/ui/Progress.tsx';
+import { useAuth } from '@/hooks/index';
 
 interface JourneyStep {
   id: string;

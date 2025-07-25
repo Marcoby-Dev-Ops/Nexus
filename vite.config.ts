@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite'
+import type { PluginOption } from 'vite'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -12,15 +13,32 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '')
   
+  // Only include bundle analyzer for analysis builds
+  const plugins: PluginOption[] = [react()];
+  if (process.env.ANALYZE === 'true') {
+    plugins.push(visualizer({ 
+      filename: 'dist/bundle-analysis.html', 
+      open: true 
+    }));
+  }
+  
   return {
     base: '/',
-    plugins: [react(), visualizer({ filename: 'dist/bundle-analysis.html', open: true })],
+    plugins,
     resolve: {
       alias: {
         '@/app': resolve(__dirname, 'src/app'),
         '@/core': resolve(__dirname, 'src/core'),
         '@/shared': resolve(__dirname, 'src/shared'),
+        '@/hooks': resolve(__dirname, 'src/hooks'),
+        '@/components': resolve(__dirname, 'src/components'),
+        '@/lib': resolve(__dirname, 'src/lib'),
         '@/domains': resolve(__dirname, 'src/domains'),
+        '@/pages': resolve(__dirname, 'src/pages'),
+        '@/services': resolve(__dirname, 'src/services'),
+        '@/utils': resolve(__dirname, 'src/utils'),
+        '@/types': resolve(__dirname, 'src/types'),
+        '@/styles': resolve(__dirname, 'src/styles'),
         '@/domains/dashboard': resolve(__dirname, 'src/domains/dashboard'),
         '@/domains/tasks/workspace': resolve(__dirname, 'src/domains/tasks/workspace'),
         '@/domains/marketplace': resolve(__dirname, 'src/domains/marketplace'),

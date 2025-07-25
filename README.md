@@ -1,178 +1,170 @@
-# Nexus - Business Intelligence Platform
+# Nexus
 
-**Nexus** is a comprehensive business intelligence platform designed to enable innovators, thinkers, and self-starters to start, standardize, operate, and grow businesses without requiring formal business education.
+> **Modern AI‑powered business operating system**
+> built with TypeScript, React, Supabase, n8n & pgvector.
 
-## 🚀 Recent Updates
-
-### Domain Configuration & Deployment
-- **Development Environment**: `nexus.marcoby.net` for testing and development
-- **Production Environment**: `nexus.marcoby.com` for live deployments
-- **Coolify Deployment**: Automated deployment via Coolify with Docker containerization
-- **Environment Variables**: Comprehensive configuration for all integrations
-
-### Microsoft 365 Integration Consolidation
-- **Unified Integration**: OneDrive, SharePoint, Teams, and Outlook now integrated under single Microsoft 365 connection
-- **Enhanced Permissions**: Comprehensive OAuth flow grants access to all Microsoft 365 services
-- **Improved UX**: Simplified setup process with unified analytics across all Microsoft services
-- **Better Organization**: Logical grouping of all Microsoft 365 capabilities
-
-### Integration Marketplace Improvements
-- **Enhanced Contrast**: Fixed accessibility issues with filter colors and badges
-- **Better Visual Hierarchy**: Improved badge styling for connection status, difficulty levels, and popular integrations
-- **Responsive Design**: Optimized layout for mobile and desktop viewing
-
-### Codebase Cleanup
-- **Removed Outdated Functions**: Cleaned up unused Edge Functions and temporary files
-- **Simplified Architecture**: Consolidated OneDrive/SharePoint into Microsoft 365 integration
-- **Updated Documentation**: Refreshed integration descriptions and user guides
-
-## 🎯 Core Features
-
-### **Unified Workspace**
-- **Inbox Management**: Centralized email, calendar, and communication management
-- **Task & Project Tracking**: Integrated task management with AI-powered prioritization
-- **Document Intelligence**: AI-powered document analysis and RAG capabilities
-- **Team Collaboration**: Real-time collaboration tools and analytics
-
-### **AI-Powered Intelligence**
-- **Conversational AI**: Natural language interaction for business tasks
-- **Predictive Analytics**: AI-driven insights and recommendations
-- **Automated Workflows**: Intelligent process automation
-- **Knowledge Management**: Smart document processing and retrieval
-
-### **Comprehensive Integrations**
-- **Microsoft 365**: Teams, Outlook, OneDrive, SharePoint with unified analytics
-- **Google Workspace**: Gmail, Drive, Calendar, and productivity tools
-- **CRM Systems**: HubSpot, Salesforce, and custom CRM integrations
-- **Communication**: Slack, Microsoft Teams, and messaging platforms
-- **Financial**: Stripe, PayPal, and payment processing
-- **Analytics**: Google Analytics, Search Console, and business intelligence tools
-
-## 🛠 Technology Stack
-
-- **Frontend**: React 18, TypeScript, Vite
-- **Backend**: Supabase (PostgreSQL, Auth, Edge Functions)
-- **AI/ML**: OpenAI GPT-4, Claude, Custom RAG Systems
-- **Styling**: Tailwind CSS, Radix UI Components
-- **State Management**: React Context, Custom Hooks
-- **Package Manager**: pnpm
-- **Deployment**: Coolify with Docker containerization
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18+ 
-- pnpm
-- Supabase CLI
-
-### Local Development
-```bash
-# Clone the repository
-git clone https://github.com/Marcoby-Dev-Ops/Nexus.git
-cd Nexus
-
-# Install dependencies
-pnpm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Start development server
-pnpm dev
-```
-
-### Environment Variables
-```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=https://kqclbpimkraenvbffnpk.supabase.co
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-# Domain Configuration
-VITE_NEXT_PUBLIC_APP_URL=https://nexus.marcoby.net
-VITE_DEV_APP_URL=http://localhost:5173
-
-# AI Services
-VITE_OPENROUTER_API_KEY=your_openrouter_key
-VITE_BRAVE_API_KEY=your_brave_key
-
-# OAuth Integrations
-VITE_MICROSOFT_CLIENT_ID=your_microsoft_client_id
-VITE_MICROSOFT_CLIENT_SECRET=your_microsoft_client_secret
-VITE_GOOGLE_CLIENT_ID=your_google_client_id
-VITE_GOOGLE_CLIENT_SECRET=your_google_client_secret
-VITE_HUBSPOT_CLIENT_ID=your_hubspot_client_id
-VITE_HUBSPOT_CLIENT_SECRET=your_hubspot_client_secret
-VITE_PAYPAL_CLIENT_ID=your_paypal_client_id
-VITE_PAYPAL_ENV=live
-
-# External Services
-VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
-VITE_STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
-VITE_N8N_URL=https://automate.marcoby.net
-VITE_N8N_API_KEY=your_n8n_api_key
-```
-
-## 🌐 Deployment
-
-### Development Environment
-- **URL**: https://nexus.marcoby.net
-- **Deployment**: Automated via Coolify
-- **Branch**: `main`
-- **Container**: Docker with Node.js serve
-
-### Production Environment
-- **URL**: https://nexus.marcoby.com
-- **Deployment**: Manual via Coolify
-- **Environment**: Production configuration
-
-### Deployment Process
-1. **Push to GitHub**: Changes automatically trigger Coolify deployment
-2. **Docker Build**: Multi-stage build with environment variables
-3. **Health Check**: Automated health monitoring
-4. **SSL Certificate**: Automatic Let's Encrypt SSL
-
-## 📚 Documentation
-
-- [Domain Configuration](./DOMAIN_UPDATE_SUMMARY.md) - Domain setup and OAuth configuration
-- [Deployment Guide](./docs/deployment/COOLIFY_DEPLOYMENT_GUIDE.md) - Coolify deployment instructions
-- [OAuth Configuration](./docs/OAUTH_CONFIGURATION_GUIDE.md) - OAuth provider setup
-- [Developer Guide](./docs/DEVELOPMENT.md) - Local development setup
-
-## 🔧 Development Commands
-
-```bash
-# Development
-pnpm dev                    # Start development server
-pnpm build                  # Build for production
-pnpm test                   # Run tests
-pnpm lint                   # Lint code
-pnpm type-check             # TypeScript check
-
-# Database
-pnpm supabase:db:pull      # Pull remote schema
-pnpm supabase:db:push      # Push local changes
-pnpm supabase:gen-types    # Generate TypeScript types
-
-# Edge Functions
-pnpm supabase functions deploy  # Deploy all functions
-```
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
-
-## 🆘 Support
-
-- **Documentation**: [docs.nexus.com](https://docs.nexus.com)
-- **Community**: [Discord](https://discord.gg/nexus)
-- **Issues**: [GitHub Issues](https://github.com/Marcoby-Dev-Ops/Nexus/issues)
+Nexus helps founders and teams **see, act, and think** through real‑time insights, automated workflows, and AI advice — all wrapped in a clean, modular codebase that scales from early startup to enterprise.
 
 ---
 
-**Nexus** - Empowering entrepreneurs with intelligent business tools. No degree required. 
+## ✨ Key Highlights
+
+| Pillar                 | What it Delivers                                                                                                                       |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **AI Agent Hierarchy** | Executive → Specialist → Tool agents, each with memory‑backed context and dynamic tool routing.                                        |
+| **Domain‑driven core** | Value Objects, Aggregates, CQRS/EventBus enforce business rules.                                                                       |
+| **Feature folders**    | 9 live domains (AI, Analytics, Automation, Business, Dashboard, Integrations, Navigator, Help‑Center, Auth) — no page‑to‑page imports. |
+| **Realtime‑native**    | Supabase Realtime + Edge Functions push KPI & workflow deltas straight to the UI.                                                      |
+| **Automation**         | Self‑hosted n8n engine with webhook queue + retry & credential rotation.                                                               |
+| **Knowledge Vault**    | Upload → embed → semantic + hybrid FTS search, with **chunk metadata** for deep links.                                                 |
+| **Design system**      | Tailwind + shadcn/ui, dark/light theming, Storybook a11y with axe‑core.                                                                |
+| **RBAC everywhere**    | Authentik‑driven roles, `rbac.guard.ts` middleware, RLS on every table.                                                                |
+| **Dev‑First DX**       | `pnpm devtools *` CLI (scaffold/validate/fix/docs), Husky hooks, 90 % test threshold.                                                  |
+
+---
+
+## 🚀 5‑Minute Quick Start
+
+```bash
+pnpm i                      # install deps
+pnpm supabase start         # local Postgres + Studio
+pnpm dev                    # Vite + Storybook tunnel
+
+# demo: scaffold a new page & KPI widget
+pnpm devtools scaffold --type=page --name=Demo
+# add a KPI card and see live data in Navigator
+
+# upload any PDF to Knowledge Vault, then ask AI:
+# "Summarize the uploaded sales contract and highlight risks."
+```
+
+---
+
+## 🧰 Tech Stack (High Level)
+
+```
+Frontend  : React 19 · TypeScript · Tailwind CSS · shadcn/ui
+Backend   : Supabase (Postgres + Auth + Realtime) · Edge Functions
+AI        : OpenAI · pgvector · Memory Service (facts/thoughts/context)
+Automation: n8n · BullMQ · EventBus · Edge Webhooks
+Infra     : Docker · CI (GitHub Actions) · Husky + lint‑staged
+```
+
+---
+
+## 📂 Monorepo Layout (feature‑first)
+
+```text
+├─ src/
+│  ├─ core/          # Domain layer (VOs, aggregates, EventBus)
+│  ├─ services/      # Application services (one folder per domain)
+│  ├─ pages/         # UI & controllers (one folder per domain)
+│  ├─ shared/        # Design system, hooks, stores, utils
+│  └─ app/           # App shell & routing
+├─ supabase/         # Edge Functions, SQL, storage rules
+├─ devtools/         # @marcoby/devtools source
+└─ docs/             # Auto‑generated architecture & API docs
+```
+
+<details>
+<summary>Active Domains</summary>
+
+| Folder               | Purpose                                  |
+| -------------------- | ---------------------------------------- |
+| `pages/ai`           | Chat UI, agent selector, AI memory hooks |
+| `pages/analytics`    | Metric dashboards, data‑warehouse views  |
+| `pages/automation`   | Workflow recipes & execution status      |
+| `pages/business`     | Company profile, FIRE Cycle health       |
+| `pages/dashboard`    | Consolidated KPI overview                |
+| `pages/integrations` | OAuth flows, webhook status, credentials |
+| `pages/navigator`    | Live KPI sparklines & alerts             |
+| `pages/help-center`  | File upload & Knowledge Vault search     |
+| `pages/auth`         | Login, profile, RBAC management          |
+
+</details>
+
+---
+
+## 🧱 Core Domain Layer
+
+* **Value Objects:** `Money`, `Identity`, … — immutable & validated.
+* **Aggregates:** `Company`, `User`, etc. Mutations emit domain events.
+* **EventBus:** In‑memory publisher; Edge Functions & services subscribe.
+* **CQRS:** Commands mutate, Queries read (queries in progress); repositories wrap Supabase.
+
+---
+
+## 📡 Realtime & Agent System
+
+```
+ai_kpi_snapshots → Realtime → useNavigatorMetrics → Navigator UI
+workflow_executions → Realtime → useWorkflowStateSync → Automation UI
+```
+
+* **3‑Tier Agents**: Executive → Department Specialist → Tool agent.
+* Agents get **memory‑backed context** (facts + thoughts + dialogue) and smart tool routing.
+* **Navigator** surfaces live KPIs, alerts & agent hints without polling.
+
+---
+
+## 📁 Knowledge Vault Flow
+
+1. Upload PDF/DOC/TXT → Supabase Storage.
+2. `embed_document` Edge Function extracts & chunks text, embeds, stores `heading_path` for deep links.
+3. Hybrid search: pgvector similarity × FTS rank.
+
+---
+
+## 🔒 Security & Permissions
+
+* Supabase Auth + Authentik SSO.
+* RBAC roles & permission sets; `usePermission` hook gates UI.
+* Row‑level security on every table via `company_id()` helper.
+
+---
+
+## 🛠️ Developer Workflow
+
+| Command                                         | Description                         |
+| ----------------------------------------------- | ----------------------------------- |
+| `pnpm devtools validate staged`                 | ESLint + TS + custom rules (staged) |
+| `pnpm devtools fix all`                         | Auto‑fix lint & format              |
+| `pnpm devtools scaffold --type=page --name=Foo` | Generate feature boilerplate        |
+| `pnpm devtools docs --format=md`                | Regenerate docs under `/docs`       |
+| `pnpm devtools test --coverage`                 | Jest with 90 % threshold            |
+| `pnpm devtools migrate --up`                    | Run DB migrations                   |
+
+Pre‑commit runs **validate → test**; CI repeats on full repo plus **madge** & **permission‑audit**.
+
+---
+
+## 🖥️ Performance
+
+* Route‑level code‑splitting & dynamic import of heavy widgets.
+* `IntersectionObserver` pauses off‑screen realtime widgets.
+* Virtualized tables for large data sets.
+* Bundle size monitored in CI via `performance-audit` (coming Q4).
+
+---
+
+## 🛣️ Roadmap (Q3 → Q4 2025)
+
+| Priority | Item                                                                      |
+| -------- | ------------------------------------------------------------------------- |
+| P1       | Wrap remaining service → DB calls in repositories; finish query handlers. |
+| P2       | Ship **permission‑audit** & **import‑graph** scripts in CI.               |
+| P3       | Agent **memory optimization** – vector recall & extended cache TTL.       |
+| P4       | Add `ai_kpi_snapshots_cache` for Navigator cold‑start trend lines.        |
+| P5       | Mobile‑first polish & responsive analytics widgets.                       |
+
+---
+
+## 🤝 Contributing
+
+Fork → branch → `pnpm devtools scaffold` → commit with Conventional Commits. PR must pass CI (coverage, circular deps, permission audit).
+
+---
+
+## 📜 License
+
+MIT © 2025 Marcoby LLC. See `LICENSE` for details. 

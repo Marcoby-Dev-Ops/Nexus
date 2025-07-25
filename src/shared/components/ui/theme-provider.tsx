@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { safeGetLocalStorage, safeSetLocalStorage } from '@/shared/utils/storageUtils';
+import { safeGetLocalStorage, safeSetLocalStorage } from '@/shared/utils/storageUtils.ts';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -45,44 +45,82 @@ export function ThemeProvider({
   defaultColor = 'green',
   ...props 
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => safeGetLocalStorage<Theme>('theme', defaultTheme)
-  );
-  const [primaryColor, setPrimaryColor] = useState<string>(
-    () => safeGetLocalStorage<string>('primaryColor', defaultColor)
-  );
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      const storedTheme = safeGetLocalStorage<Theme>('theme', defaultTheme);
+      console.log('[ThemeProvider] Initial theme loaded:', storedTheme, 'defaultTheme:', defaultTheme);
+      return storedTheme;
+    } catch (error) {
+      console.error('[ThemeProvider] Error loading theme from localStorage:', error);
+      return defaultTheme;
+    }
+  });
+  
+  const [primaryColor, setPrimaryColor] = useState<string>(() => {
+    try {
+      const storedColor = safeGetLocalStorage<string>('primaryColor', defaultColor);
+      console.log('[ThemeProvider] Initial primary color loaded:', storedColor);
+      return storedColor;
+    } catch (error) {
+      console.error('[ThemeProvider] Error loading primary color from localStorage:', error);
+      return defaultColor;
+    }
+  });
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
+    try {
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark');
 
-    if (theme === 'system') {
-      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
+      if (theme === 'system') {
+        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        root.classList.add(systemTheme);
+        console.log('[ThemeProvider] Applied system theme:', systemTheme);
+      } else {
+        root.classList.add(theme);
+        console.log('[ThemeProvider] Applied theme:', theme);
+      }
+    } catch (error) {
+      console.error('[ThemeProvider] Error applying theme:', error);
     }
   }, [theme]);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    const color = COLORS.find(c => c.name === primaryColor);
-    if (color) {
-      root.style.setProperty('--primary', color.value);
-      root.style.setProperty('--primary-foreground', color.foreground);
+    try {
+      const root = window.document.documentElement;
+      const color = COLORS.find(c => c.name === primaryColor);
+      if (color) {
+        root.style.setProperty('--primary', color.value);
+        root.style.setProperty('--primary-foreground', color.foreground);
+        console.log('[ThemeProvider] Applied primary color:', primaryColor);
+      }
+    } catch (error) {
+      console.error('[ThemeProvider] Error applying primary color:', error);
     }
   }, [primaryColor]);
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      safeSetLocalStorage('theme', theme);
-      setTheme(theme);
+      try {
+        safeSetLocalStorage('theme', theme);
+        setTheme(theme);
+        console.log('[ThemeProvider] Theme updated:', theme);
+      } catch (error) {
+        console.error('[ThemeProvider] Error saving theme to localStorage:', error);
+        setTheme(theme); // Still update the state even if localStorage fails
+      }
     },
     primaryColor,
     setPrimaryColor: (color: string) => {
-      safeSetLocalStorage('primaryColor', color);
-      setPrimaryColor(color);
+      try {
+        safeSetLocalStorage('primaryColor', color);
+        setPrimaryColor(color);
+        console.log('[ThemeProvider] Primary color updated:', color);
+      } catch (error) {
+        console.error('[ThemeProvider] Error saving primary color to localStorage:', error);
+        setPrimaryColor(color); // Still update the state even if localStorage fails
+      }
     },
   };
 

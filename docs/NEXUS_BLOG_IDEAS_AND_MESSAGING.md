@@ -6,7 +6,7 @@
 - **"Why the World Needs a Business Operating System"**
   - The fragmentation of business tools and the pain of context-switching
   - The vision for a unified, AI-first platform
-- **"The Trinity Workflow: THINK, SEE, ACT"**
+- **"The Trinity Workflow: SEE, ACT, THINK"**
   - How Nexus structures all work into ideation, analysis, and action
   - Real-world examples of the Trinity in business and personal productivity
 - **"Designing for Everyone: From Solo Founders to Global Enterprises"**

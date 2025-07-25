@@ -92,6 +92,21 @@ function cleanupLocalStorage(keysToCheck: string[] = [
       try {
         const value = localStorage.getItem(key);
         if (value) {
+          // Special handling for theme keys - preserve valid theme values
+          if (key === 'theme' || key === 'primaryColor') {
+            const validThemeValues = ['light', 'dark', 'system'];
+            const validColorValues = ['blue', 'green', 'orange', 'red', 'purple'];
+            
+            if (key === 'theme' && validThemeValues.includes(value)) {
+              // Keep valid theme values
+              return;
+            }
+            if (key === 'primaryColor' && validColorValues.includes(value)) {
+              // Keep valid color values
+              return;
+            }
+          }
+          
           // Check for common problematic values
           if (value === '[object Object]' || value === 'undefined' || value === 'null') {
             // eslint-disable-next-line no-console
@@ -147,6 +162,21 @@ function aggressiveCleanup(): void {
       try {
         const value = localStorage.getItem(key);
         if (value) {
+          // Special handling for theme keys - preserve valid theme values
+          if (key === 'theme' || key === 'primaryColor') {
+            const validThemeValues = ['light', 'dark', 'system'];
+            const validColorValues = ['blue', 'green', 'orange', 'red', 'purple'];
+            
+            if (key === 'theme' && validThemeValues.includes(value)) {
+              // Keep valid theme values
+              return;
+            }
+            if (key === 'primaryColor' && validColorValues.includes(value)) {
+              // Keep valid color values
+              return;
+            }
+          }
+          
           // Remove any "[object Object]" values immediately
           if (value === '[object Object]' || value === 'undefined' || value === 'null' || value === '') {
             // eslint-disable-next-line no-console

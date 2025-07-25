@@ -2,14 +2,14 @@
  * Nexus Operating System Demo
  * 
  * Demonstrates the business brain that customers purchase - the orchestration
- * system that runs their entire business autonomously through THINK → SEE → ACT.
+ * system that runs their entire business autonomously through SEE → ACT → THINK.
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Brain, Eye, Zap, TrendingUp, Activity, Sparkles, Target, AlertTriangle } from 'lucide-react';
 interface SystemStatus {
   thinking: boolean;

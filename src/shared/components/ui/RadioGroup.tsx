@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/utils/styles.ts';
 
 export interface RadioGroupProps
   extends React.HTMLAttributes<HTMLDivElement> {

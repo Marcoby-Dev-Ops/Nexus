@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { useCompanyProvisioning } from '@/shared/hooks/useCompanyProvisioning';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Progress } from '@/shared/components/ui/Progress';
+import { useAuth } from '@/hooks/index';
+import { useCompanyProvisioning } from '@/shared/hooks/useCompanyProvisioning.ts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { 
   User, 
   Building2, 

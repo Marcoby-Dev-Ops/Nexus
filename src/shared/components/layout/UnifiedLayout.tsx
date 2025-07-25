@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
+import { useAuth } from '@/hooks/index';
+import { useRedirectManager } from '@/shared/hooks/useRedirectManager.ts';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
@@ -23,6 +23,11 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     console.log('[UnifiedLayout] No authenticated user on protected route');
   }
 
+  // Debug logging for loading state
+  if (import.meta.env.DEV) {
+    console.log('[UnifiedLayout] Loading state:', { loading, initialized, redirectInProgress, hasUser: !!user, hasSession: !!session });
+  }
+
   // Show loading while auth is initializing or redirecting
   if (loading || !initialized || redirectInProgress) {
     return (
@@ -32,6 +37,11 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           <p className="text-muted-foreground">
             {redirectInProgress ? 'Redirecting...' : 'Loading...'}
           </p>
+          {import.meta.env.DEV && (
+            <div className="text-xs text-muted-foreground">
+              Debug: loading={loading.toString()}, initialized={initialized.toString()}, redirectInProgress={redirectInProgress.toString()}
+            </div>
+          )}
         </div>
       </div>
     );

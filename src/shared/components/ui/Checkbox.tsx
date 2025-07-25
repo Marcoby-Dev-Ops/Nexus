@@ -4,7 +4,7 @@
  */
 
 import React, { forwardRef } from 'react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/utils/styles.ts';
 import { Check } from 'lucide-react';
 import PropTypes from 'prop-types';
 

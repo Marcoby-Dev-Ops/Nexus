@@ -5,9 +5,9 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { domainAnalysisService } from '@/domains/analytics/services/analyticsService';
-import { logger } from '@/shared/lib/security/logger';
+import { useAuth } from '@/hooks/useAuth.ts';
+import { domainAnalysisService } from '@/lib/services/domainAnalysisService';
+import { logger } from '@/shared/utils/logger';
 
 export interface ProfessionalEmailStatus {
   isAnalyzed: boolean;

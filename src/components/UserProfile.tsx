@@ -1,6 +1,6 @@
 import React from 'react';
-import { useUser } from '@/hooks/useUser';
-import { useAuth } from '@/hooks/useAuth';
+import { useUser } from '@/hooks/useUser.ts';
+import { useAuth } from '@/hooks/useAuth.ts';
 
 export function UserProfile() {
   const { user } = useAuth();

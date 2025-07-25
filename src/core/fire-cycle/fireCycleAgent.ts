@@ -1,6 +1,6 @@
 import { FireCycleProcessor, type ProcessedInput, type NextAction } from './fireCycleProcessor';
 import type { UserContext } from './fireCycleLogic';
-import type { FireCyclePhase } from '@/domains/business/fire-cycle/types';
+import type { FireCyclePhase } from '@/types/business/fire-cycle';
 
 export interface AgentResponse {
   id: string;

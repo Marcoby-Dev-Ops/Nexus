@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '@/core/auth/AuthProvider';
-import { useTheme } from '@/shared/components/ui/theme-provider';
-import { useNotifications } from '@/core/hooks/NotificationContext';
-import { CommandPalette } from '@/shared/components/layout/CommandPalette';
-import { FireCycleOverlay } from '@/core/fire-cycle/FireCycleOverlay';
-import { QuickAccessBar } from './QuickAccessBar';
+import { useAuth } from '@/hooks/index';
+import { useTheme } from '@/shared/components/ui/theme-provider.tsx';
+import { useNotifications } from '@/core/hooks/NotificationContext.tsx';
+import { CommandPalette } from '@/shared/components/layout/CommandPalette.tsx';
 import { Menu, Bell, Sun, Moon, User, Settings, Search, Lightbulb } from 'lucide-react';
-import { navItems } from '@/shared/components/layout/navConfig';
-import { useThoughtAssistantStore } from '@/shared/stores/thoughtAssistantStore';
+import { navItems } from '@/shared/components/layout/navConfig.tsx';
+import { useThoughtAssistantStore } from '@/shared/stores/thoughtAssistantStore.ts';
 
 type NavItem = import('./navConfig').NavItem;
 
@@ -70,19 +68,9 @@ export function Header({ onSidebarToggle }: { onSidebarToggle: () => void; }) {
             {navItems.find((item: NavItem) => isActive(item.path))?.name || 'Dashboard'}
           </h1>
         </div>
-
-        {/* Center Section: Quick Access Bar */}
-        <div className="hidden lg:flex items-center">
-          <QuickAccessBar />
-        </div>
         
         {/* Right Section: Essential Actions */}
         <div className="flex items-center space-x-2">
-          {/* FIRE CYCLE Overlay */}
-          <div className="hidden lg:block">
-            <FireCycleOverlay variant="compact" />
-          </div>
-
           {/* Search */}
           <button
             aria-label="Open command palette"

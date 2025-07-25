@@ -3,10 +3,9 @@
  * Enhanced with real-time processing, webhook integration, and automated orchestration
  */
 
-import { databaseService } from './DatabaseService';
+import { supabase } from '@/lib/supabase';
 import { EmailIntelligenceService } from './emailIntelligenceService';
-import { logger } from '@/shared/utils/logger';
-import { supabase } from '@/core/supabase';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface EmailAnalysisResult {
   emailId: string;
@@ -382,14 +381,26 @@ export class EmailIntegrationService {
    */
   private async updateEmailWithAnalysis(emailId: string, analysisResult: any): Promise<void> {
     try {
-      const updateData = {
-        urgencyscore: this.calculatePriorityScore(analysisResult),
-        importance: this.determineCategory(analysisResult),
-        sentimentscore: this.determineSentiment(analysisResult) === 'positive' ? 1: this.determineSentiment(analysisResult) === 'negative' ? -1: 0,
-        aiinsights: this.extractActionItems(analysisResult),
-        updatedat: new Date().toISOString(),
-        riskscore: this.calculatePriorityScore(analysisResult) / 10
-      };
+      const updateData: any = {};
+
+      if (analysisResult.urgencyscore !== undefined) {
+        updateData.urgencyscore = analysisResult.urgencyscore;
+      }
+      if (analysisResult.importance !== undefined) {
+        updateData.importance = analysisResult.importance;
+      }
+      if (analysisResult.sentimentscore !== undefined) {
+        updateData.sentimentscore = analysisResult.sentimentscore;
+      }
+      if (analysisResult.aiinsights !== undefined) {
+        updateData.aiinsights = analysisResult.aiinsights;
+      }
+      if (analysisResult.updatedat !== undefined) {
+        updateData.updatedat = analysisResult.updatedat;
+      }
+      if (analysisResult.riskscore !== undefined) {
+        updateData.riskscore = analysisResult.riskscore;
+      }
 
       const { error } = await supabase
         .from('ai_inbox_items')
@@ -439,7 +450,7 @@ export class EmailIntegrationService {
       return {
         company,
         userProfile,
-        currentMetrics: kpiSnapshots?.[0]?.value || {},
+        currentMetrics: kpiSnapshots?.[0] || {},
         businessContext: {
           industry: company?.industry,
           size: company?.size,
@@ -563,8 +574,8 @@ export class EmailIntegrationService {
     
     // Extract from workflows
     analysisResult.workflows?.forEach((__workflow: any) => {
-      workflow.actions.forEach((__action: any) => {
-        actionItems.push(`${action.type}: ${action.target}`);
+      __workflow.actions.forEach((__action: any) => {
+        actionItems.push(`${__action.type}: ${__action.target}`);
       });
     });
 
@@ -585,20 +596,19 @@ export class EmailIntegrationService {
   async processNewEmails(userId: string): Promise<EmailAnalysisResult[]> {
     try {
       // Get recent emails from ai_inbox_items (unified inbox)
-      const { data: recentEmails } = await databaseService.select(
-        'ai_inbox_items',
-        '*',
-        { 
-          userid: userId,
-          sourcetype: 'email',
-          isread: false // Focus on unread emails
-        },
-        { 
-          orderBy: 'item_timestamp', 
-          ascending: false, 
-          limit: this.config.maxEmailsPerAnalysis 
-        }
-      );
+      const { data: recentEmails, error } = await supabase
+        .from('ai_inbox_items')
+        .select('*')
+        .eq('userid', userId)
+        .eq('sourcetype', 'email')
+        .eq('isread', false) // Focus on unread emails
+        .order('item_timestamp', { ascending: false })
+        .limit(this.config.maxEmailsPerAnalysis);
+
+      if (error) {
+        logger.error('Error fetching recent emails for analysis', { error, userId });
+        return [];
+      }
 
       if (!recentEmails || recentEmails.length === 0) {
         logger.info('No new emails found for analysis');
@@ -610,16 +620,13 @@ export class EmailIntegrationService {
       for (const email of recentEmails) {
         try {
           // Check if already analyzed
-          const { data: existingAnalysis } = await databaseService.select(
-            'ai_insights',
-            'id',
-            { 
-              userid: userId,
-              insighttype: 'opportunity',
-              content: { contains: email.id }
-            },
-            { limit: 1 }
-          );
+          const { data: existingAnalysis } = await supabase
+            .from('ai_insights')
+            .select('id')
+            .eq('userid', userId)
+            .eq('insighttype', 'opportunity')
+            .eq('content', email.id)
+            .limit(1);
 
           if (existingAnalysis && existingAnalysis.length > 0) {
             continue; // Already analyzed
@@ -701,18 +708,16 @@ export class EmailIntegrationService {
   async getEmailAnalysis(emailId: string, userId: string): Promise<EmailAnalysisResult | null> {
     try {
       // Get email from unified inbox
-      const { data: email } = await databaseService.select(
-        'ai_inbox_items',
-        '*',
-        { 
-          id: emailId,
-          userid: userId,
-          sourcetype: 'email'
-        },
-        { limit: 1 }
-      );
+      const { data: email, error } = await supabase
+        .from('ai_inbox_items')
+        .select('*')
+        .eq('id', emailId)
+        .eq('userid', userId)
+        .eq('sourcetype', 'email')
+        .limit(1);
 
-      if (!email || email.length === 0) {
+      if (error || !email || email.length === 0) {
+        logger.error('Error getting email analysis', { error, emailId });
         return null;
       }
 
@@ -748,18 +753,16 @@ export class EmailIntegrationService {
   async triggerEmailAnalysis(userId: string, emailId: string): Promise<EmailAnalysisResult | null> {
     try {
       // Get email from unified inbox
-      const { data: email } = await databaseService.select(
-        'ai_inbox_items',
-        '*',
-        { 
-          id: emailId,
-          userid: userId,
-          sourcetype: 'email'
-        },
-        { limit: 1 }
-      );
+      const { data: email, error } = await supabase
+        .from('ai_inbox_items')
+        .select('*')
+        .eq('id', emailId)
+        .eq('userid', userId)
+        .eq('sourcetype', 'email')
+        .limit(1);
 
-      if (!email || email.length === 0) {
+      if (error || !email || email.length === 0) {
+        logger.error('Error triggering email analysis', { error, emailId });
         return null;
       }
 
@@ -777,20 +780,18 @@ export class EmailIntegrationService {
 
   async getUserEmails(userId: string, limit: number = 20): Promise<any[]> {
     try {
-      const { data: emails } = await databaseService.select(
-        'ai_inbox_items',
-        '*',
-        { 
-          userid: userId,
-          sourcetype: 'email'
-        },
-        { 
-          orderBy: 'item_timestamp', 
-          ascending: false, 
-          limit 
-        }
-      );
+      const { data: emails, error } = await supabase
+        .from('ai_inbox_items')
+        .select('*')
+        .eq('userid', userId)
+        .eq('sourcetype', 'email')
+        .order('item_timestamp', { ascending: false })
+        .limit(limit);
 
+      if (error) {
+        logger.error('Error getting user emails', { error, userId });
+        return [];
+      }
       return emails || [];
     } catch (error) {
       logger.error('Error getting user emails', { error, userId });
@@ -830,8 +831,8 @@ export class EmailIntegrationService {
   private assessBusinessValue(opportunities: any[]): 'low' | 'medium' | 'high' | 'critical' {
     if (opportunities.length === 0) return 'low';
     
-    const maxValue = Math.max(...opportunities.map((__o: any) => {
-      switch (o.businessValue) {
+    const maxValue = Math.max(...opportunities.map((opportunity: any) => {
+      switch (opportunity.businessValue) {
         case 'critical': return 4;
         case 'high': return 3;
         case 'medium': return 2;
@@ -850,7 +851,7 @@ export class EmailIntegrationService {
 
   private async storeEmailAnalysis(analysis: any): Promise<void> {
     try {
-      await databaseService.insert('ai_insights', analysis);
+      await supabase.from('ai_insights').insert(analysis);
     } catch (error) {
       logger.error('Error storing email analysis', { error });
     }

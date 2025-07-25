@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { diagnoseAuthIssues, sessionUtils, testAndFixSession } from '@/core/supabase';
-import { smartClient } from '@/core/supabase';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { diagnoseAuthIssues, sessionUtils, testAndFixSession } from '@/lib/supabase';
+import { smartClient } from '@/lib/supabase';
 
 interface DiagnosticResult {
   serviceRoleKey: boolean;

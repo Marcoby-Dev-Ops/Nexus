@@ -3,7 +3,9 @@
  * Handles logging of user actions and system events for compliance and debugging
  */
 
-import { supabase, supabaseService } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
+
+const smartClient = supabase;
 
 export interface AuditLogEntry {
   id?: string;

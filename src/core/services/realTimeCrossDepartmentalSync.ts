@@ -6,8 +6,8 @@
  * with real-time processing and cross-departmental intelligence generation.
  */
 
-import { supabase } from '@/core/supabase';
-import { nexusUnifiedBrain } from '@/domains/ai/lib/nexusUnifiedBrain';
+import { supabase } from '@/lib/supabase';
+import { nexusUnifiedBrain } from '@/services/ai/nexusUnifiedBrain';
 
 export interface DepartmentDataSource {
   id: string;

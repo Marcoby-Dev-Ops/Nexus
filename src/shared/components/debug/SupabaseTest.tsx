@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, authUtils, dbUtils, handleSupabaseError } from '@/core/supabase';
+import { supabase, authUtils, dbUtils, handleSupabaseError } from '@/lib/supabase';
 
 export function SupabaseTest() {
   const [user, setUser] = useState<any>(null);

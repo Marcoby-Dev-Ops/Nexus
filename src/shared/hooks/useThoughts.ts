@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/core/supabase';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth.ts';
 
 export interface Thought {
   id: string;

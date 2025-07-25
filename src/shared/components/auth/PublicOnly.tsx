@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useAuth } from '@/hooks/index';
 
 interface PublicOnlyProps {
   children: ReactNode;

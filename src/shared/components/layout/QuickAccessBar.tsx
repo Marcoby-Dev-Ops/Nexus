@@ -6,8 +6,8 @@ import {
   Search, 
   Database
 } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button';
-import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
 
 interface QuickAccessItem {
   name: string;

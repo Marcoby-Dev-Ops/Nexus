@@ -4,9 +4,9 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { useAuth } from '@/hooks/useAuth.ts';
 import { userProfileService, CreateUserProfileParams, UpdateUserProfileParams } from '@/core/services/userProfileService';
-import { logger } from '@/shared/utils/logger';
+import { logger } from '@/shared/utils/logger.ts';
 
 export interface UseUserProfileReturn {
   // State

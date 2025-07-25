@@ -29,6 +29,9 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
  * @returns {JSX.Element} The rendered NotificationProvider component.
  */
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  if (import.meta.env.DEV) {
+    console.log('[NotificationProvider] Initializing...');
+  }
   const [notifications, setNotifications] = useState<Notification[]>([
     // Demo notifications - in real app these would come from an API
     {

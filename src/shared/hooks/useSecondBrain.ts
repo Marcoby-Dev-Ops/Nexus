@@ -5,9 +5,11 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { googleAnalyticsService } from '@/domains/analytics/lib/googleAnalyticsService';
-import { callEdgeFunction } from '@/core/supabase/functions';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { googleAnalyticsService } from '@/services/analytics/googleAnalyticsService';
+import { supabase } from '@/lib/supabase';
+import type { ChatMessage } from '@/core/types/chat';
+import { callEdgeFunction } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth.ts';
 import type { 
   UseSecondBrainReturn,
   BusinessInsight,

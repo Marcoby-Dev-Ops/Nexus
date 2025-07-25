@@ -1,5 +1,5 @@
-import { supabase } from '@/core/supabase';
-import { useAuth } from '@/core/auth/AuthProvider';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/hooks/useAuth.ts';
 
 // Enhanced logging utility
 const logSignOut = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
@@ -33,9 +33,23 @@ export const performSignOut = async (): Promise<void> => {
     
     // Step 3: Clear all browser storage
     try {
+      // Preserve theme preference
+      const themePreference = localStorage.getItem('theme');
+      const primaryColorPreference = localStorage.getItem('primaryColor');
+      
       // Clear localStorage
       localStorage.clear();
       logSignOut('info', 'localStorage cleared');
+      
+      // Restore theme preferences
+      if (themePreference) {
+        localStorage.setItem('theme', themePreference);
+        logSignOut('info', 'Theme preference preserved');
+      }
+      if (primaryColorPreference) {
+        localStorage.setItem('primaryColor', primaryColorPreference);
+        logSignOut('info', 'Primary color preference preserved');
+      }
       
       // Clear sessionStorage
       sessionStorage.clear();
@@ -64,19 +78,19 @@ export const performSignOut = async (): Promise<void> => {
     
     logSignOut('info', 'Sign out process completed successfully');
     
-    // Step 5: Force redirect to login page
+    // Step 5: Force redirect to home page
     setTimeout(() => {
-      logSignOut('info', 'Redirecting to login page');
-      window.location.href = '/login';
+      logSignOut('info', 'Redirecting to home page');
+      window.location.href = '/';
     }, 100);
     
   } catch (error) {
     logSignOut('error', 'Sign out process failed', { error: (error as Error).message });
     
-    // Even if there's an error, try to redirect to login
+    // Even if there's an error, try to redirect to home page
     setTimeout(() => {
-      logSignOut('info', 'Redirecting to login page after error');
-      window.location.href = '/login';
+      logSignOut('info', 'Redirecting to home page after error');
+      window.location.href = '/';
     }, 100);
   }
 };
@@ -84,7 +98,7 @@ export const performSignOut = async (): Promise<void> => {
 /**
  * Sign out with redirect to specific page
  */
-export const signOutWithRedirect = async (redirectTo: string = '/login'): Promise<void> => {
+export const signOutWithRedirect = async (redirectTo: string = '/'): Promise<void> => {
   try {
     logSignOut('info', 'Signing out with redirect', { redirectTo });
     
@@ -110,22 +124,34 @@ export const signOutWithRedirect = async (redirectTo: string = '/login'): Promis
 /**
  * Force sign out (ignores errors and forces redirect)
  */
-export const forceSignOut = (redirectTo: string = '/login'): void => {
+export const forceSignOut = (redirectTo: string = '/'): void => {
   logSignOut('info', 'Force sign out called', { redirectTo });
   
   // Clear everything immediately
   try {
+    // Preserve theme preference
+    const themePreference = localStorage.getItem('theme');
+    const primaryColorPreference = localStorage.getItem('primaryColor');
+    
     // Auth state is now handled by AuthProvider
     // No need to clear store as it's managed by React Context
     localStorage.clear();
     sessionStorage.clear();
+    
+    // Restore theme preferences
+    if (themePreference) {
+      localStorage.setItem('theme', themePreference);
+    }
+    if (primaryColorPreference) {
+      localStorage.setItem('primaryColor', primaryColorPreference);
+    }
   } catch (error) {
     logSignOut('warn', 'Error during force sign out cleanup', { error: (error as Error).message });
   }
   
   // Force redirect
   setTimeout(() => {
-    logSignOut('info', 'Force redirecting to login');
+    logSignOut('info', 'Force redirecting to home page');
     window.location.href = redirectTo;
   }, 50);
 };

@@ -2,7 +2,7 @@
  * Production quota and rate limiting service
  */
 
-import { supabase } from '@/core/supabase';
+import { supabase } from '@/lib/supabase';
 import { LICENSE_TIERS, RATE_LIMITS, type ChatQuotas, type UsageTracking, type RateLimitConfig } from '@/core/types/licensing';
 
 export class QuotaService {
@@ -165,14 +165,14 @@ export class QuotaService {
       const { data: existing } = await query.single();
 
       const updates: Partial<UsageTracking> = {
-        userid: userId,
-        orgid: orgId,
+        user_id: userId,
+        org_id: orgId,
         date: today,
-        updatedat: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
       if (type === 'message') {
-        updates.message_count = (existing?.message_count || 0) + 1;
+        updates.messages_sent = (existing?.messages_sent || 0) + 1;
       } else if (type === 'ai_request') {
         updates.ai_requests_made = (existing?.ai_requests_made || 0) + 1;
         updates.tokens_used = (existing?.tokens_used || 0) + (metadata?.tokens || 0);
@@ -200,12 +200,12 @@ export class QuotaService {
           .from('chat_usage_tracking')
           .insert({
             ...updates,
-            messagecount: type === 'message' ? 1 : 0,
-            airequests_made: type === 'ai_request' ? 1 : 0,
-            filesuploaded: type === 'file_upload' ? 1 : 0,
-            tokensused: metadata?.tokens || 0,
-            estimatedcost_usd: metadata?.cost || 0,
-            createdat: new Date().toISOString(),
+            messages_sent: type === 'message' ? 1 : 0,
+            ai_requests_made: type === 'ai_request' ? 1 : 0,
+            files_uploaded: type === 'file_upload' ? 1 : 0,
+            tokens_used: metadata?.tokens || 0,
+            estimated_cost_usd: metadata?.cost || 0,
+            created_at: new Date().toISOString(),
           });
       }
 
@@ -225,22 +225,15 @@ export class QuotaService {
    */
   private async getUserQuotas(userId: string, orgId?: string): Promise<ChatQuotas> {
     try {
-      // Build query with proper NULL handling
-      let query = supabase
+      // Get user license
+      const { data: license } = await supabase
         .from('user_licenses')
-        .select('tier, status, expires_at')
-        .eq('user_id', userId);
+        .select('tier, subscription_status, current_period_end')
+        .eq('user_id', userId)
+        .single();
 
-      if (orgId) {
-        query = query.eq('org_id', orgId);
-      } else {
-        query = query.is('org_id', null);
-      }
-
-      const { data: license } = await query.single();
-
-      if (!license || license.status !== 'active' || 
-          (license.expires_at && new Date(license.expires_at) < new Date())) {
+      if (!license || license.subscription_status !== 'active' || 
+          (license.current_period_end && new Date(license.current_period_end) < new Date())) {
         // Default to free tier
         return LICENSE_TIERS.free.quotas;
       }
@@ -315,16 +308,16 @@ export class QuotaService {
     const { data } = await query.single();
 
     return data || {
-      userid: userId,
-      orgid: orgId,
+      user_id: userId,
+      org_id: orgId,
       date,
-      messagessent: 0,
-      airequests_made: 0,
-      filesuploaded: 0,
-      tokensused: 0,
-      estimatedcost_usd: 0,
-      createdat: new Date().toISOString(),
-      updatedat: new Date().toISOString(),
+      messages_sent: 0,
+      ai_requests_made: 0,
+      files_uploaded: 0,
+      tokens_used: 0,
+      estimated_cost_usd: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     };
   }
 
@@ -369,38 +362,38 @@ export class QuotaService {
 
       if (!data || data.length === 0) {
         return {
-          userid: userId,
-          orgid: orgId,
+          user_id: userId,
+          org_id: orgId,
           date: monthStart,
-          messagecount: 0,
-          airequests_made: 0,
-          filesuploaded: 0,
-          tokensused: 0,
-          estimatedcost_usd: 0,
-          createdat: new Date().toISOString(),
-          updatedat: new Date().toISOString(),
+          messages_sent: 0,
+          ai_requests_made: 0,
+          files_uploaded: 0,
+          tokens_used: 0,
+          estimated_cost_usd: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
       }
 
       // Aggregate monthly usage
       return data.reduce((total, day) => ({
         ...total,
-        messagecount: (total.message_count || 0) + (day.message_count || 0),
-        airequests_made: (total.ai_requests_made || 0) + (day.ai_requests_made || 0),
-        filesuploaded: (total.files_uploaded || 0) + (day.files_uploaded || 0),
-        tokensused: (total.tokens_used || 0) + (day.tokens_used || 0),
-        estimatedcost_usd: (total.estimated_cost_usd || 0) + (day.estimated_cost_usd || 0),
+        messages_sent: (total.messages_sent || 0) + (day.messages_sent || 0),
+        ai_requests_made: (total.ai_requests_made || 0) + (day.ai_requests_made || 0),
+        files_uploaded: (total.files_uploaded || 0) + (day.files_uploaded || 0),
+        tokens_used: (total.tokens_used || 0) + (day.tokens_used || 0),
+        estimated_cost_usd: (total.estimated_cost_usd || 0) + (day.estimated_cost_usd || 0),
       }), {
-        userid: userId,
-        orgid: orgId,
+        user_id: userId,
+        org_id: orgId,
         date: monthStart,
-        messagecount: 0,
-        airequests_made: 0,
-        filesuploaded: 0,
-        tokensused: 0,
-        estimatedcost_usd: 0,
-        createdat: new Date().toISOString(),
-        updatedat: new Date().toISOString(),
+        messages_sent: 0,
+        ai_requests_made: 0,
+        files_uploaded: 0,
+        tokens_used: 0,
+        estimated_cost_usd: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       });
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -408,16 +401,16 @@ export class QuotaService {
     // eslint-disable-next-line no-console
     console.error('Monthly usage fetch error: ', error);
       return {
-        userid: userId,
-        orgid: orgId,
+        user_id: userId,
+        org_id: orgId,
         date: new Date().toISOString().split('T')[0],
-        messagecount: 0,
-        airequests_made: 0,
-        filesuploaded: 0,
-        tokensused: 0,
-        estimatedcost_usd: 0,
-        createdat: new Date().toISOString(),
-        updatedat: new Date().toISOString(),
+        messages_sent: 0,
+        ai_requests_made: 0,
+        files_uploaded: 0,
+        tokens_used: 0,
+        estimated_cost_usd: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
     }
   }
