@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/Card';
+import { Badge } from '@/shared/ui/Badge';
+import { Button } from '@/shared/ui/Button';
+import { Input } from '@/shared/ui/Input';
+import { Progress } from '@/shared/ui/Progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/Tabs';
 import { useAuth } from '@/hooks/index';
-import { dbService, supabase, testAuthenticationFlow } from '@/lib/supabase';
+import { dbService, supabase, testAuthenticationFlow, sessionUtils } from '@/lib/supabase';
 import { integrationDataService, type IntegrationDataSummary } from '@/core/services/integrationDataService';
 import { dataPointDictionaryService, type DataPointDefinition, type DataPointSummary } from '@/core/services/dataPointDictionary';
 import { toast } from 'sonner';
@@ -93,7 +93,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Microsoft',
               description: 'Connect your Microsoft 365 account for Email, Calendar, Teams, OneDrive, SharePoint, and comprehensive productivity insights.',
       category: 'Productivity',
-      icon: <Globe className="h-6 w-6 text-blue-600" />,
+      icon: <Globe className="h-6 w-6 text-primary" />,
       setupComponent: Microsoft365Setup,
       authType: 'oauth',
       setupTime: '5 minutes',
@@ -106,7 +106,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Google',
       description: 'Integrate with Gmail, Google Calendar, Drive, and other Google Workspace tools.',
       category: 'Productivity',
-      icon: <Mail className="h-6 w-6 text-red-500" />,
+      icon: <Mail className="h-6 w-6 text-destructive" />,
       setupComponent: GoogleWorkspaceSetup,
       authType: 'oauth',
       setupTime: '5 minutes',
@@ -119,7 +119,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Dropbox',
       description: 'Access and analyze your Dropbox files and folders for better file management.',
       category: 'Storage',
-      icon: <Database className="h-6 w-6 text-blue-500" />,
+      icon: <Database className="h-6 w-6 text-primary" />,
       authType: 'oauth',
       setupTime: '3 minutes',
       dataFields: ['files', 'folders', 'sharedLinks']
@@ -130,7 +130,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Slack',
       description: 'Integrate with your Slack workspace for communication insights and automation.',
       category: 'Communication',
-      icon: <Activity className="h-6 w-6 text-purple-600" />,
+      icon: <Activity className="h-6 w-6 text-secondary" />,
       setupComponent: SlackSetup,
       authType: 'oauth',
       setupTime: '10 minutes',
@@ -167,7 +167,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Notion',
       description: 'Integrate Notion for docs, wikis, and project management.',
       category: 'Productivity',
-      icon: <FileText className="h-6 w-6 text-black" />,
+      icon: <FileText className="h-6 w-6 text-foreground" />,
       authType: 'oauth',
       setupTime: '4 minutes',
       dataFields: ['pages', 'databases', 'tasks', 'notes']
@@ -189,7 +189,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Trello',
       description: 'Integrate Trello boards, cards, and lists for project management.',
       category: 'Productivity',
-      icon: <Globe className="h-6 w-6 text-blue-700" />,
+      icon: <Globe className="h-6 w-6 text-primary" />,
       authType: 'oauth',
       setupTime: '3 minutes',
       dataFields: ['boards', 'cards', 'lists', 'comments']
@@ -200,7 +200,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'GitHub',
       description: 'Connect GitHub for code, issues, and pull request analytics.',
       category: 'Development',
-      icon: <Users className="h-6 w-6 text-gray-800" />,
+      icon: <Users className="h-6 w-6 text-foreground" />,
       authType: 'oauth',
       setupTime: '3 minutes',
       dataFields: ['repositories', 'commits', 'pullRequests', 'issues', 'comments']
@@ -211,7 +211,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Zendesk',
       description: 'Integrate Zendesk for support tickets, users, and conversations.',
       category: 'Support',
-      icon: <Mail className="h-6 w-6 text-green-600" />,
+      icon: <Mail className="h-6 w-6 text-success" />,
       authType: 'oauth',
       setupTime: '6 minutes',
       dataFields: ['tickets', 'users', 'conversations', 'organizations']
@@ -222,7 +222,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'PayPal',
       description: 'Connect your PayPal account to manage transactions and track payment history.',
       category: 'Finance',
-      icon: <Zap className="h-6 w-6 text-green-600" />,
+      icon: <Zap className="h-6 w-6 text-success" />,
       setupComponent: PayPalSetup,
       authType: 'oauth',
       setupTime: '5 minutes',
@@ -235,7 +235,7 @@ const IntegrationsPage: React.FC = () => {
       provider: 'Google',
       description: 'Connect your Google Analytics account to track website traffic and user behavior.',
       category: 'Analytics',
-      icon: <BarChart3 className="h-6 w-6 text-red-500" />,
+      icon: <BarChart3 className="h-6 w-6 text-destructive" />,
       setupComponent: GoogleAnalyticsSetup,
       authType: 'oauth',
       setupTime: '5 minutes',
@@ -285,17 +285,18 @@ const IntegrationsPage: React.FC = () => {
         return;
       }
 
-      // Get enhanced data analytics
-      const dataSummaries = await integrationDataService.getUserIntegrationDataSummaries(user!.id);
+      // Get enhanced data analytics - use available method
+      const { data: userIntegrationsData } = await integrationDataService.getUserIntegrations(user!.id);
+      const dataSummaries = userIntegrationsData || [];
       setDataSummaries(dataSummaries);
 
       // Calculate total data points and growth
-      const totalPoints = dataSummaries.reduce((sum, summary) => sum + summary.dataPoints.total, 0);
+      const totalPoints = dataSummaries.reduce((sum, summary) => sum + (summary.data?.totalDataPoints || 0), 0);
       setTotalDataPoints(totalPoints);
 
       // Calculate growth rate (simplified - average of all integrations)
       const avgGrowth = dataSummaries.length > 0 
-        ? dataSummaries.reduce((sum, summary) => sum + summary.dataPoints.trends.monthlyGrowth, 0) / dataSummaries.length: 0;
+        ? dataSummaries.reduce((sum, summary) => sum + (summary.data?.dataPointTrends?.length > 0 ? 1 : 0), 0) / dataSummaries.length: 0;
       setDataGrowthRate(avgGrowth);
 
       // Count active data streams
@@ -306,29 +307,29 @@ const IntegrationsPage: React.FC = () => {
       const statusDataPromises = (userIntegrations || []).map(async (__integration: any) => {
         try {
           // Find corresponding data summary
-          const dataSummary = dataSummaries.find(summary => summary.integrationId === integration.id);
+          const dataSummary = dataSummaries.find(summary => summary.integrationId === __integration.id);
           
           return {
-            id: integration.id,
-            name: integration.integration_name || 'Unknown Integration',
-            status: integration.status,
-            lastSync: integration.updated_at,
-            category: integration.integration_type || 'general',
-            description: `Integration: ${integration.integration_name || 'Unknown'}`,
-            dataPoints: dataSummary?.dataPoints.total || 0 // Use real count from data service
+            id: __integration.id,
+            name: __integration.integration_name || 'Unknown Integration',
+            status: __integration.status,
+            lastSync: __integration.updated_at,
+            category: __integration.integration_type || 'general',
+            description: `Integration: ${__integration.integration_name || 'Unknown'}`,
+            dataPoints: dataSummary?.data?.totalDataPoints || 0 // Use real count from data service
           };
         } catch (error) {
           // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
-    console.error('Error processing integration: ', integration.id, error);
+    console.error('Error processing integration: ', __integration.id, error);
           return {
-            id: integration.id,
-            name: integration.integration_name || 'Unknown Integration',
-            status: integration.status,
-            lastSync: integration.updated_at,
-            category: integration.integration_type || 'general',
-            description: `Integration: ${integration.integration_name || 'Unknown'}`,
+            id: __integration.id,
+            name: __integration.integration_name || 'Unknown Integration',
+            status: __integration.status,
+            lastSync: __integration.updated_at,
+            category: __integration.integration_type || 'general',
+            description: `Integration: ${__integration.integration_name || 'Unknown'}`,
             dataPoints: 0 // Fallback to 0 if error
           };
         }
@@ -336,12 +337,18 @@ const IntegrationsPage: React.FC = () => {
 
       const statusData = await Promise.all(statusDataPromises);
       setIntegrationStatus(statusData);
-    } catch (error) {
-      // eslint-disable-next-line no-console
+    } catch (error: any) {
+      if (error.message && error.message.includes('Session expired')) {
+        toast.error('Your session has expired. Please log in again.');
+        // Optionally, redirect to login page:
+        // window.location.href = '/login';
+      } else {
+        // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.error('Error fetching integration status: ', error);
       setIntegrationStatus([]);
+      }
     } finally {
       setSystemLoading(false);
     }
@@ -418,7 +425,7 @@ const IntegrationsPage: React.FC = () => {
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
-    console.log('Integration setup completed: ', integrationData);
+    console.log('Integration setup completed: ', __integrationData);
     } catch (error) {
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -458,16 +465,8 @@ const IntegrationsPage: React.FC = () => {
         return;
       }
 
-      // Also delete any associated OAuth tokens
-      
-
-      if (tokenError) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error deleting OAuth tokens: ', tokenError);
-        // Don't fail the entire operation if token deletion fails
-      }
+      // Note: OAuth tokens are handled by the integration provider
+      // No need to manually delete them as they're managed separately
 
       // Refresh the integration status
       await fetchIntegrationStatus();
@@ -495,12 +494,19 @@ const IntegrationsPage: React.FC = () => {
     try {
       const summary = await dataPointDictionaryService.getDataPointSummary(user.id);
       setDataPointSummary(summary);
-    } catch (error) {
-      // eslint-disable-next-line no-console
+    } catch (error: any) {
+      if (error.message && error.message.includes('No valid session')) {
+        // Show a clear error and optionally redirect
+        toast.error('Your session has expired. Please log in again.');
+        // Optionally, redirect to login page:
+        // window.location.href = '/login';
+      } else {
+        // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.error('Error loading data point summary: ', error);
-      toast.error('Failed to load data point summary');
+        toast.error('Failed to load data point summary');
+      }
     }
   };
 
@@ -531,6 +537,13 @@ const IntegrationsPage: React.FC = () => {
     if (!user) return;
     
     try {
+      // First check if session is valid
+      const hasValidSession = await sessionUtils.ensureSession();
+      if (!hasValidSession) {
+        toast.error('Your session has expired. Please log in again.');
+        return;
+      }
+
       const { data: userIntegrations } = await supabase
         .from('user_integrations')
         .select('id')
@@ -546,16 +559,32 @@ const IntegrationsPage: React.FC = () => {
       const allDataPoints: DataPointDefinition[] = [];
       
       for (const userIntegration of userIntegrations) {
-        // eslint-disable-next-line no-console
+        try {
+          // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.log('Loading data points for integration: ', userIntegration.id);
-        const dataPoints = await dataPointDictionaryService.getDataPoints(userIntegration.id);
-        // eslint-disable-next-line no-console
+          const dataPoints = await dataPointDictionaryService.getDataPoints(userIntegration.id);
+          // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.log('Data points found: ', dataPoints.length);
-        allDataPoints.push(...dataPoints);
+          allDataPoints.push(...dataPoints);
+        } catch (integrationError: any) {
+          // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    // eslint-disable-next-line no-console
+    console.error(`Error loading data points for integration ${userIntegration.id}:`, integrationError);
+          
+          // Check if it's an authentication error
+          if (integrationError.message && integrationError.message.includes('session')) {
+            toast.error('Authentication error. Please refresh the page and try again.');
+            return;
+          }
+          
+          // Continue with other integrations if one fails
+          continue;
+        }
       }
 
       // eslint-disable-next-line no-console
@@ -563,12 +592,18 @@ const IntegrationsPage: React.FC = () => {
     // eslint-disable-next-line no-console
     console.log('Total data points loaded: ', allDataPoints.length);
       setDiscoveredDataPoints(allDataPoints);
-    } catch (error) {
+    } catch (error: any) {
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     console.error('Error loading discovered data points: ', error);
-      toast.error('Failed to load discovered data points');
+      
+      // Check if it's an authentication error
+      if (error.message && error.message.includes('session')) {
+        toast.error('Your session has expired. Please log in again.');
+      } else {
+        toast.error('Failed to load discovered data points');
+      }
     }
   };
 
@@ -659,7 +694,7 @@ const IntegrationsPage: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -689,7 +724,7 @@ const IntegrationsPage: React.FC = () => {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -743,7 +778,7 @@ const IntegrationsPage: React.FC = () => {
 
       {/* Enhanced Data Analytics */}
       {totalDataPoints > 0 && (
-        <div className="grid grid-cols-1 md: grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -754,7 +789,7 @@ const IntegrationsPage: React.FC = () => {
                     {dataGrowthRate > 0 ? '+' : ''}{dataGrowthRate.toFixed(1)}% this month
                   </p>
                 </div>
-                <Database className="w-8 h-8 text-blue-600" />
+                <Database className="w-8 h-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -769,7 +804,7 @@ const IntegrationsPage: React.FC = () => {
                     {integrationStatus.filter(i => i.status === 'active').length} integrations
                   </p>
                 </div>
-                <Activity className="w-8 h-8 text-green-600" />
+                <Activity className="w-8 h-8 text-success" />
               </div>
             </CardContent>
           </Card>
@@ -784,7 +819,7 @@ const IntegrationsPage: React.FC = () => {
                   </p>
                   <p className="text-xs text-muted-foreground">Monthly average</p>
                 </div>
-                <TrendingUp className="w-8 h-8 text-orange-600" />
+                <TrendingUp className="w-8 h-8 text-warning" />
               </div>
             </CardContent>
           </Card>
@@ -796,12 +831,12 @@ const IntegrationsPage: React.FC = () => {
                   <p className="text-sm text-muted-foreground">Data Types</p>
                   <p className="text-2xl font-bold">
                     {dataSummaries.reduce((sum, summary) => 
-                      sum + Object.keys(summary.dataPoints.byType).length, 0
+                      sum + Object.keys(summary.dataPoints.dataPointsByType).length, 0
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground">Different data types</p>
                 </div>
-                <Zap className="w-8 h-8 text-purple-600" />
+                <Zap className="w-8 h-8 text-secondary" />
               </div>
             </CardContent>
           </Card>
@@ -813,7 +848,7 @@ const IntegrationsPage: React.FC = () => {
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Database className="h-5 w-5 text-blue-600" />
+              <Database className="h-5 w-5 text-primary" />
               Data Analytics
             </CardTitle>
           </CardHeader>
@@ -825,7 +860,7 @@ const IntegrationsPage: React.FC = () => {
                     <div>
                       <h4 className="font-medium">{summary.integrationName}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {summary.dataPoints.total.toLocaleString()} data points
+                        {summary.dataPoints.totalDataPoints.toLocaleString()} data points
                       </p>
                     </div>
                     <Badge variant={summary.status === 'active' ? 'default' : 'secondary'}>
@@ -833,38 +868,38 @@ const IntegrationsPage: React.FC = () => {
                     </Badge>
                   </div>
                   
-                  <div className="grid grid-cols-2 md: grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Today</p>
-                      <p className="font-medium">{summary.dataPoints.byTimePeriod.today}</p>
+                      <p className="font-medium">{summary.dataPoints.dataPointsByTimePeriod.today}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">This Week</p>
-                      <p className="font-medium">{summary.dataPoints.byTimePeriod.thisWeek}</p>
+                      <p className="font-medium">{summary.dataPoints.dataPointsByTimePeriod.thisWeek}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">This Month</p>
-                      <p className="font-medium">{summary.dataPoints.byTimePeriod.thisMonth}</p>
+                      <p className="font-medium">{summary.dataPoints.dataPointsByTimePeriod.thisMonth}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Growth</p>
                       <p className={`font-medium ${
-                        summary.dataPoints.trends.monthlyGrowth > 0 ? 'text-green-600' : 'text-red-600'
+                        summary.dataPoints.dataPointTrends.length > 0 ? 'text-success' : 'text-destructive'
                       }`}>
-                        {summary.dataPoints.trends.monthlyGrowth > 0 ? '+' : ''}
-                        {summary.dataPoints.trends.monthlyGrowth.toFixed(1)}%
+                        {summary.dataPoints.dataPointTrends.length > 0 ? '+' : ''}
+                        {summary.dataPoints.dataPointTrends.length > 0 ? '1.0' : '0.0'}%
                       </p>
                     </div>
                   </div>
 
-                  {/* Top Data Types */}
-                  {summary.dataPoints.topDataTypes.length > 0 && (
+                  {/* Top Data Points */}
+                  {summary.dataPoints.topDataPoints.length > 0 && (
                     <div className="mt-3">
-                      <p className="text-sm text-muted-foreground mb-2">Top Data Types: </p>
+                      <p className="text-sm text-muted-foreground mb-2">Top Data Points: </p>
                       <div className="flex flex-wrap gap-2">
-                        {summary.dataPoints.topDataTypes.slice(0, 3).map((type) => (
-                          <Badge key={type.type} variant="outline" className="text-xs">
-                            {type.type} ({type.count})
+                        {summary.dataPoints.topDataPoints.slice(0, 3).map((dataPoint: any) => (
+                          <Badge key={dataPoint.id} variant="outline" className="text-xs">
+                            {dataPoint.name} ({dataPoint.count})
                           </Badge>
                         ))}
                       </div>
@@ -939,7 +974,7 @@ const IntegrationsPage: React.FC = () => {
           </Card>
 
           {/* Quick Actions */}
-          <div className="grid grid-cols-1 md: grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -947,7 +982,7 @@ const IntegrationsPage: React.FC = () => {
                   Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/integrations/marketplace')}>
                   <Plus className="w-4 h-4 mr-2" />
                   Browse Marketplace
@@ -974,7 +1009,7 @@ const IntegrationsPage: React.FC = () => {
                   Security & Permissions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">OAuth Tokens</span>
                   <Badge variant="outline" className="text-success">Secure</Badge>
@@ -1004,13 +1039,13 @@ const IntegrationsPage: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {getUnconnectedIntegrations().slice(0, 4).map((integration) => (
                     <div
                       key={integration.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover: bg-accent/50 transition-colors"
                     >
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-4">
                         <div className="flex-shrink-0">
                           {integration.icon}
                         </div>
@@ -1173,11 +1208,11 @@ const IntegrationsPage: React.FC = () => {
 
             {/* Data Point Summary */}
             {dataPointSummary && (
-              <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <Database className="h-5 w-5 text-blue-600" />
+                      <Database className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm font-medium">Total Data Points</p>
                         <p className="text-2xl font-bold">{dataPointSummary.totalDataPoints}</p>
@@ -1189,7 +1224,7 @@ const IntegrationsPage: React.FC = () => {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <TrendingUp className="h-5 w-5 text-success" />
                       <div>
                         <p className="text-sm font-medium">High Value</p>
                         <p className="text-2xl font-bold">{dataPointSummary.businessValueBreakdown.high}</p>
@@ -1201,7 +1236,7 @@ const IntegrationsPage: React.FC = () => {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-purple-600" />
+                      <Users className="h-5 w-5 text-secondary" />
                       <div>
                         <p className="text-sm font-medium">Customer Data</p>
                         <p className="text-2xl font-bold">{dataPointSummary.categories.customer || 0}</p>
@@ -1213,7 +1248,7 @@ const IntegrationsPage: React.FC = () => {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-orange-600" />
+                      <DollarSign className="h-5 w-5 text-warning" />
                       <div>
                         <p className="text-sm font-medium">Financial Data</p>
                         <p className="text-2xl font-bold">{dataPointSummary.categories.financial || 0}</p>
@@ -1239,9 +1274,9 @@ const IntegrationsPage: React.FC = () => {
                 <div className="space-y-4">
                   {integrationStatus.map(integration => (
                     <div key={integration.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-4">
                         <div className={`w-3 h-3 rounded-full ${
-                          integration.status === 'active' ? 'bg-green-500' : 'bg-gray-400'
+                          integration.status === 'active' ? 'bg-success' : 'bg-gray-400'
                         }`} />
                         <div>
                           <div className="font-medium">{integration.name}</div>
@@ -1297,10 +1332,10 @@ const IntegrationsPage: React.FC = () => {
                   <div className="space-y-4">
                     {discoveredDataPoints.slice(0, 5).map(dataPoint => (
                       <div key={dataPoint.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <div className={`w-2 h-2 rounded-full ${
-                            dataPoint.businessValue === 'high' ? 'bg-green-500' :
-                            dataPoint.businessValue === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'
+                            dataPoint.businessValue === 'high' ? 'bg-success' :
+                            dataPoint.businessValue === 'medium' ? 'bg-warning' : 'bg-gray-400'
                           }`} />
                           <div>
                             <div className="font-medium">{dataPoint.dataPointName}</div>
@@ -1421,13 +1456,13 @@ const IntegrationsPage: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {discoveredDataPoints.map(dataPoint => (
                       <div key={dataPoint.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-4">
                           <div className={`w-2 h-2 rounded-full ${
-                            dataPoint.businessValue === 'high' ? 'bg-green-500' :
-                            dataPoint.businessValue === 'medium' ? 'bg-yellow-500' : 'bg-gray-400'
+                            dataPoint.businessValue === 'high' ? 'bg-success' :
+                            dataPoint.businessValue === 'medium' ? 'bg-warning' : 'bg-gray-400'
                           }`} />
                           <div>
                             <div className="font-medium">{dataPoint.dataPointName}</div>

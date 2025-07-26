@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/core/types/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
 import type { ChatMessage } from '@/core/types/chat';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -15,6 +15,12 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    flowType: 'pkce',
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'nexus-dashboard',
+    },
   },
 });
 
@@ -30,6 +36,7 @@ export const handleSupabaseError = (error: any, context: string) => {
 
 // Session utilities
 export const sessionUtils = {
+  lastRefreshTime: 0 as number,
   getSession: async (retries = 3): Promise<{ session: any; error: any }> => {
     for (let i = 0; i < retries; i++) {
       try {
@@ -68,7 +75,16 @@ export const sessionUtils = {
 
   refreshSession: async (): Promise<{ session: any; error: any }> => {
     try {
+      // Add rate limiting to prevent 429 errors
+      const lastRefresh = sessionUtils.lastRefreshTime;
+      const now = Date.now();
+      if (lastRefresh && now - lastRefresh < 5000) { // 5 second cooldown
+        logger.warn('Session refresh rate limited, skipping');
+        return { session: null, error: 'Rate limited' };
+      }
+      
       const { data: { session }, error } = await supabase.auth.refreshSession();
+      sessionUtils.lastRefreshTime = now;
       return { session, error };
     } catch (error) {
       logger.error({ error }, 'Failed to refresh session');
@@ -84,6 +100,38 @@ export const sessionUtils = {
     } catch (error) {
       logger.error({ error }, 'Failed to force refresh session');
       return { session: null, error };
+    }
+  },
+
+  ensureSession: async (): Promise<boolean> => {
+    try {
+      const { session, error } = await sessionUtils.getSession();
+      if (error || !session) {
+        logger.warn({ error }, 'No valid session found, attempting refresh');
+        const refreshResult = await sessionUtils.refreshSession();
+        if (refreshResult.error || !refreshResult.session) {
+          logger.error({ error: refreshResult.error }, 'Session refresh failed');
+          return false;
+        }
+        return sessionUtils.isSessionValid(refreshResult.session);
+      }
+      
+      // Check if session is valid
+      const isValid = sessionUtils.isSessionValid(session);
+      if (!isValid) {
+        logger.warn('Session is expired, attempting refresh');
+        const refreshResult = await sessionUtils.refreshSession();
+        if (refreshResult.error || !refreshResult.session) {
+          logger.error({ error: refreshResult.error }, 'Session refresh failed');
+          return false;
+        }
+        return sessionUtils.isSessionValid(refreshResult.session);
+      }
+      
+      return true;
+    } catch (error) {
+      logger.error({ error }, 'Session validation failed');
+      return false;
     }
   }
 };
