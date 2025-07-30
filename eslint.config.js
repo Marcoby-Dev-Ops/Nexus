@@ -43,6 +43,13 @@ export default tseslint.config(
       'no-var': 'error',
       'no-console': 'warn',
       'no-debugger': 'error',
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression[callee.object.name='supabase'][callee.property.name=/from|insert|update|delete|rpc/]",
+          message: 'Use helper functions from src/lib/supabase instead of direct supabase-js calls.',
+        },
+      ],
     },
     settings: {
       react: {
