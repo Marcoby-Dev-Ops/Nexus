@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, select, selectOne, updateOne, insertOne } from '@/lib/supabase';
 import type { N8nWorkflowDefinition } from './n8nWorkflowBuilder';
 import { N8nWorkflowBuilder } from './n8nWorkflowBuilder';
 import { n8nService } from '@/services/automation/n8nService';
@@ -536,23 +536,18 @@ export class AutomationTemplateImporter {
     source?: string,
     userId?: string
   ): Promise<AutomationTemplate[]> {
-    let query = supabase.from('automation_templates').select('*');
+    const filter: Record<string, any> = {};
     
     if (category) {
-      query = query.eq('category', category);
+      filter.category = category;
     }
     
     if (source) {
-      query = query.eq('source', source);
+      filter.source = source;
     }
     
-    const { data, error } = await query.order('downloads', { ascending: false });
-    
-    if (error) {
-      throw new Error(`Failed to fetch templates: ${error.message}`);
-    }
-    
-    return data || [];
+    const data = await select<AutomationTemplate>('automation_templates', '*', filter);
+    return data.sort((a, b) => b.downloads - a.downloads);
   }
 
   /**
@@ -564,13 +559,9 @@ export class AutomationTemplateImporter {
     userId: string
   ): Promise<TemplateImportResult> {
     try {
-      const { data: template, error } = await supabase
-        .from('automation_templates')
-        .select('*')
-        .eq('id', templateId)
-        .single();
+      const template = await selectOne<AutomationTemplate>('automation_templates', templateId);
 
-      if (error || !template) {
+      if (!template) {
         throw new Error('Template not found');
       }
 
@@ -585,21 +576,16 @@ export class AutomationTemplateImporter {
       
       if (deployResult.success) {
         // Update download count
-        await supabase
-          .from('automation_templates')
-          .update({ downloads: template.downloads + 1 })
-          .eq('id', templateId);
+        await updateOne('automation_templates', templateId, { downloads: template.downloads + 1 });
 
         // Log deployment
-        await supabase
-          .from('template_deployments')
-          .insert({
-            templateid: templateId,
-            userid: userId,
-            workflowid: deployResult.workflowId,
-            customizations,
-            deployedat: new Date().toISOString()
-          });
+        await insertOne('template_deployments', {
+          templateid: templateId,
+          userid: userId,
+          workflowid: deployResult.workflowId,
+          customizations,
+          deployedat: new Date().toISOString()
+        });
 
         return {
           success: true,

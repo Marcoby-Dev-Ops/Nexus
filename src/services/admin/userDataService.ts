@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, select } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger.ts';
 
 class UserDataService {
@@ -10,15 +10,15 @@ class UserDataService {
       }
 
       const [
-        { data: recents },
-        { data: pins },
-        { data: tasks },
-        { data: notifications }
+        recents,
+        pins,
+        tasks,
+        notifications
       ] = await Promise.all([
-        supabase.from('recents').select('*').eq('user_id', user.id),
-        supabase.from('pins').select('*').eq('user_id', user.id),
-        supabase.from('tasks').select('*').eq('user_id', user.id),
-        supabase.from('notifications').select('*').eq('user_id', user.id),
+        select('recents', '*', { user_id: user.id }),
+        select('pins', '*', { user_id: user.id }),
+        select('tasks', '*', { user_id: user.id }),
+        select('notifications', '*', { user_id: user.id }),
       ]);
 
       const userExport = {
