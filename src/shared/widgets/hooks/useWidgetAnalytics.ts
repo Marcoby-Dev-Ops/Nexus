@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth.ts';
-import { supabase } from '@/lib/supabase';
-import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
+import { insertOne } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger.ts';
 
 interface WidgetEvent {
@@ -14,7 +13,6 @@ interface WidgetEvent {
 
 export const useWidgetAnalytics = () => {
   const { user } = useAuth();
-  const queryWrapper = new DatabaseQueryWrapper();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,16 +33,7 @@ export const useWidgetAnalytics = () => {
         session_id: sessionStorage.getItem('session_id') || undefined
       };
 
-      const { error } = await queryWrapper.userQuery(
-        async () => supabase.from('WidgetEvent').insert([eventData]),
-        user.id,
-        'track-widget-event'
-      );
-
-      if (error) {
-        logger.error('Error tracking widget event:', error);
-        setError('Failed to track widget event');
-      }
+      await insertOne('WidgetEvent', eventData);
     } catch (error) {
       logger.error('Error in trackEvent:', error);
       setError('Failed to track widget event');

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
-import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
+import { selectWithOptions, deleteOne } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger.ts';
 
 interface Pin {
@@ -18,7 +17,6 @@ interface RecentsWidgetProps {
 
 export const RecentsWidget: React.FC<RecentsWidgetProps> = ({ className }) => {
   const { user } = useAuth();
-  const queryWrapper = new DatabaseQueryWrapper();
   
   const [pins, setPins] = useState<Pin[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,18 +30,11 @@ export const RecentsWidget: React.FC<RecentsWidgetProps> = ({ className }) => {
     setError(null);
 
     try {
-      const { data, error } = await queryWrapper.userQuery(
-        async () => supabase.from('Pin').select('*').order('created_at', { ascending: false }).limit(10),
-        user.id,
-        'load-pins'
-      );
-
-      if (error) {
-        logger.error('Error loading pins:', error);
-        setError('Failed to load pins');
-      } else {
-        setPins(data || []);
-      }
+      const data = await selectWithOptions<Pin>('Pin', {
+        orderBy: { column: 'created_at', ascending: false },
+        limit: 10
+      });
+      setPins(data || []);
     } catch (error) {
       logger.error('Error in loadPins:', error);
       setError('Failed to load pins');
@@ -57,18 +48,8 @@ export const RecentsWidget: React.FC<RecentsWidgetProps> = ({ className }) => {
     if (!user?.id) return;
 
     try {
-      const { error } = await queryWrapper.userQuery(
-        async () => supabase.from('Pin').delete().eq('id', pinId),
-        user.id,
-        'remove-pin'
-      );
-
-      if (error) {
-        logger.error('Error removing pin:', error);
-        setError('Failed to remove pin');
-      } else {
-        setPins(prev => prev.filter(pin => pin.id !== pinId));
-      }
+      await deleteOne('Pin', pinId);
+      setPins(prev => prev.filter(pin => pin.id !== pinId));
     } catch (error) {
       logger.error('Error in removePin:', error);
       setError('Failed to remove pin');

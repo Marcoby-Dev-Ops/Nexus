@@ -3,7 +3,7 @@
  * Enhanced with real-time processing, webhook integration, and automated orchestration
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase, insertOne } from '@/lib/supabase';
 import { EmailIntelligenceService } from './emailIntelligenceService';
 import { logger } from '@/shared/utils/logger.ts';
 
@@ -851,7 +851,7 @@ export class EmailIntegrationService {
 
   private async storeEmailAnalysis(analysis: any): Promise<void> {
     try {
-      await supabase.from('ai_insights').insert(analysis);
+      await insertOne('ai_insights', analysis);
     } catch (error) {
       logger.error('Error storing email analysis', { error });
     }

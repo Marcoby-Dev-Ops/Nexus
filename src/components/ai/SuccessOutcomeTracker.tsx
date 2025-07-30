@@ -19,7 +19,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useToast } from '@/shared/ui/components/Toast';
-import { supabase } from '@/lib/supabase';
+import { supabase, insertOne, updateOne, selectOne } from '@/lib/supabase';
 import { useAuth } from '@/hooks/index';
 
 interface SuccessOutcome {
@@ -87,12 +87,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
     if (!user?.id) return;
 
     try {
-      const { data } = await supabase
-        .from('ai_success_outcomes')
-        .select('*')
-        .eq('message_id', messageId)
-        .eq('user_id', user.id)
-        .single();
+      const data = await selectOne('ai_success_outcomes', messageId, 'message_id');
 
       if (data) {
         setOutcome(data);
@@ -137,7 +132,7 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
       setShowTracker(true);
 
       // Schedule follow-up notification
-      await supabase.from('ai_audit_logs').insert({
+      await insertOne('ai_audit_logs', {
         userid: user.id,
         action: 'success_outcome_created',
         tablename: 'ai_success_outcomes',
@@ -178,20 +173,13 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
         updates.quantified_impact = quantifiedImpact;
       }
 
-      const { data, error } = await supabase
-        .from('ai_success_outcomes')
-        .update(updates)
-        .eq('id', outcome.id)
-        .select()
-        .single();
-
-      if (error) throw error;
+      const data = await updateOne('ai_success_outcomes', outcome.id, updates);
 
       setOutcome(data);
       onOutcomeTracked?.(data);
 
       // Track in analytics
-      await supabase.from('ai_audit_logs').insert({
+      await insertOne('ai_audit_logs', {
         userid: user.id,
         action: 'success_outcome_updated',
         tablename: 'ai_success_outcomes',
