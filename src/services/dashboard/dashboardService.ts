@@ -3,7 +3,7 @@
  * Provides centralized dashboard functionality and metrics
  */
 
-import { supabase } from '@/lib/supabase';
+import { supabase, select, selectOne, selectWithOptions } from '@/lib/supabase';
 // import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
 import { logger } from '@/shared/utils/logger.ts';
 
@@ -135,9 +135,9 @@ export class DashboardService {
       }
 
       // Test database connection with proper authentication
-      const { error: dbError } = await supabase.from('user_profiles').select('id').limit(1);
-
-      if (dbError) {
+      try {
+        await select('user_profiles', 'id', undefined);
+      } catch (dbError) {
         logger.error('Database connection test failed:', dbError);
         return { data: null, error: dbError };
       }
@@ -188,9 +188,9 @@ export class DashboardService {
     try {
       // Get user-specific dashboard data
       const queries = [
-        supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
-        supabase.from('user_activity').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
-        supabase.from('user_preferences').select('*').eq('user_id', userId).single()
+        selectOne('user_profiles', userId, 'user_id'),
+        selectWithOptions('user_activity', { filter: { user_id: userId }, orderBy: { column: 'created_at', ascending: false }, limit: 10 }),
+        selectOne('user_preferences', userId, 'user_id')
       ];
 
       const data = await Promise.all(queries);
@@ -215,9 +215,9 @@ export class DashboardService {
     try {
       // Get company-specific dashboard data
       const queries = [
-        supabase.from('company_profiles').select('*').eq('id', companyId).single(),
-        supabase.from('company_metrics').select('*').eq('company_id', companyId).order('created_at', { ascending: false }).limit(10),
-        supabase.from('company_settings').select('*').eq('company_id', companyId).single()
+        selectOne('company_profiles', companyId),
+        selectWithOptions('company_metrics', { filter: { company_id: companyId }, orderBy: { column: 'created_at', ascending: false }, limit: 10 }),
+        selectOne('company_settings', companyId, 'company_id')
       ];
 
       const data = await Promise.all(queries);

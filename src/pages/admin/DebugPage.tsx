@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { CheckCircle, XCircle, AlertCircle, Info, RefreshCw } from 'lucide-react';
-import { supabase, diagnoseJWTTransmission, debugClientInstances, clearAllClientInstances } from "@/lib/supabase";
+import { supabase, diagnoseJWTTransmission, debugClientInstances, clearAllClientInstances, select } from "@/lib/supabase";
 import { useAuth } from '@/hooks/index';
 
 export default function DebugPage() {
@@ -222,7 +222,8 @@ export default function DebugPage() {
     try {
       const start = Date.now();
       // Use a small, public table for a fast query (user_profiles or companies)
-      const { error } = await supabase.from('user_profiles').select('id').limit(1);
+      await select('user_profiles', 'id', undefined);
+      const error = null; // select helper handles errors internally
       queryMs = Date.now() - start;
       queryOk = !error && queryMs < 10000;
       if (error) errorMsg = 'Supabase query error: ' + error.message;
