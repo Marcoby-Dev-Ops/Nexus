@@ -1,6 +1,7 @@
 import { serviceFactory } from './ServiceFactory';
 import { userService } from './UserService';
 import { companyService } from './CompanyService';
+import { billingService } from './BillingService';
 
 /**
  * Service Registry
@@ -21,6 +22,7 @@ export const registerServices = () => {
   // Register core services
   serviceFactory.register('user', userService);
   serviceFactory.register('company', companyService);
+  serviceFactory.register('billing', billingService);
   
   // Register additional services as they are migrated
   // serviceFactory.register('analytics', analyticsService);
@@ -57,3 +59,6 @@ export const useServiceRegistry = () => {
 
 // Auto-register services on import
 registerServices(); 
+
+// Export the factory for use in components
+export { serviceFactory }; 
