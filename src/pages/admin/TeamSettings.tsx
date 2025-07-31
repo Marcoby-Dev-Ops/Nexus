@@ -1,59 +1,178 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Users, UserPlus, Mail, Shield, MoreHorizontal, Check, X } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { Input } from '@/shared/components/ui/Input.tsx';
-import { Label } from '@/shared/components/ui/Label.tsx';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select.tsx';
 import { Separator } from '@/shared/components/ui/Separator.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Avatar } from '@/shared/components/ui/Avatar.tsx';
 import { useAuth } from '@/hooks/index';
+import { useService } from '@/shared/hooks/useService';
+import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
+import { z } from 'zod';
 
-// Mock team member data
-const teamMembers = [
-  { id: 1, name: 'Sarah Johnson', email: 'sarah@example.com', role: 'admin', status: 'active', lastActive: '2 hours ago' },
-  { id: 2, name: 'Mike Roberts', email: 'mike@example.com', role: 'member', status: 'active', lastActive: '5 hours ago' },
-  { id: 3, name: 'David Lee', email: 'david@example.com', role: 'member', status: 'active', lastActive: '1 day ago' },
-  { id: 4, name: 'Emma Stevens', email: 'emma@example.com', role: 'member', status: 'invited', lastActive: 'Never' },
-  { id: 5, name: 'Alex Chen', email: 'alex@example.com', role: 'member', status: 'active', lastActive: '3 days ago' },
-];
+// Team invitation schema
+const teamInvitationSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  role: z.enum(['admin', 'member', 'guest'], {
+    errorMap: () => ({ message: 'Please select a valid role' })
+  })
+});
 
-// Mock team roles
-const teamRoles = [
-  { id: 'owner', name: 'Owner', description: 'Full access to all settings and billing' },
-  { id: 'admin', name: 'Admin', description: 'Can manage team members and most settings' },
-  { id: 'member', name: 'Member', description: 'Can use the application but cannot manage team settings' },
-  { id: 'guest', name: 'Guest', description: 'Limited access to specific features only' },
+type TeamInvitationData = z.infer<typeof teamInvitationSchema>;
+
+// Team member interface
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: 'owner' | 'admin' | 'member' | 'guest';
+  status: 'active' | 'invited' | 'inactive';
+  lastActive: string;
+  avatar?: string;
+}
+
+// Team role interface
+interface TeamRole {
+  id: string;
+  name: string;
+  description: string;
+  permissions: string[];
+}
+
+// Mock team roles (could be moved to service later)
+const teamRoles: TeamRole[] = [
+  { 
+    id: 'owner', 
+    name: 'Owner', 
+    description: 'Full access to all settings and billing',
+    permissions: ['all']
+  },
+  { 
+    id: 'admin', 
+    name: 'Admin', 
+    description: 'Can manage team members and most settings',
+    permissions: ['manage_team', 'manage_settings', 'view_billing']
+  },
+  { 
+    id: 'member', 
+    name: 'Member', 
+    description: 'Can use the application but cannot manage team settings',
+    permissions: ['use_app', 'create_content']
+  },
+  { 
+    id: 'guest', 
+    name: 'Guest', 
+    description: 'Limited access to specific features only',
+    permissions: ['view_content']
+  },
 ];
 
 /**
  * TeamSettings - Team management settings page
  * 
- * Allows administrators to: * - View and manage team members
+ * Allows administrators to:
+ * - View and manage team members
  * - Invite new team members
  * - Set roles and permissions
  * - Remove team members
  */
 const TeamSettings: React.FC = () => {
   const { user } = useAuth();
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('member');
   
+  // Use UserService for team member management
+  const userService = useService('user');
+  const { data: teamMembers, isLoading: isLoadingTeam } = userService.useList({ 
+    company_id: (user as any)?.company?.id 
+  });
+  const { mutate: inviteUser, isLoading: isInviting } = userService.useCreate();
+  const { mutate: updateUserRole, isLoading: isUpdatingRole } = userService.useUpdate();
+  const { mutate: removeUser, isLoading: isRemoving } = userService.useDelete();
+
+  // Initialize form with our new pattern
+  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
+    schema: teamInvitationSchema,
+    defaultValues: {
+      email: '',
+      role: 'member' as const
+    },
+    onSubmit: async (data: TeamInvitationData) => {
+      const userCompanyId = (user as any)?.company?.id;
+      if (!userCompanyId) return;
+
+      try {
+        await inviteUser({
+          email: data.email,
+          role: data.role,
+          company_id: userCompanyId,
+          status: 'invited'
+        });
+        
+        // Reset form after successful invitation
+        form.reset();
+      } catch (error) {
+        throw new Error('Failed to send invitation');
+      }
+    },
+    successMessage: 'Invitation sent successfully!',
+  });
+
   // Check if user is admin or owner
   const canManageTeam = user?.role === 'admin' || user?.role === 'owner';
   
-  // Handle invitation submission
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log(`Inviting ${inviteEmail} as ${inviteRole}`);
-    // Implementation would send invitation
-    setInviteEmail('');
+  // Handle role updates
+  const handleRoleUpdate = async (memberId: string, newRole: string) => {
+    try {
+      await updateUserRole(memberId, { role: newRole });
+    } catch (error) {
+      console.error('Failed to update role:', error);
+    }
   };
-  
+
+  // Handle member removal
+  const handleRemoveMember = async (memberId: string) => {
+    if (!confirm('Are you sure you want to remove this team member?')) return;
+    
+    try {
+      await removeUser(memberId);
+    } catch (error) {
+      console.error('Failed to remove member:', error);
+    }
+  };
+
+  // Show loading state while fetching team data
+  if (isLoadingTeam) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold">Team Management</h2>
+          <p className="text-muted-foreground">Manage your team members and their access</p>
+        </div>
+        <Separator />
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading team information...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Convert service data to team members format
+  const teamMembersList: TeamMember[] = teamMembers?.map((member: any) => ({
+    id: member.id,
+    name: `${member.first_name || ''} ${member.last_name || ''}`.trim() || member.email,
+    email: member.email,
+    role: member.role || 'member',
+    status: member.status || 'active',
+    lastActive: member.last_login ? '2 hours ago' : 'Never',
+    avatar: member.avatar_url
+  })) || [];
+
   return (
     <div className="space-y-6">
       <div>
@@ -73,23 +192,21 @@ const TeamSettings: React.FC = () => {
           <CardDescription>Add new people to your team</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleInvite} className="flex flex-col sm: flex-row gap-4">
+          <form onSubmit={handleSubmit} className="flex flex-col sm: flex-row gap-4">
             <div className="flex-1 relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Email address"
                 className="pl-9"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-                required
-                type="email"
-                disabled={!canManageTeam}
+                {...form.register('email')}
+                disabled={!canManageTeam || isSubmitting}
               />
+              {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
             </div>
             <Select 
-              value={inviteRole} 
-              onValueChange={setInviteRole}
-              disabled={!canManageTeam}
+              value={form.watch('role')} 
+              onValueChange={(value) => form.setValue('role', value as 'admin' | 'member' | 'guest')}
+              disabled={!canManageTeam || isSubmitting}
             >
               <SelectTrigger className="w-full sm: w-[180px]">
                 <SelectValue placeholder="Select role" />
@@ -100,7 +217,7 @@ const TeamSettings: React.FC = () => {
                 <SelectItem value="guest">Guest</SelectItem>
               </SelectContent>
             </Select>
-            <Button type="submit" disabled={!canManageTeam}>
+            <Button type="submit" disabled={!canManageTeam || isSubmitting}>
               Send Invitation
             </Button>
           </form>
@@ -118,7 +235,7 @@ const TeamSettings: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {teamMembers.map((member) => (
+            {teamMembersList.map((member) => (
               <div key={member.id} className="flex items-center justify-between p-4 rounded-md hover: bg-muted transition-colors">
                 <div className="flex items-center space-x-4">
                   <Avatar>
@@ -150,11 +267,14 @@ const TeamSettings: React.FC = () => {
                   
                   {canManageTeam && member.id.toString() !== user?.id && (
                     <div className="flex items-center space-x-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleRoleUpdate(member.id, 'admin')}>
                         <Shield className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleRoleUpdate(member.id, 'member')}>
                         <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleRemoveMember(member.id)}>
+                        <X className="h-4 w-4 text-red-500" />
                       </Button>
                     </div>
                   )}
