@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { useUserProfile } from '@/shared/hooks/useUserProfile';
 import { useIntegrations } from '@/hooks/integrations/useIntegrations';
 import { integrationService } from '@/services/integrations/integrationService.ts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
@@ -21,7 +20,7 @@ import {
   AlertTriangle,
   XCircle,
 } from 'lucide-react';
-import { supabase, sessionUtils } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { tokenManager } from '@/services/tokenManager';
 import { useSearchParams } from 'react-router-dom';
 
@@ -29,11 +28,16 @@ import { useSearchParams } from 'react-router-dom';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
+import { useService } from '@/shared/hooks/useService';
 
 const AccountSettings: React.FC = () => {
   const { user } = useAuth();
-  const { updateProfile } = useUserProfile();
   const { refreshIntegrations } = useIntegrations();
+  
+  // Use the new UserService hooks
+  const userService = useService('user');
+  const { data: userProfile, isLoading: isLoadingProfile } = userService.useGet(user?.id || '');
+  const { mutate: updateUser, isLoading: isUpdating } = userService.useUpdate();
   
   const [searchParams] = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
@@ -80,12 +84,11 @@ const AccountSettings: React.FC = () => {
         phone: data.phone,
       };
 
-      const result = await updateProfile(updates);
-      
-      if (result.success) {
+      try {
+        await updateUser(user.id, updates);
         setIsEditing(false);
-      } else {
-        throw new Error(result.error || 'Failed to update profile');
+      } catch (error) {
+        throw new Error('Failed to update profile');
       }
     },
     successMessage: 'Profile updated successfully!',
@@ -99,26 +102,27 @@ const AccountSettings: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Load profile data into form
+  // Load profile data into form when userProfile is available
   useEffect(() => {
-    if (user?.profile) {
+    if (userProfile) {
+      const profile = userProfile as any;
       form.reset({
-        firstName: user.profile.first_name || '',
-        lastName: user.profile.last_name || '',
-        displayName: user.profile.display_name || '',
-        jobTitle: user.profile.job_title || '',
-        company: user.profile.company || '',
-        role: user.profile.role || '',
-        department: user.profile.department || '',
-        businessEmail: user.profile.business_email || '',
-        personalEmail: user.profile.personal_email || '',
-        bio: user.profile.bio || '',
-        location: user.profile.location || '',
-        website: user.profile.linkedin_url || '',
-        phone: user.profile.phone || '',
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        displayName: profile.display_name || '',
+        jobTitle: profile.job_title || '',
+        company: profile.company || '',
+        role: profile.role || '',
+        department: profile.department || '',
+        businessEmail: profile.business_email || '',
+        personalEmail: profile.personal_email || '',
+        bio: profile.bio || '',
+        location: profile.location || '',
+        website: profile.linkedin_url || '',
+        phone: profile.phone || '',
       });
     }
-  }, [user?.profile, form]);
+  }, [userProfile, form]);
 
   // Load integrations from auth store and force refresh to ensure latest data
   useEffect(() => {
@@ -200,6 +204,7 @@ const AccountSettings: React.FC = () => {
           return {
             ...integration,
             tokenStatus: 'error',
+            lastRefresh: null,
             hasTokens: false,
           };
         }
