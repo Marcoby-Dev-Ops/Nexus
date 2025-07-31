@@ -1,6 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
-import { Button } from '@/shared/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface Props {

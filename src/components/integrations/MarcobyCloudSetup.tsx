@@ -10,7 +10,7 @@ import { Cloud, Server, Activity, DollarSign, CheckCircle, AlertCircle, Loader2,
 import { marcobyCloudService } from '@/services/marcobyCloudService';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/shared/core/hooks/NotificationContext';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 
 interface MarcobyCloudSetupProps {
   onComplete: () => void;

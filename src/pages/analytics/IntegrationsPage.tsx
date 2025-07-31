@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/ui/Card';
-import { Badge } from '@/shared/ui/Badge';
-import { Button } from '@/shared/ui/Button';
-import { Input } from '@/shared/ui/Input';
-import { Progress } from '@/shared/ui/Progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/Tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Input } from '@/shared/components/ui/Input.tsx';
+import { Progress } from '@/shared/components/ui/Progress.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
 import { useAuth } from '@/hooks/index';
 import { dbService, supabase, testAuthenticationFlow, sessionUtils } from '@/lib/supabase';
 import { integrationDataService, type IntegrationDataSummary } from '@/core/services/integrationDataService';

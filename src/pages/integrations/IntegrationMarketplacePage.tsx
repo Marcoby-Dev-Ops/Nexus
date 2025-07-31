@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/Card';
-import { Button } from '@/shared/ui/Button';
-import { Badge } from '@/shared/ui/Badge';
-import { Input } from '@/shared/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Input } from '@/shared/components/ui/Input.tsx';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { 
   ArrowLeft,

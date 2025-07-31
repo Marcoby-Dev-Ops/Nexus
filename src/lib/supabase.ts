@@ -413,3 +413,138 @@ if (typeof window !== 'undefined') {
     }
   };
 } 
+
+// Database helper functions
+export const select = async <T>(
+  table: string,
+  columns?: string,
+  filter?: any
+): Promise<{ data: T[] | null; error: any }> => {
+  try {
+    let query = supabase.from(table).select(columns || '*');
+    
+    if (filter) {
+      Object.entries(filter).forEach(([key, value]) => {
+        query = query.eq(key, value);
+      });
+    }
+    
+    const { data, error } = await query;
+    return { data, error };
+  } catch (error) {
+    logger.error({ error, table }, 'Select query failed');
+    return { data: null, error };
+  }
+};
+
+export const selectOne = async <T>(
+  table: string,
+  id: string,
+  idColumn: string = 'id'
+): Promise<{ data: T | null; error: any }> => {
+  try {
+    const { data, error } = await supabase
+      .from(table)
+      .select('*')
+      .eq(idColumn, id)
+      .single();
+    
+    return { data, error };
+  } catch (error) {
+    logger.error({ error, table, id }, 'SelectOne query failed');
+    return { data: null, error };
+  }
+};
+
+export const selectWithOptions = async <T>(
+  table: string,
+  options: {
+    filter?: Record<string, any>;
+    orderBy?: { column: string; ascending?: boolean };
+    limit?: number;
+    columns?: string;
+  }
+): Promise<{ data: T[] | null; error: any }> => {
+  try {
+    let query = supabase.from(table).select(options.columns || '*');
+    
+    if (options.filter) {
+      Object.entries(options.filter).forEach(([key, value]) => {
+        query = query.eq(key, value);
+      });
+    }
+    
+    if (options.orderBy) {
+      query = query.order(options.orderBy.column, { 
+        ascending: options.orderBy.ascending ?? false 
+      });
+    }
+    
+    if (options.limit) {
+      query = query.limit(options.limit);
+    }
+    
+    const { data, error } = await query;
+    return { data, error };
+  } catch (error) {
+    logger.error({ error, table, options }, 'SelectWithOptions query failed');
+    return { data: null, error };
+  }
+};
+
+export const insertOne = async <T>(
+  table: string,
+  data: any
+): Promise<{ data: T | null; error: any }> => {
+  try {
+    const { data: result, error } = await supabase
+      .from(table)
+      .insert(data)
+      .select()
+      .single();
+    
+    return { data: result, error };
+  } catch (error) {
+    logger.error({ error, table, data }, 'InsertOne query failed');
+    return { data: null, error };
+  }
+};
+
+export const updateOne = async <T>(
+  table: string,
+  id: string,
+  data: any,
+  idColumn: string = 'id'
+): Promise<{ data: T | null; error: any }> => {
+  try {
+    const { data: result, error } = await supabase
+      .from(table)
+      .update(data)
+      .eq(idColumn, id)
+      .select()
+      .single();
+    
+    return { data: result, error };
+  } catch (error) {
+    logger.error({ error, table, id, data }, 'UpdateOne query failed');
+    return { data: null, error };
+  }
+};
+
+export const deleteOne = async (
+  table: string,
+  id: string,
+  idColumn: string = 'id'
+): Promise<{ data: any; error: any }> => {
+  try {
+    const { data, error } = await supabase
+      .from(table)
+      .delete()
+      .eq(idColumn, id);
+    
+    return { data, error };
+  } catch (error) {
+    logger.error({ error, table, id }, 'DeleteOne query failed');
+    return { data: null, error };
+  }
+}; 

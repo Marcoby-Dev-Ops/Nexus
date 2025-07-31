@@ -21,7 +21,7 @@ import {
 import { googleAnalyticsService } from '@/services/analytics/googleAnalyticsService';
 import { supabase } from "@/lib/supabase";
 import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/core/hooks/NotificationContext.tsx';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 
 interface GoogleAnalyticsSetupProps {
   onComplete?: () => void;

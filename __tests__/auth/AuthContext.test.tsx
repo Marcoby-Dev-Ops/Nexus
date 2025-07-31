@@ -1,11 +1,21 @@
 import React from 'react';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { AuthProvider, useAuth } from '../../src/contexts/AuthContext';
-import { supabase } from '../../src/lib/core/supabase';
+import { useAuth } from '../../src/hooks/useAuth';
+import { supabase } from '../../src/lib/supabase';
+
+// Mock services to avoid import.meta issues
+jest.mock('../../src/services', () => ({
+  authService: {
+    signIn: jest.fn(),
+    signUp: jest.fn(),
+    signOut: jest.fn(),
+    getSession: jest.fn(),
+  },
+}));
 
 // Mock Supabase
-jest.mock('../../src/lib/core/supabase', () => ({
+jest.mock('../../src/lib/supabase', () => ({
   supabase: {
     auth: {
       getSession: jest.fn(),
@@ -31,6 +41,10 @@ const mockSupabase = supabase as typeof supabase & {
   from: jest.Mock;
 };
 
+// Import the mocked authService
+import { authService } from '../../src/services';
+const mockAuthService = authService as jest.Mocked<typeof authService>;
+
 // Test component that uses auth
 const TestComponent = () => {
   const { user, loading, error, initialized } = useAuth();
@@ -45,16 +59,21 @@ const TestComponent = () => {
   );
 };
 
-describe('AuthContext', () => {
+describe('useAuth Hook', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Mock successful session
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: null },
+    // Mock authService methods
+    mockAuthService.getSession.mockResolvedValue({
+      session: null,
       error: null,
     });
     
+    mockAuthService.signIn.mockResolvedValue({ error: null });
+    mockAuthService.signUp.mockResolvedValue({ error: null });
+    mockAuthService.signOut.mockResolvedValue({ error: null });
+    
+    // Mock Supabase auth state change
     mockSupabase.auth.onAuthStateChange.mockReturnValue({
       data: { subscription: { unsubscribe: jest.fn() } },
     });
@@ -67,11 +86,7 @@ describe('AuthContext', () => {
   });
 
   it('should initialize with loading state', async () => {
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
+    render(<TestComponent />);
 
     // Should start loading
     expect(screen.getByTestId('loading')).toHaveTextContent('loading');
@@ -94,16 +109,12 @@ describe('AuthContext', () => {
       },
     };
 
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: mockSession },
+    mockAuthService.getSession.mockResolvedValue({
+      session: mockSession,
       error: null,
     });
 
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
+    render(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('user')).toHaveTextContent('test@example.com');
@@ -113,13 +124,12 @@ describe('AuthContext', () => {
 
   it('should handle session errors gracefully', async () => {
     const error = new Error('Session error');
-    mockSupabase.auth.getSession.mockRejectedValue(error);
+    mockAuthService.getSession.mockResolvedValue({
+      session: null,
+      error: error,
+    });
 
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
+    render(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('error')).toHaveTextContent('Session error');
@@ -134,11 +144,7 @@ describe('AuthContext', () => {
       data: { subscription: { unsubscribe: unsubscribeMock } },
     });
 
-    const { unmount } = render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
+    const { unmount } = render(<TestComponent />);
 
     // Wait for initialization
     await waitFor(() => {
@@ -154,20 +160,16 @@ describe('AuthContext', () => {
 
   it('should handle timeout properly', async () => {
     // Mock a slow response
-    mockSupabase.auth.getSession.mockImplementation(
+    mockAuthService.getSession.mockImplementation(
       () => new Promise((resolve) => {
-        setTimeout(() => resolve({ data: { session: null }, error: null }), 15000);
+        setTimeout(() => resolve({ session: null, error: null }), 15000);
       })
     );
 
     // Reduce timeout for testing
     jest.useFakeTimers();
 
-    render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
+    render(<TestComponent />);
 
     // Fast-forward time to trigger timeout
     act(() => {
@@ -185,23 +187,15 @@ describe('AuthContext', () => {
 
   it('should prevent multiple simultaneous auth changes', async () => {
     let resolveCount = 0;
-    mockSupabase.auth.getSession.mockImplementation(() => {
+    mockAuthService.getSession.mockImplementation(() => {
       resolveCount++;
-      return Promise.resolve({ data: { session: null }, error: null });
+      return Promise.resolve({ session: null, error: null });
     });
 
-    const { rerender } = render(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
+    const { rerender } = render(<TestComponent />);
 
     // Try to trigger multiple auth changes quickly
-    rerender(
-      <AuthProvider>
-        <TestComponent />
-      </AuthProvider>
-    );
+    rerender(<TestComponent />);
 
     await waitFor(() => {
       expect(screen.getByTestId('initialized')).toHaveTextContent('initialized');

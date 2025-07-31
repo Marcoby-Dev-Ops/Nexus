@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/index';
 import { UnifiedLayout } from '@/shared/components/layout/UnifiedLayout';
 
 // Import pages from the new structure
-import { Login, Dashboard } from '@/pages';
+import { Dashboard } from '@/pages';
 import { LandingPage } from '@/shared/pages/LandingPage';
 
 // Import public pages
@@ -51,7 +51,7 @@ import {
 
 // Import Admin pages
 import { TenantManagementPage } from '@/pages/admin/TenantManagementPage';
-import DebugPage from '@/pages/admin/DebugPage';
+// DebugPage removed during cleanup
 import CompanySettings from '@/pages/admin/CompanySettings';
 import ResetPassword from '@/pages/admin/ResetPassword';
 import AccountSettings from '@/pages/admin/AccountSettings';
@@ -81,7 +81,7 @@ import ProfileSettings from '@/pages/admin/ProfileSettings';
 import DataPrivacySettings from '@/pages/admin/DataPrivacySettings';
 import AdvancedSettings from '@/pages/admin/AdvancedSettings';
 import ContinuousImprovementDashboard from '@/pages/admin/ContinuousImprovementDashboard';
-import { SignUp } from '@/pages/admin/SignUp';
+
 import { FeatureExplorer } from '@/pages/admin/FeatureExplorer';
 import AIModelSettings from '@/pages/admin/AIModelSettings';
 
@@ -100,8 +100,7 @@ import EmailIntelligencePage from '@/pages/email/EmailIntelligencePage';
 
 // Import FIRE Cycle components
 import { FireCycleDashboard } from '@/components/fire-cycle';
-import FireCycleEnhancedDemoPage from '@/pages/fire-cycle-enhanced-demo';
-import FireCycleDemoPage from '@/pages/fire-cycle-demo';
+// Demo pages removed during cleanup
 
 // Loading component
 const LoadingSpinner = () => (
@@ -299,27 +298,7 @@ function App() {
           } 
         />
         
-        <Route 
-          path="/fire-cycle-enhanced-demo" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <FireCycleEnhancedDemoPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/fire-cycle-demo" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <FireCycleDemoPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
+        {/* Demo routes removed during cleanup */}
         
         <Route 
           path="/business/fire-cycle/focus" 
@@ -866,16 +845,7 @@ function App() {
           } 
         />
         
-        <Route 
-          path="/admin/debug" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <DebugPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
+        {/* Debug route removed during cleanup */}
         
         <Route 
           path="/admin/company-settings" 
@@ -1133,7 +1103,7 @@ function App() {
           path="/admin/signup" 
           element={
             <PublicRoute>
-              <SignUp />
+              <SignupPage />
             </PublicRoute>
           } 
         />

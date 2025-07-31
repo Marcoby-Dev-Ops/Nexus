@@ -16,7 +16,7 @@ import {
   TrendingUp,
   Settings
 } from 'lucide-react';
-import { useNotifications } from '@/core/hooks/NotificationContext.tsx';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { useAuth } from '@/hooks/index';
 import { supabase } from '@/lib/supabase';
 import { PayPalAnalyticsSimple } from './PayPalAnalyticsSimple';

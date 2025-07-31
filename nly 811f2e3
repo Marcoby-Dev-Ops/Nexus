@@ -1,0 +1,10 @@
+[33m811f2e3[m[33m ([m[1;32mchore/standardization-20250729-185137[m[33m)[m 🔧 Fix integration marketplace crashes and authentication issues
+[33m681e50a[m Fix build issues and restore sidebar navigation - Resolve dynamic import issues causing build hangs - Add missing service exports (APIDocAnalyzer, Microsoft365Integration) - Fix authentication and redirect manager hooks - Restore all sidebar navigation routes and connections - Add comprehensive integration hub functionality - Fix user profile display in dashboard - Update navigation configuration with proper settings menu
+[33ma4e4b9e[m Remove all competing authentication systems - simplify to modern approach
+[33mc138e78[m Simplify authentication to modern React + Supabase approach
+[33mf52805c[m fix: temporarily disable RLS on user_profiles to resolve authentication issues
+[33mfc337a0[m fix: update configuration for Traefik reverse proxy setup
+[33m91b8021[m feat: update domain configuration for nexus.marcoby.net development environment
+[33m1c19401[m Fix authentication flow and simplify database access layers
+[33m7268c7f[m Fix authentication issues: Update AuthContext, persistent auth service, and database schema
+[33m72cbd67[m refactor: Clean up codebase and remove deprecated components

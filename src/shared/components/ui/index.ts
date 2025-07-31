@@ -13,7 +13,7 @@ export { Progress } from './Progress';
 export { Spinner } from './Spinner';
 export { default as Skeleton } from './Skeleton';
 export { Avatar } from './Avatar';
-// AuthForm component removed - using AuthProvider instead
+// AuthForm component removed - using useAuth hook instead
 export { Checkbox } from './Checkbox';
 export { RadioGroup, RadioGroupItem } from './RadioGroup';
 export { Switch } from './Switch';

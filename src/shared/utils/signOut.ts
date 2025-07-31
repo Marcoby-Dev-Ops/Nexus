@@ -19,9 +19,9 @@ export const performSignOut = async (): Promise<void> => {
   try {
     logSignOut('info', 'Starting comprehensive sign out process');
     
-    // Step 1: Auth state is now handled by AuthProvider
+    // Step 1: Auth state is now handled by useAuth hook
     // No need to clear Zustand store as it's managed by React Context
-    logSignOut('info', 'Auth state will be cleared by AuthProvider');
+    logSignOut('info', 'Auth state will be cleared by useAuth hook');
     
     // Step 2: Call Supabase sign out
     const { error } = await supabase.auth.signOut();
@@ -133,7 +133,7 @@ export const forceSignOut = (redirectTo: string = '/'): void => {
     const themePreference = localStorage.getItem('theme');
     const primaryColorPreference = localStorage.getItem('primaryColor');
     
-    // Auth state is now handled by AuthProvider
+    // Auth state is now handled by useAuth hook
     // No need to clear store as it's managed by React Context
     localStorage.clear();
     sessionStorage.clear();

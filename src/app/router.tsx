@@ -72,7 +72,7 @@ export const ROUTELABELS: Record<string, string> = {
   '/features': 'Features',
   '/admin': 'Admin',
   '/admin/tenant-management': 'Tenant Management',
-  '/admin/debug': 'Debug',
+  // Debug route removed during cleanup
   '/admin/company-settings': 'Company Settings',
   '/admin/account-settings': 'Account Settings',
   '/admin/billing-settings': 'Billing Settings',
@@ -105,8 +105,7 @@ export const ROUTELABELS: Record<string, string> = {
   '/admin/waitlist': 'Waitlist',
   // FIRE Cycle routes
   '/business/fire-cycle': 'FIRE Cycle Dashboard',
-  '/fire-cycle-enhanced-demo': 'FIRE Cycle Enhanced Demo',
-  '/fire-cycle-demo': 'FIRE Cycle Demo',
+  // Demo routes removed during cleanup
   '/business/fire-cycle/focus': 'Focus Phase',
   '/business/fire-cycle/insight': 'Insight Phase',
   '/business/fire-cycle/roadmap': 'Roadmap Phase',

@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/Dialog';
 import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/shared/core/hooks/NotificationContext';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { n8nService } from '@/services/automation/n8nService';
 import { userN8nConfigService } from '@/services/automation/userN8nConfig';
 import { Zap, Search, Clock, DollarSign, Calendar, MessageSquare, BarChart3, Settings, Play, ExternalLink, Workflow, Target, CheckCircle2, AlertCircle, Sparkles, ArrowRight, Code, GitBranch } from 'lucide-react';

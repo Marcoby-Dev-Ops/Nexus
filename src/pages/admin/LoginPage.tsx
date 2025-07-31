@@ -1,40 +1,54 @@
-import { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
 import { useRedirectManager } from '@/shared/hooks/useRedirectManager.ts';
 import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Alert } from '@/shared/components/ui/Alert.tsx';
 import { Card } from '@/shared/components/ui/Card.tsx';
+import { Mail, Lock } from 'lucide-react';
 
+// Import our new form patterns
+import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
+import { FormField } from '@/shared/components/forms/FormField';
+import { Input } from '@/shared/components/ui/Input.tsx';
+import { loginSchema, type LoginFormData } from '@/shared/validation/schemas';
+
+/**
+ * Modernized LoginPage using unified form patterns
+ * 
+ * Features:
+ * - Email validation with real-time feedback
+ * - Password field with proper autocomplete
+ * - Unified error handling and loading states
+ * - Consistent styling with other auth forms
+ * - Automatic redirect on successful login
+ */
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const { signIn, loading } = useAuth();
   const { redirectToDashboard } = useRedirectManager();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (!email || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
-
-    const result = await signIn(email, password);
-    if (result.error) {
-      setError(result.error);
-    } else {
-      // Debug logging
-      if (import.meta.env.DEV) {
-        console.log('✅ Login successful, redirecting to dashboard');
+  const { form, handleSubmit, isSubmitting, errors } = useFormWithValidation({
+    schema: loginSchema,
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+    onSubmit: async (data: LoginFormData) => {
+      const result = await signIn(data.email, data.password);
+      if (result.error) {
+        throw new Error(result.error);
+      } else {
+        // Debug logging
+        if (import.meta.env.DEV) {
+          console.log('✅ Login successful, redirecting to dashboard');
+        }
+        // Use centralized redirect manager
+        redirectToDashboard();
       }
-      // Use centralized redirect manager
-      redirectToDashboard();
-    }
-  };
+    },
+    successMessage: 'Welcome back! Redirecting to dashboard...',
+  });
+
+  const isFormLoading = loading || isSubmitting;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -47,56 +61,64 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <Alert variant="error">
-              {error}
-            </Alert>
-          )}
-
           <div className="space-y-4">
-            <div className="relative">
-              <Input
-                type="email"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={loading}
-                className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
-                autoComplete="email"
-              />
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                </svg>
-              </div>
-            </div>
+            {/* Email Field */}
+            <FormField
+              name="email"
+              label="Email Address"
+              control={form.control}
+              error={errors.email?.message}
+              required
+            >
+              {({ field }) => (
+                <div className="relative">
+                  <Input
+                    {...field}
+                    type="email"
+                    placeholder="Email address"
+                    disabled={isFormLoading}
+                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                    autoComplete="email"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </div>
+              )}
+            </FormField>
 
-            <div className="relative">
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
-                autoComplete="current-password"
-              />
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-            </div>
+            {/* Password Field */}
+            <FormField
+              name="password"
+              label="Password"
+              control={form.control}
+              error={errors.password?.message}
+              required
+            >
+              {({ field }) => (
+                <div className="relative">
+                  <Input
+                    {...field}
+                    type="password"
+                    placeholder="Password"
+                    disabled={isFormLoading}
+                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                    autoComplete="current-password"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                </div>
+              )}
+            </FormField>
           </div>
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={isFormLoading}
             className="w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all duration-200"
           >
-            {loading ? (
+            {isFormLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                 Signing in...

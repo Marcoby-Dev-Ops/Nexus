@@ -73,7 +73,7 @@ const CONFIG = {
   commonMissingImports: {
     'useAuth': '@/hooks/useAuth',
     'logger': '@/shared/utils/logger',
-    'AuthProvider': '@/hooks/useAuth'
+    'useAuth': '@/hooks/useAuth'
   },
   
   // Files that should exist but might be missing

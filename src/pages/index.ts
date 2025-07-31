@@ -1,5 +1,5 @@
 // Auth pages
-export { default as Login } from './auth/Login';
+// Login page moved to admin/LoginPage.tsx with unified patterns
 
 // Dashboard pages
 export { default as Dashboard } from './dashboard/Dashboard';

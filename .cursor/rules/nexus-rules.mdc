@@ -1,0 +1,165 @@
+---
+alwaysApply: true
+---
+
+# ✨ **Recommended Cursor Rules for Nexus**
+
+## 🧑‍💻 **Editor & Formatting**
+
+* **EditorConfig:**
+
+  * Spaces: 2
+  * Max line length: 100
+  * UTF-8 everywhere
+  * Final newline at end of file
+
+* **Prettier:**
+
+  * `printWidth: 100`
+  * `tabWidth: 2`
+  * `singleQuote: true`
+  * `trailingComma: all`
+  * `semi: true`
+  * `arrowParens: avoid`
+  * `endOfLine: lf`
+  * **Apply on save** for all supported file types
+
+---
+
+## 🛡️ **Linting & Static Analysis**
+
+* **ESLint:**
+
+  * Extend from `next/core-web-vitals` (if Next.js), `eslint:recommended`, `plugin:@typescript-eslint/recommended`, `plugin:react/recommended`, `plugin:prettier/recommended`
+  * Enforce strict type usage (no `any`)
+  * No unused variables, imports, or exports
+  * No console logs in production code
+  * Import order: \[builtin, external, internal, parent, sibling, index]
+  * No relative imports between domains—enforce domain boundaries
+  * Custom rule: **No direct `supabase.from()` calls** (must use helpers/services)
+  * Custom rule: **No hardcoded role/permission checks**—must use RBAC utility
+
+* **Stylelint:**
+
+  * For all CSS/Tailwind, enforce naming conventions and no unused classes
+
+---
+
+## 📦 **Architecture & Patterns**
+
+* **Folder Naming:**
+
+  * Always lowercase with dashes (e.g., `fire-cycle`, `user-management`)
+  * No camelCase or spaces in file/folder names
+
+* **File Naming:**
+
+  * Components: `PascalCase.tsx`
+  * Utilities/hooks/services: `camelCase.ts`
+  * Tests: `filename.test.ts[x]`
+  * Schemas: `schemaName.schema.ts`
+
+* **Exports:**
+
+  * Prefer named exports, not default, except for pages or root providers
+  * No wildcard barrel exports (`export * from ...`)
+
+---
+
+## 🧩 **Component & Hook Standards**
+
+* **React Components:**
+
+  * All new components are functional and typed with explicit props
+  * No direct stateful logic in page components—use hooks/services
+
+* **Hooks:**
+
+  * All shared hooks in `src/shared/hooks`
+  * All hooks tested (Vitest or React Testing Library)
+  * Prefix custom hooks with `use`
+
+---
+
+## 🛠️ **Testing**
+
+* **Vitest/Jest:**
+
+  * All new features require at least one test
+  * No skipped or only tests in committed code
+  * 100% coverage for RBAC/utilities/services
+
+---
+
+## 🔗 **Version Control**
+
+* **Commit Rules:**
+
+  * Use [Conventional Commits](https://www.conventionalcommits.org/)
+
+    * `feat:`, `fix:`, `chore:`, `refactor:`, `test:`, `docs:`, `perf:`, `ci:`, `style:`, etc.
+  * PRs must reference related issues/tickets if available
+  * No direct pushes to `main`; PR required
+
+---
+
+## 🏗️ **Automation & CI**
+
+* **Pre-commit hooks:**
+
+  * Run `lint`, `format`, and `type-check`
+  * Block commits on errors
+
+* **CI:**
+
+  * Build, lint, and run all tests before merge
+
+---
+
+## 🚦 **Project-Specific Enforcements**
+
+* **RBAC:**
+
+  * No string-literal permission/role checks in code—must use `hasPermission` utility
+  * No hardcoded admin UI—must be wrapped in `PermissionGate`
+
+* **Service Layer:**
+
+  * No direct DB/API calls from UI/components—must use service hooks
+  * All new services registered in the ServiceRegistry
+
+* **Forms:**
+
+  * All forms must use `react-hook-form` + `zod` schemas
+  * No inline validation logic—schemas in `src/shared/validation/`
+  * All errors surfaced via shared notification system
+
+* **Demo/Debug:**
+
+  * No demo/debug components in production routes
+
+---
+
+## 💡 **How to Implement in Cursor**
+
+* Add all of the above to `.editorconfig`, `.prettierrc`, `.eslintrc`, and project docs
+* Use Cursor’s “rules” and “snippets” to surface these standards on code actions and reviews
+* Set up pre-commit + pre-push hooks (via Husky or similar)
+* Document in `CONTRIBUTING.md` and your main project README
+
+---
+
+## 🚀 **Summary Table**
+
+| Area             | Rule/Enforcement                                  |
+| ---------------- | ------------------------------------------------- |
+| Formatting       | Prettier, EditorConfig, auto-format on save       |
+| Linting          | ESLint, Stylelint, custom architectural rules     |
+| Structure        | Folder/file naming, export patterns               |
+| Components/Hooks | Explicit typing, test coverage, shared patterns   |
+| Services         | No direct DB calls in UI, registry usage          |
+| Forms            | `react-hook-form` + `zod`, centralized schemas    |
+| RBAC             | No string literals, must use utilities/components |
+| Version Control  | Conventional commits, PRs, no direct main push    |
+| CI/Automation    | Lint/test/typecheck on commit and merge           |
+| Docs/Onboarding  | Guides, patterns, checklists in repo              |

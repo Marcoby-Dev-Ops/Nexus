@@ -3,9 +3,9 @@
  * Provides centralized dashboard functionality and metrics
  */
 
-import { supabase, select, selectOne, selectWithOptions } from '@/lib/supabase';
-// import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
-import { logger } from '@/shared/utils/logger.ts';
+import { select, selectOne, selectWithOptions } from '@/lib/supabase';
+import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
+import { logger } from '@/shared/utils/logger';
 
 // Enhanced Dashboard Types
 export interface DashboardMetrics {
@@ -53,7 +53,7 @@ export interface DashboardData {
 }
 
 export class DashboardService {
-  // private queryWrapper = new DatabaseQueryWrapper();
+  private queryWrapper = new DatabaseQueryWrapper();
 
   /**
    * Get enhanced dashboard data for the EnhancedDashboard component
@@ -136,7 +136,7 @@ export class DashboardService {
 
       // Test database connection with proper authentication
       try {
-        await select('user_profiles', 'id', undefined);
+        await select('user_profiles', 'id');
       } catch (dbError) {
         logger.error('Database connection test failed:', dbError);
         return { data: null, error: dbError };

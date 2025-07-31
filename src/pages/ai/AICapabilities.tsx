@@ -31,9 +31,7 @@ import {
   Network
 } from 'lucide-react';
 import { AdvancedAICapabilitiesDemo } from '@/components/ai/AdvancedAICapabilitiesDemo';
-import { ContextualDataCompletionDemo } from '@/components/ai/ContextualDataCompletionDemo';
 import { CrossPlatformIntelligenceDemo } from '@/components/ai/CrossPlatformIntelligenceDemo';
-import { ToolEnabledDemo } from '@/components/ai/ToolEnabledDemo';
 import { ModelPerformanceMonitor } from '@/components/ai/ModelPerformanceMonitor';
 
 interface AICapability {
@@ -416,7 +414,11 @@ export default function AICapabilitiesPage() {
             <h2 className="text-xl font-semibold mb-4">Detailed Capabilities</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <AdvancedAICapabilitiesDemo />
-              <ContextualDataCompletionDemo />
+              <div className="p-6 border rounded-lg bg-muted/50">
+                <p className="text-muted-foreground text-center">
+                  Contextual Data Completion demo has been removed as part of the cleanup.
+                </p>
+              </div>
             </div>
           </div>
         </TabsContent>
@@ -426,7 +428,11 @@ export default function AICapabilitiesPage() {
             <h2 className="text-xl font-semibold mb-4">Interactive Demos</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <CrossPlatformIntelligenceDemo />
-              <ToolEnabledDemo />
+              <div className="p-6 border rounded-lg bg-muted/50">
+                <p className="text-muted-foreground text-center">
+                  Tool-Enabled AI Agent demo has been removed as part of the cleanup.
+                </p>
+              </div>
             </div>
           </div>
         </TabsContent>

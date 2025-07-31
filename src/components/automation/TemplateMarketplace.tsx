@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/shared/components/ui/NotificationContext';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { automationTemplateImporter, type AutomationTemplate } from '@/services/automation/templateImporter';
 import { Search, Download, Star, Clock, Zap, Upload, AlertCircle, TrendingUp, Users, Sparkles, Play, Settings, Eye, Heart, Tag, BarChart3 } from 'lucide-react';
 interface TemplateMarketplaceProps {

@@ -11,6 +11,7 @@ import { Textarea } from '@/shared/components/ui/Textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { useToast } from '@/shared/components/ui/use-toast';
+import { useService } from '@/shared/hooks/useService';
 
 const companyProfileSchema = z.object({
   name: z.string().min(2, 'Company name must be at least 2 characters'),
@@ -27,10 +28,16 @@ const industryOptions = ["Technology", "Healthcare", "Finance", "Retail", "Manuf
 const sizeOptions = ["1-10 employees", "11-50 employees", "51-200 employees", "201-500 employees", "501-1000 employees", "1000+ employees"];
 
 export function CompanyProfilePage() {
-  const { user, updateCompany } = useAuth();
+  const { user } = useAuth();
   const { completeStep } = useOnboarding();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Use the new CompanyService hooks
+  const companyService = useService('company');
+  const companyId = (user as any)?.company?.id;
+  const { data: company, isLoading: isLoadingCompany } = companyService.useGet(companyId || '');
+  const { mutate: updateCompany, isLoading: isUpdating } = companyService.useUpdate();
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CompanyProfileFormData>({
     resolver: zodResolver(companyProfileSchema),
@@ -44,22 +51,34 @@ export function CompanyProfilePage() {
     }
   });
 
+  // Load company data when available
   useEffect(() => {
-    if (user?.company) {
+    if (company) {
+      const companyData = company as any;
       reset({
-        name: user.company.name || '',
-        industry: user.company.industry || '',
-        size: user.company.size || '',
-        website: user.company.website || '',
-        description: user.company.description || '',
-        clientbase_description: user.company.client_base_description || '',
+        name: companyData.name || '',
+        industry: companyData.industry || '',
+        size: companyData.size || '',
+        website: companyData.website || '',
+        description: companyData.description || '',
+        clientbase_description: companyData.client_base_description || '',
       });
     }
-  }, [user, reset]);
+  }, [company, reset]);
 
   const onSubmit = async (data: CompanyProfileFormData) => {
+    const userCompanyId = (user as any)?.company?.id;
+    if (!userCompanyId) {
+      toast({
+        title: 'Error',
+        description: 'Company ID not found. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      await updateCompany(data);
+      await updateCompany(userCompanyId, data);
       completeStep('company_profile');
       toast({
         title: 'Profile Updated!',
@@ -67,10 +86,7 @@ export function CompanyProfilePage() {
       });
       navigate('/dashboard');
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error("Failed to update company profile: ", error);
+      console.error("Failed to update company profile: ", error);
       toast({
         title: 'Error',
         description: 'Failed to save your information. Please try again.',
@@ -78,6 +94,22 @@ export function CompanyProfilePage() {
       });
     }
   };
+
+  // Show loading state while fetching company data
+  if (isLoadingCompany) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-2xl">
+          <CardContent className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading company information...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -154,18 +186,18 @@ export function CompanyProfilePage() {
               {errors.description && <p className="text-sm text-destructive mt-1">{errors.description.message}</p>}
             </div>
             <div>
-              <label htmlFor="client_base_description" className="block text-sm font-medium mb-1">Target Audience</label>
+              <label htmlFor="clientbase_description" className="block text-sm font-medium mb-1">Target Audience</label>
               <Controller
-                name="client_base_description"
+                name="clientbase_description"
                 control={control}
-                render={({ field }) => <Textarea id="client_base_description" {...field} placeholder="Describe your typical customer or client." />}
+                render={({ field }) => <Textarea id="clientbase_description" {...field} placeholder="Describe your typical customer or client." />}
               />
-              {errors.client_base_description && <p className="text-sm text-destructive mt-1">{errors.client_base_description.message}</p>}
+              {errors.clientbase_description && <p className="text-sm text-destructive mt-1">{errors.clientbase_description.message}</p>}
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save and Continue'}
+            <Button type="submit" disabled={isSubmitting || isUpdating}>
+              {isSubmitting || isUpdating ? 'Saving...' : 'Save and Continue'}
             </Button>
           </CardFooter>
         </form>

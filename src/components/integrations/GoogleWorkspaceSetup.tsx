@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Alert, AlertDescription } from '@/shared/components/ui';
 import { Badge } from '@/shared/components/ui';
 import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/core/hooks/NotificationContext.tsx';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { googleWorkspaceService } from '@/services/analytics/googleWorkspaceService';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink, Calendar, HardDrive, Mail, Users, BarChart3, Search, Building, Shield, FileText, ArrowRight } from 'lucide-react';
 interface GoogleWorkspaceSetupProps {

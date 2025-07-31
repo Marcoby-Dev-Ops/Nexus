@@ -78,41 +78,12 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
       const loadedRecipes = await automationRecipeEngine.getAvailableRecipes();
       setRecipes(loadedRecipes);
     } catch (error) {
-      // eslint-disable-next-line no-console
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to load recipes: ', error);
+      console.error('Failed to load recipes: ', error);
       toast.error('Failed to load automation recipes. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-
-  const filterRecipes = useCallback(() => {
-    let filtered = [...recipes];
-
-    // Search filter
-    if (searchTerm) {
-      filtered = filtered.filter(recipe =>
-        recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        recipe.tags.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-    }
-
-    // Category filter
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(recipe => recipe.category === selectedCategory);
-    }
-
-    // Difficulty filter
-    if (selectedDifficulty !== 'all') {
-      filtered = filtered.filter(recipe => recipe.difficulty === selectedDifficulty);
-    }
-
-    setFilteredRecipes(filtered);
-  }, [recipes, searchTerm, selectedCategory, selectedDifficulty]);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {

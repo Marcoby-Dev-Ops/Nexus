@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink, Shield, Monitor } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/shared/core/hooks/NotificationContext';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { NinjaRmmService } from '@/services/ninjaRmmService';
 
 interface NinjaRmmSetupProps {

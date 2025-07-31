@@ -1,88 +1,82 @@
-// Logger utility that can be disabled in production
+/**
+ * Logger Utility
+ * 
+ * Provides consistent logging across the application with different levels
+ * and environment-specific behavior.
+ */
+
+export interface LogLevel {
+  DEBUG: 0;
+  INFO: 1;
+  WARN: 2;
+  ERROR: 3;
+}
+
+const LOG_LEVELS: LogLevel = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3
+};
+
+const currentLogLevel = process.env.NODE_ENV === 'development' ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
+
 class Logger {
-  private isDevelopment = import.meta.env.DEV;
-  private isEnabled = this.isDevelopment;
+  private shouldLog(level: number): boolean {
+    return level >= currentLogLevel;
+  }
 
-  log(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log(...args);
+  private formatMessage(level: string, message: string, data?: any): string {
+    const timestamp = new Date().toISOString();
+    const dataStr = data ? ` ${JSON.stringify(data)}` : '';
+    return `[${timestamp}] [${level}] ${message}${dataStr}`;
+  }
+
+  debug(message: string, data?: any): void {
+    if (this.shouldLog(LOG_LEVELS.DEBUG)) {
+      console.debug(this.formatMessage('DEBUG', message, data));
     }
   }
 
-  warn(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(...args);
+  info(message: string, data?: any): void {
+    if (this.shouldLog(LOG_LEVELS.INFO)) {
+      console.info(this.formatMessage('INFO', message, data));
     }
   }
 
-  error(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error(...args);
+  warn(message: string, data?: any): void {
+    if (this.shouldLog(LOG_LEVELS.WARN)) {
+      console.warn(this.formatMessage('WARN', message, data));
     }
   }
 
-  debug(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('🔍', ...args);
+  error(message: string, data?: any): void {
+    if (this.shouldLog(LOG_LEVELS.ERROR)) {
+      console.error(this.formatMessage('ERROR', message, data));
     }
   }
 
-  info(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('ℹ️', ...args);
-    }
+  // Specialized logging methods
+  auth(message: string, data?: any): void {
+    this.info(`[AUTH] ${message}`, data);
   }
 
-  success(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('✅', ...args);
-    }
+  api(message: string, data?: any): void {
+    this.info(`[API] ${message}`, data);
   }
 
-  warning(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn('⚠️', ...args);
-    }
+  db(message: string, data?: any): void {
+    this.info(`[DB] ${message}`, data);
   }
 
-  failure(...args: any[]) {
-    if (this.isEnabled) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('❌', ...args);
-    }
+  ui(message: string, data?: any): void {
+    this.info(`[UI] ${message}`, data);
   }
 
-  // Enable/disable logging
-  enable() {
-    this.isEnabled = true;
-  }
-
-  disable() {
-    this.isEnabled = false;
+  performance(message: string, data?: any): void {
+    this.info(`[PERF] ${message}`, data);
   }
 }
 
+// Export singleton instance
 export const logger = new Logger(); 

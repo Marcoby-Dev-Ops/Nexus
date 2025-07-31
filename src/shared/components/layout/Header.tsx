@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
 import { useTheme } from '@/shared/components/ui/theme-provider.tsx';
-import { useNotifications } from '@/core/hooks/NotificationContext.tsx';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { CommandPalette } from '@/shared/components/layout/CommandPalette.tsx';
 import { Menu, Bell, Sun, Moon, User, Settings, Search, Lightbulb } from 'lucide-react';
 import { navItems } from '@/shared/components/layout/navConfig.tsx';

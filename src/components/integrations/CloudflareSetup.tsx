@@ -12,7 +12,7 @@ import { Shield, Globe, BarChart3, CheckCircle, AlertCircle, Loader2, ExternalLi
 import { cloudflareService } from '@/services/cloudflareService';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/shared/core/hooks/NotificationContext';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 
 interface CloudflareSetupProps {
   onComplete: () => void;
