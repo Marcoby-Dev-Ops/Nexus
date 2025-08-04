@@ -42,7 +42,7 @@ export interface ModelCapability {
   latency: number;
 }
 
-class MultiModalIntelligence {
+export class MultiModalIntelligence {
   private models: Map<string, ModelCapability> = new Map();
   private processingQueue: Array<{
     id: string;

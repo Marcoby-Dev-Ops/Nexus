@@ -1,4 +1,4 @@
-import { AnalyticsService } from '@/services/analytics';
+import { analyticsService } from '@/services/analytics';
 import { OAuthTokenService } from '@/services/integrations/oauthTokenService';
 import { useState, useEffect } from 'react';
 

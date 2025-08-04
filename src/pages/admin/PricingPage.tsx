@@ -11,10 +11,9 @@ import {
   TrendingUp,
   Crown,
   Sparkles,
-  AlertTriangle
+  AlertTriangle 
 } from 'lucide-react';
 
-import { Seo } from '@/shared/components/Seo';
 
 interface PricingTier {
   id: string;
@@ -30,7 +29,7 @@ interface PricingTier {
   roiHighlight?: string;
 }
 
-const PRICINGTIERS: PricingTier[] = [
+const PRICING_TIERS: PricingTier[] = [
   {
     id: 'free',
     name: 'Free',
@@ -183,13 +182,6 @@ export const PricingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Seo
-        title="Nexus Pricing – Plans for Founders & Teams | Marcoby"
-        description="Choose the right Nexus plan for your business. Compare Free, Pro, and Enterprise options. Early access pricing."
-        canonical="https: //nexus.marcoby.com/pricing"
-        image="https://nexus.marcoby.com/og-image.png"
-        structuredData={faqStructuredData}
-      />
       {/* Header */}
       <header className="sticky top-0 z-30 bg-background/95 border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">

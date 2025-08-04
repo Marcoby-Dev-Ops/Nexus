@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
-import { useAuth } from '@/hooks/index';
-import { supabase } from "@/lib/supabase";
+import { useTenants } from '@/hooks/business/useTenants';
 import { Skeleton } from '@/shared/components/ui/Skeleton.tsx';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/Table';
 import Modal from '@/shared/components/ui/Modal.tsx';
@@ -11,45 +10,21 @@ import { Label } from '@/shared/components/ui/Label';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Building, Users, Calendar, Mail, Phone, Globe, Edit, Trash2, Plus, CreditCard, BarChart3, Eye, AlertCircle, CheckCircle, Clock } from 'lucide-react';
-interface Tenant {
-  id: string;
+import type { Tenant } from '@/services/business/TenantService';
+
+interface TenantFormData {
   name: string;
-  domain?: string;
-  email?: string;
-  phone?: string;
-  website?: string;
-  industry?: string;
-  size?: string;
+  domain: string;
+  email: string;
+  phone: string;
+  website: string;
+  industry: string;
+  size: string;
   status: 'active' | 'suspended' | 'pending';
-  createdat: string;
-  updatedat: string;
-  user_count?: number;
-  subscription_tier?: string;
-  // Billing & Licensing
-  billing_status?: 'active' | 'past_due' | 'cancelled' | 'trial';
-  subscription_plan?: 'free' | 'pro' | 'enterprise' | 'custom';
-  monthly_revenue?: number;
-  total_revenue?: number;
-  next_billing_date?: string;
-  contract_end_date?: string;
-  license_count?: number;
-  license_usage?: number;
-  // Usage Metrics
-  monthly_messages?: number;
-  monthly_messages_limit?: number;
-  storage_used_gb?: number;
-  storage_limit_gb?: number;
-  // Contact & Sales
-  account_manager?: string;
-  sales_rep?: string;
-  contract_value?: number;
-  renewal_date?: string;
 }
 
 export const TenantManagementPage: React.FC = () => {
-  const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { tenants, loading, error, fetchTenants, createTenant, updateTenant, deleteTenant } = useTenants();
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -64,7 +39,7 @@ export const TenantManagementPage: React.FC = () => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   // Form state for creating/editing tenants
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<TenantFormData>({
     name: '',
     domain: '',
     email: '',
@@ -72,70 +47,12 @@ export const TenantManagementPage: React.FC = () => {
     website: '',
     industry: '',
     size: '',
-    status: 'active' as 'active' | 'suspended' | 'pending',
+    status: 'active',
   });
 
   useEffect(() => {
     fetchTenants();
-  }, []);
-
-  const fetchTenants = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      // Fetch companies (tenants) from the database
-      
-
-      if (companiesError) {
-        throw companiesError;
-      }
-
-      // Transform the data to match our Tenant interface with enhanced billing/licensing data
-      const transformedTenants: Tenant[] = (companies || []).map((company: any) => ({
-        id: company.id,
-        name: company.name || 'Unnamed Company',
-        domain: company.domain,
-        email: company.email,
-        phone: company.phone,
-        website: company.website,
-        industry: company.industry,
-        size: company.size,
-        status: company.status || 'active',
-        createdat: company.created_at,
-        updatedat: company.updated_at,
-        usercount: company.user_profiles?.[0]?.count || 0,
-        subscriptiontier: company.subscription_tier || 'free',
-        // Enhanced billing & licensing data (mock data for now)
-        billingstatus: company.billing_status || 'active',
-        subscriptionplan: company.subscription_plan || 'free',
-        monthlyrevenue: company.monthly_revenue || 0,
-        totalrevenue: company.total_revenue || 0,
-        nextbilling_date: company.next_billing_date || null,
-        contractend_date: company.contract_end_date || null,
-        licensecount: company.license_count || 0,
-        licenseusage: company.license_usage || 0,
-        monthlymessages: company.monthly_messages || 0,
-        monthlymessages_limit: company.monthly_messages_limit || 1000,
-        storageused_gb: company.storage_used_gb || 0,
-        storagelimit_gb: company.storage_limit_gb || 10,
-        accountmanager: company.account_manager || null,
-        salesrep: company.sales_rep || null,
-        contractvalue: company.contract_value || 0,
-        renewaldate: company.renewal_date || null,
-      }));
-
-      setTenants(transformedTenants);
-    } catch (e: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error fetching tenants: ', e);
-      setError(e.message || 'Failed to fetch tenants');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchTenants]);
 
   const handleTenantSelect = (tenant: Tenant) => {
     setSelectedTenant(tenant);
@@ -178,57 +95,35 @@ export const TenantManagementPage: React.FC = () => {
     try {
       if (selectedTenant) {
         // Update existing tenant
-        const { data, error } = await supabase
-          .from('companies')
-          .update({
-            name: formData.name,
-            domain: formData.domain || null,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            website: formData.website || null,
-            industry: formData.industry || null,
-            size: formData.size || null,
-            status: formData.status,
-            updatedat: new Date().toISOString(),
-          })
-          .eq('id', selectedTenant.id)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Update local state
-        setTenants(tenants.map(t => t.id === selectedTenant.id ? { ...t, ...data } : t));
+        await updateTenant(selectedTenant.id, {
+          name: formData.name,
+          domain: formData.domain || undefined,
+          email: formData.email || undefined,
+          phone: formData.phone || undefined,
+          website: formData.website || undefined,
+          industry: formData.industry || undefined,
+          size: formData.size || undefined,
+          status: formData.status,
+          updatedat: new Date().toISOString(),
+        });
         setIsModalOpen(false);
       } else {
         // Create new tenant
-        const { data, error } = await supabase
-          .from('companies')
-          .insert({
-            name: formData.name,
-            domain: formData.domain || null,
-            email: formData.email || null,
-            phone: formData.phone || null,
-            website: formData.website || null,
-            industry: formData.industry || null,
-            size: formData.size || null,
-            status: formData.status,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        // Add to local state
-        setTenants([{ ...data, usercount: 0, subscriptiontier: 'free' }, ...tenants]);
+        await createTenant({
+          name: formData.name,
+          domain: formData.domain || undefined,
+          email: formData.email || undefined,
+          phone: formData.phone || undefined,
+          website: formData.website || undefined,
+          industry: formData.industry || undefined,
+          size: formData.size || undefined,
+          status: formData.status,
+        });
         setIsCreateModalOpen(false);
       }
-    } catch (e: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error saving tenant: ', e);
-      setUpdateError(e.message || 'Failed to save tenant');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save tenant';
+      setUpdateError(errorMessage);
     } finally {
       setUpdating(false);
     }
@@ -240,22 +135,11 @@ export const TenantManagementPage: React.FC = () => {
     }
 
     try {
-      const { error } = await supabase
-        .from('companies')
-        .delete()
-        .eq('id', tenantId);
-
-      if (error) throw error;
-
-      // Remove from local state
-      setTenants(tenants.filter(t => t.id !== tenantId));
+      await deleteTenant(tenantId);
       setIsModalOpen(false);
-    } catch (e: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error deleting tenant: ', e);
-      setUpdateError(e.message || 'Failed to delete tenant');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete tenant';
+      setUpdateError(errorMessage);
     }
   };
 
@@ -276,14 +160,14 @@ export const TenantManagementPage: React.FC = () => {
   const getBillingStatusBadge = (status: string) => {
     const variants = {
       active: 'default',
-      pastdue: 'destructive',
+      past_due: 'destructive',
       cancelled: 'outline',
       trial: 'outline',
     } as const;
 
     const colors = {
       active: 'text-green-600',
-      pastdue: 'text-red-600',
+      past_due: 'text-red-600',
       cancelled: 'text-gray-600',
       trial: 'text-blue-600',
     } as const;
@@ -398,21 +282,21 @@ export const TenantManagementPage: React.FC = () => {
     }
 
     return (
-              <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Company</TableHead>
-              <TableHead>Contact</TableHead>
-              <TableHead>Plan & Billing</TableHead>
-              <TableHead>Revenue</TableHead>
-              <TableHead>Usage</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Company</TableHead>
+            <TableHead>Contact</TableHead>
+            <TableHead>Plan & Billing</TableHead>
+            <TableHead>Revenue</TableHead>
+            <TableHead>Usage</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Actions</TableHead>
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {filteredTenants.map(tenant => (
-            <TableRow key={tenant.id} className="cursor-pointer hover: bg-muted/50">
+            <TableRow key={tenant.id} className="cursor-pointer hover:bg-muted/50">
               <TableCell>
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -538,6 +422,7 @@ export const TenantManagementPage: React.FC = () => {
                       setIsDetailsModalOpen(true);
                     }}
                     title="View Details"
+                    aria-label={`View details for ${tenant.name}`}
                   >
                     <Eye className="w-4 h-4" />
                   </Button>
@@ -549,6 +434,7 @@ export const TenantManagementPage: React.FC = () => {
                       handleTenantSelect(tenant);
                     }}
                     title="Edit"
+                    aria-label={`Edit ${tenant.name}`}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
@@ -559,8 +445,9 @@ export const TenantManagementPage: React.FC = () => {
                       e.stopPropagation();
                       handleDeleteTenant(tenant.id);
                     }}
-                    className="text-destructive hover: text-destructive"
+                    className="text-destructive hover:text-destructive"
                     title="Delete"
+                    aria-label={`Delete ${tenant.name}`}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -577,7 +464,7 @@ export const TenantManagementPage: React.FC = () => {
     <PageLayout title="Tenant Management">
       <div className="space-y-6">
         {/* Header with stats */}
-        <div className="grid grid-cols-1 md: grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center space-x-2">
@@ -637,13 +524,14 @@ export const TenantManagementPage: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col sm: flex-row gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
               <div className="flex-1">
                 <Input
                   placeholder="Search tenants..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="max-w-sm"
+                  aria-label="Search tenants"
                 />
               </div>
               <div className="flex gap-2">
@@ -651,6 +539,7 @@ export const TenantManagementPage: React.FC = () => {
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
                   className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+                  aria-label="Filter by status"
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
@@ -661,6 +550,7 @@ export const TenantManagementPage: React.FC = () => {
                   value={filterBilling}
                   onChange={(e) => setFilterBilling(e.target.value)}
                   className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+                  aria-label="Filter by billing status"
                 >
                   <option value="all">All Billing</option>
                   <option value="active">Active</option>
@@ -672,6 +562,7 @@ export const TenantManagementPage: React.FC = () => {
                   value={filterPlan}
                   onChange={(e) => setFilterPlan(e.target.value)}
                   className="px-3 py-2 border border-border rounded-md bg-background text-sm"
+                  aria-label="Filter by plan"
                 >
                   <option value="all">All Plans</option>
                   <option value="free">Free</option>
@@ -697,6 +588,7 @@ export const TenantManagementPage: React.FC = () => {
                   id="name"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  aria-required="true"
                 />
               </div>
               <div>
@@ -734,7 +626,7 @@ export const TenantManagementPage: React.FC = () => {
                 id="website"
                 value={formData.website}
                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                placeholder="https: //example.com"
+                placeholder="https://example.com"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -768,7 +660,7 @@ export const TenantManagementPage: React.FC = () => {
               <select
                 id="status"
                 value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value as 'active' | 'suspended' | 'pending' })}
                 className="w-full px-3 py-2 border border-border rounded-md bg-background"
               >
                 <option value="active">Active</option>
@@ -799,6 +691,7 @@ export const TenantManagementPage: React.FC = () => {
                 id="create-name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                aria-required="true"
               />
             </div>
             <div>
@@ -836,7 +729,7 @@ export const TenantManagementPage: React.FC = () => {
               id="create-website"
               value={formData.website}
               onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              placeholder="https: //example.com"
+              placeholder="https://example.com"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -921,7 +814,7 @@ export const TenantManagementPage: React.FC = () => {
                 <div>
                   <Label className="text-sm font-medium">Created</Label>
                   <p className="text-sm text-muted-foreground">
-                    {new Date(selectedTenantForDetails.created_at).toLocaleDateString()}
+                    {new Date(selectedTenantForDetails.createdat).toLocaleDateString()}
                   </p>
                 </div>
               </CardContent>

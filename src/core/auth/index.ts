@@ -1,5 +1,6 @@
 // Auth Services
-export { AuthService } from './AuthService';
+export { AuthService, authService } from './AuthService';
+export type { AuthUser, AuthSession, SignInRequest, SignUpRequest } from './AuthService';
 export { OAuthTokenService } from './OAuthTokenService';
 export { authErrorHandler } from './authErrorHandler';
 export { logger } from './logger';

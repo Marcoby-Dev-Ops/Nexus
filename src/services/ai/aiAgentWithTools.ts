@@ -33,7 +33,7 @@ export interface ToolExecution {
   createdAt: string;
 }
 
-class AIAgentWithTools {
+export class AIAgentWithTools {
   private agents: Map<string, Agent> = new Map();
   private tools: Map<string, Tool> = new Map();
   private executions: ToolExecution[] = [];

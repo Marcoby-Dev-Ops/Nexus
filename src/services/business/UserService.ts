@@ -58,7 +58,7 @@ const userServiceConfig: ServiceConfig = {
 
 /**
  * Modernized User Service
- * Extends UnifiedService for consistent CRUD operations
+ * Extends BaseService for consistent CRUD operations
  */
 export class UserService extends BaseService implements CrudServiceInterface<UserProfile> {
   protected config = userServiceConfig;

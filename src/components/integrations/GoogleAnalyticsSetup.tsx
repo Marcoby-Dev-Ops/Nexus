@@ -18,7 +18,7 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
-import { AnalyticsService } from '@/services/analytics';
+import { analyticsService } from '@/services/analytics';
 import { supabase } from "@/lib/supabase";
 import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';
@@ -49,7 +49,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
 
   useEffect(() => {
     // Check if already authenticated
-    const authenticated = googleAnalyticsService.isAuthenticated();
+    const authenticated = analyticsService.isAuthenticated();
     
     // If authenticated, skip to properties step
     if (authenticated) {
@@ -63,7 +63,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
     setError(null);
 
     try {
-      const authUrl = await googleAnalyticsService.initializeOAuth();
+      const authUrl = await analyticsService.initializeOAuth();
       
       // Open OAuth in popup
       const popup = window.open(
@@ -79,7 +79,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
             clearInterval(checkOAuth);
             
             // Check if authentication succeeded
-            if (googleAnalyticsService.isAuthenticated()) {
+            if (analyticsService.isAuthenticated()) {
               setCurrentStep('properties');
               await loadProperties();
             } else {
@@ -111,7 +111,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
 
   const loadProperties = async () => {
     try {
-      const availableProperties = await googleAnalyticsService.getAvailableProperties();
+      const availableProperties = await analyticsService.getAvailableProperties();
       setProperties(availableProperties);
       
       if (availableProperties.length === 1) {
@@ -127,7 +127,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
     setSelectedProperty(property);
     
     try {
-      await googleAnalyticsService.setActiveProperty(property.id);
+      await analyticsService.setActiveProperty(property.id);
       setCurrentStep('test');
       await runConnectionTest();
     } catch (err: any) {
@@ -137,7 +137,7 @@ const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({
 
   const runConnectionTest = async () => {
     try {
-      const result = await googleAnalyticsService.testConnection();
+      const result = await analyticsService.testConnection();
       setTestResults(result);
       
       if (result.success) {

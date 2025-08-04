@@ -65,7 +65,7 @@ import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 import WaitlistLanding from '@/pages/admin/WaitlistLanding';
 import TeamSettings from '@/pages/admin/TeamSettings';
 import SettingsPage from '@/pages/admin/SettingsPage';
-import Profile from '@/pages/admin/Profile';
+import { Profile } from '@/pages/admin/Profile';
 import LoginPage from '@/pages/admin/LoginPage';
 import NotificationsSettings from '@/pages/admin/NotificationsSettings';
 import { OnboardingChecklist } from '@/pages/admin/OnboardingChecklist';
@@ -82,7 +82,7 @@ import { AdminPage } from '@/pages/admin/AdminPage';
 import ProfileSettings from '@/pages/admin/ProfileSettings';
 import DataPrivacySettings from '@/pages/admin/DataPrivacySettings';
 import AdvancedSettings from '@/pages/admin/AdvancedSettings';
-import ContinuousImprovementDashboard from '@/pages/admin/ContinuousImprovementDashboard';
+import { ContinuousImprovementDashboard } from '@/pages/admin/ContinuousImprovementDashboard';
 
 import { FeatureExplorer } from '@/pages/admin/FeatureExplorer';
 import AIModelSettings from '@/pages/admin/AIModelSettings';

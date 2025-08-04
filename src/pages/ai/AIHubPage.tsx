@@ -7,10 +7,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Brain, MessageSquare, Zap, TrendingUp, Users, Settings, Target, Activity, Sparkles, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { AIService } from '@/services/ai';
 import type { Agent } from '@/services/ai';
+
+// Mock functions - replace with actual service calls
+const getAllAgents = async (): Promise<Agent[]> => {
+  // TODO: Replace with actual service call
+  return [];
+};
+
+const getAgentsByType = async (type: string): Promise<Agent[]> => {
+  // TODO: Replace with actual service call
+  return [];
+};
+
+const continuousImprovementService = {
+  getImprovementDashboard: async (period: string) => {
+    // TODO: Replace with actual service call
+    return {};
+  }
+};
 import { ProgressiveIntelligence } from '@/components/ai/ProgressiveIntelligence';
 import { AIFeatureCard } from '@/components/ai/AIFeatureCard';
 import { ModelPerformanceMonitor } from '@/components/ai/ModelPerformanceMonitor';
 import { AdvancedAICapabilitiesDemo } from '@/components/ai/AdvancedAICapabilitiesDemo';
+import { AIOnboardingDashboard } from '@/components/ai/AIOnboardingDashboard';
 
 interface AIHubStats {
   totalAgents: number;
@@ -308,6 +327,22 @@ export default function AIHubPage() {
               maxInsights={3}
               maxActions={2}
               compact={false}
+            />
+          </div>
+
+          {/* AI Onboarding Dashboard */}
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Learning Center</h2>
+            <AIOnboardingDashboard 
+              showProgress={true}
+              onModuleStart={(moduleId) => {
+                // eslint-disable-next-line no-console
+                console.log('Started module:', moduleId);
+              }}
+              onModuleComplete={(moduleId) => {
+                // eslint-disable-next-line no-console
+                console.log('Completed module:', moduleId);
+              }}
             />
           </div>
         </TabsContent>

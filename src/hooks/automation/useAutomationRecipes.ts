@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { automationRecipeEngine } from '@/services/automation/automationRecipeEngine';
 import type { AutomationRecipe, RecipeDeployment, RecipeExecutionResult } from '@/services/automation/automationRecipeEngine';
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useAuth } from '@/hooks/index';
 import { toast } from 'sonner';
 
 export interface UseAutomationRecipesOptions {

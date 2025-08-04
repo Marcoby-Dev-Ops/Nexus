@@ -9,7 +9,7 @@ import {
   Loader2, 
   BarChart3 
 } from 'lucide-react';
-import { AnalyticsService } from '@/services/analytics';
+import { analyticsService } from '@/services/analytics';
 
 const GoogleAnalyticsCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ const GoogleAnalyticsCallback: React.FC = () => {
         }
 
         // Exchange code for tokens
-        await googleAnalyticsService.exchangeCodeForTokens(code);
+        await analyticsService.exchangeCodeForTokens(code);
         
         setStatus('success');
         setMessage('Google Analytics connected successfully!');

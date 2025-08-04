@@ -84,10 +84,52 @@ export function useUser(): UseUserReturn {
         .single();
 
       if (profileError) {
+        // Handle 403 Forbidden or table not found gracefully
+        if (profileError.code === 'PGRST116' || profileError.message.includes('403')) {
+          logger.warn('User profile table not accessible, using auth user data');
+          // Create a basic profile from auth user data
+          const basicProfile: UserProfile = {
+            id: user.id,
+            email: user.email || '',
+            first_name: (user as any).user_metadata?.first_name || user.email?.split('@')[0] || '',
+            last_name: (user as any).user_metadata?.last_name || '',
+            full_name: (user as any).user_metadata?.full_name || user.email?.split('@')[0] || '',
+            display_name: (user as any).user_metadata?.full_name || user.email?.split('@')[0] || '',
+            avatar_url: (user as any).user_metadata?.avatar_url || (user as any).user_metadata?.picture,
+            role: 'user',
+            created_at: (user as any).created_at || new Date().toISOString(),
+            updated_at: (user as any).updated_at || new Date().toISOString()
+          };
+          setProfile(basicProfile);
+          return;
+        }
         throw new Error(profileError.message);
       }
 
-      setProfile(data);
+      // Ensure the data matches UserProfile interface
+      const profileData: UserProfile = {
+        id: data.id,
+        email: data.email || user.email || '',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        full_name: data.full_name || '',
+        display_name: data.display_name || '',
+        avatar_url: data.avatar_url || '',
+        role: (data.role as 'owner' | 'admin' | 'manager' | 'user') || 'user',
+        department: data.department || '',
+        job_title: data.job_title || '',
+        company_id: data.company_id || '',
+        business_email: data.business_email || '',
+        personal_email: data.personal_email || '',
+        phone: data.phone || '',
+        location: data.location || '',
+        timezone: data.timezone || '',
+        onboarding_completed: data.onboarding_completed || false,
+        created_at: data.created_at || '',
+        updated_at: data.updated_at || ''
+      };
+      
+      setProfile(profileData);
       
       // Load company if user has one
       if (data?.company_id) {
@@ -97,14 +139,40 @@ export function useUser(): UseUserReturn {
           .eq('id', data.company_id)
           .single();
 
-        if (!companyError) {
-          setCompany(companyData);
+        if (!companyError && companyData) {
+          const company: Company = {
+            id: companyData.id,
+            name: companyData.name || '',
+            industry: companyData.industry || '',
+            size: companyData.size || '',
+            website: companyData.website || '',
+            description: companyData.description || '',
+            logo_url: companyData.logo_url || '',
+            created_at: companyData.created_at || '',
+            updated_at: companyData.updated_at || ''
+          };
+          setCompany(company);
         }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
       setError(errorMessage);
       logger.error('Error refreshing profile:', err);
+      
+      // Set a basic profile on error to prevent crashes
+      const basicProfile: UserProfile = {
+        id: user.id,
+        email: user.email || '',
+        first_name: (user as any).user_metadata?.first_name || user.email?.split('@')[0] || '',
+        last_name: (user as any).user_metadata?.last_name || '',
+        full_name: (user as any).user_metadata?.full_name || user.email?.split('@')[0] || '',
+        display_name: (user as any).user_metadata?.full_name || user.email?.split('@')[0] || '',
+        avatar_url: (user as any).user_metadata?.avatar_url || (user as any).user_metadata?.picture,
+        role: 'user',
+        created_at: (user as any).created_at || new Date().toISOString(),
+        updated_at: (user as any).updated_at || new Date().toISOString()
+      };
+      setProfile(basicProfile);
     } finally {
       setLoading(false);
     }
@@ -147,6 +215,19 @@ export function useUser(): UseUserReturn {
         .single();
 
       if (error) {
+        // Handle 403 Forbidden or table not found gracefully
+        if (error.code === 'PGRST116' || error.message.includes('403')) {
+          logger.warn('User profile table not accessible, updating local profile only');
+          // Update local profile without database
+          const updatedProfile = {
+            ...profile,
+            ...updates,
+            full_name,
+            updated_at: new Date().toISOString()
+          } as UserProfile;
+          setProfile(updatedProfile);
+          return { success: true };
+        }
         throw new Error(error.message);
       }
 

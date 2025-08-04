@@ -24,11 +24,13 @@ import {
   LifeBuoy,
   Gauge,
   Settings,
-  AlertCircle
+  AlertCircle,
+  GraduationCap
 } from 'lucide-react';
 import UnifiedAnalyticsDashboard from '@/components/analytics/UnifiedAnalyticsDashboard';
 import CrossPlatformInsightsEngine from '@/components/analytics/CrossPlatformInsightsEngine';
 import DigestibleMetricsDashboard from '@/components/analytics/DigestibleMetricsDashboard';
+import AnalyticsOnboardingDashboard from '@/components/analytics/AnalyticsOnboardingDashboard';
 // import { useData } from '@/shared/contexts/DataContext';
 
 /**
@@ -710,6 +712,32 @@ const UnifiedAnalyticsPage: React.FC = () => {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Analytics Learning Center */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="w-5 h-5" />
+            Analytics Learning Center
+          </CardTitle>
+          <CardDescription>
+            Master your analytics capabilities with interactive tutorials
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AnalyticsOnboardingDashboard
+            showProgress={true}
+            onModuleStart={(moduleId) => {
+              // eslint-disable-next-line no-console
+              console.log('Started analytics module:', moduleId);
+            }}
+            onModuleComplete={(moduleId) => {
+              // eslint-disable-next-line no-console
+              console.log('Completed analytics module:', moduleId);
+            }}
+          />
         </CardContent>
       </Card>
     </div>

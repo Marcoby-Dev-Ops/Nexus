@@ -32,7 +32,7 @@ export interface ModelUsage {
   date: string;
 }
 
-class ModelManager {
+export class ModelManager {
   private models: Map<string, ModelConfig> = new Map();
   private performance: Map<string, ModelPerformance> = new Map();
   private usage: ModelUsage[] = [];

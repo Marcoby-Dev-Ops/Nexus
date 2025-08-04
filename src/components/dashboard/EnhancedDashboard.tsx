@@ -56,26 +56,26 @@ const DashboardSuspenseFallback = () => (
 
 const EnhancedDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { data: userProfile } = useUser(user?.id);
+  const { user: userProfile } = useUser();
   
   // Debug logging to see what data is available
   console.log('[Dashboard Debug]', {
     user: user?.id,
     userProfile,
-    userMetadata: user?.user_metadata,
+    userMetadata: user?.firstName,
     email: user?.email
   });
   
   // Helper function to get display name
   const getDisplayName = () => {
-    if (userProfile?.first_name) {
-      return userProfile.first_name;
+    if (userProfile?.firstName) {
+      return userProfile.firstName;
     }
-    if (userProfile?.display_name) {
-      return userProfile.display_name.split(' ')[0];
+    if (userProfile?.name) {
+      return userProfile.name.split(' ')[0];
     }
-    if (user?.user_metadata?.full_name) {
-      return user.user_metadata.full_name.split(' ')[0];
+    if (user?.firstName) {
+      return user.firstName;
     }
     if (user?.email) {
       return user.email.split('@')[0];
@@ -115,9 +115,9 @@ const EnhancedDashboard: React.FC = () => {
   const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
 
   const trinityData = [
-    { name: 'Innovation', value: dashboardMetrics.think.ideasCaptured },
-    { name: 'Intelligence', value: dashboardMetrics.see.realTimeInsights },
-    { name: 'Execution', value: dashboardMetrics.act.automationsRunning }
+    { name: 'Innovation', value: dashboardMetrics.think?.ideasCaptured ?? 0 },
+    { name: 'Intelligence', value: dashboardMetrics.see?.realTimeInsights ?? 0 },
+    { name: 'Execution', value: dashboardMetrics.act?.automationsRunning ?? 0 }
   ];
 
   // Widget configuration with visibility controls
@@ -147,13 +147,16 @@ const EnhancedDashboard: React.FC = () => {
 
       const result = await dashboardService.getEnhancedDashboardData();
       
-      if (result) {
-        setDashboardMetrics(result.metrics);
-        setRecentActivities(result.activities);
+      if (result && result.success && result.data) {
+        setDashboardMetrics(result.data.metrics);
+        setRecentActivities(result.data.activities);
+        setLastUpdated(new Date());
+        setError(null);
+      } else {
+        // Keep existing metrics if service call fails
+        console.warn('Dashboard service returned no data, keeping existing metrics');
+        setError(new Error('Failed to load dashboard data'));
       }
-
-      setLastUpdated(new Date());
-      setError(null);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       setError(err instanceof Error ? err : new Error('Failed to load dashboard data'));
@@ -218,7 +221,7 @@ const EnhancedDashboard: React.FC = () => {
       <div className="p-6">
         <DashboardOnboarding 
           onComplete={handleCompleteOnboarding}
-          userName={user?.name || 'New User'}
+          userName={getDisplayName()}
         />
       </div>
     );
@@ -378,11 +381,11 @@ const EnhancedDashboard: React.FC = () => {
                     <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
                       {getTypeIcon(activity.type)}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{activity.title}</p>
-                        <p className="text-xs text-muted-foreground">{activity.department}</p>
+                        <p className="text-sm font-medium truncate">{activity.message}</p>
+                        <p className="text-xs text-muted-foreground">{activity.type}</p>
                       </div>
-                      <Badge variant="outline" className={getStatusColor(activity.status)}>
-                        {activity.status}
+                      <Badge variant="outline" className={getStatusColor(activity.status || 'unknown')}>
+                        {activity.status || 'unknown'}
                       </Badge>
                     </div>
                   ))}

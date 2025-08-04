@@ -1,5 +1,11 @@
 /**
- * hooks Index
+ * Analytics Hooks Index
  */
 
-// Export hooks here when they are created
+// Data management hooks
+export { useAnalyticsData } from './useAnalyticsData';
+export { useFireCycleAnalytics } from './useFireCycleAnalytics';
+export { useIntegrationAnalytics } from './useIntegrationAnalytics';
+
+// Onboarding hooks
+export { default as useAnalyticsOnboarding } from './useAnalyticsOnboarding';

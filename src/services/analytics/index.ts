@@ -2,6 +2,9 @@
  * Analytics Services Index
  */
 
+import { BaseService } from '@/core/services/BaseService';
+import { logger } from '@/shared/utils/logger.ts';
+
 // Analytics types
 export interface UnifiedCommunicationInsights {
   totalMessages: number;
@@ -27,10 +30,12 @@ export interface CommunicationHealthScore {
 }
 
 // Analytics Services
+import { AnalyticsService, analyticsService } from './AnalyticsService';
+
 export { AnalyticsService, analyticsService } from './AnalyticsService';
 
 // Communication Analytics Service - wrapper around core analytics service
-class CommunicationAnalyticsService {
+class CommunicationAnalyticsService extends BaseService {
   private analytics = analyticsService;
 
   async getInsights(): Promise<UnifiedCommunicationInsights> {
@@ -53,7 +58,7 @@ class CommunicationAnalyticsService {
         }
       };
     } catch (error) {
-      console.error('Error getting communication insights:', error);
+      this.logger.error('Error getting communication insights:', error);
       // Return mock data as fallback
       return {
         totalMessages: 0,
@@ -89,7 +94,7 @@ class CommunicationAnalyticsService {
         lastUpdated: new Date()
       };
     } catch (error) {
-      console.error('Error getting communication health score:', error);
+      this.logger.error('Error getting communication health score:', error);
       // Return mock data as fallback
       return {
         overall: 0,

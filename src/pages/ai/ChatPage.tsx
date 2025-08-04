@@ -16,11 +16,23 @@ import {
 } from 'lucide-react';
 import { AIService } from '@/services/ai';
 import type { Agent } from '@/services/ai';
+
+// Mock functions - replace with actual service calls
+const getAllAgents = async (): Promise<Agent[]> => {
+  // TODO: Replace with actual service call
+  return [];
+};
+
+const getAgentsByType = async (type: string): Promise<Agent[]> => {
+  // TODO: Replace with actual service call
+  return [];
+};
 import { StreamingComposer } from '@/components/ai/StreamingComposer';
 import { AgentPicker } from '@/components/ai/agents';
 import { DomainAgentIndicator } from '@/components/ai/agents';
 import { ContextChips } from '@/components/ai/chat';
 import { QuickChatTrigger } from '@/components/ai/chat';
+import { AIOnboardingTrigger } from '@/components/ai/AIOnboardingTrigger';
 
 interface ChatStats {
   totalConversations: number;
@@ -119,6 +131,18 @@ export default function ChatPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <AIOnboardingTrigger 
+            featureId="chat-assistant"
+            variant="button"
+            onStart={(moduleId) => {
+              // eslint-disable-next-line no-console
+              console.log('Started chat assistant module:', moduleId);
+            }}
+            onComplete={(moduleId) => {
+              // eslint-disable-next-line no-console
+              console.log('Completed chat assistant module:', moduleId);
+            }}
+          />
           <Button variant="outline" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
             Settings

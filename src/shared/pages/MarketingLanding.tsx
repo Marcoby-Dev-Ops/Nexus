@@ -4,7 +4,6 @@ import { ArrowRight, Sparkles, Check, Star, Zap, Shield, BarChart3, Bolt, Brain,
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { Card, CardContent } from '@/shared/components/ui/Card.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Seo } from '@/shared/components/Seo';
 
 const MarketingLanding: React.FC = () => {
   const [showDemo, setShowDemo] = useState(false);
@@ -62,23 +61,6 @@ const MarketingLanding: React.FC = () => {
 
   return (
     <div className="bg-background text-foreground">
-      <Seo
-        title="Nexus Marketing – Automate Your Business | Marcoby"
-        description="Automate the 20% that eats 80% of your day with Nexus. Unify your business tools, automate repetitive work, and get AI-powered insights."
-        canonical="https: //nexus.marcoby.com/marketing-landing"
-        image="https://nexus.marcoby.com/og-image.png"
-        structuredData={{
-          '@context': 'https://schema.org',
-          '@type': 'Organization',
-          name: 'Marcoby',
-          url: 'https://nexus.marcoby.com/',
-          logo: 'https://nexus.marcoby.com/nexus-horizontal-160x48-transparent.png',
-          sameAs: [
-            'https://www.linkedin.com/company/marcoby',
-            'https: //twitter.com/marcobyhq'
-          ]
-        }}
-      />
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}

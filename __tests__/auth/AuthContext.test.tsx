@@ -42,7 +42,7 @@ const mockSupabase = supabase as typeof supabase & {
 };
 
 // Import the mocked authService
-import { authService } from '../../src/core/services/AuthService';
+import { authService } from '../../src/core/auth';
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 
 // Test component that uses auth

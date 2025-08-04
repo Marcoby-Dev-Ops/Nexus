@@ -986,6 +986,95 @@ export class AnalyticsService extends BaseService implements CrudServiceInterfac
       return { data: validatedData, error: null };
     }, `list analytics events`);
   }
+
+  // Fire Cycle Analytics Methods
+  async getFireCycleMetrics(userId: string, filters?: any) {
+    this.logMethodCall('getFireCycleMetrics', { userId, filters });
+    
+    try {
+      // Mock data for now - replace with actual Fire Cycle metrics
+      const mockMetrics = {
+        totalCycles: 24,
+        activeCycles: 3,
+        completedCycles: 21,
+        averageCycleDuration: 14.5,
+        successRate: 87.5,
+        topPerformingAreas: [
+          'Customer Acquisition',
+          'Product Development',
+          'Team Collaboration'
+        ],
+        areasForImprovement: [
+          'Marketing ROI',
+          'Sales Conversion',
+          'Customer Retention'
+        ]
+      };
+
+      return {
+        data: mockMetrics,
+        error: null,
+        success: true,
+      };
+    } catch (error) {
+      return this.handleError('getFireCycleMetrics', error);
+    }
+  }
+
+  // Integration Analytics Methods
+  async getIntegrationAnalytics(userId: string, filters?: any) {
+    this.logMethodCall('getIntegrationAnalytics', { userId, filters });
+    
+    try {
+      // Get integration data from database
+      const { data: integrations, error } = await supabase
+        .from('user_integrations')
+        .select(`
+          id,
+          name,
+          status,
+          last_sync_at,
+          total_syncs,
+          error_message,
+          integrations (
+            name,
+            auth_type,
+            category
+          )
+        `)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      const activeIntegrations = integrations?.filter(i => i.status === 'active') || [];
+      const totalDataPoints = activeIntegrations.reduce((sum, integration) => {
+        return sum + (integration.total_syncs || 0);
+      }, 0);
+
+      const mockAnalytics = {
+        totalIntegrations: integrations?.length || 0,
+        activeIntegrations: activeIntegrations.length,
+        totalDataPoints,
+        lastSync: integrations?.[0]?.last_sync_at || null,
+        avgSyncDuration: 2.5, // Mock value
+        syncSuccessRate: 92.5, // Mock value
+        topIntegrations: activeIntegrations.slice(0, 5).map(integration => ({
+          name: integration.name,
+          dataPoints: integration.total_syncs || 0,
+          lastSync: integration.last_sync_at || 'Never',
+          status: integration.status
+        }))
+      };
+
+      return {
+        data: mockAnalytics,
+        error: null,
+        success: true,
+      };
+    } catch (error) {
+      return this.handleError('getIntegrationAnalytics', error);
+    }
+  }
 }
 
 // Export singleton instance

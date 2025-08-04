@@ -1,5 +1,9 @@
 /**
- * hooks Index
+ * Automation Hooks Index
  */
 
-// Export hooks here when they are created
+// Core hooks
+export { useAutomationRecipes } from './useAutomationRecipes';
+
+// Onboarding hooks
+export { useAutomationOnboarding } from './useAutomationOnboarding';

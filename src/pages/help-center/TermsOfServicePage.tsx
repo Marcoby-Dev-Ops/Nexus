@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Separator } from '@/shared/components/ui/Separator';
 import { FileText, Shield, Users, CreditCard, Zap } from 'lucide-react';
-import { Seo } from '@/shared/components/Seo';
 
 export const TermsOfServicePage: React.FC = () => {
   const keyTerms = [
@@ -31,23 +30,6 @@ export const TermsOfServicePage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <Seo
-        title="Terms of Service – Nexus Platform | Marcoby"
-        description="Read the terms and conditions for using Nexus, our AI-powered business operating system."
-        canonical="https: //nexus.marcoby.com/help/terms-of-service"
-        image="https://nexus.marcoby.com/og-image.png"
-        structuredData={{
-          '@context': 'https://schema.org',
-          '@type': 'Organization',
-          name: 'Marcoby',
-          url: 'https://nexus.marcoby.com/',
-          logo: 'https://nexus.marcoby.com/nexus-horizontal-160x48-transparent.png',
-          sameAs: [
-            'https://www.linkedin.com/company/marcoby',
-            'https: //twitter.com/marcobyhq'
-          ]
-        }}
-      />
       
       {/* Header */}
       <div className="space-y-4">

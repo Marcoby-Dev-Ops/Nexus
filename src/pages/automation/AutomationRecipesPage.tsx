@@ -10,7 +10,8 @@ import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { n8nService } from '@/services/automation/n8nService';
 import { userN8nConfigService } from '@/services/automation/userN8nConfig';
-import { Zap, Search, Clock, DollarSign, Calendar, MessageSquare, BarChart3, Settings, Play, ExternalLink, Workflow, Target, CheckCircle2, AlertCircle, Sparkles, ArrowRight, Code, GitBranch } from 'lucide-react';
+import { AutomationOnboardingDashboard } from '@/components/automation/AutomationOnboardingDashboard';
+import { Zap, Search, Clock, DollarSign, Calendar, MessageSquare, BarChart3, Settings, Play, ExternalLink, Workflow, Target, CheckCircle2, AlertCircle, Sparkles, ArrowRight, Code, GitBranch, GraduationCap } from 'lucide-react';
 interface AutomationRecipe {
   id: string;
   title: string;
@@ -737,6 +738,32 @@ const AutomationRecipesPage: React.FC = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Automation Learning Center */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="w-5 h-5" />
+            Automation Learning Center
+          </CardTitle>
+          <CardDescription>
+            Master automation workflows with interactive tutorials
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AutomationOnboardingDashboard
+            showProgress={true}
+            onModuleStart={(moduleId) => {
+              // eslint-disable-next-line no-console
+              console.log('Started automation module:', moduleId);
+            }}
+            onModuleComplete={(moduleId) => {
+              // eslint-disable-next-line no-console
+              console.log('Completed automation module:', moduleId);
+            }}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };

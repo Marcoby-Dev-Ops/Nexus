@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Separator } from '@/shared/components/ui/Separator';
 import { Shield, Lock, Eye, UserCheck } from 'lucide-react';
-import { Seo } from '@/shared/components/Seo';
 
 export const PrivacyPolicyPage: React.FC = () => {
   const privacyPrinciples = [
@@ -54,23 +53,6 @@ export const PrivacyPolicyPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <Seo
-        title="Privacy Policy – Nexus Platform | Marcoby"
-        description="Learn how Marcoby and Nexus protect your privacy, what data we collect, and your rights as a user."
-        canonical="https: //nexus.marcoby.com/help/privacy-policy"
-        image="https://nexus.marcoby.com/og-image.png"
-        structuredData={{
-          '@context': 'https://schema.org',
-          '@type': 'Organization',
-          name: 'Marcoby',
-          url: 'https://nexus.marcoby.com/',
-          logo: 'https://nexus.marcoby.com/nexus-horizontal-160x48-transparent.png',
-          sameAs: [
-            'https://www.linkedin.com/company/marcoby',
-            'https: //twitter.com/marcobyhq'
-          ]
-        }}
-      />
       {/* Header */}
       <div className="space-y-4">
         <div className="flex items-center gap-4">

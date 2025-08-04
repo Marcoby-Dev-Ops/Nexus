@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { AuthService } from '@/core/auth';
+import { authService } from '@/core/auth';
 import type { AuthUser, AuthSession } from '@/core/auth';
 
 // Simple logger for auth events
@@ -72,6 +72,7 @@ export function useAuth() {
       
       if (!mountedRef.current) return;
       
+      // Clear timeout if we got a response
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -132,6 +133,14 @@ export function useAuth() {
           timeoutRef.current = null;
         }
         
+        // Prevent multiple simultaneous calls
+        if (loadingRef.current) {
+          authLogger.info('Auth state change ignored - already processing');
+          return;
+        }
+        
+        loadingRef.current = true;
+        
         // Get updated session data from our service
         try {
           const sessionResult = await authService.getSession();
@@ -150,10 +159,11 @@ export function useAuth() {
           setSession(null);
           setUser(null);
           setError(new Error('Auth state change failed'));
+        } finally {
+          setLoading(false);
+          setInitialized(true);
+          loadingRef.current = false;
         }
-        
-        setLoading(false);
-        setInitialized(true);
       }
     );
 

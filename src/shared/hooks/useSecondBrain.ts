@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { AnalyticsService } from '@/services/analytics';
+import { analyticsService } from '@/services/analytics';
 import { supabase } from '@/lib/supabase';
 import type { ChatMessage } from '@/core/types/chat';
 import { callEdgeFunction } from '@/lib/supabase';

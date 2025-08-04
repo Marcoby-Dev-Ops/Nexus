@@ -1,7 +1,8 @@
-import { billingService } from './BillingService';
-import { analyticsService } from './AnalyticsService';
-import { aiService } from './AIService';
-import { integrationService } from './IntegrationService';
+import { billingService } from '@/services/business/BillingService';
+import { analyticsService } from '@/services/analytics/AnalyticsService';
+import { aiService } from '@/services/ai/AIService';
+import { ApiIntegrationService as integrationService } from '@/shared/services/apiIntegrationService';
+import { TenantService } from '@/services/business/TenantService';
 import { logger } from '@/shared/utils/logger.ts';
 
 // Legacy services have been migrated to core services
@@ -12,6 +13,7 @@ export interface ServiceRegistry {
   analytics: typeof analyticsService;
   ai: typeof aiService;
   integration: typeof integrationService;
+  tenant: typeof TenantService;
 }
 
 export const serviceRegistry: ServiceRegistry = {
@@ -19,6 +21,7 @@ export const serviceRegistry: ServiceRegistry = {
   analytics: analyticsService,
   ai: aiService,
   integration: integrationService,
+  tenant: TenantService,
 };
 
 // Migration helper functions
@@ -27,7 +30,7 @@ export const MigrationHelper = {
    * Check if a service has been migrated to the new core service
    */
   isServiceMigrated(serviceName: string): boolean {
-    const migratedServices = ['billing', 'analytics', 'ai', 'integration'];
+    const migratedServices = ['billing', 'analytics', 'ai', 'integration', 'tenant'];
     return migratedServices.includes(serviceName);
   },
 
@@ -62,6 +65,7 @@ export const MigrationHelper = {
       agentRegistry: { migrated: true, targetService: 'ai' },
       continuousImprovementService: { migrated: true, targetService: 'ai' },
       slashCommandService: { migrated: true, targetService: 'ai' },
+      tenantService: { migrated: true, targetService: 'tenant' },
     };
   },
 
@@ -87,6 +91,6 @@ export const MigrationHelper = {
 };
 
 // Export individual services for direct access
-export { billingService, analyticsService, aiService, integrationService };
+export { billingService, analyticsService, aiService, integrationService, TenantService };
 
 // All legacy services have been migrated to core services 

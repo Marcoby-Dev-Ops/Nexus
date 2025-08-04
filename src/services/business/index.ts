@@ -7,12 +7,13 @@ export { CompanyService } from './CompanyService';
 export { UserService } from './UserService';
 export { ContactService } from './ContactService';
 export { DealService } from './DealService';
-export { BillingService } from './BillingService';
+export { BillingService, billingService } from './BillingService';
 export { NotificationService } from './NotificationService';
 export { CalendarService } from './CalendarService';
 export { CompanyProvisioningService } from './CompanyProvisioningService';
 export { CompanyOwnershipService } from './CompanyOwnershipService';
 export { userProfileService } from './userProfileService';
+export { TenantService } from './TenantService';
 
 // Additional business services
 export { companyStatusService } from './companyStatusService';
