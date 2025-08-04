@@ -115,7 +115,6 @@
     "react-day-picker": "^9.7.0",
     "react-dom": "^19.1.0",
     "react-error-boundary": "^6.0.0",
-    "react-helmet-async": "^2.0.5",
     "react-hook-form": "^7.54.2",
     "react-i18next": "^15.6.0",
     "react-markdown": "^10.1.0",
@@ -138,9 +137,6 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@babel/preset-env": "^7.28.0",
-    "@babel/preset-react": "^7.27.1",
-    "@babel/preset-typescript": "^7.27.1",
     "@chromatic-com/storybook": "^4.0.1",
     "@eslint/js": "^9.17.0",
     "@storybook/addon-docs": "^9.0.15",
@@ -161,7 +157,6 @@
     "@types/storybook__react": "^4.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.21",
-    "babel-plugin-transform-vite-meta-env": "^1.0.3",
     "brace-expansion": "^2.0.2",
     "chalk": "^5.4.1",
     "cypress": "^13.17.0",

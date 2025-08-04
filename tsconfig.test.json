@@ -2,7 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "target": "ES2020",
-    "module": "ESNext",
+    "module": "CommonJS",
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -20,7 +20,7 @@
   "include": [
     "src/**/*",
     "__tests__/**/*",
-    "jest.setup.cjs"
+    "test/**/*"
   ],
   "exclude": [
     "node_modules",
