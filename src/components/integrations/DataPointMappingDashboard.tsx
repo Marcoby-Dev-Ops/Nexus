@@ -5,7 +5,7 @@ import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { useAuth } from '@/hooks/index';
-import { dataPointMappingService, type MappingReport } from '@/core/services/dataPointMappingService';
+import { DataPointMappingService, type MappingReport } from '@/services/integrations';
 import { RefreshCw, AlertTriangle, CheckCircle, Database, TrendingUp } from 'lucide-react';
 
 export const DataPointMappingDashboard: React.FC = () => {

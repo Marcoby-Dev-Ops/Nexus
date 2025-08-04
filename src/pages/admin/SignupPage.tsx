@@ -35,7 +35,7 @@ export default function SignupPage() {
       companyName: '',
     },
     onSubmit: async (data: SignupFormData) => {
-      const result = await signUp(data.email, data.password);
+      const result = await signUp(data.email, data.password, data.firstName, data.lastName);
       if (result.error) {
         throw new Error(result.error);
       }
@@ -70,6 +70,7 @@ export default function SignupPage() {
                   <div className="relative">
                     <Input
                       {...field}
+                      id="firstName"
                       placeholder="First name"
                       disabled={isFormLoading}
                       className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
@@ -93,6 +94,7 @@ export default function SignupPage() {
                   <div className="relative">
                     <Input
                       {...field}
+                      id="lastName"
                       placeholder="Last name"
                       disabled={isFormLoading}
                       className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
@@ -118,6 +120,7 @@ export default function SignupPage() {
                 <div className="relative">
                   <Input
                     {...field}
+                    id="companyName"
                     placeholder="Your company name"
                     disabled={isFormLoading}
                     className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
@@ -145,6 +148,7 @@ export default function SignupPage() {
                 <div className="relative">
                   <Input
                     {...field}
+                    id="email"
                     type="email"
                     placeholder="Email address"
                     disabled={isFormLoading}
@@ -171,6 +175,7 @@ export default function SignupPage() {
                 <div className="relative">
                   <Input
                     {...field}
+                    id="password"
                     type="password"
                     placeholder="Password"
                     disabled={isFormLoading}
@@ -196,6 +201,7 @@ export default function SignupPage() {
                 <div className="relative">
                   <Input
                     {...field}
+                    id="confirmPassword"
                     type="password"
                     placeholder="Confirm password"
                     disabled={isFormLoading}

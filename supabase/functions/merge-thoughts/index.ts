@@ -1,3 +1,9 @@
+/**
+ * merge-thoughts
+ * Merges multiple thoughts into a single thought using AIService patterns.
+ * TODO: Refactor to use AIService.mergeThoughts() pattern
+ * This function duplicates AIService thought merging logic
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -29,6 +35,9 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ error: 'Could not fetch thoughts to merge' }), { status: 404 });
     }
 
+    // TODO: Use AIService.mergeThoughts() pattern instead of direct implementation
+    // This duplicates the logic in AIService.mergeThoughts()
+    
     // Merge logic: combine content, tags, relationships, etc.
     // For now, just concatenate content and merge tags as an example
     const mergedContent = thoughts.map((t: any) => t.content).join('\n---\n');

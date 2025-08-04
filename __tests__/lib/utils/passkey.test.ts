@@ -8,7 +8,7 @@ import {
   handlePasskeyError,
   PasskeyRegistrationOptions,
   PasskeyAuthenticationOptions 
-} from '../../../src/lib/utils/passkey';
+} from '../../../src/shared/utils/passkey';
 import { browserSupportsWebAuthn, startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { supabase } from '../../../src/lib/supabase';
 import { toast } from 'sonner';

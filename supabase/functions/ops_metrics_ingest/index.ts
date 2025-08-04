@@ -1,3 +1,9 @@
+/**
+ * ops_metrics_ingest
+ * Ingests operations metrics using AnalyticsService patterns.
+ * TODO: Refactor to use AnalyticsService.ingestMetrics() pattern
+ * This function duplicates AnalyticsService metrics ingestion logic
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 
@@ -84,6 +90,9 @@ serve(async (req) => {
       );
     }
 
+    // TODO: Use AnalyticsService.ingestMetrics() pattern instead of direct implementation
+    // This duplicates the logic in AnalyticsService.ingestMetrics()
+    
     // ---------------------------------------------------------------------
     // Transform → insert
     // ---------------------------------------------------------------------

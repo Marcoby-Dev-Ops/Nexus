@@ -3,7 +3,7 @@
  * Provides organizational context and cross-departmental intelligence
  */
 
-import { RealTimeCrossDepartmentalSync } from '@/core/services/realTimeCrossDepartmentalSync';
+import { RealTimeCrossDepartmentalSync } from '@/services/integrations';
 
 export interface OrganizationalContext {
   crossDepartmentalMetrics: {

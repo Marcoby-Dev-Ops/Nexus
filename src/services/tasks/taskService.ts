@@ -1,22 +1,28 @@
 import { supabase } from '@/lib/supabase';
+import { BaseService } from '@/core/services/BaseService';
+import type { ServiceResponse } from '@/core/services/BaseService';
+import type { CrudServiceInterface } from '@/core/services/interfaces';
+import { z } from 'zod';
 
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  status: 'todo' | 'in_progress' | 'completed' | 'cancelled';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  due_date?: string;
-  assigned_to?: string;
-  createdby: string;
-  createdat: string;
-  updatedat: string;
-  tags?: string[];
-  estimated_hours?: number;
-  actual_hours?: number;
-  parent_task_id?: string;
-  subtasks?: Task[];
-}
+// Task Schema
+export const TaskSchema = z.object({
+  id: z.string().optional(),
+  title: z.string(),
+  description: z.string().optional(),
+  status: z.enum(['todo', 'in_progress', 'completed', 'cancelled']),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']),
+  due_date: z.string().optional(),
+  assigned_to: z.string().optional(),
+  createdby: z.string(),
+  createdat: z.string().optional(),
+  updatedat: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  estimated_hours: z.number().optional(),
+  actual_hours: z.number().optional(),
+  parent_task_id: z.string().optional(),
+});
+
+export type Task = z.infer<typeof TaskSchema>;
 
 export interface TaskMetrics {
   totalTasks: number;
@@ -35,39 +41,131 @@ export interface TaskFilter {
   due_date_to?: string;
 }
 
-class TaskService {
+/**
+ * Task Service
+ * Provides task management functionality with CRUD operations
+ * 
+ * Extends BaseService for consistent error handling and logging
+ */
+export class TaskService extends BaseService implements CrudServiceInterface<Task> {
   private tableName = 'tasks';
 
-  async createTask(task: Omit<Task, 'id' | 'created_at' | 'updated_at'>): Promise<Task> {
-    try {
+  /**
+   * Get a single task by ID
+   */
+  async get(id: string): Promise<ServiceResponse<Task>> {
+    return this.executeDbOperation(async () => {
       const { data, error } = await supabase
         .from(this.tableName)
-        .insert({
-          ...task,
-          createdat: new Date().toISOString(),
-          updatedat: new Date().toISOString()
-        })
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) throw error;
+      return { data: TaskSchema.parse(data), error: null };
+    }, `get task ${id}`);
+  }
+
+  /**
+   * Create a new task
+   */
+  async create(data: Partial<Task>): Promise<ServiceResponse<Task>> {
+    return this.executeDbOperation(async () => {
+      const taskData = {
+        ...data,
+        createdat: new Date().toISOString(),
+        updatedat: new Date().toISOString()
+      };
+
+      const { data: result, error } = await supabase
+        .from(this.tableName)
+        .insert(taskData)
         .select()
         .single();
 
       if (error) throw error;
-      return data;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to create task: ', error);
-      throw error;
-    }
+      return { data: TaskSchema.parse(result), error: null };
+    }, `create task`);
   }
 
-  async getTasks(userId: string, filter?: TaskFilter): Promise<Task[]> {
-    try {
+  /**
+   * Update an existing task
+   */
+  async update(id: string, data: Partial<Task>): Promise<ServiceResponse<Task>> {
+    return this.executeDbOperation(async () => {
+      const updateData = {
+        ...data,
+        updatedat: new Date().toISOString()
+      };
+
+      const { data: result, error } = await supabase
+        .from(this.tableName)
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data: TaskSchema.parse(result), error: null };
+    }, `update task ${id}`);
+  }
+
+  /**
+   * Delete a task
+   */
+  async delete(id: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      const { error } = await supabase
+        .from(this.tableName)
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      return { data: true, error: null };
+    }, `delete task ${id}`);
+  }
+
+  /**
+   * List tasks with optional filters
+   */
+  async list(filters?: Record<string, any>): Promise<ServiceResponse<Task[]>> {
+    return this.executeDbOperation(async () => {
       let query = supabase
         .from(this.tableName)
         .select('*')
-        .or(`created_by.eq.${userId},assigned_to.eq.${userId}`)
-        .order('created_at', { ascending: false });
+        .order('createdat', { ascending: false });
+
+      // Apply filters
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            if (Array.isArray(value)) {
+              query = query.in(key, value);
+            } else {
+              query = query.eq(key, value);
+            }
+          }
+        });
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      const validatedData = data?.map(item => TaskSchema.parse(item)) || [];
+      return { data: validatedData, error: null };
+    }, `list tasks`);
+  }
+
+  /**
+   * Get tasks for a specific user with filters
+   */
+  async getTasks(userId: string, filter?: TaskFilter): Promise<ServiceResponse<Task[]>> {
+    return this.executeDbOperation(async () => {
+      let query = supabase
+        .from(this.tableName)
+        .select('*')
+        .or(`createdby.eq.${userId},assigned_to.eq.${userId}`)
+        .order('createdat', { ascending: false });
 
       // Apply filters
       if (filter?.status && filter.status.length > 0) {
@@ -102,229 +200,191 @@ class TaskService {
         );
       }
 
-      return filteredData;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get tasks: ', error);
-      throw error;
-    }
+      const validatedData = filteredData.map(item => TaskSchema.parse(item));
+      return { data: validatedData, error: null };
+    }, `get tasks for user ${userId}`);
   }
 
-  async getTaskById(taskId: string): Promise<Task | null> {
-    try {
-      const { data, error } = await supabase
+  /**
+   * Get task metrics for a user
+   */
+  async getTaskMetrics(userId: string): Promise<ServiceResponse<TaskMetrics>> {
+    return this.executeDbOperation(async () => {
+      const { data: tasks, error } = await supabase
         .from(this.tableName)
         .select('*')
-        .eq('id', taskId)
-        .single();
+        .or(`createdby.eq.${userId},assigned_to.eq.${userId}`);
 
       if (error) throw error;
-      return data;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get task: ', error);
-      throw error;
-    }
-  }
 
-  async updateTask(taskId: string, updates: Partial<Task>): Promise<Task> {
-    try {
-      const { data, error } = await supabase
-        .from(this.tableName)
-        .update({
-          ...updates,
-          updatedat: new Date().toISOString()
-        })
-        .eq('id', taskId)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to update task: ', error);
-      throw error;
-    }
-  }
-
-  async deleteTask(taskId: string): Promise<void> {
-    try {
-      const { error } = await supabase
-        .from(this.tableName)
-        .delete()
-        .eq('id', taskId);
-
-      if (error) throw error;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to delete task: ', error);
-      throw error;
-    }
-  }
-
-  async getTaskMetrics(userId: string): Promise<TaskMetrics> {
-    try {
-      const tasks = await this.getTasks(userId);
-      
-      const totalTasks = tasks.length;
-      const completedTasks = tasks.filter(task => task.status === 'completed').length;
-      const overdueTasks = tasks.filter(task => {
-        if (task.status === 'completed' || !task.due_date) return false;
+      const totalTasks = tasks?.length || 0;
+      const completedTasks = tasks?.filter(task => task.status === 'completed').length || 0;
+      const overdueTasks = tasks?.filter(task => {
+        if (!task.due_date || task.status === 'completed') return false;
         return new Date(task.due_date) < new Date();
-      }).length;
+      }).length || 0;
 
-      const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100: 0;
+      const completionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-      // Calculate average completion time (simplified)
+      // Calculate average completion time
       const completedTaskTimes = tasks
-        .filter(task => task.status === 'completed')
+        ?.filter(task => task.status === 'completed' && task.createdat && task.updatedat)
         .map(task => {
-          const created = new Date(task.created_at);
-          const updated = new Date(task.updated_at);
+          const created = new Date(task.createdat);
+          const updated = new Date(task.updatedat);
           return (updated.getTime() - created.getTime()) / (1000 * 60 * 60 * 24); // days
-        });
+        }) || [];
 
       const averageCompletionTime = completedTaskTimes.length > 0 
-        ? completedTaskTimes.reduce((sum, time) => sum + time, 0) / completedTaskTimes.length: 0;
+        ? completedTaskTimes.reduce((sum, time) => sum + time, 0) / completedTaskTimes.length 
+        : 0;
 
-      return {
+      const metrics: TaskMetrics = {
         totalTasks,
         completedTasks,
         overdueTasks,
         completionRate,
         averageCompletionTime
       };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get task metrics: ', error);
-      throw error;
-    }
+
+      return { data: metrics, error: null };
+    }, `get task metrics for user ${userId}`);
   }
 
-  async getTasksByPriority(userId: string): Promise<{
+  /**
+   * Get tasks grouped by priority
+   */
+  async getTasksByPriority(userId: string): Promise<ServiceResponse<{
     urgent: Task[];
     high: Task[];
     medium: Task[];
     low: Task[];
-  }> {
-    try {
-      const tasks = await this.getTasks(userId);
+  }>> {
+    return this.executeDbOperation(async () => {
+      const { data: tasks, error } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .or(`createdby.eq.${userId},assigned_to.eq.${userId}`)
+        .order('createdat', { ascending: false });
+
+      if (error) throw error;
+
+      const validatedTasks = tasks?.map(item => TaskSchema.parse(item)) || [];
       
-      return {
-        urgent: tasks.filter(task => task.priority === 'urgent'),
-        high: tasks.filter(task => task.priority === 'high'),
-        medium: tasks.filter(task => task.priority === 'medium'),
-        low: tasks.filter(task => task.priority === 'low')
+      const grouped = {
+        urgent: validatedTasks.filter(task => task.priority === 'urgent'),
+        high: validatedTasks.filter(task => task.priority === 'high'),
+        medium: validatedTasks.filter(task => task.priority === 'medium'),
+        low: validatedTasks.filter(task => task.priority === 'low')
       };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get tasks by priority: ', error);
-      throw error;
-    }
+
+      return { data: grouped, error: null };
+    }, `get tasks by priority for user ${userId}`);
   }
 
-  async getOverdueTasks(userId: string): Promise<Task[]> {
-    try {
-      const tasks = await this.getTasks(userId);
-      
-      return tasks.filter(task => {
-        if (task.status === 'completed' || !task.due_date) return false;
-        return new Date(task.due_date) < new Date();
-      });
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get overdue tasks: ', error);
-      throw error;
-    }
+  /**
+   * Get overdue tasks
+   */
+  async getOverdueTasks(userId: string): Promise<ServiceResponse<Task[]>> {
+    return this.executeDbOperation(async () => {
+      const { data: tasks, error } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .or(`createdby.eq.${userId},assigned_to.eq.${userId}`)
+        .lt('due_date', new Date().toISOString())
+        .neq('status', 'completed')
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+
+      const validatedTasks = tasks?.map(item => TaskSchema.parse(item)) || [];
+      return { data: validatedTasks, error: null };
+    }, `get overdue tasks for user ${userId}`);
   }
 
-  async getUpcomingTasks(userId: string, days: number = 7): Promise<Task[]> {
-    try {
-      const tasks = await this.getTasks(userId);
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + days);
-      
-      return tasks.filter(task => {
-        if (task.status === 'completed' || !task.due_date) return false;
-        const dueDate = new Date(task.due_date);
-        return dueDate <= futureDate && dueDate >= new Date();
-      });
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get upcoming tasks: ', error);
-      throw error;
-    }
+  /**
+   * Get upcoming tasks
+   */
+  async getUpcomingTasks(userId: string, days: number = 7): Promise<ServiceResponse<Task[]>> {
+    return this.executeDbOperation(async () => {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + days);
+
+      const { data: tasks, error } = await supabase
+        .from(this.tableName)
+        .select('*')
+        .or(`createdby.eq.${userId},assigned_to.eq.${userId}`)
+        .gte('due_date', new Date().toISOString())
+        .lte('due_date', endDate.toISOString())
+        .neq('status', 'completed')
+        .order('due_date', { ascending: true });
+
+      if (error) throw error;
+
+      const validatedTasks = tasks?.map(item => TaskSchema.parse(item)) || [];
+      return { data: validatedTasks, error: null };
+    }, `get upcoming tasks for user ${userId}`);
   }
 
-  async createSubtask(parentTaskId: string, subtask: Omit<Task, 'id' | 'created_at' | 'updated_at' | 'parent_task_id'>): Promise<Task> {
-    try {
-      return await this.createTask({
+  /**
+   * Create a subtask
+   */
+  async createSubtask(parentTaskId: string, subtask: Omit<Task, 'id' | 'createdat' | 'updatedat' | 'parent_task_id'>): Promise<ServiceResponse<Task>> {
+    return this.executeDbOperation(async () => {
+      const subtaskData = {
         ...subtask,
-        parenttask_id: parentTaskId
-      });
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to create subtask: ', error);
-      throw error;
-    }
+        parent_task_id: parentTaskId,
+        createdat: new Date().toISOString(),
+        updatedat: new Date().toISOString()
+      };
+
+      const { data: result, error } = await supabase
+        .from(this.tableName)
+        .insert(subtaskData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { data: TaskSchema.parse(result), error: null };
+    }, `create subtask for task ${parentTaskId}`);
   }
 
-  async getSubtasks(parentTaskId: string): Promise<Task[]> {
-    try {
-      const { data, error } = await supabase
+  /**
+   * Get subtasks for a parent task
+   */
+  async getSubtasks(parentTaskId: string): Promise<ServiceResponse<Task[]>> {
+    return this.executeDbOperation(async () => {
+      const { data: tasks, error } = await supabase
         .from(this.tableName)
         .select('*')
         .eq('parent_task_id', parentTaskId)
-        .order('created_at', { ascending: true });
+        .order('createdat', { ascending: true });
 
       if (error) throw error;
-      return data || [];
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get subtasks: ', error);
-      throw error;
-    }
+
+      const validatedTasks = tasks?.map(item => TaskSchema.parse(item)) || [];
+      return { data: validatedTasks, error: null };
+    }, `get subtasks for task ${parentTaskId}`);
   }
 
-  async bulkUpdateTasks(taskIds: string[], updates: Partial<Task>): Promise<void> {
-    try {
+  /**
+   * Bulk update tasks
+   */
+  async bulkUpdateTasks(taskIds: string[], updates: Partial<Task>): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      const updateData = {
+        ...updates,
+        updatedat: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from(this.tableName)
-        .update({
-          ...updates,
-          updatedat: new Date().toISOString()
-        })
+        .update(updateData)
         .in('id', taskIds);
 
       if (error) throw error;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to bulk update tasks: ', error);
-      throw error;
-    }
+      return { data: true, error: null };
+    }, `bulk update ${taskIds.length} tasks`);
   }
 }
 

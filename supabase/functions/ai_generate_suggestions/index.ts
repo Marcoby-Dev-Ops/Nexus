@@ -1,3 +1,9 @@
+/**
+ * ai_generate_suggestions
+ * Generates AI-powered suggestions using AIService patterns.
+ * TODO: Refactor to use AIService.generateSuggestions() pattern
+ * This function duplicates AIService suggestion generation logic
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.10';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -81,6 +87,9 @@ serve(async (req) => {
       });
     }
 
+    // TODO: Use AIService.generateSuggestions() pattern instead of direct implementation
+    // This duplicates the logic in AIService.generateSuggestions()
+    
     // Generate suggestions using AI
     const suggestions = await generateSuggestions(requestData, openaiApiKey);
     

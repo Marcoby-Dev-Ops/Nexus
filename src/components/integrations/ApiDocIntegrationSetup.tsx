@@ -7,7 +7,7 @@ import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { AlertCircle, Check, ChevronRight, FileUp, DownloadCloud, Globe, Key, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { ApiIntegrationService, type ApiIntegrationData } from '@/services/integrations/apiIntegrationService';
+import { ApiIntegrationService, type ApiIntegrationData } from '@/shared/services/apiIntegrationService';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';

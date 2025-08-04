@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
 
 import { UnifiedLayout } from '@/shared/components/layout/UnifiedLayout';
+import { AppWithOnboarding } from '@/shared/components/layout/AppWithOnboarding';
 
 // Import pages from the new structure
 import { Dashboard } from '@/pages';
@@ -12,6 +13,7 @@ import { LandingPage } from '@/shared/pages/LandingPage';
 import SignupPage from '@/pages/admin/SignupPage';
 import { PrivacyPolicyPage } from '@/pages/help-center/PrivacyPolicyPage';
 import { TermsOfServicePage } from '@/pages/help-center/TermsOfServicePage';
+import Login from '@/pages/auth/Login';
 
 // Import AI pages
 import { 
@@ -156,8 +158,9 @@ const RootRoute = () => {
 
 function App() {
   return (
-    <div className="App">
-      <Routes>
+    <AppWithOnboarding>
+      <div className="App">
+        <Routes>
         {/* Public routes */}
         <Route 
           path="/login" 
@@ -1425,6 +1428,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
+    </AppWithOnboarding>
   );
 }
 

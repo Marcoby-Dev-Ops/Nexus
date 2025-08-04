@@ -6,8 +6,8 @@ import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Input } from '@/shared/components/ui/Input.tsx';
 import { useAuth } from '@/hooks/index';
-import { emailIntelligenceService, type OpportunityDetection, type ReplyDraft } from '@/core/services/emailIntelligenceService';
-import { emailIntegrationService, type EmailAnalysisResult } from '@/core/services/emailIntegrationService';
+import { EmailIntelligenceService, type OpportunityDetection, type ReplyDraft } from '@/services/ai';
+import { EmailIntegrationService, type EmailAnalysisResult } from '@/services/email';
 import { RefreshCw, Mail, AlertTriangle, CheckCircle, Zap, Eye, Brain } from 'lucide-react';
 interface EmailData {
   id: string;

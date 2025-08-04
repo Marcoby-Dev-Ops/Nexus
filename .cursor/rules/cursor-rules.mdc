@@ -1,0 +1,112 @@
+---
+alwaysApply: true
+---
+
+
+# Marcoby Nexus — Development Agent Rules
+
+> **Scope**  These rules apply to the *development agent* in Cursor and govern all code suggestions for the Marcoby Nexus repository.
+> **Enforced**  If any code or recommendation violates a **MUST** rule, the agent should discard that answer and try again.
+
+---
+
+## 1 General Coding Principles
+
+1.1 **Language** All backend code **MUST** be TypeScript (`.ts`) with `"strict": true`.
+1.2 **Imports** Always import external libs via the project *import map* – never hard‑code remote URLs.
+1.3 **Logging** Never use `console.*`; call `this.logger.<level>()` or `_shared/logger.ts`.
+1.4 **Date & Time** Use **Luxon** and store ISO‑8601 UTC.
+1.5 **Commit Style** Commit messages **MUST** follow **Conventional Commits** (`feat: …`, `fix: …`).
+1.6 **Formatting** Prettier + ESLint (Airbnb) autofix on save; do not deviate.
+
+---
+
+## 2 Service‑Layer Rules
+
+2.1 **Return Type** Every public service method **MUST** return
+
+```ts
+ServiceResponse<T>; // { success: boolean; data?: T; error?: string }
+```
+
+2.2 **BaseService** All services **MUST** extend `BaseService` and use
+
+```ts
+this.createResponse(data);   // success
+this.handleError(error);     // failure
+```
+
+2.3 **Retry Logic** Any outbound network / 3rd‑party call **MUST** wrap `_shared/retry.ts`.
+2.4 **No Throws** Services should *return* errors, not throw, except unrecoverable startup failures.
+
+---
+
+## 3 Supabase Edge Functions
+
+3.1 **Template** Start from `_shared/edgeTemplate.ts`; never hand‑roll boilerplate.
+3.2 **Signature Verification** All external webhooks **MUST** call `verifyMicrosoftGraph()` or `verifyGmailWebhook()`.
+3.3 **RBAC** Before any data mutation, call `requirePermission()` with the proper scope.
+3.4 **Response Shape** Edge Functions return the **exact** `ServiceResponse` contract.
+3.5 **Import Map** Use only versions pinned in `functions/import_map.json`.
+
+---
+
+## 4 Frontend / React
+
+**React 19.1 is the project standard (React‑DOM 19.1).**
+4.1 **Stack** React 19 + Tailwind + shadcn/ui; respect atoms → organisms → pages hierarchy.
+4.2 **State** Global state = Zustand; server state = React Query.
+4.3 **Components** Reuse shadcn wrappers; don’t re‑implement buttons, modals, toasts.
+4.4 **Service Calls** Always `await` a service then branch on `result.success`.
+4.5 **Error UX** When `success === false` push a destructive toast with the error.
+4.6 **React 19 Migration Guardrails**
+
+* Do **NOT** use `ReactDOM.render` or `ReactDOM.hydrate`. Use `createRoot` / `hydrateRoot`.
+* Remove any `useSyncExternalStore` polyfill.
+* Ensure all third‑party libs declare peer dep `^18 \|\| ^19`.
+
+---
+
+## 5 Testing & CI
+
+5.1 **Coverage** New modules **MUST** ship with Jest tests ≥ 90 % coverage.
+5.2 **Edge Tests** Provide `functions/xyz.test.ts` for each Edge Function using `supabase functions test`.
+5.3 **Lint / Types** `eslint` and `tsc --noEmit` must pass in CI.
+5.4 **Preview** Netlify preview build **MUST** succeed before merge.
+
+---
+
+## 6 Security & Secrets
+
+6.1 Never print secrets, tokens, or keys.
+6.2 Access secrets via `Deno.env.get()` or Supabase `secrets` CLI.
+6.3 RLS, RBAC, and signature checks **MUST NOT** be disabled in production.
+
+---
+
+## 7 Documentation
+
+7.1 All public surfaces need **TSDoc**.
+7.2 New domain/feature folders must include a `README.md`.
+
+---
+
+## 8 Prohibited
+
+* ❌ Inline SQL inside React.
+* ❌ Raw `fetch` to Supabase RPC – always use typed client.
+* ❌ `any` or `// @ts-ignore` without a TODO issue.
+* ❌ `console.log` in committed code.
+
+---
+
+## 9 Agent Behaviour Rules
+
+9.1 If the user requests *code only*, output a single formatted code block, no extra commentary.
+9.2 For *step‑by‑step* requests, give reasoning first, then code.
+9.3 The agent **MUST** search existing project files before generating new ones to avoid duplication.
+9.4 If a prompt conflicts with any rule above, follow the rules and flag the conflict.
+
+---
+
+*Last updated:* `2025‑08‑02`

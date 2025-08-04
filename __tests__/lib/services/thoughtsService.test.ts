@@ -1,8 +1,8 @@
 import { thoughtsService } from '../../../src/lib/services/thoughtsService';
 import type { CreateThoughtRequest, UpdateThoughtRequest, Thought } from '../../../src/lib/types/thoughts';
-import { supabase } from '../../../src/lib/core/supabase';
+import { supabase } from '../../../src/core/database/supabase';
 
-jest.mock('../../../src/lib/core/supabase');
+jest.mock('../../../src/core/database/supabase');
 
 describe('ThoughtsService', () => {
   const baseThought: CreateThoughtRequest = {

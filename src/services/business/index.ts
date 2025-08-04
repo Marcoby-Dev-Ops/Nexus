@@ -2,6 +2,19 @@
  * Business Services Index
  */
 
+// Core business services
+export { CompanyService } from './CompanyService';
+export { UserService } from './UserService';
+export { ContactService } from './ContactService';
+export { DealService } from './DealService';
+export { BillingService } from './BillingService';
+export { NotificationService } from './NotificationService';
+export { CalendarService } from './CalendarService';
+export { CompanyProvisioningService } from './CompanyProvisioningService';
+export { CompanyOwnershipService } from './CompanyOwnershipService';
+export { userProfileService } from './userProfileService';
+
+// Additional business services
 export { companyStatusService } from './companyStatusService';
 export { businessBenchmarkingService } from './businessBenchmarkingService';
 export { dataConnectivityHealthService } from './dataConnectivityHealthService';

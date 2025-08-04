@@ -19,10 +19,12 @@ export interface Thought {
   };
 }
 
+// Local ServiceResponse interface to avoid import issues
 interface ServiceResponse<T> {
+  data: T | null;
+  error: string | null;
   success: boolean;
-  data?: T;
-  error?: string;
+  metadata?: Record<string, any>;
 }
 
 class ThoughtsService {
@@ -64,19 +66,22 @@ class ThoughtsService {
 
       if (error) {
         return {
-          success: false,
+          data: null,
           error: error.message,
+          success: false,
         };
       }
 
       return {
-        success: true,
         data: data || [],
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to fetch thoughts',
+        success: false,
       };
     }
   }
@@ -99,19 +104,22 @@ class ThoughtsService {
 
       if (error) {
         return {
-          success: false,
+          data: null,
           error: error.message,
+          success: false,
         };
       }
 
       return {
-        success: true,
         data,
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to create thought',
+        success: false,
       };
     }
   }
@@ -130,19 +138,22 @@ class ThoughtsService {
 
       if (error) {
         return {
-          success: false,
+          data: null,
           error: error.message,
+          success: false,
         };
       }
 
       return {
-        success: true,
         data,
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to update thought',
+        success: false,
       };
     }
   }
@@ -156,18 +167,22 @@ class ThoughtsService {
 
       if (error) {
         return {
-          success: false,
+          data: null,
           error: error.message,
+          success: false,
         };
       }
 
       return {
+        data: null,
+        error: null,
         success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to delete thought',
+        success: false,
       };
     }
   }
@@ -183,19 +198,22 @@ class ThoughtsService {
 
       if (error) {
         return {
-          success: false,
+          data: null,
           error: error.message,
+          success: false,
         };
       }
 
       return {
-        success: true,
         data: data || [],
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to search thoughts',
+        success: false,
       };
     }
   }
@@ -243,13 +261,15 @@ class ThoughtsService {
       });
 
       return {
-        success: true,
         data: stats,
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to get thought stats',
+        success: false,
       };
     }
   }
@@ -265,19 +285,22 @@ class ThoughtsService {
 
       if (error) {
         return {
-          success: false,
+          data: null,
           error: error.message,
+          success: false,
         };
       }
 
       return {
-        success: true,
         data: data || [],
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to get thoughts by fire phase',
+        success: false,
       };
     }
   }

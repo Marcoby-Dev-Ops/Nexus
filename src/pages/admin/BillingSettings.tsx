@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { useAuth } from '@/hooks/index';
 import { useSubscription } from '@/components/admin/user/hooks/useSubscription';
 import { useService } from '@/shared/hooks/useService';
-import { serviceFactory } from '@/core/services/ServiceFactory';
+// import { serviceFactory } from '@/core/services/ServiceFactory'; // TEMPORARILY DISABLED
 import { toast } from 'sonner';
 import { CreditCard, Calendar, ExternalLink, Download, Plus, Edit, Trash2, Crown, Sparkles, XCircle } from 'lucide-react';
 
@@ -144,10 +144,10 @@ const BillingSettings: React.FC = () => {
     if (!currentSubscription) return;
 
     try {
-      // Use the billing service directly for cancellation
-      const service = serviceFactory.get('billing') as any;
-      await service.cancelSubscription((currentSubscription as any).id, true);
-      toast.success('Subscription cancelled successfully');
+      // TEMPORARILY DISABLED: ServiceFactory is commented out
+      // const service = serviceFactory.get('billing') as any;
+      // await service.cancelSubscription((currentSubscription as any).id, true);
+      toast.info('Subscription cancellation temporarily disabled');
     } catch (error) {
       toast.error('Failed to cancel subscription');
     }

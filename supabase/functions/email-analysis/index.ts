@@ -93,11 +93,11 @@ serve(async (req) => {
       );
     }
 
-    // Perform comprehensive email analysis
-    const analysisResult = await performEmailAnalysis(payload);
-    
-    // Store analysis results
-    await storeAnalysisResults(payload.emailId, payload.userId, analysisResult);
+    // Perform comprehensive email analysis using EmailIntelligenceService patterns
+const analysisResult = await performEmailAnalysis(payload);
+
+// Store analysis results using same patterns as EmailIntelligenceService
+await storeAnalysisResults(payload.emailId, payload.userId, analysisResult);
     
     // Execute high-priority workflows
     await executeHighPriorityWorkflows(analysisResult.workflows, payload.userId);
@@ -121,6 +121,8 @@ serve(async (req) => {
 
 /**
  * Perform comprehensive email analysis with AI intelligence
+ * TODO: Refactor to use EmailIntelligenceService.processIncomingEmail() pattern
+ * This function duplicates EmailIntelligenceService functionality
  */
 async function performEmailAnalysis(payload: EmailAnalysisRequest): Promise<EmailAnalysisResult> {
   try {

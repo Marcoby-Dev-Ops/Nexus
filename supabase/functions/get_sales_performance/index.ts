@@ -1,3 +1,9 @@
+/**
+ * get_sales_performance
+ * Retrieves sales performance metrics using AnalyticsService patterns.
+ * TODO: Refactor to use AnalyticsService.getSalesPerformance() pattern
+ * This function duplicates AnalyticsService sales metrics logic
+ */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.5';
 import { corsHeadersWithOrigin as corsHeaders } from '../_shared/cors.ts';
@@ -45,6 +51,9 @@ serve(async (req: Request) => {
       });
     }
 
+    // TODO: Use AnalyticsService.getSalesPerformance() pattern instead of direct implementation
+    // This duplicates the logic in AnalyticsService.getSalesPerformance()
+    
     // Fetch sales metrics for the company
     // Revenue, Deals Closed, Conversion Rate, New Leads (last 30 days)
     const now = new Date();

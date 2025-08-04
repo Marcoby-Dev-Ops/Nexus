@@ -25,6 +25,8 @@ serve(async (req) => {
 
     const { userId, role } = await req.json();
 
+    // TODO: Refactor to use UserService.bulkUpdateRoles() pattern
+    // This function duplicates UserService role management logic
     const { data: updatedUser, error } = await supabaseClient.auth.admin.updateUserById(
       userId,
       { role: role }

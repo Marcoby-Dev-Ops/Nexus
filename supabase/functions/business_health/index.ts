@@ -32,7 +32,9 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  // ...protected logic here (add Supabase client if needed)...
+  // TODO: Implement business health logic using BusinessService patterns
+  // This function should use BusinessService.getCompanyHealth() when implemented
+  // For now, return placeholder response
 
   return new Response(JSON.stringify({ error: "Unauthorized" }), {
     status: 401,

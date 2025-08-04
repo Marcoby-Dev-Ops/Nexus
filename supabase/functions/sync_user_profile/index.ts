@@ -83,7 +83,9 @@ serve(async (req) => {
     }
     if (!profile.email) profile.email = user.email;
 
-    // Upsert into public.user_profiles (align with frontend queries)
+    // TODO: Refactor to use UserService.updateUserProfile() pattern
+    // This function duplicates UserService profile management logic
+    // Use UserService.updateUserProfile() instead of direct database operations
     await supabase.from('user_profiles').upsert(profile, { onConflict: 'id' });
 
     return new Response(JSON.stringify({ success: true }), {

@@ -18,7 +18,7 @@ import {
   Settings,
   RefreshCw
 } from 'lucide-react';
-import { googleAnalyticsService } from '@/services/analytics/googleAnalyticsService';
+import { AnalyticsService } from '@/services/analytics';
 import { supabase } from "@/lib/supabase";
 import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';

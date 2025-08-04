@@ -3,7 +3,7 @@
  * Central AI intelligence system that processes and synthesizes business data
  */
 
-import type { CrossDepartmentalData } from '@/core/services/realTimeCrossDepartmentalSync';
+import type { CrossDepartmentalData } from '@/services/integrations';
 
 export interface UnifiedBusinessContext {
   companyId: string;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
 import { useIntegrations } from '@/hooks/integrations/useIntegrations';
-import { integrationService } from '@/services/integrations/integrationService.ts';
+// import { IntegrationService } from '@/services/integrations';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { Input } from '@/shared/components/ui/Input.tsx';

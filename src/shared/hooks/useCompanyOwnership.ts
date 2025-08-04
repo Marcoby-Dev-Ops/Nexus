@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
-import { CompanyOwnershipService, CompanyOwner, OwnershipTransferRequest } from '@/core/services/CompanyOwnershipService';
+import { CompanyOwnershipService, CompanyOwner, OwnershipTransferRequest } from '@/services/business';
 
 export interface UseCompanyOwnershipState {
   owner: CompanyOwner | null;

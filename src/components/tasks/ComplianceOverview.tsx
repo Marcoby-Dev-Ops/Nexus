@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Shield, AlertTriangle, CheckCircle, Clock, Database, Zap, Lock, Eye } from 'lucide-react';
-import { dataPrincipleService } from '@/core/services/DataPrincipleService';
+import { DataPrincipleService } from '@/core/services';
 import { useQuery } from '@tanstack/react-query';
 
 const ComplianceOverview: React.FC = () => {

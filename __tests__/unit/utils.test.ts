@@ -15,7 +15,7 @@ describe('utils.ts', () => {
 
   describe('isValidUUID()', () => {
     it('returns true for valid v4 uuid', () => {
-      expect(isValidUUID('123e4567-e89b-12d3-a456-426614174000')).toBe(true);
+      expect(isValidUUID('550e8400-e29b-41d4-a716-446655440000')).toBe(true);
     });
 
     it('returns false for invalid uuid', () => {

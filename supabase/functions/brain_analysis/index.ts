@@ -1,3 +1,9 @@
+/**
+ * brain_analysis
+ * Analyzes brain data and provides intelligence insights using AIService patterns.
+ * TODO: Refactor to use AIService.analyzeBrainData() pattern
+ * This function duplicates AIService brain analysis logic
+ */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 interface BrainAnalysisRequest {
@@ -50,6 +56,9 @@ interface BrainAnalysisResponse {
     learningProgress: number;
   };
 }
+
+// TODO: Use AIService.analyzeBrainData() pattern instead of direct implementation
+// This duplicates the logic in AIService.analyzeBrainData()
 
 // Simulated AI analysis - in production, this would call OpenAI or similar
 function analyzeBrainData(

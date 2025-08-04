@@ -1,19 +1,40 @@
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger.ts';
-import { BaseService, ServiceResponse } from './BaseService';
-import { BaseServiceInterface, ServiceConfig } from './interfaces';
+import { BaseService } from './BaseService';
+import type { ServiceResponse } from './BaseService';
+import type { CrudServiceInterface, ServiceConfig } from './interfaces';
 import { z } from 'zod';
 
 /**
- * Unified Service Base Class
- * Provides standardized CRUD operations with consistent error handling
+ * NOTE: UnifiedService is currently disabled due to conflicts with Supabase's strict typing system.
+ * 
+ * The issue is that Supabase requires specific table names and types, but UnifiedService tries to be
+ * generic. This creates type conflicts where Supabase expects specific table types but gets generic ones.
+ * 
+ * Instead, create specific service classes that extend BaseService directly:
+ * 
+ * @example
+ * ```typescript
+ * export class UserService extends BaseService implements CrudServiceInterface<User> {
+ *   async get(id: string): Promise<ServiceResponse<User>> {
+ *     return this.executeDbOperation(async () => {
+ *       const { data, error } = await supabase
+ *         .from('users')
+ *         .select('*')
+ *         .eq('id', id)
+ *         .single();
+ *       return { data, error };
+ *     }, `get user ${id}`);
+ *   }
+ *   // ... other methods
+ * }
+ * ```
  */
-export abstract class UnifiedService<T> extends BaseService implements BaseServiceInterface<T> {
+
+/*
+export abstract class UnifiedService<T> extends BaseService implements CrudServiceInterface<T> {
   protected abstract config: ServiceConfig;
 
-  /**
-   * Get a single record by ID
-   */
   async get(id: string): Promise<ServiceResponse<T>> {
     this.logMethodCall('get', { id });
     
@@ -26,15 +47,11 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
       
       if (error) throw error;
       
-      // Validate data against schema
       const validatedData = this.config.schema.parse(data);
       return { data: validatedData, error: null };
     }, `get ${this.config.tableName}`);
   }
 
-  /**
-   * Create a new record
-   */
   async create(data: Partial<T>): Promise<ServiceResponse<T>> {
     this.logMethodCall('create', { data });
     
@@ -51,15 +68,11 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
       
       if (error) throw error;
       
-      // Validate data against schema
       const validatedData = this.config.schema.parse(result);
       return { data: validatedData, error: null };
     }, `create ${this.config.tableName}`);
   }
 
-  /**
-   * Update an existing record
-   */
   async update(id: string, data: Partial<T>): Promise<ServiceResponse<T>> {
     this.logMethodCall('update', { id, data });
     
@@ -76,15 +89,11 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
       
       if (error) throw error;
       
-      // Validate data against schema
       const validatedData = this.config.schema.parse(result);
       return { data: validatedData, error: null };
     }, `update ${this.config.tableName}`);
   }
 
-  /**
-   * Delete a record
-   */
   async delete(id: string): Promise<ServiceResponse<boolean>> {
     this.logMethodCall('delete', { id });
     
@@ -100,9 +109,6 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
     }, `delete ${this.config.tableName}`);
   }
 
-  /**
-   * List records with optional filters
-   */
   async list(filters?: Record<string, any>): Promise<ServiceResponse<T[]>> {
     this.logMethodCall('list', { filters });
     
@@ -111,7 +117,6 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
         .from(this.config.tableName)
         .select('*');
       
-      // Apply filters
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -124,15 +129,11 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
       
       if (error) throw error;
       
-      // Validate each item against schema
       const validatedData = data.map(item => this.config.schema.parse(item));
       return { data: validatedData, error: null };
     }, `list ${this.config.tableName}`);
   }
 
-  /**
-   * Search records with text query
-   */
   async search(query: string, filters?: Record<string, any>): Promise<ServiceResponse<T[]>> {
     this.logMethodCall('search', { query, filters });
     
@@ -141,15 +142,12 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
         .from(this.config.tableName)
         .select('*');
       
-      // Apply text search if table supports it
       if (this.config.tableName === 'user_profiles') {
         supabaseQuery = supabaseQuery.or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`);
       } else {
-        // Fallback to basic filtering
         supabaseQuery = supabaseQuery.ilike('name', `%${query}%`);
       }
       
-      // Apply additional filters
       if (filters) {
         Object.entries(filters).forEach(([key, value]) => {
           if (value !== undefined && value !== null) {
@@ -162,15 +160,11 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
       
       if (error) throw error;
       
-      // Validate each item against schema
       const validatedData = data.map(item => this.config.schema.parse(item));
       return { data: validatedData, error: null };
     }, `search ${this.config.tableName}`);
   }
 
-  /**
-   * Bulk create records
-   */
   async bulkCreate(data: Partial<T>[]): Promise<ServiceResponse<T[]>> {
     this.logMethodCall('bulkCreate', { count: data.length });
     
@@ -186,15 +180,11 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
       
       if (error) throw error;
       
-      // Validate each item against schema
       const validatedData = result.map(item => this.config.schema.parse(item));
       return { data: validatedData, error: null };
     }, `bulkCreate ${this.config.tableName}`);
   }
 
-  /**
-   * Bulk update records
-   */
   async bulkUpdate(updates: { id: string; data: Partial<T> }[]): Promise<ServiceResponse<T[]>> {
     this.logMethodCall('bulkUpdate', { count: updates.length });
     
@@ -222,9 +212,6 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
     }, `bulkUpdate ${this.config.tableName}`);
   }
 
-  /**
-   * Bulk delete records
-   */
   async bulkDelete(ids: string[]): Promise<ServiceResponse<boolean>> {
     this.logMethodCall('bulkDelete', { count: ids.length });
     
@@ -239,4 +226,5 @@ export abstract class UnifiedService<T> extends BaseService implements BaseServi
       return { data: true, error: null };
     }, `bulkDelete ${this.config.tableName}`);
   }
-} 
+}
+*/ 

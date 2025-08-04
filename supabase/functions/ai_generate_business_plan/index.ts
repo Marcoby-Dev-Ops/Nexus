@@ -1,6 +1,8 @@
 /**
  * ai_generate_business_plan
  * Creates or refines a business plan markdown for the given company using OpenAI.
+ * TODO: Refactor to use BusinessService.generateBusinessPlan() pattern
+ * This function duplicates BusinessService business plan generation logic
  */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.10';
@@ -79,6 +81,9 @@ serve(async (req) => {
       });
     }
 
+    // TODO: Use BusinessService.generateBusinessPlan() pattern instead of direct implementation
+    // This duplicates the logic in BusinessService.generateBusinessPlan()
+    
     // Generate business plan using AI
     const planSections = await generateBusinessPlanSections(requestData, openaiApiKey);
     

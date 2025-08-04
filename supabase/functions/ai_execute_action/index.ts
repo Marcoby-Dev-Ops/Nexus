@@ -2,6 +2,10 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.42.5';
 import { corsHeaders } from '../_shared/cors.ts';
 
+// Import existing services to eliminate duplication
+// Note: In Edge Functions, we need to simulate the service calls since we can't directly import from src/
+// But we'll use the same patterns and call the same audit logging service
+
 // Environment validation
 const validateEnvironment = () => {
   const required = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
@@ -191,12 +195,25 @@ const handleRequest = async (req: Request, auth: { user: any; supabase: any }) =
   }
 };
 
-// Action execution functions
+// Enhanced action execution functions using ContactService patterns
 async function executeCreateContact(supabase: any, data: any, userId: string, companyId?: string) {
   const { name, email, phone, company, notes } = data;
   
+  // Use same validation as ContactService
   if (!name || !email) {
     throw new Error('Contact name and email are required');
+  }
+
+  // Check for duplicate email (same logic as ContactService)
+  const { data: existingContact } = await supabase
+    .from('contacts')
+    .select('id, email')
+    .eq('email', email)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (existingContact) {
+    throw new Error(`Contact with email ${email} already exists`);
   }
 
   const { data: contact, error } = await supabase
@@ -210,6 +227,7 @@ async function executeCreateContact(supabase: any, data: any, userId: string, co
       user_id: userId,
       company_id: companyId,
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .select()
     .single();
@@ -219,14 +237,44 @@ async function executeCreateContact(supabase: any, data: any, userId: string, co
     throw new Error(`Failed to create contact: ${error.message}`);
   }
 
+  // Use same audit logging pattern as ContactService
+  await supabase.from('audit_logs').insert({
+    userid: userId,
+    action: 'create',
+    resourcetype: 'contact',
+    resource_id: contact.id,
+    details: { contact_email: email, contact_name: name },
+    severity: 'info',
+    timestamp: new Date().toISOString(),
+  });
+
   return contact;
 }
 
 async function executeCreateDeal(supabase: any, data: any, userId: string, companyId?: string) {
   const { title, value, stage, contact_id, notes } = data;
   
+  // Use same validation as DealService
   if (!title || !value) {
     throw new Error('Deal title and value are required');
+  }
+
+  if (value <= 0) {
+    throw new Error('Deal value must be positive');
+  }
+
+  // Verify contact exists if contact_id provided (same logic as DealService)
+  if (contact_id) {
+    const { data: contact } = await supabase
+      .from('contacts')
+      .select('id')
+      .eq('id', contact_id)
+      .eq('user_id', userId)
+      .single();
+
+    if (!contact) {
+      throw new Error('Associated contact not found or access denied');
+    }
   }
 
   const { data: deal, error } = await supabase
@@ -234,12 +282,13 @@ async function executeCreateDeal(supabase: any, data: any, userId: string, compa
     .insert({
       title,
       value,
-      stage,
+      stage: stage || 'prospect', // Default stage like DealService
       contact_id,
       notes,
       user_id: userId,
       company_id: companyId,
       created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .select()
     .single();
@@ -248,6 +297,21 @@ async function executeCreateDeal(supabase: any, data: any, userId: string, compa
     console.error('Deal creation error:', error);
     throw new Error(`Failed to create deal: ${error.message}`);
   }
+
+  // Use same audit logging pattern as DealService
+  await supabase.from('audit_logs').insert({
+    userid: userId,
+    action: 'create',
+    resourcetype: 'deal',
+    resource_id: deal.id,
+    details: { 
+      deal_title: title, 
+      deal_value: value,
+      deal_stage: stage || 'prospect'
+    },
+    severity: 'info',
+    timestamp: new Date().toISOString(),
+  });
 
   return deal;
 }

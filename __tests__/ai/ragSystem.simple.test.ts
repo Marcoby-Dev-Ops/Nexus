@@ -27,10 +27,10 @@ describe('RAG System Simple Tests', () => {
         businessData: 'Department-specific performance data'
       };
 
-      expect(ragComponents.contextualRAG).toBeTruthy();
-      expect(ragComponents.cloudStorageRAG).toBeTruthy();
-      expect(ragComponents.chatContext).toBeTruthy();
-      expect(ragComponents.businessData).toBeTruthy();
+      expect(ragComponents.contextualRAG).toBe(true);
+      expect(ragComponents.cloudStorageRAG).toBe(true);
+      expect(ragComponents.chatContext).toBe(true);
+      expect(ragComponents.businessData).toBe(true);
     });
 
     it('should validate RAG system requirements', () => {
@@ -44,7 +44,7 @@ describe('RAG System Simple Tests', () => {
 
       expect(requirements.length).toBe(5);
       requirements.forEach(req => {
-        expect(req).toBeTruthy();
+        expect(req).toBe(true);
         expect(req.length).toBeGreaterThan(10);
       });
     });
@@ -256,7 +256,7 @@ Response Mode: Professional`;
 
       expect(dataSources.length).toBe(4);
       dataSources.forEach(source => {
-        expect(source).toBeTruthy();
+        expect(source).toBe(true);
         expect(source.includes('_')).toBe(true);
       });
     });

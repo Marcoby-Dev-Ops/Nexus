@@ -14,7 +14,8 @@ import {
   Target,
   Activity
 } from 'lucide-react';
-import { getAllAgents, getAgentsByType, type Agent } from '@/services/ai/agentRegistry';
+import { AIService } from '@/services/ai';
+import type { Agent } from '@/services/ai';
 import { StreamingComposer } from '@/components/ai/StreamingComposer';
 import { AgentPicker } from '@/components/ai/agents';
 import { DomainAgentIndicator } from '@/components/ai/agents';

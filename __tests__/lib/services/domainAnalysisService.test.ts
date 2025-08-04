@@ -4,7 +4,7 @@
  * Pillar: 1,2 - Automated business health assessment testing
  */
 
-import { domainAnalysisService } from '@/lib/services/domainAnalysisService';
+import { domainAnalysisService } from '@/business/services/domainAnalysisService';
 
 describe('DomainAnalysisService', () => {
   describe('analyzeDomain', () => {

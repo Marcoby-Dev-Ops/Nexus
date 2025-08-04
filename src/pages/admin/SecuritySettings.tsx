@@ -8,9 +8,27 @@ import { Input } from '@/shared/components/ui/Input.tsx';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Shield, Lock, Key, Smartphone, Monitor, Clock, Trash2, RefreshCw, Eye, EyeOff, Edit, LogOut, XCircle } from 'lucide-react';
+
+// Import our new service patterns
+import { useService } from '@/shared/hooks/useService';
+import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
+import { FormField, FormSection } from '@/shared/components/forms/FormField';
+import { z } from 'zod';
+
+// Password change schema
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z.string().min(1, 'Please confirm your password')
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+type PasswordChangeData = z.infer<typeof passwordChangeSchema>;
+
 interface SecuritySettings {
   twoFactorEnabled: boolean;
   emailNotifications: boolean;
@@ -33,6 +51,12 @@ interface ActiveSession {
 
 const SecuritySettings: React.FC = () => {
   const { user } = useAuth();
+  
+  // Use the new UserService hooks
+  const userService = useService('user');
+  const { data: userProfile, isLoading: isLoadingProfile } = userService.useGet(user?.id || '');
+  const { mutate: updateUser, isLoading: isUpdating } = userService.useUpdate();
+  
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorEnabled: false,
     emailNotifications: true,
@@ -47,10 +71,32 @@ const SecuritySettings: React.FC = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+
+  // Initialize password change form
+  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
+    schema: passwordChangeSchema,
+    defaultValues: {
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    },
+    onSubmit: async (data: PasswordChangeData) => {
+      if (!user?.id) return;
+
+      try {
+        // Update user with new password (this would be handled by the service)
+        await updateUser(user.id, {
+          password: data.newPassword
+        });
+        
+        setShowPasswordModal(false);
+        toast.success('Password updated successfully');
+      } catch (error) {
+        throw new Error('Failed to update password');
+      }
+    },
+    successMessage: 'Password updated successfully!',
+  });
 
   useEffect(() => {
     if (user?.id) {
@@ -84,46 +130,8 @@ const SecuritySettings: React.FC = () => {
 
       setActiveSessions(mockSessions);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error fetching security data: ', error);
+      console.error('Error fetching security data: ', error);
       toast.error('Failed to load security information');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handlePasswordChange = async () => {
-    if (newPassword !== confirmPassword) {
-      toast.error('New passwords do not match');
-      return;
-    }
-
-    if (newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters long');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Simulate password change
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      toast.success('Password changed successfully');
-      setShowPasswordModal(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      
-      // Update last password change date
-      setSecuritySettings(prev => ({
-        ...prev,
-        passwordLastChanged: new Date().toISOString()
-      }));
-    } catch (error) {
-      toast.error('Failed to change password');
     } finally {
       setLoading(false);
     }
@@ -133,16 +141,35 @@ const SecuritySettings: React.FC = () => {
     try {
       setLoading(true);
       
-      if (enabled) {
-        setShowTwoFactorModal(true);
-      } else {
-        // Simulate 2FA disable
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: false }));
-        toast.success('Two-factor authentication disabled');
-      }
+      // Update security settings
+      setSecuritySettings(prev => ({
+        ...prev,
+        twoFactorEnabled: enabled
+      }));
+      
+      toast.success(`Two-factor authentication ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
-      toast.error('Failed to update two-factor authentication');
+      console.error('Error updating 2FA settings:', error);
+      toast.error('Failed to update two-factor authentication settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNotificationToggle = async (type: 'email' | 'login', enabled: boolean) => {
+    try {
+      setLoading(true);
+      
+      setSecuritySettings(prev => ({
+        ...prev,
+        emailNotifications: type === 'email' ? enabled : prev.emailNotifications,
+        loginNotifications: type === 'login' ? enabled : prev.loginNotifications
+      }));
+      
+      toast.success(`${type === 'email' ? 'Email' : 'Login'} notifications ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+      toast.error('Failed to update notification settings');
     } finally {
       setLoading(false);
     }
@@ -152,12 +179,12 @@ const SecuritySettings: React.FC = () => {
     try {
       setLoading(true);
       
-      // Simulate session revocation
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      // Remove session from list
       setActiveSessions(prev => prev.filter(session => session.id !== sessionId));
+      
       toast.success('Session revoked successfully');
     } catch (error) {
+      console.error('Error revoking session:', error);
       toast.error('Failed to revoke session');
     } finally {
       setLoading(false);
@@ -168,12 +195,12 @@ const SecuritySettings: React.FC = () => {
     try {
       setLoading(true);
       
-      // Simulate revoking all sessions
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      // Keep only current session
       setActiveSessions(prev => prev.filter(session => session.isCurrent));
+      
       toast.success('All other sessions revoked successfully');
     } catch (error) {
+      console.error('Error revoking all sessions:', error);
       toast.error('Failed to revoke sessions');
     } finally {
       setLoading(false);
@@ -182,19 +209,18 @@ const SecuritySettings: React.FC = () => {
 
   const getSecurityScore = () => {
     let score = 0;
-    if (securitySettings.twoFactorEnabled) score += 30;
-    if (securitySettings.emailNotifications) score += 10;
-    if (securitySettings.loginNotifications) score += 10;
+    if (securitySettings.twoFactorEnabled) score += 25;
+    if (securitySettings.emailNotifications) score += 15;
+    if (securitySettings.loginNotifications) score += 15;
     if (securitySettings.sessionTimeout <= 30) score += 20;
-    if (securitySettings.failedLoginAttempts === 0) score += 30;
-    
+    if (securitySettings.failedLoginAttempts === 0) score += 25;
     return Math.min(score, 100);
   };
 
   const getSecurityScoreColor = (score: number) => {
-    if (score >= 80) return 'text-success';
-    if (score >= 60) return 'text-warning';
-    return 'text-destructive';
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
   };
 
   const getSecurityScoreLabel = (score: number) => {
@@ -204,155 +230,153 @@ const SecuritySettings: React.FC = () => {
     return 'Poor';
   };
 
-  if (loading) {
+  if (isLoadingProfile) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <RefreshCw className="w-8 h-8 animate-spin text-primary" />
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-3 text-lg text-muted-foreground">Loading security settings...</span>
       </div>
     );
   }
 
+  const securityScore = getSecurityScore();
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm: flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-medium">Security & Privacy</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your account security settings and privacy preferences
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={fetchSecurityData}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Security Settings</h1>
+        <p className="text-muted-foreground">Manage your account security and privacy</p>
       </div>
 
       {/* Security Score */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Shield className="h-5 w-5 mr-2" />
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
             Security Score
           </CardTitle>
+          <CardDescription>
+            Your account security rating based on enabled features
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="text-3xl font-bold">
-                <span className={getSecurityScoreColor(getSecurityScore())}>
-                  {getSecurityScore()}%
-                </span>
+              <div className={`text-3xl font-bold ${getSecurityScoreColor(securityScore)}`}>
+                {securityScore}%
               </div>
               <div>
-                <p className="font-medium">{getSecurityScoreLabel(getSecurityScore())}</p>
-                <p className="text-sm text-muted-foreground">Account security</p>
+                <div className="font-medium">{getSecurityScoreLabel(securityScore)}</div>
+                <div className="text-sm text-muted-foreground">
+                  {securityScore >= 80 ? 'Your account is well protected' : 
+                   securityScore >= 60 ? 'Consider enabling additional security features' :
+                   'Your account needs additional security measures'}
+                </div>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Last updated</p>
-              <p className="text-sm font-medium">
-                {new Date().toLocaleDateString()}
-              </p>
-            </div>
+            <Badge variant={securityScore >= 80 ? 'default' : securityScore >= 60 ? 'secondary' : 'destructive'}>
+              {getSecurityScoreLabel(securityScore)}
+            </Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Password Security */}
+      {/* Password Management */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Lock className="h-5 w-5 mr-2" />
-            Password Security
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5" />
+            Password
           </CardTitle>
+          <CardDescription>
+            Change your account password
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
-              <p className="font-medium">Password</p>
+              <h4 className="font-medium">Password</h4>
               <p className="text-sm text-muted-foreground">
-                Last changed: {new Date(securitySettings.passwordLastChanged).toLocaleDateString()}
+                Last changed {new Date(securitySettings.passwordLastChanged).toLocaleDateString()}
               </p>
             </div>
             <Button onClick={() => setShowPasswordModal(true)}>
-              <Edit className="w-4 h-4 mr-2" />
               Change Password
             </Button>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Two-Factor Authentication</p>
-              <p className="text-sm text-muted-foreground">
-                Add an extra layer of security to your account
-              </p>
-            </div>
-            <Switch
-              checked={securitySettings.twoFactorEnabled}
-              onCheckedChange={handleTwoFactorToggle}
-            />
           </div>
         </CardContent>
       </Card>
 
-      {/* Login Security */}
+      {/* Two-Factor Authentication */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Key className="h-5 w-5 mr-2" />
-            Login Security
+          <CardTitle className="flex items-center gap-2">
+            <Smartphone className="h-5 w-5" />
+            Two-Factor Authentication
           </CardTitle>
+          <CardDescription>
+            Add an extra layer of security to your account
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
-              <p className="font-medium mb-2">Last Login</p>
+              <h4 className="font-medium">Two-Factor Authentication</h4>
               <p className="text-sm text-muted-foreground">
-                {new Date(securitySettings.lastLogin).toLocaleString()}
+                {securitySettings.twoFactorEnabled ? 'Enabled' : 'Not enabled'}
               </p>
             </div>
-            <div>
-              <p className="font-medium mb-2">Failed Login Attempts</p>
-              <p className="text-sm text-muted-foreground">
-                {securitySettings.failedLoginAttempts} in the last 24 hours
-              </p>
+            <div className="flex items-center gap-2">
+              <Badge variant={securitySettings.twoFactorEnabled ? 'default' : 'secondary'}>
+                {securitySettings.twoFactorEnabled ? 'Enabled' : 'Disabled'}
+              </Badge>
+              <Switch
+                checked={securitySettings.twoFactorEnabled}
+                onCheckedChange={handleTwoFactorToggle}
+                disabled={loading}
+              />
             </div>
           </div>
-          
-          <div className="flex items-center justify-between">
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Monitor className="h-5 w-5" />
+            Security Notifications
+          </CardTitle>
+          <CardDescription>
+            Configure security-related notifications
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
-              <p className="font-medium">Email Notifications</p>
+              <h4 className="font-medium">Email Notifications</h4>
               <p className="text-sm text-muted-foreground">
-                Get notified of suspicious login attempts
+                Receive security alerts via email
               </p>
             </div>
             <Switch
               checked={securitySettings.emailNotifications}
-              onCheckedChange={(checked) => setSecuritySettings(prev => ({ 
-                ...prev, 
-                emailNotifications: checked 
-              }))}
+              onCheckedChange={(enabled) => handleNotificationToggle('email', enabled)}
+              disabled={loading}
             />
           </div>
           
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
-              <p className="font-medium">Login Notifications</p>
+              <h4 className="font-medium">Login Notifications</h4>
               <p className="text-sm text-muted-foreground">
-                Receive notifications for new logins
+                Get notified of new login attempts
               </p>
             </div>
             <Switch
               checked={securitySettings.loginNotifications}
-              onCheckedChange={(checked) => setSecuritySettings(prev => ({ 
-                ...prev, 
-                loginNotifications: checked 
-              }))}
+              onCheckedChange={(enabled) => handleNotificationToggle('login', enabled)}
+              disabled={loading}
             />
           </div>
         </CardContent>
@@ -361,232 +385,102 @@ const SecuritySettings: React.FC = () => {
       {/* Active Sessions */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center">
-              <Monitor className="h-5 w-5 mr-2" />
-              Active Sessions
-            </span>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleRevokeAllSessions}
-              disabled={activeSessions.filter(s => !s.isCurrent).length === 0}
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Revoke All Others
-            </Button>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Active Sessions
           </CardTitle>
+          <CardDescription>
+            Manage your active login sessions
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          {activeSessions.length === 0 ? (
-            <div className="text-center py-8">
-              <Monitor className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-              <h4 className="text-lg font-medium mb-2">No Active Sessions</h4>
-              <p className="text-muted-foreground">
-                Your active sessions will appear here
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {activeSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex items-center gap-3">
-                    <Monitor className="w-5 h-5" />
-                    <div>
-                      <p className="font-medium">{session.device}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {session.location} • {session.ipAddress}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Last active: {new Date(session.lastActive).toLocaleString()}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    {session.isCurrent && (
-                      <Badge variant="secondary">Current</Badge>
-                    )}
-                    {!session.isCurrent && (
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleSessionRevoke(session.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
+        <CardContent className="space-y-4">
+          {activeSessions.map((session) => (
+            <div key={session.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Monitor className="h-5 w-5 text-primary" />
                 </div>
-              ))}
+                <div>
+                  <h4 className="font-medium">{session.device}</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {session.location} • {session.ipAddress}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Last active: {new Date(session.lastActive).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {session.isCurrent && (
+                  <Badge variant="default">Current</Badge>
+                )}
+                {!session.isCurrent && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSessionRevoke(session.id)}
+                    disabled={loading}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
+          ))}
+          
+          {activeSessions.filter(s => !s.isCurrent).length > 0 && (
+            <Button
+              variant="outline"
+              onClick={handleRevokeAllSessions}
+              disabled={loading}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Revoke All Other Sessions
+            </Button>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Session Timeout */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Clock className="h-5 w-5 mr-2" />
-            Session Timeout
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="session-timeout">Auto-logout after inactivity (minutes)</Label>
-              <select
-                id="session-timeout"
-                value={securitySettings.sessionTimeout}
-                onChange={(e) => setSecuritySettings(prev => ({ 
-                  ...prev, 
-                  sessionTimeout: parseInt(e.target.value) 
-                }))}
-                className="w-full px-3 py-2 border rounded-md mt-2"
-              >
-                <option value={15}>15 minutes</option>
-                <option value={30}>30 minutes</option>
-                <option value={60}>1 hour</option>
-                <option value={120}>2 hours</option>
-                <option value={480}>8 hours</option>
-              </select>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              You will be automatically logged out after {securitySettings.sessionTimeout} minutes of inactivity
-            </p>
-          </div>
         </CardContent>
       </Card>
 
       {/* Password Change Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-lg shadow-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">Change Password</h2>
-                <Button variant="outline" onClick={() => setShowPasswordModal(false)}>
-                  <XCircle className="w-4 h-4" />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background p-6 rounded-lg w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Change Password</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <FormField
+                form={form}
+                name="currentPassword"
+                label="Current Password"
+                type="password"
+                placeholder="Enter your current password"
+              />
+              <FormField
+                form={form}
+                name="newPassword"
+                label="New Password"
+                type="password"
+                placeholder="Enter your new password"
+              />
+              <FormField
+                form={form}
+                name="confirmPassword"
+                label="Confirm New Password"
+                type="password"
+                placeholder="Confirm your new password"
+              />
+              <div className="flex gap-2">
+                <Button type="submit" disabled={isSubmitting || isUpdating}>
+                  {isSubmitting || isUpdating ? 'Updating...' : 'Update Password'}
                 </Button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="current-password">Current Password</Label>
-                  <Input
-                    id="current-password"
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="new-password">New Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="new-password"
-                      type={showPassword ? 'text' : 'password'}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="confirm-password">Confirm New Password</Label>
-                  <Input
-                    id="confirm-password"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="outline" onClick={() => setShowPasswordModal(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowPasswordModal(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handlePasswordChange} disabled={loading}>
-                  {loading ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      Changing...
-                    </>
-                  ) : (
-                    'Change Password'
-                  )}
-                </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Two-Factor Setup Modal */}
-      {showTwoFactorModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-lg shadow-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold">Setup Two-Factor Authentication</h2>
-                <Button variant="outline" onClick={() => setShowTwoFactorModal(false)}>
-                  <XCircle className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <Smartphone className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="font-medium mb-2">Scan QR Code</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Use your authenticator app to scan this QR code
-                  </p>
-                  <div className="bg-muted w-32 h-32 mx-auto rounded-lg flex items-center justify-center">
-                    <span className="text-muted-foreground">QR Code</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="verification-code">Verification Code</Label>
-                  <Input
-                    id="verification-code"
-                    placeholder="Enter 6-digit code"
-                    maxLength={6}
-                  />
-                </div>
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-6">
-                <Button variant="outline" onClick={() => setShowTwoFactorModal(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => {
-                  setSecuritySettings(prev => ({ ...prev, twoFactorEnabled: true }));
-                  setShowTwoFactorModal(false);
-                  toast.success('Two-factor authentication enabled');
-                }}>
-                  Enable 2FA
-                </Button>
-              </div>
-            </div>
+            </form>
           </div>
         </div>
       )}

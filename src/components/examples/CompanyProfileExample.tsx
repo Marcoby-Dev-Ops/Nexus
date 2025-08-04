@@ -1,6 +1,6 @@
 import React from 'react';
 import { useService } from '@/shared/hooks/useService';
-import type { Company, Department } from '@/core/services/CompanyService';
+import type { Company, Department } from '@/services/business';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';

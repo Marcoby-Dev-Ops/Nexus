@@ -2,7 +2,6 @@
  * AI Services Index
  */
 
-export { chatService } from './chatService';
-export { multiModalIntelligence } from './multiModalIntelligence';
-export { slashCommandService } from './slashCommandService';
-export { businessObservationService } from './businessObservationService';
+// AI Services
+export { AIService } from './AIService';
+export { EmailIntelligenceService } from './emailIntelligenceService';

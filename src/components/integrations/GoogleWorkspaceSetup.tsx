@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/shared/components/ui';
 import { Badge } from '@/shared/components/ui';
 import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';
-import { googleWorkspaceService } from '@/services/analytics/googleWorkspaceService';
+import { AnalyticsService } from '@/services/analytics';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink, Calendar, HardDrive, Mail, Users, BarChart3, Search, Building, Shield, FileText, ArrowRight } from 'lucide-react';
 interface GoogleWorkspaceSetupProps {
   onComplete: (integration: any) => void;

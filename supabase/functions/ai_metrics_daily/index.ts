@@ -1,3 +1,9 @@
+/**
+ * ai_metrics_daily
+ * Collects and analyzes daily AI metrics using AnalyticsService patterns.
+ * TODO: Refactor to use AnalyticsService.collectDailyMetrics() pattern
+ * This function duplicates AnalyticsService metrics collection logic
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.10';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -75,6 +81,9 @@ serve(async (req) => {
     const requestData = await req.json() as DailyMetricsRequest;
     const targetDate = requestData.date || new Date().toISOString().split('T')[0];
 
+    // TODO: Use AnalyticsService.collectDailyMetrics() pattern instead of direct implementation
+    // This duplicates the logic in AnalyticsService.collectDailyMetrics()
+    
     // Collect daily metrics
     const metrics = await collectDailyMetrics(supabase, targetDate, user.id, requestData.companyId);
     

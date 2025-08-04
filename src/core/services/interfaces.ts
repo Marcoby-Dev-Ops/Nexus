@@ -1,19 +1,10 @@
 import { z } from 'zod';
+import type { ServiceResponse } from './BaseService';
 
 /**
- * Standardized service response interface
+ * CRUD service interface for basic operations
  */
-export interface ServiceResponse<T> {
-  data: T | null;
-  error: string | null;
-  success: boolean;
-  metadata?: Record<string, any>;
-}
-
-/**
- * Base service interface for CRUD operations
- */
-export interface BaseServiceInterface<T> {
+export interface CrudServiceInterface<T> {
   get(id: string): Promise<ServiceResponse<T>>;
   create(data: Partial<T>): Promise<ServiceResponse<T>>;
   update(id: string, data: Partial<T>): Promise<ServiceResponse<T>>;
@@ -24,7 +15,7 @@ export interface BaseServiceInterface<T> {
 /**
  * Service interface for complex operations
  */
-export interface AdvancedServiceInterface<T> extends BaseServiceInterface<T> {
+export interface AdvancedServiceInterface<T> extends CrudServiceInterface<T> {
   search(query: string, filters?: Record<string, any>): Promise<ServiceResponse<T[]>>;
   bulkCreate(data: Partial<T>[]): Promise<ServiceResponse<T[]>>;
   bulkUpdate(updates: { id: string; data: Partial<T> }[]): Promise<ServiceResponse<T[]>>;

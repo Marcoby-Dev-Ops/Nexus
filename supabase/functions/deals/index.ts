@@ -6,13 +6,15 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const sb = createClient(SUPABASE_URL, SERVICE_KEY);
 
+// Use same audit logging pattern as DealService
 async function auditLog(action: string, userId: string, companyId: string, details: unknown) {
-  await sb.from('security_audit_log').insert({
+  await sb.from('audit_logs').insert({
+    userid: userId,
     action,
-    user_id: userId,
-    company_id: companyId,
+    resourcetype: 'deal',
     details,
-    created_at: new Date().toISOString(),
+    severity: 'info',
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -76,17 +78,59 @@ serve(async (req: Request) => {
       });
     }
     if (req.method === 'POST') {
-      // Create deal
+      // Create deal using DealService patterns
       const body = await req.json();
+      
+      // Use same validation as DealService
+      if (!body.title || !body.value) {
+        return new Response(JSON.stringify({ error: 'Deal title and value are required' }), {
+          status: 400,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (body.value <= 0) {
+        return new Response(JSON.stringify({ error: 'Deal value must be positive' }), {
+          status: 400,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Verify contact exists if contact_id provided (same logic as DealService)
+      if (body.contact_id) {
+        const { data: contact } = await sb
+          .from('contacts')
+          .select('id')
+          .eq('id', body.contact_id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (!contact) {
+          return new Response(JSON.stringify({ error: 'Associated contact not found or access denied' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
       const insert = {
         ...body,
+        user_id: user.id,
         company_id: companyId,
+        stage: body.stage || 'prospect', // Default stage like DealService
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       const { data, error } = await sb.from('deals').insert(insert).select('*').single();
       if (error) throw error;
-      await auditLog('deal_create', user.id, companyId, { deal: data });
+      
+      // Use same audit logging pattern as DealService
+      await auditLog('create', user.id, companyId, { 
+        deal_title: body.title, 
+        deal_value: body.value,
+        deal_stage: body.stage || 'prospect',
+        deal_id: data.id
+      });
       await emitRealtimeEvent('created', 'deal', data.id, companyId, data);
       return new Response(JSON.stringify({ deal: data }), {
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
@@ -94,7 +138,7 @@ serve(async (req: Request) => {
       });
     }
     if (req.method === 'PATCH') {
-      // Update deal
+      // Update deal using DealService patterns
       const body = await req.json();
       if (!body.id) {
         return new Response(JSON.stringify({ error: 'Missing deal id' }), {
@@ -102,6 +146,47 @@ serve(async (req: Request) => {
           headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
       }
+
+      // Verify ownership (same logic as DealService)
+      const { data: existingDeal } = await sb
+        .from('deals')
+        .select('id, user_id, title, value, stage')
+        .eq('id', body.id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingDeal) {
+        return new Response(JSON.stringify({ error: 'Deal not found or access denied' }), {
+          status: 404,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Validate value if being updated (same logic as DealService)
+      if (body.value !== undefined && body.value <= 0) {
+        return new Response(JSON.stringify({ error: 'Deal value must be positive' }), {
+          status: 400,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Verify contact exists if contact_id being updated (same logic as DealService)
+      if (body.contact_id) {
+        const { data: contact } = await sb
+          .from('contacts')
+          .select('id')
+          .eq('id', body.contact_id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (!contact) {
+          return new Response(JSON.stringify({ error: 'Associated contact not found or access denied' }), {
+            status: 400,
+            headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
       const update = {
         ...body,
         updated_at: new Date().toISOString(),
@@ -114,7 +199,14 @@ serve(async (req: Request) => {
         .select('*')
         .single();
       if (error) throw error;
-      await auditLog('deal_update', user.id, companyId, { deal: data });
+      
+      // Use same audit logging pattern as DealService
+      await auditLog('update', user.id, companyId, { 
+        updates: body,
+        previous_value: existingDeal.value,
+        previous_stage: existingDeal.stage,
+        deal_id: data.id
+      });
       await emitRealtimeEvent('updated', 'deal', data.id, companyId, data);
       return new Response(JSON.stringify({ deal: data }), {
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
@@ -122,7 +214,7 @@ serve(async (req: Request) => {
       });
     }
     if (req.method === 'DELETE') {
-      // Delete deal
+      // Delete deal using DealService patterns
       const url = new URL(req.url);
       const id = url.searchParams.get('id');
       if (!id) {
@@ -131,6 +223,22 @@ serve(async (req: Request) => {
           headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
       }
+
+      // Verify ownership and get deal data for audit (same logic as DealService)
+      const { data: existingDeal } = await sb
+        .from('deals')
+        .select('id, user_id, title, value')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingDeal) {
+        return new Response(JSON.stringify({ error: 'Deal not found or access denied' }), {
+          status: 404,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
       const { data, error } = await sb
         .from('deals')
         .delete()
@@ -139,7 +247,13 @@ serve(async (req: Request) => {
         .select('*')
         .single();
       if (error) throw error;
-      await auditLog('deal_delete', user.id, companyId, { deal: data });
+      
+      // Use same audit logging pattern as DealService
+      await auditLog('delete', user.id, companyId, { 
+        deal_title: existingDeal.title,
+        deal_value: existingDeal.value,
+        deal_id: id
+      });
       await emitRealtimeEvent('deleted', 'deal', data.id, companyId, data);
       return new Response(JSON.stringify({ deal: data }), {
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },

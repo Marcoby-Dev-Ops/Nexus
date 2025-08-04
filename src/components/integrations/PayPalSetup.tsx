@@ -20,7 +20,7 @@ import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { useAuth } from '@/hooks/index';
 import { supabase } from '@/lib/supabase';
 import { PayPalAnalyticsSimple } from './PayPalAnalyticsSimple';
-import { PayPalRestAPI } from '@/services/integrations/paypal/PayPalRestAPI';
+import { PayPalIntegrationService } from '@/services/integrations/paypal/PayPalIntegrationService';
 
 interface PayPalSetupProps {
   onComplete?: () => void;
@@ -180,6 +180,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     if (!user) {
       addNotification({
         type: 'error',
+        title: 'Authentication Required',
         message: 'Please log in to connect PayPal'
       });
       return;
@@ -237,6 +238,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
 
       addNotification({
         type: 'info',
+        title: 'PayPal Authorization',
         message: 'Complete the PayPal authorization in the popup window...'
       });
 
@@ -247,6 +249,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     console.error('PayPal connection error: ', error);
       addNotification({
         type: 'error',
+        title: 'PayPal Connection Error',
         message: error instanceof Error ? error.message : 'Failed to connect PayPal. Please try again.'
       });
     } finally {
@@ -259,6 +262,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     if (!user) {
       addNotification({
         type: 'error',
+        title: 'Authentication Required',
         message: 'Please log in to connect PayPal'
       });
       return;
@@ -316,6 +320,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
 
       addNotification({
         type: 'info',
+        title: 'PayPal Authorization',
         message: 'Complete the PayPal authorization in the popup window...'
       });
 
@@ -326,6 +331,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     console.error('PayPal connection error: ', error);
       addNotification({
         type: 'error',
+        title: 'PayPal Connection Error',
         message: error instanceof Error ? error.message : 'Failed to connect PayPal. Please try again.'
       });
     } finally {
@@ -334,55 +340,76 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
   };
 
   const handleDisconnect = async () => {
-    if (!paypalIntegration) return;
-    
+    if (!user) {
+      addNotification({
+        type: 'error',
+        title: 'Authentication Required',
+        message: 'Please log in to disconnect PayPal'
+      });
+      return;
+    }
+
     try {
+      // Remove user integration
       const { error } = await supabase
         .from('user_integrations')
-        .update({ status: 'inactive' })
-        .eq('id', paypalIntegration.id);
+        .delete()
+        .eq('user_id', user.id)
+        .eq('integration_id', paypalIntegration.id);
 
       if (error) throw error;
 
       setPaypalIntegration(null);
       setConnectionStatus('disconnected');
-      
+
       addNotification({
         type: 'success',
-        message: 'PayPal integration disconnected successfully'
+        title: 'PayPal Disconnected',
+        message: 'PayPal integration has been disconnected successfully.'
       });
-      
-      onComplete?.();
+
+      if (onComplete) onComplete();
+
     } catch (error) {
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
-    console.error('Error disconnecting PayPal: ', error);
+    console.error('PayPal disconnection error: ', error);
       addNotification({
         type: 'error',
+        title: 'PayPal Disconnection Error',
         message: 'Failed to disconnect PayPal. Please try again.'
       });
     }
   };
 
   const handleRefreshToken = async () => {
-    if (!paypalIntegration) return;
-    
+    if (!user) {
+      addNotification({
+        type: 'error',
+        title: 'Authentication Required',
+        message: 'Please log in to refresh PayPal tokens'
+      });
+      return;
+    }
+
     try {
+      // Call the token refresh function
       const { error } = await supabase.functions.invoke('paypal_refresh_token', {
-        body: { orgId: user?.company_id }
+        body: { user_id: user.id }
       });
 
       if (error) throw error;
 
       addNotification({
         type: 'success',
-        message: 'PayPal tokens refreshed successfully'
+        title: 'Token Refreshed',
+        message: 'PayPal tokens have been refreshed successfully.'
       });
-      
-      // Refresh integration status
-      await checkExistingIntegration();
-      
+
+      // Re-check integration status
+      checkExistingIntegration();
+
     } catch (error) {
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -390,6 +417,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     console.error('Token refresh error: ', error);
       addNotification({
         type: 'error',
+        title: 'Token Refresh Error',
         message: 'Failed to refresh PayPal tokens. Please try reconnecting.'
       });
     }
@@ -397,20 +425,33 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
 
   const testRestApiConnection = async () => {
     try {
-      const api = new PayPalRestAPI();
-      const result = await api.testConnection();
+      const api = new PayPalIntegrationService();
+      
+      // Get the PayPal integration ID
+      const { data: integration, error: integrationError } = await supabase
+        .from('integrations')
+        .select('id')
+        .eq('slug', 'paypal')
+        .single();
+
+      if (integrationError || !integration) {
+        throw new Error('PayPal integration not found. Please set up the integration first.');
+      }
+
+      const result = await api.testConnection(integration.id);
       
       const testResult = {
-        success: result,
-        message: result 
+        success: Boolean(result.success && result.data?.success),
+        message: result.success && result.data?.success
           ? 'PayPal REST API connection successful! You can access transaction data for analytics.'
-          : 'PayPal REST API connection failed. Check your credentials.'
+          : result.error || 'PayPal REST API connection failed. Check your credentials.'
       };
       
       setRestApiTest(testResult);
       
       addNotification({
-        type: result ? 'success' : 'error',
+        type: testResult.success ? 'success' : 'error',
+        title: testResult.success ? 'API Test Successful' : 'API Test Failed',
         message: testResult.message
       });
     } catch (error) {
@@ -423,6 +464,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       
       addNotification({
         type: 'error',
+        title: 'API Test Error',
         message: testResult.message
       });
     }

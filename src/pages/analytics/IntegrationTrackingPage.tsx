@@ -8,8 +8,8 @@ import { Input } from '@/shared/components/ui/Input.tsx';
 import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
-import { IntegrationTracker } from '@/services/analytics/IntegrationTracker';
-import type { ComponentUsage } from '../services/IntegrationTracker';
+// import { IntegrationService } from '@/services/integrations';
+import type { ComponentUsage } from '@/services/integrations';
 
 interface ComponentStats {
   componentName: string;

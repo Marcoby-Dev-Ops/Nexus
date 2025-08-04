@@ -137,7 +137,7 @@
     --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
     --border: 160 15% 18%;      /* #2a2a2a - Darker border */
-    --input: 214.3 31.8% 91.4%;
+    --input: 160 15% 10%;       /* #1a1a1a - Much darker input background for better contrast */
     --ring: 215 20.2% 65.1%;
     
     /* Enhanced Extended UI State Colors - Dark Mode */

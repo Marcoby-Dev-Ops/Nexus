@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/index';
-import { authErrorHandler } from '@/core/services/authErrorHandler';
+import { authErrorHandler } from '@/core/auth';
 import { logger } from '@/shared/utils/logger.ts';
 
 export interface FireCycleLog {

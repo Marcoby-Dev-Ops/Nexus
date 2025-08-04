@@ -1,3 +1,9 @@
+/**
+ * get_finance_performance
+ * Retrieves financial performance metrics using AnalyticsService patterns.
+ * TODO: Refactor to use AnalyticsService.getFinancePerformance() pattern
+ * This function duplicates AnalyticsService finance metrics logic
+ */
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -38,6 +44,8 @@ serve(async (req: Request) => {
   }
 
   try {
+    // TODO: Use AnalyticsService.getFinancePerformance() pattern instead of mock data
+    // This duplicates the logic in AnalyticsService.getFinancePerformance()
     return new Response(JSON.stringify({ stats: MOCK_FINANCIAL_STATS }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

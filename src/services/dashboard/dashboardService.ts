@@ -5,6 +5,8 @@
 
 import { select, selectOne, selectWithOptions } from '@/lib/supabase';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
+import { BaseService } from '@/core/services/BaseService';
+import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 
 // Enhanced Dashboard Types
@@ -52,14 +54,20 @@ export interface DashboardData {
   alerts: any[];
 }
 
-export class DashboardService {
+/**
+ * Dashboard Service
+ * Provides centralized dashboard functionality and metrics
+ * 
+ * Extends BaseService for consistent error handling and logging
+ */
+export class DashboardService extends BaseService {
   private queryWrapper = new DatabaseQueryWrapper();
 
   /**
    * Get enhanced dashboard data for the EnhancedDashboard component
    */
-  async getEnhancedDashboardData(): Promise<{ metrics: DashboardMetrics; activities: DashboardActivity[] }> {
-    try {
+  async getEnhancedDashboardData(): Promise<ServiceResponse<{ metrics: DashboardMetrics; activities: DashboardActivity[] }>> {
+    return this.executeDbOperation(async () => {
       // Mock enhanced dashboard data
       const metrics: DashboardMetrics = {
         think: {
@@ -117,20 +125,16 @@ export class DashboardService {
         }
       ];
 
-      return { metrics, activities };
-    } catch (error) {
-      logger.error('Error in getEnhancedDashboardData:', error);
-      throw error;
-    }
+      return { data: { metrics, activities }, error: null };
+    }, 'get enhanced dashboard data');
   }
 
   /**
    * Get dashboard data with proper authentication
    */
-  async getDashboardData(userId?: string): Promise<{ data: DashboardData | null; error: any }> {
-    try {
+  async getDashboardData(userId?: string): Promise<ServiceResponse<DashboardData>> {
+    return this.executeDbOperation(async () => {
       if (!userId) {
-        logger.warn('Cannot get dashboard data: No user ID provided');
         return { data: null, error: 'User ID required' };
       }
 
@@ -148,91 +152,90 @@ export class DashboardService {
           totalUsers: 1250,
           activeUsers: 890,
           totalRevenue: 125000,
-          growthRate: 12.5
+          growthRate: 15.5
         },
         recentActivity: [
           {
             id: '1',
-            type: 'user_signup',
+            type: 'user_registration',
             message: 'New user registered',
             timestamp: new Date().toISOString()
           },
           {
             id: '2',
-            type: 'revenue_update',
-            message: 'Monthly revenue updated',
-            timestamp: new Date().toISOString()
+            type: 'revenue_milestone',
+            message: 'Revenue milestone reached',
+            timestamp: new Date(Date.now() - 3600000).toISOString()
           }
         ],
         alerts: [
           {
             id: '1',
             type: 'warning',
-            message: 'System maintenance scheduled',
+            message: 'System performance alert',
             timestamp: new Date().toISOString()
           }
         ]
       };
 
       return { data: mockData, error: null };
-    } catch (error) {
-      logger.error('Error in getDashboardData:', error);
-      return { data: null, error };
-    }
+    }, `get dashboard data for user ${userId}`);
   }
 
   /**
-   * Get user-specific dashboard data with proper authentication
+   * Get user-specific dashboard data
    */
-  async getUserDashboard(userId: string): Promise<{ data: any | null; error: any }> {
-    try {
-      // Get user-specific dashboard data
-      const queries = [
-        selectOne('user_profiles', userId, 'user_id'),
-        selectWithOptions('user_activity', { filter: { user_id: userId }, orderBy: { column: 'created_at', ascending: false }, limit: 10 }),
-        selectOne('user_preferences', userId, 'user_id')
-      ];
-
-      const data = await Promise.all(queries);
-      const error = null;
-
-      if (error) {
-        logger.error('Error getting user dashboard:', error);
-        return { data: null, error };
+  async getUserDashboard(userId: string): Promise<ServiceResponse<any>> {
+    return this.executeDbOperation(async () => {
+      if (!userId) {
+        return { data: null, error: 'User ID required' };
       }
 
-      return { data, error: null };
-    } catch (error) {
-      logger.error('Error in getUserDashboard:', error);
-      return { data: null, error };
-    }
+      // Get user profile
+      const { data: userProfile, error: profileError } = await selectOne('user_profiles', 'id', userId);
+      
+      if (profileError) {
+        return { data: null, error: profileError };
+      }
+
+      // Get user-specific metrics
+      const userMetrics = {
+        totalTasks: 0,
+        completedTasks: 0,
+        pendingTasks: 0,
+        recentActivity: []
+      };
+
+      return { data: { userProfile, metrics: userMetrics }, error: null };
+    }, `get user dashboard for user ${userId}`);
   }
 
   /**
-   * Get company dashboard data with proper authentication
+   * Get company-specific dashboard data
    */
-  async getCompanyDashboard(companyId: string): Promise<{ data: any | null; error: any }> {
-    try {
-      // Get company-specific dashboard data
-      const queries = [
-        selectOne('company_profiles', companyId),
-        selectWithOptions('company_metrics', { filter: { company_id: companyId }, orderBy: { column: 'created_at', ascending: false }, limit: 10 }),
-        selectOne('company_settings', companyId, 'company_id')
-      ];
-
-      const data = await Promise.all(queries);
-      const error = null;
-
-      if (error) {
-        logger.error('Error getting company dashboard:', error);
-        return { data: null, error };
+  async getCompanyDashboard(companyId: string): Promise<ServiceResponse<any>> {
+    return this.executeDbOperation(async () => {
+      if (!companyId) {
+        return { data: null, error: 'Company ID required' };
       }
 
-      return { data, error: null };
-    } catch (error) {
-      logger.error('Error in getCompanyDashboard:', error);
-      return { data: null, error };
-    }
+      // Get company profile
+      const { data: companyProfile, error: profileError } = await selectOne('companies', 'id', companyId);
+      
+      if (profileError) {
+        return { data: null, error: profileError };
+      }
+
+      // Get company-specific metrics
+      const companyMetrics = {
+        totalUsers: 0,
+        totalRevenue: 0,
+        activeProjects: 0,
+        recentActivity: []
+      };
+
+      return { data: { companyProfile, metrics: companyMetrics }, error: null };
+    }, `get company dashboard for company ${companyId}`);
   }
 }
 

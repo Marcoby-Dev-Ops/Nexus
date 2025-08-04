@@ -77,6 +77,7 @@ export const FormField = <
           <div className="space-y-1">
             {children({
               ...field,
+              id: name, // Ensure the field has the correct id
               disabled: disabled || fieldState.disabled,
             })}
             

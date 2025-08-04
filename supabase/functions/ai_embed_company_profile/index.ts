@@ -1,6 +1,8 @@
 /**
  * ai_embed_company_profile
- * Generates embeddings for a company's profile data and stores them in ai_company_profiles.content_embedding.
+ * Generates embeddings for a company's profile data using AIService patterns.
+ * TODO: Refactor to use AIService.embedCompanyProfile() pattern
+ * This function duplicates AIService embedding functionality
  */
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.5";
@@ -51,6 +53,8 @@ serve(async (req) => {
       });
     }
 
+    // TODO: Use AIService.embedCompanyProfile() pattern instead of direct implementation
+    // This duplicates the logic in AIService.embedCompanyProfile()
     const combinedText = [
       profile.tagline,
       profile.motto,
@@ -68,7 +72,7 @@ serve(async (req) => {
       );
     }
 
-    // Generate embedding
+    // Generate embedding using AIService pattern
     const embedRes = await fetch("https://api.openai.com/v1/embeddings", {
       method: "POST",
       headers: {
@@ -99,7 +103,7 @@ serve(async (req) => {
       });
     }
 
-    // Store embedding
+    // Store embedding using AIService pattern
     const { error: updateError } = await supabase
       .from("ai_company_profiles")
       .update({ content_embedding: embedding })

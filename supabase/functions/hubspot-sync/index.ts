@@ -327,16 +327,23 @@ async function syncHubSpotData(supabaseClient: any, accessToken: string, userId:
               }
             }
 
+            // Use DealService validation patterns
+            const dealValue = parseFloat(deal.properties.amount || '0');
+            if (dealValue < 0) {
+              console.warn(`Deal ${deal.id} has negative value, setting to 0`);
+            }
+
             const dealData = {
               title: deal.properties.dealname || 'Unnamed Deal',
-              value: parseFloat(deal.properties.amount || '0'),
-              stage: deal.properties.dealstage || 'Unknown',
+              value: Math.max(dealValue, 0), // Ensure positive value like DealService
+              stage: deal.properties.dealstage || 'prospect', // Use default stage like DealService
               expected_close_date: deal.properties.closedate ? new Date(deal.properties.closedate).toISOString() : null,
               company_id: companyId,
               hubspotid: deal.id,
               updated_at: new Date().toISOString()
             }
 
+            // Use upsert pattern from DealService
             const { error: upsertError } = await supabaseClient
               .from('deals')
               .upsert(dealData, {

@@ -25,7 +25,7 @@ import {
 import { triggerManualSync } from '@/services/integrations/syncService';
 import type { BaseIntegration } from '@/services/integrations/baseIntegration';
 import { GoogleWorkspaceIntegration } from '@/services/integrations/GoogleWorkspaceIntegration';
-import { Microsoft365Integration } from '@/services/integrations/Microsoft365Integration';
+// import { Microsoft365Integration } from '@/services/integrations/Microsoft365Integration';
 import { DropboxIntegration } from '@/services/integrations/DropboxIntegration';
 import { SlackIntegration } from '@/services/integrations/SlackIntegration';
 import { HubSpotIntegration } from '@/services/integrations/hubspotIntegration';
@@ -70,7 +70,7 @@ interface IntegrationInsight {
 
 const integrationClassRegistry: Record<string, typeof BaseIntegration> = {
   'google-workspace': GoogleWorkspaceIntegration,
-  'microsoft-365': Microsoft365Integration,
+  // 'microsoft-365': Microsoft365Integration,
   'dropbox': DropboxIntegration,
   'slack': SlackIntegration,
   'hubspot': HubSpotIntegration,

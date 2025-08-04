@@ -1,5 +1,5 @@
 import React from 'react';
-import type { SlashCommand } from '@/services/ai/slashCommandService';
+import type { SlashCommand } from '@/services/ai';
 
 interface SlashCommandMenuProps {
   commands: SlashCommand[];

@@ -3,10 +3,7 @@
  * Exports all admin domain services
  */
 
-export { billingService } from './billingService';
-export { userService } from './userService';
-export { userDataService } from './userDataService';
-export { profileContextService } from './profileContextService';
+export { BillingService } from '@/services/business';
 export { securityManager } from './security';
 
 // Security types

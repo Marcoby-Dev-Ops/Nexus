@@ -14,8 +14,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { PayPalAnalyticsService } from '@/services/integrations/paypal/PayPalAnalytics';
-import type { PayPalAnalyticsData } from '@/services/integrations/paypal/PayPalAnalytics';
+import { PayPalIntegrationService, type PayPalAnalytics } from '@/services/integrations/paypal/PayPalIntegrationService';
 import { supabase } from '@/lib/supabase';
 
 interface PayPalAnalyticsSimpleProps {
@@ -24,7 +23,7 @@ interface PayPalAnalyticsSimpleProps {
 
 export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ className }) => {
   const { user } = useAuth();
-  const [analytics, setAnalytics] = useState<PayPalAnalyticsData | null>(null);
+  const [analytics, setAnalytics] = useState<PayPalAnalytics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [integrationId, setIntegrationId] = useState<string | null>(null);
@@ -39,7 +38,7 @@ export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ cl
     return new Date().toISOString().split('T')[0];
   });
 
-  const analyticsService = new PayPalAnalyticsService();
+  const analyticsService = new PayPalIntegrationService();
 
   // Get user's PayPal integration
   useEffect(() => {
@@ -47,7 +46,7 @@ export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ cl
       if (!user) return;
 
       try {
-        const { error } = await supabase
+        const { data: integration, error } = await supabase
           .from('user_integrations')
           .select('id, integration_id, status')
           .eq('user_id', user.id)
@@ -63,8 +62,8 @@ export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ cl
           return;
         }
 
-        if (integrations) {
-          setIntegrationId(integrations.id);
+        if (integration) {
+          setIntegrationId(integration.integration_id);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
@@ -87,8 +86,17 @@ export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ cl
     setError(null);
 
     try {
-      const data = await analyticsService.getAnalytics(startDate, endDate, user.id, integrationId);
-      setAnalytics(data);
+      const result = await analyticsService.getAnalytics(integrationId, {
+        startDate,
+        endDate,
+        currency: 'USD'
+      });
+
+      if (result.success && result.data) {
+        setAnalytics(result.data);
+      } else {
+        setError(result.error || 'Failed to fetch analytics');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message: 'Failed to fetch analytics';
       setError(errorMessage);

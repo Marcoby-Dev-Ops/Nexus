@@ -4,11 +4,11 @@ import {
   filterSlashCommands, 
   clearSlashCommandsCache,
   type SlashCommand 
-} from '@/features/services/slashCommandService';
-import { supabase } from '@/lib/core/supabase';
+} from '@/core/services/AIService';
+import { supabase } from '@/core/database/supabase';
 
 // Mock Supabase
-jest.mock('@/lib/core/supabase', () => ({
+jest.mock('@/core/database/supabase', () => ({
   supabase: {
     from: jest.fn(),
   },

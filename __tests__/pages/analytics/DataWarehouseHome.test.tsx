@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import DataWarehouseHome from './DataWarehouseHome';
+import DataWarehouseHome from '../../../src/pages/analytics/DataWarehouseHome';
 
 describe('DataWarehouseHome', () => {
   it('renders analytics title', () => {

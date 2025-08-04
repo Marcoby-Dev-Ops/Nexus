@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { googleAnalyticsService } from '@/services/analytics/googleAnalyticsService';
+import { AnalyticsService } from '@/services/analytics';
 import { supabase } from '@/lib/supabase';
 import type { ChatMessage } from '@/core/types/chat';
 import { callEdgeFunction } from '@/lib/supabase';
@@ -104,28 +104,26 @@ export function useSecondBrain(pageId: string): UseSecondBrainReturn {
   const loadGoogleAnalyticsData = async (): Promise<IntegrationDataPoint | null> => {
     try {
       // Use the Google Analytics service directly
-      if (!googleAnalyticsService.isAuthenticated()) {
+      const overview = await analyticsService.getGoogleAnalyticsOverview();
+      
+      if (!overview) {
         return null;
       }
-
-      const data = await googleAnalyticsService.getAnalyticsData('last7Days');
       return {
         source: 'google-analytics',
         type: 'metric',
         value: {
-          sessions: parseInt(data.overview.sessions.value.replace(/[^\d]/g, '')) || 0,
-          pageviews: parseInt(data.overview.pageViews.value.replace(/[^\d]/g, '')) || 0,
-          bounceRate: parseFloat(data.overview.bounceRate.value.replace('%', '')) || 0,
-          avgSessionDuration: data.overview.avgSessionDuration.value || '0:00',
-          totalUsers: parseInt(data.overview.totalUsers.value.replace(/[^\d]/g, '')) || 0,
-          realTimeUsers: data.realTimeUsers || 0
+          sessions: overview.sessions || 0,
+          pageviews: overview.pageViews || 0,
+          bounceRate: overview.bounceRate || 0,
+          avgSessionDuration: overview.avgSessionDuration || 0,
+          totalUsers: overview.users || 0,
+          realTimeUsers: 0 // Not available in new service
         },
         timestamp: new Date().toISOString(),
         metadata: { 
           period: '7d', 
-          reportType: 'overview',
-          topPages: data.topPages.slice(0, 3),
-          topSources: data.topSources.slice(0, 3)
+          reportType: 'overview'
         },
         relevanceScore: 0.9
       };

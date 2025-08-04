@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
@@ -18,50 +18,131 @@ import {
   CheckCircle
 } from 'lucide-react';
 
+// Import our new service patterns
+import { useService } from '@/shared/hooks/useService';
+import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
+import { FormField, FormSection } from '@/shared/components/forms/FormField';
+import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
+
 const AccountSettings: React.FC = () => {
   const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
-  const [formData, setFormData] = useState({
-    firstName: user?.first_name || '',
-    lastName: user?.last_name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
+  // Use the new UserService hooks
+  const userService = useService('user');
+  const { data: userProfile, isLoading: isLoadingProfile } = userService.useGet(user?.id || '');
+  const { mutate: updateUser, isLoading: isUpdating } = userService.useUpdate();
+  
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Initialize form with our new pattern
+  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
+    schema: userProfileSchema,
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      displayName: '',
+      jobTitle: '',
+      company: '',
+      role: '',
+      department: '',
+      businessEmail: '',
+      personalEmail: '',
+      bio: '',
+      location: '',
+      website: '',
+      phone: '',
+    },
+    onSubmit: async (data: UserProfileFormData) => {
+      if (!user?.id) return;
+
+      const updates = {
+        first_name: data.firstName,
+        last_name: data.lastName,
+        display_name: data.displayName,
+        job_title: data.jobTitle,
+        role: data.role,
+        department: data.department,
+        business_email: data.businessEmail,
+        personal_email: data.personalEmail,
+        bio: data.bio,
+        location: data.location,
+        linkedin_url: data.website,
+        phone: data.phone,
+      };
+
+      try {
+        await updateUser(user.id, updates);
+        setIsEditing(false);
+      } catch (error) {
+        throw new Error('Failed to update profile');
+      }
+    },
+    successMessage: 'Profile updated successfully!',
   });
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  // Update form when user profile loads
+  useEffect(() => {
+    if (userProfile) {
+      form.reset({
+        firstName: userProfile.first_name || '',
+        lastName: userProfile.last_name || '',
+        displayName: userProfile.display_name || '',
+        jobTitle: userProfile.job_title || '',
+        company: userProfile.company || '',
+        role: userProfile.role || '',
+        department: userProfile.department || '',
+        businessEmail: userProfile.business_email || '',
+        personalEmail: userProfile.personal_email || '',
+        bio: userProfile.bio || '',
+        location: userProfile.location || '',
+        website: userProfile.linkedin_url || '',
+        phone: userProfile.phone || '',
+      });
+    }
+  }, [userProfile, form]);
+
+  const handleEditToggle = () => {
+    setIsEditing(!isEditing);
   };
 
-  const handleSave = async () => {
-    setLoading(true);
-    try {
-      // TODO: Implement actual profile update
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
-      setIsEditing(false);
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update profile. Please try again.' });
-    } finally {
-      setLoading(false);
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset form to current values
+    if (userProfile) {
+      form.reset({
+        firstName: userProfile.first_name || '',
+        lastName: userProfile.last_name || '',
+        displayName: userProfile.display_name || '',
+        jobTitle: userProfile.job_title || '',
+        company: userProfile.company || '',
+        role: userProfile.role || '',
+        department: userProfile.department || '',
+        businessEmail: userProfile.business_email || '',
+        personalEmail: userProfile.personal_email || '',
+        bio: userProfile.bio || '',
+        location: userProfile.location || '',
+        website: userProfile.linkedin_url || '',
+        phone: userProfile.phone || '',
+      });
     }
   };
 
-  const handleCancel = () => {
-    setFormData({
-      firstName: user?.first_name || '',
-      lastName: user?.last_name || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-    });
-    setIsEditing(false);
-    setMessage(null);
-  };
+  if (isLoadingProfile) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Account Settings</h1>
+          <p className="text-muted-foreground">Manage your account information and preferences</p>
+        </div>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -70,85 +151,107 @@ const AccountSettings: React.FC = () => {
         <p className="text-muted-foreground">Manage your account information and preferences</p>
       </div>
 
-      {message && (
-        <Alert variant={message.type === 'error' ? 'destructive' : 'default'}>
-          <CheckCircle className="h-4 w-4" />
-          <AlertDescription>{message.text}</AlertDescription>
-        </Alert>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Personal Information
-          </CardTitle>
-          <CardDescription>
-            Update your personal details and contact information
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Personal Information
+            </CardTitle>
+            <CardDescription>
+              Update your personal details and contact information
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                form={form}
+                name="firstName"
+                label="First Name"
+                placeholder="Enter your first name"
+                disabled={!isEditing}
+              />
+              <FormField
+                form={form}
+                name="lastName"
+                label="Last Name"
+                placeholder="Enter your last name"
                 disabled={!isEditing}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                disabled={!isEditing}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="email">Email Address</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
+            
+            <FormField
+              form={form}
+              name="displayName"
+              label="Display Name"
+              placeholder="Enter your display name"
               disabled={!isEditing}
             />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
-            <Input
-              id="phone"
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                form={form}
+                name="jobTitle"
+                label="Job Title"
+                placeholder="Enter your job title"
+                disabled={!isEditing}
+              />
+              <FormField
+                form={form}
+                name="department"
+                label="Department"
+                placeholder="Enter your department"
+                disabled={!isEditing}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                form={form}
+                name="businessEmail"
+                label="Business Email"
+                type="email"
+                placeholder="Enter your business email"
+                disabled={!isEditing}
+              />
+              <FormField
+                form={form}
+                name="personalEmail"
+                label="Personal Email"
+                type="email"
+                placeholder="Enter your personal email"
+                disabled={!isEditing}
+              />
+            </div>
+            
+            <FormField
+              form={form}
+              name="phone"
+              label="Phone Number"
               type="tel"
-              value={formData.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
+              placeholder="Enter your phone number"
               disabled={!isEditing}
             />
-          </div>
 
-          <div className="flex gap-2 pt-4">
-            {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)}>
-                Edit Information
-              </Button>
-            ) : (
-              <>
-                <Button onClick={handleSave} disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Changes'}
+            <div className="flex gap-2 pt-4">
+              {!isEditing ? (
+                <Button type="button" onClick={handleEditToggle}>
+                  Edit Information
                 </Button>
-                <Button variant="outline" onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              ) : (
+                <>
+                  <Button type="submit" disabled={isSubmitting || isUpdating}>
+                    {isSubmitting || isUpdating ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                    Cancel
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </form>
 
       <Card>
         <CardHeader>

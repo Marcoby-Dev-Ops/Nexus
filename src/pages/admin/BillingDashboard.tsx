@@ -13,7 +13,7 @@ import {
   ExternalLink,
   AlertTriangle
 } from 'lucide-react';
-import { billingService } from '@/services/admin/index.ts';
+import { BillingService } from '@/services/business';
 import { quotaService } from '@/shared/services/quotaService';
 import { useAuth } from '@/hooks/index';
 import type { BillingStatus } from '@/core/types/billing';

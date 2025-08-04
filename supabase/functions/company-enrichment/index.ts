@@ -40,6 +40,9 @@ serve(async (req: Request) => {
       });
     }
 
+    // TODO: Refactor to use CompanyService.enrichCompanyData() pattern
+    // This function duplicates CompanyService enrichment logic
+
     // Start with only the provided name
     const companyInfo: CompanyInfo = { name: companyName };
     let enriched = false;

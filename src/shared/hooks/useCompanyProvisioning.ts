@@ -6,8 +6,8 @@
 
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth.ts';
-import { companyProvisioningService } from '@/core/services/CompanyProvisioningService';
-import type { CompanyProvisioningOptions, ProvisioningResult } from '@/core/services/CompanyProvisioningService';
+import { CompanyProvisioningService } from '@/services/business';
+import type { CompanyProvisioningOptions, ProvisioningResult } from '@/services/business';
 import { logger } from '@/shared/utils/logger.ts';
 
 export interface UseCompanyProvisioningReturn {

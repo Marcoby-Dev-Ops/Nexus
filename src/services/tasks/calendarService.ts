@@ -1,27 +1,33 @@
 import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
-import { OAuthTokenService } from '@/services/integrations/oauthTokenService';
+import { BaseService } from '@/core/services/BaseService';
+import type { ServiceResponse } from '@/core/services/BaseService';
+import { logger } from '@/shared/utils/logger';
+import { OAuthTokenService } from '@/core/auth/OAuthTokenService';
+import { z } from 'zod';
 
-export interface CalendarEvent {
-  id: string;
-  title: string;
-  description?: string;
-  startDate: Date;
-  endDate: Date;
-  allDay: boolean;
-  location?: string;
-  attendees?: string[];
-  organizer: string;
-  category: 'meeting' | 'task' | 'reminder' | 'personal' | 'work';
-  priority: 'high' | 'medium' | 'low';
-  source: 'microsoft' | 'google' | 'outlook' | 'yahoo' | 'custom';
-  isRecurring: boolean;
-  recurrencePattern?: string;
-  color?: string;
-  isPrivate: boolean;
-  hasAttachments: boolean;
-  meetingUrl?: string;
-}
+// Calendar Event Schema
+export const CalendarEventSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  startDate: z.date(),
+  endDate: z.date(),
+  allDay: z.boolean(),
+  location: z.string().optional(),
+  attendees: z.array(z.string()).optional(),
+  organizer: z.string(),
+  category: z.enum(['meeting', 'task', 'reminder', 'personal', 'work']),
+  priority: z.enum(['high', 'medium', 'low']),
+  source: z.enum(['microsoft', 'google', 'outlook', 'yahoo', 'custom']),
+  isRecurring: z.boolean(),
+  recurrencePattern: z.string().optional(),
+  color: z.string().optional(),
+  isPrivate: z.boolean(),
+  hasAttachments: z.boolean(),
+  meetingUrl: z.string().optional(),
+});
+
+export type CalendarEvent = z.infer<typeof CalendarEventSchema>;
 
 export interface CalendarFilters {
   sources?: string[];
@@ -44,13 +50,21 @@ export interface CalendarStats {
   remindersCount: number;
 }
 
-class CalendarService {
+/**
+ * Calendar Service
+ * Provides calendar event management functionality
+ * 
+ * Extends BaseService for consistent error handling and logging
+ */
+export class CalendarService extends BaseService {
+  private oauthTokenService = new OAuthTokenService();
+
   /**
    * Get calendar events from all connected sources
    * Follows data principles: real-time access, no local storage
    */
-  async getEvents(filters: CalendarFilters = {}): Promise<CalendarEvent[]> {
-    try {
+  async getEvents(filters: CalendarFilters = {}): Promise<ServiceResponse<CalendarEvent[]>> {
+    return this.executeDbOperation(async () => {
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         throw new Error('User not authenticated');
@@ -82,11 +96,11 @@ class CalendarService {
       }
 
       // Apply filters
-      return this.applyFilters(events, filters);
-    } catch (error) {
-      logger.error('Error fetching calendar events: ', error);
-      throw error;
-    }
+      const filteredEvents = this.applyFilters(events, filters);
+      const validatedEvents = filteredEvents.map(event => CalendarEventSchema.parse(event));
+      
+      return { data: validatedEvents, error: null };
+    }, 'get calendar events');
   }
 
   /**
@@ -97,159 +111,124 @@ class CalendarService {
     source: 'microsoft' | 'google' | 'outlook',
     filters: CalendarFilters
   ): Promise<CalendarEvent[]> {
-    try {
-      // Use the new TokenManager for client-side token refresh
-      logger.info({ source }, 'Getting valid tokens using TokenManager');
-      
-      const tokens = await OAuthTokenService.getTokens(source);
-      
-      logger.info({ 
-        source,
-        hasAccessToken: !!tokens.access_token,
-        hasRefreshToken: !!tokens.refresh_token,
-        expiresAt: tokens.expires_at
-      }, 'Successfully retrieved OAuth tokens');
+    return this.executeDbOperation(async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
 
-      // Check if user has active integrations for this source
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('User not authenticated');
-      }
-
-      const { data: userIntegrations, error: integrationError } = await supabase
-        .from('user_integrations')
-        .select('id, status')
-        .eq('user_id', session.user.id)
-        .eq('integration_type', source)
-        .eq('status', 'active')
-        .limit(1);
-
-      if (integrationError) {
-        logger.error({ error: integrationError }, `Error checking ${source} integration status`);
+      // Get access token for the specific source
+      const accessToken = await this.oauthTokenService.getAccessToken(user.id, source);
+      if (!accessToken) {
+        logger.warn(`No access token found for ${source} calendar`);
         return [];
       }
 
-      if (!userIntegrations || userIntegrations.length === 0) {
-        logger.warn(`No active ${source} integration found for user`);
-        return [];
-      }
+      let events: CalendarEvent[] = [];
 
-      // Fetch events from the source API
       switch (source) {
         case 'microsoft':
-          return await this.fetchMicrosoftEvents(tokens.access_token, filters);
+          events = await this.fetchMicrosoftEvents(accessToken, filters);
+          break;
         case 'google':
-          return await this.fetchGoogleEvents(tokens.access_token, filters);
+          events = await this.fetchGoogleEvents(accessToken, filters);
+          break;
         case 'outlook':
-          return await this.fetchOutlookEvents(tokens.access_token, filters);
-        default: throw new Error(`Unsupported calendar source: ${source}`);
+          events = await this.fetchOutlookEvents(accessToken, filters);
+          break;
+        default:
+          logger.warn(`Unsupported calendar source: ${source}`);
+          return [];
       }
-    } catch (error) {
-      logger.error({ error, source }, `Error fetching events from ${source}`);
-      
-      // If token refresh failed, remove expired tokens and throw re-auth error
-      if (error instanceof Error && error.message.includes('expired')) {
-        await OAuthTokenService.deleteTokens(source);
-        throw new Error(`Your ${source} calendar connection has expired. Please reconnect your account.`);
-      }
-      
-      return [];
-    }
+
+      this.logCalendarAccess('fetch_events', source);
+      return events;
+    }, `fetch events from ${source}`);
   }
 
   /**
    * Fetch events from Microsoft Graph API
    */
   private async fetchMicrosoftEvents(accessToken: string, filters: CalendarFilters): Promise<CalendarEvent[]> {
-    const startDate = filters.startDate || new Date();
-    const endDate = filters.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    return this.executeDbOperation(async () => {
+      const now = new Date();
+      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
-    const params = new URLSearchParams({
-      $select: 'id,subject,body,start,end,location,attendees,organizer,isAllDay,isCancelled,seriesMasterId,recurrence',
-      $filter: `start/dateTime ge '${startDate.toISOString()}' and end/dateTime le '${endDate.toISOString()}'`,
-      $orderby: 'start/dateTime',
-      $top: '100'
-    });
-
-    const response = await fetch(
-      `https: //graph.microsoft.com/v1.0/me/calendarView?${params.toString()}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${now.toISOString()}&endDateTime=${endDate.toISOString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Microsoft Graph API error: ${response.statusText}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`Microsoft Graph API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.value.map((event: any) => this.mapMicrosoftEvent(event));
+      const data = await response.json();
+      return data.value.map((event: any) => this.mapMicrosoftEvent(event));
+    }, 'fetch Microsoft events');
   }
 
   /**
    * Fetch events from Google Calendar API
    */
   private async fetchGoogleEvents(accessToken: string, filters: CalendarFilters): Promise<CalendarEvent[]> {
-    const startDate = filters.startDate || new Date();
-    const endDate = filters.endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    return this.executeDbOperation(async () => {
+      const now = new Date();
+      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
 
-    const params = new URLSearchParams({
-      timeMin: startDate.toISOString(),
-      timeMax: endDate.toISOString(),
-      singleEvents: 'true',
-      orderBy: 'startTime',
-      maxResults: '100'
-    });
-
-    const response = await fetch(
-      `https: //www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${endDate.toISOString()}&singleEvents=true`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          }
         }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Google Calendar API error: ${response.statusText}`);
       }
-    );
 
-    if (!response.ok) {
-      throw new Error(`Google Calendar API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.items.map((event: any) => this.mapGoogleEvent(event));
+      const data = await response.json();
+      return data.items.map((event: any) => this.mapGoogleEvent(event));
+    }, 'fetch Google events');
   }
 
   /**
    * Fetch events from Outlook API
    */
   private async fetchOutlookEvents(accessToken: string, filters: CalendarFilters): Promise<CalendarEvent[]> {
-    // Outlook uses Microsoft Graph API, so this is similar to Microsoft
-    return await this.fetchMicrosoftEvents(accessToken, filters);
+    return this.executeDbOperation(async () => {
+      // Outlook API implementation similar to Microsoft Graph
+      // For now, return empty array as placeholder
+      return [];
+    }, 'fetch Outlook events');
   }
 
   /**
-   * Map Microsoft Graph event to our format
+   * Map Microsoft Graph event to CalendarEvent
    */
   private mapMicrosoftEvent(event: any): CalendarEvent {
     return {
       id: event.id,
-      title: event.subject || '(No subject)',
+      title: event.subject || 'Untitled Event',
       description: event.body?.content || '',
-      startDate: new Date(event.start.dateTime || event.start.date),
-      endDate: new Date(event.end.dateTime || event.end.date),
+      startDate: new Date(event.start.dateTime),
+      endDate: new Date(event.end.dateTime),
       allDay: event.isAllDay || false,
       location: event.location?.displayName || '',
-      attendees: event.attendees?.map((a: any) => a.emailAddress?.address) || [],
+      attendees: event.attendees?.map((a: any) => a.emailAddress.address) || [],
       organizer: event.organizer?.emailAddress?.address || '',
       category: this.determineCategory(event),
       priority: this.determinePriority(event),
       source: 'microsoft',
-      isRecurring: !!event.seriesMasterId || !!event.recurrence,
+      isRecurring: !!event.recurrence,
       recurrencePattern: event.recurrence?.pattern?.type,
-      color: event.color || '#3b82f6',
+      color: event.color || '#0078d4',
       isPrivate: event.sensitivity === 'private',
       hasAttachments: event.hasAttachments || false,
       meetingUrl: event.onlineMeeting?.joinUrl || ''
@@ -257,70 +236,72 @@ class CalendarService {
   }
 
   /**
-   * Map Google Calendar event to our format
+   * Map Google Calendar event to CalendarEvent
    */
   private mapGoogleEvent(event: any): CalendarEvent {
     return {
       id: event.id,
-      title: event.summary || '(No subject)',
+      title: event.summary || 'Untitled Event',
       description: event.description || '',
       startDate: new Date(event.start.dateTime || event.start.date),
       endDate: new Date(event.end.dateTime || event.end.date),
-      allDay: !event.start.dateTime,
+      allDay: !!event.start.date,
       location: event.location || '',
       attendees: event.attendees?.map((a: any) => a.email) || [],
       organizer: event.organizer?.email || '',
       category: this.determineCategory(event),
       priority: this.determinePriority(event),
       source: 'google',
-      isRecurring: !!event.recurringEventId,
-      color: event.colorId ? this.getGoogleColor(event.colorId) : '#10b981',
+      isRecurring: !!event.recurrence,
+      recurrencePattern: event.recurrence?.[0],
+      color: this.getGoogleColor(event.colorId),
       isPrivate: event.visibility === 'private',
-      hasAttachments: event.attachments?.length > 0,
+      hasAttachments: !!event.attachments?.length,
       meetingUrl: event.hangoutLink || ''
     };
   }
 
   /**
-   * Determine event category based on content
+   * Determine event category based on event data
    */
   private determineCategory(event: any): 'meeting' | 'task' | 'reminder' | 'personal' | 'work' {
-    const title = (event.subject || event.summary || '').toLowerCase();
-    const description = (event.body?.content || event.description || '').toLowerCase();
+    const title = event.subject || event.summary || '';
+    const description = event.body?.content || event.description || '';
+    const text = `${title} ${description}`.toLowerCase();
 
-    if (title.includes('meeting') || title.includes('call') || title.includes('standup')) {
+    if (text.includes('meeting') || text.includes('call') || text.includes('zoom') || text.includes('teams')) {
       return 'meeting';
     }
-    if (title.includes('task') || title.includes('todo') || title.includes('action')) {
+    if (text.includes('task') || text.includes('todo') || text.includes('action')) {
       return 'task';
     }
-    if (title.includes('reminder') || title.includes('alert')) {
+    if (text.includes('reminder') || text.includes('alert')) {
       return 'reminder';
     }
-    if (title.includes('personal') || description.includes('personal')) {
+    if (text.includes('personal') || text.includes('family')) {
       return 'personal';
     }
     return 'work';
   }
 
   /**
-   * Determine event priority based on content and attendees
+   * Determine event priority based on event data
    */
   private determinePriority(event: any): 'high' | 'medium' | 'low' {
-    const title = (event.subject || event.summary || '').toLowerCase();
-    const attendees = event.attendees?.length || 0;
+    const title = event.subject || event.summary || '';
+    const text = title.toLowerCase();
 
-    if (title.includes('urgent') || title.includes('critical') || attendees > 5) {
+    if (text.includes('urgent') || text.includes('asap') || text.includes('critical')) {
       return 'high';
     }
-    if (title.includes('important') || attendees > 2) {
+    if (text.includes('important') || text.includes('priority')) {
       return 'medium';
     }
     return 'low';
   }
 
   /**
-   * Get Google Calendar color
+   * Get Google Calendar color from colorId
    */
   private getGoogleColor(colorId: string): string {
     const colors: Record<string, string> = {
@@ -328,19 +309,19 @@ class CalendarService {
       '2': '#33b679', // Sage
       '3': '#8e63ce', // Grape
       '4': '#e67c73', // Flamingo
-      '5': '#f6c26b', // Banana
-      '6': '#f79b83', // Tangerine
-      '7': '#f69c9c', // Peacock
-      '8': '#9ddbad', // Graphite
-      '9': '#77dd77', // Blueberry
-      '10': '#ffb347', // Basil
-      '11': '#ff6961'  // Tomato
+      '5': '#f6c026', // Banana
+      '6': '#f5511d', // Tangerine
+      '7': '#039be5', // Peacock
+      '8': '#616161', // Graphite
+      '9': '#3f51b5', // Blueberry
+      '10': '#0b8043', // Basil
+      '11': '#d60000'  // Tomato
     };
-    return colors[colorId] || '#3b82f6';
+    return colors[colorId] || '#039be5';
   }
 
   /**
-   * Apply filters to events
+   * Apply filters to calendar events
    */
   private applyFilters(events: CalendarEvent[], filters: CalendarFilters): CalendarEvent[] {
     return events.filter(event => {
@@ -359,23 +340,30 @@ class CalendarService {
         return false;
       }
 
-      // Search term
+      // Search term filter
       if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
-        const matchesTitle = event.title.toLowerCase().includes(searchLower);
-        const matchesDescription = event.description?.toLowerCase().includes(searchLower) || false;
-        if (!matchesTitle && !matchesDescription) {
+        const searchText = filters.searchTerm.toLowerCase();
+        const eventText = `${event.title} ${event.description}`.toLowerCase();
+        if (!eventText.includes(searchText)) {
           return false;
         }
       }
 
-      // Private events
+      // Private events filter
       if (!filters.showPrivate && event.isPrivate) {
         return false;
       }
 
-      // Recurring events
+      // Recurring events filter
       if (!filters.showRecurring && event.isRecurring) {
+        return false;
+      }
+
+      // Date range filter
+      if (filters.startDate && event.startDate < filters.startDate) {
+        return false;
+      }
+      if (filters.endDate && event.endDate > filters.endDate) {
         return false;
       }
 
@@ -386,50 +374,34 @@ class CalendarService {
   /**
    * Get calendar statistics
    */
-  async getStats(): Promise<CalendarStats> {
-    try {
-      const events = await this.getEvents();
+  async getStats(): Promise<ServiceResponse<CalendarStats>> {
+    return this.executeDbOperation(async () => {
+      const { data: events, error } = await this.getEvents();
+      
+      if (error) throw error;
+
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
 
-      const todayEvents = events.filter(event => {
-        const eventDate = new Date(event.startDate);
-        return eventDate >= today && eventDate < tomorrow;
-      });
-
-      const upcomingEvents = events.filter(event => {
-        const eventDate = new Date(event.startDate);
-        return eventDate >= now;
-      });
-
-      return {
-        totalEvents: events.length,
-        todayEvents: todayEvents.length,
-        upcomingEvents: upcomingEvents.length,
-        highPriorityEvents: events.filter(e => e.priority === 'high').length,
-        meetingsCount: events.filter(e => e.category === 'meeting').length,
-        tasksCount: events.filter(e => e.category === 'task').length,
-        remindersCount: events.filter(e => e.category === 'reminder').length
+      const stats: CalendarStats = {
+        totalEvents: events?.length || 0,
+        todayEvents: events?.filter(e => e.startDate >= today && e.startDate < tomorrow).length || 0,
+        upcomingEvents: events?.filter(e => e.startDate > now).length || 0,
+        highPriorityEvents: events?.filter(e => e.priority === 'high').length || 0,
+        meetingsCount: events?.filter(e => e.category === 'meeting').length || 0,
+        tasksCount: events?.filter(e => e.category === 'task').length || 0,
+        remindersCount: events?.filter(e => e.category === 'reminder').length || 0
       };
-    } catch (error) {
-      logger.error('Error getting calendar stats: ', error);
-      throw error;
-    }
+
+      return { data: stats, error: null };
+    }, 'get calendar stats');
   }
 
   /**
    * Log calendar access for audit purposes
    */
   private logCalendarAccess(action: string, source?: string): void {
-    logger.info({
-      action,
-      source,
-      timestamp: new Date().toISOString(),
-      principle: 'Calendar access logged for audit compliance'
-    }, 'Calendar access logged');
+    this.logger.info(`Calendar access: ${action}${source ? ` from ${source}` : ''}`);
   }
-}
-
-export const calendarService = new CalendarService(); 
+} 

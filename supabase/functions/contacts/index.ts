@@ -6,13 +6,15 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const sb = createClient(SUPABASE_URL, SERVICE_KEY);
 
+// Use same audit logging pattern as ContactService
 async function auditLog(action: string, userId: string, companyId: string, details: unknown) {
-  await sb.from('security_audit_log').insert({
+  await sb.from('audit_logs').insert({
+    userid: userId,
     action,
-    user_id: userId,
-    company_id: companyId,
+    resourcetype: 'contact',
     details,
-    created_at: new Date().toISOString(),
+    severity: 'info',
+    timestamp: new Date().toISOString(),
   });
 }
 
@@ -76,17 +78,48 @@ serve(async (req: Request) => {
       });
     }
     if (req.method === 'POST') {
-      // Create contact
+      // Create contact using ContactService patterns
       const body = await req.json();
+      
+      // Use same validation as ContactService
+      if (!body.name || !body.email) {
+        return new Response(JSON.stringify({ error: 'Contact name and email are required' }), {
+          status: 400,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
+      // Check for duplicate email (same logic as ContactService)
+      const { data: existingContact } = await sb
+        .from('contacts')
+        .select('id, email')
+        .eq('email', body.email)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existingContact) {
+        return new Response(JSON.stringify({ error: `Contact with email ${body.email} already exists` }), {
+          status: 400,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
       const insert = {
         ...body,
+        user_id: user.id,
         company_id: companyId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
       const { data, error } = await sb.from('contacts').insert(insert).select('*').single();
       if (error) throw error;
-      await auditLog('contact_create', user.id, companyId, { contact: data });
+      
+      // Use same audit logging pattern as ContactService
+      await auditLog('create', user.id, companyId, { 
+        contact_email: body.email, 
+        contact_name: body.name,
+        contact_id: data.id 
+      });
       await emitRealtimeEvent('created', 'contact', data.id, companyId, data);
       return new Response(JSON.stringify({ contact: data }), {
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
@@ -94,7 +127,7 @@ serve(async (req: Request) => {
       });
     }
     if (req.method === 'PATCH') {
-      // Update contact
+      // Update contact using ContactService patterns
       const body = await req.json();
       if (!body.id) {
         return new Response(JSON.stringify({ error: 'Missing contact id' }), {
@@ -102,6 +135,22 @@ serve(async (req: Request) => {
           headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
       }
+
+      // Verify ownership (same logic as ContactService)
+      const { data: existingContact } = await sb
+        .from('contacts')
+        .select('id, user_id, name, email')
+        .eq('id', body.id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingContact) {
+        return new Response(JSON.stringify({ error: 'Contact not found or access denied' }), {
+          status: 404,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
       const update = {
         ...body,
         updated_at: new Date().toISOString(),
@@ -114,7 +163,14 @@ serve(async (req: Request) => {
         .select('*')
         .single();
       if (error) throw error;
-      await auditLog('contact_update', user.id, companyId, { contact: data });
+      
+      // Use same audit logging pattern as ContactService
+      await auditLog('update', user.id, companyId, { 
+        updates: body,
+        previous_name: existingContact.name,
+        previous_email: existingContact.email,
+        contact_id: data.id
+      });
       await emitRealtimeEvent('updated', 'contact', data.id, companyId, data);
       return new Response(JSON.stringify({ contact: data }), {
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
@@ -122,7 +178,7 @@ serve(async (req: Request) => {
       });
     }
     if (req.method === 'DELETE') {
-      // Delete contact
+      // Delete contact using ContactService patterns
       const url = new URL(req.url);
       const id = url.searchParams.get('id');
       if (!id) {
@@ -131,6 +187,22 @@ serve(async (req: Request) => {
           headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
         });
       }
+
+      // Verify ownership and get contact data for audit (same logic as ContactService)
+      const { data: existingContact } = await sb
+        .from('contacts')
+        .select('id, user_id, name, email')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingContact) {
+        return new Response(JSON.stringify({ error: 'Contact not found or access denied' }), {
+          status: 404,
+          headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },
+        });
+      }
+
       const { data, error } = await sb
         .from('contacts')
         .delete()
@@ -139,7 +211,13 @@ serve(async (req: Request) => {
         .select('*')
         .single();
       if (error) throw error;
-      await auditLog('contact_delete', user.id, companyId, { contact: data });
+      
+      // Use same audit logging pattern as ContactService
+      await auditLog('delete', user.id, companyId, { 
+        contact_name: existingContact.name,
+        contact_email: existingContact.email,
+        contact_id: id
+      });
       await emitRealtimeEvent('deleted', 'contact', data.id, companyId, data);
       return new Response(JSON.stringify({ contact: data }), {
         headers: { ...corsHeaders(origin), 'Content-Type': 'application/json' },

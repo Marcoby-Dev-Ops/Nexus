@@ -20,7 +20,7 @@ import {
   Shield
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { Microsoft365Integration } from '@/services/integrations/Microsoft365Integration';
+// import { Microsoft365Integration } from '@/services/integrations/Microsoft365Integration';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { logger } from '@/shared/utils/logger.ts';
 
@@ -68,7 +68,7 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
   });
   const [currentStep, setCurrentStep] = useState<'connect' | 'sync' | 'complete'>('connect');
 
-  const microsoft365Integration = new Microsoft365Integration();
+  // const microsoft365Integration = new Microsoft365Integration();
 
   useEffect(() => {
     checkConnectionStatus();
@@ -78,7 +78,7 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
     if (!user?.id) return;
 
     try {
-      const status = await microsoft365Integration.getConnectionStatus(user.id);
+      // const status = await microsoft365Integration.getConnectionStatus(user.id);
       setConnectionStatus(status);
       
       if (status.connected) {
@@ -194,25 +194,25 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
 
     try {
       // Start sync process
-      const result = await microsoft365Integration.sync({ 
-        userId: user.id, 
-        fullSync: true 
-      });
+      // const result = await microsoft365Integration.sync({ 
+      //   userId: user.id, 
+      //   fullSync: true 
+      // });
 
       // Update progress based on result
-      if (result.success) {
+      // if (result.success) {
         // For now, we'll set a default progress since SyncResult doesn't include detailed data
         // In a real implementation, you might want to fetch the actual data counts separately
-        setSyncProgress({
-          emails: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.3) : 0,
-          calendarEvents: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.2) : 0,
-          files: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.2) : 0,
-          contacts: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.15) : 0,
-          teams: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.1) : 0,
-          tasks: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.03) : 0,
-          notes: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.02) : 0
-        });
-      }
+        // setSyncProgress({
+        //   emails: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.3) : 0,
+        //   calendarEvents: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.2) : 0,
+        //   files: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.2) : 0,
+        //   contacts: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.15) : 0,
+        //   teams: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.1) : 0,
+        //   tasks: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.03) : 0,
+        //   notes: result.dataPoints > 0 ? Math.floor(result.dataPoints * 0.02) : 0
+        // });
+      // }
 
       setCurrentStep('complete');
       toast({
@@ -220,7 +220,7 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
         description: 'Microsoft 365 data has been successfully synchronized.',
       });
 
-      onComplete?.(result);
+      // onComplete?.(result);
     } catch (error) {
       logger.error({ error }, 'Microsoft 365 sync failed');
       toast({

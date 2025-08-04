@@ -1,39 +1,76 @@
-import { useState, useCallback, useEffect } from 'react';
-import { serviceFactory } from '@/core/services/ServiceFactory';
-import type { ServiceResponse } from '@/core/services/interfaces';
+import { useState, useCallback } from 'react';
+import type { ServiceResponse } from '@/core/services/BaseService';
 import { useNotifications } from './NotificationContext';
+import { UserService } from '@/services/business';
+import { CompanyService } from '@/services/business';
+import { BillingService } from '@/services/business';
+import { AnalyticsService } from '@/services/analytics';
+// import { IntegrationService } from '@/services/integrations';
+import { NotificationService } from '@/services/business';
+import { AIService } from '@/services/ai';
+import { TaskService } from '@/services/tasks';
+import { ContactService } from '@/services/business';
+import { DealService } from '@/services/business';
+import { AuthService } from '@/core/auth';
+import { CalendarService } from '@/services/business';
+import { EmailService } from '@/services/email';
+import { OAuthTokenService } from '@/core/auth';
 
-/**
- * Hook for getting a single record
- */
-export const useServiceGet = <T>(serviceName: string, id: string) => {
+// Service registry for standalone approach
+const serviceRegistry = {
+  user: new UserService(),
+  company: new CompanyService(),
+  billing: new BillingService(),
+  analytics: new AnalyticsService(),
+  // integrations: new IntegrationService(),
+  notifications: new NotificationService(),
+  ai: new AIService(),
+  tasks: new TaskService(),
+  contacts: new ContactService(),
+  deals: new DealService(),
+  auth: new AuthService(),
+  calendar: new CalendarService(),
+  email: new EmailService(),
+  oauthTokens: new OAuthTokenService(),
+} as const;
+
+type ServiceName = keyof typeof serviceRegistry;
+
+export const useService = <T = any>(serviceName: ServiceName) => {
+  const service = serviceRegistry[serviceName];
+  if (!service) {
+    throw new Error(`Service '${serviceName}' not found. Available services: ${Object.keys(serviceRegistry).join(', ')}`);
+  }
+  return service;
+};
+
+export const useServiceGet = <T = any>(serviceName: ServiceName, id: string) => {
   const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const { addNotification } = useNotifications();
+
+  const service = useService<T>(serviceName);
 
   const fetchData = useCallback(async () => {
-    if (!id) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
     try {
-      const service = serviceFactory.get(serviceName);
-      const response: ServiceResponse<T> = await service.get(id);
+      setLoading(true);
+      setError(null);
       
-      if (response.success) {
-        setData(response.data);
+      const result = await service.get(id);
+      
+      if (result.success) {
+        setData(result.data as T);
       } else {
-        setError(response.error);
+        setError(result.error || 'Failed to fetch data');
         addNotification({
           type: 'error',
           title: 'Error',
-          message: response.error || 'Failed to fetch data'
+          message: result.error || 'Failed to fetch data'
         });
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       addNotification({
         type: 'error',
@@ -41,50 +78,40 @@ export const useServiceGet = <T>(serviceName: string, id: string) => {
         message: errorMessage
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [serviceName, id, addNotification]);
+  }, [service, id, addNotification]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const refetch = useCallback(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, error, isLoading, refetch };
+  return { data, loading, error, refetch: fetchData };
 };
 
-/**
- * Hook for listing records
- */
-export const useServiceList = <T>(serviceName: string, filters?: Record<string, any>) => {
-  const [data, setData] = useState<T[] | null>(null);
+export const useServiceList = <T = any>(serviceName: ServiceName, filters?: Record<string, any>) => {
+  const [data, setData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const { addNotification } = useNotifications();
+
+  const service = useService<T>(serviceName);
 
   const fetchData = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    
     try {
-      const service = serviceFactory.get(serviceName);
-      const response: ServiceResponse<T[]> = await service.list(filters);
+      setLoading(true);
+      setError(null);
       
-      if (response.success) {
-        setData(response.data);
+      const result = await service.list(filters);
+      
+      if (result.success) {
+        setData(result.data as T[]);
       } else {
-        setError(response.error);
+        setError(result.error || 'Failed to fetch data');
         addNotification({
           type: 'error',
           title: 'Error',
-          message: response.error || 'Failed to fetch data'
+          message: result.error || 'Failed to fetch data'
         });
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       addNotification({
         type: 'error',
@@ -92,177 +119,150 @@ export const useServiceList = <T>(serviceName: string, filters?: Record<string, 
         message: errorMessage
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [serviceName, filters, addNotification]);
+  }, [service, filters, addNotification]);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  const refetch = useCallback(() => {
-    fetchData();
-  }, [fetchData]);
-
-  return { data, error, isLoading, refetch };
+  return { data, loading, error, refetch: fetchData };
 };
 
-/**
- * Hook for creating records
- */
-export const useServiceCreate = <T>(serviceName: string) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const useServiceCreate = <T = any>(serviceName: ServiceName) => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
   const { addNotification } = useNotifications();
 
-  const mutate = useCallback(async (data: Partial<T>) => {
-    setIsLoading(true);
-    setError(null);
-    setIsSuccess(false);
-    
+  const service = useService<T>(serviceName);
+
+  const create = useCallback(async (data: Partial<T>) => {
     try {
-      const service = serviceFactory.get(serviceName);
-      const response: ServiceResponse<T> = await service.create(data);
+      setLoading(true);
+      setError(null);
       
-      if (response.success) {
-        setIsSuccess(true);
+      const result = await service.create(data);
+      
+      if (result.success) {
         addNotification({
           type: 'success',
           title: 'Success',
-          message: 'Record created successfully'
+          message: 'Item created successfully'
         });
+        return result.data;
       } else {
-        setError(response.error);
+        setError(result.error || 'Failed to create item');
         addNotification({
           type: 'error',
           title: 'Error',
-          message: response.error || 'Failed to create record'
+          message: result.error || 'Failed to create item'
         });
+        return null;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       addNotification({
         type: 'error',
         title: 'Error',
         message: errorMessage
       });
+      return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [serviceName, addNotification]);
+  }, [service, addNotification]);
 
-  return { mutate, isLoading, error, isSuccess };
+  return { create, loading, error };
 };
 
-/**
- * Hook for updating records
- */
-export const useServiceUpdate = <T>(serviceName: string) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const useServiceUpdate = <T = any>(serviceName: ServiceName) => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
   const { addNotification } = useNotifications();
 
-  const mutate = useCallback(async (id: string, data: Partial<T>) => {
-    setIsLoading(true);
-    setError(null);
-    setIsSuccess(false);
-    
+  const service = useService<T>(serviceName);
+
+  const update = useCallback(async (id: string, data: Partial<T>) => {
     try {
-      const service = serviceFactory.get(serviceName);
-      const response: ServiceResponse<T> = await service.update(id, data);
+      setLoading(true);
+      setError(null);
       
-      if (response.success) {
-        setIsSuccess(true);
+      const result = await service.update(id, data);
+      
+      if (result.success) {
         addNotification({
           type: 'success',
           title: 'Success',
-          message: 'Record updated successfully'
+          message: 'Item updated successfully'
         });
+        return result.data;
       } else {
-        setError(response.error);
+        setError(result.error || 'Failed to update item');
         addNotification({
           type: 'error',
           title: 'Error',
-          message: response.error || 'Failed to update record'
+          message: result.error || 'Failed to update item'
         });
+        return null;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       addNotification({
         type: 'error',
         title: 'Error',
         message: errorMessage
       });
+      return null;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [serviceName, addNotification]);
+  }, [service, addNotification]);
 
-  return { mutate, isLoading, error, isSuccess };
+  return { update, loading, error };
 };
 
-/**
- * Hook for deleting records
- */
-export const useServiceDelete = (serviceName: string) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const useServiceDelete = <T = any>(serviceName: ServiceName) => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
   const { addNotification } = useNotifications();
 
-  const mutate = useCallback(async (id: string) => {
-    setIsLoading(true);
-    setError(null);
-    setIsSuccess(false);
-    
+  const service = useService<T>(serviceName);
+
+  const remove = useCallback(async (id: string) => {
     try {
-      const service = serviceFactory.get(serviceName);
-      const response: ServiceResponse<boolean> = await service.delete(id);
+      setLoading(true);
+      setError(null);
       
-      if (response.success) {
-        setIsSuccess(true);
+      const result = await service.delete(id);
+      
+      if (result.success) {
         addNotification({
           type: 'success',
           title: 'Success',
-          message: 'Record deleted successfully'
+          message: 'Item deleted successfully'
         });
+        return true;
       } else {
-        setError(response.error);
+        setError(result.error || 'Failed to delete item');
         addNotification({
           type: 'error',
           title: 'Error',
-          message: response.error || 'Failed to delete record'
+          message: result.error || 'Failed to delete item'
         });
+        return false;
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
       setError(errorMessage);
       addNotification({
         type: 'error',
         title: 'Error',
         message: errorMessage
       });
+      return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [serviceName, addNotification]);
+  }, [service, addNotification]);
 
-  return { mutate, isLoading, error, isSuccess };
-};
-
-/**
- * Main service hook that provides all operations
- */
-export const useService = <T>(serviceName: string) => {
-  return {
-    useGet: (id: string) => useServiceGet<T>(serviceName, id),
-    useList: (filters?: Record<string, any>) => useServiceList<T>(serviceName, filters),
-    useCreate: () => useServiceCreate<T>(serviceName),
-    useUpdate: () => useServiceUpdate<T>(serviceName),
-    useDelete: () => useServiceDelete(serviceName)
-  };
+  return { remove, loading, error };
 }; 

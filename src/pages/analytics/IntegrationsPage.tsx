@@ -8,8 +8,8 @@ import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
 import { useAuth } from '@/hooks/index';
 import { dbService, supabase, testAuthenticationFlow, sessionUtils } from '@/lib/supabase';
-import { integrationDataService, type IntegrationDataSummary } from '@/core/services/integrationDataService';
-import { dataPointDictionaryService, type DataPointDefinition, type DataPointSummary } from '@/core/services/dataPointDictionary';
+import { IntegrationDataService, type IntegrationDataSummary } from '@/services/integrations';
+import { dataPointDictionaryService, type DataPointDefinition, type DataPointSummary } from '@/services/integrations';
 import { toast } from 'sonner';
 import {
   CheckCircle2,

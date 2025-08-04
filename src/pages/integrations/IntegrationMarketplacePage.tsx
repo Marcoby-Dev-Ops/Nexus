@@ -34,7 +34,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { adapterRegistry, type AdapterMetadata } from '@/core/adapters/adapterRegistry';
-import { universalIntegrationService } from '@/core/services/universalIntegrationService';
+import { UniversalIntegrationService } from '@/services/integrations';
 import { supabase } from '@/lib/supabase';
 
 interface MarketplaceIntegration {

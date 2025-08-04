@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import { useAuth } from '../../src/hooks/useAuth';
 import { supabase } from '../../src/lib/supabase';
 
-// Mock services to avoid import.meta issues
+// Mock services to avoid importMeta issues
 jest.mock('../../src/services', () => ({
   authService: {
     signIn: jest.fn(),
@@ -42,7 +42,7 @@ const mockSupabase = supabase as typeof supabase & {
 };
 
 // Import the mocked authService
-import { authService } from '../../src/services';
+import { authService } from '../../src/core/services/AuthService';
 const mockAuthService = authService as jest.Mocked<typeof authService>;
 
 // Test component that uses auth

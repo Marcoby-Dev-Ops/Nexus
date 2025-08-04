@@ -9,7 +9,7 @@ import {
   Loader2, 
   BarChart3 
 } from 'lucide-react';
-import { googleAnalyticsService } from '@/services/analytics/googleAnalyticsService';
+import { AnalyticsService } from '@/services/analytics';
 
 const GoogleAnalyticsCallback: React.FC = () => {
   const navigate = useNavigate();

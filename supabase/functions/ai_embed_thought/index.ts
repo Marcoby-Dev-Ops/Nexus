@@ -1,3 +1,9 @@
+/**
+ * ai_embed_thought
+ * Generates embeddings for thoughts using AIService patterns.
+ * TODO: Refactor to use AIService.generateEmbedding() pattern
+ * This function duplicates AIService embedding functionality
+ */
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.0';
 import { corsHeaders } from '../_shared/cors.ts';
@@ -33,6 +39,9 @@ serve(async (req) => {
 
     const sb = createClient(supabaseUrl, supabaseServiceKey);
 
+    // TODO: Use AIService.generateEmbedding() pattern instead of direct implementation
+    // This duplicates the logic in AIService.generateEmbedding()
+    
     // Try cache first
     const { data: cachedRow } = await sb
       .from('ai_embedding_cache')

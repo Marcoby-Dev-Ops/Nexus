@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { useNavigate } from 'react-router-dom';
-import { billingService } from '@/services/admin/billingService';
+import { BillingService } from '@/services/business';
 import { LoadingSpinner } from '@/shared/components/patterns/LoadingStates';
 
 interface AIPerformanceWidgetProps {

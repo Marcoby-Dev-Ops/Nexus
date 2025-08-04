@@ -850,11 +850,12 @@ export const AppWithOnboarding: React.FC<AppWithOnboardingProps> = ({ children }
   const { createDefaultCompany } = useCompanyProvisioning();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [hasCheckedOnboarding, setHasCheckedOnboarding] = useState(false);
 
-  // Check if user needs onboarding
+  // Check if user needs onboarding - only run once when auth is ready
   useEffect(() => {
     // Skip if still loading or not initialized
-    if (loading || !initialized) {
+    if (loading || !initialized || hasCheckedOnboarding) {
       return;
     }
 
@@ -862,17 +863,20 @@ export const AppWithOnboarding: React.FC<AppWithOnboardingProps> = ({ children }
     const forceOnboarding = window.location.search.includes('force-onboarding=true');
     if (forceOnboarding) {
       setShowOnboarding(true);
+      setHasCheckedOnboarding(true);
       return;
     }
 
     // If user is not authenticated, don't show onboarding
     if (!user || !session) {
+      setHasCheckedOnboarding(true);
       return;
     }
 
-    // For now, we'll skip the profile check since profile doesn't exist in the new auth system
+    // For now, skip onboarding for existing users
     // This can be re-implemented when we add profile support back
-  }, [user?.id, session?.access_token, loading, initialized, onboardingCompleted]);
+    setHasCheckedOnboarding(true);
+  }, [user?.id, session?.access_token, loading, initialized, hasCheckedOnboarding]);
 
   const handleOnboardingComplete = async (_data: any) => {
     // Ensure user has a company association after onboarding

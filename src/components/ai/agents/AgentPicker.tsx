@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Brain, Users, Settings, Sparkles } from 'lucide-react';
-import type { Agent } from '@/services/ai/agentRegistry';
+import type { Agent } from '@/services/ai';
 
 interface AgentPickerProps {
   agents: Agent[];

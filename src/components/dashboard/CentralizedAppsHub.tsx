@@ -9,8 +9,8 @@ import { Building2, Zap, Brain, TrendingUp, AlertCircle, CheckCircle, Settings, 
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Button } from '@/shared/components/ui/Button.tsx';
-import { orchestrator } from '@/services/integrations/centralizedAppsOrchestrator';
-import type { BusinessApp, BusinessFunction, AppCategory } from '@/services/integrations/centralizedAppsOrchestrator';
+// import { orchestrator } from '@/services/integrations/centralizedAppsOrchestrator';
+// import type { BusinessApp, BusinessFunction, AppCategory } from '@/services/integrations/centralizedAppsOrchestrator';
 
 interface CentralizedAppsHubProps {
   className?: string;

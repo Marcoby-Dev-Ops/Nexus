@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { calendarService } from '@/services/tasks/calendarService';
+import { CalendarService } from '@/services/business';
 import { useAuth } from '@/hooks/index';
 
 export interface CalendarEvent {

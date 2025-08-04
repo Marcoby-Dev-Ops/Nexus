@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth.ts';
-import { domainAnalysisService } from '@/lib/services/domainAnalysisService';
+import { domainAnalysisService } from '@/business/services/domainAnalysisService';
 import { logger } from '@/shared/utils/logger';
 
 export interface ProfessionalEmailStatus {

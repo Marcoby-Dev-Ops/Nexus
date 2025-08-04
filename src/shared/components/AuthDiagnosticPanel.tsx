@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { authErrorHandler } from '@/core/services/authErrorHandler';
+import { authErrorHandler } from '@/core/auth';
 import { sessionUtils } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger.ts';
 

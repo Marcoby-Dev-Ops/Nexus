@@ -19,10 +19,12 @@ export interface WaitlistStats {
   conversion_rate: number;
 }
 
+// Local ServiceResponse interface to avoid import issues
 interface ServiceResponse<T> {
+  data: T | null;
+  error: string | null;
   success: boolean;
-  data?: T;
-  error?: string;
+  metadata?: Record<string, any>;
 }
 
 class WaitlistService {
@@ -48,13 +50,15 @@ class WaitlistService {
       };
 
       return {
-        success: true,
         data: mockSignup,
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to sign up for waitlist',
+        success: false,
       };
     }
   }
@@ -73,13 +77,15 @@ class WaitlistService {
       };
 
       return {
-        success: true,
         data: mockStats,
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to fetch waitlist stats',
+        success: false,
       };
     }
   }
@@ -91,13 +97,15 @@ class WaitlistService {
       const position = Math.floor(Math.random() * 1000) + 1;
 
       return {
-        success: true,
         data: position,
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to get waitlist position',
+        success: false,
       };
     }
   }
@@ -117,13 +125,15 @@ class WaitlistService {
       };
 
       return {
-        success: true,
         data: mockReferralStats,
+        error: null,
+        success: true,
       };
     } catch (error) {
       return {
-        success: false,
+        data: null,
         error: 'Failed to get referral stats',
+        success: false,
       };
     }
   }

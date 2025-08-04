@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { TrendingUp, TrendingDown, Star, DollarSign, Activity, AlertTriangle, CheckCircle, Clock, Target, BarChart3, PieChart, LineChart } from 'lucide-react';
-import { continuousImprovementService } from '@/services/ai/continuousImprovementService';
-import { billingService } from '@/services/admin/billingService';
+import { AIService } from '@/services/ai';
+import { BillingService } from '@/services/business';
 
 interface ImprovementDashboardProps {
   userId: string;

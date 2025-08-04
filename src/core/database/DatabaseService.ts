@@ -39,11 +39,7 @@ export interface DatabaseProfile {
   company_id?: string | null;
 }
 
-interface ServiceResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+import { ServiceResponse } from '@/core/services/BaseService';
 
 export class DatabaseService {
   async getUserProfile(userId: string): Promise<ServiceResponse<DatabaseProfile>> {
