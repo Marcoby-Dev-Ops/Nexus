@@ -4,7 +4,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
 import { sessionUtils } from '@/lib/supabase';
 
 export interface AuthErrorContext {

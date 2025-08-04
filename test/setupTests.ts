@@ -1,8 +1,35 @@
 require('@testing-library/jest-dom');
 require('whatwg-fetch');
 
-// Shim for leftover import.meta
-global.importMeta = {};
+// Mock import.meta.env for Jest
+global.importMeta = {
+  env: {
+    VITE_SUPABASE_URL: 'https://test.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+    VITE_SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+    VITE_OPENROUTER_API_KEY: 'test-openrouter-key',
+    VITE_GOOGLE_CLIENT_ID: 'test-google-client-id',
+    VITE_GOOGLE_CLIENT_SECRET: 'test-google-client-secret',
+    VITE_GOOGLE_API_KEY: 'test-google-api-key',
+    VITE_MICROSOFT_CLIENT_ID: 'test-microsoft-client-id',
+    VITE_MICROSOFT_CLIENT_SECRET: 'test-microsoft-client-secret',
+    VITE_MICROSOFT_REDIRECT_URI: 'http://localhost:5173/integrations/microsoft365/callback',
+    VITE_MS_TEAMS_TENANT_ID: 'test-teams-tenant-id',
+    VITE_SLACK_CLIENT_ID: 'test-slack-client-id',
+    VITE_HUBSPOT_CLIENT_ID: 'test-hubspot-client-id',
+    VITE_PAYPAL_CLIENT_ID: 'test-paypal-client-id',
+    VITE_PAYPAL_CLIENT_SECRET: 'test-paypal-client-secret',
+    VITE_PAYPAL_ENV: 'sandbox',
+    VITE_STRIPE_PUBLISHABLE_KEY: 'pk_test_stripe_key',
+    VITE_NINJARMM_CLIENT_ID: 'test-ninjarmm-client-id',
+    VITE_N8N_URL: 'https://test.n8n.io',
+    VITE_N8N_API_KEY: 'test-n8n-api-key',
+    VITE_CHAT_V2: '1',
+    VITE_AI_CHAT_URL: 'https://localhost:5173/functions/v1/ai_chat',
+    VITE_NEXT_PUBLIC_APP_URL: 'https://nexux.marcoby.com',
+    VITE_DEV_APP_URL: 'http://localhost:5173',
+  }
+};
 
 // Mock matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -79,6 +106,10 @@ const sessionStorageMock = {
   key: jest.fn(),
 };
 global.sessionStorage = sessionStorageMock;
+
+// Mock TextEncoder for React Router
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
 
 // Helper function to get test secrets
 const getTestSecrets = async () => {

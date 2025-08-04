@@ -11,11 +11,7 @@
  */
 
 import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
-
-// ============================================================================
-// TYPE DEFINITIONS
-// ============================================================================
+import { logger } from '@/shared/utils/logger';
 
 /**
  * Standardized service response interface
@@ -148,8 +144,8 @@ export abstract class BaseService {
     const errorMessage = this.extractErrorMessage(error);
     
     this.logger.error(
-      { error, context, timestamp: new Date().toISOString() },
-      `Service error in ${context}: ${errorMessage}`
+      `Service error in ${context}: ${errorMessage}`,
+      { error, context, timestamp: new Date().toISOString() }
     );
     
     return this.createErrorResponse<never>(
@@ -219,11 +215,10 @@ export abstract class BaseService {
    * 
    * @example
    * ```typescript
-   * const validationError = this.validateParams(
-   *   { id, name, email },
-   *   ['id', 'name']
-   * );
-   * if (validationError) return this.createErrorResponse(validationError);
+   * const validation = this.validateParams(data, ['email', 'password']);
+   * if (validation) {
+   *   return this.createErrorResponse(validation);
+   * }
    * ```
    */
   protected validateParams(
@@ -231,17 +226,17 @@ export abstract class BaseService {
     required: string[]
   ): ValidationResult {
     for (const field of required) {
-      if (params[field] === undefined || params[field] === null) {
-        return `Missing required parameter: ${field}`;
+      if (!params[field]) {
+        return `Missing required field: ${field}`;
       }
     }
     return null;
   }
 
   /**
-   * Validates that a string parameter is not empty
+   * Validates a string parameter
    * 
-   * @param value - The string value to validate
+   * @param value - The value to validate
    * @param fieldName - Name of the field for error messages
    * @returns Validation result
    */
@@ -249,14 +244,14 @@ export abstract class BaseService {
     value: string | undefined | null,
     fieldName: string
   ): ValidationResult {
-    if (!value || value.trim() === '') {
-      return `${fieldName} cannot be empty`;
+    if (!value || typeof value !== 'string' || value.trim() === '') {
+      return `${fieldName} is required and must be a non-empty string`;
     }
     return null;
   }
 
   /**
-   * Validates that an ID parameter is valid
+   * Validates an ID parameter
    * 
    * @param id - The ID to validate
    * @param fieldName - Name of the field for error messages
@@ -266,66 +261,42 @@ export abstract class BaseService {
     id: string | undefined | null,
     fieldName: string = 'id'
   ): ValidationResult {
-    if (!id || id.trim() === '') {
-      return `${fieldName} is required`;
+    if (!id || typeof id !== 'string' || id.trim() === '') {
+      return `${fieldName} is required and must be a valid ID`;
     }
-    
-    if (id.length < 1) {
-      return `${fieldName} must be at least 1 character long`;
-    }
-    
     return null;
   }
 
   // ========================================================================
-  // DATABASE OPERATION METHODS
+  // DATABASE OPERATION WRAPPERS
   // ========================================================================
 
   /**
-   * Executes a database operation with standardized error handling
+   * Executes a database operation with consistent error handling
    * 
    * @param operation - The database operation to execute
-   * @param context - Context for logging and error messages
+   * @param context - Context for error messages
    * @returns Standardized service response
-   * 
-   * @example
-   * ```typescript
-   * return this.executeDbOperation(
-   *   async () => {
-   *     const { data, error } = await supabase
-   *       .from('users')
-   *       .select('*')
-   *       .eq('id', userId)
-   *       .single();
-   *     return { data, error };
-   *   },
-   *   `get user ${userId}`
-   * );
-   * ```
    */
   protected async executeDbOperation<T>(
     operation: () => Promise<DatabaseOperationResult<T>>,
     context: string
   ): Promise<ServiceResponse<T>> {
     try {
-      this.logMethodCall('executeDbOperation', { context });
+      this.logMethodCall(context, {});
       
       const result = await operation();
       
       if (result.error) {
-        this.logger.error(
-          { error: result.error, context },
-          'Database operation failed'
-        );
-        
-        return this.createErrorResponse<T>(
-          result.error.message || 'Database operation failed',
-          { context, operation: 'database' }
+        this.logFailure(context, result.error);
+        return this.createErrorResponse(
+          `Database operation failed: ${this.extractErrorMessage(result.error)}`,
+          { error: result.error, context }
         );
       }
       
-      return this.createSuccessResponse(result.data);
-      
+      this.logSuccess(context);
+      return this.createSuccessResponse(result.data as T);
     } catch (error) {
       return this.handleError(error, context);
     }
@@ -336,30 +307,30 @@ export abstract class BaseService {
   // ========================================================================
 
   /**
-   * Logs service method calls for debugging
+   * Logs method calls for debugging
    * 
-   * @param method - Name of the method being called
+   * @param method - Method name being called
    * @param params - Parameters passed to the method
    */
   protected logMethodCall(
     method: string, 
     params: Record<string, any>
   ): void {
-    this.logger.debug(
-      { 
-        method, 
+    this.logger.info(
+      `Service method called: ${method}`,
+      {
+        method,
         params,
         service: this.constructor.name,
         timestamp: new Date().toISOString()
-      },
-      'Service method called'
+      }
     );
   }
 
   /**
    * Logs successful operations
    * 
-   * @param operation - Description of the operation
+   * @param operation - Operation that succeeded
    * @param metadata - Additional metadata
    */
   protected logSuccess(
@@ -367,20 +338,20 @@ export abstract class BaseService {
     metadata?: Record<string, any>
   ): void {
     this.logger.info(
+      `Service operation successful: ${operation}`,
       {
         operation,
         service: this.constructor.name,
         timestamp: new Date().toISOString(),
         ...metadata
-      },
-      'Service operation completed successfully'
+      }
     );
   }
 
   /**
    * Logs failed operations
    * 
-   * @param operation - Description of the operation
+   * @param operation - Operation that failed
    * @param error - The error that occurred
    * @param metadata - Additional metadata
    */
@@ -390,14 +361,14 @@ export abstract class BaseService {
     metadata?: Record<string, any>
   ): void {
     this.logger.error(
+      `Service operation failed: ${operation}`,
       {
         operation,
         error,
         service: this.constructor.name,
         timestamp: new Date().toISOString(),
         ...metadata
-      },
-      'Service operation failed'
+      }
     );
   }
 } 

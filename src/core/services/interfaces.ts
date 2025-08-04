@@ -1,24 +1,40 @@
-import { z } from 'zod';
 import type { ServiceResponse } from './BaseService';
 
 /**
- * CRUD service interface for basic operations
+ * Standard CRUD service interface
+ * Provides common operations for all services
  */
 export interface CrudServiceInterface<T> {
+  /** Get a single item by ID */
   get(id: string): Promise<ServiceResponse<T>>;
+  
+  /** Create a new item */
   create(data: Partial<T>): Promise<ServiceResponse<T>>;
+  
+  /** Update an existing item */
   update(id: string, data: Partial<T>): Promise<ServiceResponse<T>>;
+  
+  /** Delete an item by ID */
   delete(id: string): Promise<ServiceResponse<boolean>>;
+  
+  /** List items with optional filters */
   list(filters?: Record<string, any>): Promise<ServiceResponse<T[]>>;
 }
 
 /**
- * Service interface for complex operations
+ * Extended service interface with search capabilities
  */
-export interface AdvancedServiceInterface<T> extends CrudServiceInterface<T> {
+export interface SearchableServiceInterface<T> extends CrudServiceInterface<T> {
+  /** Search items by query string */
   search(query: string, filters?: Record<string, any>): Promise<ServiceResponse<T[]>>;
+  
+  /** Bulk create multiple items */
   bulkCreate(data: Partial<T>[]): Promise<ServiceResponse<T[]>>;
+  
+  /** Bulk update multiple items */
   bulkUpdate(updates: { id: string; data: Partial<T> }[]): Promise<ServiceResponse<T[]>>;
+  
+  /** Bulk delete multiple items */
   bulkDelete(ids: string[]): Promise<ServiceResponse<boolean>>;
 }
 
@@ -27,7 +43,7 @@ export interface AdvancedServiceInterface<T> extends CrudServiceInterface<T> {
  */
 export interface ServiceConfig {
   tableName: string;
-  schema: z.ZodSchema<any>;
+  schema: any; // z.ZodSchema<any>; // This line was removed as per the new_code, as zod is no longer imported.
   cacheEnabled?: boolean;
   cacheTTL?: number;
   enableLogging?: boolean;

@@ -170,7 +170,7 @@ class SecureStorage {
         version: '1.0',
       });
 
-      const shouldEncrypt = STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any);
+      const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
       const finalValue = shouldEncrypt 
         ? await this.encrypt(serializedValue)
         : serializedValue;
@@ -198,7 +198,7 @@ class SecureStorage {
    */
   public async getItem<T>(key: string, defaultValue?: T): Promise<T | null> {
     try {
-      const shouldEncrypt = STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any);
+      const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
       const storageKey = shouldEncrypt ? `secure_${key}` : key;
       const storedValue = localStorage.getItem(storageKey);
 
@@ -263,7 +263,7 @@ class SecureStorage {
       }
 
       // Check if data is expired
-      if (parsed.timestamp && Date.now() - parsed.timestamp > STORAGE_CONFIG.MAX_AGE) {
+      if (parsed.timestamp && Date.now() - parsed.timestamp > STORAGE_CONFIG.MAXAGE) {
         this.removeItem(key);
         return defaultValue ?? null;
       }
@@ -284,7 +284,7 @@ class SecureStorage {
    * Remove stored data
    */
      public removeItem(key: string): void {
-     const shouldEncrypt = STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any);
+     const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
      const storageKey = shouldEncrypt ? `secure_${key}` : key;
      localStorage.removeItem(storageKey);
    }
@@ -295,7 +295,7 @@ class SecureStorage {
   public clearSecureStorage(): void {
     const keys = Object.keys(localStorage);
          keys.forEach(key => {
-       if (key.startsWith('secure_') || STORAGE_CONFIG.SENSITIVE_KEYS.includes(key as any)) {
+       if (key.startsWith('secure_') || STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any)) {
          localStorage.removeItem(key);
        }
      });

@@ -89,7 +89,7 @@ export class SecureLogger {
    * Safe console.log replacement
    */
   public log(...args: any[]): void {
-    if (this.isProduction && SECURITY_CHECKS.DISABLE_CONSOLE_IN_PROD) {
+    if (this.isProduction && SECURITY_CHECKS.DISABLECONSOLE_IN_PROD) {
       return; // Disable logging in production
     }
 
@@ -139,7 +139,7 @@ export class SecureLogger {
    * Info logging with emoji
    */
   public info(...args: any[]): void {
-    if (!this.isProduction || !SECURITY_CHECKS.DISABLE_CONSOLE_IN_PROD) {
+    if (!this.isProduction || !SECURITY_CHECKS.DISABLECONSOLE_IN_PROD) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console
@@ -152,7 +152,7 @@ export class SecureLogger {
    * Success logging with emoji
    */
   public success(...args: any[]): void {
-    if (!this.isProduction || !SECURITY_CHECKS.DISABLE_CONSOLE_IN_PROD) {
+    if (!this.isProduction || !SECURITY_CHECKS.DISABLECONSOLE_IN_PROD) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
       // eslint-disable-next-line no-console
     // eslint-disable-next-line no-console

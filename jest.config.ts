@@ -1,18 +1,19 @@
 import type { Config } from 'jest';
 
 const config: Config = {
+  preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/test/setupTests.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/setupTests.js'],
   transform: { 
     '^.+\\\\.(t|j)sx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
       useESM: false,
     }]
   },
-  extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
     '^@app/(.*)$': '<rootDir>/src/app/$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
+    '^@/core/(.*)$': '<rootDir>/src/core/$1',
     '^@/shared/(.*)$': '<rootDir>/src/shared/$1',
     '^@/hooks/(.*)$': '<rootDir>/src/hooks/$1',
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
@@ -45,7 +46,7 @@ const config: Config = {
   transformIgnorePatterns: [
     'node_modules/(?!(.*\\.mjs$))',
   ],
-  testTimeout: 10000,
+  testTimeout: 30000,
   verbose: true,
   clearMocks: true,
   restoreMocks: true,
