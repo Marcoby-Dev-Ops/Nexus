@@ -3,18 +3,15 @@ import { supabase } from '@/lib/supabase';
 import { authService } from '@/core/auth';
 import type { AuthUser, AuthSession } from '@/core/auth';
 import { performSignOut } from '@/shared/utils/signOut';
+import { logger } from '@/shared/utils/logger';
 
 // Simple logger for auth events
 const authLogger = {
-  info: (message: string, data?: any) => {
-    if (process.env.NODE_ENV === 'development' && process.env.VITE_ENABLE_AUTH_LOGS === 'true') {
-      console.log(`[AuthContext] ${message}`, data);
-    }
+  info: (message: string, data?: unknown) => {
+    logger.info(`[AuthContext] ${message}`, data);
   },
-  error: (message: string, error?: any) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.error(`[AuthContext Error] ${message}`, error);
-    }
+  error: (message: string, error?: unknown) => {
+    logger.error(`[AuthContext Error] ${message}`, error);
   }
 };
 
