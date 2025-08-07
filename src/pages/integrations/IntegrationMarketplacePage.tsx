@@ -34,8 +34,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { adapterRegistry, type AdapterMetadata } from '@/core/adapters/adapterRegistry';
-import { UniversalIntegrationService } from '@/services/integrations';
+import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
 interface MarketplaceIntegration {
   id: string;
@@ -57,6 +58,9 @@ const IntegrationMarketplacePage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  // Initialize services
+  // Using consolidated integration service
+  
   // State management
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -65,39 +69,6 @@ const IntegrationMarketplacePage: React.FC = () => {
   const [connectedIntegrations, setConnectedIntegrations] = useState<string[]>([]);
   const [selectedIntegration, setSelectedIntegration] = useState<MarketplaceIntegration | null>(null);
   const [showSetup, setShowSetup] = useState(false);
-  
-  // Early return if user is not authenticated (after all hooks)
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle>Authentication Required</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">
-              Please log in to access the integration marketplace.
-            </p>
-            <Button onClick={() => navigate('/login')}>
-              Go to Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Show loading state while data is being fetched
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading marketplace...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Categories for filtering
   const categories = [
@@ -114,91 +85,91 @@ const IntegrationMarketplacePage: React.FC = () => {
   // Get available adapters and convert to marketplace format
   const getMarketplaceIntegrations = (): MarketplaceIntegration[] => {
     try {
-      const adapters = adapterRegistry.getAvailableAdapters();
+      const adapters = adapterRegistry.getAll();
       
       return adapters.map(adapter => {
-      // Create icon based on adapter name
-      const getIcon = (adapterName: string) => {
-        switch (adapterName.toLowerCase()) {
-          case 'hubspot':
-            return <Building2 className="h-8 w-8 text-orange-500" />;
-          case 'paypal':
-            return <DollarSign className="h-8 w-8 text-blue-500" />;
-          case 'stripe':
-            return <Zap className="h-8 w-8 text-purple-500" />;
-          case 'salesforce':
-            return <Cloud className="h-8 w-8 text-blue-600" />;
-          case 'quickbooks':
-            return <BarChart3 className="h-8 w-8 text-green-500" />;
-          case 'mailchimp':
-            return <Mail className="h-8 w-8 text-pink-500" />;
-          case 'slack':
-            return <MessageSquare className="h-8 w-8 text-purple-500" />;
-          case 'asana':
-            return <Grid3X3 className="h-8 w-8 text-red-500" />;
-          case 'googleanalytics':
-            return <TrendingUp className="h-8 w-8 text-blue-500" />;
-          default:
-            return <Plug className="h-8 w-8 text-gray-500" />;
-        }
-      };
-
-      // Map adapter capabilities to features
-      const getFeatures = (capabilities: string[]) => {
-        const featureMap: Record<string, string> = {
-          'crm': 'Customer Relationship Management',
-          'payments': 'Payment Processing',
-          'marketing': 'Marketing Automation',
-          'sales': 'Sales Pipeline Management',
-          'automation': 'Workflow Automation',
-          'email': 'Email Marketing',
-          'invoicing': 'Invoice Management',
-          'subscriptions': 'Subscription Billing',
-          'refunds': 'Refund Processing',
-          'analytics': 'Business Analytics',
-          'communication': 'Team Communication',
-          'productivity': 'Project Management'
+        // Create icon based on adapter name
+        const getIcon = (adapterName: string) => {
+          switch (adapterName.toLowerCase()) {
+            case 'hubspot':
+              return <Building2 className="h-8 w-8 text-orange-500" />;
+            case 'paypal':
+              return <DollarSign className="h-8 w-8 text-blue-500" />;
+            case 'stripe':
+              return <Zap className="h-8 w-8 text-purple-500" />;
+            case 'salesforce':
+              return <Cloud className="h-8 w-8 text-blue-600" />;
+            case 'quickbooks':
+              return <BarChart3 className="h-8 w-8 text-green-500" />;
+            case 'mailchimp':
+              return <Mail className="h-8 w-8 text-pink-500" />;
+            case 'slack':
+              return <MessageSquare className="h-8 w-8 text-purple-500" />;
+            case 'asana':
+              return <Grid3X3 className="h-8 w-8 text-red-500" />;
+            case 'googleanalytics':
+              return <TrendingUp className="h-8 w-8 text-blue-500" />;
+            default:
+              return <Plug className="h-8 w-8 text-gray-500" />;
+          }
         };
 
-        return capabilities.map(cap => featureMap[cap] || cap).filter(Boolean);
-      };
+        // Map adapter capabilities to features
+        const getFeatures = (capabilities: string[]) => {
+          const featureMap: Record<string, string> = {
+            'crm': 'Customer Relationship Management',
+            'payments': 'Payment Processing',
+            'marketing': 'Marketing Automation',
+            'sales': 'Sales Pipeline Management',
+            'automation': 'Workflow Automation',
+            'email': 'Email Marketing',
+            'invoicing': 'Invoice Management',
+            'subscriptions': 'Subscription Billing',
+            'refunds': 'Refund Processing',
+            'analytics': 'Business Analytics',
+            'communication': 'Team Communication',
+            'productivity': 'Project Management'
+          };
 
-      // Determine difficulty based on auth type and capabilities
-      const getDifficulty = (authType: string, capabilities: string[]): 'Easy' | 'Medium' | 'Advanced' => {
-        if (authType === 'api_key' && capabilities.length <= 2) return 'Easy';
-        if (authType === 'oauth2' && capabilities.length <= 3) return 'Medium';
-        return 'Advanced';
-      };
+          return capabilities.map(cap => featureMap[cap] || cap).filter(Boolean);
+        };
 
-      // Estimate setup time
-      const getSetupTime = (difficulty: string): string => {
-        switch (difficulty) {
-          case 'Easy': return '2-3 minutes';
-          case 'Medium': return '5-10 minutes';
-          case 'Advanced': return '15-30 minutes';
-          default: return '5-10 minutes';
-        }
-      };
+        // Determine difficulty based on auth type and capabilities
+        const getDifficulty = (authType: string, capabilities: string[]): 'Easy' | 'Medium' | 'Advanced' => {
+          if (authType === 'api_key' && capabilities.length <= 2) return 'Easy';
+          if (authType === 'oauth2' && capabilities.length <= 3) return 'Medium';
+          return 'Advanced';
+        };
 
-      const difficulty = getDifficulty(adapter.authType, adapter.capabilities);
-      const setupTime = getSetupTime(difficulty);
+        // Estimate setup time
+        const getSetupTime = (difficulty: string): string => {
+          switch (difficulty) {
+            case 'Easy': return '2-3 minutes';
+            case 'Medium': return '5-10 minutes';
+            case 'Advanced': return '15-30 minutes';
+            default: return '5-10 minutes';
+          }
+        };
 
-      return {
-        id: adapter.name,
-        name: adapter.displayName,
-        provider: adapter.displayName,
-        description: adapter.description,
-        category: adapter.category.charAt(0).toUpperCase() + adapter.category.slice(1),
-        icon: getIcon(adapter.name),
-        difficulty,
-        setupTime,
-        features: getFeatures(adapter.capabilities),
-        isPopular: adapter.status === 'active' && adapter.capabilities.length > 2,
-        adapterMetadata: adapter
-      };
-    });
+        const difficulty = getDifficulty(adapter.metadata.authType, adapter.metadata.capabilities);
+        const setupTime = getSetupTime(difficulty);
+
+        return {
+          id: adapter.metadata.name,
+          name: adapter.metadata.displayName,
+          provider: adapter.metadata.displayName,
+          description: adapter.metadata.description,
+          category: adapter.metadata.category.charAt(0).toUpperCase() + adapter.metadata.category.slice(1),
+          icon: getIcon(adapter.metadata.name),
+          difficulty,
+          setupTime,
+          features: getFeatures(adapter.metadata.capabilities),
+          isPopular: adapter.metadata.isPopular && adapter.metadata.capabilities.length > 2,
+          adapterMetadata: adapter.metadata
+        };
+      });
     } catch (error) {
-      console.error('Error getting marketplace integrations:', error);
+      logger.error('Error getting marketplace integrations:', error);
       return [];
     }
   };
@@ -208,7 +179,7 @@ const IntegrationMarketplacePage: React.FC = () => {
   // Fetch connected integrations
   const fetchConnectedIntegrations = async () => {
     if (!user?.id) {
-      console.log('No user ID available, skipping integration fetch');
+      logger.info('No user ID available, skipping integration fetch');
       setConnectedIntegrations([]);
       return;
     }
@@ -223,7 +194,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         .eq('status', 'active');
 
       if (error) {
-        console.error('Error fetching connected integrations:', error);
+        logger.error('Error fetching connected integrations:', error);
         setConnectedIntegrations([]);
       } else {
         const connectedNames = (data || []).map(integration => 
@@ -232,7 +203,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         setConnectedIntegrations(connectedNames);
       }
     } catch (error) {
-      console.error('Error fetching connected integrations:', error);
+      logger.error('Error fetching connected integrations:', error);
       setConnectedIntegrations([]);
     } finally {
       setLoading(false);
@@ -250,7 +221,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         connectionStatus: isConnected ? 'connected' : 'disconnected'
       };
     } catch (error) {
-      console.error('Error processing integration:', integration.id, error);
+      logger.error('Error processing integration:', integration.id, error);
       return {
         ...integration,
         isConnected: false,
@@ -268,7 +239,7 @@ const IntegrationMarketplacePage: React.FC = () => {
       const matchesCategory = selectedCategory === 'All' || integration.category === selectedCategory;
       return matchesSearch && matchesCategory;
     } catch (error) {
-      console.error('Error filtering integration:', integration.id, error);
+      logger.error('Error filtering integration:', integration.id, error);
       return false;
     }
   });
@@ -289,7 +260,7 @@ const IntegrationMarketplacePage: React.FC = () => {
 
   const handleConnectIntegration = async (integration: MarketplaceIntegration) => {
     if (!user?.id) {
-      console.error('No user ID available for integration connection');
+      logger.error('No user ID available for integration connection');
       return;
     }
 
@@ -299,11 +270,17 @@ const IntegrationMarketplacePage: React.FC = () => {
       // For demo purposes, use mock credentials
       const mockCredentials = getMockCredentials(integration.id);
       
-      const success = await universalIntegrationService.connectVendor(
+      const { data: result, error } = await consolidatedIntegrationService.connectVendor(
         integration.id,
         mockCredentials,
         user.id
       );
+
+      if (error) {
+        throw new Error(error);
+      }
+
+      const success = result?.success || false;
 
       if (success) {
         // Refresh connected integrations
@@ -313,7 +290,7 @@ const IntegrationMarketplacePage: React.FC = () => {
       }
 
     } catch (error) {
-      console.error(`Failed to connect to ${integration.name}:`, error);
+      logger.error(`Failed to connect to ${integration.name}:`, error);
       // Show user-friendly error message
       alert(`Failed to connect to ${integration.name}. Please try again.`);
     } finally {
@@ -394,17 +371,50 @@ const IntegrationMarketplacePage: React.FC = () => {
 
   useEffect(() => {
     if (!user?.id) {
-      console.log('No user ID, skipping integration fetch');
+      logger.info('No user ID, skipping integration fetch');
       return;
     }
     
     try {
       fetchConnectedIntegrations();
     } catch (error) {
-      console.error('Error in useEffect for fetchConnectedIntegrations:', error);
+      logger.error('Error in useEffect for fetchConnectedIntegrations:', error);
       setConnectedIntegrations([]);
     }
   }, [user?.id]);
+
+  // Early return if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>Authentication Required</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              Please log in to access the integration marketplace.
+            </p>
+            <Button onClick={() => navigate('/login')}>
+              Go to Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show loading state while data is being fetched
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading marketplace...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>

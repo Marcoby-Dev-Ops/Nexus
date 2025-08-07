@@ -193,7 +193,7 @@ const ClientIntelligencePage: React.FC = () => {
       setProfiles(mockProfiles);
     } catch {
       // // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching client profiles: ', error);
     } finally {
@@ -277,7 +277,7 @@ const ClientIntelligencePage: React.FC = () => {
       }
     } catch {
       // // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
     // eslint-disable-next-line no-console
     console.error('Error triggering client unification: ', error);
     }

@@ -54,7 +54,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-8 bg-card shadow-xl border-0">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Welcome Back</h1>
+          <h1 className="text-3xl font-bold text-card-foreground">Welcome Back</h1>
           <p className="text-muted-foreground mt-2">
             Sign in to your account to continue
           </p>
@@ -77,11 +77,11 @@ export default function LoginPage() {
                     type="email"
                     placeholder="Email address"
                     disabled={isFormLoading}
-                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
                     autoComplete="email"
                   />
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <Mail className="h-5 w-5 text-card-foreground" />
                   </div>
                 </div>
               )}
@@ -102,11 +102,11 @@ export default function LoginPage() {
                     type="password"
                     placeholder="Password"
                     disabled={isFormLoading}
-                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
                     autoComplete="current-password"
                   />
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-muted-foreground" />
+                    <Lock className="h-5 w-5 text-card-foreground" />
                   </div>
                 </div>
               )}

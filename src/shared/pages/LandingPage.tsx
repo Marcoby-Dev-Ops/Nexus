@@ -38,7 +38,7 @@ export const LandingPage: React.FC = () => {
               Nexus transforms your business into a self-optimizing, intelligent organism. 
               No degree required – just the vision to grow.
             </p>
-            <div className="flex flex-col sm: flex-row gap-4 justify-center items-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button size="lg" className="w-full sm:w-auto">
                 <Link to="/signup" className="flex items-center justify-center w-full">
                   Get Started Free

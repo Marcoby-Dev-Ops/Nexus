@@ -51,20 +51,20 @@ const systemAlerts = [
 ];
 
 const quickActions = [
-  { label: 'User Management', icon: <Users className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  { label: 'User Management', icon: <Users className="w-5 h-5" />, onClick: () =>  
+     
     // eslint-disable-next-line no-console
     console.log('User Management') },
-  { label: 'System Settings', icon: <Settings className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  { label: 'System Settings', icon: <Settings className="w-5 h-5" />, onClick: () =>  
+     
     // eslint-disable-next-line no-console
     console.log('System Settings') },
-  { label: 'Security Center', icon: <Shield className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  { label: 'Security Center', icon: <Shield className="w-5 h-5" />, onClick: () =>  
+     
     // eslint-disable-next-line no-console
     console.log('Security Center') },
-  { label: 'System Logs', icon: <Activity className="w-5 h-5" />, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  { label: 'System Logs', icon: <Activity className="w-5 h-5" />, onClick: () =>  
+     
     // eslint-disable-next-line no-console
     console.log('System Logs') },
 ];

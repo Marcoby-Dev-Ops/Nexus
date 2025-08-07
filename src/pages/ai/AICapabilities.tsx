@@ -33,6 +33,7 @@ import {
 import { AdvancedAICapabilitiesDemo } from '@/components/ai/AdvancedAICapabilitiesDemo';
 import { CrossPlatformIntelligenceDemo } from '@/components/ai/CrossPlatformIntelligenceDemo';
 import { ModelPerformanceMonitor } from '@/components/ai/ModelPerformanceMonitor';
+import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
 
 interface AICapability {
   id: string;
@@ -202,8 +203,8 @@ export default function AICapabilitiesPage() {
 
       setCapabilities(allCapabilities);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading AI capabilities: ', error);
     } finally {
@@ -391,8 +392,8 @@ export default function AICapabilitiesPage() {
                              variant="outline" 
                              size="sm" 
                              className="w-full"
-                             onClick={() => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+                             onClick={() =>  
+     
     // eslint-disable-next-line no-console
     console.log('Learn more about: ', capability.id)}
                            >

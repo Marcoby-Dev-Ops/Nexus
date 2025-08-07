@@ -255,8 +255,8 @@ const DataWarehouseHome: React.FC = () => {
       }
 
     } catch (err) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching analytics: ', err);
       setError(err instanceof Error ? err.message: 'Failed to load analytics data');

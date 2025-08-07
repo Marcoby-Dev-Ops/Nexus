@@ -2,7 +2,7 @@ import React from 'react';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
-import { CheckCircle, AlertTriangle, Clock, UserCheck } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 
 interface ProfileVerificationBannerProps {
   verificationStatus?: 'verified' | 'pending' | 'unverified';

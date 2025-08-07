@@ -40,8 +40,8 @@ export const IntelligentFireCycle: React.FC<IntelligentFireCycleProps> = ({
     try {
       await triggerAnalysis();
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Analysis failed: ', error);
     } finally {

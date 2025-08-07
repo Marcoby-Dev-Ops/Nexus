@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { useAuth } from '@/hooks/index';
 import { supabase } from '@/lib/supabase';
+import { createHubSpotAuthUrl } from '@/services/integrations/hubspot/utils';
+import { HUBSPOT_REQUIRED_SCOPES } from '@/services/integrations/hubspot/constants';
 
 import {
   CheckCircle2,
@@ -44,8 +46,8 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
 
     try {
       // Use a more reliable session check before OAuth
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔄 [HubSpotSetup] Checking session before OAuth...');
       
@@ -53,8 +55,8 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       if (sessionError) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.warn('⚠️ [HubSpotSetup] Session check failed: ', sessionError);
         setError('Authentication error. Please log in again and try connecting HubSpot.');
@@ -63,8 +65,8 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       }
 
       if (!session) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('❌ [HubSpotSetup] No valid session found');
         setError('Please log in again before connecting HubSpot.');
@@ -72,8 +74,8 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
         return;
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('✅ [HubSpotSetup] Session validated, proceeding with OAuth');
 
@@ -86,10 +88,6 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
       // Configure OAuth settings - redirect to frontend callback page
       const redirectUri = `${window.location.origin}/integrations/hubspot/callback`;
       
-      // Use the consolidated HubSpot utilities
-      const { createHubSpotAuthUrl } = await import('@/services/integrations/hubspot/utils');
-const { HUBSPOT_REQUIRED_SCOPES } = await import('@/services/integrations/hubspot/constants');
-      
       // Create state parameter with user ID and timestamp for security
       const state = btoa(JSON.stringify({ 
         timestamp: Date.now(),
@@ -97,8 +95,8 @@ const { HUBSPOT_REQUIRED_SCOPES } = await import('@/services/integrations/hubspo
         userId: user?.id || null
       }));
       
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpotSetup] Creating OAuth URL with: ', {
         clientId: clientId ? '***' : 'missing',
@@ -116,14 +114,14 @@ const { HUBSPOT_REQUIRED_SCOPES } = await import('@/services/integrations/hubspo
         state
       });
       
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpotSetup] Generated auth URL: ', authUrl);
       
       // Debug: Log the complete OAuth URL for verification
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpotSetup] Complete OAuth URL for verification:', {
         baseUrl: 'https://app.hubspot.com/oauth/authorize',
@@ -138,8 +136,8 @@ const { HUBSPOT_REQUIRED_SCOPES } = await import('@/services/integrations/hubspo
       window.location.href = authUrl;
       
     } catch (error: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('❌ [HubSpotSetup] OAuth initiation failed: ', error);
       setError(error.message || 'Failed to initiate HubSpot connection');
@@ -150,8 +148,8 @@ const { HUBSPOT_REQUIRED_SCOPES } = await import('@/services/integrations/hubspo
   const completeSetup = async () => {
     // The integration is now handled by the callback page
     // This function is kept for compatibility but doesn't need to do anything
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('✅ [HubSpotSetup] Setup completed via callback page');
     setLoading(false);

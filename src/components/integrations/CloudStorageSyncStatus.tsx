@@ -78,8 +78,8 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
         error: null
       });
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Failed to load sync stats: ', error);
       setSyncStats(prev => ({ 
@@ -112,8 +112,8 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
       await loadSyncStats();
       
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Sync failed: ', error);
       showToast({

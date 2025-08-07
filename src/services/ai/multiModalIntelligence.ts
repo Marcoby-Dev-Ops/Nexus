@@ -6,7 +6,7 @@ export interface MultiModalInput {
   metadata?: {
     source: string;
     timestamp: Date;
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
   };
 }
 
@@ -25,7 +25,7 @@ export interface MultiModalResponse {
 export interface MultiModalAction {
   type: 'extract' | 'analyze' | 'generate' | 'classify' | 'translate';
   description: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   confidence: number;
 }
 

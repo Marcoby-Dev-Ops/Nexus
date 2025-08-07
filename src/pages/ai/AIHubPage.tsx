@@ -30,6 +30,7 @@ import { AIFeatureCard } from '@/components/ai/AIFeatureCard';
 import { ModelPerformanceMonitor } from '@/components/ai/ModelPerformanceMonitor';
 import { AdvancedAICapabilitiesDemo } from '@/components/ai/AdvancedAICapabilitiesDemo';
 import { AIOnboardingDashboard } from '@/components/ai/AIOnboardingDashboard';
+import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
 
 interface AIHubStats {
   totalAgents: number;
@@ -305,12 +306,12 @@ export default function AIHubPage() {
                 <AIFeatureCard
                   key={feature.id}
                   feature={feature}
-                  onLearnMore={(feature) => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+                  onLearnMore={(feature) =>  
+     
     // eslint-disable-next-line no-console
     console.log('Learn more: ', feature.id)}
-                  onDemo={(feature) => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+                  onDemo={(feature) =>  
+     
     // eslint-disable-next-line no-console
     console.log('Demo: ', feature.id)}
                 />

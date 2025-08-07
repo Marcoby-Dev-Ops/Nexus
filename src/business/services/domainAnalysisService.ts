@@ -4,245 +4,122 @@
  * Pillar: 1,2 - Automated business health assessment
  */
 
-import { supabase } from '@/core/database/supabase';
-import { logger } from '@/shared/utils/logger';
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
-export interface DomainAnalysisResult {
+interface DomainAnalysis {
+  id: string;
+  user_id: string;
   domain: string;
-  isProfessional: boolean;
-  isCustomDomain: boolean;
-  provider: 'custom' | 'microsoft365' | 'google' | 'generic';
-  confidence: number;
-  recommendations: string[];
-  upsellOpportunity?: {
-    type: 'microsoft365' | 'google';
-    benefits: string[];
-    estimatedCost: string;
-  };
+  analysis_result: any;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface UserEmailAnalysis {
-  customDomainCount: number;
-  overallProfessionalScore: number;
-  primaryDomain?: string;
-  recommendations: string[];
-}
-
-export interface UpsellRecommendation {
-  shouldShowUpsell: boolean;
-  type: 'microsoft365' | 'google';
-  benefits: string[];
-  estimatedCost: string;
-}
-
-class DomainAnalysisService {
-  private readonly PROFESSIONAL_DOMAINS = [
-    'outlook.com',
-    'office365.com',
-    'microsoft365.com',
-    'gmail.com',
-    'googleworkspace.com',
-    'google.com'
-  ];
-
-  private readonly GENERIC_DOMAINS = [
-    'gmail.com',
-    'yahoo.com',
-    'hotmail.com',
-    'live.com',
-    'aol.com',
-    'icloud.com'
-  ];
-
-  async analyzeDomain(domain: string): Promise<DomainAnalysisResult> {
-    const normalizedDomain = domain.toLowerCase().trim();
-    
-    // Check if it's a custom domain
-    const isCustomDomain = !this.GENERIC_DOMAINS.includes(normalizedDomain) && 
-                          !this.PROFESSIONAL_DOMAINS.includes(normalizedDomain);
-    
-    // Determine provider
-    let provider: DomainAnalysisResult['provider'] = 'generic';
-    if (isCustomDomain) {
-      provider = 'custom';
-    } else if (normalizedDomain.includes('outlook') || normalizedDomain.includes('office365') || normalizedDomain.includes('microsoft365')) {
-      provider = 'microsoft365';
-    } else if (normalizedDomain.includes('gmail') || normalizedDomain.includes('google')) {
-      provider = 'google';
+export class DomainAnalysisService extends BaseService {
+  /**
+   * Get domain analysis for a specific user and domain
+   */
+  async getDomainAnalysis(userId: string, domain: string): Promise<ServiceResponse<DomainAnalysis>> {
+    const userIdValidation = this.validateIdParam(userId, 'userId');
+    if (userIdValidation) {
+      return this.createErrorResponse(userIdValidation);
     }
-    
-    // Calculate confidence
-    let confidence = 50;
-    if (isCustomDomain) confidence = 95;
-    else if (provider === 'microsoft365') confidence = 80;
-    else if (provider === 'google') confidence = 70;
-    
-    // Generate recommendations
-    const recommendations: string[] = [];
-    if (isCustomDomain) {
-      recommendations.push('Excellent! You\'re using a professional custom domain');
-    } else if (provider === 'microsoft365') {
-      recommendations.push('Good! You\'re using Microsoft 365 for business');
-    } else if (provider === 'google') {
-      recommendations.push('Good! You\'re using Google Workspace for business');
-    } else {
-      recommendations.push('Consider upgrading to a professional email service');
+
+    const domainValidation = this.validateRequiredParam(domain, 'domain');
+    if (domainValidation) {
+      return this.createErrorResponse(domainValidation);
     }
-    
-    // Generate upsell opportunity for generic domains
-    let upsellOpportunity: DomainAnalysisResult['upsellOpportunity'] | undefined;
-    if (provider === 'generic') {
-      upsellOpportunity = {
-        type: 'microsoft365',
-        benefits: [
-          'Custom domain email (you@yourcompany.com)',
-          'Professional appearance',
-          'Better deliverability',
-          'Integrated calendar and contacts'
-        ],
-        estimatedCost: '$6-22/user/month'
-      };
-    }
-    
-    return {
-      domain: normalizedDomain,
-      isProfessional: isCustomDomain || provider !== 'generic',
-      isCustomDomain,
-      provider,
-      confidence,
-      recommendations,
-      upsellOpportunity
-    };
+
+    return this.executeDbOperation(
+      async () => {
+        const { data, error } = await selectOne('domain_analyses', { 
+          user_id: userId, 
+          domain 
+        });
+        return { data: data as DomainAnalysis, error };
+      },
+      'getDomainAnalysis'
+    );
   }
 
-  async analyzeUserEmailDomains(userId: string): Promise<UserEmailAnalysis> {
-    try {
-      // Get user's email addresses from database
-      const { data: userEmails, error } = await supabase
-        .from('user_emails')
-        .select('email')
-        .eq('user_id', userId);
-
-      if (error) {
-        logger.error({ error, userId }, 'Error fetching user emails');
-        return {
-          customDomainCount: 0,
-          overallProfessionalScore: 0,
-          recommendations: ['Unable to analyze email domains']
-        };
-      }
-
-      const domains = userEmails?.map(email => {
-        const domain = email.email.split('@')[1];
-        return domain;
-      }).filter(Boolean) || [];
-
-      let customDomainCount = 0;
-      let totalScore = 0;
-      const recommendations: string[] = [];
-
-      for (const domain of domains) {
-        const analysis = await this.analyzeDomain(domain);
-        if (analysis.isCustomDomain) {
-          customDomainCount++;
-        }
-        totalScore += analysis.confidence;
-      }
-
-      const overallProfessionalScore = domains.length > 0 ? totalScore / domains.length : 0;
-      const primaryDomain = domains[0];
-
-      if (customDomainCount > 0) {
-        recommendations.push('Excellent! You have custom domain emails');
-      } else if (overallProfessionalScore >= 70) {
-        recommendations.push('Good! You\'re using professional email services');
-      } else {
-        recommendations.push('Consider upgrading to professional email services');
-      }
-
-      return {
-        customDomainCount,
-        overallProfessionalScore,
-        primaryDomain,
-        recommendations
-      };
-
-    } catch (error) {
-      logger.error({ error, userId }, 'Error analyzing user email domains');
-      return {
-        customDomainCount: 0,
-        overallProfessionalScore: 0,
-        recommendations: ['Error analyzing email domains']
-      };
+  /**
+   * Create a new domain analysis
+   */
+  async createDomainAnalysis(analysisData: Omit<DomainAnalysis, 'id' | 'created_at' | 'updated_at'>): Promise<ServiceResponse<DomainAnalysis>> {
+    const userIdValidation = this.validateIdParam(analysisData.user_id, 'user_id');
+    if (userIdValidation) {
+      return this.createErrorResponse(userIdValidation);
     }
+
+    const domainValidation = this.validateRequiredParam(analysisData.domain, 'domain');
+    if (domainValidation) {
+      return this.createErrorResponse(domainValidation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        const { data, error } = await insertOne('domain_analyses', analysisData);
+        return { data: data as DomainAnalysis, error };
+      },
+      'createDomainAnalysis'
+    );
   }
 
-  async getMicrosoft365UpsellRecommendation(userId: string): Promise<UpsellRecommendation> {
-    const analysis = await this.analyzeUserEmailDomains(userId);
-    
-    const shouldShowUpsell = analysis.customDomainCount === 0 && 
-                             analysis.overallProfessionalScore < 70;
+  /**
+   * Update an existing domain analysis
+   */
+  async updateDomainAnalysis(analysisId: string, updates: Partial<DomainAnalysis>): Promise<ServiceResponse<DomainAnalysis>> {
+    const validation = this.validateIdParam(analysisId, 'analysisId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
 
-    return {
-      shouldShowUpsell,
-      type: 'microsoft365',
-      benefits: [
-        'Custom domain email (you@yourcompany.com)',
-        'Professional appearance',
-        'Better deliverability',
-        'Integrated calendar and contacts',
-        'Advanced security features'
-      ],
-      estimatedCost: '$6-22/user/month'
-    };
+    return this.executeDbOperation(
+      async () => {
+        const { data, error } = await updateOne('domain_analyses', analysisId, updates);
+        return { data: data as DomainAnalysis, error };
+      },
+      'updateDomainAnalysis'
+    );
   }
 
-  async updateProfessionalEmailKPI(userId: string, companyId?: string): Promise<void> {
-    try {
-      const analysis = await this.analyzeUserEmailDomains(userId);
-      const hasProfessionalEmail = analysis.customDomainCount > 0 || 
-                                   analysis.overallProfessionalScore >= 70;
-
-      // Update user's professional email status
-      await supabase
-        .from('users')
-        .update({ 
-          has_professional_email: hasProfessionalEmail,
-          professional_email_score: analysis.overallProfessionalScore
-        })
-        .eq('id', userId);
-
-      // Update company KPI if company ID is provided
-      if (companyId) {
-        const { data: companyUsers } = await supabase
-          .from('users')
-          .select('has_professional_email')
-          .eq('company_id', companyId);
-
-        const professionalEmailCount = companyUsers?.filter(u => u.has_professional_email).length || 0;
-        const totalUsers = companyUsers?.length || 0;
-        const professionalEmailPercentage = totalUsers > 0 ? (professionalEmailCount / totalUsers) * 100 : 0;
-
-        await supabase
-          .from('companies')
-          .update({ 
-            professional_email_percentage: professionalEmailPercentage,
-            last_kpi_update: new Date().toISOString()
-          })
-          .eq('id', companyId);
-      }
-
-      logger.info({ 
-        userId, 
-        companyId, 
-        hasProfessionalEmail, 
-        score: analysis.overallProfessionalScore 
-      }, 'Updated professional email KPI');
-
-    } catch (error) {
-      logger.error({ error, userId, companyId }, 'Error updating professional email KPI');
+  /**
+   * Get all domain analyses for a user
+   */
+  async getAllDomainAnalyses(userId: string): Promise<ServiceResponse<DomainAnalysis[]>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
     }
+
+    return this.executeDbOperation(
+      async () => {
+        const { data, error } = await select('domain_analyses', '*', { user_id: userId });
+        return { data: data as DomainAnalysis[], error };
+      },
+      'getAllDomainAnalyses'
+    );
+  }
+
+  /**
+   * Delete a domain analysis
+   */
+  async deleteDomainAnalysis(analysisId: string): Promise<ServiceResponse<boolean>> {
+    const validation = this.validateIdParam(analysisId, 'analysisId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        const { error } = await deleteOne('domain_analyses', analysisId);
+        return { data: !error, error };
+      },
+      'deleteDomainAnalysis'
+    );
   }
 }
 
+// Export singleton instance
 export const domainAnalysisService = new DomainAnalysisService(); 

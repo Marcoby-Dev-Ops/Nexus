@@ -1,3 +1,10 @@
+/**
+ * User N8N Configuration Service
+ * Manages user-specific N8N configurations and settings
+ */
+
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+
 export interface UserN8nConfig {
   userId: string;
   organizationId?: string;
@@ -62,276 +69,537 @@ export interface N8nWebhookConfig {
   };
 }
 
-class UserN8nConfigService {
+export interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  details?: Record<string, any>;
+}
+
+export interface SyncResult {
+  success: boolean;
+  message: string;
+  workflowsCount?: number;
+  webhooksCount?: number;
+}
+
+export class UserN8nConfigService extends BaseService {
   private configs: Map<string, UserN8nConfig> = new Map();
   private credentials: Map<string, N8nCredential> = new Map();
   private webhookConfigs: Map<string, N8nWebhookConfig> = new Map();
 
   constructor() {
+    super();
     this.loadConfigs();
   }
 
   /**
    * Create or update user N8N configuration
    */
-  async setUserConfig(config: Omit<UserN8nConfig, 'lastSync' | 'syncStatus' | 'errorMessage'>): Promise<void> {
-    const existingConfig = this.configs.get(config.userId);
-    
-    if (existingConfig) {
-      Object.assign(existingConfig, config);
-    } else {
-      const newConfig: UserN8nConfig = {
-        ...config,
-        lastSync: undefined,
-        syncStatus: 'idle',
-        errorMessage: undefined
-      };
-      this.configs.set(config.userId, newConfig);
+  async setUserConfig(config: Omit<UserN8nConfig, 'lastSync' | 'syncStatus' | 'errorMessage'>): Promise<ServiceResponse<void>> {
+    const userIdValidation = this.validateIdParam(config.userId, 'userId');
+    if (userIdValidation) {
+      return this.createErrorResponse(userIdValidation);
     }
 
-    await this.saveConfigs();
+    const urlValidation = this.validateRequiredParam(config.n8nInstanceUrl, 'n8nInstanceUrl');
+    if (urlValidation) {
+      return this.createErrorResponse(urlValidation);
+    }
+
+    const apiKeyValidation = this.validateRequiredParam(config.apiKey, 'apiKey');
+    if (apiKeyValidation) {
+      return this.createErrorResponse(apiKeyValidation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const existingConfig = this.configs.get(config.userId);
+          
+          if (existingConfig) {
+            Object.assign(existingConfig, config);
+          } else {
+            const newConfig: UserN8nConfig = {
+              ...config,
+              lastSync: undefined,
+              syncStatus: 'idle',
+              errorMessage: undefined
+            };
+            this.configs.set(config.userId, newConfig);
+          }
+
+          await this.saveConfigs();
+          return { data: undefined, error: null };
+        } catch (error) {
+          return { data: null, error: error instanceof Error ? error.message : 'Failed to save configuration' };
+        }
+      },
+      'setUserConfig'
+    );
   }
 
   /**
    * Get user N8N configuration
    */
-  getUserConfig(userId: string): UserN8nConfig | undefined {
-    return this.configs.get(userId);
+  async getUserConfig(userId: string): Promise<ServiceResponse<UserN8nConfig | undefined>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const config = this.configs.get(userId);
+          return { data: config, error: null };
+        } catch (error) {
+          return { data: undefined, error: error instanceof Error ? error.message : 'Failed to get configuration' };
+        }
+      },
+      'getUserConfig'
+    );
   }
 
   /**
    * Get all configurations for an organization
    */
-  getOrganizationConfigs(organizationId: string): UserN8nConfig[] {
-    return Array.from(this.configs.values()).filter(config => config.organizationId === organizationId);
+  async getOrganizationConfigs(organizationId: string): Promise<ServiceResponse<UserN8nConfig[]>> {
+    const validation = this.validateIdParam(organizationId, 'organizationId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const configs = Array.from(this.configs.values()).filter(config => config.organizationId === organizationId);
+          return { data: configs, error: null };
+        } catch (error) {
+          return { data: [], error: error instanceof Error ? error.message : 'Failed to get organization configurations' };
+        }
+      },
+      'getOrganizationConfigs'
+    );
   }
 
   /**
    * Test N8N connection
    */
-  async testConnection(userId: string): Promise<{
-    success: boolean;
-    message: string;
-    details?: Record<string, any>;
-  }> {
-    const config = this.configs.get(userId);
-    if (!config) {
-      return {
-        success: false,
-        message: 'User configuration not found'
-      };
+  async testConnection(userId: string): Promise<ServiceResponse<ConnectionTestResult>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
     }
 
-    try {
-      // Simulate connection test
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
-      
-      // Simulate occasional connection failures
-      if (Math.random() < 0.2) {
-        throw new Error('Connection failed: Invalid API key or instance URL');
-      }
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const config = this.configs.get(userId);
+          if (!config) {
+            return {
+              data: {
+                success: false,
+                message: 'User configuration not found'
+              },
+              error: null
+            };
+          }
 
-      return {
-        success: true,
-        message: 'Connection successful',
-        details: {
-          instanceUrl: config.n8nInstanceUrl,
-          apiVersion: '1.0.0',
-          workflowsCount: Math.floor(Math.random() * 50),
-          activeWebhooks: Math.floor(Math.random() * 10)
+          // Simulate connection test
+          await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 3000));
+          
+          // Simulate occasional connection failures
+          if (Math.random() < 0.2) {
+            throw new Error('Connection failed: Invalid API key or instance URL');
+          }
+
+          return {
+            data: {
+              success: true,
+              message: 'Connection successful',
+              details: {
+                instanceUrl: config.n8nInstanceUrl,
+                apiVersion: '1.0.0',
+                workflowsCount: Math.floor(Math.random() * 50),
+                activeWebhooks: Math.floor(Math.random() * 10)
+              }
+            },
+            error: null
+          };
+        } catch (error) {
+          return {
+            data: {
+              success: false,
+              message: error instanceof Error ? error.message : 'Connection test failed',
+              details: {
+                error: error instanceof Error ? error.message : 'Unknown error'
+              }
+            },
+            error: null
+          };
         }
-      };
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : 'Connection test failed',
-        details: {
-          error: error instanceof Error ? error.message : 'Unknown error'
-        }
-      };
-    }
+      },
+      'testConnection'
+    );
   }
 
   /**
    * Sync user workflows from N8N
    */
-  async syncUserWorkflows(userId: string): Promise<{
-    success: boolean;
-    workflowsSynced: number;
-    message: string;
-  }> {
-    const config = this.configs.get(userId);
-    if (!config) {
-      return {
-        success: false,
-        workflowsSynced: 0,
-        message: 'User configuration not found'
-      };
+  async syncUserWorkflows(userId: string): Promise<ServiceResponse<SyncResult>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
     }
 
-    try {
-      config.syncStatus = 'syncing';
-      await this.saveConfigs();
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const config = this.configs.get(userId);
+          if (!config || !config.isActive) {
+            return {
+              data: {
+                success: false,
+                message: 'No active N8N configuration found'
+              },
+              error: null
+            };
+          }
 
-      // Simulate sync process
-      await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 5000));
-      
-      const workflowsSynced = Math.floor(Math.random() * 20) + 5;
-      
-      config.syncStatus = 'success';
-      config.lastSync = new Date();
-      config.errorMessage = undefined;
+          // Update sync status
+          config.syncStatus = 'syncing';
+          config.lastSync = new Date();
+          await this.saveConfigs();
 
-      await this.saveConfigs();
+          // Simulate sync process
+          await new Promise(resolve => setTimeout(resolve, 3000 + Math.random() * 2000));
 
-      return {
-        success: true,
-        workflowsSynced,
-        message: `Successfully synced ${workflowsSynced} workflows`
-      };
-    } catch (error) {
-      config.syncStatus = 'error';
-      config.errorMessage = error instanceof Error ? error.message: 'Sync failed';
-      
-      await this.saveConfigs();
+          // Simulate occasional sync failures
+          if (Math.random() < 0.1) {
+            config.syncStatus = 'error';
+            config.errorMessage = 'Sync failed: Network timeout';
+            await this.saveConfigs();
+            
+            return {
+              data: {
+                success: false,
+                message: 'Sync failed: Network timeout'
+              },
+              error: null
+            };
+          }
 
-      return {
-        success: false,
-        workflowsSynced: 0,
-        message: error instanceof Error ? error.message : 'Sync failed'
-      };
-    }
+          // Success
+          config.syncStatus = 'success';
+          config.errorMessage = undefined;
+          await this.saveConfigs();
+
+          return {
+            data: {
+              success: true,
+              message: 'Sync completed successfully',
+              workflowsCount: Math.floor(Math.random() * 20) + 5,
+              webhooksCount: Math.floor(Math.random() * 10) + 2
+            },
+            error: null
+          };
+        } catch (error) {
+          return {
+            data: {
+              success: false,
+              message: error instanceof Error ? error.message : 'Sync failed'
+            },
+            error: null
+          };
+        }
+      },
+      'syncUserWorkflows'
+    );
   }
 
   /**
-   * Add N8N credential
+   * Add credential for user
    */
-  async addCredential(credential: Omit<N8nCredential, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const id = `cred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const now = new Date();
-    
-    const newCredential: N8nCredential = {
-      ...credential,
-      id,
-      createdAt: now,
-      updatedAt: now
-    };
+  async addCredential(credential: Omit<N8nCredential, 'id' | 'createdAt' | 'updatedAt'>): Promise<ServiceResponse<string>> {
+    const userIdValidation = this.validateIdParam(credential.userId, 'userId');
+    if (userIdValidation) {
+      return this.createErrorResponse(userIdValidation);
+    }
 
-    this.credentials.set(id, newCredential);
-    await this.saveCredentials();
-    return id;
+    const nameValidation = this.validateRequiredParam(credential.name, 'name');
+    if (nameValidation) {
+      return this.createErrorResponse(nameValidation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const newCredential: N8nCredential = {
+            ...credential,
+            id: `cred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+
+          this.credentials.set(newCredential.id, newCredential);
+          await this.saveCredentials();
+
+          return { data: newCredential.id, error: null };
+        } catch (error) {
+          return { data: '', error: error instanceof Error ? error.message : 'Failed to add credential' };
+        }
+      },
+      'addCredential'
+    );
   }
 
   /**
    * Get user credentials
    */
-  getUserCredentials(userId: string): N8nCredential[] {
-    return Array.from(this.credentials.values()).filter(cred => cred.userId === userId);
+  async getUserCredentials(userId: string): Promise<ServiceResponse<N8nCredential[]>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const userCredentials = Array.from(this.credentials.values()).filter(cred => cred.userId === userId);
+          return { data: userCredentials, error: null };
+        } catch (error) {
+          return { data: [], error: error instanceof Error ? error.message : 'Failed to get credentials' };
+        }
+      },
+      'getUserCredentials'
+    );
   }
 
   /**
    * Update credential
    */
-  async updateCredential(credentialId: string, updates: Partial<N8nCredential>): Promise<void> {
-    const credential = this.credentials.get(credentialId);
-    if (!credential) {
-      throw new Error(`Credential ${credentialId} not found`);
+  async updateCredential(credentialId: string, updates: Partial<N8nCredential>): Promise<ServiceResponse<void>> {
+    const validation = this.validateIdParam(credentialId, 'credentialId');
+    if (validation) {
+      return this.createErrorResponse(validation);
     }
 
-    Object.assign(credential, updates, { updatedAt: new Date() });
-    await this.saveCredentials();
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const credential = this.credentials.get(credentialId);
+          if (!credential) {
+            return { data: null, error: 'Credential not found' };
+          }
+
+          Object.assign(credential, updates, { updatedAt: new Date() });
+          await this.saveCredentials();
+
+          return { data: undefined, error: null };
+        } catch (error) {
+          return { data: null, error: error instanceof Error ? error.message : 'Failed to update credential' };
+        }
+      },
+      'updateCredential'
+    );
   }
 
   /**
    * Delete credential
    */
-  async deleteCredential(credentialId: string): Promise<void> {
-    this.credentials.delete(credentialId);
-    await this.saveCredentials();
+  async deleteCredential(credentialId: string): Promise<ServiceResponse<boolean>> {
+    const validation = this.validateIdParam(credentialId, 'credentialId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const deleted = this.credentials.delete(credentialId);
+          if (deleted) {
+            await this.saveCredentials();
+          }
+          return { data: deleted, error: null };
+        } catch (error) {
+          return { data: false, error: error instanceof Error ? error.message : 'Failed to delete credential' };
+        }
+      },
+      'deleteCredential'
+    );
   }
 
   /**
    * Configure webhook
    */
-  async configureWebhook(webhookConfig: Omit<N8nWebhookConfig, 'id'>): Promise<string> {
-    const id = `webhook_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    const newWebhookConfig: N8nWebhookConfig = {
-      ...webhookConfig,
-      id
-    };
+  async configureWebhook(webhookConfig: Omit<N8nWebhookConfig, 'id'>): Promise<ServiceResponse<string>> {
+    const workflowIdValidation = this.validateIdParam(webhookConfig.workflowId, 'workflowId');
+    if (workflowIdValidation) {
+      return this.createErrorResponse(workflowIdValidation);
+    }
 
-    this.webhookConfigs.set(id, newWebhookConfig);
-    await this.saveWebhookConfigs();
-    return id;
+    const pathValidation = this.validateRequiredParam(webhookConfig.path, 'path');
+    if (pathValidation) {
+      return this.createErrorResponse(pathValidation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const newWebhook: N8nWebhookConfig = {
+            ...webhookConfig,
+            id: `webhook_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+          };
+
+          this.webhookConfigs.set(newWebhook.id, newWebhook);
+          await this.saveWebhookConfigs();
+
+          return { data: newWebhook.id, error: null };
+        } catch (error) {
+          return { data: '', error: error instanceof Error ? error.message : 'Failed to configure webhook' };
+        }
+      },
+      'configureWebhook'
+    );
   }
 
   /**
-   * Get webhook configurations for user
+   * Get user webhook configurations
    */
-  getUserWebhookConfigs(userId: string): N8nWebhookConfig[] {
-    const config = this.configs.get(userId);
-    if (!config) return [];
+  async getUserWebhookConfigs(userId: string): Promise<ServiceResponse<N8nWebhookConfig[]>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
 
-    // Filter webhooks based on user's workflows
-    return Array.from(this.webhookConfigs.values()).filter(_webhook => {
-      // In a real implementation, you'd check if the user has access to the workflow
-      return true;
-    });
+    return this.executeDbOperation(
+      async () => {
+        try {
+          // Filter webhooks by user (this would need to be implemented based on your data structure)
+          const userWebhooks = Array.from(this.webhookConfigs.values());
+          return { data: userWebhooks, error: null };
+        } catch (error) {
+          return { data: [], error: error instanceof Error ? error.message : 'Failed to get webhook configurations' };
+        }
+      },
+      'getUserWebhookConfigs'
+    );
   }
 
   /**
    * Update webhook configuration
    */
-  async updateWebhookConfig(webhookId: string, updates: Partial<N8nWebhookConfig>): Promise<void> {
-    const webhook = this.webhookConfigs.get(webhookId);
-    if (!webhook) {
-      throw new Error(`Webhook configuration ${webhookId} not found`);
+  async updateWebhookConfig(webhookId: string, updates: Partial<N8nWebhookConfig>): Promise<ServiceResponse<void>> {
+    const validation = this.validateIdParam(webhookId, 'webhookId');
+    if (validation) {
+      return this.createErrorResponse(validation);
     }
 
-    Object.assign(webhook, updates);
-    await this.saveWebhookConfigs();
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const webhook = this.webhookConfigs.get(webhookId);
+          if (!webhook) {
+            return { data: null, error: 'Webhook configuration not found' };
+          }
+
+          Object.assign(webhook, updates);
+          await this.saveWebhookConfigs();
+
+          return { data: undefined, error: null };
+        } catch (error) {
+          return { data: null, error: error instanceof Error ? error.message : 'Failed to update webhook configuration' };
+        }
+      },
+      'updateWebhookConfig'
+    );
   }
 
   /**
    * Delete webhook configuration
    */
-  async deleteWebhookConfig(webhookId: string): Promise<void> {
-    this.webhookConfigs.delete(webhookId);
-    await this.saveWebhookConfigs();
+  async deleteWebhookConfig(webhookId: string): Promise<ServiceResponse<boolean>> {
+    const validation = this.validateIdParam(webhookId, 'webhookId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const deleted = this.webhookConfigs.delete(webhookId);
+          if (deleted) {
+            await this.saveWebhookConfigs();
+          }
+          return { data: deleted, error: null };
+        } catch (error) {
+          return { data: false, error: error instanceof Error ? error.message : 'Failed to delete webhook configuration' };
+        }
+      },
+      'deleteWebhookConfig'
+    );
   }
 
   /**
    * Get user statistics
    */
-  getUserStats(userId: string): {
+  async getUserStats(userId: string): Promise<ServiceResponse<{
     workflowsCount: number;
     activeWebhooks: number;
     credentialsCount: number;
     lastSync?: Date;
     syncStatus: string;
-  } {
-    const config = this.configs.get(userId);
-    const userCredentials = this.getUserCredentials(userId);
-    const userWebhooks = this.getUserWebhookConfigs(userId);
+  }>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
 
-    return {
-      workflowsCount: Math.floor(Math.random() * 50), // Simulated
-      activeWebhooks: userWebhooks.filter(w => w.isActive).length,
-      credentialsCount: userCredentials.length,
-      lastSync: config?.lastSync,
-      syncStatus: config?.syncStatus || 'idle'
-    };
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const config = this.configs.get(userId);
+          const userCredentials = Array.from(this.credentials.values()).filter(cred => cred.userId === userId);
+          const userWebhooks = Array.from(this.webhookConfigs.values()).filter(w => w.isActive);
+
+          return {
+            data: {
+              workflowsCount: Math.floor(Math.random() * 50),
+              activeWebhooks: userWebhooks.length,
+              credentialsCount: userCredentials.length,
+              lastSync: config?.lastSync,
+              syncStatus: config?.syncStatus || 'idle'
+            },
+            error: null
+          };
+        } catch (error) {
+          return {
+            data: {
+              workflowsCount: 0,
+              activeWebhooks: 0,
+              credentialsCount: 0,
+              syncStatus: 'error'
+            },
+            error: error instanceof Error ? error.message : 'Failed to get user stats'
+          };
+        }
+      },
+      'getUserStats'
+    );
   }
 
   /**
    * Validate configuration
    */
-  validateConfig(config: Partial<UserN8nConfig>): {
+  validateConfig(config: Partial<UserN8nConfig>): ServiceResponse<{
     isValid: boolean;
     errors: string[];
-  } {
+  }> {
     const errors: string[] = [];
+
+    if (!config.userId) {
+      errors.push('User ID is required');
+    }
 
     if (!config.n8nInstanceUrl) {
       errors.push('N8N instance URL is required');
@@ -343,50 +611,99 @@ class UserN8nConfigService {
       errors.push('API key is required');
     }
 
-    if (config.settings?.syncInterval && config.settings.syncInterval < 1) {
-      errors.push('Sync interval must be at least 1 minute');
+    if (config.settings?.syncInterval && (config.settings.syncInterval < 1 || config.settings.syncInterval > 1440)) {
+      errors.push('Sync interval must be between 1 and 1440 minutes');
     }
 
     return {
-      isValid: errors.length === 0,
-      errors
+      data: {
+        isValid: errors.length === 0,
+        errors
+      },
+      error: null
     };
   }
 
   /**
    * Export user configuration
    */
-  exportUserConfig(userId: string): {
+  async exportUserConfig(userId: string): Promise<ServiceResponse<{
     config: UserN8nConfig | undefined;
     credentials: N8nCredential[];
     webhooks: N8nWebhookConfig[];
-  } {
-    return {
-      config: this.configs.get(userId),
-      credentials: this.getUserCredentials(userId),
-      webhooks: this.getUserWebhookConfigs(userId)
-    };
+  }>> {
+    const validation = this.validateIdParam(userId, 'userId');
+    if (validation) {
+      return this.createErrorResponse(validation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const config = this.configs.get(userId);
+          const userCredentials = Array.from(this.credentials.values()).filter(cred => cred.userId === userId);
+          const userWebhooks = Array.from(this.webhookConfigs.values());
+
+          return {
+            data: {
+              config,
+              credentials: userCredentials,
+              webhooks: userWebhooks
+            },
+            error: null
+          };
+        } catch (error) {
+          return {
+            data: {
+              config: undefined,
+              credentials: [],
+              webhooks: []
+            },
+            error: error instanceof Error ? error.message : 'Failed to export configuration'
+          };
+        }
+      },
+      'exportUserConfig'
+    );
   }
 
+  // Private methods for data persistence
   private async loadConfigs(): Promise<void> {
-    // In a real implementation, this would load from database
-    // For now, we'll start with an empty map
+    try {
+      // Load configurations from storage (implement based on your storage mechanism)
+      // For now, using in-memory storage
+    } catch (error) {
+      this.logger.error('Error loading configurations', { error });
+    }
   }
 
   private async saveConfigs(): Promise<void> {
-    // In a real implementation, this would save to database
-    // For now, we'll just keep in memory
+    try {
+      // Save configurations to storage (implement based on your storage mechanism)
+      // For now, using in-memory storage
+    } catch (error) {
+      this.logger.error('Error saving configurations', { error });
+    }
   }
 
   private async saveCredentials(): Promise<void> {
-    // In a real implementation, this would save to database
-    // For now, we'll just keep in memory
+    try {
+      // Save credentials to storage (implement based on your storage mechanism)
+      // For now, using in-memory storage
+    } catch (error) {
+      this.logger.error('Error saving credentials', { error });
+    }
   }
 
   private async saveWebhookConfigs(): Promise<void> {
-    // In a real implementation, this would save to database
-    // For now, we'll just keep in memory
+    try {
+      // Save webhook configurations to storage (implement based on your storage mechanism)
+      // For now, using in-memory storage
+    } catch (error) {
+      this.logger.error('Error saving webhook configurations', { error });
+    }
   }
 }
 
+// Export singleton instance
 export const userN8nConfigService = new UserN8nConfigService(); 

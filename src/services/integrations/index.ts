@@ -1,3 +1,27 @@
+// ============================================================================
+// CONSOLIDATED INTEGRATION SERVICE (RECOMMENDED)
+// ============================================================================
+// This is the main integration service that consolidates all functionality
+export {
+  consolidatedIntegrationService,
+  ConsolidatedIntegrationService,
+  type IntegrationPlatform,
+  type UserIntegration,
+  type DataPointAnalytics,
+  type IntegrationDataSummary,
+  type ApiIntegrationData,
+  type ConnectionResult,
+  type SyncResult,
+  type IntegrationCredentials,
+  type IntegrationConfig,
+  type IntegrationUpdates,
+  type DataPoint,
+} from './consolidatedIntegrationService';
+
+// ============================================================================
+// LEGACY SERVICES (DEPRECATED - Use consolidatedIntegrationService instead)
+// ============================================================================
+
 // Core Integration Services
 export { IntegrationBaseService } from './core/IntegrationBaseService';
 export { IntegrationRegistryService } from './core/IntegrationRegistryService';

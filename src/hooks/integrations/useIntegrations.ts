@@ -45,8 +45,8 @@ export const useIntegrations = (): UseIntegrationsReturn => {
       setIsLoading(true);
       setError(null);
       
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔄 Starting integration refresh for user: ', user.id);
       
@@ -56,21 +56,21 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         .eq('user_id', user.id);
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('❌ Failed to fetch integrations: ', error);
         throw error;
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('✅ Successfully fetched integrations: ', data?.length || 0);
       setIntegrations(data || []);
     } catch (err) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('❌ Error refreshing integrations: ', err);
       setError(err instanceof Error ? err: new Error('An error occurred'));

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/index';
 import { useNavigate } from 'react-router-dom';
+import { performSignOut } from '@/shared/utils/signOut';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
@@ -53,8 +54,8 @@ export default function SettingsPage() {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
-      navigate('/login');
+      await performSignOut();
+      // performSignOut already handles redirect, so we don't need to navigate
     } catch (error) {
       console.error('Sign out failed:', error);
     }

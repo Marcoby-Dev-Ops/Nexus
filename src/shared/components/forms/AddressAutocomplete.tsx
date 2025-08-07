@@ -74,8 +74,8 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       setShowSuggestions(true);
       setSelectedIndex(-1);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching address suggestions: ', error);
       setSuggestions([]);
@@ -111,8 +111,8 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       const parsedAddress = googlePlacesService.parseAddressComponents(placeDetails);
       onChange?.(parsedAddress);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching place details: ', error);
     } finally {
@@ -157,13 +157,13 @@ export const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     try {
       const location = await googlePlacesService.getCurrentLocation();
       // You could implement reverse geocoding here if needed
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Current location: ', location);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error getting current location: ', error);
       alert('Unable to get your current location');

@@ -1,6 +1,8 @@
 import { browserSupportsWebAuthn, startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { supabase } from "@/lib/supabase";
 import { toast } from 'sonner';
+import { select, insertOne, updateOne } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
 export interface PasskeyRegistrationOptions {
   userId: string;
@@ -123,8 +125,8 @@ export async function fetchUserPasskeys(): Promise<PasskeyRecord[]> {
     .order('created_at', { ascending: false });
   
   if (error) {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.error('[Passkey] Failed to fetch passkeys', error);
     throw new Error('Failed to load passkeys');
@@ -195,8 +197,8 @@ export function handlePasskeyError(error: unknown, operation: 'registration' | '
     toast.error(errorMessage);
   }
   
-  // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+   
+     
     // eslint-disable-next-line no-console
     console.error(`[Passkey] ${operation} failed: `, error);
 }
@@ -260,3 +262,45 @@ export async function handleCompletePasskeySignIn(
     throw error; // Re-throw for caller to handle if needed
   }
 } 
+
+export const getPasskeys = async (userId: string) => {
+  try {
+    const { data, error } = await select('user_passkeys', '*', { user_id: userId });
+    if (error) {
+      logger.error({ error }, 'Failed to fetch passkeys');
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    logger.error({ err }, 'Error fetching passkeys');
+    return [];
+  }
+};
+
+export const addPasskey = async (userId: string, passkey: any) => {
+  try {
+    const { data, error } = await insertOne('user_passkeys', { ...passkey, user_id: userId });
+    if (error) {
+      logger.error({ error }, 'Failed to add passkey');
+      return null;
+    }
+    return data;
+  } catch (err) {
+    logger.error({ err }, 'Error adding passkey');
+    return null;
+  }
+};
+
+export const updatePasskey = async (id: string, updates: any) => {
+  try {
+    const { data, error } = await updateOne('user_passkeys', id, updates);
+    if (error) {
+      logger.error({ error }, 'Failed to update passkey');
+      return null;
+    }
+    return data;
+  } catch (err) {
+    logger.error({ err }, 'Error updating passkey');
+    return null;
+  }
+}; 

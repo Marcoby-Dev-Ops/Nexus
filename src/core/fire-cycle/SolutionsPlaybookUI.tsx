@@ -32,8 +32,8 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
         const recs = await recommendPlaybook(userContext, currentPhase, detectedProblem);
         setRecommendations(recs);
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error loading playbook recommendations: ', error);
       } finally {

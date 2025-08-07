@@ -13,6 +13,7 @@ import { Shield, Lock, Key, Smartphone, Monitor, Clock, Trash2, RefreshCw, Eye, 
 
 // Import our new service patterns
 import { useService } from '@/shared/hooks/useService';
+import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { z } from 'zod';
@@ -52,11 +53,33 @@ interface ActiveSession {
 const SecuritySettings: React.FC = () => {
   const { user } = useAuth();
   
-  // Use the new UserService hooks
+  // Use the UserService directly
   const userService = useService('user');
-  const { data: userProfile, isLoading: isLoadingProfile } = userService.useGet(user?.id || '');
-  const { mutate: updateUser, isLoading: isUpdating } = userService.useUpdate();
-  
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      setIsLoadingProfile(true);
+      try {
+        const result = await userService.get(user.id);
+        if (result.success && result.data) {
+          setUserProfile(result.data);
+        }
+              } catch (error) {
+          logger.error('Failed to fetch user profile:', error);
+        } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.id, userService]);
+
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorEnabled: false,
     emailNotifications: true,
@@ -83,16 +106,22 @@ const SecuritySettings: React.FC = () => {
     onSubmit: async (data: PasswordChangeData) => {
       if (!user?.id) return;
 
+      setIsUpdating(true);
       try {
-        // Update user with new password (this would be handled by the service)
-        await updateUser(user.id, {
+        const result = await userService.update(user.id, {
           password: data.newPassword
         });
         
-        setShowPasswordModal(false);
-        toast.success('Password updated successfully');
+        if (result.success) {
+          setShowPasswordModal(false);
+          toast.success('Password updated successfully');
+        } else {
+          throw new Error(result.error || 'Failed to update password');
+        }
       } catch (error) {
         throw new Error('Failed to update password');
+      } finally {
+        setIsUpdating(false);
       }
     },
     successMessage: 'Password updated successfully!',

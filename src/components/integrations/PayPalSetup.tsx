@@ -47,8 +47,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
 
   const checkExistingIntegration = async () => {
     if (!user) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('No user found, skipping integration check');
       return;
@@ -59,22 +59,22 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     try {
       // Debug authentication status
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Current session: ', session ? 'Authenticated' : 'Not authenticated', sessionError);
       
       if (!session) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.warn('User not authenticated, cannot check integrations');
         setConnectionStatus('disconnected');
         return;
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Checking PayPal integration for user: ', user.id);
       
@@ -88,8 +88,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       let integrationId: string | null = null;
 
       if (integrationError) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.warn('PayPal integration not found by slug: ', integrationError);
         
@@ -101,8 +101,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
           .single();
           
         if (nameError || !integrationByName) {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.warn('PayPal integration not found by name either');
           
@@ -114,8 +114,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
             .limit(1);
             
           if (searchError || !paypalIntegrations || paypalIntegrations.length === 0) {
-            // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+             
+     
     // eslint-disable-next-line no-console
     console.warn('No PayPal integration found in database');
             setConnectionStatus('disconnected');
@@ -131,8 +131,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       }
 
       if (!integrationId) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.warn('No PayPal integration ID found');
         setConnectionStatus('disconnected');
@@ -149,8 +149,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
         .maybeSingle();
 
       if (userIntegrationError) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error checking PayPal integration: ', userIntegrationError);
         setConnectionStatus('error');
@@ -165,8 +165,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       }
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error checking PayPal integration: ', error);
       // Don't set error status for database access issues, just assume disconnected
@@ -243,8 +243,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       });
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('PayPal connection error: ', error);
       addNotification({
@@ -325,8 +325,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       });
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('PayPal connection error: ', error);
       addNotification({
@@ -371,8 +371,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       if (onComplete) onComplete();
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('PayPal disconnection error: ', error);
       addNotification({
@@ -411,8 +411,8 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       checkExistingIntegration();
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Token refresh error: ', error);
       addNotification({

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useService } from '@/shared/hooks/useService';
+import { logger } from '@/shared/utils/logger';
 
 const companyProfileSchema = z.object({
   name: z.string().min(2, 'Company name must be at least 2 characters'),
@@ -33,11 +34,12 @@ export function CompanyProfilePage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Use the new CompanyService hooks
+  // Use the CompanyService directly
   const companyService = useService('company');
   const companyId = (user as any)?.company?.id;
-  const { data: company, isLoading: isLoadingCompany } = companyService.useGet(companyId || '');
-  const { mutate: updateCompany, isLoading: isUpdating } = companyService.useUpdate();
+  const [company, setCompany] = useState<any>(null);
+  const [isLoadingCompany, setIsLoadingCompany] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CompanyProfileFormData>({
     resolver: zodResolver(companyProfileSchema),
@@ -53,18 +55,38 @@ export function CompanyProfilePage() {
 
   // Load company data when available
   useEffect(() => {
-    if (company) {
-      const companyData = company as any;
-      reset({
-        name: companyData.name || '',
-        industry: companyData.industry || '',
-        size: companyData.size || '',
-        website: companyData.website || '',
-        description: companyData.description || '',
-        clientbase_description: companyData.client_base_description || '',
-      });
-    }
-  }, [company, reset]);
+    const fetchCompanyData = async () => {
+      if (!companyId) return;
+      
+      setIsLoadingCompany(true);
+      try {
+        const result = await companyService.get(companyId);
+        if (result.success && result.data) {
+          setCompany(result.data);
+          const companyData = result.data as any;
+          reset({
+            name: companyData.name || '',
+            industry: companyData.industry || '',
+            size: companyData.size || '',
+            website: companyData.website || '',
+            description: companyData.description || '',
+            clientbase_description: companyData.client_base_description || '',
+          });
+        }
+              } catch (error) {
+          logger.error('Failed to fetch company data:', error);
+          toast({
+            title: 'Error',
+            description: 'Failed to load company information.',
+            variant: 'destructive',
+          });
+        } finally {
+        setIsLoadingCompany(false);
+      }
+    };
+
+    fetchCompanyData();
+  }, [companyId, companyService, reset, toast]);
 
   const onSubmit = async (data: CompanyProfileFormData) => {
     const userCompanyId = (user as any)?.company?.id;
@@ -77,21 +99,32 @@ export function CompanyProfilePage() {
       return;
     }
 
+    setIsUpdating(true);
     try {
-      await updateCompany(userCompanyId, data);
-      completeStep('company_profile');
-      toast({
-        title: 'Profile Updated!',
-        description: 'Your company information has been saved successfully.',
-      });
-      navigate('/dashboard');
+      const result = await companyService.update(userCompanyId, data);
+      if (result.success) {
+        completeStep('company_profile');
+        toast({
+          title: 'Profile Updated!',
+          description: 'Your company information has been saved successfully.',
+        });
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to save your information. Please try again.',
+          variant: 'destructive',
+        });
+      }
     } catch (error) {
-      console.error("Failed to update company profile: ", error);
+      logger.error("Failed to update company profile: ", error);
       toast({
         title: 'Error',
         description: 'Failed to save your information. Please try again.',
         variant: 'destructive',
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 

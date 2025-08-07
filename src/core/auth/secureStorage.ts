@@ -1,9 +1,12 @@
 /**
  * Secure Storage Utilities
  * @description Encrypted localStorage wrapper for sensitive data
+ * Updated to use helper functions from src/lib/supabase.ts
  */
 
 import { STORAGE_CONFIG } from '@/core/constants/security';
+import { supabase } from '@/lib/supabase';
+import { supabaseService } from '@/core/services/SupabaseService';
 
 // Simple encryption/decryption using Web Crypto API
 class SecureStorage {
@@ -17,6 +20,52 @@ class SecureStorage {
       SecureStorage.instance = new SecureStorage();
     }
     return SecureStorage.instance;
+  }
+
+  /**
+   * Log storage operation for security audit
+   */
+  private async logStorageOperation(operation: string, key: string, success: boolean, error?: any): Promise<void> {
+    try {
+      // Get current session context
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const logData = {
+        operation,
+        key: key.startsWith('secure_') ? key.substring(8) : key, // Remove secure_ prefix for logging
+        success,
+        userId: session?.user?.id || 'anonymous',
+        timestamp: new Date().toISOString(),
+        error: error?.message || null
+      };
+
+      // Send to security log via edge function
+      await supabaseService.callEdgeFunction('security_log', {
+        type: 'STORAGE_OPERATION',
+        message: `Storage ${operation}: ${key}`,
+        details: logData
+      });
+    } catch (error) {
+      // Silent fail for logging - don't break storage operations
+      console.warn('Failed to log storage operation:', error);
+    }
+  }
+
+  /**
+   * Validate user session before sensitive operations
+   */
+  private async validateSession(): Promise<boolean> {
+    try {
+      const { session, error } = await supabaseService.sessionUtils.getSession();
+      
+      if (error || !session) {
+        return false;
+      }
+
+      return supabaseService.sessionUtils.isSessionValid(session);
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
@@ -49,9 +98,7 @@ class SecureStorage {
       );
     } catch (error) {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn('Failed to initialize encryption key: ', error);
+      console.warn('Failed to initialize encryption key: ', error);
       this.key = null;
     }
   }
@@ -86,9 +133,7 @@ class SecureStorage {
       return btoa(String.fromCharCode(...combined));
     } catch (error) {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn('Encryption failed, using base64: ', error);
+      console.warn('Encryption failed, using base64: ', error);
       return btoa(data);
     }
   }
@@ -127,9 +172,7 @@ class SecureStorage {
       return new TextDecoder().decode(decryptedData);
     } catch (error) {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn('Decryption failed, trying base64: ', error);
+      console.warn('Decryption failed, trying base64: ', error);
       try {
         return atob(encryptedData);
       } catch {
@@ -139,17 +182,27 @@ class SecureStorage {
   }
 
   /**
-   * Securely store data
+   * Securely store data with session validation and logging
    */
   public async setItem(key: string, value: any): Promise<void> {
     try {
       // Validate input value
       if (value === undefined) {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Attempting to store undefined value for key: ${key}`);
+        console.warn(`Attempting to store undefined value for key: ${key}`);
+        await this.logStorageOperation('set', key, false, new Error('Undefined value'));
         return;
+      }
+
+      // Validate session for sensitive keys
+      const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
+      if (shouldEncrypt) {
+        const isValidSession = await this.validateSession();
+        if (!isValidSession) {
+          const error = new Error('Invalid session for sensitive storage operation');
+          await this.logStorageOperation('set', key, false, error);
+          throw error;
+        }
       }
 
       // Ensure we don't store functions or other non-serializable values
@@ -158,9 +211,8 @@ class SecureStorage {
         serializableValue = JSON.parse(JSON.stringify(value));
       } catch (error) {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error(`Value for ${key} is not serializable: `, error);
+        console.error(`Value for ${key} is not serializable: `, error);
+        await this.logStorageOperation('set', key, false, error);
         throw new Error(`Cannot store non-serializable value for key: ${key}`);
       }
 
@@ -170,59 +222,72 @@ class SecureStorage {
         version: '1.0',
       });
 
-      const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
       const finalValue = shouldEncrypt 
         ? await this.encrypt(serializedValue)
         : serializedValue;
 
       // Validate final value before storing
       if (typeof finalValue !== 'string') {
-        throw new Error(`Final value for ${key} is not a string: ${typeof finalValue}`);
+        const error = new Error(`Final value for ${key} is not a string: ${typeof finalValue}`);
+        await this.logStorageOperation('set', key, false, error);
+        throw error;
       }
 
       localStorage.setItem(
         shouldEncrypt ? `secure_${key}` : key,
         finalValue
       );
+
+      // Log successful operation
+      await this.logStorageOperation('set', key, true);
     } catch (error) {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error(`Failed to store ${key}:`, error);
+      console.error(`Failed to store ${key}:`, error);
+      await this.logStorageOperation('set', key, false, error);
       throw new Error(`Storage failed for key: ${key}`);
     }
   }
 
   /**
-   * Securely retrieve data
+   * Securely retrieve data with session validation and logging
    */
   public async getItem<T>(key: string, defaultValue?: T): Promise<T | null> {
     try {
       const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
+      
+      // Validate session for sensitive keys
+      if (shouldEncrypt) {
+        const isValidSession = await this.validateSession();
+        if (!isValidSession) {
+          const error = new Error('Invalid session for sensitive storage retrieval');
+          await this.logStorageOperation('get', key, false, error);
+          return defaultValue ?? null;
+        }
+      }
+
       const storageKey = shouldEncrypt ? `secure_${key}` : key;
       const storedValue = localStorage.getItem(storageKey);
 
       if (!storedValue) {
+        await this.logStorageOperation('get', key, true, null);
         return defaultValue ?? null;
       }
 
       // Handle cases where the stored value is not a string or is corrupted
       if (typeof storedValue !== 'string') {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Invalid stored value type for ${key}:`, typeof storedValue);
+        console.warn(`Invalid stored value type for ${key}:`, typeof storedValue);
         this.removeItem(key);
+        await this.logStorageOperation('get', key, false, new Error('Invalid value type'));
         return defaultValue ?? null;
       }
 
       // Check for obvious corruption (e.g., "[object Object]")
       if (storedValue === '[object Object]' || storedValue.startsWith('[object ')) {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Corrupted stored value detected for ${key}:`, storedValue);
+        console.warn(`Corrupted stored value detected for ${key}:`, storedValue);
         this.removeItem(key);
+        await this.logStorageOperation('get', key, false, new Error('Corrupted value'));
         return defaultValue ?? null;
       }
 
@@ -233,10 +298,9 @@ class SecureStorage {
       // Validate that rawValue is a string before parsing
       if (typeof rawValue !== 'string') {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Decrypted value is not a string for ${key}:`, typeof rawValue);
+        console.warn(`Decrypted value is not a string for ${key}:`, typeof rawValue);
         this.removeItem(key);
+        await this.logStorageOperation('get', key, false, new Error('Invalid decrypted value'));
         return defaultValue ?? null;
       }
 
@@ -245,60 +309,86 @@ class SecureStorage {
         parsed = JSON.parse(rawValue);
       } catch (parseError) {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`JSON parse error for ${key}:`, parseError, 'Raw value: ', rawValue);
+        console.warn(`JSON parse error for ${key}:`, parseError, 'Raw value: ', rawValue);
         this.removeItem(key);
+        await this.logStorageOperation('get', key, false, parseError);
         return defaultValue ?? null;
       }
 
       // Validate parsed structure
       if (!parsed || typeof parsed !== 'object') {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Invalid parsed structure for ${key}:`, parsed);
+        console.warn(`Invalid parsed structure for ${key}:`, parsed);
         this.removeItem(key);
+        await this.logStorageOperation('get', key, false, new Error('Invalid parsed structure'));
         return defaultValue ?? null;
       }
 
       // Check if data is expired
       if (parsed.timestamp && Date.now() - parsed.timestamp > STORAGE_CONFIG.MAXAGE) {
         this.removeItem(key);
+        await this.logStorageOperation('get', key, false, new Error('Data expired'));
         return defaultValue ?? null;
       }
 
+      await this.logStorageOperation('get', key, true);
       return parsed.data;
     } catch (error) {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Failed to retrieve ${key}:`, error);
+      console.warn(`Failed to retrieve ${key}:`, error);
       // Clean up corrupted data
       this.removeItem(key);
+      await this.logStorageOperation('get', key, false, error);
       return defaultValue ?? null;
     }
   }
 
   /**
-   * Remove stored data
+   * Remove stored data with logging
    */
-     public removeItem(key: string): void {
-     const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
-     const storageKey = shouldEncrypt ? `secure_${key}` : key;
-     localStorage.removeItem(storageKey);
-   }
+  public async removeItem(key: string): Promise<void> {
+    try {
+      const shouldEncrypt = STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any);
+      const storageKey = shouldEncrypt ? `secure_${key}` : key;
+      
+      const existed = localStorage.getItem(storageKey) !== null;
+      localStorage.removeItem(storageKey);
+      
+      await this.logStorageOperation('remove', key, true, null);
+    } catch (error) {
+      await this.logStorageOperation('remove', key, false, error);
+      throw error;
+    }
+  }
 
   /**
-   * Clear all secure storage
+   * Clear all secure storage with logging
    */
-  public clearSecureStorage(): void {
-    const keys = Object.keys(localStorage);
-         keys.forEach(key => {
-       if (key.startsWith('secure_') || STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any)) {
-         localStorage.removeItem(key);
-       }
-     });
+  public async clearSecureStorage(): Promise<void> {
+    try {
+      const keys = Object.keys(localStorage);
+      const removedKeys: string[] = [];
+      
+      keys.forEach(key => {
+        if (key.startsWith('secure_') || STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any)) {
+          localStorage.removeItem(key);
+          removedKeys.push(key);
+        }
+      });
+
+      // Log the bulk operation
+      await supabaseService.callEdgeFunction('security_log', {
+        type: 'STORAGE_OPERATION',
+        message: 'Bulk storage clear',
+        details: {
+          operation: 'clear',
+          keysRemoved: removedKeys.length,
+          timestamp: new Date().toISOString()
+        }
+      });
+    } catch (error) {
+      console.warn('Failed to log storage clear operation:', error);
+    }
   }
 
   /**
@@ -312,9 +402,9 @@ class SecureStorage {
   }
 
   /**
-   * Clean up corrupted localStorage entries
+   * Clean up corrupted localStorage entries with logging
    */
-  public cleanupCorruptedEntries(): void {
+  public async cleanupCorruptedEntries(): Promise<void> {
     const keysToRemove: string[] = [];
     
     for (let i = 0; i < localStorage.length; i++) {
@@ -325,33 +415,89 @@ class SecureStorage {
         const value = localStorage.getItem(key);
         if (value === '[object Object]' || (value && value.startsWith('[object '))) {
           // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Found corrupted entry: ${key} = ${value}`);
+          console.warn(`Found corrupted entry: ${key} = ${value}`);
           keysToRemove.push(key);
         }
       } catch (error) {
         // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.warn(`Error checking key ${key}:`, error);
+        console.warn(`Error checking key ${key}:`, error);
         keysToRemove.push(key);
       }
     }
     
     keysToRemove.forEach(key => {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log(`Removing corrupted entry: ${key}`);
+      console.log(`Removing corrupted entry: ${key}`);
       localStorage.removeItem(key);
     });
     
     if (keysToRemove.length > 0) {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log(`Cleaned up ${keysToRemove.length} corrupted localStorage entries`);
+      console.log(`Cleaned up ${keysToRemove.length} corrupted localStorage entries`);
+      
+      // Log the cleanup operation
+      await supabaseService.callEdgeFunction('security_log', {
+        type: 'STORAGE_OPERATION',
+        message: 'Storage cleanup completed',
+        details: {
+          operation: 'cleanup',
+          keysRemoved: keysToRemove.length,
+          timestamp: new Date().toISOString()
+        }
+      });
+    }
+  }
+
+  /**
+   * Get storage statistics for audit
+   */
+  public async getStorageStats(): Promise<{
+    totalKeys: number;
+    secureKeys: number;
+    regularKeys: number;
+    totalSize: number;
+  }> {
+    const keys = Object.keys(localStorage);
+    let totalSize = 0;
+    let secureKeys = 0;
+    let regularKeys = 0;
+
+    keys.forEach(key => {
+      const value = localStorage.getItem(key);
+      if (value) {
+        totalSize += value.length;
+        if (key.startsWith('secure_') || STORAGE_CONFIG.SENSITIVEKEYS.includes(key as any)) {
+          secureKeys++;
+        } else {
+          regularKeys++;
+        }
+      }
+    });
+
+    return {
+      totalKeys: keys.length,
+      secureKeys,
+      regularKeys,
+      totalSize
+    };
+  }
+
+  /**
+   * Sync storage metadata with Supabase for audit purposes
+   */
+  public async syncStorageMetadata(): Promise<void> {
+    try {
+      const stats = await this.getStorageStats();
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      await supabaseService.callEdgeFunction('store_storage_metadata', {
+        userId: session?.user?.id || 'anonymous',
+        stats,
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'production'
+      });
+    } catch (error) {
+      console.warn('Failed to sync storage metadata:', error);
     }
   }
 }
@@ -364,4 +510,6 @@ export const setSecureItem = (key: string, value: any) => secureStorage.setItem(
 export const getSecureItem = <T>(key: string, defaultValue?: T) => secureStorage.getItem<T>(key, defaultValue);
 export const removeSecureItem = (key: string) => secureStorage.removeItem(key);
 export const clearAllSecureData = () => secureStorage.clearSecureStorage();
-export const cleanupCorruptedStorage = () => secureStorage.cleanupCorruptedEntries(); 
+export const cleanupCorruptedStorage = () => secureStorage.cleanupCorruptedEntries();
+export const getStorageStats = () => secureStorage.getStorageStats();
+export const syncStorageMetadata = () => secureStorage.syncStorageMetadata(); 

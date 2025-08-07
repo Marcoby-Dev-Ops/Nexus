@@ -55,8 +55,8 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message: 'Failed to load recipes';
       setError(errorMessage);
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading recipes: ', err);
     } finally {
@@ -76,8 +76,8 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message: 'Failed to load deployments';
       setError(errorMessage);
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading deployments: ', err);
     } finally {
@@ -119,8 +119,8 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message: 'Deployment error';
       setError(errorMessage);
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error deploying recipe: ', err);
       
@@ -162,8 +162,8 @@ export function useAutomationRecipes(options: UseAutomationRecipesOptions = {}):
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message: `Failed to ${action} deployment`;
       setError(errorMessage);
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error(`Error ${action}ing deployment: `, err);
       

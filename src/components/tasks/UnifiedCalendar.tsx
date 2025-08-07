@@ -92,8 +92,8 @@ const UnifiedCalendar: React.FC = () => {
         .eq('status', 'active');
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching calendar integrations: ', error);
         return [];
@@ -127,8 +127,8 @@ const UnifiedCalendar: React.FC = () => {
 
         return calendarEvents;
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching calendar events: ', error);
         return [];

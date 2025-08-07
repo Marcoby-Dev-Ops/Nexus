@@ -4,7 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.42.5";
 // Simple in-memory cache for user profile to avoid extra DB calls per request (clears on cold start)
 const profileCache = new Map<string, { name: string; company?: string }>();
 
-async function getProfile(supabaseClient: any, userId: string) {
+async function getProfile(supabaseClient: Record<string, unknown>, userId: string) {
   if (profileCache.has(userId)) return profileCache.get(userId)!;
 
   // Fetch from auth.users metadata instead of a separate table
@@ -436,8 +436,9 @@ serve(async (req: Request) => {
           .filter(Boolean)
           .join('\n\n');
       }
-    } catch (e: any) {
-      console.error('RAG Error:', e.message);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'Unknown RAG error';
+      console.error('RAG Error:', errorMessage);
     }
     
     // === SYSTEM MESSAGE & FINAL PAYLOAD =================================
@@ -474,9 +475,10 @@ serve(async (req: Request) => {
               content: aiResponseContent,
             });
 
-          } catch (e: any) {
-            console.error('LLM or persistence error:', e);
-            controller.enqueue(createErrorChunk(e.message));
+          } catch (e: unknown) {
+            const errorMessage = e instanceof Error ? e.message : 'Unknown LLM error';
+            console.error('LLM or persistence error:', errorMessage);
+            controller.enqueue(createErrorChunk(errorMessage));
           } finally {
             controller.close();
           }
@@ -510,18 +512,20 @@ serve(async (req: Request) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
         );
 
-      } catch (e: any) {
-        console.error('LLM or persistence error:', e);
+      } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Unknown LLM error';
+        console.error('LLM or persistence error:', errorMessage);
         return new Response(
-          JSON.stringify({ success: false, error: e.message }),
+          JSON.stringify({ success: false, error: errorMessage }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 },
         );
       }
     }
-  } catch (error) {
-    console.error('ai_chat error', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown ai_chat error';
+    console.error('ai_chat error', errorMessage);
     return new Response(
-      JSON.stringify({ error: (error as Error).message, success: false }),
+      JSON.stringify({ error: errorMessage, success: false }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

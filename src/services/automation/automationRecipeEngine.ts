@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase, callRPC } from '@/lib/supabase';
 import type { WorkflowGenerationRequest } from './n8nWorkflowBuilder';
 import { N8nWorkflowBuilder } from './n8nWorkflowBuilder';
 import { n8nService } from '@/services/automation/n8nService';
@@ -103,8 +103,8 @@ class AutomationRecipeEngine {
         .order('usage_count', { ascending: false });
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Failed to load recipes: ', error);
         return this.getDefaultRecipes();
@@ -117,8 +117,8 @@ class AutomationRecipeEngine {
 
       return recipes || this.getDefaultRecipes();
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching recipes: ', error);
       return this.getDefaultRecipes();
@@ -197,8 +197,8 @@ class AutomationRecipeEngine {
       };
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Recipe deployment failed: ', error);
       return { 
@@ -223,8 +223,8 @@ class AutomationRecipeEngine {
         .order('deployed_at', { ascending: false });
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Failed to fetch deployments: ', error);
         return [];
@@ -232,8 +232,8 @@ class AutomationRecipeEngine {
 
       return deployments || [];
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching deployments: ', error);
       return [];
@@ -254,8 +254,8 @@ class AutomationRecipeEngine {
         .eq('id', deploymentId);
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Failed to toggle deployment: ', error);
         return false;
@@ -263,8 +263,8 @@ class AutomationRecipeEngine {
 
       return true;
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error toggling deployment: ', error);
       return false;
@@ -413,18 +413,26 @@ class AutomationRecipeEngine {
    * Update recipe usage count
    */
   private async updateRecipeUsage(recipeId: string): Promise<void> {
-    const { error } = await supabase
-      .from('automation_recipes')
-      .update({ 
-        usagecount: supabase.rpc('increment_usage_count', { recipeid: recipeId })
-      })
-      .eq('id', recipeId);
+    try {
+      const { error: rpcError } = await callRPC('increment_usage_count', { recipeid: recipeId });
+      if (rpcError) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to update recipe usage: ', rpcError);
+        return;
+      }
 
-    if (error) {
+      const { error } = await supabase
+        .from('automation_recipes')
+        .update({ usagecount: true })
+        .eq('id', recipeId);
+
+      if (error) {
+        // eslint-disable-next-line no-console
+        console.error('Failed to update recipe usage: ', error);
+      }
+    } catch (error) {
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to update recipe usage: ', error);
+      console.error('Failed to update recipe usage: ', error);
     }
   }
 

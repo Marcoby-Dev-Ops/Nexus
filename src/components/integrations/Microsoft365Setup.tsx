@@ -107,8 +107,8 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
       
       // Store code verifier in session storage for callback
       sessionStorage.setItem('microsoft_code_verifier', codeVerifier);
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Stored code verifier: ', { 
         codeVerifierLength: codeVerifier.length,
@@ -118,8 +118,8 @@ const Microsoft365Setup: React.FC<Microsoft365SetupProps> = ({
       
       // Verify storage worked
       const storedVerifier = sessionStorage.getItem('microsoft_code_verifier');
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Verification - stored code verifier: ', { 
         hasStoredVerifier: !!storedVerifier,

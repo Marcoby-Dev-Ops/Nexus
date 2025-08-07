@@ -13,8 +13,8 @@ import { Textarea } from '@/shared/components/ui/Textarea';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Spinner } from '@/shared/components/ui/Spinner.tsx';
 import { Alert } from '@/shared/components/ui/Alert.tsx';
-import { thoughtsService } from '@/services/help-center/thoughtsService';
-import type { InteractionMethod, ThoughtCategory } from '@/services/help-center/types/thoughts';
+import { thoughtsService } from '@/lib/services/thoughtsService';
+import type { InteractionMethod, ThoughtCategory } from '@/core/types/thoughts';
 import { useAuth } from '@/hooks/index';
 
 interface InteractivePromptsProps {
@@ -101,8 +101,8 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       mediaRecorder.start();
       setIsRecording(true);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error starting recording: ', error);
     }
@@ -132,8 +132,8 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       // Auto-suggest categories based on voice content
       await generateSuggestions(mockTranscription);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error processing voice input: ', error);
       setInputState(prev => ({ ...prev, isProcessing: false }));
@@ -169,8 +169,8 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       
       await generateSuggestions(extractedContent);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error processing file: ', error);
       setInputState(prev => ({ ...prev, isProcessing: false }));
@@ -200,8 +200,8 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       }));
       await generateSuggestions(clipboardText);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error reading clipboard: ', error);
     }
@@ -219,13 +219,23 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       // Get company_id from user profile
       
 
-      const thought = await thoughtsService.createThought({
+      const result = await thoughtsService.createThought({
+        userid: user?.id || '',
         content: inputState.content,
-        interactionmethod: inputState.method,
+        category: 'idea',
         status: 'not_started',
-        companyid: userProfile?.company_id || undefined,
-        category: 'idea'
+        interaction_method: inputState.method,
+        company_id: userProfile?.company_id || undefined,
+        mainsubcategories: [],
+        initiative: false,
+        aiinsights: {}
       });
+      
+      if (!result.success || !result.data) {
+        setError('Failed to create thought. Please try again.');
+        setInputState(prev => ({ ...prev, isProcessing: false }));
+        return;
+      }
       
       // Reset form
       setInputState({
@@ -235,10 +245,10 @@ export const InteractivePrompts: React.FC<InteractivePromptsProps> = ({
       });
       setSuggestions([]);
       
-      onThoughtCreated?.(thought.id);
+      onThoughtCreated?.(result.data.id);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error creating thought: ', error);
       setError('Failed to create thought. Please try again.');

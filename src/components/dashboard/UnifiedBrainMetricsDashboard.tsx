@@ -53,8 +53,8 @@ export const UnifiedBrainMetricsDashboard: React.FC = () => {
         ]);
         setIsLoading(false);
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error loading metrics: ', error);
         setIsLoading(false);

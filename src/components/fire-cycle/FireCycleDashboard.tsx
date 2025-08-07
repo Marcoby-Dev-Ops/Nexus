@@ -26,9 +26,24 @@ import { Switch } from '@/shared/components/ui/Switch';
 import { Label } from '@/shared/components/ui/Label';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
 import { useAuth } from '@/hooks/index';
-import { thoughtsService } from '@/services/help-center/thoughtsService';
-import type { Thought } from '@/core/types/thoughts';
+import { thoughtsService } from '@/lib/services/thoughtsService';
+import type { Thought as CoreThought } from '@/core/types/thoughts';
+import { logger } from '@/shared/utils/logger';
+
+// Local interface for ThoughtsService compatibility
+interface ServiceThought {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  category?: string;
+  tags?: string[];
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 interface FireCyclePhase {
   id: 'focus' | 'insight' | 'roadmap' | 'execute';
@@ -41,7 +56,7 @@ interface FireCyclePhase {
   count: number;
 }
 
-interface FireCycleThought extends Thought {
+interface FireCycleThought extends ServiceThought {
   firePhase: 'focus' | 'insight' | 'roadmap' | 'execute';
   confidence: number;
   suggestedActions: string[];
@@ -136,20 +151,24 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
 
     setLoading(true);
     try {
-      const response = await thoughtsService.getThoughts({}, 100, 0);
-      const enrichedThoughts: FireCycleThought[] = response.thoughts.map(thought => ({
+      const result = await thoughtsService.getThoughts(user.id);
+      if (!result.success || !result.data) {
+        logger.error('Failed to load thoughts', { error: result.error });
+        return;
+      }
+      const enrichedThoughts: FireCycleThought[] = result.data.map(thought => ({
         ...thought,
         firePhase: determineFirePhase(thought.content),
         confidence: calculateConfidence(thought.content),
         suggestedActions: generateSuggestedActions(thought.content),
-        lastActivity: new Date(thought.lastupdated),
+        lastActivity: new Date(thought.updated_at),
         isStuck: isThoughtStuck(thought),
         daysInPhase: calculateDaysInPhase(thought)
       }));
       
       setThoughts(enrichedThoughts);
     } catch (error) {
-      console.error('Failed to load thoughts:', error);
+      logger.error('Failed to load thoughts', { error });
     } finally {
       setLoading(false);
     }
@@ -166,7 +185,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
     if (searchQuery) {
       filtered = filtered.filter(t => 
         t.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        t.status?.toLowerCase().includes(searchQuery.toLowerCase())
+        t.category?.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
     
@@ -240,13 +259,13 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
     }
   };
 
-  const isThoughtStuck = (thought: Thought): boolean => {
-    const daysSinceUpdate = (Date.now() - new Date(thought.lastupdated).getTime()) / (1000 * 60 * 60 * 24);
+  const isThoughtStuck = (thought: ServiceThought): boolean => {
+    const daysSinceUpdate = (Date.now() - new Date(thought.updated_at).getTime()) / (1000 * 60 * 60 * 24);
     return daysSinceUpdate > 7; // Stuck if no activity for 7+ days
   };
 
-  const calculateDaysInPhase = (thought: Thought): number => {
-    const daysSinceUpdate = (Date.now() - new Date(thought.lastupdated).getTime()) / (1000 * 60 * 60 * 24);
+  const calculateDaysInPhase = (thought: ServiceThought): number => {
+    const daysSinceUpdate = (Date.now() - new Date(thought.updated_at).getTime()) / (1000 * 60 * 60 * 24);
     return Math.floor(daysSinceUpdate);
   };
 
@@ -256,24 +275,17 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
       const thought = thoughts.find(t => t.id === thoughtId);
       if (!thought) return;
 
-      await thoughtsService.updateThought({
-        id: thoughtId,
+      const result = await thoughtsService.updateThought(thoughtId, {
         content: thought.content,
-        status: newPhase === 'execute' ? 'in_progress' : 'concept',
-        // Add phase-specific metadata
-        ai_clarification_data: {
-          ...thought.ai_clarification_data,
-          firePhase: newPhase,
-          phaseChangedAt: new Date().toISOString(),
-          previousPhase: thought.firePhase
-        }
+        category: newPhase
       });
-
-      // Reload thoughts to reflect changes
+      if (!result.success) {
+        logger.error('Failed to advance phase', { error: result.error });
+        return;
+      }
       await loadThoughts();
-      onPhaseChange?.(newPhase);
     } catch (error) {
-      console.error('Failed to advance phase:', error);
+      logger.error('Failed to advance phase', { error });
     }
   };
 
@@ -282,45 +294,38 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
     if (!user?.id) return;
 
     try {
-      const newThought = await thoughtsService.createThought({
+      const result = await thoughtsService.createThought({
+        userid: user.id,
         content,
-        status: 'in_progress',
-        priority: 'medium',
-        category: 'idea'
+        category: firePhase,
+        status: 'concept',
+        mainsubcategories: [],
+        initiative: false,
+        aiinsights: {}
       });
       
-      const enrichedThought: FireCycleThought = {
-        ...newThought,
-        firePhase,
-        confidence: calculateConfidence(content),
-        suggestedActions: generateSuggestedActions(content),
-        lastActivity: new Date(),
-        isStuck: false,
-        daysInPhase: 0
-      };
-      
-      setThoughts(prev => [enrichedThought, ...prev]);
-      onThoughtCreated?.(newThought.id);
+      if (result.success && result.data) {
+        await loadThoughts();
+        onThoughtCreated?.(result.data.id);
+      } else {
+        logger.error('Failed to create thought', { error: result.error });
+      }
     } catch (error) {
-      console.error('Failed to create thought:', error);
+      logger.error('Failed to create thought', { error });
     }
   };
 
   // Handle thought editing
   const handleEditThought = async (thought: FireCycleThought) => {
     try {
-      await thoughtsService.updateThought({
-        id: thought.id,
-        content: thought.content,
-        category: thought.category,
-        status: thought.status,
-        priority: thought.priority,
-        estimated_effort: thought.estimated_effort
+      const result = await thoughtsService.updateThought(thought.id, {
+        content: thought.content
       });
-      
+      if (!result.success) {
+        logger.error('Failed to edit thought', { error: result.error });
+        return;
+      }
       await loadThoughts();
-      setShowEditDialog(false);
-      setEditingThought(null);
     } catch (error) {
       console.error('Failed to edit thought:', error);
     }
@@ -329,7 +334,11 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
   // Handle thought deletion
   const handleDeleteThought = async (thoughtId: string) => {
     try {
-      await thoughtsService.deleteThought(thoughtId);
+      const result = await thoughtsService.deleteThought(thoughtId);
+      if (!result.success) {
+        logger.error('Failed to delete thought', { error: result.error });
+        return;
+      }
       await loadThoughts();
     } catch (error) {
       console.error('Failed to delete thought:', error);
@@ -499,7 +508,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {thoughts.filter(t => t.status === 'in_progress').length}
+                  {thoughts.filter(t => t.category === 'in_progress').length}
                 </div>
                 <p className="text-xs text-muted-foreground">Active initiatives</p>
               </CardContent>
@@ -510,7 +519,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {thoughts.filter(t => t.status === 'completed').length}
+                  {thoughts.filter(t => t.category === 'completed').length}
                 </div>
                 <p className="text-xs text-muted-foreground">Achievements</p>
               </CardContent>
@@ -537,8 +546,8 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
                         </p>
                       </div>
                     </div>
-                    <Badge className={getStatusColor(thought.status)}>
-                      {thought.status}
+                    <Badge className={getStatusColor(thought.category || 'concept')}>
+                      {thought.category || 'concept'}
                     </Badge>
                   </div>
                 ))}
@@ -606,8 +615,8 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
                             <Badge className={getPhaseColor(thought.firePhase)}>
                               {thought.firePhase}
                             </Badge>
-                            <Badge className={getStatusColor(thought.status)}>
-                              {thought.status}
+                            <Badge className={getStatusColor(thought.category || 'concept')}>
+                              {thought.category || 'concept'}
                             </Badge>
                             {thought.isStuck && (
                               <Badge variant="destructive">
@@ -822,16 +831,12 @@ interface EditThoughtFormProps {
 
 const EditThoughtForm: React.FC<EditThoughtFormProps> = ({ thought, onSubmit, onCancel }) => {
   const [content, setContent] = useState(thought.content);
-  const [status, setStatus] = useState(thought.status);
-  const [priority, setPriority] = useState(thought.priority || 'medium');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       ...thought,
-      content: content.trim(),
-      status,
-      priority
+      content: content.trim()
     });
   };
 
@@ -847,35 +852,7 @@ const EditThoughtForm: React.FC<EditThoughtFormProps> = ({ thought, onSubmit, on
         />
       </div>
       
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={(value) => setStatus(value as any)}>
-            <SelectTrigger className="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="concept">Concept</SelectItem>
-              <SelectItem value="in_progress">In Progress</SelectItem>
-              <SelectItem value="completed">Completed</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        
-        <div>
-          <Label htmlFor="priority">Priority</Label>
-          <Select value={priority} onValueChange={(value) => setPriority(value as any)}>
-            <SelectTrigger className="mt-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="low">Low</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+
 
       <DialogFooter>
         <Button type="button" variant="outline" onClick={onCancel}>

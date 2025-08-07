@@ -63,8 +63,8 @@ const GoogleAnalyticsCallback: React.FC = () => {
         }, 2000);
 
       } catch (err: any) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('OAuth callback error: ', err);
         setStatus('error');

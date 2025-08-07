@@ -115,8 +115,8 @@ export const useAIChatStore = create<AIChatStoreState>()(
             });
 
           } catch (e) {
-            // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+             
+     
     // eslint-disable-next-line no-console
     console.warn('Failed to trigger n8n workflow', e);
           }

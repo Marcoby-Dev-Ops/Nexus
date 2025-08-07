@@ -66,8 +66,8 @@ const AppearanceSettings: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching appearance settings: ', error);
       toast.error('Failed to load appearance settings');

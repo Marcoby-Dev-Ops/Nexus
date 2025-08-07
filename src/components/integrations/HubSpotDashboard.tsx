@@ -13,7 +13,7 @@ import { Progress } from '@/shared/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Users, Building2, TrendingUp, Target, RefreshCw, Activity } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { callEdgeFunction } from '@/lib/supabase';
+import { supabaseService } from '@/core/services/SupabaseService';
 
 interface HubSpotMetrics {
   success: boolean;
@@ -63,7 +63,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
     setError(null);
 
     try {
-      const result = await callEdgeFunction<HubSpotMetrics>('hubspot-metrics', {
+      const result = await supabaseService.callEdgeFunction<HubSpotMetrics>('hubspot-metrics', {
         userId: user.id
       });
 

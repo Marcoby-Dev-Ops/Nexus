@@ -1,12 +1,11 @@
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/useAuth.ts';
 
 // Enhanced logging utility
 const logSignOut = (level: 'info' | 'warn' | 'error', message: string, data?: any) => {
   const timestamp = new Date().toISOString();
   const logData = data ? ` | Data: ${JSON.stringify(data)}` : '';
-  // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+   
+     
     // eslint-disable-next-line no-console
     console.log(`[SignOut: ${timestamp}] ${level.toUpperCase()}: ${message}${logData}`);
 };
@@ -23,8 +22,13 @@ export const performSignOut = async (): Promise<void> => {
     // No need to clear Zustand store as it's managed by React Context
     logSignOut('info', 'Auth state will be cleared by useAuth hook');
     
-    // Step 2: Call Supabase sign out
-    const { error } = await supabase.auth.signOut();
+    // Step 2: Call Supabase sign out with timeout
+    const signOutPromise = supabase.auth.signOut();
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Sign out timeout')), 10000)
+    );
+    
+    const { error } = await Promise.race([signOutPromise, timeoutPromise]) as any;
     if (error) {
       logSignOut('error', 'Supabase sign out failed', { error: error.message });
     } else {
@@ -78,11 +82,11 @@ export const performSignOut = async (): Promise<void> => {
     
     logSignOut('info', 'Sign out process completed successfully');
     
-    // Step 5: Force redirect to home page
+    // Step 5: Force redirect to home page with longer delay to ensure cleanup
     setTimeout(() => {
       logSignOut('info', 'Redirecting to home page');
       window.location.href = '/';
-    }, 100);
+    }, 500);
     
   } catch (error) {
     logSignOut('error', 'Sign out process failed', { error: (error as Error).message });

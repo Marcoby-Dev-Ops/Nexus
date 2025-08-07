@@ -1,82 +1,78 @@
-import { useForm } from 'react-hook-form';
-import type { UseFormReturn, FieldValues, SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useToast } from '@/shared/components/ui/use-toast';
+import { useState, useCallback } from 'react';
+import type { FieldValues } from 'react-hook-form';
 
-export interface FormWithValidationOptions<T extends FieldValues> {
-  schema: z.ZodSchema<T>;
-  defaultValues: T;
-  onSubmit: (data: T) => Promise<void>;
-  onError?: (error: Error) => void;
-  successMessage?: string;
-  errorMessage?: string;
+export interface ValidationError {
+  field: string;
+  message: string;
 }
 
-export interface FormWithValidationReturn<T extends FieldValues> {
-  form: UseFormReturn<T>;
-  handleSubmit: (e?: React.BaseSyntheticEvent) => Promise<void>;
-  isSubmitting: boolean;
-  isValid: boolean;
-  errors: Record<string, any>;
+export interface FormValidationConfig<T extends FieldValues> {
+  onSubmit: (data: T) => Promise<void> | void;
+  onError?: (errors: ValidationError[]) => void;
+  validateOnChange?: boolean;
+  validateOnBlur?: boolean;
 }
 
-/**
- * Unified form hook with validation, error handling, and loading states
- * 
- * @example
- * ```tsx
- * const { form, handleSubmit, isSubmitting } = useFormWithValidation({
- *   schema: userProfileSchema,
- *   defaultValues: { firstName: '', lastName: '', email: '' },
- *   onSubmit: async (data) => {
- *     await updateUserProfile(data);
- *   },
- *   successMessage: 'Profile updated successfully!',
- * });
- * ```
- */
-export const useFormWithValidation = <T extends FieldValues>({
-  schema,
-  defaultValues,
-  onSubmit,
-  onError,
-  successMessage = 'Form submitted successfully!',
-  errorMessage = 'Something went wrong. Please try again.',
-}: FormWithValidationOptions<T>): FormWithValidationReturn<T> => {
-  const { toast } = useToast();
-  
-  const form = useForm<T>({
-    resolver: zodResolver(schema),
-    defaultValues,
-    mode: 'onChange', // Validate on change for better UX
-  });
+export const useFormWithValidation = <T extends FieldValues>(
+  config: FormValidationConfig<T>
+) => {
+  const [errors, setErrors] = useState<ValidationError[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = form.handleSubmit(async (data: T) => {
+  const validateForm = useCallback((data: T): ValidationError[] => {
+    const validationErrors: ValidationError[] = [];
+    
+    // Basic validation - can be extended with more complex validation logic
+    Object.entries(data).forEach(([field, value]) => {
+      if (value === undefined || value === null || value === '') {
+        validationErrors.push({
+          field,
+          message: `${field} is required`,
+        });
+      }
+    });
+    
+    return validationErrors;
+  }, []);
+
+  const handleSubmit = useCallback(async (data: T) => {
+    setIsSubmitting(true);
+    setErrors([]);
+    
     try {
-      await onSubmit(data);
-      toast({
-        title: 'Success',
-        description: successMessage,
-      });
+      // Validate form data
+      const validationErrors = validateForm(data);
+      
+      if (validationErrors.length > 0) {
+        setErrors(validationErrors);
+        config.onError?.(validationErrors);
+        return;
+      }
+      
+      // Submit form data
+      await config.onSubmit(data);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
-      
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
-      
-      onError?.(error as Error);
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      setErrors([{ field: 'form', message: errorMessage }]);
+      config.onError?.([{ field: 'form', message: errorMessage }]);
+    } finally {
+      setIsSubmitting(false);
     }
-  });
+  }, [config, validateForm]);
+
+  const getFieldError = useCallback((fieldName: string): string | undefined => {
+    return errors.find(error => error.field === fieldName)?.message;
+  }, [errors]);
+
+  const clearErrors = useCallback(() => {
+    setErrors([]);
+  }, []);
 
   return {
-    form,
+    errors,
+    isSubmitting,
     handleSubmit,
-    isSubmitting: form.formState.isSubmitting,
-    isValid: form.formState.isValid,
-    errors: form.formState.errors,
+    getFieldError,
+    clearErrors,
   };
 }; 

@@ -21,6 +21,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { ModelPerformanceMonitor } from '@/components/ai/ModelPerformanceMonitor';
+import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
 
 interface PerformanceMetrics {
   responseTime: {
@@ -189,8 +190,8 @@ export default function AIPerformancePage() {
       setMetrics(mockMetrics);
       setAgentPerformance(mockAgentPerformance);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading performance data: ', error);
     } finally {

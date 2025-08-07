@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
+import { logger } from '@/shared/utils/logger';
 
 interface AssessmentQuestion {
   id: string;
@@ -86,8 +87,9 @@ export const useAssessmentData = (): UseAssessmentDataReturn => {
       
       setData(mockData);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to fetch assessment data'));
-      console.error('Error fetching assessment data:', err);
+      const error = err instanceof Error ? err : new Error('Failed to fetch assessment data');
+      setError(error);
+      logger.error('Error fetching assessment data', { error: err });
     } finally {
       setLoading(false);
     }

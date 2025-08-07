@@ -1,474 +1,525 @@
 /**
- * Production quota and rate limiting service
+ * Quota Service
+ * Handles user quota management and limits
  */
 
 import { supabase } from '@/lib/supabase';
-import { LICENSE_TIERS, RATE_LIMITS, type ChatQuotas, type UsageTracking, type RateLimitConfig } from '@/core/types/licensing';
+import { logger } from '@/shared/utils/logger';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
-export class QuotaService {
-  private static instance: QuotaService;
-  private rateLimitCache = new Map<string, { count: number; resetTime: number }>();
+// ============================================================================
+// INTERFACES
+// ============================================================================
 
-  static getInstance(): QuotaService {
-    if (!QuotaService.instance) {
-      QuotaService.instance = new QuotaService();
-    }
-    return QuotaService.instance;
+export interface QuotaLimit {
+  id: string;
+  user_id: string;
+  quota_type: string;
+  current_usage: number;
+  max_limit: number;
+  reset_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuotaUsage {
+  quota_type: string;
+  current_usage: number;
+  max_limit: number;
+  percentage_used: number;
+  reset_date: string;
+  is_exceeded: boolean;
+}
+
+export interface QuotaConfig {
+  quota_type: string;
+  default_limit: number;
+  description: string;
+  reset_frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  is_enabled: boolean;
+}
+
+// ============================================================================
+// QUOTA SERVICE CLASS
+// ============================================================================
+
+export class QuotaService extends BaseService {
+  constructor() {
+    super('QuotaService');
   }
 
   /**
-   * Check if user can send a message based on their quotas
+   * Get user quota usage
    */
-  async canSendMessage(userId: string, orgId?: string): Promise<{
-    allowed: boolean;
-    reason?: string;
-    retryAfter?: number;
-    quotas?: ChatQuotas;
-  }> {
-    try {
-      // Get user's license and quotas
-      const quotas = await this.getUserQuotas(userId, orgId);
-      
-      // Check rate limits
-      const rateLimitCheck = this.checkRateLimit(userId, 'messages', RATE_LIMITS.messages);
-      if (!rateLimitCheck.allowed) {
-        return {
-          allowed: false,
-          reason: rateLimitCheck.message,
-          retryAfter: rateLimitCheck.retryAfter,
-          quotas,
-        };
-      }
+  async getUserQuotaUsage(userId: string): Promise<ServiceResponse<QuotaUsage[]>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getUserQuotaUsage', { userId });
 
-      // Check monthly message quota (most important for cost control)
-      const monthlyUsage = await this.getMonthlyUsage(userId, orgId);
-      if (monthlyUsage.message_count >= quotas.max_messages_per_month) {
-        return {
-          allowed: false,
-          reason: `Monthly message limit of ${quotas.max_messages_per_month} reached. Upgrade your plan or wait for next billing cycle.`,
-          quotas,
-        };
-      }
+      try {
+        const { data, error } = await this.supabase
+          .from('user_quotas')
+          .select('*')
+          .eq('user_id', userId);
 
-      // Check daily message quota
-      const today = new Date().toISOString().split('T')[0];
-      const usage = await this.getUsageForDate(userId, today, orgId);
-      
-      if ((usage.message_count || 0) >= quotas.max_messages_per_day) {
-        return {
-          allowed: false,
-          reason: `Daily message limit of ${quotas.max_messages_per_day} reached. Upgrade your plan for more messages.`,
-          quotas,
-        };
-      }
-
-      // Check hourly message quota
-      const hourlyUsage = await this.getHourlyUsage(userId, 'messages');
-      if (hourlyUsage >= quotas.max_messages_per_hour) {
-        return {
-          allowed: false,
-          reason: `Hourly message limit of ${quotas.max_messages_per_hour} reached. Please wait and try again.`,
-          retryAfter: 60 * 60 * 1000, // 1 hour
-          quotas,
-        };
-      }
-
-      return { allowed: true, quotas };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Quota check error: ', error);
-      // Fail open for now, but log the error
-      return { allowed: true };
-    }
-  }
-
-  /**
-   * Check if user can make AI request
-   */
-  async canMakeAIRequest(userId: string, tokensNeeded: number = 1000, orgId?: string): Promise<{
-    allowed: boolean;
-    reason?: string;
-    retryAfter?: number;
-    quotas?: ChatQuotas;
-  }> {
-    try {
-      const quotas = await this.getUserQuotas(userId, orgId);
-      
-      // Check rate limits
-      const rateLimitCheck = this.checkRateLimit(userId, 'ai_requests', RATE_LIMITS.ai_requests);
-      if (!rateLimitCheck.allowed) {
-        return {
-          allowed: false,
-          reason: rateLimitCheck.message,
-          retryAfter: rateLimitCheck.retryAfter,
-          quotas,
-        };
-      }
-
-      // Check hourly AI request quota
-      const hourlyUsage = await this.getHourlyUsage(userId, 'ai_requests');
-      if (hourlyUsage >= quotas.max_ai_requests_per_hour) {
-        return {
-          allowed: false,
-          reason: `AI request limit of ${quotas.max_ai_requests_per_hour} per hour reached.`,
-          retryAfter: 60 * 60 * 1000,
-          quotas,
-        };
-      }
-
-      // Check token quota
-      if (tokensNeeded > quotas.max_context_tokens) {
-        return {
-          allowed: false,
-          reason: `Request too large. Maximum ${quotas.max_context_tokens} tokens allowed.`,
-          quotas,
-        };
-      }
-
-      return { allowed: true, quotas };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('AI request quota check error: ', error);
-      return { allowed: true };
-    }
-  }
-
-  /**
-   * Record usage for billing and analytics
-   */
-  async recordUsage(userId: string, type: 'message' | 'ai_request' | 'file_upload', metadata?: {
-    tokens?: number;
-    cost?: number;
-    orgId?: string;
-  }): Promise<void> {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const orgId = metadata?.orgId;
-
-      // Build query with proper NULL handling
-      let query = supabase
-        .from('chat_usage_tracking')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('date', today);
-
-      if (orgId) {
-        query = query.eq('org_id', orgId);
-      } else {
-        query = query.is('org_id', null);
-      }
-
-      const { data: existing } = await query.single();
-
-      const updates: Partial<UsageTracking> = {
-        user_id: userId,
-        org_id: orgId,
-        date: today,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (type === 'message') {
-        updates.messages_sent = (existing?.messages_sent || 0) + 1;
-      } else if (type === 'ai_request') {
-        updates.ai_requests_made = (existing?.ai_requests_made || 0) + 1;
-        updates.tokens_used = (existing?.tokens_used || 0) + (metadata?.tokens || 0);
-        updates.estimated_cost_usd = (existing?.estimated_cost_usd || 0) + (metadata?.cost || 0);
-      } else if (type === 'file_upload') {
-        updates.files_uploaded = (existing?.files_uploaded || 0) + 1;
-      }
-
-      if (existing) {
-        let updateQuery = supabase
-          .from('chat_usage_tracking')
-          .update(updates)
-          .eq('user_id', userId)
-          .eq('date', today);
-
-        if (orgId) {
-          updateQuery = updateQuery.eq('org_id', orgId);
-        } else {
-          updateQuery = updateQuery.is('org_id', null);
+        if (error) {
+          this.logFailure('getUserQuotaUsage', error.message);
+          return { data: null, error };
         }
 
-        await updateQuery;
-      } else {
-        await supabase
-          .from('chat_usage_tracking')
-          .insert({
-            ...updates,
-            messages_sent: type === 'message' ? 1 : 0,
-            ai_requests_made: type === 'ai_request' ? 1 : 0,
-            files_uploaded: type === 'file_upload' ? 1 : 0,
-            tokens_used: metadata?.tokens || 0,
-            estimated_cost_usd: metadata?.cost || 0,
-            created_at: new Date().toISOString(),
-          });
-      }
+        const quotaUsage: QuotaUsage[] = (data || []).map(quota => ({
+          quota_type: quota.quota_type,
+          current_usage: quota.current_usage || 0,
+          max_limit: quota.max_limit || 0,
+          percentage_used: quota.max_limit > 0 ? (quota.current_usage / quota.max_limit) * 100 : 0,
+          reset_date: quota.reset_date,
+          is_exceeded: (quota.current_usage || 0) > (quota.max_limit || 0)
+        }));
 
-      // Update rate limit cache
-      this.updateRateLimitCache(userId, type);
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Usage recording error: ', error);
-      // Don't throw - we don't want to block the user experience
-    }
+        this.logSuccess('getUserQuotaUsage', `Retrieved ${quotaUsage.length} quota types for user ${userId}`);
+        return { data: quotaUsage, error: null };
+      } catch (error) {
+        this.logFailure('getUserQuotaUsage', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
   }
 
   /**
-   * Get user's current quotas based on their license
+   * Get specific quota usage
    */
-  private async getUserQuotas(userId: string, orgId?: string): Promise<ChatQuotas> {
-    try {
-      // Get user license
-      const { data: license } = await supabase
-        .from('user_licenses')
-        .select('tier, subscription_status, current_period_end')
-        .eq('user_id', userId)
-        .single();
+  async getQuotaUsage(userId: string, quotaType: string): Promise<ServiceResponse<QuotaUsage | null>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getQuotaUsage', { userId, quotaType });
 
-      if (!license || license.subscription_status !== 'active' || 
-          (license.current_period_end && new Date(license.current_period_end) < new Date())) {
-        // Default to free tier
-        return LICENSE_TIERS.free.quotas;
-      }
+      try {
+        const { data, error } = await this.supabase
+          .from('user_quotas')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('quota_type', quotaType)
+          .single();
 
-      return LICENSE_TIERS[license.tier]?.quotas || LICENSE_TIERS.free.quotas;
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error getting user quotas: ', error);
-      // Default to free tier on error
-      return LICENSE_TIERS.free.quotas;
-    }
-  }
+        if (error) {
+          this.logFailure('getQuotaUsage', error.message);
+          return { data: null, error };
+        }
 
-  /**
-   * Rate limiting check
-   */
-  private checkRateLimit(userId: string, type: string, config: RateLimitConfig): {
-    allowed: boolean;
-    message?: string;
-    retryAfter?: number;
-  } {
-    const key = `${userId}:${type}`;
-    const now = Date.now();
-    const cached = this.rateLimitCache.get(key);
+        if (!data) {
+          this.logSuccess('getQuotaUsage', `No quota found for type ${quotaType}`);
+          return { data: null, error: null };
+        }
 
-    if (!cached || now > cached.resetTime) {
-      // Reset or initialize counter
-      this.rateLimitCache.set(key, {
-        count: 1,
-        resetTime: now + config.window_ms,
-      });
-      return { allowed: true };
-    }
-
-    if (cached.count >= config.max_requests) {
-      return {
-        allowed: false,
-        message: config.message,
-        retryAfter: config.retry_after_ms || (cached.resetTime - now),
-      };
-    }
-
-    // Increment counter
-    cached.count++;
-    return { allowed: true };
-  }
-
-  private updateRateLimitCache(userId: string, type: string): void {
-    const key = `${userId}:${type}`;
-    const cached = this.rateLimitCache.get(key);
-    if (cached) {
-      cached.count++;
-    }
-  }
-
-  private async getUsageForDate(userId: string, date: string, orgId?: string): Promise<UsageTracking> {
-    // Build query with proper NULL handling
-    let query = supabase
-      .from('chat_usage_tracking')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('date', date);
-
-    if (orgId) {
-      query = query.eq('org_id', orgId);
-    } else {
-      query = query.is('org_id', null);
-    }
-
-    const { data } = await query.single();
-
-    return data || {
-      user_id: userId,
-      org_id: orgId,
-      date,
-      messages_sent: 0,
-      ai_requests_made: 0,
-      files_uploaded: 0,
-      tokens_used: 0,
-      estimated_cost_usd: 0,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-  }
-
-  private async getHourlyUsage(userId: string, type: 'messages' | 'ai_requests'): Promise<number> {
-    // Simple in-memory tracking for hourly limits
-    const key = `${userId}:${type}:hour`;
-    const cached = this.rateLimitCache.get(key);
-    const now = Date.now();
-    const hourStart = now - (now % (60 * 60 * 1000));
-    
-    if (cached && cached.resetTime > hourStart) {
-      return cached.count;
-    }
-    
-    return 0;
-  }
-
-  /**
-   * Get monthly usage for cost control
-   */
-  private async getMonthlyUsage(userId: string, orgId?: string): Promise<UsageTracking> {
-    try {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-
-      // Build query with proper NULL handling
-      let query = supabase
-        .from('chat_usage_tracking')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('date', monthStart)
-        .lte('date', monthEnd);
-
-      if (orgId) {
-        query = query.eq('org_id', orgId);
-      } else {
-        query = query.is('org_id', null);
-      }
-
-      const { data } = await query;
-
-      if (!data || data.length === 0) {
-        return {
-          user_id: userId,
-          org_id: orgId,
-          date: monthStart,
-          messages_sent: 0,
-          ai_requests_made: 0,
-          files_uploaded: 0,
-          tokens_used: 0,
-          estimated_cost_usd: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+        const quotaUsage: QuotaUsage = {
+          quota_type: data.quota_type,
+          current_usage: data.current_usage || 0,
+          max_limit: data.max_limit || 0,
+          percentage_used: data.max_limit > 0 ? (data.current_usage / data.max_limit) * 100 : 0,
+          reset_date: data.reset_date,
+          is_exceeded: (data.current_usage || 0) > (data.max_limit || 0)
         };
-      }
 
-      // Aggregate monthly usage
-      return data.reduce((total, day) => ({
-        ...total,
-        messages_sent: (total.messages_sent || 0) + (day.messages_sent || 0),
-        ai_requests_made: (total.ai_requests_made || 0) + (day.ai_requests_made || 0),
-        files_uploaded: (total.files_uploaded || 0) + (day.files_uploaded || 0),
-        tokens_used: (total.tokens_used || 0) + (day.tokens_used || 0),
-        estimated_cost_usd: (total.estimated_cost_usd || 0) + (day.estimated_cost_usd || 0),
-      }), {
-        user_id: userId,
-        org_id: orgId,
-        date: monthStart,
-        messages_sent: 0,
-        ai_requests_made: 0,
-        files_uploaded: 0,
-        tokens_used: 0,
-        estimated_cost_usd: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      });
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Monthly usage fetch error: ', error);
-      return {
-        user_id: userId,
-        org_id: orgId,
-        date: new Date().toISOString().split('T')[0],
-        messages_sent: 0,
-        ai_requests_made: 0,
-        files_uploaded: 0,
-        tokens_used: 0,
-        estimated_cost_usd: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+        this.logSuccess('getQuotaUsage', `Retrieved quota ${quotaType} for user ${userId}`);
+        return { data: quotaUsage, error: null };
+      } catch (error) {
+        this.logFailure('getQuotaUsage', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Check if user has exceeded quota
+   */
+  async isQuotaExceeded(userId: string, quotaType: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('isQuotaExceeded', { userId, quotaType });
+
+      try {
+        const quotaResult = await this.getQuotaUsage(userId, quotaType);
+        
+        if (!quotaResult.success) {
+          return { data: null, error: quotaResult.error };
+        }
+
+        const isExceeded = quotaResult.data?.is_exceeded || false;
+        this.logSuccess('isQuotaExceeded', `Quota ${quotaType} exceeded: ${isExceeded}`);
+        return { data: isExceeded, error: null };
+      } catch (error) {
+        this.logFailure('isQuotaExceeded', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Increment quota usage
+   */
+  async incrementQuotaUsage(
+    userId: string, 
+    quotaType: string, 
+    amount: number = 1
+  ): Promise<ServiceResponse<{ success: boolean; newUsage: number; isExceeded: boolean }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('incrementQuotaUsage', { userId, quotaType, amount });
+
+      try {
+        // Get current quota
+        const { data: currentQuota, error: fetchError } = await this.supabase
+          .from('user_quotas')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('quota_type', quotaType)
+          .single();
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          this.logFailure('incrementQuotaUsage', fetchError.message);
+          return { data: null, error: fetchError };
+        }
+
+        let newUsage: number;
+        let isExceeded: boolean;
+
+        if (currentQuota) {
+          // Update existing quota
+          newUsage = (currentQuota.current_usage || 0) + amount;
+          isExceeded = newUsage > (currentQuota.max_limit || 0);
+
+          const { error: updateError } = await this.supabase
+            .from('user_quotas')
+            .update({ 
+              current_usage: newUsage,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .eq('quota_type', quotaType);
+
+          if (updateError) {
+            this.logFailure('incrementQuotaUsage', updateError.message);
+            return { data: null, error: updateError };
+          }
+        } else {
+          // Create new quota entry
+          const defaultLimit = await this.getDefaultQuotaLimit(quotaType);
+          newUsage = amount;
+          isExceeded = newUsage > defaultLimit;
+
+          const { error: insertError } = await this.supabase
+            .from('user_quotas')
+            .insert({
+              user_id: userId,
+              quota_type: quotaType,
+              current_usage: newUsage,
+              max_limit: defaultLimit,
+              reset_date: this.calculateNextResetDate(quotaType),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            this.logFailure('incrementQuotaUsage', insertError.message);
+            return { data: null, error: insertError };
+          }
+        }
+
+        this.logSuccess('incrementQuotaUsage', `Incremented quota ${quotaType} by ${amount} for user ${userId}`);
+        return { 
+          data: { 
+            success: true, 
+            newUsage, 
+            isExceeded 
+          }, 
+          error: null 
+        };
+      } catch (error) {
+        this.logFailure('incrementQuotaUsage', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Reset quota usage
+   */
+  async resetQuotaUsage(userId: string, quotaType: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('resetQuotaUsage', { userId, quotaType });
+
+      try {
+        const { error } = await this.supabase
+          .from('user_quotas')
+          .update({ 
+            current_usage: 0,
+            reset_date: this.calculateNextResetDate(quotaType),
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .eq('quota_type', quotaType);
+
+        if (error) {
+          this.logFailure('resetQuotaUsage', error.message);
+          return { data: null, error };
+        }
+
+        this.logSuccess('resetQuotaUsage', `Reset quota ${quotaType} for user ${userId}`);
+        return { data: true, error: null };
+      } catch (error) {
+        this.logFailure('resetQuotaUsage', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Set quota limit
+   */
+  async setQuotaLimit(
+    userId: string, 
+    quotaType: string, 
+    maxLimit: number
+  ): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('setQuotaLimit', { userId, quotaType, maxLimit });
+
+      try {
+        const { data: existingQuota, error: fetchError } = await this.supabase
+          .from('user_quotas')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('quota_type', quotaType)
+          .single();
+
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          this.logFailure('setQuotaLimit', fetchError.message);
+          return { data: null, error: fetchError };
+        }
+
+        if (existingQuota) {
+          // Update existing quota
+          const { error: updateError } = await this.supabase
+            .from('user_quotas')
+            .update({ 
+              max_limit: maxLimit,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId)
+            .eq('quota_type', quotaType);
+
+          if (updateError) {
+            this.logFailure('setQuotaLimit', updateError.message);
+            return { data: null, error: updateError };
+          }
+        } else {
+          // Create new quota entry
+          const { error: insertError } = await this.supabase
+            .from('user_quotas')
+            .insert({
+              user_id: userId,
+              quota_type: quotaType,
+              current_usage: 0,
+              max_limit: maxLimit,
+              reset_date: this.calculateNextResetDate(quotaType),
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            this.logFailure('setQuotaLimit', insertError.message);
+            return { data: null, error: insertError };
+          }
+        }
+
+        this.logSuccess('setQuotaLimit', `Set quota ${quotaType} limit to ${maxLimit} for user ${userId}`);
+        return { data: true, error: null };
+      } catch (error) {
+        this.logFailure('setQuotaLimit', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Get quota statistics
+   */
+  async getQuotaStats(): Promise<ServiceResponse<{
+    totalUsers: number;
+    totalQuotas: number;
+    exceededQuotas: number;
+    byType: Record<string, { total: number; exceeded: number }>;
+  }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getQuotaStats', {});
+
+      try {
+        const { data: quotas, error } = await this.supabase
+          .from('user_quotas')
+          .select('*');
+
+        if (error) {
+          this.logFailure('getQuotaStats', error.message);
+          return { data: null, error };
+        }
+
+        const stats = {
+          totalUsers: new Set(quotas?.map(q => q.user_id) || []).size,
+          totalQuotas: quotas?.length || 0,
+          exceededQuotas: quotas?.filter(q => (q.current_usage || 0) > (q.max_limit || 0)).length || 0,
+          byType: {} as Record<string, { total: number; exceeded: number }>
+        };
+
+        // Group by quota type
+        quotas?.forEach(quota => {
+          const type = quota.quota_type;
+          if (!stats.byType[type]) {
+            stats.byType[type] = { total: 0, exceeded: 0 };
+          }
+          stats.byType[type].total++;
+          if ((quota.current_usage || 0) > (quota.max_limit || 0)) {
+            stats.byType[type].exceeded++;
+          }
+        });
+
+        this.logSuccess('getQuotaStats', `Retrieved stats: ${stats.totalQuotas} total quotas, ${stats.exceededQuotas} exceeded`);
+        return { data: stats, error: null };
+      } catch (error) {
+        this.logFailure('getQuotaStats', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Get default quota limit for a type
+   */
+  private async getDefaultQuotaLimit(quotaType: string): Promise<number> {
+    const defaultLimits: Record<string, number> = {
+      'api_calls': 1000,
+      'storage_mb': 100,
+      'messages_per_day': 100,
+      'integrations': 5,
+      'ai_requests': 50,
+      'export_requests': 10
+    };
+
+    return defaultLimits[quotaType] || 100;
+  }
+
+  /**
+   * Calculate next reset date based on quota type
+   */
+  private calculateNextResetDate(quotaType: string): string {
+    const now = new Date();
+    const resetFrequencies: Record<string, 'daily' | 'weekly' | 'monthly'> = {
+      'api_calls': 'daily',
+      'storage_mb': 'monthly',
+      'messages_per_day': 'daily',
+      'integrations': 'monthly',
+      'ai_requests': 'daily',
+      'export_requests': 'monthly'
+    };
+
+    const frequency = resetFrequencies[quotaType] || 'monthly';
+    
+    switch (frequency) {
+      case 'daily':
+        return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      case 'weekly':
+        return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+      case 'monthly':
+        return new Date(now.getFullYear(), now.getMonth() + 1, now.getDate()).toISOString();
+      default:
+        return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
     }
   }
 
   /**
-   * Get user's current usage statistics
+   * Check if quota reset is needed
    */
-  async getUserUsageStats(userId: string, days: number = 7, orgId?: string): Promise<{
-    currentQuotas: ChatQuotas;
-    todayUsage: UsageTracking;
-    weeklyUsage: UsageTracking[];
-    costProjection: number;
-  }> {
-    try {
-      const quotas = await this.getUserQuotas(userId, orgId);
-      const today = new Date().toISOString().split('T')[0];
-      const todayUsage = await this.getUsageForDate(userId, today, orgId);
+  async checkQuotaReset(userId: string, quotaType: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('checkQuotaReset', { userId, quotaType });
 
-      // Get weekly usage
-      const dates = Array.from({ length: days }, (_, i) => {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        return date.toISOString().split('T')[0];
-      });
+      try {
+        const { data: quota, error } = await this.supabase
+          .from('user_quotas')
+          .select('reset_date')
+          .eq('user_id', userId)
+          .eq('quota_type', quotaType)
+          .single();
 
-      // Build query with proper NULL handling
-      let query = supabase
-        .from('chat_usage_tracking')
-        .select('*')
-        .eq('user_id', userId)
-        .in('date', dates);
+        if (error) {
+          this.logFailure('checkQuotaReset', error.message);
+          return { data: null, error };
+        }
 
-      if (orgId) {
-        query = query.eq('org_id', orgId);
-      } else {
-        query = query.is('org_id', null);
+        if (!quota) {
+          this.logSuccess('checkQuotaReset', `No quota found for type ${quotaType}`);
+          return { data: false, error: null };
+        }
+
+        const resetDate = new Date(quota.reset_date);
+        const now = new Date();
+        const needsReset = now > resetDate;
+
+        this.logSuccess('checkQuotaReset', `Quota ${quotaType} reset needed: ${needsReset}`);
+        return { data: needsReset, error: null };
+      } catch (error) {
+        this.logFailure('checkQuotaReset', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
       }
+    });
+  }
 
-      const { data: weeklyData } = await query;
+  /**
+   * Auto-reset expired quotas
+   */
+  async autoResetExpiredQuotas(): Promise<ServiceResponse<{ resetCount: number; errors: string[] }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('autoResetExpiredQuotas', {});
 
-      const weeklyUsage = weeklyData || [];
-      const totalCost = weeklyUsage.reduce((sum, day) => sum + (day.estimated_cost_usd || 0), 0);
-      const costProjection = (totalCost / days) * 30; // Monthly projection
+      try {
+        const now = new Date().toISOString();
+        
+        const { data: expiredQuotas, error } = await this.supabase
+          .from('user_quotas')
+          .select('*')
+          .lt('reset_date', now);
 
-      return {
-        currentQuotas: quotas,
-        todayUsage,
-        weeklyUsage,
-        costProjection,
-      };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error getting usage stats: ', error);
-      throw error;
-    }
+        if (error) {
+          this.logFailure('autoResetExpiredQuotas', error.message);
+          return { data: null, error };
+        }
+
+        let resetCount = 0;
+        const errors: string[] = [];
+
+        for (const quota of expiredQuotas || []) {
+          try {
+            const result = await this.resetQuotaUsage(quota.user_id, quota.quota_type);
+            if (result.success) {
+              resetCount++;
+            } else {
+              errors.push(`Failed to reset quota ${quota.quota_type} for user ${quota.user_id}`);
+            }
+          } catch (error) {
+            errors.push(`Error resetting quota ${quota.quota_type} for user ${quota.user_id}: ${error}`);
+          }
+        }
+
+        this.logSuccess('autoResetExpiredQuotas', `Reset ${resetCount} expired quotas, ${errors.length} errors`);
+        return { 
+          data: { 
+            resetCount, 
+            errors 
+          }, 
+          error: null 
+        };
+      } catch (error) {
+        this.logFailure('autoResetExpiredQuotas', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
   }
 }
 
-export const quotaService = QuotaService.getInstance(); 
+// Export singleton instance
+export const quotaService = new QuotaService(); 

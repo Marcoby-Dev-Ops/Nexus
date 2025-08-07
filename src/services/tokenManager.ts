@@ -1,246 +1,113 @@
-import { supabase } from '@/lib/supabase';
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
-export interface TokenInfo {
+interface Token {
   id: string;
-  name: string;
-  type: 'api' | 'oauth' | 'integration';
-  status: 'active' | 'expired' | 'revoked' | 'pending';
-  createdAt: string;
-  expiresAt?: string;
-  lastUsed?: string;
-  scopes?: string[];
-  metadata?: Record<string, any>;
+  user_id: string;
+  integration_type: string;
+  access_token: string;
+  refresh_token?: string;
+  expires_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-interface TokenManagerResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-class TokenManager {
-  async getTokens(userId: string): Promise<TokenManagerResponse<TokenInfo[]>> {
+export class TokenManager {
+  static async getToken(userId: string, integrationType: string): Promise<Token | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_tokens')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await selectOne('user_tokens', { 
+        user_id: userId, 
+        integration_type: integrationType 
+      });
       if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
+        logger.error('Failed to fetch token', { error });
+        return null;
       }
-
-      return {
-        success: true,
-        data: data || [],
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to fetch tokens',
-      };
+      return data as Token | null;
+    } catch (err) {
+      logger.error('Error fetching token', { err });
+      return null;
     }
   }
 
-  async createToken(userId: string, tokenData: {
-    name: string;
-    type: 'api' | 'oauth' | 'integration';
-    scopes?: string[];
-    metadata?: Record<string, any>;
-  }): Promise<TokenManagerResponse<TokenInfo>> {
+  static async saveToken(tokenData: Omit<Token, 'id' | 'created_at' | 'updated_at'>): Promise<Token | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_tokens')
-        .insert({
-          user_id: userId,
-          name: tokenData.name,
-          type: tokenData.type,
-          status: 'active',
-          scopes: tokenData.scopes || [],
-          metadata: tokenData.metadata || {},
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
+      const { data, error } = await insertOne('user_tokens', tokenData);
       if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
+        logger.error('Failed to save token', { error });
+        return null;
       }
-
-      return {
-        success: true,
-        data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to create token',
-      };
+      return data as Token | null;
+    } catch (err) {
+      logger.error('Error saving token', { err });
+      return null;
     }
   }
 
-  async revokeToken(tokenId: string): Promise<TokenManagerResponse<void>> {
+  static async updateToken(userId: string, integrationType: string, updates: Partial<Token>): Promise<Token | null> {
     try {
-      const { error } = await supabase
-        .from('user_tokens')
-        .update({
-          status: 'revoked',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', tokenId);
-
+      const { data, error } = await updateOne('user_tokens', { 
+        user_id: userId, 
+        integration_type: integrationType 
+      }, updates);
       if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
+        logger.error('Failed to update token', { error });
+        return null;
       }
-
-      return {
-        success: true,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to revoke token',
-      };
+      return data as Token | null;
+    } catch (err) {
+      logger.error('Error updating token', { err });
+      return null;
     }
   }
 
-  async refreshToken(tokenId: string): Promise<TokenManagerResponse<TokenInfo>> {
+  static async deleteToken(userId: string, integrationType: string): Promise<boolean> {
     try {
-      const { data, error } = await supabase
-        .from('user_tokens')
-        .update({
-          status: 'active',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', tokenId)
-        .select()
-        .single();
-
+      const { error } = await deleteOne('user_tokens', { 
+        user_id: userId, 
+        integration_type: integrationType 
+      });
       if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
+        logger.error('Failed to delete token', { error });
+        return false;
       }
-
-      return {
-        success: true,
-        data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to refresh token',
-      };
+      return true;
+    } catch (err) {
+      logger.error('Error deleting token', { err });
+      return false;
     }
   }
 
-  async validateToken(tokenId: string): Promise<TokenManagerResponse<{
-    isValid: boolean;
-    status: string;
-    expiresAt?: string;
-  }>> {
+  static async getAllTokens(userId: string): Promise<Token[]> {
     try {
-      const { data, error } = await supabase
-        .from('user_tokens')
-        .select('status, expires_at')
-        .eq('id', tokenId)
-        .single();
-
+      const { data, error } = await select('user_tokens', '*', { user_id: userId });
       if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
+        logger.error('Failed to fetch all tokens', { error });
+        return [];
       }
-
-      const isValid = data.status === 'active' && 
-        (!data.expires_at || new Date(data.expires_at) > new Date());
-
-      return {
-        success: true,
-        data: {
-          isValid,
-          status: data.status,
-          expiresAt: data.expires_at,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to validate token',
-      };
+      return (data as Token[]) || [];
+    } catch (err) {
+      logger.error('Error fetching all tokens', { err });
+      return [];
     }
   }
 
-  async updateTokenMetadata(tokenId: string, metadata: Record<string, any>): Promise<TokenManagerResponse<TokenInfo>> {
+  static async refreshToken(userId: string, integrationType: string): Promise<Token | null> {
     try {
-      const { data, error } = await supabase
-        .from('user_tokens')
-        .update({
-          metadata,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', tokenId)
-        .select()
-        .single();
-
+      const { data, error } = await updateOne('user_tokens', { 
+        user_id: userId, 
+        integration_type: integrationType 
+      }, {
+        updated_at: new Date().toISOString()
+      });
       if (error) {
-        return {
-          success: false,
-          error: error.message,
-        };
+        logger.error('Failed to refresh token', { error });
+        return null;
       }
-
-      return {
-        success: true,
-        data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to update token metadata',
-      };
+      return data as Token | null;
+    } catch (err) {
+      logger.error('Error refreshing token', { err });
+      return null;
     }
   }
-
-  async getTokenUsage(tokenId: string): Promise<TokenManagerResponse<{
-    totalRequests: number;
-    lastUsed: string;
-    usageByDate: Record<string, number>;
-  }>> {
-    try {
-      // TODO: Implement actual usage tracking
-      // For now, return mock data
-      const mockUsage = {
-        totalRequests: Math.floor(Math.random() * 1000),
-        lastUsed: new Date().toISOString(),
-        usageByDate: {
-          [new Date().toISOString().split('T')[0]]: Math.floor(Math.random() * 100),
-        },
-      };
-
-      return {
-        success: true,
-        data: mockUsage,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: 'Failed to get token usage',
-      };
-    }
-  }
-}
-
-export const tokenManager = new TokenManager(); 
+} 

@@ -8,7 +8,7 @@ import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
 import { useAuth } from '@/hooks/index';
 import { dbService, supabase, testAuthenticationFlow, sessionUtils } from '@/lib/supabase';
-import { IntegrationDataService, type IntegrationDataSummary } from '@/services/integrations';
+import { consolidatedIntegrationService, type IntegrationDataSummary } from '@/services/integrations/consolidatedIntegrationService';
 import { DataPointDictionaryService, type DataPointDefinition, type DataPointSummary } from '@/services/integrations';
 import { toast } from 'sonner';
 import {
@@ -44,6 +44,9 @@ import PayPalSetup from '@/components/integrations/PayPalSetup';
 import GoogleAnalyticsSetup from '@/components/integrations/GoogleAnalyticsSetup';
 import SlackSetup from '@/components/integrations/SlackSetup';
 
+// Initialize services
+const dataPointDictionaryService = new DataPointDictionaryService();
+
 interface IntegrationStatus {
   id: string;
   name: string;
@@ -62,7 +65,7 @@ interface AvailableIntegration {
   description: string;
   category: string;
   icon: React.ReactNode;
-  setupComponent?: React.ComponentType<any>;
+        setupComponent?: React.ComponentType<Record<string, unknown>>;
   authType: 'oauth' | 'api_key';
   setupTime: string;
   isPopular?: boolean;
@@ -265,8 +268,8 @@ const IntegrationsPage: React.FC = () => {
     try {
       setSystemLoading(true);
       
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔄 Fetching integration status for user: ', user!.id);
       
@@ -277,8 +280,8 @@ const IntegrationsPage: React.FC = () => {
       );
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('❌ Failed to fetch integration status: ', error);
         setIntegrationStatus([]);
@@ -286,7 +289,10 @@ const IntegrationsPage: React.FC = () => {
       }
 
       // Get enhanced data analytics - use available method
-      const { data: userIntegrationsData } = await integrationDataService.getUserIntegrations(user!.id);
+      const { data: userIntegrationsData, error: dataError } = await consolidatedIntegrationService.getUserIntegrationDataSummaries(user!.id);
+      if (dataError) {
+        throw new Error(dataError);
+      }
       const dataSummaries = userIntegrationsData || [];
       setDataSummaries(dataSummaries);
 
@@ -304,7 +310,7 @@ const IntegrationsPage: React.FC = () => {
       setActiveDataStreams(activeStreams);
 
       // Get real data point counts for each integration
-      const statusDataPromises = (userIntegrations || []).map(async (__integration: any) => {
+      const statusDataPromises = (userIntegrations || []).map(async (__integration: Record<string, unknown>) => {
         try {
           // Find corresponding data summary
           const dataSummary = dataSummaries.find(summary => summary.integrationId === __integration.id);
@@ -319,8 +325,8 @@ const IntegrationsPage: React.FC = () => {
             dataPoints: dataSummary?.data?.totalDataPoints || 0 // Use real count from data service
           };
         } catch (error) {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error('Error processing integration: ', __integration.id, error);
           return {
@@ -337,14 +343,14 @@ const IntegrationsPage: React.FC = () => {
 
       const statusData = await Promise.all(statusDataPromises);
       setIntegrationStatus(statusData);
-    } catch (error: any) {
-      if (error.message && error.message.includes('Session expired')) {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string' && error.message.includes('Session expired')) {
         toast.error('Your session has expired. Please log in again.');
         // Optionally, redirect to login page:
         // window.location.href = '/login';
       } else {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching integration status: ', error);
       setIntegrationStatus([]);
@@ -413,7 +419,7 @@ const IntegrationsPage: React.FC = () => {
     }
   };
 
-  const handleSetupComplete = async (__integrationData: any) => {
+  const handleSetupComplete = async (__integrationData: Record<string, unknown>) => {
     try {
       // The setup component should handle saving to the database
       // Here we just refresh the status and close the modal
@@ -422,13 +428,13 @@ const IntegrationsPage: React.FC = () => {
       setSelectedIntegration(null);
       
       // Show success message
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Integration setup completed: ', __integrationData);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error handling setup completion: ', error);
     }
@@ -457,8 +463,8 @@ const IntegrationsPage: React.FC = () => {
         .eq('user_id', user.id);
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error disconnecting integration: ', error);
         toast.error('Failed to disconnect integration');
@@ -473,8 +479,8 @@ const IntegrationsPage: React.FC = () => {
       
       toast.success(`${integrationName} disconnected successfully`);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error disconnecting integration: ', error);
       toast.error('Failed to disconnect integration');
@@ -491,10 +497,16 @@ const IntegrationsPage: React.FC = () => {
   const loadDataPointSummary = async () => {
     if (!user) return;
     
-    try {
-      const dataPointService = new DataPointDictionaryService();
-  const summary = await dataPointService.getDataPointSummary(user.id);
-      setDataPointSummary(summary);
+          try {
+        const { data: summary, error } = await dataPointDictionaryService.getDataPointSummary(user.id);
+        
+        if (error) {
+          console.error('Error getting data point summary:', error);
+          toast.error('Failed to load data point summary');
+          return;
+        }
+        
+        setDataPointSummary(summary);
     } catch (error: any) {
       if (error.message && error.message.includes('No valid session')) {
         // Show a clear error and optionally redirect
@@ -502,8 +514,8 @@ const IntegrationsPage: React.FC = () => {
         // Optionally, redirect to login page:
         // window.location.href = '/login';
       } else {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error loading data point summary: ', error);
         toast.error('Failed to load data point summary');
@@ -514,18 +526,22 @@ const IntegrationsPage: React.FC = () => {
   const discoverDataPoints = async (userIntegrationId: string) => {
     setDiscoveringDataPoints(true);
     try {
-      const dataPointService = new DataPointDictionaryService();
-    const discoveryLog = await dataPointService.discoverDataPoints(userIntegrationId);
+      const { data: discoveryLog, error } = await dataPointDictionaryService.discoverDataPoints(userIntegrationId);
       
-      if (discoveryLog.discoveryStatus === 'completed') {
+      if (error) {
+        toast.error(`Discovery failed: ${error}`);
+        return;
+      }
+      
+      if (discoveryLog?.discoveryStatus === 'completed') {
         toast.success(`Discovered ${discoveryLog.newDataPoints} new data points from ${discoveryLog.endpointsScanned} endpoints`);
         await loadDataPointSummary();
       } else {
-        toast.error(`Discovery failed: ${discoveryLog.errorMessage}`);
+        toast.error(`Discovery failed: ${discoveryLog?.errorMessage || 'Unknown error'}`);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error discovering data points: ', error);
       toast.error('Failed to discover data points');
@@ -551,8 +567,8 @@ const IntegrationsPage: React.FC = () => {
         .select('id')
         .eq('user_id', user.id);
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('User integrations found: ', userIntegrations);
 
@@ -562,20 +578,27 @@ const IntegrationsPage: React.FC = () => {
       
       for (const userIntegration of userIntegrations) {
         try {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.log('Loading data points for integration: ', userIntegration.id);
-          const dataPointService = new DataPointDictionaryService();
-      const dataPoints = await dataPointService.getDataPoints(userIntegration.id);
-          // eslint-disable-next-line no-console
+          const { data: dataPoints, error: dataPointsError } = await dataPointDictionaryService.getDataPoints(userIntegration.id);
+          
+          if (dataPointsError) {
+            console.error(`Error getting data points for integration ${userIntegration.id}:`, dataPointsError);
+            continue;
+          }
+          
+           
+     
     // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Data points found: ', dataPoints.length);
-          allDataPoints.push(...dataPoints);
+    console.log('Data points found: ', dataPoints?.length || 0);
+          if (dataPoints) {
+            allDataPoints.push(...dataPoints);
+          }
         } catch (integrationError: any) {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error(`Error loading data points for integration ${userIntegration.id}:`, integrationError);
           
@@ -590,14 +613,14 @@ const IntegrationsPage: React.FC = () => {
         }
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Total data points loaded: ', allDataPoints.length);
       setDiscoveredDataPoints(allDataPoints);
     } catch (error: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading discovered data points: ', error);
       
@@ -630,8 +653,8 @@ const IntegrationsPage: React.FC = () => {
               setAnalysisResults({ success: true, data: { message: 'Analysis not implemented yet' } });
       toast.success(`Analysis complete for ${dataPoint.dataPointName}`);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error analyzing data point: ', error);
       toast.error('Failed to analyze data point');
@@ -654,8 +677,8 @@ const IntegrationsPage: React.FC = () => {
       
       toast.success(`Sample data stored for ${dataPoint.dataPointName}`);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error storing sample data: ', error);
       toast.error('Failed to store sample data');
@@ -666,8 +689,8 @@ const IntegrationsPage: React.FC = () => {
   const handleTestAuth = async () => {
     try {
       const result = await testAuthenticationFlow();
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔍 Authentication test result: ', result);
       
@@ -677,8 +700,8 @@ const IntegrationsPage: React.FC = () => {
         toast.success('Authentication test completed - check console for details');
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error testing authentication: ', error);
       toast.error('Failed to test authentication');
@@ -1218,7 +1241,7 @@ const IntegrationsPage: React.FC = () => {
                       <Database className="h-5 w-5 text-primary" />
                       <div>
                         <p className="text-sm font-medium">Total Data Points</p>
-                        <p className="text-2xl font-bold">{dataPointSummary.totalDataPoints}</p>
+                        <p className="text-2xl font-bold">{dataPointSummary?.totalDataPoints || 0}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1230,7 +1253,7 @@ const IntegrationsPage: React.FC = () => {
                       <TrendingUp className="h-5 w-5 text-success" />
                       <div>
                         <p className="text-sm font-medium">High Value</p>
-                        <p className="text-2xl font-bold">{dataPointSummary.businessValueBreakdown.high}</p>
+                        <p className="text-2xl font-bold">{dataPointSummary.businessValueBreakdown?.high || 0}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1242,7 +1265,7 @@ const IntegrationsPage: React.FC = () => {
                       <Users className="h-5 w-5 text-secondary" />
                       <div>
                         <p className="text-sm font-medium">Customer Data</p>
-                        <p className="text-2xl font-bold">{dataPointSummary.categories.customer || 0}</p>
+                        <p className="text-2xl font-bold">{dataPointSummary?.categories?.customer || 0}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1254,7 +1277,7 @@ const IntegrationsPage: React.FC = () => {
                       <DollarSign className="h-5 w-5 text-warning" />
                       <div>
                         <p className="text-sm font-medium">Financial Data</p>
-                        <p className="text-2xl font-bold">{dataPointSummary.categories.financial || 0}</p>
+                        <p className="text-2xl font-bold">{dataPointSummary?.categories?.financial || 0}</p>
                       </div>
                     </div>
                   </CardContent>

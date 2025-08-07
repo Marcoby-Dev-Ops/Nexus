@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Brain, Lightbulb, Target, BookOpen, Tag } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { supabase } from '@/lib/supabase';
-// import { thoughtsService } from '@/services/help-center/thoughtsService';
+import { personalThoughtsService } from '@/core/services/PersonalThoughtsService';
+import { useUser } from '@/hooks/useUser';
 
 /**
  * PersonalMemoryCapture
@@ -41,6 +42,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   const [tags, setTags] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
+  const { userProfile } = useUser();
 
   const categories = [
     { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-warning/10 text-warning-foreground' },
@@ -89,11 +91,18 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       };
 
       // Get company_id from user profile
-      
-
-      const inserted = await thoughtsService.createThought({ 
-        ...createReq, 
-        companyid: userProfile?.company_id || undefined 
+      const inserted = await personalThoughtsService.create({ 
+        content: content.trim(),
+        userid: user.id,
+        company_id: userProfile?.company_id,
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        metadata: {
+          category: categoryMap[category],
+          status: 'concept',
+          personalor_professional: 'personal',
+          interactionmethod: 'text',
+          impact: currentContext?.department ? `Dept:${currentContext.department}` : undefined,
+        }
       });
 
       // Reset form
@@ -102,29 +111,29 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       setIsOpen(false);
       
       const savedThought: PersonalThought = {
-        content: createReq.content,
+        content: content.trim(),
         category,
-        tags: createReq.main_sub_categories ?? [],
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         businessContext: currentContext,
       };
       onThoughtSaved?.(savedThought);
       
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Personal thought saved with business context: ', currentContext);
 
       // Fire-and-forget AI processing (no await to keep UI snappy)
-      if (inserted?.id) {
+      if (inserted.success && inserted.data?.id) {
         // Fire embedding
         supabase.functions.invoke('ai_embed_thought', {
           body: {
-            thoughtId: inserted.id,
-            content: inserted.content,
+            thoughtId: inserted.data.id,
+            content: inserted.data.content,
           },
         }).catch((err) => {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error('Failed to invoke aiembed_thought: ', err);
         });
@@ -133,32 +142,32 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
         supabase.functions.invoke('trigger-n8n-workflow', {
           body: {
             workflowname: 'intelligent_thought_processor',
-            thoughtid: inserted.id,
+            thoughtid: inserted.data.id,
             userid: user.id,
             companyid: user.company_id,
             triggersource: 'thought_creation',
             context: currentContext
           },
         }).catch((err) => {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error('Failed to trigger intelligent thought processor: ', err);
         });
 
         // Legacy: Trigger suggestion generation (integration-aware) - will be replaced by n8n
         supabase.functions.invoke('ai_generate_thought_suggestions', {
-          body: { thoughtId: inserted.id },
+          body: { thoughtId: inserted.data.id },
         }).catch((err) => {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error('Failed to invoke aigenerate_thought_suggestions: ', err);
         });
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Failed to save personal thought: ', error);
     } finally {

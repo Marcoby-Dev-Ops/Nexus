@@ -1,20 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { performSignOut } from '@/shared/utils/signOut';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { 
-  User, 
   Shield, 
   CheckCircle, 
   AlertTriangle, 
-  Clock, 
   RefreshCw,
-  LogOut,
-  Settings
+  LogOut
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
 interface AuthStatusInfo {
   isAuthenticated: boolean;
@@ -54,7 +53,7 @@ export const AuthStatus: React.FC = () => {
 
       setStatusInfo(info);
     } catch (error) {
-      console.error('Error loading auth status:', error);
+      logger.error('Error loading auth status', { error });
     } finally {
       setLoading(false);
     }
@@ -65,12 +64,12 @@ export const AuthStatus: React.FC = () => {
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) {
-        console.error('Session refresh failed:', error);
+        logger.error('Session refresh failed', { error });
       } else {
         await loadAuthStatus();
       }
     } catch (error) {
-      console.error('Session refresh error:', error);
+      logger.error('Session refresh error', { error });
     } finally {
       setRefreshing(false);
     }
@@ -78,9 +77,9 @@ export const AuthStatus: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      await signOut();
+      await performSignOut();
     } catch (error) {
-      console.error('Sign out error:', error);
+      logger.error('Sign out error', { error });
     }
   };
 

@@ -39,8 +39,8 @@ export class BackendErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.error('Backend Error Boundary caught an error: ', error, errorInfo);
   }

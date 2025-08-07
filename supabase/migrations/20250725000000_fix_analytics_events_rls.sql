@@ -56,8 +56,8 @@ GRANT ALL PRIVILEGES ON TABLE public.analytics_events TO service_role;
 
 -- Create indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_analytics_events_user_id ON public.analytics_events(user_id);
-CREATE INDEX IF NOT EXISTS idx_analytics_events_timestamp ON public.analytics_events(timestamp);
-CREATE INDEX IF NOT EXISTS idx_analytics_events_eventtype ON public.analytics_events(eventtype);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON public.analytics_events(created_at);
+CREATE INDEX IF NOT EXISTS idx_analytics_events_event_type ON public.analytics_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_session_id ON public.analytics_events(session_id);
 
 -- ====================================================================
@@ -66,8 +66,8 @@ CREATE INDEX IF NOT EXISTS idx_analytics_events_session_id ON public.analytics_e
 
 COMMENT ON TABLE public.analytics_events IS 'Analytics events for tracking user behavior and application metrics';
 COMMENT ON COLUMN public.analytics_events.user_id IS 'User ID for the event (nullable for anonymous events)';
-COMMENT ON COLUMN public.analytics_events.eventtype IS 'Type of analytics event (e.g., page_view, button_click, error)';
-COMMENT ON COLUMN public.analytics_events.properties IS 'JSON object containing event-specific properties';
+COMMENT ON COLUMN public.analytics_events.event_type IS 'Type of analytics event (e.g., page_view, button_click, error)';
+COMMENT ON COLUMN public.analytics_events.event_data IS 'JSON object containing event-specific properties';
 COMMENT ON COLUMN public.analytics_events.session_id IS 'Session identifier for grouping related events';
 COMMENT ON COLUMN public.analytics_events.source IS 'Source of the event (e.g., web, mobile, api)';
 COMMENT ON COLUMN public.analytics_events.version IS 'Version of the analytics tracking system';

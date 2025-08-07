@@ -1,5 +1,8 @@
 // src/shared/services/apiIntegrationService.ts
 
+import { select, insertOne, updateOne } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
+
 export type ApiIntegrationData = {
   name: string;
   version: string;
@@ -12,6 +15,48 @@ export type ApiIntegrationData = {
   }>;
   authMethods?: string[];
   [key: string]: any;
+};
+
+export const getIntegrations = async (userId: string) => {
+  try {
+    const { data, error } = await select('user_integrations', '*', { user_id: userId });
+    if (error) {
+      logger.error({ error }, 'Failed to fetch integrations');
+      return [];
+    }
+    return data || [];
+  } catch (err) {
+    logger.error({ err }, 'Error fetching integrations');
+    return [];
+  }
+};
+
+export const addIntegration = async (userId: string, integration: any) => {
+  try {
+    const { data, error } = await insertOne('user_integrations', { ...integration, user_id: userId });
+    if (error) {
+      logger.error({ error }, 'Failed to add integration');
+      return null;
+    }
+    return data;
+  } catch (err) {
+    logger.error({ err }, 'Error adding integration');
+    return null;
+  }
+};
+
+export const updateIntegration = async (id: string, updates: any) => {
+  try {
+    const { data, error } = await updateOne('user_integrations', id, updates);
+    if (error) {
+      logger.error({ error }, 'Failed to update integration');
+      return null;
+    }
+    return data;
+  } catch (err) {
+    logger.error({ err }, 'Error updating integration');
+    return null;
+  }
 };
 
 export const ApiIntegrationService = {

@@ -26,7 +26,7 @@ import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Progress } from '@/shared/components/ui/Progress';
 import { useAuth } from '@/hooks/index';
 import { useFireCycleChatIntegration } from '@/core/fire-cycle/fireCycleChatIntegration';
-import { thoughtsService } from '@/services/help-center/thoughtsService';
+import { thoughtsService } from '@/lib/services/thoughtsService';
 import type { Thought } from '@/core/types/thoughts';
 
 interface FireCycleChatMessage {
@@ -85,9 +85,13 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
   // FIRE Cycle integration
   const userContext = {
     userId: user?.id || '',
-    companyId: user?.company_id || '',
-    department: user?.department || '',
-    role: user?.role || 'user',
+    companyId: (user as any)?.company_id || '',
+    department: (user as any)?.department || '',
+    role: (user as any)?.role || 'user',
+    experienceLevel: 'intermediate' as const,
+    goals: ['business_growth', 'efficiency'],
+    challenges: ['time_management', 'prioritization'],
+    currentProjects: [],
     preferences: {
       communicationStyle: 'professional',
       detailLevel: 'medium',
@@ -97,6 +101,18 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
       phase: 'focus' as const,
       priority: 'medium' as const,
       context: 'general'
+    },
+    recentActivity: [],
+    recentActivities: [],
+    metrics: [] as any[],
+    integrations: [],
+    companySize: 'small',
+    industry: 'technology',
+    stage: 'growth' as const,
+    skillLevels: {
+      planning: 'intermediate',
+      execution: 'intermediate',
+      analysis: 'intermediate'
     }
   };
 
@@ -116,8 +132,10 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
     if (!user?.id) return;
 
     try {
-      const response = await thoughtsService.getThoughts({}, 50, 0);
-      setRelatedThoughts(response.thoughts);
+      const response = await thoughtsService.getThoughts(user?.id || '', { limit: 50 });
+      if (response.success && response.data) {
+        setRelatedThoughts(response.data);
+      }
     } catch (error) {
       console.error('Failed to load related thoughts:', error);
     }
@@ -133,7 +151,7 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
 
     setProcessingUpdate(true);
     try {
-      const response = await analyzeChatMessage(message, user.id, user.company_id);
+      const response = await analyzeChatMessage(message, user.id, (user as any).company_id);
       
       if (response.shouldTrigger && response.firePhase) {
         // Find related thoughts based on content similarity
@@ -176,7 +194,7 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
       
       // Check for word overlap
       const commonWords = messageWords.filter(word => 
-        thoughtWords.some(thoughtWord => 
+        thoughtWords.some((thoughtWord: string) => 
           thoughtWord.includes(word) || word.includes(thoughtWord)
         )
       );
@@ -192,15 +210,16 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
   const autoAdvanceThoughts = async (thoughts: Thought[], newPhase: 'focus' | 'insight' | 'roadmap' | 'execute') => {
     for (const thought of thoughts) {
       try {
-        await thoughtsService.updateThought({
-          id: thought.id,
+        await thoughtsService.updateThought(thought.id, {
           content: thought.content,
-          status: newPhase === 'execute' ? 'in_progress' : 'concept',
-          ai_clarification_data: {
-            ...thought.ai_clarification_data,
-            firePhase: newPhase,
+          status: newPhase === 'execute' ? 'completed' : 'in_progress',
+          workflow_stage: newPhase === 'focus' ? 'create_idea' : 
+                         newPhase === 'insight' ? 'update_idea' : 
+                         newPhase === 'roadmap' ? 'implement_idea' : 'achievement',
+          aiinsights: {
+            ...thought.aiinsights,
             phaseChangedAt: new Date().toISOString(),
-            previousPhase: thought.ai_clarification_data?.firePhase || 'focus',
+            previousPhase: thought.workflow_stage || 'create_idea',
             autoAdvanced: true,
             conversationTrigger: true
           }
@@ -230,7 +249,7 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
 
     try {
       // Process for FIRE cycle triggers
-      const fireCycleResponse = await analyzeChatMessage(inputValue, user?.id || '', user?.company_id);
+              const fireCycleResponse = await analyzeChatMessage(inputValue, user?.id || '', (user as any)?.company_id);
       
       if (fireCycleResponse.shouldTrigger) {
         // Show FIRE cycle insights
@@ -288,7 +307,7 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
       const thoughtId = await createThoughtFromChat(
         currentFireCycleResponse.originalMessage || inputValue,
         user.id,
-        user.company_id,
+        (user as any).company_id,
         currentFireCycleResponse.firePhase
       );
 
@@ -472,7 +491,7 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
                 <div className="mb-4">
                   <p className="text-sm font-medium mb-2">Suggested Next Steps:</p>
                   <div className="space-y-1">
-                    {currentFireCycleResponse.nextSteps.map((step, index) => (
+                    {currentFireCycleResponse.nextSteps.map((step: string, index: number) => (
                       <div key={index} className="flex items-center gap-2 text-sm">
                         <CheckCircle className="w-4 h-4 text-muted-foreground" />
                         <span>{step}</span>

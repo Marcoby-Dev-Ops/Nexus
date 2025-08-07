@@ -21,7 +21,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { tokenManager } from '@/services/tokenManager';
+import { TokenManager } from '@/services/tokenManager';
 import { useSearchParams } from 'react-router-dom';
 
 // Import our new form patterns
@@ -29,16 +29,39 @@ import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
 import { useService } from '@/shared/hooks/useService';
+import { logger } from '@/shared/utils/logger';
 
 const AccountSettings: React.FC = () => {
   const { user } = useAuth();
   const { refreshIntegrations } = useIntegrations();
   
-  // Use the new UserService hooks
+  // Use the UserService directly
   const userService = useService('user');
-  const { data: userProfile, isLoading: isLoadingProfile } = userService.useGet(user?.id || '');
-  const { mutate: updateUser, isLoading: isUpdating } = userService.useUpdate();
-  
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      setIsLoadingProfile(true);
+      try {
+        const result = await userService.get(user.id);
+        if (result.success && result.data) {
+          setUserProfile(result.data);
+        }
+              } catch (error) {
+          logger.error('Failed to fetch user profile:', error);
+        } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.id, userService]);
+
   const [searchParams] = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
   const [integrations, setIntegrations] = useState<any[]>([]);
@@ -84,11 +107,23 @@ const AccountSettings: React.FC = () => {
         phone: data.phone,
       };
 
+      setIsUpdating(true);
       try {
-        await updateUser(user.id, updates);
-        setIsEditing(false);
+        const result = await userService.update(user.id, updates);
+        if (result.success) {
+          setIsEditing(false);
+          // Refresh user profile data
+          const refreshResult = await userService.get(user.id);
+          if (refreshResult.success && refreshResult.data) {
+            setUserProfile(refreshResult.data);
+          }
+        } else {
+          throw new Error(result.error || 'Failed to update profile');
+        }
       } catch (error) {
         throw new Error('Failed to update profile');
+      } finally {
+        setIsUpdating(false);
       }
     },
     successMessage: 'Profile updated successfully!',
@@ -174,7 +209,8 @@ const AccountSettings: React.FC = () => {
       user.integrations.map(async (integration) => {
         try {
           // Check if tokens exist and are valid
-          const hasTokens = await tokenManager.hasTokens(integration.integration_type || '');
+          const tokens = await TokenManager.getAllTokens(user?.id || '');
+      const hasTokens = tokens.some(token => token.integration_type === integration.integration_type);
           
           // Get OAuth token details if they exist
           let tokenStatus = 'not_connected';

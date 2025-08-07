@@ -1,85 +1,59 @@
-import React from 'react';
-import { cn } from '@/shared/utils/styles.ts';
-import PropTypes from 'prop-types';
+import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-/**
- * @interface AlertProps
- * @description Props for the Alert component.
- */
-export interface AlertProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'error' | 'success' | 'warning' | 'destructive';
-  action?: React.ReactNode;
-}
+import { cn } from '@/shared/lib/utils';
 
-/**
- * @interface AlertDescriptionProps
- * @description Props for the AlertDescription component.
- */
-export interface AlertDescriptionProps extends React.HTMLAttributes<HTMLParagraphElement> {}
+const alertVariants = cva(
+  'relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground',
+  {
+    variants: {
+      variant: {
+        default: 'bg-background text-foreground',
+        destructive:
+          'border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive',
+      },
+    },
+    defaultVariants: {
+      variant: 'default',
+    },
+  }
+);
 
-/**
- * @name Alert
- * @description A notification component for feedback messages.
- * @param {AlertProps} props - The props for the component.
- * @returns {JSX.Element} The rendered Alert component.
- */
-export const Alert: React.FC<AlertProps> = ({
-  children,
-  className,
-  variant = 'default',
-  action,
-  ...props
-}) => {
-  const variants = {
-    default: 'bg-muted text-foreground',
-    error: 'bg-destructive/10 text-destructive',
-    success: 'bg-success/10 text-success',
-    warning: 'bg-warning/10 text-warning',
-    destructive: 'bg-destructive/10 text-destructive'
-  };
-
-  return (
-    <div
-      className={cn(
-        'rounded-lg p-4 flex items-start gap-4',
-        variants[variant],
-        className
-      )}
-      {...props}
-    >
-      <div className="flex-1">{children}</div>
-      {action && <div className="flex-shrink-0">{action}</div>}
-    </div>
-  );
-};
-
-/**
- * @name AlertDescription
- * @description A description component for use within Alert components.
- * @param {AlertDescriptionProps} props - The props for the component.
- * @returns {JSX.Element} The rendered AlertDescription component.
- */
-export const AlertDescription: React.FC<AlertDescriptionProps> = ({
-  className,
-  ...props
-}) => (
+const Alert = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
+>(({ className, variant, ...props }, ref) => (
   <div
+    ref={ref}
+    role="alert"
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
+));
+Alert.displayName = 'Alert';
+
+const AlertTitle = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
+>(({ className, ...props }, ref) => (
+  <h5
+    ref={ref}
+    className={cn('mb-1 font-medium leading-none tracking-tight', className)}
+    {...props}
+  />
+));
+AlertTitle.displayName = 'AlertTitle';
+
+const AlertDescription = React.forwardRef<
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
     className={cn('text-sm [&_p]:leading-relaxed', className)}
     {...props}
   />
-);
-
-Alert.displayName = 'Alert';
+));
 AlertDescription.displayName = 'AlertDescription';
 
-Alert.propTypes = {
-  variant: PropTypes.oneOf(['default', 'error', 'success', 'warning', 'destructive']),
-  action: PropTypes.node,
-  className: PropTypes.string,
-};
-
-AlertDescription.propTypes = {
-  className: PropTypes.string,
-};
-
-export default Alert; 
+export { Alert, AlertTitle, AlertDescription }; 

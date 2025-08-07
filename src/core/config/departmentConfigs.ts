@@ -1,12 +1,86 @@
 /**
  * departmentConfigs.ts
  * Configuration data for unified department pages
+ * Updated to follow project standards and use helper functions
  * 
  * Pillar: 1 (Efficient Automation) - Centralized department configuration
  */
 
 import { Activity, Package, Settings, Users, TrendingUp, Target, Handshake, UserPlus, FileText, Plus, Wrench, CreditCard, Receipt, Calculator, Monitor, Shield, Code, Heart, Scale, Briefcase } from 'lucide-react';
-import type { DepartmentConfig } from '@/shared/components/patterns/UnifiedPages';
+import { logger } from '@/shared/utils/logger';
+import { supabaseService } from '@/core/services/SupabaseService';
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+export interface DepartmentConfig {
+  title: string;
+  subtitle: string;
+  kpis: Array<{ title: string; value: string | number; delta?: string }>;
+  quickActions: Array<{ 
+    label: string; 
+    icon: React.ComponentType<{ className?: string }>; 
+    onClick: () => Promise<void> | void;
+  }>;
+  charts: {
+    primary: { title: string; description: string; data: Array<{ name: string; value: number }> };
+    secondary: { title: string; description: string; data: Array<{ name: string; value: number }> };
+  };
+  activities: Array<{ description: string; status: string; time: string; type: string }>;
+  businessInsights?: {
+    crossDepartmentalImpact: string[];
+    keyBusinessDrivers: string[];
+    commonChallenges: string[];
+    bestPractices: string[];
+    aiRecommendations: string[];
+  };
+  educationalContent?: {
+    whatThisMeans: string;
+    whyItMatters: string;
+    howToImprove: string[];
+    industryBenchmarks: string;
+  };
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Log department action with context
+ */
+const logDepartmentAction = async (department: string, action: string, details?: any): Promise<void> => {
+  try {
+          await supabaseService.callEdgeFunction('log_department_action', {
+      department,
+      action,
+      details,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'production'
+    });
+  } catch (error) {
+    logger.error('Failed to log department action', { department, action, error });
+  }
+};
+
+/**
+ * Create a quick action handler with logging
+ */
+const createQuickAction = (department: string, action: string) => {
+  return async (): Promise<void> => {
+    try {
+      logger.info(`Department action: ${action}`, { department });
+      await logDepartmentAction(department, action);
+    } catch (error) {
+      logger.error(`Failed to execute department action: ${action}`, { department, error });
+    }
+  };
+};
+
+// ============================================================================
+// DEPARTMENT CONFIGURATIONS
+// ============================================================================
 
 // ===== OPERATIONS CONFIGURATION =====
 export const operationsConfig: DepartmentConfig = {
@@ -19,22 +93,10 @@ export const operationsConfig: DepartmentConfig = {
     { title: 'Team Productivity', value: '87.5%', delta: '+3.1%' },
   ],
   quickActions: [
-    { label: 'New Workflow', icon: Activity, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Workflow') },
-    { label: 'Check Inventory', icon: Package, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Check Inventory') },
-    { label: 'Process Report', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Process Report') },
-    { label: 'Maintenance', icon: Wrench, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Maintenance') },
+    { label: 'New Workflow', icon: Activity, onClick: createQuickAction('operations', 'new_workflow') },
+    { label: 'Check Inventory', icon: Package, onClick: createQuickAction('operations', 'check_inventory') },
+    { label: 'Process Report', icon: FileText, onClick: createQuickAction('operations', 'process_report') },
+    { label: 'Maintenance', icon: Wrench, onClick: createQuickAction('operations', 'maintenance') },
   ],
   charts: {
     primary: {
@@ -105,22 +167,10 @@ export const salesConfig: DepartmentConfig = {
     { title: 'Conversion Rate', value: '24.8%', delta: '+2.1%' },
   ],
   quickActions: [
-    { label: 'New Deal', icon: Handshake, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Deal') },
-    { label: 'Add Contact', icon: UserPlus, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Add Contact') },
-    { label: 'Create Proposal', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Create Proposal') },
-    { label: 'Schedule Follow-up', icon: Plus, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Schedule Follow-up') },
+    { label: 'New Deal', icon: Handshake, onClick: createQuickAction('sales', 'new_deal') },
+    { label: 'Add Contact', icon: UserPlus, onClick: createQuickAction('sales', 'add_contact') },
+    { label: 'Create Proposal', icon: FileText, onClick: createQuickAction('sales', 'create_proposal') },
+    { label: 'Schedule Follow-up', icon: Plus, onClick: createQuickAction('sales', 'schedule_followup') },
   ],
   charts: {
     primary: {
@@ -191,22 +241,10 @@ export const financeConfig: DepartmentConfig = {
     { title: 'Profit Margin', value: '41.2%', delta: '+3.1%' },
   ],
   quickActions: [
-    { label: 'New Invoice', icon: Receipt, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Invoice') },
-    { label: 'Record Expense', icon: CreditCard, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Record Expense') },
-    { label: 'Generate Report', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Generate Report') },
-    { label: 'Calculate Tax', icon: Calculator, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Calculate Tax') },
+    { label: 'New Invoice', icon: Receipt, onClick: createQuickAction('finance', 'new_invoice') },
+    { label: 'Record Expense', icon: CreditCard, onClick: createQuickAction('finance', 'record_expense') },
+    { label: 'Generate Report', icon: FileText, onClick: createQuickAction('finance', 'generate_report') },
+    { label: 'Calculate Tax', icon: Calculator, onClick: createQuickAction('finance', 'calculate_tax') },
   ],
   charts: {
     primary: {
@@ -277,22 +315,10 @@ export const supportConfig: DepartmentConfig = {
     { title: 'Resolution Rate', value: '87.5%', delta: '+3.1%' },
   ],
   quickActions: [
-    { label: 'New Ticket', icon: Plus, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Ticket') },
-    { label: 'Knowledge Base', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Knowledge Base') },
-    { label: 'Team Status', icon: Users, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Team Status') },
-    { label: 'Escalate Issue', icon: TrendingUp, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Escalate Issue') },
+    { label: 'New Ticket', icon: Plus, onClick: createQuickAction('support', 'new_ticket') },
+    { label: 'Knowledge Base', icon: FileText, onClick: createQuickAction('support', 'knowledge_base') },
+    { label: 'Team Status', icon: Users, onClick: createQuickAction('support', 'team_status') },
+    { label: 'Escalate Issue', icon: TrendingUp, onClick: createQuickAction('support', 'escalate_issue') },
   ],
   charts: {
     primary: {
@@ -338,22 +364,10 @@ export const marketingConfig: DepartmentConfig = {
     { title: 'Email Open Rate', value: '24.5%', delta: '+3.1%' },
   ],
   quickActions: [
-    { label: 'New Campaign', icon: Plus, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Campaign') },
-    { label: 'Email Blast', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Email Blast') },
-    { label: 'Analytics Report', icon: TrendingUp, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Analytics Report') },
-    { label: 'Lead Import', icon: Users, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Lead Import') },
+    { label: 'New Campaign', icon: Plus, onClick: createQuickAction('marketing', 'new_campaign') },
+    { label: 'Email Blast', icon: FileText, onClick: createQuickAction('marketing', 'email_blast') },
+    { label: 'Analytics Report', icon: TrendingUp, onClick: createQuickAction('marketing', 'analytics_report') },
+    { label: 'Lead Import', icon: Users, onClick: createQuickAction('marketing', 'lead_import') },
   ],
   charts: {
     primary: {
@@ -399,22 +413,10 @@ export const maturityConfig: DepartmentConfig = {
     { title: 'Team Efficiency', value: '76%', delta: '+6.1%' },
   ],
   quickActions: [
-    { label: 'Run Assessment', icon: Target, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Run Assessment') },
-    { label: 'View Recommendations', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('View Recommendations') },
-    { label: 'Progress Report', icon: TrendingUp, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Progress Report') },
-    { label: 'Benchmark Analysis', icon: Settings, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Benchmark Analysis') },
+    { label: 'Run Assessment', icon: Target, onClick: createQuickAction('maturity', 'run_assessment') },
+    { label: 'View Recommendations', icon: FileText, onClick: createQuickAction('maturity', 'view_recommendations') },
+    { label: 'Progress Report', icon: TrendingUp, onClick: createQuickAction('maturity', 'progress_report') },
+    { label: 'Benchmark Analysis', icon: Settings, onClick: createQuickAction('maturity', 'benchmark_analysis') },
   ],
   charts: {
     primary: {
@@ -460,22 +462,10 @@ export const hrConfig: DepartmentConfig = {
     { title: 'Retention Rate', value: '94.5%', delta: '+2.1%' },
   ],
   quickActions: [
-    { label: 'New Employee', icon: UserPlus, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Employee') },
-    { label: 'Post Job', icon: Briefcase, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Post Job') },
-    { label: 'Performance Review', icon: Target, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Performance Review') },
-    { label: 'Training Plan', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Training Plan') },
+    { label: 'New Employee', icon: UserPlus, onClick: createQuickAction('hr', 'new_employee') },
+    { label: 'Post Job', icon: Briefcase, onClick: createQuickAction('hr', 'post_job') },
+    { label: 'Performance Review', icon: Target, onClick: createQuickAction('hr', 'performance_review') },
+    { label: 'Training Plan', icon: FileText, onClick: createQuickAction('hr', 'training_plan') },
   ],
   charts: {
     primary: {
@@ -521,22 +511,10 @@ export const itConfig: DepartmentConfig = {
     { title: 'User Satisfaction', value: '4.6/5', delta: '+0.1' },
   ],
   quickActions: [
-    { label: 'System Monitor', icon: Monitor, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('System Monitor') },
-    { label: 'Security Scan', icon: Shield, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Security Scan') },
-    { label: 'User Support', icon: Users, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('User Support') },
-    { label: 'Infrastructure', icon: Settings, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Infrastructure') },
+    { label: 'System Monitor', icon: Monitor, onClick: createQuickAction('it', 'system_monitor') },
+    { label: 'Security Scan', icon: Shield, onClick: createQuickAction('it', 'security_scan') },
+    { label: 'User Support', icon: Users, onClick: createQuickAction('it', 'user_support') },
+    { label: 'Infrastructure', icon: Settings, onClick: createQuickAction('it', 'infrastructure') },
   ],
   charts: {
     primary: {
@@ -582,22 +560,10 @@ export const productConfig: DepartmentConfig = {
     { title: 'Bug Resolution', value: '1.8 days', delta: '-0.3 days' },
   ],
   quickActions: [
-    { label: 'New Feature', icon: Plus, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Feature') },
-    { label: 'Code Review', icon: Code, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Code Review') },
-    { label: 'Sprint Plan', icon: Target, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Sprint Plan') },
-    { label: 'Release Notes', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Release Notes') },
+    { label: 'New Feature', icon: Plus, onClick: createQuickAction('product', 'new_feature') },
+    { label: 'Code Review', icon: Code, onClick: createQuickAction('product', 'code_review') },
+    { label: 'Sprint Plan', icon: Target, onClick: createQuickAction('product', 'sprint_plan') },
+    { label: 'Release Notes', icon: FileText, onClick: createQuickAction('product', 'release_notes') },
   ],
   charts: {
     primary: {
@@ -642,22 +608,10 @@ export const customerSuccessConfig: DepartmentConfig = {
     { title: 'Expansion Revenue', value: '$45,200', delta: '+18%' },
   ],
   quickActions: [
-    { label: 'Health Check', icon: Heart, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Health Check') },
-    { label: 'Customer Meeting', icon: Users, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Customer Meeting') },
-    { label: 'Success Plan', icon: Target, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Success Plan') },
-    { label: 'Feedback Survey', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Feedback Survey') },
+    { label: 'Health Check', icon: Heart, onClick: createQuickAction('customer_success', 'health_check') },
+    { label: 'Customer Meeting', icon: Users, onClick: createQuickAction('customer_success', 'customer_meeting') },
+    { label: 'Success Plan', icon: Target, onClick: createQuickAction('customer_success', 'success_plan') },
+    { label: 'Feedback Survey', icon: FileText, onClick: createQuickAction('customer_success', 'feedback_survey') },
   ],
   charts: {
     primary: {
@@ -702,22 +656,10 @@ export const legalConfig: DepartmentConfig = {
     { title: 'Risk Assessment', value: 'Low', delta: 'Stable' },
   ],
   quickActions: [
-    { label: 'New Contract', icon: FileText, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('New Contract') },
-    { label: 'Compliance Check', icon: Shield, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Compliance Check') },
-    { label: 'Risk Review', icon: Scale, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Risk Review') },
-    { label: 'Legal Research', icon: Settings, onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Legal Research') },
+    { label: 'New Contract', icon: FileText, onClick: createQuickAction('legal', 'new_contract') },
+    { label: 'Compliance Check', icon: Shield, onClick: createQuickAction('legal', 'compliance_check') },
+    { label: 'Risk Review', icon: Scale, onClick: createQuickAction('legal', 'risk_review') },
+    { label: 'Legal Research', icon: Settings, onClick: createQuickAction('legal', 'legal_research') },
   ],
   charts: {
     primary: {
@@ -750,4 +692,24 @@ export const legalConfig: DepartmentConfig = {
     { description: 'Risk: IP protection review completed', status: 'Completed', time: '6 hours ago', type: 'team' },
     { description: 'Research: New regulation impact assessment', status: 'Pending', time: '1 day ago', type: 'team' },
   ]
-}; 
+};
+
+// ============================================================================
+// EXPORT ALL CONFIGURATIONS
+// ============================================================================
+
+export const departmentConfigs = {
+  operations: operationsConfig,
+  sales: salesConfig,
+  finance: financeConfig,
+  support: supportConfig,
+  marketing: marketingConfig,
+  maturity: maturityConfig,
+  hr: hrConfig,
+  it: itConfig,
+  product: productConfig,
+  customerSuccess: customerSuccessConfig,
+  legal: legalConfig,
+} as const;
+
+export type DepartmentType = keyof typeof departmentConfigs; 

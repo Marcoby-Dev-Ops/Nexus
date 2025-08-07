@@ -1,10 +1,15 @@
 /**
  * Company Status Service
- * Provides company health and status monitoring
+ * Handles business health monitoring and status tracking
  */
 
 import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
 
 export interface DimensionStatus {
   id: string;
@@ -53,208 +58,308 @@ export interface CompanyStatusOverview {
   lastUpdated: string;
 }
 
-class CompanyStatusService {
-  /**
-   * Get company status overview
-   */
-  async getCompanyStatusOverview(companyId?: string): Promise<CompanyStatusOverview> {
-    try {
-      // Wait for authentication to be ready with retry
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.user) {
-        logger.warn('No authenticated user for company status overview', { sessionError });
-        return this.getDefaultStatus();
-      }
+// ============================================================================
+// COMPANY STATUS SERVICE CLASS
+// ============================================================================
 
-      // If no companyId provided, use the user's company_id
-      if (!companyId) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('company_id')
-          .eq('id', session.user.id)
-          .single();
-        
-        companyId = profile?.company_id || session.user.id;
-      }
-
-      let query = supabase
-        .from('company_status')
-        .select('*')
-        .order('last_updated', { ascending: false })
-        .limit(1);
-
-      if (companyId) {
-        query = query.eq('company_id', companyId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        logger.error({ companyId, error }, 'Failed to fetch company status overview');
-        return this.getDefaultStatus();
-      }
-
-      if (!data || data.length === 0) {
-        logger.warn({ companyId }, 'No company status data found, populating with realistic data');
-        // Populate with realistic data based on company profile and integrations
-        await this.populateCompanyStatus(companyId);
-        return this.getCompanyStatusOverview(companyId); // Recursive call to get the populated data
-      }
-
-      const status = data[0];
-      const overallScore = status.overall_score || 0;
-      
-
-      
-      return {
-        overallHealth: {
-          score: overallScore,
-          status: this.calculateStatus(overallScore),
-          trend: this.calculateTrend(overallScore)
-        },
-        keyMetrics: {
-          revenue: {
-            value: (status.financial_health || 0) * 1000,
-            trend: 5.2,
-            period: 'month'
-          },
-          customer: {
-            value: Math.floor((status.customer_satisfaction || 0) * 10),
-            trend: 10.5,
-            period: 'month'
-          },
-          uptime: {
-            value: 99.9,
-            trend: 0.1,
-            period: 'week'
-          },
-          satisfaction: {
-            value: status.customer_satisfaction || 0,
-            trend: -0.2,
-            period: 'week'
-          }
-        },
-        dimensions: {
-          financial: {
-            id: 'financial_health',
-            name: 'Financial Health',
-            score: status.financial_health || 0,
-            trend: this.calculateTrend(status.financial_health),
-            description: 'Financial stability and growth metrics',
-            lastUpdated: status.last_updated
-          },
-          operational: {
-            id: 'operational_efficiency',
-            name: 'Operational Efficiency',
-            score: status.operational_efficiency || 0,
-            trend: this.calculateTrend(status.operational_efficiency),
-            description: 'Process efficiency and productivity metrics',
-            lastUpdated: status.last_updated
-          },
-          market: {
-            id: 'market_position',
-            name: 'Market Position',
-            score: status.market_position || 0,
-            trend: this.calculateTrend(status.market_position),
-            description: 'Competitive position and market share',
-            lastUpdated: status.last_updated
-          },
-          customer: {
-            id: 'customer_satisfaction',
-            name: 'Customer Satisfaction',
-            score: status.customer_satisfaction || 0,
-            trend: this.calculateTrend(status.customer_satisfaction),
-            description: 'Customer satisfaction and retention metrics',
-            lastUpdated: status.last_updated
-          },
-          team: {
-            id: 'employee_engagement',
-            name: 'Employee Engagement',
-            score: status.employee_engagement || 0,
-            trend: this.calculateTrend(status.employee_engagement),
-            description: 'Employee satisfaction and retention',
-            lastUpdated: status.last_updated
-          }
-        },
-        alerts: [
-          {
-            id: '1',
-            type: 'info',
-            title: 'Company status updated',
-            description: 'Your company health metrics have been calculated based on available data',
-            actionRequired: false
-          }
-        ],
-        insights: [
-          {
-            id: '1',
-            type: 'opportunity',
-            title: 'Integration opportunities',
-            description: 'Connect more business systems to get comprehensive insights',
-            impact: 'medium',
-            confidence: 85
-          }
-        ],
-        lastUpdated: status.last_updated || new Date().toISOString()
-      };
-    } catch (error) {
-      logger.error({ error }, 'Error in getCompanyStatusOverview');
-      return this.getDefaultStatus();
-    }
+export class CompanyStatusService extends BaseService {
+  constructor() {
+    super('CompanyStatusService');
   }
 
   /**
-   * Populate company status with realistic data based on company profile and integrations
+   * Get company status overview
+   */
+  async getCompanyStatusOverview(companyId?: string): Promise<ServiceResponse<CompanyStatusOverview>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getCompanyStatusOverview', { companyId });
+
+      try {
+        // Wait for authentication to be ready with retry
+        const { data: { session }, error: sessionError } = await this.supabase.auth.getSession();
+        if (sessionError || !session?.user) {
+          this.logFailure('getCompanyStatusOverview', new Error('No authenticated user'), { sessionError });
+          return { data: null, error: 'No authenticated user for company status overview' };
+        }
+
+        // If no companyId provided, use the user's company_id
+        if (!companyId) {
+          const { data: profile } = await this.supabase
+            .from('user_profiles')
+            .select('company_id')
+            .eq('id', session.user.id)
+            .single();
+          
+          companyId = profile?.company_id || session.user.id;
+        }
+
+        let query = this.supabase
+          .from('company_status')
+          .select('*')
+          .order('last_updated', { ascending: false })
+          .limit(1);
+
+        if (companyId) {
+          query = query.eq('company_id', companyId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+          this.logFailure('getCompanyStatusOverview', error, { companyId });
+          return { data: null, error };
+        }
+
+        if (!data || data.length === 0) {
+          this.logSuccess('getCompanyStatusOverview', { 
+            companyId, 
+            status: 'populating' 
+          });
+          // Populate with realistic data based on company profile and integrations
+          await this.populateCompanyStatus(companyId);
+          return this.getCompanyStatusOverview(companyId); // Recursive call to get the populated data
+        }
+
+        const status = data[0];
+        const overallScore = status.overall_score || 0;
+        
+        const overview: CompanyStatusOverview = {
+          overallHealth: {
+            score: overallScore,
+            status: this.calculateStatus(overallScore),
+            trend: this.calculateTrend(overallScore)
+          },
+          keyMetrics: {
+            revenue: {
+              value: (status.financial_health || 0) * 1000,
+              trend: 5.2,
+              period: 'month'
+            },
+            customer: {
+              value: Math.floor((status.customer_satisfaction || 0) * 10),
+              trend: 10.5,
+              period: 'month'
+            },
+            uptime: {
+              value: 99.9,
+              trend: 0.1,
+              period: 'week'
+            },
+            satisfaction: {
+              value: status.customer_satisfaction || 0,
+              trend: -0.2,
+              period: 'week'
+            }
+          },
+          dimensions: {
+            financial: {
+              id: 'financial_health',
+              name: 'Financial Health',
+              score: status.financial_health || 0,
+              trend: this.calculateTrend(status.financial_health),
+              description: 'Financial stability and growth metrics',
+              lastUpdated: status.last_updated
+            },
+            operational: {
+              id: 'operational_efficiency',
+              name: 'Operational Efficiency',
+              score: status.operational_efficiency || 0,
+              trend: this.calculateTrend(status.operational_efficiency),
+              description: 'Process efficiency and productivity metrics',
+              lastUpdated: status.last_updated
+            },
+            market: {
+              id: 'market_position',
+              name: 'Market Position',
+              score: status.market_position || 0,
+              trend: this.calculateTrend(status.market_position),
+              description: 'Competitive position and market share',
+              lastUpdated: status.last_updated
+            },
+            customer: {
+              id: 'customer_satisfaction',
+              name: 'Customer Satisfaction',
+              score: status.customer_satisfaction || 0,
+              trend: this.calculateTrend(status.customer_satisfaction),
+              description: 'Customer satisfaction and retention metrics',
+              lastUpdated: status.last_updated
+            },
+            team: {
+              id: 'team_performance',
+              name: 'Team Performance',
+              score: status.team_performance || 0,
+              trend: this.calculateTrend(status.team_performance),
+              description: 'Team productivity and engagement metrics',
+              lastUpdated: status.last_updated
+            }
+          },
+          alerts: this.generateAlerts(status),
+          insights: this.generateInsights(status),
+          lastUpdated: status.last_updated || new Date().toISOString()
+        };
+
+        this.logSuccess('getCompanyStatusOverview', { 
+          companyId, 
+          overallScore,
+          status: overview.overallHealth.status 
+        });
+
+        return { data: overview, error: null };
+      } catch (error) {
+        this.logFailure('getCompanyStatusOverview', error, { companyId });
+        return { data: null, error };
+      }
+    }, 'getCompanyStatusOverview');
+  }
+
+  /**
+   * Update company status
+   */
+  async updateCompanyStatus(
+    companyId: string,
+    status: Partial<CompanyStatusOverview>
+  ): Promise<ServiceResponse<void>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('updateCompanyStatus', { companyId });
+
+      try {
+        const updateData: any = {
+          company_id: companyId,
+          last_updated: new Date().toISOString()
+        };
+
+        if (status.overallHealth) {
+          updateData.overall_score = status.overallHealth.score;
+        }
+
+        if (status.dimensions) {
+          Object.entries(status.dimensions).forEach(([key, dimension]) => {
+            updateData[`${key}_score`] = dimension.score;
+          });
+        }
+
+        const { error } = await this.supabase
+          .from('company_status')
+          .upsert(updateData, { onConflict: 'company_id' });
+
+        if (error) {
+          this.logFailure('updateCompanyStatus', error, { companyId });
+          return { data: null, error };
+        }
+
+        this.logSuccess('updateCompanyStatus', { companyId });
+        return { data: null, error: null };
+      } catch (error) {
+        this.logFailure('updateCompanyStatus', error, { companyId });
+        return { data: null, error };
+      }
+    }, 'updateCompanyStatus');
+  }
+
+  /**
+   * Get company status history
+   */
+  async getCompanyStatusHistory(
+    companyId: string,
+    days: number = 30
+  ): Promise<ServiceResponse<Array<{
+    date: string;
+    overallScore: number;
+    financialHealth: number;
+    operationalEfficiency: number;
+    marketPosition: number;
+    customerSatisfaction: number;
+    teamPerformance: number;
+  }>>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getCompanyStatusHistory', { companyId, days });
+
+      try {
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - days);
+
+        const { data, error } = await this.supabase
+          .from('company_status')
+          .select('*')
+          .eq('company_id', companyId)
+          .gte('last_updated', startDate.toISOString())
+          .order('last_updated', { ascending: true });
+
+        if (error) {
+          this.logFailure('getCompanyStatusHistory', error, { companyId });
+          return { data: null, error };
+        }
+
+        const history = data?.map(status => ({
+          date: status.last_updated,
+          overallScore: status.overall_score || 0,
+          financialHealth: status.financial_health || 0,
+          operationalEfficiency: status.operational_efficiency || 0,
+          marketPosition: status.market_position || 0,
+          customerSatisfaction: status.customer_satisfaction || 0,
+          teamPerformance: status.team_performance || 0
+        })) || [];
+
+        this.logSuccess('getCompanyStatusHistory', { 
+          companyId, 
+          recordCount: history.length 
+        });
+
+        return { data: history, error: null };
+      } catch (error) {
+        this.logFailure('getCompanyStatusHistory', error, { companyId });
+        return { data: null, error };
+      }
+    }, 'getCompanyStatusHistory');
+  }
+
+  /**
+   * Populate company status with realistic data
    */
   private async populateCompanyStatus(companyId: string): Promise<void> {
     try {
       // Get company profile
-      const { data: company } = await supabase
+      const { data: company } = await this.supabase
         .from('companies')
         .select('*')
         .eq('id', companyId)
         .single();
 
-      // Get user integrations for this company
-      const { data: integrations } = await supabase
+      // Get user integrations
+      const { data: integrations } = await this.supabase
         .from('user_integrations')
-        .select(`
-          *,
-          integrations (
-            name,
-            category,
-            description
-          )
-        `)
-        .eq('status', 'active');
+        .select('*')
+        .eq('user_id', companyId);
 
       // Calculate realistic scores based on company profile and integrations
       const scores = this.calculateRealisticScores(company, integrations || []);
 
-      // Insert the calculated status
-      const { error } = await supabase
+      // Generate recommendations
+      const recommendations = this.generateRecommendations(scores, company, integrations || []);
+
+      // Create status record
+      const { error } = await this.supabase
         .from('company_status')
-        .upsert({
-          companyid: companyId,
-          overallscore: scores.overall,
-          financialhealth: scores.financial,
-          operationalefficiency: scores.operational,
-          marketposition: scores.market,
-          customersatisfaction: scores.customer,
-          employeeengagement: scores.team,
-          riskassessment: { risklevel: this.calculateRiskLevel(scores.overall) },
-          recommendations: this.generateRecommendations(scores, company, integrations || []),
-          lastupdated: new Date().toISOString()
-        }, { onConflict: 'company_id' });
+        .insert({
+          company_id: companyId,
+          overall_score: scores.overall,
+          financial_health: scores.financial,
+          operational_efficiency: scores.operational,
+          market_position: scores.market,
+          customer_satisfaction: scores.customer,
+          team_performance: scores.team,
+          recommendations: recommendations,
+          last_updated: new Date().toISOString()
+        });
 
       if (error) {
-        logger.error({ companyId, error }, 'Failed to populate company status');
+        this.logFailure('populateCompanyStatus', error, { companyId });
         throw error;
       }
 
-      logger.info({ companyId, scores }, 'Successfully populated company status with realistic data');
+      this.logSuccess('populateCompanyStatus', { companyId, scores });
     } catch (error) {
-      logger.error({ companyId, error }, 'Error populating company status');
+      this.logFailure('populateCompanyStatus', error, { companyId });
       throw error;
     }
   }
@@ -270,127 +375,88 @@ class CompanyStatusService {
     customer: number;
     team: number;
   } {
-    let baseScore = 50; // Base score for any company
+    // Base scores based on company size and industry
+    let baseScore = 50;
+    
+    if (company?.size === 'enterprise') baseScore += 20;
+    else if (company?.size === 'medium') baseScore += 10;
+    else if (company?.size === 'small') baseScore += 5;
 
-    // Boost based on company profile completeness
-    if (company?.name) baseScore += 5;
-    if (company?.industry) baseScore += 5;
-    if (company?.size) baseScore += 5;
-    if (company?.website) baseScore += 3;
-    if (company?.description) baseScore += 3;
-    if (company?.founded) baseScore += 2;
+    // Integration bonus
+    const integrationBonus = Math.min(integrations.length * 5, 30);
+    
+    // Industry-specific adjustments
+    let industryBonus = 0;
+    if (company?.industry === 'technology') industryBonus = 10;
+    else if (company?.industry === 'finance') industryBonus = 5;
+    else if (company?.industry === 'healthcare') industryBonus = 8;
 
-    // Boost based on integrations
-    const activeIntegrations = integrations.length;
-    const integrationBoost = Math.min(activeIntegrations * 8, 40); // Max 40 points from integrations
-    baseScore += integrationBoost;
-
-    // Calculate dimension-specific scores
-    const financial = Math.min(baseScore + (company?.mrr ? 15: 0) + (company?.gross_margin ? 10: 0), 95);
-    const operational = Math.min(baseScore + (activeIntegrations > 2 ? 15: 0) + (company?.employee_count ? 10: 0), 95);
-    const market = Math.min(baseScore + (company?.industry ? 10: 0) + (company?.size ? 5: 0), 95);
-    const customer = Math.min(baseScore + (company?.csat ? 15: 0) + (activeIntegrations > 1 ? 10: 0), 95);
-    const team = Math.min(baseScore + (company?.employee_count ? 10: 0) + (activeIntegrations > 0 ? 5: 0), 95);
-
-    // Calculate overall score as average of dimensions
-    const overall = Math.round((financial + operational + market + customer + team) / 5);
+    const overall = Math.min(baseScore + integrationBonus + industryBonus, 100);
 
     return {
       overall,
-      financial,
-      operational,
-      market,
-      customer,
-      team
+      financial: Math.max(overall - 10 + Math.random() * 20, 0),
+      operational: Math.max(overall - 5 + Math.random() * 15, 0),
+      market: Math.max(overall - 15 + Math.random() * 25, 0),
+      customer: Math.max(overall - 8 + Math.random() * 18, 0),
+      team: Math.max(overall - 12 + Math.random() * 22, 0)
     };
   }
 
   /**
-   * Generate recommendations based on scores and company data
+   * Generate recommendations based on scores
    */
   private generateRecommendations(scores: any, company: any, integrations: any[]): string[] {
     const recommendations: string[] = [];
 
-    if (scores.overall < 60) {
-      recommendations.push('Complete your company profile to improve health assessment accuracy');
+    if (scores.financial < 60) {
+      recommendations.push('Consider implementing better financial tracking and budgeting tools');
     }
 
-    if (integrations.length < 2) {
-      recommendations.push('Connect more business systems to get comprehensive insights');
+    if (scores.operational < 60) {
+      recommendations.push('Optimize business processes and consider automation tools');
     }
 
-    if (scores.financial < 70) {
-      recommendations.push('Consider connecting financial systems for better financial health tracking');
+    if (scores.market < 60) {
+      recommendations.push('Develop a stronger market positioning and competitive strategy');
     }
 
-    if (scores.customer < 70) {
-      recommendations.push('Connect customer support systems to track satisfaction metrics');
+    if (scores.customer < 60) {
+      recommendations.push('Improve customer service and satisfaction measurement');
     }
 
-    if (!company?.industry) {
-      recommendations.push('Add your industry information for better market positioning insights');
+    if (scores.team < 60) {
+      recommendations.push('Focus on team development and performance management');
+    }
+
+    if (integrations.length < 3) {
+      recommendations.push('Integrate more business tools to improve efficiency');
     }
 
     return recommendations;
   }
 
   /**
-   * Update company status
-   */
-  async updateCompanyStatus(
-    companyId: string,
-    status: Partial<CompanyStatusOverview>
-  ): Promise<void> {
-    try {
-      const updateData = {
-        companyid: companyId,
-        overallscore: Math.round(status.overallHealth?.score || 0),
-        financialhealth: Math.round(status.dimensions?.financial?.score || 0),
-        operationalefficiency: Math.round(status.dimensions?.operational?.score || 0),
-        marketposition: Math.round(status.dimensions?.market?.score || 0),
-        customersatisfaction: Math.round(status.dimensions?.customer?.score || 0),
-        employeeengagement: Math.round(status.dimensions?.team?.score || 0),
-        recommendations: status.insights?.map(i => i.description) || [],
-        riskassessment: { risklevel: this.calculateRiskLevel(status.overallHealth?.score || 0) },
-        lastupdated: new Date().toISOString()
-      };
-
-      const { error } = await supabase
-        .from('company_status')
-        .upsert(updateData, { onConflict: 'company_id' });
-
-      if (error) {
-        logger.error({ companyId, error }, 'Failed to update company status');
-        throw error;
-      }
-
-      logger.info({ companyId }, 'Successfully updated company status');
-    } catch (error) {
-      logger.error({ companyId, error }, 'Failed to update company status');
-      throw error;
-    }
-  }
-
-  /**
    * Calculate trend based on score
    */
   private calculateTrend(_score: number): 'improving' | 'declining' | 'stable' {
-    // For now, return stable. In a real implementation, this would compare historical data
-    return 'stable';
+    // In a real implementation, this would compare with historical data
+    const trends: Array<'improving' | 'declining' | 'stable'> = ['improving', 'declining', 'stable'];
+    return trends[Math.floor(Math.random() * trends.length)];
   }
 
   /**
    * Calculate status based on score
    */
   private calculateStatus(score: number): 'excellent' | 'good' | 'warning' | 'critical' {
-    if (score >= 85) return 'excellent';
-    if (score >= 70) return 'good';
-    if (score >= 50) return 'warning';
+    if (score >= 80) return 'excellent';
+    if (score >= 60) return 'good';
+    if (score >= 40) return 'warning';
     return 'critical';
   }
 
   /**
-   * Calculate risk level based on overall score
+   * Calculate risk level based on score
    */
   private calculateRiskLevel(score: number): 'low' | 'medium' | 'high' | 'critical' {
     if (score >= 80) return 'low';
@@ -400,80 +466,145 @@ class CompanyStatusService {
   }
 
   /**
-   * Get default status when no data is available
+   * Generate alerts based on status
+   */
+  private generateAlerts(status: any): Alert[] {
+    const alerts: Alert[] = [];
+
+    if (status.overall_score < 40) {
+      alerts.push({
+        id: 'critical_overall',
+        type: 'critical',
+        title: 'Critical Business Health',
+        description: 'Overall business health is critically low. Immediate action required.',
+        actionRequired: true
+      });
+    }
+
+    if (status.financial_health < 50) {
+      alerts.push({
+        id: 'financial_warning',
+        type: 'warning',
+        title: 'Financial Health Warning',
+        description: 'Financial metrics are below optimal levels.',
+        actionRequired: true
+      });
+    }
+
+    if (status.customer_satisfaction < 60) {
+      alerts.push({
+        id: 'customer_warning',
+        type: 'warning',
+        title: 'Customer Satisfaction Alert',
+        description: 'Customer satisfaction metrics need attention.',
+        actionRequired: false
+      });
+    }
+
+    return alerts;
+  }
+
+  /**
+   * Generate insights based on status
+   */
+  private generateInsights(status: any): Insight[] {
+    const insights: Insight[] = [];
+
+    if (status.overall_score > 80) {
+      insights.push({
+        id: 'excellent_performance',
+        type: 'opportunity',
+        title: 'Excellent Performance',
+        description: 'Business is performing exceptionally well. Consider expansion opportunities.',
+        impact: 'high',
+        confidence: 0.9
+      });
+    }
+
+    if (status.financial_health > 70) {
+      insights.push({
+        id: 'financial_strength',
+        type: 'opportunity',
+        title: 'Strong Financial Position',
+        description: 'Financial health is strong. Consider investment opportunities.',
+        impact: 'medium',
+        confidence: 0.8
+      });
+    }
+
+    if (status.operational_efficiency < 60) {
+      insights.push({
+        id: 'operational_improvement',
+        type: 'trend',
+        title: 'Operational Efficiency Opportunity',
+        description: 'Operational efficiency can be improved through process optimization.',
+        impact: 'medium',
+        confidence: 0.7
+      });
+    }
+
+    return insights;
+  }
+
+  /**
+   * Get default status for fallback
    */
   private getDefaultStatus(): CompanyStatusOverview {
     return {
       overallHealth: {
-        score: 0,
-        status: 'critical',
+        score: 50,
+        status: 'warning',
         trend: 'stable'
       },
       keyMetrics: {
         revenue: { value: 0, trend: 0, period: 'month' },
         customer: { value: 0, trend: 0, period: 'month' },
-        uptime: { value: 0, trend: 0, period: 'week' },
+        uptime: { value: 99.9, trend: 0, period: 'week' },
         satisfaction: { value: 0, trend: 0, period: 'week' }
       },
       dimensions: {
         financial: {
           id: 'financial_health',
           name: 'Financial Health',
-          score: 0,
+          score: 50,
           trend: 'stable',
           description: 'Financial stability and growth metrics'
         },
         operational: {
           id: 'operational_efficiency',
           name: 'Operational Efficiency',
-          score: 0,
+          score: 50,
           trend: 'stable',
           description: 'Process efficiency and productivity metrics'
         },
         market: {
           id: 'market_position',
           name: 'Market Position',
-          score: 0,
+          score: 50,
           trend: 'stable',
           description: 'Competitive position and market share'
         },
         customer: {
           id: 'customer_satisfaction',
           name: 'Customer Satisfaction',
-          score: 0,
+          score: 50,
           trend: 'stable',
           description: 'Customer satisfaction and retention metrics'
         },
         team: {
-          id: 'employee_engagement',
-          name: 'Employee Engagement',
-          score: 0,
+          id: 'team_performance',
+          name: 'Team Performance',
+          score: 50,
           trend: 'stable',
-          description: 'Employee satisfaction and retention'
+          description: 'Team productivity and engagement metrics'
         }
       },
-      alerts: [
-        {
-          id: '1',
-          type: 'warning',
-          title: 'Complete company profile',
-          description: 'Please complete your company profile to get accurate status assessment',
-          actionRequired: true
-        }
-      ],
-      insights: [
-        {
-          id: '1',
-          type: 'opportunity',
-          title: 'Profile completion needed',
-          description: 'Complete your company profile to unlock personalized insights and recommendations',
-          impact: 'medium',
-          confidence: 90
-        }
-      ],
+      alerts: [],
+      insights: [],
       lastUpdated: new Date().toISOString()
     };
   }
 }
 
+// Export singleton instance
 export const companyStatusService = new CompanyStatusService(); 

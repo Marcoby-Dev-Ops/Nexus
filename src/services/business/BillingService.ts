@@ -4,6 +4,8 @@ import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger.ts';
+import { userLicensesService } from '@/core/services/UserLicensesService';
+import { chatUsageTrackingService } from '@/core/services/ChatUsageTrackingService';
 
 // Billing Plan Schema
 export const BillingPlanSchema = z.object({
@@ -501,18 +503,15 @@ export class BillingService extends BaseService implements CrudServiceInterface<
         throw new Error('User ID is required');
       }
 
-      // Get user's license info from Supabase
-      const { data: userLicenses, error } = await supabase
-        .from('user_licenses')
-        .select('*')
-        .eq('user_id', userId);
+      // Get user's license info using service layer
+      const userLicensesResult = await userLicensesService.list({ user_id: userId });
       
-      const userLicense = userLicenses?.[0] || null;
-
-      if (error && error.code !== 'PGRST116') {
-        logger.error({ userId, error }, 'Failed to fetch user license');
-        throw error;
+      if (!userLicensesResult.success) {
+        logger.error({ userId, error: userLicensesResult.error }, 'Failed to fetch user license');
+        throw new Error(userLicensesResult.error || 'Failed to fetch user license');
       }
+      
+      const userLicense = userLicensesResult.data?.[0] || null;
 
       // Default to free tier if no license found
       if (!userLicense) {
@@ -574,18 +573,15 @@ export class BillingService extends BaseService implements CrudServiceInterface<
         throw new Error('User ID and email are required');
       }
 
-      // Check if customer already exists in our database
-      const { data: existingCustomers, error: fetchError } = await supabase
-        .from('user_licenses')
-        .select('stripe_customer_id')
-        .eq('user_id', userId);
+      // Check if customer already exists in our database using service layer
+      const existingCustomersResult = await userLicensesService.list({ user_id: userId });
       
-      const existingCustomer = existingCustomers?.[0] || null;
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        logger.error({ userId, error: fetchError }, 'Failed to fetch existing customer');
-        throw fetchError;
+      if (!existingCustomersResult.success) {
+        logger.error({ userId, error: existingCustomersResult.error }, 'Failed to fetch existing customer');
+        throw new Error(existingCustomersResult.error || 'Failed to fetch existing customer');
       }
+      
+      const existingCustomer = existingCustomersResult.data?.[0] || null;
 
       if (existingCustomer?.stripe_customer_id) {
         // Fetch from Stripe to ensure it still exists
@@ -653,19 +649,19 @@ export class BillingService extends BaseService implements CrudServiceInterface<
         startDate = new Date().toISOString().slice(0, 7);
       }
       
-      // Query with proper NULL handling for org_id
-      const { data: usage, error } = await supabase
-        .from('chat_usage_tracking')
-        .select('*')
-        .eq('user_id', userId)
-        .is('org_id', null)
-        .gte('date', `${startDate}-01`)
-        .lt('date', this.getNextMonth(startDate));
+      // Query usage data using service layer
+      const usageResult = await chatUsageTrackingService.getUsageForPeriod(
+        userId,
+        `${startDate}-01`,
+        this.getNextMonth(startDate)
+      );
 
-      if (error) {
-        logger.error({ userId, period, error }, 'Failed to fetch usage data');
-        throw error;
+      if (!usageResult.success) {
+        logger.error({ userId, period, error: usageResult.error }, 'Failed to fetch usage data');
+        throw new Error(usageResult.error || 'Failed to fetch usage data');
       }
+
+      const usage = usageResult.data || [];
 
       const totalMessages = usage?.reduce((sum, day) => sum + (day.messages_sent || 0), 0) || 0;
       

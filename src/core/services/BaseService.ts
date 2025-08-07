@@ -2,8 +2,9 @@
  * Base Service Class
  * 
  * Provides common functionality for all services including:
- * - Standardized error handling
- * - Database operation wrappers
+ * - Standardized error handling with retry logic
+ * - Database operation wrappers with exponential backoff
+ * - Transaction-like utilities for multi-step operations
  * - Logging and debugging utilities
  * - Parameter validation
  * 
@@ -44,6 +45,15 @@ interface DatabaseOperationResult<T> {
  */
 type ValidationResult = string | null;
 
+/**
+ * Retry configuration for operations
+ */
+interface RetryConfig {
+  maxAttempts: number;
+  baseDelay: number;
+  maxDelay: number;
+}
+
 // ============================================================================
 // BASE SERVICE CLASS
 // ============================================================================
@@ -52,12 +62,27 @@ type ValidationResult = string | null;
  * Abstract base class for all services
  * 
  * Provides common functionality that all services inherit:
- * - Error handling and logging
- * - Database operation wrappers
+ * - Error handling and logging with retry support
+ * - Database operation wrappers with exponential backoff
+ * - Transaction-like utilities for multi-step operations
  * - Parameter validation
  * - Response standardization
  */
 export abstract class BaseService {
+  // ========================================================================
+  // STATIC CONFIGURATION
+  // ========================================================================
+  
+  /**
+   * Default retry configuration for all services
+   * Centralized to ensure consistent retry behavior across the application
+   */
+  protected static readonly RETRY_CONFIG: RetryConfig = {
+    maxAttempts: 3,
+    baseDelay: 1000,
+    maxDelay: 10000,
+  };
+
   // ========================================================================
   // PROTECTED PROPERTIES
   // ========================================================================
@@ -96,6 +121,8 @@ export abstract class BaseService {
       success: error === null,
       metadata: {
         timestamp: new Date().toISOString(),
+        service: this.constructor.name,
+        environment: process.env.NODE_ENV,
         ...metadata
       }
     };
@@ -116,7 +143,7 @@ export abstract class BaseService {
   }
 
   /**
-   * Creates an error response
+   * Creates an error response with enhanced metadata
    * 
    * @param error - Error message
    * @param metadata - Additional error metadata
@@ -126,7 +153,12 @@ export abstract class BaseService {
     error: string,
     metadata?: Record<string, any>
   ): ServiceResponse<T> {
-    return this.createResponse<T>(null, error, metadata);
+    return this.createResponse<T>(null, error, {
+      service: this.constructor.name,
+      environment: process.env.NODE_ENV,
+      timestamp: new Date().toISOString(),
+      ...metadata
+    });
   }
 
   // ========================================================================
@@ -267,6 +299,28 @@ export abstract class BaseService {
     return null;
   }
 
+  /**
+   * Validates that a required parameter is provided
+   * 
+   * @param value - The value to validate
+   * @param fieldName - The name of the field for error messages
+   * @returns ValidationResult - null if valid, error message if invalid
+   */
+  protected validateRequiredParam(
+    value: any,
+    fieldName: string
+  ): ValidationResult {
+    if (value === undefined || value === null) {
+      return `${fieldName} is required`;
+    }
+    
+    if (typeof value === 'string' && value.trim() === '') {
+      return `${fieldName} is required and cannot be empty`;
+    }
+    
+    return null;
+  }
+
   // ========================================================================
   // DATABASE OPERATION WRAPPERS
   // ========================================================================
@@ -300,6 +354,159 @@ export abstract class BaseService {
     } catch (error) {
       return this.handleError(error, context);
     }
+  }
+
+  /**
+   * Executes a database operation with retry logic and exponential backoff
+   * 
+   * @param operation - The database operation to execute
+   * @param context - Context for error messages
+   * @param config - Retry configuration (optional, uses defaults if not provided)
+   * @returns Standardized service response
+   * 
+   * @example
+   * ```typescript
+   * return this.executeDbOperationWithRetry(
+   *   () => supabase.from('users').select('*').eq('id', userId),
+   *   'get-user-profile',
+   *   { maxAttempts: 5, baseDelay: 500 }
+   * );
+   * ```
+   */
+  protected async executeDbOperationWithRetry<T>(
+    operation: () => Promise<DatabaseOperationResult<T>>,
+    context: string,
+    config?: Partial<RetryConfig>
+  ): Promise<ServiceResponse<T>> {
+    const retryConfig = { ...BaseService.RETRY_CONFIG, ...config };
+    
+    for (let attempt = 0; attempt < retryConfig.maxAttempts; attempt++) {
+      try {
+        if (attempt > 0) {
+          const delay = Math.min(
+            retryConfig.baseDelay * Math.pow(2, attempt - 1), 
+            retryConfig.maxDelay
+          );
+          this.logger.warn(
+            `Retrying operation "${context}" in ${delay}ms (attempt ${attempt + 1}/${retryConfig.maxAttempts})`
+          );
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+        
+        this.logMethodCall(context, { attempt: attempt + 1 });
+        const result = await operation();
+        
+        if (!result.error) {
+          this.logSuccess(context);
+          return this.createSuccessResponse(result.data as T);
+        }
+        
+        this.logFailure(context, result.error);
+        
+        // If last attempt, throw the error to be handled by catch block
+        if (attempt === retryConfig.maxAttempts - 1) {
+          throw result.error;
+        }
+      } catch (error) {
+        if (attempt === retryConfig.maxAttempts - 1) {
+          return this.handleError(error, context);
+        }
+      }
+    }
+    
+    return this.createErrorResponse<T>('Unknown error in executeDbOperationWithRetry');
+  }
+
+  /**
+   * Executes a series of database operations as a transaction-like workflow
+   * 
+   * Note: This is client-side only and does not provide rollback functionality.
+   * All steps must be idempotent for safety.
+   * 
+   * @param steps - Array of database operations to execute in sequence
+   * @param context - Context for error messages
+   * @returns Standardized service response with the result of the last step
+   * 
+   * @example
+   * ```typescript
+   * return this.executeTransaction([
+   *   () => this.createUser(userData),
+   *   () => this.createUserProfile(profileData),
+   *   () => this.assignUserToCompany(userId, companyId)
+   * ], 'user-onboarding');
+   * ```
+   */
+  protected async executeTransaction<T>(
+    steps: (() => Promise<DatabaseOperationResult<T>>)[],
+    context: string
+  ): Promise<ServiceResponse<T>> {
+    let lastResult: T | null = null;
+    
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      const stepContext = `${context}-step-${i + 1}`;
+      
+      const result = await this.executeDbOperation(step, stepContext);
+      
+      if (!result.success) {
+        this.logger.error(
+          `Transaction failed at step ${i + 1} in ${context}`,
+          { step: i + 1, totalSteps: steps.length, error: result.error }
+        );
+        return result as ServiceResponse<T>;
+      }
+      
+      lastResult = result.data;
+    }
+    
+    this.logSuccess(context);
+    return this.createSuccessResponse(lastResult as T);
+  }
+
+  // ========================================================================
+  // UTILITY METHODS
+  // ========================================================================
+
+  /**
+   * Calculates exponential backoff delay
+   * 
+   * @param attempt - Current attempt number (0-based)
+   * @param baseDelay - Base delay in milliseconds
+   * @param maxDelay - Maximum delay in milliseconds
+   * @returns Delay in milliseconds
+   */
+  protected calculateBackoffDelay(
+    attempt: number,
+    baseDelay: number = BaseService.RETRY_CONFIG.baseDelay,
+    maxDelay: number = BaseService.RETRY_CONFIG.maxDelay
+  ): number {
+    return Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+  }
+
+  /**
+   * Checks if an error is retryable
+   * 
+   * @param error - The error to check
+   * @returns True if the error should trigger a retry
+   */
+  protected isRetryableError(error: unknown): boolean {
+    if (error instanceof Error) {
+      const retryableMessages = [
+        'network',
+        'timeout',
+        'connection',
+        'temporary',
+        'rate limit',
+        'too many requests',
+        'service unavailable'
+      ];
+      
+      return retryableMessages.some(msg => 
+        error.message.toLowerCase().includes(msg)
+      );
+    }
+    
+    return false;
   }
 
   // ========================================================================

@@ -19,8 +19,8 @@ export interface WorkspaceComponent {
   description: string;
   category: 'productivity' | 'analytics' | 'communication' | 'ai' | 'business' | 'custom';
   icon: React.ReactNode;
-  component: React.ComponentType<any>;
-  defaultProps?: any;
+  component: React.ComponentType<Record<string, unknown>>;
+  defaultProps?: Record<string, unknown>;
   configurable: boolean;
   size: 'small' | 'medium' | 'large' | 'extra-large';
   tags: string[];
@@ -205,7 +205,7 @@ interface LayoutComponent {
   componentId: string;
   position: { x: number; y: number };
   size: { width: number; height: number };
-  config?: any;
+  config?: Record<string, unknown>;
   visible: boolean;
 }
 
@@ -379,8 +379,8 @@ export const WorkspaceBuilder: React.FC = () => {
 
   const configureComponent = useCallback((id: string) => {
     // Open configuration dialog
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('Configure component: ', id);
   }, []);
@@ -403,8 +403,8 @@ export const WorkspaceBuilder: React.FC = () => {
     savedWorkspaces.push(workspace);
     localStorage.setItem('nexus-workspaces', JSON.stringify(savedWorkspaces));
     
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('Workspace saved: ', workspace);
   }, [workspaceName, layout]);

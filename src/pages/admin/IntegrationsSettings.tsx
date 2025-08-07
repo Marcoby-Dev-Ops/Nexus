@@ -88,8 +88,8 @@ const IntegrationsSettings: React.FC = () => {
 
       setIntegrationConfigs(formattedConfigs);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching integration configs: ', error);
       toast.error('Failed to load integration configurations');
@@ -114,8 +114,8 @@ const IntegrationsSettings: React.FC = () => {
       setIntegrationConfigs(prev => prev.filter(config => config.id !== integrationId));
       toast.success('Integration disconnected successfully');
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error disconnecting integration: ', error);
       toast.error('Failed to disconnect integration');
@@ -177,8 +177,8 @@ const IntegrationsSettings: React.FC = () => {
       toast.success('Configuration updated successfully');
       setShowConfigModal(false);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error updating configuration: ', error);
       toast.error('Failed to update configuration');

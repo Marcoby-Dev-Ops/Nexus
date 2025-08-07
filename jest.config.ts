@@ -3,11 +3,12 @@ import type { Config } from 'jest';
 const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/test/setupTests.js'],
+  setupFilesAfterEnv: ['<rootDir>/test/setupTests.ts'],
   transform: { 
     '^.+\\\\.(t|j)sx?$': ['ts-jest', {
       tsconfig: 'tsconfig.test.json',
       useESM: false,
+      isolatedModules: true,
     }]
   },
   moduleNameMapper: {
@@ -51,6 +52,12 @@ const config: Config = {
   clearMocks: true,
   restoreMocks: true,
   resetMocks: true,
+  extensionsToTreatAsEsm: [],
+  globals: {
+    'ts-jest': {
+      useESM: false,
+    },
+  },
 };
 
 export default config; 

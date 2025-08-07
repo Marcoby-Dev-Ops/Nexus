@@ -8,7 +8,6 @@ export { AuthStatus } from './AuthStatus';
 export { BillingDashboard } from './BillingDashboard';
 export { BillingPage } from './BillingPage';
 export { default as BillingSettings } from './BillingSettings';
-export { CompanyProfilePage } from './CompanyProfilePage';
 export { default as CompanySettings } from './CompanySettings';
 export { default as EmailNotVerified } from './EmailNotVerified';
 export { FeatureExplorer } from './FeatureExplorer';

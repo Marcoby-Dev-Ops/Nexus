@@ -6,17 +6,17 @@ import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interf
 // User Profile Schema
 export const UserProfileSchema = z.object({
   id: z.string().uuid(),
-  email: z.string().email().optional(),
-  first_name: z.string().min(1).max(100).optional(),
-  last_name: z.string().min(1).max(100).optional(),
-  role: z.enum(['user', 'owner', 'admin', 'manager']).optional(),
-  company_id: z.string().uuid().optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
-  avatar_url: z.string().url().optional(),
-  phone: z.string().optional(),
-  bio: z.string().max(500).optional(),
-  preferences: z.record(z.any()).optional(),
+  email: z.string().email().optional().nullable(),
+  first_name: z.string().min(1).max(100).optional().nullable(),
+  last_name: z.string().min(1).max(100).optional().nullable(),
+  role: z.enum(['user', 'owner', 'admin', 'manager']).optional().nullable(),
+  company_id: z.string().uuid().optional().nullable(),
+  created_at: z.string().datetime().optional().nullable(),
+  updated_at: z.string().datetime().optional().nullable(),
+  avatar_url: z.string().url().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  bio: z.string().max(500).optional().nullable(),
+  preferences: z.record(z.any()).optional().nullable(),
 });
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;

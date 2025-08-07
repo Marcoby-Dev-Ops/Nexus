@@ -147,9 +147,9 @@ export const AutomationRecipeBrowser: React.FC<AutomationRecipeBrowserProps> = (
         toast.error(result.error || 'Failed to deploy recipe.');
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+       
+     
     // eslint-disable-next-line no-console
     console.error('Deployment error: ', error);
       toast.error('An unexpected error occurred during deployment.');

@@ -1,177 +1,109 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/hooks/index';
+import { useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
-interface RedirectConfig {
-  // Auth redirects
-  redirectToLogin: string;
-  redirectToDashboard: string;
-  redirectToHome: string;
-  
-  // Public routes that don't require auth
-  publicRoutes: string[];
-  
-  // Protected routes that require auth
-  protectedRoutes: string[];
-  
-  // Debug mode
-  debug: boolean;
+interface RedirectRule {
+  id: string;
+  user_id: string;
+  source_path: string;
+  target_path: string;
+  status_code: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
-const defaultConfig: RedirectConfig = {
-  redirectToLogin: '/login',
-  redirectToDashboard: '/dashboard/home',
-  redirectToHome: '/home',
-  publicRoutes: [
-    '/',
-    '/login',
-    '/signup',
-    '/reset-password',
-    '/auth/callback',
-    '/features',
-    '/help',
-    '/legal',
-    '/password-reset',
-    '/email-not-verified',
-    '/waitlist',
-    '/marketing',
-    '/pricing'
-  ],
-  protectedRoutes: [
-    '/dashboard',
-    '/workspace',
-    '/ai-hub',
-    '/chat',
-    '/integrations',
-    '/settings',
-    '/profile',
-    '/admin',
-    '/home'
-  ],
-  debug: import.meta.env.DEV
-};
+// Define public routes
+const PUBLIC_ROUTES = [
+  '/',
+  '/login',
+  '/signup',
+  '/privacy',
+  '/terms',
+  '/landing',
+  '/waitlist',
+  '/auth/callback',
+  '/reset-password',
+  '/email-not-verified'
+];
 
-export function useRedirectManager(config: Partial<RedirectConfig> = {}) {
-  const finalConfig = { ...defaultConfig, ...config };
-  const navigate = useNavigate();
+export const useRedirectManager = () => {
+  const [redirects, setRedirects] = useState<RedirectRule[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [redirectInProgress, setRedirectInProgress] = useState(false);
   const location = useLocation();
-  const { user, session, loading, initialized, isAuthenticated } = useAuth();
-  const isAuthenticatedUser = !!user;
-  const redirectInProgress = useRef(false);
 
-  // Check if current route is public
   const isPublicRoute = useCallback(() => {
-    return finalConfig.publicRoutes.some(route => 
-      location.pathname === route || 
-      (route !== '/' && location.pathname.startsWith(route))
-    );
-  }, [location.pathname, finalConfig.publicRoutes]);
-
-  // Check if current route is protected
-  const isProtectedRoute = useCallback(() => {
-    return finalConfig.protectedRoutes.some(route => 
-      location.pathname === route || 
-      (route !== '/' && location.pathname.startsWith(route))
-    );
-  }, [location.pathname, finalConfig.protectedRoutes]);
-
-  // Redirect to login
-  const redirectToLogin = useCallback((replace = true) => {
-    if (redirectInProgress.current) return;
-    
-    redirectInProgress.current = true;
-    if (finalConfig.debug) {
-      console.log('[RedirectManager] Redirecting to login');
+    // Special handling for root route - only treat exact '/' as public
+    if (location.pathname === '/') {
+      return true;
     }
     
-    navigate(finalConfig.redirectToLogin, { replace });
-    
-    // Reset flag after navigation
-    setTimeout(() => {
-      redirectInProgress.current = false;
-    }, 100);
-  }, [navigate, finalConfig.redirectToLogin, finalConfig.debug]);
-
-  // Redirect to dashboard
-  const redirectToDashboard = useCallback((replace = true) => {
-    if (redirectInProgress.current) return;
-    
-    redirectInProgress.current = true;
-    if (finalConfig.debug) {
-      console.log('[RedirectManager] Redirecting to dashboard');
-    }
-    
-    navigate(finalConfig.redirectToDashboard, { replace });
-    
-    // Reset flag after navigation
-    setTimeout(() => {
-      redirectInProgress.current = false;
-    }, 100);
-  }, [navigate, finalConfig.redirectToDashboard, finalConfig.debug]);
-
-  // Redirect to home
-  const redirectToHome = useCallback((replace = true) => {
-    if (redirectInProgress.current) return;
-    
-    redirectInProgress.current = true;
-    if (finalConfig.debug) {
-      console.log('[RedirectManager] Redirecting to home');
-    }
-    
-    navigate(finalConfig.redirectToHome, { replace });
-    
-    // Reset flag after navigation
-    setTimeout(() => {
-      redirectInProgress.current = false;
-    }, 100);
-  }, [navigate, finalConfig.redirectToHome, finalConfig.debug]);
-
-  // Handle auth state changes
-  useEffect(() => {
-    if (loading || !initialized) return;
-
-    // If user is authenticated and on a public route, redirect to dashboard
-    if (isAuthenticatedUser && isPublicRoute() && location.pathname !== '/') {
-      if (finalConfig.debug) {
-        console.log('[RedirectManager] Authenticated user on public route, redirecting to dashboard');
+    return PUBLIC_ROUTES.some(route => {
+      if (route === '/') {
+        // Skip root route check for other paths
+        return false;
       }
-      redirectToDashboard();
-      return;
-    }
-
-    // If user is not authenticated and on a protected route, redirect to login
-    if (!isAuthenticatedUser && isProtectedRoute()) {
-      if (finalConfig.debug) {
-        console.log('[RedirectManager] Unauthenticated user on protected route, redirecting to login');
+      if (route.includes(':')) {
+        const routePattern = route.replace(/:[^/]+/g, '[^/]+');
+        const regex = new RegExp(`^${routePattern}$`);
+        return regex.test(location.pathname);
       }
-      redirectToLogin();
-      return;
+      return location.pathname.startsWith(route);
+    });
+  }, [location.pathname]);
+
+  const fetchRedirects = useCallback(async (userId: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await supabase
+        .from('redirect_rules')
+        .select('*')
+        .eq('user_id', userId);
+      
+      if (error) {
+        logger.error('Failed to fetch redirect rules', { error });
+        setError('Failed to fetch redirects');
+        return;
+      }
+      setRedirects(data || []);
+    } catch (err) {
+      logger.error('Error fetching redirect rules', { err });
+      setError('Error fetching redirects');
+    } finally {
+      setLoading(false);
     }
-  }, [
-    isAuthenticatedUser,
-    loading,
-    initialized,
-    location.pathname,
-    isPublicRoute,
-    isProtectedRoute,
-    redirectToDashboard,
-    redirectToLogin,
-    finalConfig.debug
-  ]);
+  }, []);
+
+  const getRedirectById = useCallback(async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('redirect_rules')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (error) {
+        logger.error('Failed to fetch redirect rule', { error });
+        return null;
+      }
+      return data;
+    } catch (err) {
+      logger.error('Error fetching redirect rule', { err });
+      return null;
+    }
+  }, []);
 
   return {
-    // State
+    redirects,
+    loading,
+    error,
+    redirectInProgress,
     isPublicRoute,
-    isProtectedRoute,
-    redirectInProgress: redirectInProgress.current,
-    
-    // Actions
-    redirectToLogin,
-    redirectToDashboard,
-    redirectToHome,
-    
-    // Utilities
-    shouldShowAuthUI: isProtectedRoute(),
-    shouldShowPublicUI: isPublicRoute(),
+    fetchRedirects,
+    getRedirectById,
   };
-} 
+}; 

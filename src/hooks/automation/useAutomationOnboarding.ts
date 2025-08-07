@@ -172,7 +172,7 @@ export function useAutomationOnboarding(): UseAutomationOnboardingReturn {
     completeModule,
     skipModule,
     closeModule,
-    showProgress: showProgressHandler,
+    showProgressHandler,
     hideProgress,
     resetOnboarding
   };

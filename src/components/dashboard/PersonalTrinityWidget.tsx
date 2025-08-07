@@ -1,6 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { supabase, callRPC } from '@/lib/supabase';
 import { Brain, Eye, Zap, Plus, ExternalLink } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card.tsx';
 import { Button } from '@/shared/components/ui/Button.tsx';
@@ -68,9 +68,9 @@ const fetchPersonalThoughts = async (): Promise<PersonalThought[]> => {
 
 const fetchPersonalAnalytics = async (): Promise<PersonalAnalytics> => {
   try {
-    const { data, error } = await supabase.rpc('get_personal_analytics');
+    const { data, error } = await callRPC<PersonalAnalytics>('get_personal_analytics');
     if (error) throw error;
-    return (data as PersonalAnalytics) || {
+    return data || {
       totalThoughts: 0,
       ideas: 0,
       goals: 0,

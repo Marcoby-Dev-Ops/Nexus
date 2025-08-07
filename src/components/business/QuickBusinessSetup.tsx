@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import React, { useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { useToast } from '@/shared/ui/components/Toast';
+import { Badge } from '@/shared/components/ui/Badge';
+import { useToast } from '@/shared/components/ui/use-toast';
 import { Building2, Users, DollarSign, Target, TrendingUp } from 'lucide-react';
-import { useAuth } from '@/hooks/index';
-import { supabase } from "@/lib/supabase";
-import { useOrganizationStore } from '@/shared/stores/organizationStore.ts';
+import { useAuth } from '@/hooks/useAuth';
+import { useOrganizationStore } from '@/shared/stores/organizationStore';
+import { businessProfileService } from '@/shared/lib/business/businessProfileService';
+import { logger } from '@/shared/utils/logger';
 
-interface MarcobyProfile {
+interface BusinessProfile {
   // Core Info
   companyName: string;
   industry: string;
@@ -35,13 +36,32 @@ interface MarcobyProfile {
   currentChallenges: string[];
 }
 
+interface BusinessProfileData {
+  user_id: string;
+  org_id: string;
+  company_name: string;
+  industry: string;
+  business_model: string;
+  primary_services: string[];
+  unique_value_proposition: string;
+  target_markets: string[];
+  ideal_client_profile: string;
+  current_clients: string[];
+  revenue_model: string;
+  pricing_strategy: string;
+  strategic_objectives: string[];
+  financial_goals: string[];
+}
+
 export const QuickBusinessSetup: React.FC = () => {
-  const { toast, showToast } = useToast() as any;
+  const { toast } = useToast();
   const { user } = useAuth();
   const { activeOrgId, loadMemberships } = useOrganizationStore();
-  const [profile, setProfile] = useState<MarcobyProfile>({
-    companyName: 'Marcoby',
-    industry: 'Technology Consulting',
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [profile, setProfile] = useState<BusinessProfile>({
+    companyName: '',
+    industry: '',
     businessModel: 'B2B Consulting',
     primaryServices: [],
     valueProposition: '',
@@ -60,7 +80,7 @@ export const QuickBusinessSetup: React.FC = () => {
   const [newGoal, setNewGoal] = useState('');
   const [newChallenge, setNewChallenge] = useState('');
 
-  const addToArray = (field: keyof MarcobyProfile, value: string, setter: (val: string) => void) => {
+  const addToArray = useCallback((field: keyof BusinessProfile, value: string, setter: (val: string) => void) => {
     if (!value.trim()) return;
     
     setProfile(prev => ({
@@ -68,73 +88,35 @@ export const QuickBusinessSetup: React.FC = () => {
       [field]: [...(prev[field] as string[]), value.trim()]
     }));
     setter('');
-  };
+  }, []);
 
-  const removeFromArray = (field: keyof MarcobyProfile, index: number) => {
+  const removeFromArray = useCallback((field: keyof BusinessProfile, index: number) => {
     setProfile(prev => ({
       ...prev,
       [field]: (prev[field] as string[]).filter((_, i) => i !== index)
     }));
-  };
+  }, []);
 
-  const handleSave = async () => {
-    try {
-      if (!user) throw new Error('You must be logged in to save your business profile');
+  const transformProfileToDatabaseFormat = useCallback((profile: BusinessProfile, userId: string, orgId: string): BusinessProfileData => {
+    return {
+      user_id: userId,
+      org_id: orgId,
+      company_name: profile.companyName,
+      industry: profile.industry,
+      business_model: profile.businessModel,
+      primary_services: profile.primaryServices,
+      unique_value_proposition: profile.valueProposition,
+      target_markets: profile.targetMarkets,
+      ideal_client_profile: profile.idealCustomerProfile,
+      current_clients: [profile.totalClients.toString()],
+      revenue_model: profile.monthlyRevenue.toString(),
+      pricing_strategy: profile.averageDealSize.toString(),
+      strategic_objectives: Array.isArray(profile.shortTermGoals) ? profile.shortTermGoals : [profile.shortTermGoals],
+      financial_goals: Array.isArray(profile.currentChallenges) ? profile.currentChallenges : [profile.currentChallenges],
+    };
+  }, []);
 
-      // Determine organisation context (take first membership for now)
-      const orgId = activeOrgId;
-      if (!orgId) throw new Error('No organisation selected.');
-
-      // Persist to Supabase (upsert per-org)
-      const { error } = await supabase
-        .from('business_profiles')
-        .upsert(
-          {
-            org_id: orgId,
-            company_name: profile.companyName,
-            industry: profile.industry,
-            business_model: profile.businessModel,
-            primary_services: profile.primaryServices,
-            unique_value_proposition: profile.valueProposition,
-            target_markets: profile.targetMarkets,
-            ideal_client_profile: profile.idealCustomerProfile,
-            current_clients: [profile.totalClients.toString()],
-            revenue_model: profile.monthlyRevenue.toString(),
-            pricing_strategy: profile.averageDealSize.toString(),
-            strategic_objectives: Array.isArray(profile.shortTermGoals) ? profile.shortTermGoals : [profile.shortTermGoals],
-            financial_goals: Array.isArray(profile.currentChallenges) ? profile.currentChallenges : [profile.currentChallenges],
-          },
-          { onConflict: 'org_id' }
-        );
-
-      if (error) throw error;
-
-      // Also cache locally so advisor can work offline / before round-trip fetch
-      localStorage.setItem('marcoby_business_profile', JSON.stringify(profile));
-
-      // Generate AI context for business understanding and cache
-      const businessContext = generateBusinessContext(profile);
-      localStorage.setItem('business_ai_context', businessContext);
-
-      (showToast || toast)({
-        title: 'Success!',
-        description: 'Marcoby business profile saved. Nexus now understands your business!',
-        variant: 'default'
-      });
-    } catch (err: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to save business profile', err);
-      (showToast || toast)({
-        title: 'Error',
-        description: err?.message ?? 'Failed to save business profile',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const generateBusinessContext = (profile: MarcobyProfile): string => {
+  const generateBusinessContext = useCallback((profile: BusinessProfile): string => {
     return `
 BUSINESS CONTEXT FOR AI ASSISTANCE: Company: ${profile.companyName}
 Industry: ${profile.industry}
@@ -162,11 +144,11 @@ CURRENT CHALLENGES: ${profile.currentChallenges.join(', ')}
 
 BUSINESS INTELLIGENCE INSIGHTS: ${generateInsights(profile)}
 
-Use this context to provide specific, actionable business advice tailored to Marcoby's situation as a ${profile.businessModel} in the ${profile.industry} space.
+Use this context to provide specific, actionable business advice tailored to ${profile.companyName}'s situation as a ${profile.businessModel} in the ${profile.industry} space.
     `.trim();
-  };
+  }, []);
 
-  const generateInsights = (profile: MarcobyProfile): string => {
+  const generateInsights = useCallback((profile: BusinessProfile): string => {
     const insights = [];
     
     if (profile.totalClients > 0 && profile.monthlyRevenue > 0) {
@@ -183,14 +165,89 @@ Use this context to provide specific, actionable business advice tailored to Mar
     }
     
     return insights.join('. ');
-  };
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You must be logged in to save your business profile',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!profile.companyName.trim()) {
+      toast({
+        title: 'Company Name Required',
+        description: 'Please enter your company name to continue.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const businessProfileData = transformProfileToDatabaseFormat(profile, user.id, '');
+      
+      // Create organization and business profile in one transaction
+      const result = await businessProfileService.createOrganizationWithProfile(
+        user.id, // tenantId (using user.id as tenant for now)
+        user.id, // userId
+        profile.companyName, // orgName
+        businessProfileData
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create organization and business profile');
+      }
+
+      // Cache locally for offline access
+      localStorage.setItem('business_profile', JSON.stringify(profile));
+
+      // Generate and cache AI context
+      const businessContext = generateBusinessContext(profile);
+      localStorage.setItem('business_ai_context', businessContext);
+
+      // Update organization store with new organization
+      if (result.orgId) {
+        localStorage.setItem('active_org_id', result.orgId);
+        // Reload memberships to include the new organization
+        await loadMemberships(user.id);
+      }
+
+      logger.info('Organization and business profile created successfully', { 
+        userId: user.id, 
+        orgId: result.orgId,
+        profileId: result.profileId 
+      });
+
+      toast({
+        title: 'Success!',
+        description: 'Organization created and business profile saved. Nexus now understands your business!',
+        variant: 'default'
+      });
+    } catch (error) {
+      logger.error('Failed to create organization and business profile', { error, userId: user?.id });
+      
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create organization and business profile',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, profile, transformProfileToDatabaseFormat, generateBusinessContext, loadMemberships, toast]);
 
   React.useEffect(() => {
     if (user) {
-      loadMemberships(user.id);
+      loadMemberships(user.id).catch((error) => {
+        logger.error('Failed to load memberships', { error, userId: user.id });
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, loadMemberships]);
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -198,7 +255,7 @@ Use this context to provide specific, actionable business advice tailored to Mar
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Building2 className="w-6 h-6" />
-            Marcoby Business Profile Setup
+            Business Profile Setup
           </CardTitle>
           <p className="text-muted-foreground">
             Tell Nexus about your business so it can provide intelligent, personalized advice.
@@ -215,13 +272,13 @@ Use this context to provide specific, actionable business advice tailored to Mar
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md: grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Company Name</label>
               <Input
                 value={profile.companyName}
                 onChange={(e) => setProfile(prev => ({ ...prev, companyName: e.target.value }))}
-                placeholder="Marcoby"
+                placeholder="Your Company Name"
               />
             </div>
             <div>
@@ -229,7 +286,7 @@ Use this context to provide specific, actionable business advice tailored to Mar
               <Input
                 value={profile.industry}
                 onChange={(e) => setProfile(prev => ({ ...prev, industry: e.target.value }))}
-                placeholder="Technology Consulting"
+                placeholder="e.g., Technology, Healthcare, Manufacturing"
               />
             </div>
             <div>
@@ -243,6 +300,9 @@ Use this context to provide specific, actionable business advice tailored to Mar
                 <option value="B2C Services">B2C Services</option>
                 <option value="SaaS">SaaS</option>
                 <option value="E-commerce">E-commerce</option>
+                <option value="Agency">Agency</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Other">Other</option>
               </select>
             </div>
           </div>
@@ -264,7 +324,7 @@ Use this context to provide specific, actionable business advice tailored to Mar
               <Input
                 value={newService}
                 onChange={(e) => setNewService(e.target.value)}
-                placeholder="e.g., IT Consulting, Cloud Migration"
+                placeholder="e.g., IT Consulting, Web Development, Marketing"
                 onKeyPress={(e) => e.key === 'Enter' && addToArray('primaryServices', newService, setNewService)}
               />
               <Button onClick={() => addToArray('primaryServices', newService, setNewService)}>
@@ -286,7 +346,7 @@ Use this context to provide specific, actionable business advice tailored to Mar
             <Textarea
               value={profile.valueProposition}
               onChange={(e) => setProfile(prev => ({ ...prev, valueProposition: e.target.value }))}
-              placeholder="What makes Marcoby unique? Why do clients choose you over competitors?"
+              placeholder="What makes your business unique? Why do clients choose you over competitors?"
               rows={3}
             />
           </div>
@@ -346,7 +406,7 @@ Use this context to provide specific, actionable business advice tailored to Mar
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md: grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Total Clients</label>
               <Input
@@ -447,8 +507,13 @@ Use this context to provide specific, actionable business advice tailored to Mar
       {/* Save Button */}
       <Card>
         <CardContent className="pt-6">
-          <Button onClick={handleSave} className="w-full" size="lg">
-            Save Marcoby Profile & Enable AI Business Intelligence
+          <Button 
+            onClick={handleSave} 
+            className="w-full" 
+            size="lg"
+            disabled={isLoading}
+          >
+            {isLoading ? 'Saving...' : 'Save Business Profile & Enable AI Business Intelligence'}
           </Button>
           <p className="text-sm text-muted-foreground mt-2 text-center">
             This will enable Nexus to understand your business and provide personalized advice

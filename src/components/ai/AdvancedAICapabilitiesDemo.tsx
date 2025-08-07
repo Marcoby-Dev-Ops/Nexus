@@ -440,8 +440,8 @@ export const AdvancedAICapabilitiesDemo: React.FC = () => {
                 runProcessMiningDemo();
               } else {
                 // Handle other demos
-                // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+                 
+     
     // eslint-disable-next-line no-console
     console.log(`Demo for ${capability.id} not implemented yet`);
               }

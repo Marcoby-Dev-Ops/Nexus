@@ -10,10 +10,13 @@ export { DealService } from './DealService';
 export { BillingService, billingService } from './BillingService';
 export { NotificationService } from './NotificationService';
 export { CalendarService } from './CalendarService';
-export { CompanyProvisioningService } from './CompanyProvisioningService';
+export { CompanyProvisioningService, companyProvisioningService } from './CompanyProvisioningService';
 export { CompanyOwnershipService } from './CompanyOwnershipService';
 export { userProfileService } from './userProfileService';
 export { TenantService } from './TenantService';
+
+// Export types from CompanyProvisioningService
+export type { CompanyProvisioningOptions, ProvisioningResult } from './CompanyProvisioningService';
 
 // Additional business services
 export { companyStatusService } from './companyStatusService';

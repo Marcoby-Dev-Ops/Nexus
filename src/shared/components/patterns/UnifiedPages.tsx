@@ -101,16 +101,16 @@ const SimpleBarChart: React.FC<{ data: any }> = ({ data }) => (
 
 // Mock analytics service
 const analyticsService = {
-  init: (userId: string, config: any) => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  init: (userId: string, config: any) =>  
+     
     // eslint-disable-next-line no-console
     console.log('Analytics init: ', userId, config),
-  track: (event: string, data: any) => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  track: (event: string, data: any) =>  
+     
     // eslint-disable-next-line no-console
     console.log('Analytics track: ', event, data),
-  reset: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  reset: () =>  
+     
     // eslint-disable-next-line no-console
     console.log('Analytics reset')
 };

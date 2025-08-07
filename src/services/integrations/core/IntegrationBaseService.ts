@@ -239,7 +239,7 @@ export abstract class IntegrationBaseService extends BaseService implements Crud
           lastSync: integration.lastSync,
           dataCount: integration.dataCount || 0,
           errorCount: integration.errorCount || 0,
-          lastError: null, // TODO: Implement last error tracking
+          lastError: await this.getLastError(integrationId),
         },
         error: null
       };
@@ -271,6 +271,30 @@ export abstract class IntegrationBaseService extends BaseService implements Crud
       if (error) throw error;
       return { data: IntegrationSchema.parse(result), error: null };
     }, `update status for integration ${integrationId}`);
+  }
+
+  /**
+   * Get the last error for an integration
+   */
+  private async getLastError(integrationId: string): Promise<string | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('integration_errors')
+        .select('error_message')
+        .eq('integration_id', integrationId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        return null;
+      }
+
+      return data.error_message;
+    } catch (error) {
+      this.logger.warn('Failed to get last error for integration:', error);
+      return null;
+    }
   }
 
   /**

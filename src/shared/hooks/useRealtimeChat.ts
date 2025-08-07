@@ -1,60 +1,62 @@
-import { useEffect, useState } from 'react';
-import { supabase } from "@/lib/supabase";
-import type { ChatMessage } from "@/core/types/chat";
+import { useState, useCallback } from 'react';
+import { select, insertOne } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
-export function useRealtimeChat(conversationId: string) {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+interface RealtimeMessage {
+  id: string;
+  content: string;
+  user_id: string;
+  channel: string;
+  timestamp: string;
+}
 
-  useEffect(() => {
-    // Don't fetch if conversationId is empty
-    if (!conversationId) {
-      setLoading(false);
-      return;
-    }
+export const useRealtimeChat = (channel: string) => {
+  const [messages, setMessages] = useState<RealtimeMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    // Initial fetch of messages
-    const fetchMessages = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('chat_messages')
-          .select('*')
-          .eq('conversation_id', conversationId)
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-        setMessages(data);
-      } catch (err) {
-        setError(err instanceof Error ? err: new Error('Failed to fetch messages'));
-      } finally {
-        setLoading(false);
+  const fetchMessages = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await select('realtime_messages', '*', { channel });
+      if (error) {
+        logger.error({ error }, 'Failed to fetch realtime messages');
+        setError('Failed to fetch messages');
+        return;
       }
-    };
+      setMessages(data || []);
+    } catch (err) {
+      logger.error({ err }, 'Error fetching realtime messages');
+      setError('Error fetching messages');
+    } finally {
+      setLoading(false);
+    }
+  }, [channel]);
 
-    fetchMessages();
+  const sendMessage = useCallback(async (content: string, userId: string) => {
+    try {
+      const message: Omit<RealtimeMessage, 'id' | 'timestamp'> = {
+        content,
+        user_id: userId,
+        channel,
+      };
+      const { data, error } = await insertOne('realtime_messages', message);
+      if (error) {
+        logger.error({ error }, 'Failed to send realtime message');
+        return;
+      }
+      setMessages(prev => [...prev, data]);
+    } catch (err) {
+      logger.error({ err }, 'Error sending realtime message');
+    }
+  }, [channel]);
 
-    // Subscribe to new messages
-    const subscription = supabase
-      .channel(`chat: ${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'chat_messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        (payload) => {
-          setMessages((current) => [...current, payload.new as ChatMessage]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [conversationId]);
-
-  return { messages, loading, error };
-} 
+  return {
+    messages,
+    loading,
+    error,
+    fetchMessages,
+    sendMessage,
+  };
+}; 

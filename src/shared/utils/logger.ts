@@ -19,7 +19,9 @@ const LOG_LEVELS: LogLevel = {
   ERROR: 3
 };
 
-const currentLogLevel = process.env.NODE_ENV === 'development' ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO;
+const currentLogLevel = process.env.NODE_ENV === 'development' 
+  ? (process.env.VITE_ENABLE_DEBUG_LOGS === 'true' ? LOG_LEVELS.DEBUG : LOG_LEVELS.INFO)
+  : LOG_LEVELS.INFO;
 
 class Logger {
   private shouldLog(level: number): boolean {

@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui
 import { Button } from '@/shared/components/ui/Button';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Label } from '@/shared/components/ui/Label';
-import { RadioGroup, RadioGroupItem } from '@/shared/components/ui/RadioGroup';
 import { Progress } from '@/shared/components/ui/Progress';
+import { logger } from '@/shared/utils/logger';
 
 interface AssessmentQuestion {
   id: string;
@@ -43,11 +43,11 @@ export const Questionnaire: React.FC<QuestionnaireProps> = ({ questions, onAnswe
       setIsSubmitting(true);
       try {
         // TODO: Submit answers to backend
-        console.log('Submitting answers:', answers);
+        logger.info('Submitting answers', { answers });
         await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
         onAnswered();
       } catch (error) {
-        console.error('Failed to submit answers:', error);
+        logger.error('Failed to submit answers', { error });
       } finally {
         setIsSubmitting(false);
       }

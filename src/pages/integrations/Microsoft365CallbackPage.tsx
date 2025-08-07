@@ -30,8 +30,8 @@ const Microsoft365CallbackPage: React.FC = () => {
   const handleCallback = async () => {
     // Prevent multiple executions
     if (hasProcessed.current) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Callback already processed, skipping...');
       return;
@@ -66,8 +66,8 @@ const Microsoft365CallbackPage: React.FC = () => {
 
       // Get code verifier from session storage
       const codeVerifier = sessionStorage.getItem('microsoft_code_verifier');
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Retrieved code verifier: ', { 
         hasCodeVerifier: !!codeVerifier, 
@@ -78,16 +78,16 @@ const Microsoft365CallbackPage: React.FC = () => {
       });
       
       if (!codeVerifier) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Code verifier not found in session storage!');
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Available session storage keys: ', Object.keys(sessionStorage));
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('This will cause the OAuth flow to fail with code_verifier mismatch');
         throw new Error('Code verifier not found. Please try connecting again.');
@@ -113,8 +113,8 @@ const Microsoft365CallbackPage: React.FC = () => {
         ...(codeVerifier && { codeverifier: codeVerifier }),
       });
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Token exchange parameters: ', {
         clientid: clientId,
@@ -137,8 +137,8 @@ const Microsoft365CallbackPage: React.FC = () => {
 
       if (!tokenResponse.ok) {
         const errorData = await tokenResponse.json();
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Token exchange failed: ', {
           status: tokenResponse.status,
@@ -156,8 +156,8 @@ const Microsoft365CallbackPage: React.FC = () => {
                   throw new Error('No valid session found');
                 }
 
-                // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+                 
+     
     // eslint-disable-next-line no-console
     console.log('Calling edge function with session token: ', {
                   hasSessionToken: !!session.access_token,
@@ -180,8 +180,8 @@ const Microsoft365CallbackPage: React.FC = () => {
                   }),
                 });
 
-                // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+                 
+     
     // eslint-disable-next-line no-console
     console.log('Edge function response: ', {
                   status: response.status,
@@ -191,8 +191,8 @@ const Microsoft365CallbackPage: React.FC = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Edge function error response: ', errorData);
         throw new Error(errorData.error_description || errorData.error || `Failed to complete OAuth flow: ${response.status}`);

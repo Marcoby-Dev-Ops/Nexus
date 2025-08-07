@@ -1,172 +1,125 @@
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/hooks/index';
-import { CompanyOwnershipService, CompanyOwner, OwnershipTransferRequest } from '@/services/business';
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
-export interface UseCompanyOwnershipState {
-  owner: CompanyOwner | null;
-  isOwner: boolean;
-  isLoading: boolean;
-  isTransferring: boolean;
-  error: string | null;
-  stats: {
-    totalCompanies: number;
-    companiesWithOwners: number;
-    orphanedCompanies: number;
-  };
+interface CompanyOwnership {
+  id: string;
+  company_id: string;
+  owner_id: string;
+  ownership_percentage: number;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface UseCompanyOwnershipActions {
-  getOwner: (companyId: string) => Promise<void>;
-  checkOwnership: (companyId: string) => Promise<void>;
-  transferOwnership: (request: OwnershipTransferRequest) => Promise<{ success: boolean; error?: string }>;
-  getOwnershipStats: () => Promise<void>;
-  setCompanyOwner: (companyId: string, userId: string) => Promise<{ success: boolean; error?: string }>;
-}
+export const useCompanyOwnership = () => {
+  const [ownerships, setOwnerships] = useState<CompanyOwnership[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-export const useCompanyOwnership = (): UseCompanyOwnershipState & UseCompanyOwnershipActions => {
-  const { user } = useAuth();
-  const ownershipService = new CompanyOwnershipService();
-  
-  const [state, setState] = useState<UseCompanyOwnershipState>({
-    owner: null,
-    isOwner: false,
-    isLoading: false,
-    isTransferring: false,
-    error: null,
-    stats: {
-      totalCompanies: 0,
-      companiesWithOwners: 0,
-      orphanedCompanies: 0
-    }
-  });
-
-  const getOwner = useCallback(async (companyId: string) => {
-    if (!companyId) return;
-
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
+  const fetchOwnerships = useCallback(async (companyId: string) => {
+    setLoading(true);
+    setError(null);
     try {
-      const owner = await ownershipService.getCompanyOwner(companyId);
-      setState(prev => ({ 
-        ...prev, 
-        owner, 
-        isLoading: false 
-      }));
-    } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        error: 'Failed to get company owner', 
-        isLoading: false 
-      }));
-    }
-  }, [ownershipService]);
-
-  const checkOwnership = useCallback(async (companyId: string) => {
-    if (!companyId || !user?.id) return;
-
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const isOwner = await ownershipService.isCompanyOwner(companyId, user.id);
-      setState(prev => ({ 
-        ...prev, 
-        isOwner, 
-        isLoading: false 
-      }));
-    } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        error: 'Failed to check ownership', 
-        isLoading: false 
-      }));
-    }
-  }, [ownershipService, user?.id]);
-
-  const transferOwnership = useCallback(async (request: OwnershipTransferRequest) => {
-    setState(prev => ({ ...prev, isTransferring: true, error: null }));
-
-    try {
-      const result = await ownershipService.transferOwnership(request);
-      
-      if (result.success) {
-        // Refresh owner data
-        await getOwner(request.companyId);
-        await checkOwnership(request.companyId);
+      const { data, error } = await select('company_ownership', '*', { company_id: companyId });
+      if (error) {
+        logger.error({ error }, 'Failed to fetch company ownerships');
+        setError('Failed to fetch ownerships');
+        return;
       }
-
-      setState(prev => ({ 
-        ...prev, 
-        isTransferring: false,
-        error: result.error || null
-      }));
-
-      return result;
-    } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        isTransferring: false,
-        error: 'Failed to transfer ownership'
-      }));
-
-      return { success: false, error: 'Failed to transfer ownership' };
+      setOwnerships(data || []);
+    } catch (err) {
+      logger.error({ err }, 'Error fetching company ownerships');
+      setError('Error fetching ownerships');
+    } finally {
+      setLoading(false);
     }
-  }, [ownershipService, getOwner, checkOwnership]);
+  }, []);
 
-  const getOwnershipStats = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
+  const getOwnership = useCallback(async (id: string) => {
     try {
-      const stats = await ownershipService.getOwnershipStats();
-      setState(prev => ({ 
-        ...prev, 
-        stats, 
-        isLoading: false 
-      }));
-    } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        error: 'Failed to get ownership stats', 
-        isLoading: false 
-      }));
-    }
-  }, [ownershipService]);
-
-  const setCompanyOwner = useCallback(async (companyId: string, userId: string) => {
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const result = await ownershipService.setCompanyOwner(companyId, userId);
-      
-      if (result.success) {
-        // Refresh owner data
-        await getOwner(companyId);
-        await checkOwnership(companyId);
+      const { data, error } = await selectOne('company_ownership', id);
+      if (error) {
+        logger.error({ error }, 'Failed to fetch ownership');
+        return null;
       }
-
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false,
-        error: result.error || null
-      }));
-
-      return result;
-    } catch (error) {
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false,
-        error: 'Failed to set company owner'
-      }));
-
-      return { success: false, error: 'Failed to set company owner' };
+      return data;
+    } catch (err) {
+      logger.error({ err }, 'Error fetching ownership');
+      return null;
     }
-  }, [ownershipService, getOwner, checkOwnership]);
+  }, []);
+
+  const createOwnership = useCallback(async (ownershipData: Omit<CompanyOwnership, 'id' | 'created_at' | 'updated_at'>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await insertOne('company_ownership', ownershipData);
+      if (error) {
+        logger.error({ error }, 'Failed to create ownership');
+        setError('Failed to create ownership');
+        return null;
+      }
+      setOwnerships(prev => [...prev, data]);
+      return data;
+    } catch (err) {
+      logger.error({ err }, 'Error creating ownership');
+      setError('Error creating ownership');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateOwnership = useCallback(async (id: string, updates: Partial<CompanyOwnership>) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error } = await updateOne('company_ownership', id, updates);
+      if (error) {
+        logger.error({ error }, 'Failed to update ownership');
+        setError('Failed to update ownership');
+        return null;
+      }
+      setOwnerships(prev => prev.map(ownership => (ownership.id === id ? { ...ownership, ...updates } : ownership)));
+      return data;
+    } catch (err) {
+      logger.error({ err }, 'Error updating ownership');
+      setError('Error updating ownership');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteOwnership = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await deleteOne('company_ownership', id);
+      if (error) {
+        logger.error({ error }, 'Failed to delete ownership');
+        setError('Failed to delete ownership');
+        return false;
+      }
+      setOwnerships(prev => prev.filter(ownership => ownership.id !== id));
+      return true;
+    } catch (err) {
+      logger.error({ err }, 'Error deleting ownership');
+      setError('Error deleting ownership');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   return {
-    ...state,
-    getOwner,
-    checkOwnership,
-    transferOwnership,
-    getOwnershipStats,
-    setCompanyOwner
+    ownerships,
+    loading,
+    error,
+    fetchOwnerships,
+    getOwnership,
+    createOwnership,
+    updateOwnership,
+    deleteOwnership,
   };
 }; 

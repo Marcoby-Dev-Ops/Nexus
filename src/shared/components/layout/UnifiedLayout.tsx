@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/index';
 import { useRedirectManager } from '@/shared/hooks/useRedirectManager.ts';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { HeaderProvider } from '@/shared/hooks/useHeaderContext';
 
 interface UnifiedLayoutProps {
   children: React.ReactNode;
@@ -18,16 +19,6 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     return <>{children}</>;
   }
 
-  // Debug logging - only in development and only for important state changes
-  if (import.meta.env.DEV && !user && !session && initialized && !loading) {
-    console.log('[UnifiedLayout] No authenticated user on protected route');
-  }
-
-  // Debug logging for loading state
-  if (import.meta.env.DEV) {
-    console.log('[UnifiedLayout] Loading state:', { loading, initialized, redirectInProgress, hasUser: !!user, hasSession: !!session });
-  }
-
   // Show loading while auth is initializing or redirecting
   if (loading || !initialized || redirectInProgress) {
     return (
@@ -37,11 +28,6 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           <p className="text-muted-foreground">
             {redirectInProgress ? 'Redirecting...' : 'Loading...'}
           </p>
-          {import.meta.env.DEV && (
-            <div className="text-xs text-muted-foreground">
-              Debug: loading={loading.toString()}, initialized={initialized.toString()}, redirectInProgress={redirectInProgress.toString()}
-            </div>
-          )}
         </div>
       </div>
     );
@@ -60,29 +46,31 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex h-screen">
-        {/* Sidebar */}
-        <Sidebar 
-          isOpen={sidebarOpen} 
-          onClose={() => setSidebarOpen(false)}
-        />
-        
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <Header 
-            onSidebarToggle={() => setSidebarOpen(true)}
+    <HeaderProvider>
+      <div className="min-h-screen bg-background">
+        <div className="flex h-screen">
+          {/* Sidebar */}
+          <Sidebar 
+            isOpen={sidebarOpen} 
+            onClose={() => setSidebarOpen(false)}
           />
           
-          {/* Main content area */}
-          <main className="flex-1 overflow-y-auto">
-            <div className="container mx-auto px-4 py-6">
-              {children}
-            </div>
-          </main>
+          {/* Main content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
+            <Header 
+              onSidebarToggle={() => setSidebarOpen(true)}
+            />
+            
+            {/* Main content area - Full width responsive */}
+            <main className="flex-1 overflow-y-auto">
+              <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 py-6">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </HeaderProvider>
   );
 }; 

@@ -1,5 +1,15 @@
+/**
+ * Company Ownership Service
+ * Handles company ownership management and transfers
+ */
+
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+
+// ============================================================================
+// INTERFACES
+// ============================================================================
 
 export interface CompanyOwner {
   id: string;
@@ -16,226 +26,403 @@ export interface OwnershipTransferRequest {
   currentUserId: string;
 }
 
-export class CompanyOwnershipService {
+// ============================================================================
+// COMPANY OWNERSHIP SERVICE CLASS
+// ============================================================================
+
+export class CompanyOwnershipService extends BaseService {
+  constructor() {
+    super('CompanyOwnershipService');
+  }
+
   /**
    * Get the owner of a company
    */
-  async getCompanyOwner(companyId: string): Promise<CompanyOwner | null> {
-    try {
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('owner_id')
-        .eq('id', companyId)
-        .single();
+  async getCompanyOwner(companyId: string): Promise<ServiceResponse<CompanyOwner | null>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getCompanyOwner', { companyId });
 
-      if (companyError || !company?.owner_id) {
-        return null;
+      try {
+        const { data: company, error: companyError } = await this.supabase
+          .from('companies')
+          .select('owner_id')
+          .eq('id', companyId)
+          .single();
+
+        if (companyError || !company?.owner_id) {
+          this.logSuccess('getCompanyOwner', { companyId, result: 'no_owner' });
+          return { data: null, error: null };
+        }
+
+        const { data: owner, error: ownerError } = await this.supabase
+          .from('user_profiles')
+          .select('id, email, first_name, last_name, display_name, role')
+          .eq('id', company.owner_id)
+          .single();
+
+        if (ownerError) {
+          this.logFailure('getCompanyOwner', ownerError, { companyId });
+          return { data: null, error: ownerError };
+        }
+
+        const companyOwner: CompanyOwner = {
+          id: owner.id,
+          email: owner.email || '',
+          first_name: owner.first_name,
+          last_name: owner.last_name,
+          display_name: owner.display_name,
+          role: owner.role || 'owner'
+        };
+
+        this.logSuccess('getCompanyOwner', { companyId, ownerId: owner.id });
+        return { data: companyOwner, error: null };
+      } catch (error) {
+        this.logFailure('getCompanyOwner', error, { companyId });
+        return { data: null, error };
       }
-
-      const { data: owner, error: ownerError } = await supabase
-        .from('user_profiles')
-        .select('id, email, first_name, last_name, display_name, role')
-        .eq('id', company.owner_id)
-        .single();
-
-      if (ownerError) {
-        logger.error('Error fetching company owner:', ownerError);
-        return null;
-      }
-
-      return {
-        id: owner.id,
-        email: owner.email || '',
-        first_name: owner.first_name,
-        last_name: owner.last_name,
-        display_name: owner.display_name,
-        role: owner.role || 'owner'
-      };
-    } catch (error) {
-      logger.error('Error getting company owner:', error);
-      return null;
-    }
+    }, 'getCompanyOwner');
   }
 
   /**
    * Check if a user is the owner of a company
    */
-  async isCompanyOwner(companyId: string, userId: string): Promise<boolean> {
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .select('owner_id')
-        .eq('id', companyId)
-        .eq('owner_id', userId)
-        .single();
+  async isCompanyOwner(companyId: string, userId: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('isCompanyOwner', { companyId, userId });
 
-      if (error) {
-        logger.error('Error checking company ownership:', error);
-        return false;
+      try {
+        const { data, error } = await this.supabase
+          .from('companies')
+          .select('owner_id')
+          .eq('id', companyId)
+          .eq('owner_id', userId)
+          .single();
+
+        if (error) {
+          this.logFailure('isCompanyOwner', error, { companyId, userId });
+          return { data: null, error };
+        }
+
+        const isOwner = !!data;
+        this.logSuccess('isCompanyOwner', { companyId, userId, isOwner });
+        return { data: isOwner, error: null };
+      } catch (error) {
+        this.logFailure('isCompanyOwner', error, { companyId, userId });
+        return { data: null, error };
       }
-
-      return !!data;
-    } catch (error) {
-      logger.error('Error checking company ownership:', error);
-      return false;
-    }
+    }, 'isCompanyOwner');
   }
 
   /**
    * Transfer company ownership to another user
    */
-  async transferOwnership(request: OwnershipTransferRequest): Promise<{ success: boolean; error?: string }> {
-    try {
-      // Verify current user is the owner
-      const isOwner = await this.isCompanyOwner(request.companyId, request.currentUserId);
-      if (!isOwner) {
-        return {
-          success: false,
-          error: 'Only the current owner can transfer ownership'
-        };
-      }
-
-      // Verify new owner exists and belongs to the company
-      const { data: newOwner, error: newOwnerError } = await supabase
-        .from('user_profiles')
-        .select('id, company_id')
-        .eq('id', request.newOwnerId)
-        .eq('company_id', request.companyId)
-        .single();
-
-      if (newOwnerError || !newOwner) {
-        return {
-          success: false,
-          error: 'New owner must be a member of the company'
-        };
-      }
-
-      // Use the database function to transfer ownership
-      const { data, error } = await supabase.rpc('transfer_company_ownership', {
-        company_uuid: request.companyId,
-        new_owner_uuid: request.newOwnerId,
-        current_user_uuid: request.currentUserId
+  async transferOwnership(request: OwnershipTransferRequest): Promise<ServiceResponse<{ success: boolean; error?: string }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('transferOwnership', { 
+        companyId: request.companyId, 
+        newOwnerId: request.newOwnerId,
+        currentUserId: request.currentUserId 
       });
 
-      if (error) {
-        logger.error('Error transferring ownership:', error);
-        return {
-          success: false,
-          error: error.message
-        };
-      }
+      try {
+        // Verify current user is the owner
+        const isOwnerResult = await this.isCompanyOwner(request.companyId, request.currentUserId);
+        if (!isOwnerResult.success) {
+          return { data: null, error: isOwnerResult.error };
+        }
 
-      return { success: true };
-    } catch (error) {
-      logger.error('Error transferring ownership:', error);
-      return {
-        success: false,
-        error: 'Failed to transfer ownership'
-      };
-    }
+        if (!isOwnerResult.data) {
+          this.logFailure('transferOwnership', new Error('Only the current owner can transfer ownership'), { request });
+          return { 
+            data: { 
+              success: false, 
+              error: 'Only the current owner can transfer ownership' 
+            }, 
+            error: null 
+          };
+        }
+
+        // Verify new owner exists and belongs to the company
+        const { data: newOwner, error: newOwnerError } = await this.supabase
+          .from('user_profiles')
+          .select('id, company_id')
+          .eq('id', request.newOwnerId)
+          .eq('company_id', request.companyId)
+          .single();
+
+        if (newOwnerError || !newOwner) {
+          this.logFailure('transferOwnership', new Error('New owner must be a member of the company'), { request });
+          return { 
+            data: { 
+              success: false, 
+              error: 'New owner must be a member of the company' 
+            }, 
+            error: null 
+          };
+        }
+
+        // Use the database function to transfer ownership
+        const { data, error } = await this.supabase.rpc('transfer_company_ownership', {
+          p_company_id: request.companyId,
+          p_new_owner_id: request.newOwnerId,
+          p_current_user_id: request.currentUserId
+        });
+
+        if (error) {
+          this.logFailure('transferOwnership', error, { request });
+          return { 
+            data: { 
+              success: false, 
+              error: error.message 
+            }, 
+            error: null 
+          };
+        }
+
+        this.logSuccess('transferOwnership', { 
+          companyId: request.companyId, 
+          newOwnerId: request.newOwnerId 
+        });
+
+        return { 
+          data: { success: true }, 
+          error: null 
+        };
+      } catch (error) {
+        this.logFailure('transferOwnership', error, { request });
+        return { data: null, error };
+      }
+    }, 'transferOwnership');
   }
 
   /**
    * Get all companies owned by a user
    */
-  async getUserOwnedCompanies(userId: string): Promise<any[]> {
-    try {
-      const { data, error } = await supabase
-        .from('companies')
-        .select('*')
-        .eq('owner_id', userId);
+  async getUserOwnedCompanies(userId: string): Promise<ServiceResponse<any[]>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getUserOwnedCompanies', { userId });
 
-      if (error) {
-        logger.error('Error fetching user owned companies:', error);
-        return [];
+      try {
+        const { data, error } = await this.supabase
+          .from('companies')
+          .select(`
+            id,
+            name,
+            industry,
+            size,
+            created_at,
+            updated_at,
+            owner_id
+          `)
+          .eq('owner_id', userId);
+
+        if (error) {
+          this.logFailure('getUserOwnedCompanies', error, { userId });
+          return { data: null, error };
+        }
+
+        this.logSuccess('getUserOwnedCompanies', { 
+          userId, 
+          count: data?.length || 0 
+        });
+
+        return { data: data || [], error: null };
+      } catch (error) {
+        this.logFailure('getUserOwnedCompanies', error, { userId });
+        return { data: null, error };
       }
-
-      return data || [];
-    } catch (error) {
-      logger.error('Error fetching user owned companies:', error);
-      return [];
-    }
+    }, 'getUserOwnedCompanies');
   }
 
   /**
-   * Set a user as the owner of a company (for new companies)
+   * Set company owner
    */
-  async setCompanyOwner(companyId: string, userId: string): Promise<{ success: boolean; error?: string }> {
-    try {
-      const { error } = await supabase
-        .from('companies')
-        .update({ owner_id: userId, updated_at: new Date().toISOString() })
-        .eq('id', companyId);
+  async setCompanyOwner(companyId: string, userId: string): Promise<ServiceResponse<{ success: boolean; error?: string }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('setCompanyOwner', { companyId, userId });
 
-      if (error) {
-        logger.error('Error setting company owner:', error);
-        return {
-          success: false,
-          error: error.message
+      try {
+        // Verify user exists
+        const { data: user, error: userError } = await this.supabase
+          .from('user_profiles')
+          .select('id')
+          .eq('id', userId)
+          .single();
+
+        if (userError || !user) {
+          this.logFailure('setCompanyOwner', new Error('User not found'), { companyId, userId });
+          return { 
+            data: { 
+              success: false, 
+              error: 'User not found' 
+            }, 
+            error: null 
+          };
+        }
+
+        // Update company owner
+        const { error: updateError } = await this.supabase
+          .from('companies')
+          .update({ owner_id: userId })
+          .eq('id', companyId);
+
+        if (updateError) {
+          this.logFailure('setCompanyOwner', updateError, { companyId, userId });
+          return { 
+            data: { 
+              success: false, 
+              error: updateError.message 
+            }, 
+            error: null 
+          };
+        }
+
+        this.logSuccess('setCompanyOwner', { companyId, userId });
+        return { 
+          data: { success: true }, 
+          error: null 
         };
+      } catch (error) {
+        this.logFailure('setCompanyOwner', error, { companyId, userId });
+        return { data: null, error };
       }
-
-      // Also update the user's role to 'owner'
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .update({ role: 'owner', updated_at: new Date().toISOString() })
-        .eq('id', userId)
-        .eq('company_id', companyId);
-
-      if (profileError) {
-        logger.error('Error updating user role:', profileError);
-        // Don't fail the whole operation, just log the error
-      }
-
-      return { success: true };
-    } catch (error) {
-      logger.error('Error setting company owner:', error);
-      return {
-        success: false,
-        error: 'Failed to set company owner'
-      };
-    }
+    }, 'setCompanyOwner');
   }
 
   /**
-   * Get company ownership statistics
+   * Get ownership statistics
    */
-  async getOwnershipStats(): Promise<{
+  async getOwnershipStats(): Promise<ServiceResponse<{
     totalCompanies: number;
     companiesWithOwners: number;
     orphanedCompanies: number;
-  }> {
-    try {
-      const { data: totalCompanies, error: totalError } = await supabase
-        .from('companies')
-        .select('id', { count: 'exact' });
+  }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getOwnershipStats', {});
 
-      const { data: companiesWithOwners, error: ownersError } = await supabase
-        .from('companies')
-        .select('id', { count: 'exact' })
-        .not('owner_id', 'is', null);
+      try {
+        // Get total companies
+        const { count: totalCompanies } = await this.supabase
+          .from('companies')
+          .select('*', { count: 'exact', head: true });
 
-      if (totalError || ownersError) {
-        logger.error('Error getting ownership stats:', totalError || ownersError);
-        return {
-          totalCompanies: 0,
-          companiesWithOwners: 0,
-          orphanedCompanies: 0
+        // Get companies with owners
+        const { count: companiesWithOwners } = await this.supabase
+          .from('companies')
+          .select('*', { count: 'exact', head: true })
+          .not('owner_id', 'is', null);
+
+        const stats = {
+          totalCompanies: totalCompanies || 0,
+          companiesWithOwners: companiesWithOwners || 0,
+          orphanedCompanies: (totalCompanies || 0) - (companiesWithOwners || 0)
         };
-      }
 
-      return {
-        totalCompanies: totalCompanies?.length || 0,
-        companiesWithOwners: companiesWithOwners?.length || 0,
-        orphanedCompanies: (totalCompanies?.length || 0) - (companiesWithOwners?.length || 0)
-      };
-    } catch (error) {
-      logger.error('Error getting ownership stats:', error);
-      return {
-        totalCompanies: 0,
-        companiesWithOwners: 0,
-        orphanedCompanies: 0
-      };
-    }
+        this.logSuccess('getOwnershipStats', stats);
+        return { data: stats, error: null };
+      } catch (error) {
+        this.logFailure('getOwnershipStats', error);
+        return { data: null, error };
+      }
+    }, 'getOwnershipStats');
   }
-} 
+
+  /**
+   * Get orphaned companies (companies without owners)
+   */
+  async getOrphanedCompanies(): Promise<ServiceResponse<any[]>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getOrphanedCompanies', {});
+
+      try {
+        const { data, error } = await this.supabase
+          .from('companies')
+          .select(`
+            id,
+            name,
+            industry,
+            size,
+            created_at,
+            updated_at
+          `)
+          .is('owner_id', null);
+
+        if (error) {
+          this.logFailure('getOrphanedCompanies', error);
+          return { data: null, error };
+        }
+
+        this.logSuccess('getOrphanedCompanies', { 
+          count: data?.length || 0 
+        });
+
+        return { data: data || [], error: null };
+      } catch (error) {
+        this.logFailure('getOrphanedCompanies', error);
+        return { data: null, error };
+      }
+    }, 'getOrphanedCompanies');
+  }
+
+  /**
+   * Assign ownership to orphaned companies
+   */
+  async assignOrphanedCompanyOwnership(
+    companyId: string, 
+    userId: string
+  ): Promise<ServiceResponse<{ success: boolean; error?: string }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('assignOrphanedCompanyOwnership', { companyId, userId });
+
+      try {
+        // Verify company is orphaned
+        const { data: company, error: companyError } = await this.supabase
+          .from('companies')
+          .select('id, owner_id')
+          .eq('id', companyId)
+          .single();
+
+        if (companyError) {
+          this.logFailure('assignOrphanedCompanyOwnership', companyError, { companyId, userId });
+          return { 
+            data: { 
+              success: false, 
+              error: 'Company not found' 
+            }, 
+            error: null 
+          };
+        }
+
+        if (company.owner_id) {
+          this.logFailure('assignOrphanedCompanyOwnership', new Error('Company already has an owner'), { companyId, userId });
+          return { 
+            data: { 
+              success: false, 
+              error: 'Company already has an owner' 
+            }, 
+            error: null 
+          };
+        }
+
+        // Assign ownership
+        const result = await this.setCompanyOwner(companyId, userId);
+        
+        if (!result.success) {
+          return result;
+        }
+
+        this.logSuccess('assignOrphanedCompanyOwnership', { companyId, userId });
+        return { 
+          data: { success: true }, 
+          error: null 
+        };
+      } catch (error) {
+        this.logFailure('assignOrphanedCompanyOwnership', error, { companyId, userId });
+        return { data: null, error };
+      }
+    }, 'assignOrphanedCompanyOwnership');
+  }
+}
+
+// Export singleton instance
+export const companyOwnershipService = new CompanyOwnershipService(); 

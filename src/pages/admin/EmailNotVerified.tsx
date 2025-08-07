@@ -1,5 +1,6 @@
 import { useAuth } from '@/hooks/index';
 import { Button } from '@/shared/components/ui/Button.tsx';
+import { performSignOut } from '@/shared/utils/signOut';
 
 export default function EmailNotVerified() {
   const { signOut } = useAuth();
@@ -25,7 +26,7 @@ export default function EmailNotVerified() {
           Didn't get the email? Check your spam folder or request a new one.
         </p>
         <div className="flex justify-center gap-4">
-          <Button onClick={signOut}>Back to Login</Button>
+          <Button onClick={performSignOut}>Back to Login</Button>
         </div>
       </div>
     </div>

@@ -9,7 +9,8 @@ import {
   Home,
   Users,
   HelpCircle,
-  Database
+  Database,
+  Building2
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -121,6 +122,11 @@ export const navItems: NavItem[] = [
         name: 'Thoughts & Ideas',
         path: '/help-center/knowledge/thoughts',
         description: 'Capture and organize your thoughts'
+      },
+      {
+        name: 'Organizations',
+        path: '/organizations',
+        description: 'Manage your business organizations and teams'
       },
       {
         name: 'Integration Hub',

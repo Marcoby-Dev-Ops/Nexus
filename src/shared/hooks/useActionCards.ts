@@ -1,51 +1,103 @@
-import { useEffect, useState } from 'react';
-import { supabase } from "@/lib/supabase";
-import type { ActionCardRecord } from '@/components/ai/ActionCard';
+import { useState, useEffect, useCallback } from 'react';
+import { select, selectWithOptions } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
-export function useActionCards(conversationId?: string) {
-  const [cards, setCards] = useState<ActionCardRecord[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+interface ActionCard {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  priority: 'low' | 'medium' | 'high';
+  status: 'pending' | 'in_progress' | 'completed';
+  created_at: string;
+  updated_at: string;
+}
+
+interface ActionCardsState {
+  cards: ActionCard[];
+  loading: boolean;
+  error: string | null;
+}
+
+export const useActionCards = () => {
+  const [state, setState] = useState<ActionCardsState>({
+    cards: [],
+    loading: false,
+    error: null,
+  });
+
+  const fetchActionCards = useCallback(async () => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      
+      const { data, error } = await select('action_cards', '*');
+      
+      if (error) {
+        logger.error({ error }, 'Failed to fetch action cards');
+        setState(prev => ({ 
+          ...prev, 
+          loading: false, 
+          error: 'Failed to fetch action cards' 
+        }));
+        return;
+      }
+
+      setState(prev => ({ 
+        ...prev, 
+        cards: data || [], 
+        loading: false 
+      }));
+    } catch (error) {
+      logger.error({ error }, 'Error fetching action cards');
+      setState(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: 'Failed to fetch action cards' 
+      }));
+    }
+  }, []);
+
+  const fetchActionCardsByCategory = useCallback(async (category: string) => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      
+      const { data, error } = await selectWithOptions('action_cards', {
+        filter: { category },
+        orderBy: { column: 'created_at', ascending: false }
+      });
+      
+      if (error) {
+        logger.error({ error, category }, 'Failed to fetch action cards by category');
+        setState(prev => ({ 
+          ...prev, 
+          loading: false, 
+          error: 'Failed to fetch action cards' 
+        }));
+        return;
+      }
+
+      setState(prev => ({ 
+        ...prev, 
+        cards: data || [], 
+        loading: false 
+      }));
+    } catch (error) {
+      logger.error({ error, category }, 'Error fetching action cards by category');
+      setState(prev => ({ 
+        ...prev, 
+        loading: false, 
+        error: 'Failed to fetch action cards' 
+      }));
+    }
+  }, []);
 
   useEffect(() => {
-    if (!conversationId) return;
+    fetchActionCards();
+  }, [fetchActionCards]);
 
-    let ignore = false;
-    const fetchCards = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('ai_action_cards')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at');
-      if (!ignore && !error) {
-        setCards(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetchCards();
-
-    const channel = supabase.channel(`cards_${conversationId}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'ai_action_cards', filter: `conversation_id=eq.${conversationId}` },
-        payload => {
-          if (payload.eventType === 'INSERT') {
-            setCards(prev => [...prev, payload.new as any]);
-          } else if (payload.eventType === 'UPDATE') {
-            setCards(prev => prev.map(c => (c.id === payload.new.id ? (payload.new as any) : c)));
-          } else if (payload.eventType === 'DELETE') {
-            setCards(prev => prev.filter(c => c.id !== payload.old.id));
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      ignore = true;
-      supabase.removeChannel(channel);
-    };
-  }, [conversationId]);
-
-  return { cards, loading };
-} 
+  return {
+    ...state,
+    fetchActionCards,
+    fetchActionCardsByCategory,
+  };
+}; 

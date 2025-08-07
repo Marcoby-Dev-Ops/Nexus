@@ -43,8 +43,8 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
       setConnectionData(status.config);
       onConnectionChange?.(status.isConnected);
     } catch (err) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error checking connection status: ', err);
       setError('Failed to check connection status');
@@ -67,8 +67,8 @@ export const NinjaRmmSetup: React.FC<NinjaRmmSetupProps> = ({ onConnectionChange
       window.location.href = authUrl;
       
     } catch (err) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error initiating NinjaRMM connection: ', err);
       setError(err instanceof Error ? err.message: 'Failed to connect to NinjaRMM');

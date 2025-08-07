@@ -1,6 +1,7 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { IntegrationBaseService, type Integration, type IntegrationConfig } from './IntegrationBaseService';
+import type { IntegrationBaseService} from './IntegrationBaseService';
+import { type Integration, type IntegrationConfig } from './IntegrationBaseService';
 import { z } from 'zod';
 
 // Integration Registry Schema
@@ -258,7 +259,7 @@ export class IntegrationRegistryService extends BaseService {
         totalIntegrations: integrations?.length || 0,
         activeIntegrations: integrations?.filter(i => i.status === 'connected').length || 0,
         errorIntegrations: integrations?.filter(i => i.status === 'error').length || 0,
-        totalDataPoints: 0, // TODO: Calculate from integration_data table
+        totalDataPoints: await this.calculateTotalDataPoints(),
         categories: {} as Record<string, number>,
       };
 
@@ -274,6 +275,27 @@ export class IntegrationRegistryService extends BaseService {
 
       return { data: stats, error: null };
     }, 'get integration statistics');
+  }
+
+  /**
+   * Calculate total data points from integration_data table
+   */
+  private async calculateTotalDataPoints(): Promise<number> {
+    try {
+      const { data, error } = await this.supabase
+        .from('integration_data')
+        .select('id', { count: 'exact' });
+
+      if (error) {
+        this.logger.warn('Failed to calculate total data points:', error);
+        return 0;
+      }
+
+      return data?.length || 0;
+    } catch (error) {
+      this.logger.warn('Error calculating total data points:', error);
+      return 0;
+    }
   }
 
   /**

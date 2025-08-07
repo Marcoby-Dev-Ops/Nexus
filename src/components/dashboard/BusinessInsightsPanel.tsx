@@ -110,8 +110,8 @@ export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ cl
         setInsights(mockInsights);
       } catch (err) {
         setError('Failed to load business insights. Please try again.');
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error loading insights: ', err);
       } finally {

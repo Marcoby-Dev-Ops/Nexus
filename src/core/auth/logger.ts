@@ -1,9 +1,12 @@
 /**
  * Secure Logger
  * @description Production-safe logging with sensitive data filtering
+ * Updated to use helper functions from src/lib/supabase.ts
  */
 
 import { SECURITY_CHECKS } from '@/core/constants/security';
+import { supabase } from '@/lib/supabase';
+import { supabaseService } from '@/core/services/SupabaseService';
 import pino from 'pino';
 
 // Sensitive patterns to filter from logs
@@ -37,7 +40,7 @@ const loggerConfig = {
 const pinoLogger = pino(loggerConfig);
 
 /**
- * A secure logger class that wraps pino.
+ * A secure logger class that wraps pino and integrates with Supabase helpers.
  * It provides methods for different log levels and ensures consistent logging structure.
  */
 export class SecureLogger {
@@ -86,6 +89,46 @@ export class SecureLogger {
   }
 
   /**
+   * Send security logs to Supabase using helper functions
+   */
+  private async sendSecurityLogToSupabase(logEntry: any): Promise<void> {
+    try {
+          // Use the callEdgeFunction helper to send security logs
+    await supabaseService.callEdgeFunction('security_log', {
+        timestamp: logEntry.timestamp,
+        type: logEntry.type,
+        message: logEntry.message,
+        details: logEntry.details,
+        component: this.component,
+        environment: process.env.NODE_ENV || 'production',
+        version: process.env.npm_package_version || '1.0.0'
+      });
+    } catch (error) {
+      // Fallback to console if Supabase call fails
+      console.warn('Failed to send security log to Supabase:', error);
+    }
+  }
+
+  /**
+   * Store log entry in Supabase logs table using helper functions
+   */
+  private async storeLogInDatabase(logEntry: any): Promise<void> {
+    try {
+          // Use the callEdgeFunction helper to store logs
+    await supabaseService.callEdgeFunction('store_log', {
+        timestamp: logEntry.timestamp,
+        level: logEntry.type,
+        message: logEntry.message,
+        details: logEntry.details,
+        component: this.component,
+        environment: process.env.NODE_ENV || 'production'
+      });
+    } catch (error) {
+      console.warn('Failed to store log in database:', error);
+    }
+  }
+
+  /**
    * Safe console.log replacement
    */
   public log(...args: any[]): void {
@@ -94,8 +137,7 @@ export class SecureLogger {
     }
 
     const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
     // eslint-disable-next-line no-console
     console.log(...filteredArgs);
   }
@@ -104,9 +146,8 @@ export class SecureLogger {
    * Safe console.warn replacement
    */
   public warn(...args: any[]): void {
-    const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+    const filteredArgs = args.map(arg => this.filterSensitiveData(args));
+     
     // eslint-disable-next-line no-console
     console.warn(...filteredArgs);
   }
@@ -116,8 +157,7 @@ export class SecureLogger {
    */
   public error(...args: any[]): void {
     const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
     // eslint-disable-next-line no-console
     console.error(...filteredArgs);
   }
@@ -128,10 +168,9 @@ export class SecureLogger {
   public debug(...args: any[]): void {
     if (!this.isProduction) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
+       
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.debug('🐛 DEBUG: ', ...filteredArgs);
+      console.debug('🐛 DEBUG: ', ...filteredArgs);
     }
   }
 
@@ -141,10 +180,9 @@ export class SecureLogger {
   public info(...args: any[]): void {
     if (!this.isProduction || !SECURITY_CHECKS.DISABLECONSOLE_IN_PROD) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
+       
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.info('ℹ️ INFO: ', ...filteredArgs);
+      console.info('ℹ️ INFO: ', ...filteredArgs);
     }
   }
 
@@ -154,17 +192,16 @@ export class SecureLogger {
   public success(...args: any[]): void {
     if (!this.isProduction || !SECURITY_CHECKS.DISABLECONSOLE_IN_PROD) {
       const filteredArgs = args.map(arg => this.filterSensitiveData(arg));
+       
       // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('✅ SUCCESS: ', ...filteredArgs);
+      console.log('✅ SUCCESS: ', ...filteredArgs);
     }
   }
 
   /**
-   * Security-specific logging
+   * Security-specific logging with Supabase integration
    */
-  public security(message: string, details?: any): void {
+  public async security(message: string, details?: any): Promise<void> {
     const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
@@ -175,13 +212,74 @@ export class SecureLogger {
 
     // Always log security events, even in production
     // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
     console.warn('🔒 SECURITY: ', logEntry);
 
-    // In production, send to structured log pipeline
+    // In production, send to structured log pipeline using helper functions
     if (this.isProduction) {
-      this.sendToLogPipeline(logEntry);
+      try {
+        // Send to Supabase edge function using helper
+        await this.sendSecurityLogToSupabase(logEntry);
+        
+        // Also store in database if needed
+        await this.storeLogInDatabase(logEntry);
+      } catch (error) {
+        // Fallback to webhook if Supabase fails
+        this.sendToLogPipeline(logEntry);
+      }
+    }
+  }
+
+  /**
+   * Authentication-specific logging with Supabase integration
+   */
+  public async auth(message: string, details?: any): Promise<void> {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      type: 'AUTH',
+      message,
+      details: details ? this.filterSensitiveData(details) : undefined,
+    };
+
+    // Log to console
+    // eslint-disable-next-line no-console
+    console.info('🔐 AUTH: ', logEntry);
+
+    // In production, send to Supabase
+    if (this.isProduction) {
+      try {
+        await this.sendSecurityLogToSupabase(logEntry);
+      } catch (error) {
+        // Fallback to webhook
+        this.sendToLogPipeline(logEntry);
+      }
+    }
+  }
+
+  /**
+   * Database operation logging with Supabase integration
+   */
+  public async db(message: string, details?: any): Promise<void> {
+    const timestamp = new Date().toISOString();
+    const logEntry = {
+      timestamp,
+      type: 'DATABASE',
+      message,
+      details: details ? this.filterSensitiveData(details) : undefined,
+    };
+
+    // Log to console
+    // eslint-disable-next-line no-console
+    console.info('🗄️ DB: ', logEntry);
+
+    // In production, store in database
+    if (this.isProduction) {
+      try {
+        await this.storeLogInDatabase(logEntry);
+      } catch (error) {
+        // Fallback to webhook
+        this.sendToLogPipeline(logEntry);
+      }
     }
   }
 
@@ -225,22 +323,52 @@ export class SecureLogger {
         /* silent */
       }
     }
+  }
 
-    // Fallback to Supabase edge function for security events
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    if (supabaseUrl) {
-      try {
-        void fetch(`${supabaseUrl}/functions/v1/security_log`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ''}`
-          },
-          body: JSON.stringify(logEntry),
-        });
-      } catch {
-        /* silent */
+  /**
+   * Get current session info for logging context
+   */
+  public async getSessionContext(): Promise<any> {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        return { userId: null, sessionId: null };
       }
+
+      return {
+        userId: session.user?.id,
+        sessionId: session.access_token ? 'active' : 'inactive',
+        expiresAt: session.expires_at
+      };
+    } catch (error) {
+      return { userId: null, sessionId: null, error: 'Failed to get session' };
+    }
+  }
+
+  /**
+   * Log with session context
+   */
+  public async logWithContext(level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: any): Promise<void> {
+    const sessionContext = await this.getSessionContext();
+    const enrichedData = {
+      ...data,
+      session: sessionContext
+    };
+
+    switch (level) {
+      case 'info':
+        this.info(message, enrichedData);
+        break;
+      case 'warn':
+        this.warn(message, enrichedData);
+        break;
+      case 'error':
+        this.error(message, enrichedData);
+        break;
+      case 'debug':
+        this.debug(message, enrichedData);
+        break;
     }
   }
 }
@@ -255,4 +383,8 @@ export const error = (...args: any[]) => logger.error(...args);
 export const debug = (...args: any[]) => logger.debug(...args);
 export const info = (...args: any[]) => logger.info(...args);
 export const success = (...args: any[]) => logger.success(...args);
-export const securityLog = (message: string, details?: any) => logger.security(message, details); 
+export const securityLog = (message: string, details?: any) => logger.security(message, details);
+export const authLog = (message: string, details?: any) => logger.auth(message, details);
+export const dbLog = (message: string, details?: any) => logger.db(message, details);
+export const logWithContext = (level: 'info' | 'warn' | 'error' | 'debug', message: string, data?: any) => 
+  logger.logWithContext(level, message, data); 

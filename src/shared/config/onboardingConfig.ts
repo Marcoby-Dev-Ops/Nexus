@@ -119,12 +119,11 @@ export const onboardingConfig: OnboardingConfig = {
 export const getOnboardingConfig = (): OnboardingConfig => {
   const config = { ...onboardingConfig };
   
-  // Development overrides
+  // Environment-specific overrides
   if (import.meta.env.DEV) {
     config.debugMode = true;
   }
   
-  // Production overrides
   if (import.meta.env.PROD) {
     config.debugMode = false;
   }
@@ -147,6 +146,12 @@ export const shouldShowOnboarding = (
   
   // If onboarding is disabled globally, never show it
   if (!config.enabled) {
+    return false;
+  }
+  
+  // Validate required parameters
+  if (!pathname || typeof pathname !== 'string') {
+    console.error('Invalid pathname provided to shouldShowOnboarding');
     return false;
   }
   

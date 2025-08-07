@@ -1,7 +1,9 @@
 /**
  * Contextual Data Completion Service
- * Provides AI-powered data completion and enhancement functionality
+ * AI-powered data completion and enhancement based on context
  */
+
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
 export interface CompletionContext {
   userId: string;
@@ -25,59 +27,89 @@ export interface DataEnhancement {
   source: string;
 }
 
-export class ContextualDataCompletionService {
+export class ContextualDataCompletionService extends BaseService {
   /**
    * Complete missing data fields based on context
    */
-  async completeData(context: CompletionContext): Promise<CompletionResult> {
-    try {
-      // Analyze existing data patterns
-      const patterns = await this.analyzePatterns(context);
-      
-      // Generate suggestions based on patterns
-      const suggestions = await this.generateSuggestions(context, patterns);
-      
-      // Validate suggestions against business rules
-      const validatedSuggestions = await this.validateSuggestions(suggestions, context);
-      
-      return {
-        completed: Object.keys(validatedSuggestions).length > 0,
-        suggestedData: validatedSuggestions,
-        confidence: this.calculateConfidence(validatedSuggestions, patterns),
-        reasoning: this.generateReasoning(validatedSuggestions, patterns)
-      };
-    } catch (error) {
-      console.error('Error completing data:', error);
-      return {
-        completed: false,
-        suggestedData: {},
-        confidence: 0,
-        reasoning: 'Unable to complete data due to an error'
-      };
+  async completeData(context: CompletionContext): Promise<ServiceResponse<CompletionResult>> {
+    const userIdValidation = this.validateIdParam(context.userId, 'userId');
+    if (userIdValidation) {
+      return this.createErrorResponse(userIdValidation);
     }
+
+    const dataTypeValidation = this.validateRequiredParam(context.dataType, 'dataType');
+    if (dataTypeValidation) {
+      return this.createErrorResponse(dataTypeValidation);
+    }
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          // Analyze existing data patterns
+          const patterns = await this.analyzePatterns(context);
+          
+          // Generate suggestions based on patterns
+          const suggestions = await this.generateSuggestions(context, patterns);
+          
+          // Validate suggestions against business rules
+          const validatedSuggestions = await this.validateSuggestions(suggestions, context);
+          
+          return {
+            data: {
+              completed: Object.keys(validatedSuggestions).length > 0,
+              suggestedData: validatedSuggestions,
+              confidence: this.calculateConfidence(validatedSuggestions, patterns),
+              reasoning: this.generateReasoning(validatedSuggestions, patterns)
+            },
+            error: null
+          };
+        } catch (error) {
+          return {
+            data: {
+              completed: false,
+              suggestedData: {},
+              confidence: 0,
+              reasoning: 'Unable to complete data due to an error'
+            },
+            error: error instanceof Error ? error.message : 'Data completion failed'
+          };
+        }
+      },
+      'completeData'
+    );
   }
 
   /**
    * Enhance existing data with additional context
    */
-  async enhanceData(data: Record<string, any>, context: CompletionContext): Promise<DataEnhancement[]> {
-    const enhancements: DataEnhancement[] = [];
-    
-    try {
-      // Analyze each field for potential enhancements
-      for (const [field, value] of Object.entries(data)) {
-        if (typeof value === 'string' && value.trim()) {
-          const enhancement = await this.enhanceField(field, value, context);
-          if (enhancement) {
-            enhancements.push(enhancement);
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error enhancing data:', error);
+  async enhanceData(data: Record<string, any>, context: CompletionContext): Promise<ServiceResponse<DataEnhancement[]>> {
+    const userIdValidation = this.validateIdParam(context.userId, 'userId');
+    if (userIdValidation) {
+      return this.createErrorResponse(userIdValidation);
     }
-    
-    return enhancements;
+
+    return this.executeDbOperation(
+      async () => {
+        try {
+          const enhancements: DataEnhancement[] = [];
+          
+          // Analyze each field for potential enhancements
+          for (const [field, value] of Object.entries(data)) {
+            if (typeof value === 'string' && value.trim()) {
+              const enhancement = await this.enhanceField(field, value, context);
+              if (enhancement) {
+                enhancements.push(enhancement);
+              }
+            }
+          }
+
+          return { data: enhancements, error: null };
+        } catch (error) {
+          return { data: [], error: error instanceof Error ? error.message : 'Data enhancement failed' };
+        }
+      },
+      'enhanceData'
+    );
   }
 
   /**
@@ -145,15 +177,15 @@ export class ContextualDataCompletionService {
    * Validate suggestions against business rules
    */
   private async validateSuggestions(suggestions: Record<string, any>, context: CompletionContext): Promise<Record<string, any>> {
-    const validated: Record<string, any> = {};
+    const validatedSuggestions: Record<string, any> = {};
     
     for (const [field, value] of Object.entries(suggestions)) {
       if (this.isValidSuggestion(field, value, context)) {
-        validated[field] = value;
+        validatedSuggestions[field] = value;
       }
     }
     
-    return validated;
+    return validatedSuggestions;
   }
 
   /**
@@ -164,27 +196,42 @@ export class ContextualDataCompletionService {
       return 0;
     }
     
-    // Simple confidence calculation based on number of suggestions and pattern matches
-    const baseConfidence = 0.6;
-    const patternBonus = Object.keys(patterns).length * 0.1;
-    const suggestionBonus = Object.keys(suggestions).length * 0.05;
+    // Simple confidence calculation based on pattern matches
+    let totalConfidence = 0;
+    let suggestionCount = 0;
     
-    return Math.min(0.95, baseConfidence + patternBonus + suggestionBonus);
+    for (const [field, value] of Object.entries(suggestions)) {
+      let fieldConfidence = 0.5; // Base confidence
+      
+      // Increase confidence based on pattern matches
+      if (patterns.emailPattern && field === 'email' && patterns.emailPattern.test(value)) {
+        fieldConfidence += 0.3;
+      }
+      if (patterns.phonePattern && field === 'phone' && patterns.phonePattern.test(value)) {
+        fieldConfidence += 0.3;
+      }
+      if (patterns.domainPattern && field === 'website' && patterns.domainPattern.test(value)) {
+        fieldConfidence += 0.3;
+      }
+      
+      totalConfidence += Math.min(fieldConfidence, 1.0);
+      suggestionCount++;
+    }
+    
+    return suggestionCount > 0 ? totalConfidence / suggestionCount : 0;
   }
 
   /**
    * Generate reasoning for suggestions
    */
   private generateReasoning(suggestions: Record<string, any>, patterns: Record<string, any>): string {
-    if (Object.keys(suggestions).length === 0) {
-      return 'No suggestions generated based on available context.';
+    const reasons: string[] = [];
+    
+    for (const [field, value] of Object.entries(suggestions)) {
+      reasons.push(`Generated ${field} based on existing data patterns and business rules`);
     }
     
-    const reasons = Object.entries(suggestions).map(([field, value]) => 
-      `Generated ${field} based on existing data patterns.`
-    );
-    
-    return reasons.join(' ');
+    return reasons.length > 0 ? reasons.join('; ') : 'No suggestions generated';
   }
 
   /**
@@ -193,21 +240,25 @@ export class ContextualDataCompletionService {
   private async enhanceField(field: string, value: string, context: CompletionContext): Promise<DataEnhancement | null> {
     try {
       let enhancedValue = value;
-      let confidence = 0.8;
-      let source = 'pattern_analysis';
+      let confidence = 0.5;
+      let source = 'pattern_matching';
       
       switch (field.toLowerCase()) {
         case 'name':
           enhancedValue = this.enhanceName(value);
+          confidence = 0.8;
           break;
         case 'email':
           enhancedValue = this.enhanceEmail(value);
+          confidence = 0.9;
           break;
         case 'phone':
           enhancedValue = this.enhancePhone(value);
+          confidence = 0.7;
           break;
         case 'company':
           enhancedValue = this.enhanceCompany(value);
+          confidence = 0.6;
           break;
         default:
           return null;
@@ -222,45 +273,46 @@ export class ContextualDataCompletionService {
           source
         };
       }
+      
+      return null;
     } catch (error) {
-      console.error(`Error enhancing field ${field}:`, error);
+      this.logger.error('Error enhancing field', { error, field, value });
+      return null;
     }
-    
-    return null;
   }
 
   /**
-   * Check if a suggestion is valid
+   * Validate if a suggestion is valid
    */
   private isValidSuggestion(field: string, value: any, context: CompletionContext): boolean {
+    if (!value || typeof value !== 'string') {
+      return false;
+    }
+    
     // Basic validation based on field type
     switch (field.toLowerCase()) {
       case 'email':
-        return typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
       case 'phone':
-        return typeof value === 'string' && /^[\+]?[1-9][\d]{0,15}$/.test(value.replace(/\s/g, ''));
+        return /^[\+]?[1-9][\d]{0,15}$/.test(value);
       case 'website':
-        return typeof value === 'string' && value.startsWith('http');
+        return /^https?:\/\/.+/.test(value);
       case 'value':
-        return typeof value === 'number' && value > 0;
+        return !isNaN(Number(value)) && Number(value) > 0;
       default:
-        return value !== null && value !== undefined && value !== '';
+        return value.trim().length > 0;
     }
   }
 
-  // Helper methods for generating suggestions
+  // Helper methods for data generation
   private generateEmailFromName(name: string): string {
-    const cleanName = name.toLowerCase().replace(/[^a-z\s]/g, '').trim();
-    const parts = cleanName.split(' ');
-    if (parts.length >= 2) {
-      return `${parts[0]}.${parts[parts.length - 1]}@example.com`;
-    }
-    return `${cleanName.replace(/\s/g, '')}@example.com`;
+    const cleanName = name.toLowerCase().replace(/[^a-z]/g, '');
+    return `${cleanName}@example.com`;
   }
 
   private generatePhoneFromCompany(company: string): string {
-    // Generate a placeholder phone number
-    return '+1-555-000-0000';
+    // Simulate phone generation
+    return `+1-555-${Math.floor(Math.random() * 9000) + 1000}`;
   }
 
   private generateWebsiteFromName(name: string): string {
@@ -269,16 +321,19 @@ export class ContextualDataCompletionService {
   }
 
   private extractIndustryFromDescription(description: string): string {
-    // Simple industry extraction based on keywords
-    const keywords = description.toLowerCase();
-    if (keywords.includes('tech') || keywords.includes('software')) return 'Technology';
-    if (keywords.includes('finance') || keywords.includes('banking')) return 'Finance';
-    if (keywords.includes('health') || keywords.includes('medical')) return 'Healthcare';
-    return 'General';
+    const industries = ['technology', 'healthcare', 'finance', 'retail', 'manufacturing'];
+    const lowerDesc = description.toLowerCase();
+    
+    for (const industry of industries) {
+      if (lowerDesc.includes(industry)) {
+        return industry;
+      }
+    }
+    
+    return 'general';
   }
 
   private estimateDealValue(stage: string): number {
-    // Estimate deal value based on stage
     const stageValues: Record<string, number> = {
       'prospecting': 5000,
       'qualification': 10000,
@@ -287,27 +342,27 @@ export class ContextualDataCompletionService {
       'closed_won': 75000,
       'closed_lost': 0
     };
-    return stageValues[stage.toLowerCase()] || 15000;
+    
+    return stageValues[stage] || 10000;
   }
 
   private estimateCloseDate(stage: string): string {
-    // Estimate close date based on stage
-    const daysFromNow: Record<string, number> = {
-      'prospecting': 90,
+    const now = new Date();
+    const stageDelays: Record<string, number> = {
+      'prospecting': 30,
       'qualification': 60,
-      'proposal': 30,
-      'negotiation': 15,
+      'proposal': 90,
+      'negotiation': 120,
       'closed_won': 0,
       'closed_lost': 0
     };
     
-    const days = daysFromNow[stage.toLowerCase()] || 45;
-    const date = new Date();
-    date.setDate(date.getDate() + days);
-    return date.toISOString().split('T')[0];
+    const daysToAdd = stageDelays[stage] || 90;
+    const closeDate = new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    return closeDate.toISOString().split('T')[0];
   }
 
-  // Helper methods for enhancing fields
+  // Field enhancement methods
   private enhanceName(name: string): string {
     return name.trim().replace(/\s+/g, ' ');
   }
@@ -317,7 +372,12 @@ export class ContextualDataCompletionService {
   }
 
   private enhancePhone(phone: string): string {
-    return phone.replace(/\s/g, '').replace(/[^\d+]/g, '');
+    // Standardize phone format
+    const cleaned = phone.replace(/[^\d+]/g, '');
+    if (cleaned.startsWith('+')) {
+      return cleaned;
+    }
+    return `+1-${cleaned}`;
   }
 
   private enhanceCompany(company: string): string {

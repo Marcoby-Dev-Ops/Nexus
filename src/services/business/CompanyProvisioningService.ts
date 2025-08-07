@@ -11,12 +11,17 @@ import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger.ts';
 import { z } from 'zod';
+import type { Database } from '@/core/types/supabase';
 
 // Company Provisioning Schema
 export const CompanyProvisioningOptionsSchema = z.object({
   createDefaultCompany: z.boolean().optional(),
   redirectToOnboarding: z.boolean().optional(),
   silentMode: z.boolean().optional(),
+  companyName: z.string().optional(),
+  jobTitle: z.string().optional(),
+  industry: z.string().optional(),
+  size: z.string().optional(),
 });
 
 export const ProvisioningResultSchema = z.object({
@@ -29,6 +34,8 @@ export const ProvisioningResultSchema = z.object({
 
 export type CompanyProvisioningOptions = z.infer<typeof CompanyProvisioningOptionsSchema>;
 export type ProvisioningResult = z.infer<typeof ProvisioningResultSchema>;
+
+type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
 
 /**
  * Company Provisioning Service
@@ -82,7 +89,7 @@ export class CompanyProvisioningService extends BaseService {
 
       // User doesn't have a company - handle based on options
       if (options.createDefaultCompany) {
-        return await this.createDefaultCompany(userId, profile);
+        return await this.createDefaultCompany(userId, profile, options);
       }
 
       if (options.redirectToOnboarding) {
@@ -102,20 +109,20 @@ export class CompanyProvisioningService extends BaseService {
   /**
    * Create a default company for the user
    */
-  private async createDefaultCompany(userId: string, profile: any): Promise<ServiceResponse<ProvisioningResult>> {
+  private async createDefaultCompany(userId: string, profile: UserProfile, options: CompanyProvisioningOptions): Promise<ServiceResponse<ProvisioningResult>> {
     return this.executeDbOperation(async () => {
-      const companyName = profile?.first_name && profile?.last_name
+      const companyName = options.companyName || (profile?.first_name && profile?.last_name
         ? `${profile.first_name} ${profile.last_name}'s Company`
         : profile?.email
         ? `${profile.email.split('@')[0]}'s Company`
-        : 'My Company';
+        : 'My Company');
 
       const { data: company, error: companyError } = await supabase
         .from('companies')
         .insert({
           name: companyName,
-          industry: 'Technology',
-          size: '1-10',
+          industry: options.industry || 'Technology',
+          size: options.size || '1-10',
           created_by: userId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -140,7 +147,8 @@ export class CompanyProvisioningService extends BaseService {
         .update({
           company_id: company.id,
           role: 'owner',
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          ...(options.jobTitle && { job_title: options.jobTitle })
         })
         .eq('id', userId);
 
@@ -168,7 +176,7 @@ export class CompanyProvisioningService extends BaseService {
   /**
    * Create a personal company for the user
    */
-  private async createPersonalCompany(userId: string, profile: any): Promise<ServiceResponse<ProvisioningResult>> {
+  private async createPersonalCompany(userId: string, profile: UserProfile): Promise<ServiceResponse<ProvisioningResult>> {
     return this.executeDbOperation(async () => {
       const companyName = profile?.first_name && profile?.last_name
         ? `${profile.first_name} ${profile.last_name}'s Personal Business`
@@ -286,3 +294,6 @@ export class CompanyProvisioningService extends BaseService {
     }, `get or create company for user ${userId}`);
   }
 }
+
+// Create and export service instance
+export const companyProvisioningService = new CompanyProvisioningService();

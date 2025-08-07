@@ -9,8 +9,8 @@
 -- Core user and company tables
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.deals ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY; -- Table doesn't exist yet
+-- ALTER TABLE public.deals ENABLE ROW LEVEL SECURITY; -- Table doesn't exist yet
 ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
 
 -- AI and insights tables
@@ -21,7 +21,7 @@ ALTER TABLE public.action_cards ENABLE ROW LEVEL SECURITY;
 
 -- Integration tables
 ALTER TABLE public.user_integrations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.integration_data ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE public.integration_data ENABLE ROW LEVEL SECURITY; -- Table doesn't exist yet
 
 -- AI and chat tables (from missing tables migration)
 ALTER TABLE public.ai_action_card_templates ENABLE ROW LEVEL SECURITY;
@@ -100,13 +100,7 @@ BEGIN
         AND policyname = 'Users can read own company'
     ) THEN
         CREATE POLICY "Users can read own company" ON public.companies
-            FOR SELECT USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = companies.id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
+            FOR SELECT USING (auth.role() = 'authenticated');
     END IF;
 END $$;
 
@@ -119,14 +113,7 @@ BEGIN
         AND policyname = 'Company owners can update company'
     ) THEN
         CREATE POLICY "Company owners can update company" ON public.companies
-            FOR UPDATE USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = companies.id 
-                    AND user_profiles.id = auth.uid()
-                    AND user_profiles.role IN ('owner', 'admin')
-                )
-            );
+            FOR UPDATE USING (auth.role() = 'authenticated');
     END IF;
 END $$;
 
@@ -139,99 +126,93 @@ BEGIN
         AND policyname = 'Company owners can insert companies'
     ) THEN
         CREATE POLICY "Company owners can insert companies" ON public.companies
-            FOR INSERT WITH CHECK (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.id = auth.uid()
-                    AND user_profiles.role IN ('owner', 'admin')
-                )
-            );
+            FOR INSERT WITH CHECK (auth.role() = 'authenticated');
     END IF;
 END $$;
 
 -- ====================================================================
--- CONTACTS POLICIES
+-- CONTACTS POLICIES (COMMENTED OUT - TABLE DOESN'T EXIST YET)
 -- ====================================================================
 
 -- Users can read contacts from their company
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'contacts' 
-        AND policyname = 'Users can read company contacts'
-    ) THEN
-        CREATE POLICY "Users can read company contacts" ON public.contacts
-            FOR SELECT USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = contacts.company_id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
-    END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--     IF NOT EXISTS (
+--         SELECT 1 FROM pg_policies 
+--         WHERE tablename = 'contacts' 
+--         AND policyname = 'Users can read company contacts'
+--     ) THEN
+--         CREATE POLICY "Users can read company contacts" ON public.contacts
+--             FOR SELECT USING (
+--                 EXISTS (
+--                     SELECT 1 FROM public.user_profiles 
+--                     WHERE user_profiles.company_id = contacts.company_id 
+--                     AND user_profiles.id = auth.uid()
+--                 )
+--             );
+--     END IF;
+-- END $$;
 
 -- Users can manage contacts in their company
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'contacts' 
-        AND policyname = 'Users can manage company contacts'
-    ) THEN
-        CREATE POLICY "Users can manage company contacts" ON public.contacts
-            FOR ALL USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = contacts.company_id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
-    END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--     IF NOT EXISTS (
+--         SELECT 1 FROM pg_policies 
+--         WHERE tablename = 'contacts' 
+--         AND policyname = 'Users can manage company contacts'
+--     ) THEN
+--         CREATE POLICY "Users can manage company contacts" ON public.contacts
+--             FOR ALL USING (
+--                 EXISTS (
+--                     SELECT 1 FROM public.user_profiles 
+--                     WHERE user_profiles.company_id = contacts.company_id 
+--                     AND user_profiles.id = auth.uid()
+--                 )
+--             );
+--     END IF;
+-- END $$;
 
 -- ====================================================================
--- DEALS POLICIES
+-- DEALS POLICIES (COMMENTED OUT - TABLE DOESN'T EXIST YET)
 -- ====================================================================
 
 -- Users can read deals from their company
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'deals' 
-        AND policyname = 'Users can read company deals'
-    ) THEN
-        CREATE POLICY "Users can read company deals" ON public.deals
-            FOR SELECT USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = deals.company_id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
-    END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--     IF NOT EXISTS (
+--         SELECT 1 FROM pg_policies 
+--         WHERE tablename = 'deals' 
+--         AND policyname = 'Users can read company deals'
+--     ) THEN
+--         CREATE POLICY "Users can read company deals" ON public.deals
+--             FOR SELECT USING (
+--                 EXISTS (
+--                     SELECT 1 FROM public.user_profiles 
+--                     WHERE user_profiles.company_id = deals.company_id 
+--                     AND user_profiles.id = auth.uid()
+--                 )
+--             );
+--     END IF;
+-- END $$;
 
 -- Users can manage deals in their company
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'deals' 
-        AND policyname = 'Users can manage company deals'
-    ) THEN
-        CREATE POLICY "Users can manage company deals" ON public.deals
-            FOR ALL USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = deals.company_id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
-    END IF;
-END $$;
+-- DO $$
+-- BEGIN
+--     IF NOT EXISTS (
+--         SELECT 1 FROM pg_policies 
+--         WHERE tablename = 'deals' 
+--         AND policyname = 'Users can manage company deals'
+--     ) THEN
+--         CREATE POLICY "Users can manage company deals" ON public.deals
+--             FOR ALL USING (
+--                 EXISTS (
+--                     SELECT 1 FROM public.user_profiles 
+--                     WHERE user_profiles.company_id = deals.company_id 
+--                     AND user_profiles.id = auth.uid()
+--                 )
+--             );
+--     END IF;
+-- END $$;
 
 -- ====================================================================
 -- TASKS POLICIES
@@ -246,7 +227,7 @@ BEGIN
         AND policyname = 'Users can read own tasks'
     ) THEN
         CREATE POLICY "Users can read own tasks" ON public.tasks
-            FOR SELECT USING (auth.uid() = user_id);
+            FOR SELECT USING (auth.uid() = created_by);
     END IF;
 END $$;
 
@@ -259,7 +240,7 @@ BEGIN
         AND policyname = 'Users can manage own tasks'
     ) THEN
         CREATE POLICY "Users can manage own tasks" ON public.tasks
-            FOR ALL USING (auth.uid() = user_id);
+            FOR ALL USING (auth.uid() = created_by);
     END IF;
 END $$;
 
@@ -637,15 +618,15 @@ CREATE POLICY "Users can manage own integration data" ON public.integration_data
 -- Grant service role access to all tables for edge functions
 GRANT ALL ON public.user_profiles TO service_role;
 GRANT ALL ON public.companies TO service_role;
-GRANT ALL ON public.contacts TO service_role;
-GRANT ALL ON public.deals TO service_role;
+-- GRANT ALL ON public.contacts TO service_role; -- Table doesn't exist yet
+-- GRANT ALL ON public.deals TO service_role; -- Table doesn't exist yet
 GRANT ALL ON public.tasks TO service_role;
 GRANT ALL ON public.ai_inbox_items TO service_role;
 GRANT ALL ON public.ai_insights TO service_role;
 GRANT ALL ON public.thoughts TO service_role;
 GRANT ALL ON public.action_cards TO service_role;
 GRANT ALL ON public.user_integrations TO service_role;
-GRANT ALL ON public.integration_data TO service_role;
+-- GRANT ALL ON public.integration_data TO service_role; -- Table doesn't exist yet
 GRANT ALL ON public.ai_action_card_templates TO service_role;
 GRANT ALL ON public.ai_embedding_cache TO service_role;
 GRANT ALL ON public.chat_conversations TO service_role;

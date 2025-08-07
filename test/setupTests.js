@@ -1,3 +1,4 @@
+const { jest } = require('@jest/globals');
 require('@testing-library/jest-dom');
 require('whatwg-fetch');
 

@@ -1,39 +1,46 @@
 import React from 'react';
 import { performSignOut, forceSignOut } from '@/shared/utils/signOut';
+import { Button } from '@/shared/components/ui/Button';
 
 export const TestSignOut: React.FC = () => {
   const handleSignOut = async () => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Testing sign out...');
-    await performSignOut();
+    try {
+      console.log('Starting sign out process...');
+      await performSignOut();
+      console.log('Sign out completed successfully');
+    } catch (error) {
+      console.error('Sign out failed:', error);
+    }
   };
 
   const handleForceSignOut = () => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Testing force sign out...');
-    forceSignOut();
+    try {
+      console.log('Starting force sign out...');
+      forceSignOut();
+      console.log('Force sign out completed');
+    } catch (error) {
+      console.error('Force sign out failed:', error);
+    }
   };
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-lg font-semibold">Test Sign Out</h2>
+      <h3 className="text-lg font-semibold">Sign Out Test</h3>
       <div className="space-y-2">
-        <button
+        <Button
+          variant="destructive"
           onClick={handleSignOut}
-          className="px-4 py-2 bg-red-500 text-white rounded hover: bg-red-600"
+          className="w-full"
         >
-          Test Sign Out (Comprehensive)
-        </button>
-        <button
+          Test Normal Sign Out
+        </Button>
+        <Button
+          variant="outline"
           onClick={handleForceSignOut}
-          className="px-4 py-2 bg-red-700 text-white rounded hover: bg-red-800"
+          className="w-full"
         >
           Test Force Sign Out
-        </button>
+        </Button>
       </div>
     </div>
   );

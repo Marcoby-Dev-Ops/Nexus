@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
-import { integrationService } from '@/services/integrations/integrationService.ts';
+import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
 import { logger } from '@/shared/utils/logger.ts';
 
 interface Integration {
@@ -48,9 +48,12 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
     setError(null);
 
     try {
-      const userIntegrations = await integrationService.getUserIntegrations(user.id);
-      setIntegrations(userIntegrations);
-      onIntegrationChange?.(userIntegrations);
+      const { data: userIntegrations, error } = await consolidatedIntegrationService.getUserIntegrations(user.id);
+      if (error) {
+        throw new Error(error);
+      }
+      setIntegrations(userIntegrations || []);
+      onIntegrationChange?.(userIntegrations || []);
     } catch (error) {
       logger.error('Error loading integrations:', error);
       setError('Failed to load integrations');
@@ -62,8 +65,11 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
   // Load available platforms with proper authentication
   const loadAvailablePlatforms = useCallback(async () => {
     try {
-      const platforms = await integrationService.getAvailablePlatforms();
-      setAvailablePlatforms(platforms);
+      const { data: platforms, error } = await consolidatedIntegrationService.getAvailablePlatforms();
+      if (error) {
+        throw new Error(error);
+      }
+      setAvailablePlatforms(platforms || []);
     } catch (error) {
       logger.error('Error loading available platforms:', error);
       setError('Failed to load available platforms');
@@ -93,12 +99,16 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
         expires_at: new Date(Date.now() + 3600000).toISOString()
       };
 
-      const result = await integrationService.connectIntegration(user.id, platform, credentials);
+      const { data: result, error } = await consolidatedIntegrationService.connectIntegration(user.id, platform, credentials);
       
-      if (result.success) {
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (result?.success) {
         await loadIntegrations(); // Reload integrations
       } else {
-        setError(result.error || 'Failed to connect integration');
+        setError(result?.error || 'Failed to connect integration');
       }
     } catch (error) {
       logger.error('Error connecting integration:', error);
@@ -113,12 +123,16 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
     if (!user?.id) return;
 
     try {
-      const result = await integrationService.disconnectIntegration(user.id, platform);
+      const { data: result, error } = await consolidatedIntegrationService.disconnectIntegration(user.id, platform);
       
-      if (result.success) {
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (result?.success) {
         await loadIntegrations(); // Reload integrations
       } else {
-        setError(result.error || 'Failed to disconnect integration');
+        setError(result?.error || 'Failed to disconnect integration');
       }
     } catch (error) {
       logger.error('Error disconnecting integration:', error);
@@ -131,13 +145,17 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
     if (!user?.id) return;
 
     try {
-      const result = await integrationService.syncIntegration(user.id, platform);
+      const { data: result, error } = await consolidatedIntegrationService.syncIntegration(user.id, platform);
       
-      if (result.success) {
+      if (error) {
+        throw new Error(error);
+      }
+      
+      if (result?.success) {
         logger.info(`Sync completed for ${platform}: ${result.recordsProcessed} records processed`);
         await loadIntegrations(); // Reload to get updated last_sync
       } else {
-        setError(`Sync failed for ${platform}: ${result.errors.join(', ')}`);
+        setError(`Sync failed for ${platform}: ${result?.errors?.join(', ') || 'Unknown error'}`);
       }
     } catch (error) {
       logger.error(`Error syncing ${platform}:`, error);

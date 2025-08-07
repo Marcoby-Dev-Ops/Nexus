@@ -159,8 +159,8 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
 
       setKnowledge(compiledKnowledge);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading user knowledge: ', error);
     } finally {
@@ -308,8 +308,8 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
             integrations: integrationDetails || { name: 'Unknown', slug: 'unknown', category: 'general' }
           };
         } catch (error) {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching integration details: ', error);
           return {

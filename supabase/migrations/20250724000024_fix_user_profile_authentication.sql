@@ -12,57 +12,29 @@ DROP POLICY IF EXISTS "Users can read own profile" ON public.user_profiles;
 CREATE POLICY "Authenticated users can read profiles" ON public.user_profiles
   FOR SELECT
   TO public
-  USING (
-    auth.role() = 'authenticated' AND 
-    (
-      auth.uid() = id OR 
-      auth.uid() IN (
-        SELECT user_id FROM user_profiles WHERE id = auth.uid()
-      )
-    )
-  );
+  USING (auth.role() = 'authenticated');
 
--- Add a policy for users to read their own profile by user_id
-CREATE POLICY "Users can read own profile by user_id" ON public.user_profiles
+-- Add a policy for users to read their own profile
+CREATE POLICY "Users can read own profile" ON public.user_profiles
   FOR SELECT
   TO public
   USING (
     auth.role() = 'authenticated' AND 
-    auth.uid() = user_id
+    auth.uid() = id
   );
 
 -- ====================================================================
--- STEP 2: ENSURE USER_PROFILES HAS USER_ID COLUMN
+-- STEP 2: SKIP USER_ID COLUMN (NOT NEEDED)
 -- ====================================================================
 
--- Add user_id column if it doesn't exist
-DO $$ 
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'user_profiles' AND column_name = 'user_id'
-  ) THEN
-    ALTER TABLE public.user_profiles ADD COLUMN user_id UUID REFERENCES auth.users(id);
-  END IF;
-END $$;
-
--- Update existing profiles to have user_id = id
-UPDATE public.user_profiles 
-SET user_id = id 
-WHERE user_id IS NULL;
-
--- ====================================================================
--- STEP 3: ADD INDEX FOR BETTER PERFORMANCE
--- ====================================================================
-
--- Create index on user_id for faster lookups
-CREATE INDEX IF NOT EXISTS idx_user_profiles_user_id ON public.user_profiles(user_id);
+-- The user_profiles table uses 'id' as the primary key that references auth.users(id)
+-- No separate user_id column is needed
 
 -- ====================================================================
 -- STEP 4: UPDATE TRIGGER TO SET USER_ID
 -- ====================================================================
 
--- Update the trigger function to also set user_id
+-- Update the trigger function (removed user_id reference)
 CREATE OR REPLACE FUNCTION create_user_profile_if_missing()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -71,14 +43,12 @@ BEGIN
     -- Create user profile
     INSERT INTO public.user_profiles (
       id,
-      user_id,
       email,
       role,
       created_at,
       updated_at
     ) VALUES (
       NEW.id,
-      NEW.id, -- user_id = id for existing users
       NEW.email,
       'owner',
       NOW(),

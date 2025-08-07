@@ -2,11 +2,12 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { authService } from '@/core/auth';
 import type { AuthUser, AuthSession } from '@/core/auth';
+import { performSignOut } from '@/shared/utils/signOut';
 
 // Simple logger for auth events
 const authLogger = {
   info: (message: string, data?: any) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && process.env.VITE_ENABLE_AUTH_LOGS === 'true') {
       console.log(`[Auth] ${message}`, data);
     }
     // In production, this would send to your logging service
@@ -32,6 +33,7 @@ export function useAuth() {
   const subscriptionRef = useRef<any>(null);
   const initializingRef = useRef(false);
   const loadingRef = useRef(false);
+  const authListenerRef = useRef<any>(null);
 
   // Cleanup function
   const cleanup = useCallback(() => {
@@ -44,6 +46,10 @@ export function useAuth() {
       subscriptionRef.current.unsubscribe();
       subscriptionRef.current = null;
     }
+    if (authListenerRef.current) {
+      authListenerRef.current.unsubscribe();
+      authListenerRef.current = null;
+    }
   }, []);
 
   // Initialize auth state
@@ -54,7 +60,7 @@ export function useAuth() {
     loadingRef.current = true;
     
     try {
-      // Set up timeout for session retrieval (increased to 15 seconds)
+      // Set up timeout for session retrieval (reduced to 5 seconds)
       timeoutRef.current = setTimeout(() => {
         if (mountedRef.current && loadingRef.current) {
           authLogger.error('Authentication timeout - proceeding without session');
@@ -65,7 +71,7 @@ export function useAuth() {
           setSession(null);
           loadingRef.current = false;
         }
-      }, 15000); // 15 second timeout
+      }, 5000); // 5 second timeout
 
       // Get initial session
       const result = await authService.getSession();
@@ -120,54 +126,84 @@ export function useAuth() {
     // Initialize auth state
     initializeAuth();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, supabaseSession) => {
-        if (!mountedRef.current) return;
-        
-        authLogger.info('Auth state changed', { event, userId: supabaseSession?.user?.id });
-        
-        // Clear any existing timeout
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-          timeoutRef.current = null;
-        }
-        
-        // Prevent multiple simultaneous calls
-        if (loadingRef.current) {
-          authLogger.info('Auth state change ignored - already processing');
-          return;
-        }
-        
-        loadingRef.current = true;
-        
-        // Get updated session data from our service
-        try {
-          const sessionResult = await authService.getSession();
-          if (sessionResult.success) {
-            setSession(sessionResult.data);
-            setUser(sessionResult.data?.user ?? null);
-            setError(null); // Clear any previous errors
-          } else {
-            // Clear session on auth errors
+    // Only set up auth listener if one doesn't already exist
+    if (!authListenerRef.current) {
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, supabaseSession) => {
+          if (!mountedRef.current) return;
+          
+          authLogger.info('Auth state changed', { event, userId: supabaseSession?.user?.id });
+          
+          // Clear any existing timeout
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+          }
+          
+          // Prevent multiple simultaneous calls
+          if (loadingRef.current) {
+            authLogger.info('Auth state change ignored - already processing');
+            return;
+          }
+          
+          loadingRef.current = true;
+          
+          // Handle auth state change based on event type
+          try {
+            if (event === 'SIGNED_OUT') {
+              // Clear session immediately for sign out
+              setSession(null);
+              setUser(null);
+              setError(null);
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              // Get updated session data from our service
+              const sessionResult = await authService.getSession();
+              if (sessionResult.success) {
+                setSession(sessionResult.data);
+                setUser(sessionResult.data?.user ?? null);
+                setError(null); // Clear any previous errors
+              } else {
+                // Clear session on auth errors
+                setSession(null);
+                setUser(null);
+                setError(new Error(sessionResult.error || 'Auth state change failed'));
+              }
+            } else {
+              // For other events, just update based on the provided session
+              if (supabaseSession) {
+                const authUser: AuthUser = {
+                  id: supabaseSession.user.id,
+                  email: supabaseSession.user.email || '',
+                  firstName: supabaseSession.user.user_metadata?.firstName,
+                  lastName: supabaseSession.user.user_metadata?.lastName,
+                  createdAt: supabaseSession.user.created_at,
+                  updatedAt: supabaseSession.user.updated_at,
+                };
+                setSession({ user: authUser, session: supabaseSession });
+                setUser(authUser);
+                setError(null);
+              } else {
+                setSession(null);
+                setUser(null);
+                setError(null);
+              }
+            }
+          } catch (error) {
+            authLogger.error('Error during auth state change', error);
             setSession(null);
             setUser(null);
-            setError(new Error(sessionResult.error || 'Auth state change failed'));
+            setError(new Error('Auth state change failed'));
+          } finally {
+            setLoading(false);
+            setInitialized(true);
+            loadingRef.current = false;
           }
-        } catch (error) {
-          authLogger.error('Error during auth state change', error);
-          setSession(null);
-          setUser(null);
-          setError(new Error('Auth state change failed'));
-        } finally {
-          setLoading(false);
-          setInitialized(true);
-          loadingRef.current = false;
         }
-      }
-    );
+      );
 
-    subscriptionRef.current = subscription;
+      authListenerRef.current = subscription;
+    }
 
     // Return cleanup function
     return cleanup;
@@ -227,14 +263,9 @@ export function useAuth() {
     setError(null);
 
     try {
-      const result = await authService.signOut();
+      // Use the comprehensive sign out utility
+      await performSignOut();
       
-      if (!result.success) {
-        setError(new Error(result.error || 'Sign out failed'));
-        setLoading(false);
-        return { success: false, error: result.error };
-      }
-
       // Clear local state immediately
       setUser(null);
       setSession(null);

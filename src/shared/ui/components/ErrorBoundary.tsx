@@ -32,8 +32,8 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log the error details
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.error('ErrorBoundary caught an error: ', error, errorInfo);
     
@@ -62,8 +62,8 @@ class ErrorBoundary extends Component<Props, State> {
                 JSON.parse(value); // Test if it's valid JSON
               }
             } catch {
-              // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+               
+     
     // eslint-disable-next-line no-console
     console.warn(`Removing corrupted localStorage key: ${key}`);
               localStorage.removeItem(key);
@@ -72,8 +72,8 @@ class ErrorBoundary extends Component<Props, State> {
         });
       });
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.warn('Error cleaning localStorage: ', error);
     }

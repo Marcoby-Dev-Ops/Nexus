@@ -1,7 +1,8 @@
 import { FireCycleProcessor, type ProcessedInput } from './fireCycleProcessor';
 import { supabase } from '@/lib/supabase';
 import type { UserContext } from './fireCycleLogic';
-import { thoughtsService } from '@/services/help-center/thoughtsService';
+import { thoughtsService } from '@/lib/services/thoughtsService';
+import { logger } from '@/shared/utils/logger';
 
 /**
  * FIRE Cycle Chat Integration
@@ -194,25 +195,31 @@ export class FireCycleChatIntegration {
     try {
       const thought = await thoughtsService.createThought({
         content: message,
-        category: this.mapFirePhaseToCategory(firePhase || 'focus'),
-        status: 'concept',
-        interaction_method: 'text',
+        userid: userId,
         company_id: companyId,
-        main_sub_categories: this.extractCategories(message),
-        personal_or_professional: 'professional',
-        priority: this.determinePriority(message, firePhase),
-        estimated_effort: this.estimateEffort(message, firePhase),
-        impact: this.assessImpact(message, firePhase)
+        tags: this.extractCategories(message),
+        metadata: {
+          category: this.mapFirePhaseToCategory(firePhase || 'focus'),
+          status: 'draft',
+          fire_phase: firePhase || 'focus',
+          priority: this.determinePriority(message, firePhase),
+          interaction_method: 'text',
+          main_sub_categories: this.extractCategories(message),
+          personal_or_professional: 'professional',
+          estimated_effort: this.estimateEffort(message, firePhase),
+          impact: this.assessImpact(message, firePhase)
+        }
       });
 
       // Trigger AI processing for the thought
-      if (thought?.id) {
-        this.triggerAIProcessing(thought.id, message, userId, companyId);
+      if (thought?.success && thought?.data?.id) {
+        this.triggerAIProcessing(thought.data.id, message, userId, companyId);
+        return thought.data.id;
       }
 
-      return thought?.id || null;
+      return null;
     } catch (error) {
-      console.error('Error creating thought from chat:', error);
+      logger.error('Error creating thought from chat:', error);
       return null;
     }
   }
@@ -465,7 +472,7 @@ export class FireCycleChatIntegration {
           content,
         },
       }).catch((err) => {
-        console.error('Failed to invoke ai_embed_thought:', err);
+        logger.error('Failed to invoke ai_embed_thought:', err);
       });
 
       // Trigger intelligent thought processor
@@ -479,11 +486,11 @@ export class FireCycleChatIntegration {
           context: { source: 'fire_cycle_chat' }
         },
       }).catch((err) => {
-        console.error('Failed to trigger intelligent thought processor:', err);
+        logger.error('Failed to trigger intelligent thought processor:', err);
       });
 
     } catch (error) {
-      console.error('Error triggering AI processing:', error);
+      logger.error('Error triggering AI processing:', error);
     }
   }
 }

@@ -127,8 +127,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         const commands = await getSlashCommands();
         setAvailableCommands(commands);
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('[StreamingComposer] Failed to load slash commands: ', error);
         // Fallback to empty array - the service handles fallbacks internally
@@ -226,8 +226,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         }
       }
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Streaming error', err);
       const errorMessage = `Error: ${err.message}`;
@@ -283,8 +283,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         //   }
         // );
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error recording billing: ', error);
       }
@@ -312,13 +312,13 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       // });
 
       // Update message with feedback (extend ChatMessage type if needed)
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log(`Feedback recorded: ${rating} stars for message ${messageIndex}`);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error submitting feedback: ', error);
     }
@@ -347,8 +347,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         variant: "default",
       });
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error submitting feedback: ', error);
       toast({

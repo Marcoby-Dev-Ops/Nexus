@@ -348,7 +348,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
             <input
               type="password"
               placeholder="Enter your API key"
-              className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-10"
+              className="w-full px-4 py-2 border border-border rounded-lg bg-card text-card-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent pr-10"
             />
             <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-muted-foreground">
               <Eye className="w-4 h-4" />
@@ -445,7 +445,7 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
           <label className="block text-sm font-medium text-foreground/90 dark:text-muted-foreground/60 mb-2">
             Sync Frequency
           </label>
-          <select className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground">
+          <select className="w-full px-4 py-2 border border-border rounded-lg bg-card text-card-foreground">
             <option value="realtime">Real-time (Recommended)</option>
             <option value="hourly">Every Hour</option>
             <option value="daily">Daily</option>

@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { logger } from '@/shared/utils/logger';
 
 // Simple logger for notification events
 const notificationLogger = {
   info: (message: string, data?: any) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[Notifications] ${message}`, data);
+      logger.info(`[Notifications] ${message}`, data);
     }
     // In production, this would send to your logging service
   },

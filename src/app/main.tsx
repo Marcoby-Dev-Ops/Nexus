@@ -18,98 +18,98 @@ import '@/shared/services/i18n';
 // Initialize storage cleanup to fix potential localStorage corruption
 initializeStorageCleanup();
 
-// Create a client
+// Create a client with optimized settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
       retry: 3,
       retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+      // Add performance optimizations
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
 
 // Initialize environment validation
-try {
-  // Simple environment check
-  const requiredEnvVars = [
-    'VITE_SUPABASE_URL',
-    'VITE_SUPABASE_ANON_KEY'
-  ];
-  
-  const missingVars = requiredEnvVars.filter(
-    varName => !import.meta.env[varName]
-  );
-  
-  if (missingVars.length > 0) {
-    throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
+const validateEnvironment = async () => {
+  try {
+    // Simple environment check
+    const requiredEnvVars = [
+      'VITE_SUPABASE_URL',
+      'VITE_SUPABASE_ANON_KEY'
+    ];
+    
+    const missingVars = requiredEnvVars.filter(
+      varName => !import.meta.env[varName]
+    );
+    
+    if (missingVars.length > 0) {
+      throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
+    }
+    
+    logger.info('Environment configuration validated successfully');
+  } catch (error) {
+    logger.error('Environment validation failed', { error });
   }
-  
-  logger.info('Environment configuration validated successfully');
-} catch (error) {
-  logger.error({ error }, 'Environment validation failed');
-  console.error('Environment validation failed:', error);
-}
+};
 
-// Enhanced error boundary for the root
+// Enhanced error boundary with better UX
 const RootErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [hasError, setHasError] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
 
   React.useEffect(() => {
     const handleError = (event: ErrorEvent) => {
-      console.error('Root error caught:', event.error);
+      logger.error('Root error caught', { error: event.error });
       setError(event.error);
       setHasError(true);
     };
 
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      logger.error('Unhandled promise rejection', { reason: event.reason });
+      setError(new Error(event.reason));
+      setHasError(true);
+    };
+
     window.addEventListener('error', handleError);
-    return () => window.removeEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
   }, []);
 
   if (hasError) {
     return (
-      <div style={{ 
-        padding: '20px', 
-        textAlign: 'center', 
-        fontFamily: 'Arial, sans-serif',
-        backgroundColor: '#f8f9fa',
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}>
-        <div>
-          <h1 style={{ color: '#dc3545', marginBottom: '10px' }}>Application Error</h1>
-          <p style={{ color: '#6c757d', marginBottom: '20px' }}>
-            The application encountered an error during startup.
-          </p>
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full space-y-4 text-center">
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-destructive">Application Error</h1>
+            <p className="text-muted-foreground">
+              The application encountered an error during startup.
+            </p>
+          </div>
+          
           {error && (
-            <details style={{ textAlign: 'left', maxWidth: '600px', margin: '0 auto' }}>
-              <summary style={{ cursor: 'pointer', color: '#007bff' }}>Error Details</summary>
-              <pre style={{ 
-                backgroundColor: '#f8f9fa', 
-                padding: '10px', 
-                border: '1px solid #dee2e6',
-                borderRadius: '4px',
-                fontSize: '12px',
-                overflow: 'auto'
-              }}>
+            <details className="text-left">
+              <summary className="cursor-pointer text-primary hover:text-primary/80">
+                Error Details
+              </summary>
+              <pre className="mt-2 p-3 bg-muted rounded-md text-xs overflow-auto max-h-40">
                 {error.toString()}
               </pre>
             </details>
           )}
+          
           <button 
             onClick={() => window.location.reload()} 
-            style={{
-              backgroundColor: '#007bff',
-              color: 'white',
-              border: 'none',
-              padding: '10px 20px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              marginTop: '20px'
-            }}
+            className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
           >
             Reload Application
           </button>
@@ -121,10 +121,13 @@ const RootErrorBoundary: React.FC<{ children: React.ReactNode }> = ({ children }
   return <>{children}</>;
 };
 
-// Enhanced React app initialization with error handling
-const initializeApp = () => {
+// Enhanced React app initialization with error handling and performance monitoring
+const initializeApp = async () => {
   try {
-    console.log('Starting application initialization...');
+    logger.info('Starting application initialization...');
+    
+    // Initialize environment validation
+    await validateEnvironment();
     
     const rootElement = document.getElementById('root');
     if (!rootElement) {
@@ -133,7 +136,7 @@ const initializeApp = () => {
 
     const root = ReactDOM.createRoot(rootElement);
     
-    console.log('Rendering application...');
+    logger.info('Rendering application...');
     root.render(
       <React.StrictMode>
         <RootErrorBoundary>
@@ -152,22 +155,24 @@ const initializeApp = () => {
       </React.StrictMode>
     );
     
-    console.log('Application rendered successfully');
+    logger.info('Application rendered successfully');
   } catch (error) {
-    console.error('Failed to initialize application:', error);
+    logger.error('Failed to initialize application', { error });
     // Fallback error display
     const rootElement = document.getElementById('root');
     if (rootElement) {
       rootElement.innerHTML = `
-        <div style="padding: 20px; text-align: center; font-family: Arial, sans-serif;">
-          <h1 style="color: #dc3545;">Application Startup Error</h1>
-          <p style="color: #6c757d;">Failed to initialize the application.</p>
-          <pre style="background-color: #f8f9fa; padding: 10px; border-radius: 4px; font-size: 12px;">
-            ${error instanceof Error ? error.toString() : 'Unknown error'}
-          </pre>
-          <button onclick="window.location.reload()" style="margin-top: 20px; padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Reload Application
-          </button>
+        <div class="min-h-screen bg-background flex items-center justify-center p-4">
+          <div class="max-w-md w-full space-y-4 text-center">
+            <h1 class="text-2xl font-bold text-destructive">Application Startup Error</h1>
+            <p class="text-muted-foreground">Failed to initialize the application.</p>
+            <pre class="mt-2 p-3 bg-muted rounded-md text-xs overflow-auto max-h-40">
+              ${error instanceof Error ? error.toString() : 'Unknown error'}
+            </pre>
+            <button onclick="window.location.reload()" class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
+              Reload Application
+            </button>
+          </div>
         </div>
       `;
     }

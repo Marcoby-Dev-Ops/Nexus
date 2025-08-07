@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Separator } from '@/shared/components/ui/Separator';
-import { ApiIntegrationService } from '@/services/apiIntegrationService';
+import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
 import { Settings, RefreshCw, CheckCircle2, AlertCircle, Copy, Eye, EyeOff, Trash2, Save, Code, Globe, Key, Activity, X } from 'lucide-react';
 interface ApiIntegration {
   id: string;
@@ -97,7 +97,7 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      const updatedIntegration = await ApiIntegrationService.updateApiIntegration(integration.id, {
+      const { data: updatedIntegration, error } = await consolidatedIntegrationService.updateApiIntegration(integration.id, {
         name: formData.name,
         description: formData.description,
         apiurl: formData.api_url,
@@ -115,13 +115,15 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
         }
       });
 
+      if (error) {
+        console.error('Failed to update integration: ', error);
+        return;
+      }
+
       onUpdate(updatedIntegration);
       setActiveTab('settings');
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to update integration: ', error);
+      console.error('Failed to update integration: ', error);
     } finally {
       setIsLoading(false);
     }
@@ -132,7 +134,17 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
     setTestResults(null);
 
     try {
-      const result = await ApiIntegrationService.testApiIntegration(integration.id);
+      const { data: result, error } = await consolidatedIntegrationService.testApiIntegration(integration.id);
+      
+      if (error) {
+        setTestResults({
+          success: false,
+          error: 'Failed to run test',
+          details: error
+        });
+        return;
+      }
+
       setTestResults(result);
       setActiveTab('testing');
     } catch (error) {
@@ -150,14 +162,17 @@ export const ManageIntegrationModal: React.FC<ManageIntegrationModalProps> = ({
     if (window.confirm(`Are you sure you want to delete the integration "${integration.name}"? This action cannot be undone.`)) {
       setIsLoading(true);
       try {
-        await ApiIntegrationService.deleteApiIntegration(integration.id);
+        const { error } = await consolidatedIntegrationService.deleteApiIntegration(integration.id);
+        
+        if (error) {
+          console.error('Failed to delete integration: ', error);
+          return;
+        }
+
         onDelete(integration.id);
         onClose();
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to delete integration: ', error);
+        console.error('Failed to delete integration: ', error);
       } finally {
         setIsLoading(false);
       }

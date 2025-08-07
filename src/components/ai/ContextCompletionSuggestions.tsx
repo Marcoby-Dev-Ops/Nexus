@@ -85,8 +85,8 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
       const proactiveSuggestions = await contextualDataCompletionService.getProactiveContextSuggestions(user.id);
       setSuggestions(proactiveSuggestions);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading proactive suggestions: ', error);
     } finally {
@@ -111,8 +111,8 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
         onComplete?.([gap]);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error completing gap: ', error);
     } finally {
@@ -137,8 +137,8 @@ export const ContextCompletionSuggestions: React.FC<ContextCompletionSuggestions
         });
         onComplete?.(suggestion.gaps);
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error completing suggestion: ', error);
       } finally {
@@ -493,8 +493,8 @@ const DetailedCompletionDialog: React.FC<DetailedCompletionDialogProps> = ({
       
       onComplete(completedGaps);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error completing suggestion: ', error);
     } finally {

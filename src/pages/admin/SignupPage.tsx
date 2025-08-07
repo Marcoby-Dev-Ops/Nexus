@@ -49,7 +49,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md p-8 bg-card shadow-xl border-0">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Create Account</h1>
+          <h1 className="text-3xl font-bold text-card-foreground">Create Account</h1>
           <p className="text-muted-foreground mt-2">
             Sign up to get started with Nexus
           </p>
@@ -73,11 +73,11 @@ export default function SignupPage() {
                       id="firstName"
                       placeholder="First name"
                       disabled={isFormLoading}
-                      className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                      className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
                       autoComplete="given-name"
                     />
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-muted-foreground" />
+                      <User className="h-5 w-5 text-card-foreground" />
                     </div>
                   </div>
                 )}
@@ -97,11 +97,11 @@ export default function SignupPage() {
                       id="lastName"
                       placeholder="Last name"
                       disabled={isFormLoading}
-                      className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                      className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
                       autoComplete="family-name"
                     />
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-muted-foreground" />
+                      <User className="h-5 w-5 text-card-foreground" />
                     </div>
                   </div>
                 )}
@@ -118,16 +118,16 @@ export default function SignupPage() {
             >
               {({ field }) => (
                 <div className="relative">
-                  <Input
-                    {...field}
-                    id="companyName"
-                    placeholder="Your company name"
-                    disabled={isFormLoading}
-                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
-                    autoComplete="organization"
-                  />
+                                      <Input
+                      {...field}
+                      id="companyName"
+                      placeholder="Your company name"
+                      disabled={isFormLoading}
+                      className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
+                      autoComplete="organization"
+                    />
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 text-card-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
                   </div>
@@ -152,11 +152,11 @@ export default function SignupPage() {
                     type="email"
                     placeholder="Email address"
                     disabled={isFormLoading}
-                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
                     autoComplete="email"
                   />
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-muted-foreground" />
+                    <Mail className="h-5 w-5 text-card-foreground" />
                   </div>
                 </div>
               )}
@@ -179,11 +179,11 @@ export default function SignupPage() {
                     type="password"
                     placeholder="Password"
                     disabled={isFormLoading}
-                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
                     autoComplete="new-password"
                   />
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-muted-foreground" />
+                    <Lock className="h-5 w-5 text-card-foreground" />
                   </div>
                 </div>
               )}
@@ -205,11 +205,11 @@ export default function SignupPage() {
                     type="password"
                     placeholder="Confirm password"
                     disabled={isFormLoading}
-                    className="pl-12 h-12 text-base border-border focus:border-primary focus:ring-primary rounded-xl transition-all duration-200"
+                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
                     autoComplete="new-password"
                   />
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-muted-foreground" />
+                    <Lock className="h-5 w-5 text-card-foreground" />
                   </div>
                 </div>
               )}

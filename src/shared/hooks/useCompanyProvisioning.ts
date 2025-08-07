@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth.ts';
-import { CompanyProvisioningService } from '@/services/business';
+import { companyProvisioningService } from '@/services/business';
 import type { CompanyProvisioningOptions, ProvisioningResult } from '@/services/business';
 import { logger } from '@/shared/utils/logger.ts';
 
@@ -49,14 +49,33 @@ export const useCompanyProvisioning = (): UseCompanyProvisioningReturn => {
     setError(null);
 
     try {
-      const result = await companyProvisioningService.ensureCompanyAssociation(user.id, options);
+      const serviceResponse = await companyProvisioningService.ensureCompanyAssociation(user.id, options);
+      
+      if (serviceResponse.error) {
+        const result: ProvisioningResult = {
+          success: false,
+          action: 'failed',
+          message: 'Failed to provision company',
+          error: serviceResponse.error
+        };
+        setError(result.error ?? null);
+        setProvisioningResult(result);
+        return result;
+      }
+
+      const result = serviceResponse.data;
       setProvisioningResult(result);
       
-      if (!result.success) {
+      if (result && !result.success) {
         setError(result.error || 'Failed to provision company');
       }
       
-      return result;
+      return result || {
+        success: false,
+        action: 'failed',
+        message: 'No result returned from service',
+        error: 'No result returned from service'
+      };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
@@ -88,7 +107,7 @@ export const useCompanyProvisioning = (): UseCompanyProvisioningReturn => {
   }, [provisionCompany]);
 
   // Check if user has a company
-  const hasCompany = provisioningResult?.success && provisioningResult.companyId != null;
+  const hasCompany = Boolean(provisioningResult?.success && provisioningResult?.companyId);
   const companyId = provisioningResult?.companyId || null;
 
   return {

@@ -1,36 +1,88 @@
-// Auto-generated service file
-export class useDataService {
-  // TODO: Implement service methods
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import type { ServiceResponse } from '@/core/types/service';
+
+export interface DataServiceConfig {
+  table: string;
+  select?: string;
+  filters?: Record<string, any>;
 }
 
-// Data service hooks
-export const useInboxItems = () => {
-  // TODO: Implement inbox items hook
-  return {
-    items: [],
-    loading: false,
-    error: null,
-    refetch: () => {}
+export const useDataService = () => {
+  const fetchData = async (config: DataServiceConfig): Promise<ServiceResponse<any[]>> => {
+    try {
+      const { data, error } = await select(config.table, config.select, config.filters);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Database operation failed' };
+    }
   };
-};
 
-export const useNotifications = () => {
-  // TODO: Implement notifications hook
-  return {
-    notifications: [],
-    loading: false,
-    error: null,
-    markAsRead: () => {},
-    markAllAsRead: () => {}
+  const fetchOne = async (table: string, id: string): Promise<ServiceResponse<any>> => {
+    try {
+      const { data, error } = await selectOne(table, id);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Database operation failed' };
+    }
   };
-};
 
-export const useDashboardMetrics = () => {
-  // TODO: Implement dashboard metrics hook
+  const createData = async (table: string, data: any): Promise<ServiceResponse<any>> => {
+    try {
+      const { data: result, error } = await insertOne(table, data);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: 'Database operation failed' };
+    }
+  };
+
+  const updateData = async (table: string, id: string, data: any): Promise<ServiceResponse<any>> => {
+    try {
+      const { data: result, error } = await updateOne(table, id, data);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true, data: result };
+    } catch (error) {
+      return { success: false, error: 'Database operation failed' };
+    }
+  };
+
+  const deleteData = async (table: string, id: string): Promise<ServiceResponse<boolean>> => {
+    try {
+      const { data, error } = await deleteOne(table, id);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true, data: true };
+    } catch (error) {
+      return { success: false, error: 'Database operation failed' };
+    }
+  };
+
   return {
-    metrics: {},
-    loading: false,
-    error: null,
-    refetch: () => {}
+    fetchData,
+    fetchOne,
+    createData,
+    updateData,
+    deleteData,
   };
 };

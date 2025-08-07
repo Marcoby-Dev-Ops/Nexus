@@ -68,7 +68,7 @@ export class DataPointMappingService extends BaseService {
     return this.executeDbOperation(async () => {
       try {
         // Get all user integrations
-        const userIntegrations = await select('user_integrations', '*', { userid: userId });
+        const userIntegrations = await select('user_integrations', '*', { user_id: userId });
 
         if (!userIntegrations?.length) {
           const emptyReport: MappingReport = {
@@ -226,7 +226,7 @@ export class DataPointMappingService extends BaseService {
     return this.executeDbOperation(async () => {
       try {
         // Get all user integrations
-        const userIntegrations = await select('user_integrations', '*', { userid: userId });
+        const userIntegrations = await select('user_integrations', '*', { user_id: userId });
 
         if (!userIntegrations?.length) {
           return { 

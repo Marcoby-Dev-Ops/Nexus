@@ -20,6 +20,7 @@ import {
 
 // Import our new service patterns
 import { useService } from '@/shared/hooks/useService';
+import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
@@ -27,11 +28,33 @@ import { userProfileSchema, type UserProfileFormData } from '@/shared/validation
 const AccountSettings: React.FC = () => {
   const { user } = useAuth();
   
-  // Use the new UserService hooks
+  // Use the UserService directly
   const userService = useService('user');
-  const { data: userProfile, isLoading: isLoadingProfile } = userService.useGet(user?.id || '');
-  const { mutate: updateUser, isLoading: isUpdating } = userService.useUpdate();
-  
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+  // Fetch user profile data
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (!user?.id) return;
+      
+      setIsLoadingProfile(true);
+      try {
+        const result = await userService.get(user.id);
+        if (result.success && result.data) {
+          setUserProfile(result.data);
+        }
+              } catch (error) {
+          logger.error('Failed to fetch user profile:', error);
+        } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [user?.id, userService]);
+
   const [isEditing, setIsEditing] = useState(false);
 
   // Initialize form with our new pattern
@@ -70,11 +93,23 @@ const AccountSettings: React.FC = () => {
         phone: data.phone,
       };
 
+      setIsUpdating(true);
       try {
-        await updateUser(user.id, updates);
-        setIsEditing(false);
+        const result = await userService.update(user.id, updates);
+        if (result.success) {
+          setIsEditing(false);
+          // Refresh user profile data
+          const refreshResult = await userService.get(user.id);
+          if (refreshResult.success && refreshResult.data) {
+            setUserProfile(refreshResult.data);
+          }
+        } else {
+          throw new Error(result.error || 'Failed to update profile');
+        }
       } catch (error) {
         throw new Error('Failed to update profile');
+      } finally {
+        setIsUpdating(false);
       }
     },
     successMessage: 'Profile updated successfully!',

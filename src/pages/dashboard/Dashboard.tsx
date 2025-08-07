@@ -1,6 +1,6 @@
 import React from 'react';
-import EnhancedDashboard from '@/components/dashboard/EnhancedDashboard';
+import NarrativeDashboard from '@/components/dashboard/NarrativeDashboard';
 
 export default function Dashboard() {
-  return <EnhancedDashboard />;
+  return <NarrativeDashboard />;
 } 

@@ -1,106 +1,135 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Calendar, AlertCircle, Plus } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/hooks/index';
+import React, { useState, useEffect } from 'react';
+import { Calendar, CalendarContent, CalendarHeader, CalendarTitle } from '@/shared/components/ui/Calendar';
+import { Badge } from '@/shared/components/ui/Badge';
+import { select } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: string;
+  type: 'meeting' | 'deadline' | 'reminder' | 'task';
+  description?: string;
+}
 
 interface CalendarWidgetProps {
   className?: string;
 }
 
-/**
- * CalendarWidget
- * Displays calendar events for the workspace dashboard.
- */
-const CalendarWidget: React.FC<CalendarWidgetProps> = ({ className = '' }) => {
-  const { user } = useAuth();
+export const CalendarWidget: React.FC<CalendarWidgetProps> = ({ className = '' }) => {
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
-  // Check if user has any calendar integrations connected
-  const { isLoading } = useQuery({
-    queryKey: ['calendar-integrations-widget', user?.id],
-    queryFn: async () => {
-      if (!user) return [];
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
       
-      const { data, error } = await supabase
-        .from('user_integrations')
-        .select(`
-          id, 
-          status, 
-          integration_type,
-          integrations: integration_id (
-            id, 
-            name, 
-            slug, 
-            description
-          )
-        `)
-        .eq('user_id', user.id)
-        .in('integration_type', ['microsoft', 'google', 'outlook', 'microsoft365'])
-        .eq('status', 'active');
-
+      // Fetch calendar events from the database
+      const { data, error } = await select('calendar_events', '*');
+      
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Error fetching calendar integrations: ', error);
-        return [];
+        logger.error({ error }, 'Failed to fetch calendar events');
+        return;
       }
 
-      return data || [];
-    },
-    enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+      // Transform the data to match our interface
+      const transformedEvents: CalendarEvent[] = (data || []).map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        date: event.date,
+        type: event.type || 'reminder',
+        description: event.description
+      }));
 
-  const hasConnectedIntegrations = integrations && integrations.length > 0;
+      setEvents(transformedEvents);
+    } catch (error) {
+      logger.error({ error }, 'Error fetching calendar events');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getEventsForDate = (date: Date) => {
+    const dateString = date.toISOString().split('T')[0];
+    return events.filter(event => event.date === dateString);
+  };
+
+  const getEventTypeColor = (type: string) => {
+    switch (type) {
+      case 'meeting':
+        return 'bg-blue-500';
+      case 'deadline':
+        return 'bg-red-500';
+      case 'reminder':
+        return 'bg-yellow-500';
+      case 'task':
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={`p-4 border rounded-lg ${className}`}>
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="space-y-2">
+            <div className="h-3 bg-gray-200 rounded"></div>
+            <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+            <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <Card className={`${className}`}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-primary" />
-          Today's Schedule
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {isLoading ? (
-          <div className="text-center py-4">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-          </div>
-        ) : !hasConnectedIntegrations ? (
-          <div className="space-y-3">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                No calendar integrations connected
-              </AlertDescription>
-            </Alert>
-            <Button size="sm" variant="outline" className="w-full">
-              <Plus className="w-4 h-4 mr-2" />
-              Connect Calendar
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              Connected to {integrations.length} calendar source{integrations.length > 1 ? 's' : ''}
+    <div className={`p-4 border rounded-lg ${className}`}>
+      <CalendarHeader>
+        <CalendarTitle>Calendar</CalendarTitle>
+      </CalendarHeader>
+      <CalendarContent>
+        <Calendar
+          mode="single"
+          selected={selectedDate}
+          onSelect={setSelectedDate}
+          className="rounded-md border"
+        />
+        
+        {selectedDate && (
+          <div className="mt-4">
+            <h4 className="font-medium mb-2">
+              Events for {selectedDate.toLocaleDateString()}
+            </h4>
+            <div className="space-y-2">
+              {getEventsForDate(selectedDate).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No events scheduled</p>
+              ) : (
+                getEventsForDate(selectedDate).map((event) => (
+                  <div key={event.id} className="flex items-center gap-2 p-2 bg-muted rounded">
+                    <div className={`w-2 h-2 rounded-full ${getEventTypeColor(event.type)}`}></div>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{event.title}</div>
+                      {event.description && (
+                        <div className="text-xs text-muted-foreground">{event.description}</div>
+                      )}
+                    </div>
+                    <Badge variant="outline" className="text-xs capitalize">
+                      {event.type}
+                    </Badge>
+                  </div>
+                ))
+              )}
             </div>
-            <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">
-                View your calendar events in the full calendar view
-              </p>
-            </div>
-            <Button size="sm" variant="outline" className="w-full">
-              View Calendar
-            </Button>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </CalendarContent>
+    </div>
   );
-};
-
-export default CalendarWidget; 
+}; 

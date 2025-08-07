@@ -38,23 +38,23 @@ export class CallbackRegistryImpl implements CallbackRegistry {
   public async initialize(): Promise<void> {
     // Global guard to prevent multiple initializations
     if (globalInitializationGuard) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('✅ Callback registry already initialized globally, skipping...');
       return;
     }
     
     if (this.isInitialized) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('✅ Callback registry already initialized, skipping...');
       return;
     }
     
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('🔄 Initializing callback registry...');
     
@@ -76,8 +76,8 @@ export class CallbackRegistryImpl implements CallbackRegistry {
     }
     
     this.isInitialized = true;
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('✅ Callback registry initialized successfully');
   }
@@ -122,8 +122,8 @@ export class CallbackRegistryImpl implements CallbackRegistry {
   public unregister(id: string): void {
     const config = this.callbacks.get(id);
     if (!config) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.warn(`Callback ${id} not found for unregistration`);
       return;
@@ -142,8 +142,8 @@ export class CallbackRegistryImpl implements CallbackRegistry {
       this.integrationMap.delete(config.integrationSlug);
     }
 
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log(`Unregistered callback: ${id}`);
   }
@@ -335,8 +335,8 @@ export class CallbackRegistryImpl implements CallbackRegistry {
       try {
         this.register(config);
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error(`Failed to import callback ${config.id}:`, error);
       }
@@ -455,8 +455,8 @@ export class CallbackRegistryImpl implements CallbackRegistry {
   private async loadExistingCallbacks(): Promise<void> {
     // Check if callbacks are already loaded
     if (this.callbacks.size > 0) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
       console.log('✅ Callbacks already loaded, skipping re-registration');
       return;
@@ -466,13 +466,13 @@ export class CallbackRegistryImpl implements CallbackRegistry {
     try {
       const { registerAllCallbacks } = await import('./configs/integrationCallbacks');
       await registerAllCallbacks();
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
       console.log('✅ Loaded all callback configurations');
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
       console.error('❌ Failed to load callback configurations: ', error);
     }
@@ -511,8 +511,8 @@ export const callbackRegistry = new CallbackRegistryImpl();
 export const initializeCallbackRegistry = async (): Promise<void> => {
   // Check if already initialized
   if (callbackRegistry.isCallbacksLoaded()) {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('✅ Callback registry already loaded, skipping initialization');
     return;

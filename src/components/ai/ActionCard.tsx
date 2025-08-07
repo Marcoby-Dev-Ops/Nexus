@@ -88,8 +88,8 @@ export const ActionCard: React.FC<ActionCardProps> = ({
         setModalOpen(false);
         onCompleted?.(action);
       } catch (err: any) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('[ActionCard] Execution failed', err);
         toast.error(err?.message ?? 'Failed to execute action');

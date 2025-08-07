@@ -105,16 +105,56 @@ export default defineConfig(({ mode }) => {
         '@supabase/supabase-js',
         'react',
         'react-dom',
-        'zustand'
+        'zustand',
+        'lucide-react',
+        '@radix-ui/react-dialog',
+        '@radix-ui/react-dropdown-menu',
+        '@radix-ui/react-select',
+        '@radix-ui/react-toast',
+        'react-hook-form',
+        'zod',
+        'framer-motion',
+        'recharts',
+        'react-router-dom',
+        'axios',
+        'date-fns',
+        'clsx',
+        'tailwind-merge',
+        'class-variance-authority',
+        'next-themes',
+        'sonner',
+        'vaul',
+        'react-confetti',
+        'react-day-picker',
+        'react-error-boundary',
+        'react-use',
+        'i18next',
+        'openai',
+        'pino',
+        'uuid',
+        'immer',
+        'tailwindcss-animate',
+        '@simplewebauthn/browser',
+        'rehype-highlight',
+        'rehype-raw',
+        'remark-gfm',
+        'react-markdown',
+        'react-window',
+        'react-virtualized-auto-sizer',
+        '@dnd-kit/core',
+        '@dnd-kit/sortable',
+        '@dnd-kit/utilities'
       ]
     },
     build: {
       // Configure build for better Microsoft Graph Toolkit compatibility
+      chunkSizeWarningLimit: 1500, // Increase from 1000KB to 1.5MB
       rollupOptions: {
         external: [],
         output: {
           // Separate chunks for better performance
           manualChunks: (id) => {
+            // Vendor chunks for large libraries
             if (id.includes('framer-motion')) {
               return 'framer-motion';
             }
@@ -126,6 +166,155 @@ export default defineConfig(({ mode }) => {
             }
             if (id.includes('react-router-dom')) {
               return 'react-router';
+            }
+            if (id.includes('lucide-react')) {
+              return 'lucide-react';
+            }
+            if (id.includes('@radix-ui')) {
+              return 'radix-ui';
+            }
+            if (id.includes('recharts')) {
+              return 'recharts';
+            }
+            if (id.includes('react-hook-form')) {
+              return 'react-hook-form';
+            }
+            if (id.includes('zod')) {
+              return 'zod';
+            }
+            if (id.includes('zustand')) {
+              return 'zustand';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'react-query';
+            }
+            if (id.includes('date-fns')) {
+              return 'date-fns';
+            }
+            if (id.includes('react-markdown')) {
+              return 'react-markdown';
+            }
+            if (id.includes('react-window')) {
+              return 'react-window';
+            }
+            if (id.includes('react-virtualized-auto-sizer')) {
+              return 'react-virtualized';
+            }
+            if (id.includes('@dnd-kit')) {
+              return 'dnd-kit';
+            }
+            if (id.includes('sonner')) {
+              return 'sonner';
+            }
+            if (id.includes('vaul')) {
+              return 'vaul';
+            }
+            if (id.includes('react-confetti')) {
+              return 'react-confetti';
+            }
+            if (id.includes('react-day-picker')) {
+              return 'react-day-picker';
+            }
+            if (id.includes('react-error-boundary')) {
+              return 'react-error-boundary';
+            }
+            if (id.includes('react-use')) {
+              return 'react-use';
+            }
+            if (id.includes('i18next')) {
+              return 'i18next';
+            }
+            if (id.includes('openai')) {
+              return 'openai';
+            }
+            if (id.includes('pino')) {
+              return 'pino';
+            }
+            if (id.includes('uuid')) {
+              return 'uuid';
+            }
+            if (id.includes('yargs')) {
+              return 'yargs';
+            }
+            if (id.includes('immer')) {
+              return 'immer';
+            }
+            if (id.includes('clsx')) {
+              return 'clsx';
+            }
+            if (id.includes('tailwind-merge')) {
+              return 'tailwind-merge';
+            }
+            if (id.includes('class-variance-authority')) {
+              return 'cva';
+            }
+            if (id.includes('next-themes')) {
+              return 'next-themes';
+            }
+            if (id.includes('@simplewebauthn')) {
+              return 'webauthn';
+            }
+            if (id.includes('rehype-')) {
+              return 'rehype';
+            }
+            if (id.includes('remark-')) {
+              return 'remark';
+            }
+            if (id.includes('tailwindcss-animate')) {
+              return 'tailwind-animate';
+            }
+            
+            // Shared utilities chunk
+            if (id.includes('@/shared/utils/') || id.includes('@/shared/utils\\')) {
+              return 'shared-utils';
+            }
+            
+            // Auth-related chunk
+            if (id.includes('@/core/auth') || id.includes('@/hooks/useAuth') || id.includes('@/shared/utils/signOut')) {
+              return 'auth';
+            }
+            
+            // UI components chunk
+            if (id.includes('@/shared/components/ui/')) {
+              return 'ui-components';
+            }
+            
+            // Integration-specific chunks
+            if (id.includes('@/services/integrations/hubspot')) {
+              return 'hubspot-integration';
+            }
+            if (id.includes('@/services/integrations/salesforce')) {
+              return 'salesforce-integration';
+            }
+            if (id.includes('@/services/integrations/microsoft')) {
+              return 'microsoft-integration';
+            }
+            
+            // Domain-specific chunks
+            if (id.includes('@/domains/')) {
+              const domainMatch = id.match(/@\/domains\/([^\/]+)/);
+              if (domainMatch) {
+                return `domain-${domainMatch[1]}`;
+              }
+            }
+            
+            // Page-specific chunks for large pages
+            if (id.includes('@/pages/admin/')) {
+              return 'admin-pages';
+            }
+            if (id.includes('@/pages/analytics/')) {
+              return 'analytics-pages';
+            }
+            if (id.includes('@/pages/ai/')) {
+              return 'ai-pages';
+            }
+            if (id.includes('@/pages/integrations/')) {
+              return 'integration-pages';
+            }
+            
+            // Default vendor chunk for other node_modules
+            if (id.includes('node_modules')) {
+              return 'vendor';
             }
           },
         }

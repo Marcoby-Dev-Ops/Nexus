@@ -109,7 +109,7 @@ export class FireCycleAgent {
   /**
    * Generate Focus phase responses
    */
-  private generateFocusResponse(entities: any[], sentiment: any): string {
+  private generateFocusResponse(entities: Array<{ type: string; value: string }>, sentiment: { label: string }): string {
     const goals = entities.filter(e => e.type === 'goal');
     const challenges = entities.filter(e => e.type === 'challenge');
     
@@ -127,7 +127,7 @@ export class FireCycleAgent {
   /**
    * Generate Insight phase responses
    */
-  private generateInsightResponse(entities: any[], sentiment: any): string {
+  private generateInsightResponse(entities: Array<{ type: string; value: string }>, sentiment: { label: string }): string {
     const metrics = entities.filter(e => e.type === 'metric');
     
     if (metrics.length > 0) {
@@ -144,7 +144,7 @@ export class FireCycleAgent {
   /**
    * Generate Roadmap phase responses
    */
-  private generateRoadmapResponse(entities: any[], sentiment: any): string {
+  private generateRoadmapResponse(entities: Array<{ type: string; value: string }>, sentiment: { label: string }): string {
     const projects = entities.filter(e => e.type === 'project');
     
     if (projects.length > 0) {
@@ -157,7 +157,7 @@ export class FireCycleAgent {
   /**
    * Generate Execute phase responses
    */
-  private generateExecuteResponse(entities: any[], sentiment: any): string {
+  private generateExecuteResponse(entities: Array<{ type: string; value: string }>, sentiment: { label: string }): string {
     const tasks = entities.filter(e => e.type === 'task');
     
     if (tasks.length > 0) {
@@ -170,19 +170,19 @@ export class FireCycleAgent {
   /**
    * Generate update responses for existing items
    */
-  private generateFocusUpdateResponse(contextMatch: any): string {
+  private generateFocusUpdateResponse(contextMatch: { name: string }): string {
     return `🎯 **Updating Focus**: "${contextMatch.name}"\n\nI've linked this to your existing focus area. This update helps us: \n• Refine your priorities\n• Track progress better\n• Stay aligned with your goals`;
   }
 
-  private generateInsightUpdateResponse(contextMatch: any): string {
+  private generateInsightUpdateResponse(contextMatch: { name: string }): string {
     return `💡 **Enhancing Insight**: "${contextMatch.name}"\n\nThis adds valuable context to your existing insights. This helps us: \n• Deepen our understanding\n• Identify new patterns\n• Make better decisions`;
   }
 
-  private generateRoadmapUpdateResponse(contextMatch: any): string {
+  private generateRoadmapUpdateResponse(contextMatch: { name: string }): string {
     return `🗺️ **Updating Roadmap**: "${contextMatch.name}"\n\nThis improves your existing plan. This helps us: \n• Refine the strategy\n• Adjust timelines\n• Optimize resources`;
   }
 
-  private generateExecuteUpdateResponse(contextMatch: any): string {
+  private generateExecuteUpdateResponse(contextMatch: { name: string }): string {
     return `⚡ **Progress Update**: "${contextMatch.name}"\n\nThis shows progress on your existing action. This helps us: \n• Track completion\n• Identify blockers\n• Plan next steps`;
   }
 
@@ -323,12 +323,9 @@ export class FireCycleAgent {
    * Execute an action (placeholder for real implementation)
    */
   private executeAction(action: NextAction): void {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log(`Executing action: ${action.title}`);
     // This would integrate with your actual action system
     // For example, creating tasks, updating projects, etc.
+    // TODO: Implement actual action execution
   }
 
   /**

@@ -45,6 +45,7 @@ CREATE POLICY "user_profiles_service_role_policy" ON public.user_profiles
 DO $$
 DECLARE
     policy_count INTEGER;
+    policy_record RECORD;
 BEGIN
     SELECT COUNT(*) INTO policy_count
     FROM pg_policies 

@@ -35,8 +35,8 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
     try {
       // TODO: Implement actual connection logic
       // This would typically open OAuth flows or connection wizards
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log(`Connecting to ${sourceId}`);
       
@@ -47,8 +47,8 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
       await refresh();
       
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Failed to connect: ', error);
     } finally {

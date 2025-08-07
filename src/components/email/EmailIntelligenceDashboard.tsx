@@ -55,8 +55,8 @@ export const EmailIntelligenceDashboard: React.FC = () => {
       }
     } catch (err) {
       setError('Failed to load emails from unified inbox');
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading emails: ', err);
     } finally {
@@ -84,8 +84,8 @@ export const EmailIntelligenceDashboard: React.FC = () => {
       }
     } catch (err) {
       setError('Failed to analyze email');
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error analyzing email: ', err);
     } finally {
@@ -112,8 +112,8 @@ export const EmailIntelligenceDashboard: React.FC = () => {
       await loadUserEmails();
     } catch (err) {
       setError('Failed to process emails');
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error processing emails: ', err);
     } finally {

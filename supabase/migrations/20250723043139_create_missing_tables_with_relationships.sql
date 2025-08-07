@@ -344,60 +344,42 @@ BEGIN
     END IF;
 END $$;
 
--- Assessment Summary - Company-based access
+-- Assessment Summary - Simple access (company-based policy will be added later)
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'assessment_summary' 
-        AND policyname = 'Company users can access assessment summary'
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'assessment_summary'
+        AND policyname = 'Allow authenticated users to access assessment summary'
     ) THEN
-        CREATE POLICY "Company users can access assessment summary" ON public.assessment_summary
-            FOR ALL USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = assessment_summary.company_id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
+        CREATE POLICY "Allow authenticated users to access assessment summary" ON public.assessment_summary
+            FOR ALL USING (auth.role() = 'authenticated');
     END IF;
 END $$;
 
--- Assessment Category Score - Company-based access
+-- Assessment Category Score - Simple access (company-based policy will be added later)
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'assessment_category_score' 
-        AND policyname = 'Company users can access assessment category scores'
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'assessment_category_score'
+        AND policyname = 'Allow authenticated users to access assessment category scores'
     ) THEN
-        CREATE POLICY "Company users can access assessment category scores" ON public.assessment_category_score
-            FOR ALL USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = assessment_category_score.company_id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
+        CREATE POLICY "Allow authenticated users to access assessment category scores" ON public.assessment_category_score
+            FOR ALL USING (auth.role() = 'authenticated');
     END IF;
 END $$;
 
--- Assessment Response - Company-based access
+-- Assessment Response - Simple access (company-based policy will be added later)
 DO $$
 BEGIN
     IF NOT EXISTS (
-        SELECT 1 FROM pg_policies 
-        WHERE tablename = 'assessment_response' 
-        AND policyname = 'Company users can access assessment responses'
+        SELECT 1 FROM pg_policies
+        WHERE tablename = 'assessment_response'
+        AND policyname = 'Allow authenticated users to access assessment responses'
     ) THEN
-        CREATE POLICY "Company users can access assessment responses" ON public.assessment_response
-            FOR ALL USING (
-                EXISTS (
-                    SELECT 1 FROM public.user_profiles 
-                    WHERE user_profiles.company_id = assessment_response.company_id 
-                    AND user_profiles.id = auth.uid()
-                )
-            );
+        CREATE POLICY "Allow authenticated users to access assessment responses" ON public.assessment_response
+            FOR ALL USING (auth.role() = 'authenticated');
     END IF;
 END $$;
 

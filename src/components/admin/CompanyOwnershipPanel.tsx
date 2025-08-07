@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,7 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Crown, Users, AlertTriangle } from 'lucide-react';
 import { useCompanyOwnership } from '@/shared/hooks/useCompanyOwnership';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
+import { select } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
 interface CompanyOwnershipPanelProps {
   companyId: string;
@@ -55,32 +56,34 @@ export const CompanyOwnershipPanel: React.FC<CompanyOwnershipPanelProps> = ({
       getOwnershipStats();
       loadCompanyMembers();
     }
-  }, [companyId, getOwner, checkOwnership, getOwnershipStats]);
+  }, [companyId, getOwner, checkOwnership, getOwnershipStats, loadCompanyMembers]);
 
-  const loadCompanyMembers = async () => {
+  const loadCompanyMembers = useCallback(async () => {
     if (!companyId) return;
 
     setIsLoadingMembers(true);
     try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('id, email, first_name, last_name, display_name, role')
-        .eq('company_id', companyId)
-        .order('role', { ascending: false })
-        .order('first_name');
+      const { data, error } = await select('user_profiles', 'id, email, first_name, last_name, display_name, role', { 
+        company_id: companyId 
+      }, { 
+        orderBy: [
+          { column: 'role', ascending: false },
+          { column: 'first_name', ascending: true }
+        ]
+      });
 
       if (error) {
-        console.error('Error loading company members:', error);
+        logger.error('Error loading company members', { error });
         return;
       }
 
       setMembers(data || []);
     } catch (error) {
-      console.error('Error loading company members:', error);
+      logger.error('Error loading company members', { error });
     } finally {
       setIsLoadingMembers(false);
     }
-  };
+  }, [companyId]);
 
   const handleTransferOwnership = async () => {
     if (!selectedNewOwner || !user?.id) return;

@@ -1,8 +1,9 @@
 import { billingService } from '@/services/business/BillingService';
-import { analyticsService } from '@/services/analytics/AnalyticsService';
+import { analyticsService } from '@/services/analytics/analyticsService';
 import { aiService } from '@/services/ai/AIService';
-import { ApiIntegrationService as integrationService } from '@/shared/services/apiIntegrationService';
+import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
 import { TenantService } from '@/services/business/TenantService';
+import { onboardingService } from '@/shared/services/OnboardingService';
 import { logger } from '@/shared/utils/logger.ts';
 
 // Legacy services have been migrated to core services
@@ -12,16 +13,18 @@ export interface ServiceRegistry {
   billing: typeof billingService;
   analytics: typeof analyticsService;
   ai: typeof aiService;
-  integration: typeof integrationService;
+  integration: typeof consolidatedIntegrationService;
   tenant: typeof TenantService;
+  onboarding: typeof onboardingService;
 }
 
 export const serviceRegistry: ServiceRegistry = {
   billing: billingService,
   analytics: analyticsService,
   ai: aiService,
-  integration: integrationService,
+  integration: consolidatedIntegrationService,
   tenant: TenantService,
+  onboarding: onboardingService,
 };
 
 // Migration helper functions
@@ -30,7 +33,7 @@ export const MigrationHelper = {
    * Check if a service has been migrated to the new core service
    */
   isServiceMigrated(serviceName: string): boolean {
-    const migratedServices = ['billing', 'analytics', 'ai', 'integration', 'tenant'];
+    const migratedServices = ['billing', 'analytics', 'ai', 'integration', 'tenant', 'onboarding'];
     return migratedServices.includes(serviceName);
   },
 
@@ -66,6 +69,7 @@ export const MigrationHelper = {
       continuousImprovementService: { migrated: true, targetService: 'ai' },
       slashCommandService: { migrated: true, targetService: 'ai' },
       tenantService: { migrated: true, targetService: 'tenant' },
+      onboardingService: { migrated: true, targetService: 'onboarding' },
     };
   },
 
@@ -91,6 +95,6 @@ export const MigrationHelper = {
 };
 
 // Export individual services for direct access
-export { billingService, analyticsService, aiService, integrationService, TenantService };
+export { billingService, analyticsService, aiService, consolidatedIntegrationService as integrationService, TenantService, onboardingService };
 
 // All legacy services have been migrated to core services 

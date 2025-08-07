@@ -118,8 +118,8 @@ const UnifiedClientProfilesView: React.FC = () => {
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching client profiles: ', error);
     } finally {
@@ -138,8 +138,8 @@ const UnifiedClientProfilesView: React.FC = () => {
       if (error) throw error;
       setInteractions(data || []);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching interactions: ', error);
     }
@@ -157,8 +157,8 @@ const UnifiedClientProfilesView: React.FC = () => {
       if (error) throw error;
       setAlerts(data || []);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching alerts: ', error);
     }
@@ -181,8 +181,8 @@ const UnifiedClientProfilesView: React.FC = () => {
         await fetchClientProfiles();
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error triggering client unification: ', error);
     }

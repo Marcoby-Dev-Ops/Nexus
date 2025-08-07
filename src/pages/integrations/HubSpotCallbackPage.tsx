@@ -29,8 +29,8 @@ const HubSpotCallbackPage: React.FC = () => {
   const handleCallback = async () => {
     // Prevent multiple executions
     if (hasProcessed.current) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Callback already processed, skipping...');
       return;
@@ -45,8 +45,8 @@ const HubSpotCallbackPage: React.FC = () => {
       const state = searchParams.get('state');
       const errorParam = searchParams.get('error');
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpot Callback] Received parameters: ', {
         hasCode: !!code,
@@ -79,8 +79,8 @@ const HubSpotCallbackPage: React.FC = () => {
       let userId: string | null = null;
       try {
         const stateData = JSON.parse(atob(state));
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpot Callback] State data: ', {
           service: stateData.service,
@@ -93,8 +93,8 @@ const HubSpotCallbackPage: React.FC = () => {
         }
         userId = stateData.userId;
       } catch (e) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Failed to parse state parameter: ', e);
         setError('Invalid state parameter');
@@ -114,8 +114,8 @@ const HubSpotCallbackPage: React.FC = () => {
         throw new Error('No valid session found');
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpot Callback] Exchanging code for tokens via backend');
 
@@ -137,8 +137,8 @@ const HubSpotCallbackPage: React.FC = () => {
       }
 
       const { tokens, portalInfo: exchangePortalInfo } = await exchangeResponse.json();
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpot Callback] Token exchange successful');
 
@@ -148,8 +148,8 @@ const HubSpotCallbackPage: React.FC = () => {
         throw new Error('No valid session found');
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpot Callback] Storing integration data...');
 
@@ -172,8 +172,8 @@ const HubSpotCallbackPage: React.FC = () => {
         throw new Error(errorData.error || 'Failed to store integration');
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpot Callback] Integration stored successfully');
       setStatus('success');
@@ -191,8 +191,8 @@ const HubSpotCallbackPage: React.FC = () => {
       }, 2000);
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('HubSpot callback error: ', error);
       setError(error instanceof Error ? error.message: 'An unexpected error occurred');

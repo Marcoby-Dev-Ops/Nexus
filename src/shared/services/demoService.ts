@@ -1,599 +1,539 @@
 /**
  * Demo Service
- * 
- * Provides comprehensive mock data for all application features
- * Used when demo mode is enabled or for development/testing
+ * Handles demo data generation and management
  */
 
-import { getDemoData, type DemoData } from '@/shared/config/demoConfig';
+import { supabase } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
-export interface DemoDashboardData {
-  overview: {
-    totalRevenue: number;
-    monthlyGrowth: number;
-    activeUsers: number;
-    conversionRate: number;
-  };
-  metrics: {
-    sales: {
-      pipeline: number;
-      deals: number;
-      conversion: number;
-      averageDealSize: number;
-    };
-    marketing: {
-      leads: number;
-      cpa: number;
-      roi: number;
-      campaigns: number;
-    };
-    finance: {
-      expenses: number;
-      profit: number;
-      cashFlow: number;
-      burnRate: number;
-    };
-  };
-  recentActivity: Array<{
-    id: string;
-    type: 'deal' | 'lead' | 'integration' | 'ai';
-    title: string;
-    description: string;
-    timestamp: string;
-    value?: number;
-  }>;
+// ============================================================================
+// INTERFACES
+// ============================================================================
+
+export interface DemoData {
+  id: string;
+  user_id: string;
+  demo_type: string;
+  data: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
 }
 
-export interface DemoAnalyticsData {
-  googleAnalytics: {
-    connected: boolean;
-    metrics: {
-      pageViews: number;
-      uniqueVisitors: number;
-      bounceRate: number;
-      avgSessionDuration: number;
-      topPages: Array<{
-        page: string;
-        views: number;
-        conversion: number;
-      }>;
-    };
-  };
-  googleWorkspace: {
-    connected: boolean;
-    metrics: {
-      emailsSent: number;
-      meetingsScheduled: number;
-      documentsCreated: number;
-      storageUsed: number;
-    };
-  };
-  integrations: Array<{
-    name: string;
-    status: 'connected' | 'disconnected' | 'error';
-    lastSync: string;
-    dataPoints: number;
-  }>;
+export interface DemoConfig {
+  demo_type: string;
+  description: string;
+  data_schema: Record<string, any>;
+  is_enabled: boolean;
+  max_instances: number;
 }
 
-export interface DemoAIData {
-  agents: Array<{
-    id: string;
-    name: string;
-    type: 'sales' | 'support' | 'marketing' | 'general';
-    status: 'active' | 'inactive';
-    conversations: number;
-    accuracy: number;
-    satisfaction: number;
-  }>;
-  conversations: Array<{
-    id: string;
-    agent: string;
-    user: string;
-    topic: string;
-    duration: number;
-    satisfaction: number;
-    timestamp: string;
-  }>;
-  insights: Array<{
-    id: string;
-    type: 'opportunity' | 'risk' | 'trend' | 'recommendation';
-    title: string;
-    description: string;
-    confidence: number;
-    impact: 'high' | 'medium' | 'low';
-    timestamp: string;
-  }>;
-  performance: {
-    responseTime: number;
-    accuracy: number;
-    satisfaction: number;
-    costPerConversation: number;
-    totalCost: number;
-  };
+export interface DemoStats {
+  totalDemos: number;
+  activeDemos: number;
+  byType: Record<string, number>;
+  recentActivity: number;
 }
 
-export interface DemoIntegrationData {
-  connected: Array<{
-    id: string;
-    name: string;
-    type: 'crm' | 'payment' | 'communication' | 'analytics';
-    status: 'active' | 'warning' | 'error';
-    lastSync: string;
-    dataPoints: number;
-    metrics: Record<string, any>;
-  }>;
-  available: Array<{
-    id: string;
-    name: string;
-    type: 'crm' | 'payment' | 'communication' | 'analytics';
-    description: string;
-    features: string[];
-    pricing: string;
-  }>;
-  insights: Array<{
-    id: string;
-    integration: string;
-    type: 'data_sync' | 'performance' | 'usage';
-    title: string;
-    description: string;
-    value: number;
-    trend: 'up' | 'down' | 'stable';
-  }>;
-}
+// ============================================================================
+// DEMO SERVICE CLASS
+// ============================================================================
 
-export interface DemoBillingData {
-  subscription: {
-    plan: 'starter' | 'professional' | 'enterprise';
-    status: 'active' | 'past_due' | 'canceled';
-    nextBilling: string;
-    amount: number;
-  };
-  usage: {
-    aiConversations: number;
-    storageUsed: number;
-    integrations: number;
-    users: number;
-  };
-  invoices: Array<{
-    id: string;
-    date: string;
-    amount: number;
-    status: 'paid' | 'pending' | 'overdue';
-    description: string;
-  }>;
-  paymentMethods: Array<{
-    id: string;
-    type: 'card' | 'bank';
-    last4: string;
-    brand: string;
-    expiry?: string;
-    isDefault: boolean;
-  }>;
-}
-
-export class DemoService {
-  private demoData: DemoData | null = null;
-
-  constructor(accountId?: string) {
-    if (accountId) {
-      this.demoData = getDemoData(accountId);
-    }
+export class DemoService extends BaseService {
+  constructor() {
+    super('DemoService');
   }
 
-  // Dashboard Data
-  getDashboardData(): DemoDashboardData {
-    const baseRevenue = this.demoData?.metrics.revenue || 1000000;
-    
-    return {
-      overview: {
-        totalRevenue: baseRevenue,
-        monthlyGrowth: this.demoData?.metrics.growth || 12.5,
-        activeUsers: this.demoData?.business.employees || 50,
-        conversionRate: 3.2,
-      },
-      metrics: {
-        sales: {
-          pipeline: baseRevenue * 2.5,
-          deals: 47,
-          conversion: 28,
-          averageDealSize: baseRevenue / 20,
-        },
-        marketing: {
-          leads: 156,
-          cpa: 45,
-          roi: 320,
-          campaigns: 8,
-        },
-        finance: {
-          expenses: baseRevenue * 0.7,
-          profit: baseRevenue * 0.3,
-          cashFlow: baseRevenue * 0.15,
-          burnRate: baseRevenue * 0.08,
-        },
-      },
-      recentActivity: [
-        {
-          id: '1',
-          type: 'deal',
-          title: 'New Enterprise Deal',
-          description: 'TechCorp Solutions - $125,000 opportunity',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          value: 125000,
-        },
-        {
-          id: '2',
-          type: 'lead',
-          title: 'High-Value Lead',
-          description: 'Innovation Labs - Qualified lead from website',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: '3',
-          type: 'integration',
-          title: 'HubSpot Connected',
-          description: 'CRM integration successfully established',
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: '4',
-          type: 'ai',
-          title: 'AI Insight Generated',
-          description: 'New opportunity identified in Q4 pipeline',
-          timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-        },
-      ],
-    };
+  /**
+   * Create demo data for a user
+   */
+  async createDemoData(
+    userId: string, 
+    demoType: string, 
+    data: Record<string, any>
+  ): Promise<ServiceResponse<DemoData>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('createDemoData', { userId, demoType });
+
+      try {
+        // Check if user already has this demo type
+        const { data: existingDemo, error: checkError } = await this.supabase
+          .from('demo_data')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('demo_type', demoType)
+          .single();
+
+        if (checkError && checkError.code !== 'PGRST116') {
+          this.logFailure('createDemoData', checkError.message);
+          return { data: null, error: checkError };
+        }
+
+        if (existingDemo) {
+          this.logFailure('createDemoData', 'Demo data already exists for this user and type');
+          return { 
+            data: null, 
+            error: 'Demo data already exists for this user and type' 
+          };
+        }
+
+        // Create new demo data
+        const { data: newDemo, error: insertError } = await this.supabase
+          .from('demo_data')
+          .insert({
+            user_id: userId,
+            demo_type: demoType,
+            data: data,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          this.logFailure('createDemoData', insertError.message);
+          return { data: null, error: insertError };
+        }
+
+        this.logSuccess('createDemoData', `Created demo data for user ${userId}, type ${demoType}`);
+        return { data: newDemo as DemoData, error: null };
+      } catch (error) {
+        this.logFailure('createDemoData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
   }
 
-  // Analytics Data
-  getAnalyticsData(): DemoAnalyticsData {
-    return {
-      googleAnalytics: {
-        connected: true,
+  /**
+   * Get demo data for a user
+   */
+  async getUserDemoData(userId: string): Promise<ServiceResponse<DemoData[]>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getUserDemoData', { userId });
+
+      try {
+        const { data, error } = await this.supabase
+          .from('demo_data')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_active', true);
+
+        if (error) {
+          this.logFailure('getUserDemoData', error.message);
+          return { data: null, error };
+        }
+
+        this.logSuccess('getUserDemoData', `Retrieved ${data?.length || 0} demo data entries for user ${userId}`);
+        return { data: data as DemoData[] || [], error: null };
+      } catch (error) {
+        this.logFailure('getUserDemoData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Get specific demo data
+   */
+  async getDemoData(userId: string, demoType: string): Promise<ServiceResponse<DemoData | null>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getDemoData', { userId, demoType });
+
+      try {
+        const { data, error } = await this.supabase
+          .from('demo_data')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('demo_type', demoType)
+          .eq('is_active', true)
+          .single();
+
+        if (error) {
+          this.logFailure('getDemoData', error.message);
+          return { data: null, error };
+        }
+
+        this.logSuccess('getDemoData', `Retrieved demo data for user ${userId}, type ${demoType}`);
+        return { data: data as DemoData, error: null };
+      } catch (error) {
+        this.logFailure('getDemoData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Update demo data
+   */
+  async updateDemoData(
+    userId: string, 
+    demoType: string, 
+    updates: Partial<DemoData>
+  ): Promise<ServiceResponse<DemoData>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('updateDemoData', { userId, demoType });
+
+      try {
+        const { data, error } = await this.supabase
+          .from('demo_data')
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .eq('demo_type', demoType)
+          .eq('is_active', true)
+          .select()
+          .single();
+
+        if (error) {
+          this.logFailure('updateDemoData', error.message);
+          return { data: null, error };
+        }
+
+        this.logSuccess('updateDemoData', `Updated demo data for user ${userId}, type ${demoType}`);
+        return { data: data as DemoData, error: null };
+      } catch (error) {
+        this.logFailure('updateDemoData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Delete demo data
+   */
+  async deleteDemoData(userId: string, demoType: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('deleteDemoData', { userId, demoType });
+
+      try {
+        const { error } = await this.supabase
+          .from('demo_data')
+          .update({ 
+            is_active: false,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .eq('demo_type', demoType);
+
+        if (error) {
+          this.logFailure('deleteDemoData', error.message);
+          return { data: null, error };
+        }
+
+        this.logSuccess('deleteDemoData', `Deleted demo data for user ${userId}, type ${demoType}`);
+        return { data: true, error: null };
+      } catch (error) {
+        this.logFailure('deleteDemoData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Generate sample demo data
+   */
+  async generateSampleData(userId: string, demoType: string): Promise<ServiceResponse<DemoData>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('generateSampleData', { userId, demoType });
+
+      try {
+        const sampleData = this.getSampleDataForType(demoType);
+        
+        const result = await this.createDemoData(userId, demoType, sampleData);
+        
+        if (!result.success) {
+          return result;
+        }
+
+        this.logSuccess('generateSampleData', `Generated sample data for user ${userId}, type ${demoType}`);
+        return result;
+      } catch (error) {
+        this.logFailure('generateSampleData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Get demo statistics
+   */
+  async getDemoStats(): Promise<ServiceResponse<DemoStats>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getDemoStats', {});
+
+      try {
+        const { data: demos, error } = await this.supabase
+          .from('demo_data')
+          .select('*')
+          .eq('is_active', true);
+
+        if (error) {
+          this.logFailure('getDemoStats', error.message);
+          return { data: null, error };
+        }
+
+        const stats: DemoStats = {
+          totalDemos: demos?.length || 0,
+          activeDemos: demos?.filter(d => d.is_active).length || 0,
+          byType: {},
+          recentActivity: 0
+        };
+
+        // Group by demo type
+        demos?.forEach(demo => {
+          const type = demo.demo_type;
+          stats.byType[type] = (stats.byType[type] || 0) + 1;
+        });
+
+        // Count recent activity (last 7 days)
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+        
+        stats.recentActivity = demos?.filter(demo => 
+          new Date(demo.updated_at) > oneWeekAgo
+        ).length || 0;
+
+        this.logSuccess('getDemoStats', `Retrieved stats: ${stats.totalDemos} total demos, ${stats.activeDemos} active`);
+        return { data: stats, error: null };
+      } catch (error) {
+        this.logFailure('getDemoStats', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Get available demo types
+   */
+  async getAvailableDemoTypes(): Promise<ServiceResponse<DemoConfig[]>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getAvailableDemoTypes', {});
+
+      try {
+        const demoConfigs: DemoConfig[] = [
+          {
+            demo_type: 'business_health',
+            description: 'Business health monitoring demo',
+            data_schema: {
+              metrics: ['revenue', 'customers', 'satisfaction'],
+              timeframes: ['daily', 'weekly', 'monthly']
+            },
+            is_enabled: true,
+            max_instances: 1
+          },
+          {
+            demo_type: 'ai_assistant',
+            description: 'AI assistant functionality demo',
+            data_schema: {
+              features: ['chat', 'analysis', 'recommendations'],
+              models: ['gpt-4', 'claude-3']
+            },
+            is_enabled: true,
+            max_instances: 1
+          },
+          {
+            demo_type: 'integrations',
+            description: 'Third-party integrations demo',
+            data_schema: {
+              providers: ['microsoft', 'gmail', 'slack'],
+              features: ['sync', 'automation', 'analytics']
+            },
+            is_enabled: true,
+            max_instances: 3
+          },
+          {
+            demo_type: 'automation',
+            description: 'Workflow automation demo',
+            data_schema: {
+              triggers: ['email', 'schedule', 'webhook'],
+              actions: ['notification', 'data_update', 'api_call']
+            },
+            is_enabled: true,
+            max_instances: 2
+          }
+        ];
+
+        this.logSuccess('getAvailableDemoTypes', `Retrieved ${demoConfigs.length} available demo types`);
+        return { data: demoConfigs, error: null };
+      } catch (error) {
+        this.logFailure('getAvailableDemoTypes', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Check if user has demo data
+   */
+  async hasDemoData(userId: string, demoType: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('hasDemoData', { userId, demoType });
+
+      try {
+        const { data, error } = await this.supabase
+          .from('demo_data')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('demo_type', demoType)
+          .eq('is_active', true)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          this.logFailure('hasDemoData', error.message);
+          return { data: null, error };
+        }
+
+        const hasData = !!data;
+        this.logSuccess('hasDemoData', `User ${userId} has demo data for type ${demoType}: ${hasData}`);
+        return { data: hasData, error: null };
+      } catch (error) {
+        this.logFailure('hasDemoData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Clean up expired demo data
+   */
+  async cleanupExpiredDemoData(): Promise<ServiceResponse<{ deletedCount: number; errors: string[] }>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('cleanupExpiredDemoData', {});
+
+      try {
+        // Find demo data older than 30 days
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const { data: expiredDemos, error } = await this.supabase
+          .from('demo_data')
+          .select('*')
+          .lt('created_at', thirtyDaysAgo.toISOString())
+          .eq('is_active', true);
+
+        if (error) {
+          this.logFailure('cleanupExpiredDemoData', error.message);
+          return { data: null, error };
+        }
+
+        let deletedCount = 0;
+        const errors: string[] = [];
+
+        for (const demo of expiredDemos || []) {
+          try {
+            const result = await this.deleteDemoData(demo.user_id, demo.demo_type);
+            if (result.success) {
+              deletedCount++;
+            } else {
+              errors.push(`Failed to delete demo ${demo.demo_type} for user ${demo.user_id}`);
+            }
+          } catch (error) {
+            errors.push(`Error deleting demo ${demo.demo_type} for user ${demo.user_id}: ${error}`);
+          }
+        }
+
+        this.logSuccess('cleanupExpiredDemoData', `Deleted ${deletedCount} expired demos, ${errors.length} errors`);
+        return { 
+          data: { 
+            deletedCount, 
+            errors 
+          }, 
+          error: null 
+        };
+      } catch (error) {
+        this.logFailure('cleanupExpiredDemoData', error instanceof Error ? error.message : 'Unknown error');
+        return { data: null, error };
+      }
+    });
+  }
+
+  /**
+   * Get sample data for a specific demo type
+   */
+  private getSampleDataForType(demoType: string): Record<string, any> {
+    const sampleData: Record<string, Record<string, any>> = {
+      business_health: {
         metrics: {
-          pageViews: 15420,
-          uniqueVisitors: 3247,
-          bounceRate: 23.5,
-          avgSessionDuration: 245,
-          topPages: [
-            { page: '/dashboard', views: 3247, conversion: 12.5 },
-            { page: '/analytics', views: 2156, conversion: 8.3 },
-            { page: '/ai', views: 1892, conversion: 15.7 },
-            { page: '/integrations', views: 1456, conversion: 6.2 },
-          ],
+          revenue: 50000,
+          customers: 150,
+          satisfaction: 4.2,
+          growth_rate: 12.5
         },
+        alerts: [
+          { type: 'warning', message: 'Customer satisfaction below target', severity: 'medium' },
+          { type: 'info', message: 'Revenue growth on track', severity: 'low' }
+        ],
+        insights: [
+          'Revenue increased 15% this month',
+          'Customer churn rate improved by 8%',
+          'New feature adoption at 65%'
+        ]
       },
-      googleWorkspace: {
-        connected: true,
-        metrics: {
-          emailsSent: 2847,
-          meetingsScheduled: 156,
-          documentsCreated: 89,
-          storageUsed: 45.2,
+      ai_assistant: {
+        conversations: [
+          { role: 'user', content: 'How can I improve my business metrics?' },
+          { role: 'assistant', content: 'Based on your data, I recommend focusing on customer retention strategies.' }
+        ],
+        features: {
+          chat_enabled: true,
+          analysis_enabled: true,
+          recommendations_enabled: true
         },
+        usage_stats: {
+          total_conversations: 25,
+          average_response_time: 2.3,
+          satisfaction_score: 4.5
+        }
       },
-      integrations: [
-        {
-          name: 'HubSpot CRM',
-          status: 'connected',
-          lastSync: '2 minutes ago',
-          dataPoints: 1247,
-        },
-        {
-          name: 'Stripe Payments',
-          status: 'connected',
-          lastSync: '1 minute ago',
-          dataPoints: 892,
-        },
-        {
-          name: 'Slack',
-          status: 'connected',
-          lastSync: '5 minutes ago',
-          dataPoints: 2156,
-        },
-        {
-          name: 'Google Analytics',
-          status: 'connected',
-          lastSync: '3 minutes ago',
-          dataPoints: 3247,
-        },
-      ],
-    };
-  }
-
-  // AI Data
-  getAIData(): DemoAIData {
-    const baseConversations = this.demoData?.ai.conversations || 1000;
-    const baseAccuracy = this.demoData?.ai.accuracy || 90;
-    
-    return {
-      agents: [
-        {
-          id: 'sales-agent',
-          name: 'Sales Assistant',
-          type: 'sales',
-          status: 'active',
-          conversations: Math.floor(baseConversations * 0.4),
-          accuracy: baseAccuracy,
-          satisfaction: 4.7,
-        },
-        {
-          id: 'support-agent',
-          name: 'Support Bot',
-          type: 'support',
-          status: 'active',
-          conversations: Math.floor(baseConversations * 0.3),
-          accuracy: baseAccuracy - 2,
-          satisfaction: 4.5,
-        },
-        {
-          id: 'marketing-agent',
-          name: 'Marketing Assistant',
-          type: 'marketing',
-          status: 'active',
-          conversations: Math.floor(baseConversations * 0.2),
-          accuracy: baseAccuracy - 1,
-          satisfaction: 4.6,
-        },
-        {
-          id: 'general-agent',
-          name: 'General Assistant',
-          type: 'general',
-          status: 'active',
-          conversations: Math.floor(baseConversations * 0.1),
-          accuracy: baseAccuracy - 3,
-          satisfaction: 4.3,
-        },
-      ],
-      conversations: [
-        {
-          id: 'conv-1',
-          agent: 'Sales Assistant',
-          user: 'john@techcorp.com',
-          topic: 'Product Inquiry',
-          duration: 180,
-          satisfaction: 5,
-          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'conv-2',
-          agent: 'Support Bot',
-          user: 'sarah@innovate.com',
-          topic: 'Technical Support',
-          duration: 240,
-          satisfaction: 4,
-          timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'conv-3',
-          agent: 'Marketing Assistant',
-          user: 'mike@startup.com',
-          topic: 'Campaign Strategy',
-          duration: 300,
-          satisfaction: 5,
-          timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-        },
-      ],
-      insights: [
-        {
-          id: 'insight-1',
-          type: 'opportunity',
-          title: 'High-Value Lead Identified',
-          description: 'TechCorp Solutions shows strong buying signals',
-          confidence: 87,
-          impact: 'high',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'insight-2',
-          type: 'trend',
-          title: 'Sales Cycle Optimization',
-          description: 'AI analysis suggests 15% reduction in sales cycle',
-          confidence: 92,
-          impact: 'medium',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        },
-        {
-          id: 'insight-3',
-          type: 'recommendation',
-          title: 'Customer Retention Strategy',
-          description: 'Implement loyalty program for 25% revenue increase',
-          confidence: 78,
-          impact: 'high',
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        },
-      ],
-      performance: {
-        responseTime: 1.2,
-        accuracy: baseAccuracy,
-        satisfaction: this.demoData?.ai.satisfaction || 4.5,
-        costPerConversation: 0.15,
-        totalCost: baseConversations * 0.15,
+      integrations: {
+        connected_services: [
+          { name: 'Microsoft 365', status: 'connected', last_sync: '2024-01-15T10:30:00Z' },
+          { name: 'Gmail', status: 'connected', last_sync: '2024-01-15T09:45:00Z' }
+        ],
+        automation_rules: [
+          { name: 'Email to Task', trigger: 'new_email', action: 'create_task', active: true },
+          { name: 'Calendar Sync', trigger: 'calendar_update', action: 'sync_event', active: true }
+        ],
+        data_synced: {
+          emails: 1250,
+          contacts: 450,
+          calendar_events: 89,
+          tasks: 234
+        }
       },
-    };
-  }
-
-  // Integration Data
-  getIntegrationData(): DemoIntegrationData {
-    return {
-      connected: [
-        {
-          id: 'hubspot',
-          name: 'HubSpot CRM',
-          type: 'crm',
-          status: 'active',
-          lastSync: '2 minutes ago',
-          dataPoints: 1247,
-          metrics: {
-            contacts: 2847,
-            deals: 156,
-            pipeline: 2450000,
+      automation: {
+        workflows: [
+          {
+            name: 'Customer Onboarding',
+            status: 'active',
+            steps: ['welcome_email', 'setup_call', 'resource_access'],
+            completion_rate: 85
           },
+          {
+            name: 'Lead Follow-up',
+            status: 'active',
+            steps: ['initial_contact', 'qualification', 'proposal'],
+            completion_rate: 72
+          }
+        ],
+        triggers: {
+          email_received: 45,
+          form_submitted: 23,
+          time_based: 12
         },
-        {
-          id: 'stripe',
-          name: 'Stripe Payments',
-          type: 'payment',
-          status: 'active',
-          lastSync: '1 minute ago',
-          dataPoints: 892,
-          metrics: {
-            transactions: 892,
-            revenue: 125000,
-            refunds: 2,
-          },
-        },
-        {
-          id: 'slack',
-          name: 'Slack',
-          type: 'communication',
-          status: 'active',
-          lastSync: '5 minutes ago',
-          dataPoints: 2156,
-          metrics: {
-            messages: 2156,
-            channels: 12,
-            members: 45,
-          },
-        },
-        {
-          id: 'google-analytics',
-          name: 'Google Analytics',
-          type: 'analytics',
-          status: 'active',
-          lastSync: '3 minutes ago',
-          dataPoints: 3247,
-          metrics: {
-            pageViews: 15420,
-            visitors: 3247,
-            conversions: 156,
-          },
-        },
-      ],
-      available: [
-        {
-          id: 'salesforce',
-          name: 'Salesforce',
-          type: 'crm',
-          description: 'Enterprise CRM with advanced automation',
-          features: ['Lead Management', 'Sales Automation', 'Analytics'],
-          pricing: '$25/user/month',
-        },
-        {
-          id: 'zapier',
-          name: 'Zapier',
-          type: 'automation',
-          description: 'Connect apps and automate workflows',
-          features: ['Workflow Automation', 'App Integration', 'Triggers'],
-          pricing: '$20/month',
-        },
-        {
-          id: 'quickbooks',
-          name: 'QuickBooks',
-          type: 'accounting',
-          description: 'Small business accounting software',
-          features: ['Invoicing', 'Expense Tracking', 'Financial Reports'],
-          pricing: '$30/month',
-        },
-      ],
-      insights: [
-        {
-          id: 'insight-1',
-          integration: 'HubSpot CRM',
-          type: 'data_sync',
-          title: 'Data Sync Performance',
-          description: '99.8% sync success rate over last 30 days',
-          value: 99.8,
-          trend: 'up',
-        },
-        {
-          id: 'insight-2',
-          integration: 'Stripe Payments',
-          type: 'performance',
-          title: 'Payment Processing',
-          description: 'Average processing time: 1.2 seconds',
-          value: 1.2,
-          trend: 'stable',
-        },
-        {
-          id: 'insight-3',
-          integration: 'Slack',
-          type: 'usage',
-          title: 'Team Communication',
-          description: '45% increase in team collaboration',
-          value: 45,
-          trend: 'up',
-        },
-      ],
+        outcomes: {
+          tasks_created: 156,
+          emails_sent: 89,
+          data_updated: 234
+        }
+      }
     };
-  }
 
-  // Billing Data
-  getBillingData(): DemoBillingData {
-    return {
-      subscription: {
-        plan: 'professional',
-        status: 'active',
-        nextBilling: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-        amount: 299,
-      },
-      usage: {
-        aiConversations: this.demoData?.ai.conversations || 1000,
-        storageUsed: 45.2,
-        integrations: this.demoData?.integrations.connected || 4,
-        users: this.demoData?.business.employees || 50,
-      },
-      invoices: [
-        {
-          id: 'inv-001',
-          date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-          amount: 299,
-          status: 'paid',
-          description: 'Professional Plan - January 2024',
-        },
-        {
-          id: 'inv-002',
-          date: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-          amount: 299,
-          status: 'paid',
-          description: 'Professional Plan - December 2023',
-        },
-        {
-          id: 'inv-003',
-          date: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          amount: 299,
-          status: 'paid',
-          description: 'Professional Plan - November 2023',
-        },
-      ],
-      paymentMethods: [
-        {
-          id: 'pm-001',
-          type: 'card',
-          last4: '4242',
-          brand: 'Visa',
-          expiry: '12/25',
-          isDefault: true,
-        },
-        {
-          id: 'pm-002',
-          type: 'bank',
-          last4: '1234',
-          brand: 'Chase',
-          isDefault: false,
-        },
-      ],
-    };
-  }
-
-  // Generic mock data generator
-  generateMockData<T>(template: T, variations: number = 1): T[] {
-    const results: T[] = [];
-    for (let i = 0; i < variations; i++) {
-      results.push({ ...template });
-    }
-    return results;
+    return sampleData[demoType] || { message: 'Sample data not available for this demo type' };
   }
 }
 

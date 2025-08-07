@@ -21,14 +21,14 @@ export class SecurityManagerImpl implements SecurityManager {
         });
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Failed to log security event: ', error);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Security event logging failed: ', error);
     }

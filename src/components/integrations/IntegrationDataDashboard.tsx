@@ -135,8 +135,8 @@ const IntegrationDataDashboard: React.FC = () => {
               integrations: integrationDetails || { name: 'Unknown', slug: 'unknown' }
             };
           } catch (error) {
-            // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+             
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching integration details: ', error);
             return {
@@ -171,8 +171,8 @@ const IntegrationDataDashboard: React.FC = () => {
 
       setIntegrationData(enhancedData);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching integration data: ', error);
     } finally {

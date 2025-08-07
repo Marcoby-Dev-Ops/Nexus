@@ -38,7 +38,7 @@ import CrossPlatformInsightsEngine from '@/components/analytics/CrossPlatformIns
  * Smart display name logic based on real-world best practices
  * Priority: display_name > first_name > email_username > fallback
  */
-const getDisplayName = (profile: any, user: any): string => {
+const getDisplayName = (profile: Record<string, unknown> | null, user: Record<string, unknown> | null): string => {
   // 1. Use display_name if available (user's preferred name)
   if (profile?.display_name) {
     return profile.display_name;
@@ -173,7 +173,7 @@ export const ConsolidatedDashboard: React.FC = () => {
       };
       
       // Calculate health scores
-      const calculateRevenueHealth = (salesMetrics: any): number => {
+      const calculateRevenueHealth = (salesMetrics: Record<string, unknown>): number => {
         const pipelineValue = salesMetrics?.pipeline_value || 0;
         const conversionRate = salesMetrics?.conversion_rate || 0;
         const averageDealSize = salesMetrics?.average_deal_size || 0;
@@ -188,7 +188,7 @@ export const ConsolidatedDashboard: React.FC = () => {
         return Math.min(100, score);
       };
 
-      const calculateOverallHealth = (metrics: any): number => {
+      const calculateOverallHealth = (metrics: Record<string, unknown>): number => {
         const salesHealth = calculateRevenueHealth(metrics?.sales);
         const marketingHealth = 75; // Would calculate from marketing metrics
         const financeHealth = 80; // Would calculate from finance metrics
@@ -216,8 +216,8 @@ export const ConsolidatedDashboard: React.FC = () => {
       }));
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading dashboard data: ', error);
       // Fallback to mock data
@@ -232,8 +232,8 @@ export const ConsolidatedDashboard: React.FC = () => {
   };
 
   const handleQuickAction = (action: string) => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('Quick action triggered: ', action);
     // Implement quick action logic
@@ -241,8 +241,8 @@ export const ConsolidatedDashboard: React.FC = () => {
   
   // Debug: Log user object to see what's available
   useEffect(() => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('ConsolidatedDashboard - User state: ', {
       user: user,
@@ -276,8 +276,8 @@ export const ConsolidatedDashboard: React.FC = () => {
 
   // Show loading skeleton if auth is not ready
   if (loading || !initialized || !user || !session) {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.log('ConsolidatedDashboard - Showing loading skeleton: ', {
       loading,
@@ -300,8 +300,8 @@ export const ConsolidatedDashboard: React.FC = () => {
     );
   }
 
-  // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+   
+     
     // eslint-disable-next-line no-console
     console.log('ConsolidatedDashboard - Rendering main dashboard');
 

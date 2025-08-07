@@ -23,8 +23,9 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Progress } from '@/shared/components/ui/Progress';
 import { useAuth } from '@/hooks/index';
-import { thoughtsService } from '@/services/help-center/thoughtsService';
+import { thoughtsService } from '@/lib/services/thoughtsService';
 import type { Thought } from '@/core/types/thoughts';
+import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
 
 interface FireCycleNotification {
   id: string;

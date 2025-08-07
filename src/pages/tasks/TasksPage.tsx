@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { taskService } from '@/services/tasks/taskService';
+import { TaskService } from '@/services/tasks/taskService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { Button } from '@/shared/components/ui/Button.tsx';
 import { Input } from '@/shared/components/ui/Input.tsx';
@@ -65,7 +65,7 @@ const TasksPage: React.FC = () => {
         if (statusFilter !== 'all') filter.status = [statusFilter];
         if (priorityFilter !== 'all') filter.priority = [priorityFilter];
         
-        const fetchedTasks = await taskService.getTasks(user.id, filter);
+        const fetchedTasks = await TaskService.getTasks(user.id);
         setTasks(fetchedTasks);
       } catch (err: any) {
         setError(err.message);

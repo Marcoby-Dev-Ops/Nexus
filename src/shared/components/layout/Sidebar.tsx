@@ -17,8 +17,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   // Get user journey stage (simplified - could be enhanced with actual user data)
   const getUserJourneyStage = () => {
     // This could be enhanced with actual user data from the database
-    const daysSinceSignup = user?.created_at ? 
-      Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const daysSinceSignup = user?.createdAt ? 
+      Math.floor((Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
     
     if (daysSinceSignup < 7) return 'novice';
     if (daysSinceSignup < 30) return 'intermediate';
@@ -87,7 +87,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                   className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive(item.path)
                       ? 'bg-primary/10 text-primary'
-                      : 'text-foreground hover: bg-muted'
+                      : 'text-foreground hover:bg-muted'
                   }`}
                   title={item.description}
                 >
@@ -116,7 +116,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                         className={`block px-4 py-2 text-xs rounded-md transition-colors ${
                           isActive(child.path)
                             ? 'bg-primary/5 text-primary'
-                            : 'text-muted-foreground hover: text-foreground hover:bg-muted/50'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                         }`}
                         title={child.description}
                       >
@@ -138,7 +138,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           <div className="pt-4 border-t border-border">
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
-              className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover: text-foreground transition-colors"
+              className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <Brain className="h-4 w-4 mr-3" />
               <span>Advanced Features</span>
@@ -160,7 +160,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                       className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         isActive(item.path)
                           ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover: bg-muted'
+                          : 'text-foreground hover:bg-muted'
                       }`}
                       title={item.description}
                     >
@@ -189,7 +189,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                             className={`block px-4 py-2 text-xs rounded-md transition-colors ${
                               isActive(child.path)
                                 ? 'bg-primary/5 text-primary'
-                                : 'text-muted-foreground hover: text-foreground hover:bg-muted/50'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                             }`}
                             title={child.description}
                           >
@@ -213,7 +213,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           <div className="pt-4 border-t border-border">
             <button
               onClick={() => setShowExpert(!showExpert)}
-              className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover: text-foreground transition-colors"
+              className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="h-4 w-4 mr-3" />
               <span>Expert Tools</span>
@@ -235,7 +235,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                       className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                         isActive(item.path)
                           ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover: bg-muted'
+                          : 'text-foreground hover:bg-muted'
                       }`}
                       title={item.description}
                     >
@@ -264,7 +264,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                             className={`block px-4 py-2 text-xs rounded-md transition-colors ${
                               isActive(child.path)
                                 ? 'bg-primary/5 text-primary'
-                                : 'text-muted-foreground hover: text-foreground hover:bg-muted/50'
+                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                             }`}
                             title={child.description}
                           >
@@ -287,7 +287,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       </aside>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg: hidden"
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}

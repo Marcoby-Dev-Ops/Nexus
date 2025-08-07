@@ -9,6 +9,7 @@ import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Avatar } from '@/shared/components/ui/Avatar.tsx';
 import { useAuth } from '@/hooks/index';
 import { useService } from '@/shared/hooks/useService';
+import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { z } from 'zod';
 
@@ -83,12 +84,33 @@ const TeamSettings: React.FC = () => {
   
   // Use UserService for team member management
   const userService = useService('user');
-  const { data: teamMembers, isLoading: isLoadingTeam } = userService.useList({ 
-    company_id: (user as any)?.company?.id 
-  });
-  const { mutate: inviteUser, isLoading: isInviting } = userService.useCreate();
-  const { mutate: updateUserRole, isLoading: isUpdatingRole } = userService.useUpdate();
-  const { mutate: removeUser, isLoading: isRemoving } = userService.useDelete();
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [isLoadingTeam, setIsLoadingTeam] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+
+  // Fetch team members data
+  useEffect(() => {
+    const fetchTeamMembers = async () => {
+      const userCompanyId = (user as any)?.company?.id;
+      if (!userCompanyId) return;
+      
+      setIsLoadingTeam(true);
+      try {
+        const result = await userService.list({ company_id: userCompanyId });
+        if (result.success && result.data) {
+          setTeamMembers(result.data);
+        }
+              } catch (error) {
+          logger.error('Failed to fetch team members:', error);
+        } finally {
+        setIsLoadingTeam(false);
+      }
+    };
+
+    fetchTeamMembers();
+  }, [user?.company?.id, userService]);
 
   // Initialize form with our new pattern
   const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
@@ -101,18 +123,30 @@ const TeamSettings: React.FC = () => {
       const userCompanyId = (user as any)?.company?.id;
       if (!userCompanyId) return;
 
+      setIsInviting(true);
       try {
-        await inviteUser({
+        const result = await userService.create({
           email: data.email,
           role: data.role,
           company_id: userCompanyId,
           status: 'invited'
         });
         
-        // Reset form after successful invitation
-        form.reset();
+        if (result.success) {
+          // Reset form after successful invitation
+          form.reset();
+          // Refresh team members list
+          const refreshResult = await userService.list({ company_id: userCompanyId });
+          if (refreshResult.success && refreshResult.data) {
+            setTeamMembers(refreshResult.data);
+          }
+        } else {
+          throw new Error(result.error || 'Failed to send invitation');
+        }
       } catch (error) {
         throw new Error('Failed to send invitation');
+      } finally {
+        setIsInviting(false);
       }
     },
     successMessage: 'Invitation sent successfully!',
@@ -123,10 +157,25 @@ const TeamSettings: React.FC = () => {
   
   // Handle role updates
   const handleRoleUpdate = async (memberId: string, newRole: string) => {
+    setIsUpdatingRole(true);
     try {
-      await updateUserRole(memberId, { role: newRole });
-    } catch (error) {
-      console.error('Failed to update role:', error);
+      const result = await userService.update(memberId, { role: newRole });
+      if (result.success) {
+        // Refresh team members list
+        const userCompanyId = (user as any)?.company?.id;
+        if (userCompanyId) {
+          const refreshResult = await userService.list({ company_id: userCompanyId });
+          if (refreshResult.success && refreshResult.data) {
+            setTeamMembers(refreshResult.data);
+          }
+        }
+              } else {
+          logger.error('Failed to update role:', result.error);
+        }
+      } catch (error) {
+        logger.error('Failed to update role:', error);
+    } finally {
+      setIsUpdatingRole(false);
     }
   };
 
@@ -134,10 +183,25 @@ const TeamSettings: React.FC = () => {
   const handleRemoveMember = async (memberId: string) => {
     if (!confirm('Are you sure you want to remove this team member?')) return;
     
+    setIsRemoving(true);
     try {
-      await removeUser(memberId);
-    } catch (error) {
-      console.error('Failed to remove member:', error);
+      const result = await userService.delete(memberId);
+      if (result.success) {
+        // Refresh team members list
+        const userCompanyId = (user as any)?.company?.id;
+        if (userCompanyId) {
+          const refreshResult = await userService.list({ company_id: userCompanyId });
+          if (refreshResult.success && refreshResult.data) {
+            setTeamMembers(refreshResult.data);
+          }
+        }
+              } else {
+          logger.error('Failed to remove member:', result.error);
+        }
+      } catch (error) {
+        logger.error('Failed to remove member:', error);
+    } finally {
+      setIsRemoving(false);
     }
   };
 

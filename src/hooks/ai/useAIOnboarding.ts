@@ -157,7 +157,7 @@ export const useAIOnboarding = (): AIOnboardingState & AIOnboardingActions => {
     completeModule,
     skipModule,
     closeModule,
-    showProgress: showProgressHandler,
+    showProgressHandler,
     hideProgress,
     resetOnboarding,
     

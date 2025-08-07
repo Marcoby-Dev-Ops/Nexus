@@ -68,8 +68,8 @@ export const KnowledgeEnhancer: React.FC<KnowledgeEnhancerProps> = ({ className 
       setDataSources(integrationDataSources);
       setLastAnalysis(new Date());
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching knowledge data: ', error);
     } finally {
@@ -197,8 +197,8 @@ export const KnowledgeEnhancer: React.FC<KnowledgeEnhancerProps> = ({ className 
       }
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching knowledge insights: ', error);
     }
@@ -305,8 +305,8 @@ export const KnowledgeEnhancer: React.FC<KnowledgeEnhancerProps> = ({ className 
         });
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching data sources: ', error);
     }

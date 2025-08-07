@@ -361,8 +361,8 @@ const DigestibleMetricsDashboard: React.FC = () => {
       setBusinessStories(stories);
       
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading digestible data: ', error);
     } finally {
@@ -388,7 +388,7 @@ const DigestibleMetricsDashboard: React.FC = () => {
     }
   };
 
-  const getTrendIcon = (__trend: any) => {
+  const getTrendIcon = (trend: any) => {
     const color = getTrendColor(trend);
     if (trend.direction === 'up') {
       return <TrendingUp className={`w-4 h-4 ${color}`} />;

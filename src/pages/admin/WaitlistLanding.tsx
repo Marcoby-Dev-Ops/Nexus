@@ -129,8 +129,8 @@ const WaitlistLanding: React.FC = () => {
       }
       
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Signup failed: ', error);
       setSubmitError('Network error. Please check your connection and try again.');

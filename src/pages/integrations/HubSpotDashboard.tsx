@@ -76,8 +76,8 @@ export default function HubSpotDashboard() {
         throw new Error('User not authenticated');
       }
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔍 [HubSpot Dashboard] Loading data for user: ', user.id);
 
@@ -89,8 +89,8 @@ export default function HubSpotDashboard() {
       }
 
       // Get data from local database (synced from HubSpot)
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔍 [HubSpot Dashboard] Querying with userid: ', user.id);
       
@@ -114,8 +114,8 @@ export default function HubSpotDashboard() {
       const companies = companiesData.data || [];
       const deals = dealsData.data || [];
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('🔍 [HubSpot Dashboard] Data loaded: ', {
         contactsCount: contacts.length,
@@ -187,8 +187,8 @@ export default function HubSpotDashboard() {
 
       setData(dashboardData);
     } catch (err: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('HubSpot Dashboard Error: ', err);
       setError(err.message || 'Failed to load HubSpot dashboard');

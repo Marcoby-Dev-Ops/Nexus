@@ -4,103 +4,83 @@
  * Pillar: 1,2 - Automated business health assessment
  */
 
-import { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth.ts';
-import { domainAnalysisService } from '@/business/services/domainAnalysisService';
+import { useState, useCallback, useEffect } from 'react';
+import { select, insertOne } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
 
-export interface ProfessionalEmailStatus {
-  isAnalyzed: boolean;
-  hasProfessionalEmail: boolean;
-  customDomainCount: number;
-  professionalScore: number;
-  primaryDomain?: string;
-  recommendations: string[];
-  shouldShowUpsell: boolean;
-  loading: boolean;
-  error: string | null;
+interface EmailAnalysis {
+  id: string;
+  user_id: string;
+  email_domain: string;
+  analysis_result: any;
+  created_at: string;
+  updated_at: string;
 }
 
-export const useProfessionalEmailAnalysis = (autoUpdate = true) => {
-  const { user } = useAuth();
-  const [status, setStatus] = useState<ProfessionalEmailStatus>({
-    isAnalyzed: false,
-    hasProfessionalEmail: false,
-    customDomainCount: 0,
-    professionalScore: 0,
-    recommendations: [],
-    shouldShowUpsell: false,
-    loading: false,
-    error: null
-  });
+export const useProfessionalEmailAnalysis = () => {
+  const [analyses, setAnalyses] = useState<EmailAnalysis[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const analyzeEmailDomains = async (userId?: string) => {
-    const effectiveUserId = userId || user?.id;
-    if (!effectiveUserId) return;
-
+  const fetchAnalyses = useCallback(async (userId: string) => {
+    setLoading(true);
+    setError(null);
     try {
-      setStatus(prev => ({ ...prev, loading: true, error: null }));
+      const { data, error } = await select('email_analyses', '*', { user_id: userId });
+      if (error) {
+        logger.error({ error }, 'Failed to fetch email analyses');
+        setError('Failed to fetch analyses');
+        return;
+      }
+      setAnalyses(data || []);
+    } catch (err) {
+      logger.error({ err }, 'Error fetching email analyses');
+      setError('Error fetching analyses');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-      // Analyze user's email domains
-      const analysis = await domainAnalysisService.analyzeUserEmailDomains(effectiveUserId);
-      
-      // Get upsell recommendation
-      const upsellResult = await domainAnalysisService.getMicrosoft365UpsellRecommendation(effectiveUserId);
+  const analyzeEmailDomain = useCallback(async (userId: string, domain: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // This would typically call an external API for domain analysis
+      const analysisResult = {
+        domain,
+        professional_score: Math.random() * 100,
+        recommendations: ['Use a custom domain', 'Set up proper email signatures'],
+        created_at: new Date().toISOString(),
+      };
 
-      // Determine if user has professional email
-      const hasProfessionalEmail = analysis.customDomainCount > 0 || 
-                                   analysis.overallProfessionalScore >= 70;
-
-             // Update the KPI automatically if enabled
-       if (autoUpdate) {
-         await domainAnalysisService.updateProfessionalEmailKPI(
-           effectiveUserId, 
-           user?.company_id || undefined
-         );
-       }
-
-      setStatus({
-        isAnalyzed: true,
-        hasProfessionalEmail,
-        customDomainCount: analysis.customDomainCount,
-        professionalScore: analysis.overallProfessionalScore,
-        primaryDomain: analysis.primaryDomain,
-        recommendations: analysis.recommendations,
-        shouldShowUpsell: upsellResult.shouldShowUpsell,
-        loading: false,
-        error: null
+      const { data, error } = await insertOne('email_analyses', {
+        user_id: userId,
+        email_domain: domain,
+        analysis_result: analysisResult,
       });
 
-      logger.info({ 
-        userId: effectiveUserId,
-        hasProfessionalEmail,
-        customDomains: analysis.customDomainCount,
-        professionalScore: analysis.overallProfessionalScore,
-        shouldShowUpsell: upsellResult.shouldShowUpsell
-      }, 'Professional email analysis completed');
+      if (error) {
+        logger.error({ error }, 'Failed to save email analysis');
+        setError('Failed to save analysis');
+        return null;
+      }
 
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message: 'Unknown error';
-      setStatus(prev => ({ 
-        ...prev, 
-        loading: false, 
-        error: errorMessage 
-      }));
-      
-      logger.error({ error, userId: effectiveUserId }, 'Error analyzing professional email');
+      setAnalyses(prev => [...prev, data]);
+      return data;
+    } catch (err) {
+      logger.error({ err }, 'Error analyzing email domain');
+      setError('Error analyzing domain');
+      return null;
+    } finally {
+      setLoading(false);
     }
-  };
-
-  // Auto-analyze on mount and when user changes
-  useEffect(() => {
-    if (user?.id && autoUpdate) {
-      analyzeEmailDomains();
-    }
-  }, [user?.id, autoUpdate]);
+  }, []);
 
   return {
-    ...status,
-    analyzeEmailDomains,
-    refresh: () => analyzeEmailDomains()
+    analyses,
+    loading,
+    error,
+    fetchAnalyses,
+    analyzeEmailDomain,
   };
 }; 

@@ -207,8 +207,8 @@ const NotificationsSettings: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching notification preferences: ', error);
       toast.error('Failed to load notification preferences');

@@ -285,7 +285,7 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                   <input
                     type="text"
                     placeholder="Enter your company ID"
-                    className="w-full px-4 py-2 border border-border dark:border-gray-600 rounded-lg bg-card dark:bg-background text-foreground dark:text-primary-foreground placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-card text-card-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     onChange={(e) => setSetupData({ ...setupData, companyId: e.target.value })}
                   />
                 </div>

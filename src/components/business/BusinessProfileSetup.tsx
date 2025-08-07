@@ -8,6 +8,7 @@ import { useToast } from '@/shared/ui/components/Toast';
 import { useAuth } from '@/hooks/index';
 import { businessProfileService } from '@/shared/lib/business/businessProfileService';
 import type { BusinessProfile } from '@/shared/lib/business/businessProfileService';
+import { logger } from '@/shared/utils/logger';
 import {
   Building2,
   Users,
@@ -55,26 +56,56 @@ export const BusinessProfileSetup: React.FC<BusinessProfileSetupProps> = ({ onCo
   };
 
   const handleSave = async () => {
-    if (!user?.company_id) return;
-    
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'You must be logged in to save your business profile',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    if (!profile.company_name?.trim()) {
+      toast({
+        title: 'Company Name Required',
+        description: 'Please enter your company name to continue.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsLoading(true);
-    const success = await businessProfileService.saveBusinessProfile(user.company_id, profile);
-    
-    if (success) {
+
+    try {
+      // Create organization and business profile in one transaction
+      const result = await businessProfileService.createOrganizationWithProfile(
+        user.id, // tenantId (using user.id as tenant for now)
+        user.id, // userId
+        profile.company_name, // orgName
+        profile
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to create organization and business profile');
+      }
+
       toast({
         title: 'Success',
-        description: 'Business profile saved successfully!',
+        description: 'Organization created and business profile saved successfully!',
         variant: 'default'
       });
       onComplete?.();
-    } else {
+    } catch (error) {
+      logger.error('Failed to create organization and business profile', { error, userId: user?.id });
+      
       toast({
         title: 'Error',
-        description: 'Failed to save business profile',
+        description: error instanceof Error ? error.message : 'Failed to create organization and business profile',
         variant: 'destructive'
       });
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const addToArray = (field: keyof BusinessProfile, value: string) => {

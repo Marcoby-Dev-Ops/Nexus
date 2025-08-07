@@ -33,6 +33,7 @@ import { DomainAgentIndicator } from '@/components/ai/agents';
 import { ContextChips } from '@/components/ai/chat';
 import { QuickChatTrigger } from '@/components/ai/chat';
 import { AIOnboardingTrigger } from '@/components/ai/AIOnboardingTrigger';
+import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
 
 interface ChatStats {
   totalConversations: number;

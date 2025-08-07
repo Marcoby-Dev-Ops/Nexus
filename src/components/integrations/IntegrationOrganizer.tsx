@@ -117,7 +117,7 @@ export const IntegrationOrganizer: React.FC = () => {
   //     toast.success('Integration connected successfully');
   //   } catch (error) {
   //     // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
     // eslint-disable-next-line no-console
     console.error('Error connecting integration: ', error);
   //     toast.error('Failed to connect integration');
@@ -129,8 +129,8 @@ export const IntegrationOrganizer: React.FC = () => {
       await removeIntegration(integrationId);
       toast.success('Integration disconnected successfully');
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error disconnecting integration: ', error);
       toast.error('Failed to disconnect integration');
@@ -150,8 +150,8 @@ export const IntegrationOrganizer: React.FC = () => {
       await updateIntegration(integrationId, updatedIntegration);
       toast.success('Settings updated successfully');
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error updating settings: ', error);
       toast.error('Failed to update settings');

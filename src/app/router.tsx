@@ -2,6 +2,11 @@
  * Central route map for title / breadcrumb generation
  * Extend as new routes are added.
  */
+import { OrganizationsPage } from '@/pages/organizations/OrganizationsPage';
+import { OrganizationDetailsPage } from '@/pages/organizations/[orgId]/OrganizationDetailsPage';
+import { OrganizationSettingsPage } from '@/pages/organizations/[orgId]/OrganizationSettingsPage';
+import { OrganizationMembersPage } from '@/pages/organizations/[orgId]/OrganizationMembersPage';
+
 export const ROUTELABELS: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/chat': 'Chat',
@@ -52,14 +57,12 @@ export const ROUTELABELS: Record<string, string> = {
   '/marketplace': 'Marketplace',
   '/integrations': 'Integrations',
   '/integrations/hubspot': 'HubSpot Integration',
-  '/integrations/marketplace': 'Integration Marketplace',
   '/integrations/client-intelligence': 'Client Intelligence',
   '/integrations/hubspot/test': 'HubSpot Test',
   '/integrations/hubspot/callback': 'HubSpot Callback',
   '/integrations/microsoft365/callback': 'Microsoft 365 Callback',
   '/integrations/settings': 'Integration Settings',
   '/integrations/setup': 'Integration Setup',
-  '/integrations/api-learning': 'API Learning',
   '/automation': 'Automation',
   '/automation/recipes': 'Automation Recipes',
   '/automation/act': 'Automation Act',
@@ -100,6 +103,11 @@ export const ROUTELABELS: Record<string, string> = {
   '/admin/reset-password': 'Reset Password',
   '/admin/password-reset': 'Password Reset',
   '/admin/auth-callback': 'Auth Callback',
+  '/organizations': 'Organizations',
+  '/organizations/:orgId': 'Organization Details',
+  '/organizations/:orgId/settings': 'Organization Settings',
+  '/organizations/:orgId/members': 'Organization Members',
+  '/organizations/:orgId/business-profile': 'Organization Business Profile',
   '/admin/auth-status': 'Auth Status',
   '/admin/email-not-verified': 'Email Not Verified',
   '/admin/waitlist': 'Waitlist',
@@ -122,5 +130,5 @@ export const ROUTELABELS: Record<string, string> = {
 };
 
 export function getRouteLabel(path: string): string | undefined {
-  return ROUTE_LABELS[path];
+  return ROUTELABELS[path];
 } 

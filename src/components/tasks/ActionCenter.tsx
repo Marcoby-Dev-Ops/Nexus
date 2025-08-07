@@ -75,8 +75,8 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
 
       setActions(allActions);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching actions: ', error);
     } finally {
@@ -119,8 +119,8 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
         });
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching task actions: ', error);
     }
@@ -175,8 +175,8 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
         actions.push(...manualProcesses);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching automation actions: ', error);
     }
@@ -230,8 +230,8 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
         }
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching decision actions: ', error);
     }
@@ -271,8 +271,8 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
         });
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching meeting actions: ', error);
     }
@@ -338,8 +338,8 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
         default: window.location.href = '/workspace';
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error starting action: ', error);
     }

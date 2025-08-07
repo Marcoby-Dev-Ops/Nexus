@@ -84,9 +84,9 @@ DROP POLICY IF EXISTS "Billing plans are viewable by authenticated users" ON pub
 -- Drop existing policies on user_billing_plans
 DROP POLICY IF EXISTS "Users can view own billing plans" ON public.user_billing_plans;
 
--- Drop existing policies on business_profiles
-DROP POLICY IF EXISTS "Users can read own business profile" ON public.business_profiles;
-DROP POLICY IF EXISTS "Users can manage own business profile" ON public.business_profiles;
+-- Drop existing policies on business_profiles (commented out - table doesn't exist)
+-- DROP POLICY IF EXISTS "Users can read own business profile" ON public.business_profiles;
+-- DROP POLICY IF EXISTS "Users can manage own business profile" ON public.business_profiles;
 
 -- ====================================================================
 -- CREATE NEW POLICIES
@@ -104,13 +104,7 @@ CREATE POLICY "Users can insert own profile" ON public.user_profiles
 
 -- COMPANIES POLICIES
 CREATE POLICY "Users can read own company" ON public.companies
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.user_profiles 
-            WHERE user_profiles.company_id = companies.id 
-            AND user_profiles.id = auth.uid()
-        )
-    );
+    FOR SELECT USING (auth.role() = 'authenticated');
 
 -- AI INBOX ITEMS POLICIES
 CREATE POLICY "Users can read own AI inbox items" ON public.ai_inbox_items

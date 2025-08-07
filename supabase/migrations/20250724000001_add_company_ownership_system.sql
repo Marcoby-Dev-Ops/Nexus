@@ -14,27 +14,11 @@ COMMENT ON COLUMN public.companies.owner_id IS 'The user ID of the company owner
 -- Update RLS policies to include owner-based access
 DROP POLICY IF EXISTS "Company owners can update company" ON public.companies;
 CREATE POLICY "Company owners can update company" ON public.companies
-    FOR UPDATE USING (
-        owner_id = auth.uid() OR
-        EXISTS (
-            SELECT 1 FROM public.user_profiles 
-            WHERE user_profiles.company_id = companies.id 
-            AND user_profiles.id = auth.uid()
-            AND user_profiles.role IN ('owner', 'admin')
-        )
-    );
+    FOR UPDATE USING (owner_id = auth.uid());
 
 -- Add policy for company owners to manage their companies
 CREATE POLICY "Company owners can manage their companies" ON public.companies
-    FOR ALL USING (
-        owner_id = auth.uid() OR
-        EXISTS (
-            SELECT 1 FROM public.user_profiles 
-            WHERE user_profiles.company_id = companies.id 
-            AND user_profiles.id = auth.uid()
-            AND user_profiles.role IN ('owner', 'admin')
-        )
-    );
+    FOR ALL USING (owner_id = auth.uid());
 
 -- Create function to get company owner
 CREATE OR REPLACE FUNCTION get_company_owner(company_uuid UUID)
@@ -77,14 +61,14 @@ BEGIN
     SET owner_id = new_owner_uuid, updated_at = NOW()
     WHERE id = company_uuid;
     
-    -- Update user profiles to reflect ownership change
-    UPDATE user_profiles 
-    SET role = 'admin', updated_at = NOW()
-    WHERE company_id = company_uuid AND id = current_user_uuid;
+    -- Update user profiles to reflect ownership change (commented out - company_id doesn't exist yet)
+    -- UPDATE user_profiles 
+    -- SET role = 'admin', updated_at = NOW()
+    -- WHERE company_id = company_uuid AND id = current_user_uuid;
     
-    UPDATE user_profiles 
-    SET role = 'owner', updated_at = NOW()
-    WHERE company_id = company_uuid AND id = new_owner_uuid;
+    -- UPDATE user_profiles 
+    -- SET role = 'owner', updated_at = NOW()
+    -- WHERE company_id = company_uuid AND id = new_owner_uuid;
     
     RETURN TRUE;
 END;

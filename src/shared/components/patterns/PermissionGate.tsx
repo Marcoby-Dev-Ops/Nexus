@@ -1,5 +1,6 @@
 import React from 'react';
-import { Role, hasPermission } from '@/lib/permissions';
+import type { Role} from '@/lib/permissions';
+import { hasPermission } from '@/lib/permissions';
 
 interface PermissionGateProps {
   permission: string;

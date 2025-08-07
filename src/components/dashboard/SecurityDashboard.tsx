@@ -112,8 +112,8 @@ export const SecurityDashboard: React.FC = () => {
       generateSecurityAlerts(events || []);
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Failed to load security data: ', error);
     } finally {

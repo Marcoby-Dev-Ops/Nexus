@@ -8,7 +8,7 @@ interface WidgetEvent {
   event_type: 'view' | 'interaction' | 'error';
   user_id?: string;
   session_id?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export const useWidgetAnalytics = () => {
@@ -42,7 +42,7 @@ export const useWidgetAnalytics = () => {
     }
   };
 
-  const trackView = async (widgetId: string, metadata?: Record<string, any>) => {
+  const trackView = async (widgetId: string, metadata?: Record<string, unknown>) => {
     await trackEvent({
       widget_id: widgetId,
       event_type: 'view',
@@ -50,7 +50,7 @@ export const useWidgetAnalytics = () => {
     });
   };
 
-  const trackInteraction = async (widgetId: string, metadata?: Record<string, any>) => {
+  const trackInteraction = async (widgetId: string, metadata?: Record<string, unknown>) => {
     await trackEvent({
       widget_id: widgetId,
       event_type: 'interaction',
@@ -58,7 +58,7 @@ export const useWidgetAnalytics = () => {
     });
   };
 
-  const trackError = async (widgetId: string, error: string, metadata?: Record<string, any>) => {
+  const trackError = async (widgetId: string, error: string, metadata?: Record<string, unknown>) => {
     await trackEvent({
       widget_id: widgetId,
       event_type: 'error',

@@ -55,8 +55,8 @@ export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ cl
           .single();
 
         if (error && error.code !== 'PGRST116') {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error('Error fetching PayPal integration: ', error);
           return;
@@ -66,8 +66,8 @@ export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ cl
           setIntegrationId(integration.integration_id);
         }
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error getting PayPal integration: ', error);
       }
@@ -100,8 +100,8 @@ export const PayPalAnalyticsSimple: React.FC<PayPalAnalyticsSimpleProps> = ({ cl
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message: 'Failed to fetch analytics';
       setError(errorMessage);
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('PayPal analytics error: ', err);
     } finally {

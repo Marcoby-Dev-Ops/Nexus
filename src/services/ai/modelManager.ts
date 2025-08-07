@@ -247,7 +247,7 @@ export class ModelManager {
     }
   }
 
-  async getCostAnalysis(timeframe: 'day' | 'week' | 'month' = 'week'): Promise<{
+  async getCostAnalysis(_timeframe: 'day' | 'week' | 'month' = 'week'): Promise<{
     totalCost: number;
     costByModel: Record<string, number>;
     costByProvider: Record<string, number>;

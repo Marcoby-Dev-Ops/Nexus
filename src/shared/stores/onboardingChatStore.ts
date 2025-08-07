@@ -1,45 +1,28 @@
 import { create } from 'zustand';
-import type { StoreApi, UseBoundStore } from 'zustand';
-import type { EnhancedUser } from '@/shared/lib/types/userProfile';
+import { createSelectors } from '@/shared/utils/zustand';
+import { logger } from '@/shared/utils/logger';
 
-interface OnboardingMessage {
+interface OnboardingChatMessage {
   id: string;
-  role: 'assistant' | 'user';
   content: string;
-  timestamp: Date;
-  type: 'message' | 'introduction' | 'data-collected' | 'relationship-building';
-  metadata?: {
-    step?: string;
-    dataCollected?: Record<string, any>;
-    suggestions?: string[];
-    emotion?: 'excited' | 'thoughtful' | 'supportive' | 'celebratory' | 'friendly';
-  };
+  role: 'user' | 'assistant';
+  timestamp: string;
+  metadata?: Record<string, any>;
 }
 
 interface OnboardingChatState {
-  messages: OnboardingMessage[];
+  messages: OnboardingChatMessage[];
   isTyping: boolean;
   hasInitialized: boolean;
-  initialize: (user: EnhancedUser | null) => void;
-  addMessage: (message: Omit<OnboardingMessage, 'id' | 'timestamp'>) => void;
-  setIsTyping: (isTyping: boolean) => void;
+  
+  // Actions
+  initialize: (user: any) => void;
+  addMessage: (message: Omit<OnboardingChatMessage, 'id' | 'timestamp'>) => void;
+  setTyping: (isTyping: boolean) => void;
+  clearMessages: () => void;
+  updateMessage: (id: string, updates: Partial<OnboardingChatMessage>) => void;
+  removeMessage: (id: string) => void;
 }
-
-type WithSelectors<S> = S extends { getState: () => infer T }
-  ? S & { use: { [K in keyof T]: () => T[K] } }
-  : never;
-
-const createSelectors = <S extends UseBoundStore<StoreApi<object>>>(
-  _store: S,
-) => {
-  const store = _store as WithSelectors<typeof _store>;
-  store.use = {};
-  for (const k of Object.keys(store.getState())) {
-    (store.use as any)[k] = () => store((s) => s[k as keyof typeof s]);
-  }
-
-  return store;
-};
 
 const useOnboardingChatStoreBase = create<OnboardingChatState>((set, get) => ({
   messages: [],
@@ -47,80 +30,167 @@ const useOnboardingChatStoreBase = create<OnboardingChatState>((set, get) => ({
   hasInitialized: false,
 
   initialize: (user) => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+    // Validate required parameters
+    if (!user) {
+      logger.error('User is required for onboarding chat initialization');
+      return;
+    }
+     
     // eslint-disable-next-line no-console
     console.log('[OnboardingChatStore] Initialize called. Has initialized?', get().hasInitialized);
     if (get().hasInitialized || !user) return;
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
     // eslint-disable-next-line no-console
     console.log('[OnboardingChatStore] Initializing for the first time...');
 
-    const profile = user.profile;
-    const company = user.company;
-    const userContext = profile?.preferences?.user_context;
-    const businessContext = company?.settings;
+    try {
+      const profile = user.profile;
+      const company = user.company;
+      const userContext = profile?.preferences?.user_context;
+      const businessContext = company?.settings;
 
-    const firstName = profile?.first_name || 'there';
-    const timeOfDay = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening';
-    
-    const personalizedGreeting = `Good ${timeOfDay}, ${firstName}! 👋`;
-    let introContent = `I'm Nex, your new AI business partner. My purpose is to help you streamline operations, make smarter decisions, and achieve your goals faster.
+      const firstName = profile?.first_name || 'there';
+      const timeOfDay = new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening';
+      
+      const personalizedGreeting = `Good ${timeOfDay}, ${firstName}! 👋`;
+      let introContent = `I'm Nex, your new AI business partner. My purpose is to help you streamline operations, make smarter decisions, and achieve your goals faster.
 
 I'm designed to understand your business, learn your preferences, and become your trusted right-hand assistant.
 
 Before we dive in, I want to make sure I'm on the right track.`;
 
-    if (userContext?.role && company?.name) {
-      introContent += `\n\nI understand you're a **${userContext.role}** at **${company.name}**.`;
-    }
-
-    if (userContext?.biggest_challenge) {
-      introContent += ` It looks like a key focus for you is **tackling the challenge of '${userContext.biggest_challenge}'**.`;
-      introContent += `\n\nI'm confident we can make significant progress on that together.`;
-    } else if (businessContext?.business_priorities && businessContext.business_priorities.length > 0) {
-      introContent += ` It looks like a key priority for you and the team is **'${businessContext.business_priorities[0]}'**.`;
-      introContent += `\n\nI'm ready to help you focus on that.`;
-    }
-
-    introContent += `\n\nReady to start our partnership and build your context-aware workspace?`;
-
-    const introMessage: OnboardingMessage = {
-      id: '1',
-      role: 'assistant',
-      content: `${personalizedGreeting}\n\n${introContent}`,
-      timestamp: new Date(),
-      type: 'introduction',
-      metadata: {
-        step: 'introduction',
-        emotion: 'friendly',
-        suggestions: [
-          '🚀 Yes, let\'s get started!',
-          '🤔 Tell me more about what you can do',
-          '💼 How will you help my business?',
-          '⚡ What makes you different?'
-        ]
+      if (userContext?.role && company?.name) {
+        introContent += `\n\nI understand you're a **${userContext.role}** at **${company.name}**.`;
       }
-    };
 
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('[OnboardingChatStore] Setting initial message.');
-    set({ messages: [introMessage], hasInitialized: true });
+      if (businessContext?.industry) {
+        introContent += `\n\nI see you're in the **${businessContext.industry}** industry.`;
+      }
+
+      introContent += `\n\nWhat's the biggest challenge you're facing right now that I can help you solve?`;
+
+      const welcomeMessage: OnboardingChatMessage = {
+        id: 'welcome',
+        content: personalizedGreeting + '\n\n' + introContent,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          type: 'welcome',
+          userContext,
+          businessContext
+        }
+      };
+
+      set({
+        messages: [welcomeMessage],
+        hasInitialized: true
+      });
+
+      logger.info('Onboarding chat initialized successfully', { 
+        userId: user.id, 
+        hasUserContext: !!userContext,
+        hasBusinessContext: !!businessContext 
+      });
+    } catch (error) {
+      logger.error('Failed to initialize onboarding chat:', error);
+    }
   },
 
   addMessage: (message) => {
-    const newMessage: OnboardingMessage = {
-      ...message,
-      id: Date.now().toString(),
-      timestamp: new Date()
-    };
-    set(state => ({ messages: [...state.messages, newMessage] }));
+    // Validate required parameters
+    if (!message.content || typeof message.content !== 'string') {
+      logger.error('Message content is required and must be a string');
+      return;
+    }
+
+    if (!message.role || !['user', 'assistant'].includes(message.role)) {
+      logger.error('Message role must be either "user" or "assistant"');
+      return;
+    }
+
+    try {
+      const newMessage: OnboardingChatMessage = {
+        ...message,
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString()
+      };
+
+      set(state => ({
+        messages: [...state.messages, newMessage]
+      }));
+
+      logger.info('Message added to onboarding chat', { 
+        role: message.role, 
+        contentLength: message.content.length 
+      });
+    } catch (error) {
+      logger.error('Failed to add message to onboarding chat:', error);
+    }
   },
 
-  setIsTyping: (isTyping) => set({ isTyping }),
+  setTyping: (isTyping: boolean) => {
+    // Validate required parameters
+    if (typeof isTyping !== 'boolean') {
+      logger.error('Typing status must be a boolean');
+      return;
+    }
+
+    try {
+      set({ isTyping });
+      if (isTyping) {
+        logger.info('Onboarding chat typing started');
+      } else {
+        logger.info('Onboarding chat typing stopped');
+      }
+    } catch (error) {
+      logger.error('Failed to set typing status:', error);
+    }
+  },
+
+  clearMessages: () => {
+    try {
+      set({ messages: [] });
+      logger.info('Onboarding chat messages cleared');
+    } catch (error) {
+      logger.error('Failed to clear onboarding chat messages:', error);
+    }
+  },
+
+  updateMessage: (id: string, updates: Partial<OnboardingChatMessage>) => {
+    // Validate required parameters
+    if (!id || typeof id !== 'string') {
+      logger.error('Message ID is required and must be a string');
+      return;
+    }
+
+    try {
+      set(state => ({
+        messages: state.messages.map(msg => 
+          msg.id === id ? { ...msg, ...updates } : msg
+        )
+      }));
+      logger.info('Onboarding chat message updated', { messageId: id });
+    } catch (error) {
+      logger.error('Failed to update onboarding chat message:', error);
+    }
+  },
+
+  removeMessage: (id: string) => {
+    // Validate required parameters
+    if (!id || typeof id !== 'string') {
+      logger.error('Message ID is required and must be a string');
+      return;
+    }
+
+    try {
+      set(state => ({
+        messages: state.messages.filter(msg => msg.id !== id)
+      }));
+      logger.info('Onboarding chat message removed', { messageId: id });
+    } catch (error) {
+      logger.error('Failed to remove onboarding chat message:', error);
+    }
+  }
 }));
 
 export const useOnboardingChatStore = createSelectors(useOnboardingChatStoreBase); 

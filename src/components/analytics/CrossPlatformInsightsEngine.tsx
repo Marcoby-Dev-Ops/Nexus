@@ -70,6 +70,7 @@ const CrossPlatformInsightsEngine: React.FC = () => {
       setLoading(true);
       
       // Fetch user's active integrations to understand available data sources
+      const integrations = await fetchUserIntegrations();
       
 
       // Generate insights based on available integrations
@@ -80,12 +81,29 @@ const CrossPlatformInsightsEngine: React.FC = () => {
       ]);
       
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading insights: ', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to fetch user integrations
+  const fetchUserIntegrations = async () => {
+    try {
+      // For now, return mock integrations - in real implementation, fetch from API
+      return [
+        { id: 'google-analytics', name: 'Google Analytics', status: 'active' },
+        { id: 'paypal', name: 'PayPal', status: 'active' },
+        { id: 'hubspot', name: 'HubSpot', status: 'active' },
+        { id: 'quickbooks', name: 'QuickBooks', status: 'active' },
+        { id: 'microsoft-365', name: 'Microsoft 365', status: 'active' }
+      ];
+    } catch (error) {
+      console.error('Error fetching integrations:', error);
+      return [];
     }
   };
 

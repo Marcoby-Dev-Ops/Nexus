@@ -12,6 +12,11 @@ jest.mock('../../src/lib/supabase', () => ({
     from: jest.fn(() => ({
       select: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
+      ilike: jest.fn().mockReturnThis(),
+      or: jest.fn().mockReturnThis(),
+      order: jest.fn().mockReturnThis(),
+      limit: jest.fn().mockReturnThis(),
+      upsert: jest.fn().mockResolvedValue({ error: null }),
       single: jest.fn().mockResolvedValue({ 
         data: {
           profile: {
@@ -27,13 +32,6 @@ jest.mock('../../src/lib/supabase', () => ({
   }
 }));
 
-// Mock the business observation service
-jest.mock('../../src/lib/services/businessObservationService', () => ({
-  businessObservationService: {
-    generateBusinessObservations: jest.fn().mockResolvedValue([])
-  }
-}));
-
 describe('ContextualRAG Core Functionality', () => {
   let ragSystem: ContextualRAG;
 
@@ -42,157 +40,182 @@ describe('ContextualRAG Core Functionality', () => {
     jest.clearAllMocks();
   });
 
-  describe('Initialization', () => {
-    it('should initialize successfully with valid user ID', async () => {
-      await expect(ragSystem.initialize('test-user-id')).resolves.not.toThrow();
-    });
+  describe('Document Search', () => {
+    it('should search relevant documents successfully', async () => {
+      const query = {
+        query: 'test query',
+        context: {
+          userId: 'test-user-id',
+          companyId: 'test-company-id',
+          sessionId: 'test-session-id'
+        },
+        maxResults: 5,
+        threshold: 0.7
+      };
 
-    it('should throw error when initializing with invalid user ID', async () => {
-      await expect(ragSystem.initialize('')).rejects.toThrow();
-    });
-
-    it('should handle initialization within reasonable time', async () => {
-      const start = performance.now();
-      await ragSystem.initialize('test-user-id');
-      const end = performance.now();
+      const result = await ragSystem.searchRelevantDocuments(query);
       
-      expect(end - start).toBeLessThan(1000); // Should initialize within 1 second
+      expect(result).toBeDefined();
+      expect(result.documents).toBeDefined();
+      expect(result.query).toBe(query.query);
+      expect(result.context).toBe(query.context);
+      expect(result.totalResults).toBeGreaterThanOrEqual(0);
+      expect(result.processingTime).toBeGreaterThan(0);
+    });
+
+    it('should handle search with empty results gracefully', async () => {
+      const query = {
+        query: 'nonexistent query',
+        context: {
+          userId: 'test-user-id'
+        }
+      };
+
+      const result = await ragSystem.searchRelevantDocuments(query);
+      
+      expect(result.documents).toEqual([]);
+      expect(result.totalResults).toBe(0);
+    });
+
+    it('should handle search errors gracefully', async () => {
+      // Mock database error
+      const { supabase } = await import('../../src/lib/supabase');
+      (supabase.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        ilike: jest.fn().mockReturnThis(),
+        or: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockRejectedValue(new Error('Database error'))
+      });
+
+      const query = {
+        query: 'test query',
+        context: { userId: 'test-user-id' }
+      };
+
+      const result = await ragSystem.searchRelevantDocuments(query);
+      
+      expect(result.documents).toEqual([]);
+      expect(result.totalResults).toBe(0);
     });
   });
 
-  describe('Executive Context Generation', () => {
-    beforeEach(async () => {
-      await ragSystem.initialize('test-user-id');
+  describe('Contextual Response Generation', () => {
+    it('should generate contextual response with relevant documents', async () => {
+      const context = {
+        userId: 'test-user-id',
+        companyId: 'test-company-id',
+        currentTopic: 'business strategy'
+      };
+
+      const response = await ragSystem.generateContextualResponse('What are our priorities?', context);
+      
+      expect(response).toBeDefined();
+      expect(typeof response).toBe('string');
+      expect(response.length).toBeGreaterThan(0);
     });
 
-    it('should generate executive context for strategic queries', async () => {
-      const context = await ragSystem.getExecutiveContext('What should be our Q1 priorities?');
+    it('should handle response generation with no relevant documents', async () => {
+      const context = {
+        userId: 'test-user-id'
+      };
+
+      const response = await ragSystem.generateContextualResponse('completely unrelated query', context);
       
-      expect(context).toBeDefined();
-      expect(context.length).toBeGreaterThan(0);
-      expect(context).toContain('EXECUTIVE CONTEXT');
+      expect(response).toBeDefined();
+      expect(response).toContain("don't have enough relevant context");
     });
 
-    it('should include user intelligence in executive responses', async () => {
-      const context = await ragSystem.getExecutiveContext('How is the company performing?');
-      
-      expect(context).toContain('USER INTELLIGENCE');
-      expect(context).toContain('BUSINESS CONTEXT');
-    });
+    it('should handle response generation errors gracefully', async () => {
+      // Mock error in searchRelevantDocuments
+      const { supabase } = await import('../../src/lib/supabase');
+      (supabase.from as jest.Mock).mockReturnValue({
+        select: jest.fn().mockRejectedValue(new Error('Search error'))
+      });
 
-    it('should handle executive context generation efficiently', async () => {
-      const start = performance.now();
-      await ragSystem.getExecutiveContext('Test executive query');
-      const end = performance.now();
-      
-      expect(end - start).toBeLessThan(500); // Should be fast
-    });
+      const context = {
+        userId: 'test-user-id'
+      };
 
-    it('should throw error when not initialized', async () => {
-      const uninitializedRAG = new ContextualRAG();
+      const response = await ragSystem.generateContextualResponse('test query', context);
       
-      await expect(
-        uninitializedRAG.getExecutiveContext('test query')
-      ).rejects.toThrow('RAG system not initialized');
+      expect(response).toBeDefined();
+      expect(response).toContain("having trouble accessing");
     });
   });
 
-  describe('Department Context Generation', () => {
-    beforeEach(async () => {
-      await ragSystem.initialize('test-user-id');
+  describe('User Context Updates', () => {
+    it('should update user context successfully', async () => {
+      const userId = 'test-user-id';
+      const contextUpdate = {
+        currentTopic: 'sales performance',
+        sessionId: 'new-session-id'
+      };
+
+      await expect(ragSystem.updateUserContext(userId, contextUpdate)).resolves.not.toThrow();
     });
 
-    it('should generate sales department context', async () => {
-      const context = await ragSystem.getDepartmentContext('sales', 'Show me sales performance');
-      
-      expect(context).toBeDefined();
-      expect(context.length).toBeGreaterThan(0);
-      expect(context).toContain('SALES');
-    });
+    it('should handle context update errors gracefully', async () => {
+      // Mock database error
+      const { supabase } = await import('../../src/lib/supabase');
+      (supabase.from as jest.Mock).mockReturnValue({
+        upsert: jest.fn().mockResolvedValue({ error: new Error('Update failed') })
+      });
 
-    it('should generate marketing department context', async () => {
-      const context = await ragSystem.getDepartmentContext('marketing', 'How are campaigns performing?');
-      
-      expect(context).toBeDefined();
-      expect(context.length).toBeGreaterThan(0);
-      expect(context).toContain('MARKETING');
-    });
+      const userId = 'test-user-id';
+      const contextUpdate = {
+        currentTopic: 'test topic'
+      };
 
-    it('should generate finance department context', async () => {
-      const context = await ragSystem.getDepartmentContext('finance', 'What is our financial position?');
-      
-      expect(context).toBeDefined();
-      expect(context.length).toBeGreaterThan(0);
-      expect(context).toContain('FINANCE');
-    });
-
-    it('should generate operations department context', async () => {
-      const context = await ragSystem.getDepartmentContext('operations', 'Show me project status');
-      
-      expect(context).toBeDefined();
-      expect(context.length).toBeGreaterThan(0);
-      expect(context).toContain('OPERATIONS');
-    });
-
-    it('should include user profile in department context', async () => {
-      const context = await ragSystem.getDepartmentContext('sales', 'Show me sales performance');
-      
-      expect(context).toContain('USER PROFILE');
-      expect(context).toContain('DEPARTMENT CONTEXT');
-    });
-
-    it('should handle invalid department gracefully', async () => {
-      const context = await ragSystem.getDepartmentContext('invalid-department', 'test query');
-      
-      expect(context).toBeDefined();
-      expect(context.length).toBeGreaterThan(0);
-    });
-
-    it('should throw error when not initialized', async () => {
-      const uninitializedRAG = new ContextualRAG();
-      
-      await expect(
-        uninitializedRAG.getDepartmentContext('sales', 'test query')
-      ).rejects.toThrow('RAG system not initialized');
+      await expect(ragSystem.updateUserContext(userId, contextUpdate)).resolves.not.toThrow();
     });
   });
 
-  describe('Query Routing Intelligence', () => {
-    beforeEach(async () => {
-      await ragSystem.initialize('test-user-id');
-    });
-
-    it('should provide routing intelligence for queries', async () => {
-      const routing = await ragSystem.getRoutingIntelligence('Show me our sales performance');
-      
-      expect(routing).toBeDefined();
-      expect(routing.recommendedAgent).toBeDefined();
-      expect(routing.confidence).toBeGreaterThan(0);
-      expect(routing.confidence).toBeLessThanOrEqual(1);
-      expect(routing.reasoning).toBeDefined();
-    });
-
-    it('should handle different query types', async () => {
+  describe('Performance Tests', () => {
+    it('should handle concurrent document searches', async () => {
       const queries = [
-        'Show me sales performance',
-        'How are our marketing campaigns?',
-        'What is our financial position?',
-        'What are our project statuses?'
+        {
+          query: 'Query 1',
+          context: { userId: 'test-user-id' }
+        },
+        {
+          query: 'Query 2', 
+          context: { userId: 'test-user-id' }
+        },
+        {
+          query: 'Query 3',
+          context: { userId: 'test-user-id' }
+        }
       ];
 
-      for (const query of queries) {
-        const routing = await ragSystem.getRoutingIntelligence(query);
-        expect(routing.recommendedAgent).toBeDefined();
-        expect(routing.confidence).toBeGreaterThan(0);
-      }
+      const promises = queries.map(query => ragSystem.searchRelevantDocuments(query));
+      const results = await Promise.all(promises);
+      
+      results.forEach(result => {
+        expect(result).toBeDefined();
+        expect(result.documents).toBeDefined();
+        expect(result.processingTime).toBeGreaterThan(0);
+      });
     });
 
-    it('should throw error when not initialized', async () => {
-      const uninitializedRAG = new ContextualRAG();
-      
-      await expect(
-        uninitializedRAG.getRoutingIntelligence('test query')
-      ).rejects.toThrow('RAG system not initialized');
+    it('should maintain performance under load', async () => {
+      const iterations = 5;
+      const promises: Promise<any>[] = [];
+
+      for (let i = 0; i < iterations; i++) {
+        promises.push(ragSystem.searchRelevantDocuments({
+          query: `Test query ${i}`,
+          context: { userId: 'test-user-id' }
+        }));
+      }
+
+      const startTime = performance.now();
+      await Promise.all(promises);
+      const endTime = performance.now();
+
+      const averageTime = (endTime - startTime) / iterations;
+      expect(averageTime).toBeLessThan(1000); // Average should be reasonable
     });
   });
 
@@ -203,93 +226,81 @@ describe('ContextualRAG Core Functionality', () => {
       (supabase.from as jest.Mock).mockReturnValue({
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
-        single: jest.fn().mockRejectedValue(new Error('Database connection failed'))
+        ilike: jest.fn().mockReturnThis(),
+        or: jest.fn().mockReturnThis(),
+        order: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockRejectedValue(new Error('Database connection failed'))
       });
 
-      const newRAG = new ContextualRAG();
+      const query = {
+        query: 'test query',
+        context: { userId: 'test-user-id' }
+      };
+
+      const result = await ragSystem.searchRelevantDocuments(query);
       
-      // Should handle error gracefully and use default context
-      await expect(newRAG.initialize('test-user-id')).resolves.not.toThrow();
+      expect(result.documents).toEqual([]);
+      expect(result.totalResults).toBe(0);
     });
 
     it('should handle invalid query parameters', async () => {
-      await ragSystem.initialize('test-user-id');
+      const query = {
+        query: '',
+        context: { userId: 'test-user-id' }
+      };
+
+      const result = await ragSystem.searchRelevantDocuments(query);
       
-      // Test with empty queries
-      await expect(ragSystem.getExecutiveContext('')).resolves.not.toThrow();
-      await expect(ragSystem.getDepartmentContext('sales', '')).resolves.not.toThrow();
+      expect(result).toBeDefined();
+      expect(result.documents).toBeDefined();
     });
 
     it('should handle memory constraints with large queries', async () => {
-      await ragSystem.initialize('test-user-id');
-      
-      // Test with very large query
       const largeQuery = 'test '.repeat(1000);
       
-      await expect(ragSystem.getExecutiveContext(largeQuery)).resolves.not.toThrow();
-    });
-  });
-
-  describe('Performance Tests', () => {
-    beforeEach(async () => {
-      await ragSystem.initialize('test-user-id');
-    });
-
-    it('should handle concurrent context generation', async () => {
-      const promises = [
-        ragSystem.getExecutiveContext('Executive query 1'),
-        ragSystem.getDepartmentContext('sales', 'Sales query 1'),
-        ragSystem.getDepartmentContext('marketing', 'Marketing query 1'),
-        ragSystem.getDepartmentContext('finance', 'Finance query 1')
-      ];
-
-      const results = await Promise.all(promises);
-      
-      results.forEach(result => {
-        expect(result).toBeDefined();
-        expect(result.length).toBeGreaterThan(0);
+      const result = await ragSystem.searchRelevantDocuments({
+        query: largeQuery,
+        context: { userId: 'test-user-id' }
       });
-    });
-
-    it('should maintain performance under load', async () => {
-      const iterations = 5;
-      const promises = [];
-
-      for (let i = 0; i < iterations; i++) {
-        promises.push(ragSystem.getExecutiveContext(`Test query ${i}`));
-      }
-
-      const startTime = performance.now();
-      await Promise.all(promises);
-      const endTime = performance.now();
-
-      const averageTime = (endTime - startTime) / iterations;
-      expect(averageTime).toBeLessThan(200); // Average should be reasonable
+      
+      expect(result).toBeDefined();
+      expect(result.documents).toBeDefined();
     });
   });
 
-  describe('Context Content Quality', () => {
-    beforeEach(async () => {
-      await ragSystem.initialize('test-user-id');
+  describe('Document Ranking', () => {
+    it('should rank documents by relevance', async () => {
+      const query = {
+        query: 'business strategy',
+        context: { 
+          userId: 'test-user-id',
+          currentTopic: 'strategy'
+        }
+      };
+
+      const result = await ragSystem.searchRelevantDocuments(query);
+      
+      if (result.documents.length > 1) {
+        // Check that documents are ranked by relevance score
+        const scores = result.documents.map(doc => doc.metadata.relevance_score || 0);
+        for (let i = 1; i < scores.length; i++) {
+          expect(scores[i - 1]).toBeGreaterThanOrEqual(scores[i]);
+        }
+      }
     });
 
-    it('should provide relevant context for business queries', async () => {
-      const context = await ragSystem.getExecutiveContext('What are our key business metrics?');
-      
-      expect(context).toContain('BUSINESS');
-      expect(context).toContain('METRICS');
-    });
+    it('should apply threshold filtering correctly', async () => {
+      const query = {
+        query: 'test query',
+        context: { userId: 'test-user-id' },
+        threshold: 0.8 // High threshold
+      };
 
-    it('should include personalization in responses', async () => {
-      const context = await ragSystem.getExecutiveContext('Help me prioritize my tasks');
+      const result = await ragSystem.searchRelevantDocuments(query);
       
-      expect(context).toContain('PERSONALIZATION');
-    });
-
-    it('should provide actionable insights', async () => {
-      const context = await ragSystem.getDepartmentContext('sales', 'How can I improve our sales?');
-      
-      expect(context).toContain('RECOMMENDATIONS');
+      result.documents.forEach(doc => {
+        expect(doc.metadata.relevance_score || 0).toBeGreaterThanOrEqual(0.8);
+      });
     });
   });
 }); 

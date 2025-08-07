@@ -1,6 +1,9 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
+import { supabase } from '@/lib/supabase';
+import { supabaseService } from '@/core/services/SupabaseService';
+import { logger } from '@/shared/utils/logger';
 
 import { UnifiedLayout } from '@/shared/components/layout/UnifiedLayout';
 import { AppWithOnboarding } from '@/shared/components/layout/AppWithOnboarding';
@@ -47,7 +50,6 @@ import {
   HubSpotCallbackPage,
   IntegrationSettingsPage,
   IntegrationSetupPage,
-  IntegrationsDashboardPage,
   ApiLearning
 } from '@/pages/integrations';
 
@@ -72,7 +74,6 @@ import { OnboardingChecklist } from '@/pages/admin/OnboardingChecklist';
 import PasswordResetPage from '@/pages/admin/PasswordResetPage';
 import { PricingPage } from '@/pages/admin/PricingPage';
 import EmailNotVerified from '@/pages/admin/EmailNotVerified';
-import { CompanyProfilePage } from '@/pages/admin/CompanyProfilePage';
 import { AuthStatus } from '@/pages/admin/AuthStatus';
 import { BillingDashboard } from '@/pages/admin/BillingDashboard';
 import { BillingPage } from '@/pages/admin/BillingPage';
@@ -87,6 +88,9 @@ import { ContinuousImprovementDashboard } from '@/pages/admin/ContinuousImprovem
 import { FeatureExplorer } from '@/pages/admin/FeatureExplorer';
 import AIModelSettings from '@/pages/admin/AIModelSettings';
 
+// Lazy imports for code splitting
+const CompanyProfilePage = React.lazy(() => import('@/pages/admin/CompanyProfilePage').then(m => ({ default: m.CompanyProfilePage })));
+
 // Import Automation pages
 import AutomationRecipesPage from '@/pages/automation/AutomationRecipesPage';
 import { ActPage } from '@/pages/automation/ActPage';
@@ -95,6 +99,12 @@ import { ActPage } from '@/pages/automation/ActPage';
 import { UserGuidePage } from '@/pages/help-center/UserGuidePage';
 import { DataUsagePage } from '@/pages/help-center/DataUsagePage';
 import { SecurityCompliancePage } from '@/pages/help-center/SecurityCompliancePage';
+
+// Import Organization pages
+import { OrganizationsPage } from '@/pages/organizations/OrganizationsPage';
+import { OrganizationDetailsPage } from '@/pages/organizations/[orgId]/OrganizationDetailsPage';
+import { OrganizationSettingsPage } from '@/pages/organizations/[orgId]/OrganizationSettingsPage';
+import { OrganizationMembersPage } from '@/pages/organizations/[orgId]/OrganizationMembersPage';
 import { AboutPage } from '@/pages/help-center/AboutPage';
 
 // Import Email pages
@@ -111,9 +121,38 @@ const LoadingSpinner = () => (
   </div>
 );
 
+// Wrapper component for ContinuousImprovementDashboard
+const ContinuousImprovementWrapper = () => {
+  const { user } = useAuth();
+  return <ContinuousImprovementDashboard userId={user?.id || ''} timeframe="week" />;
+};
+
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const [profileEnsured, setProfileEnsured] = React.useState(false);
+
+  // Ensure user profile exists when user is authenticated
+  React.useEffect(() => {
+    if (user?.id && !profileEnsured) {
+      const ensureProfile = async () => {
+        try {
+          // Use RPC call instead of edge function
+          const { error } = await callRPC('ensure_user_profile', { user_id: user.id });
+          if (error) {
+            logger.warn('Failed to ensure user profile', { error });
+          }
+          setProfileEnsured(true);
+        } catch (error) {
+          logger.warn('Failed to ensure user profile', { error });
+          // Continue anyway - profile creation is not critical
+          setProfileEnsured(true);
+        }
+      };
+      
+      ensureProfile();
+    }
+  }, [user?.id, profileEnsured]);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -121,6 +160,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  // Show loading while ensuring profile exists
+  if (!profileEnsured) {
+    return <LoadingSpinner />;
   }
 
   return <>{children}</>;
@@ -420,6 +464,51 @@ function App() {
             <ProtectedRoute>
               <UnifiedLayout>
                 <IntegrationsPage />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Organization routes */}
+        <Route 
+          path="/organizations" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <OrganizationsPage />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/organizations/:orgId" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <OrganizationDetailsPage />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/organizations/:orgId/settings" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <OrganizationSettingsPage />
+              </UnifiedLayout>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/organizations/:orgId/members" 
+          element={
+            <ProtectedRoute>
+              <UnifiedLayout>
+                <OrganizationMembersPage />
               </UnifiedLayout>
             </ProtectedRoute>
           } 
@@ -976,7 +1065,9 @@ function App() {
           element={
             <ProtectedRoute>
               <UnifiedLayout>
-                <CompanyProfilePage />
+                <React.Suspense fallback={<LoadingSpinner />}>
+                  <CompanyProfilePage />
+                </React.Suspense>
               </UnifiedLayout>
             </ProtectedRoute>
           } 
@@ -1064,7 +1155,7 @@ function App() {
           element={
             <ProtectedRoute>
               <UnifiedLayout>
-                <ContinuousImprovementDashboard />
+                <ContinuousImprovementWrapper />
               </UnifiedLayout>
             </ProtectedRoute>
           } 

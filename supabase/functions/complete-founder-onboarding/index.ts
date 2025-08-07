@@ -39,8 +39,14 @@ serve(async (req) => {
 
     const { userId, founderProfile, setupTrialEnvironment = true } = await req.json() as OnboardingRequest;
 
+    // Validate required fields
     if (!userId || !founderProfile) {
       throw new Error('Missing required fields: userId and founderProfile');
+    }
+
+    // Validate founder profile structure
+    if (!founderProfile.industry || !founderProfile.companySize || !founderProfile.biggestChallenge) {
+      throw new Error('Invalid founder profile: missing required fields');
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -68,6 +74,8 @@ serve(async (req) => {
       console.error('Error updating user profile:', profileError);
       throw new Error(`Failed to save founder profile: ${profileError.message}`);
     }
+
+    console.log('Founder profile saved successfully');
 
     // 2. Create company if not exists
     const { data: existingProfile } = await supabase
@@ -103,6 +111,7 @@ serve(async (req) => {
       }
 
       companyId = newCompany.id;
+      console.log('Company created successfully:', companyId);
 
       // Link user to company
       await supabase
@@ -113,63 +122,72 @@ serve(async (req) => {
 
     // 3. Setup trial environment if requested
     if (setupTrialEnvironment) {
-      // Create initial business health baseline
-      const kpiInserts = [
-        {
-          org_id: companyId,
-          kpi_key: 'monthly_revenue',
-          value: parseInt(founderProfile.monthlyRevenue.replace(/[^0-9]/g, '')) || 0,
-          recorded_at: new Date().toISOString(),
-          source: 'founder_onboarding'
-        },
-        {
-          org_id: companyId,
-          kpi_key: 'admin_hours_per_week',
-          value: parseInt(founderProfile.timeSpentOnAdmin.replace(/[^0-9]/g, '')) || 20,
-          recorded_at: new Date().toISOString(),
-          source: 'founder_onboarding'
-        },
-        {
-          org_id: companyId,
-          kpi_key: 'automation_potential_hours',
-          value: founderProfile.roi.hoursPerWeek,
-          recorded_at: new Date().toISOString(),
-          source: 'founder_onboarding'
+      try {
+        // Create initial business health baseline
+        const kpiInserts = [
+          {
+            org_id: companyId,
+            kpi_key: 'monthly_revenue',
+            value: parseInt(founderProfile.monthlyRevenue.replace(/[^0-9]/g, '')) || 0,
+            recorded_at: new Date().toISOString(),
+            source: 'founder_onboarding'
+          },
+          {
+            org_id: companyId,
+            kpi_key: 'admin_hours_per_week',
+            value: parseInt(founderProfile.timeSpentOnAdmin.replace(/[^0-9]/g, '')) || 20,
+            recorded_at: new Date().toISOString(),
+            source: 'founder_onboarding'
+          },
+          {
+            org_id: companyId,
+            kpi_key: 'automation_potential_hours',
+            value: founderProfile.roi.hoursPerWeek,
+            recorded_at: new Date().toISOString(),
+            source: 'founder_onboarding'
+          }
+        ];
+
+        const { error: kpiError } = await supabase
+          .from('ai_kpi_datapoints')
+          .insert(kpiInserts);
+
+        if (kpiError) {
+          console.warn('Warning: Could not insert baseline KPIs:', kpiError);
+          // Don't fail the onboarding for this
+        } else {
+          console.log('Baseline KPIs created successfully');
         }
-      ];
 
-      const { error: kpiError } = await supabase
-        .from('ai_kpi_datapoints')
-        .insert(kpiInserts);
+        // Create first AI insight based on founder profile
+        const firstInsight = {
+          org_id: companyId,
+          insight_type: 'welcome',
+          title: `Welcome to Nexus, ${getFounderName(founderProfile)}!`,
+          content: `Based on your ${founderProfile.industry} business profile, I've identified ${founderProfile.roi.hoursPerWeek} hours per week of automation potential. Your biggest challenge "${founderProfile.biggestChallenge}" is exactly what I'm here to help solve.`,
+          confidence_score: 0.95,
+          priority: 'high',
+          category: 'onboarding',
+          metadata: {
+            founder_profile: founderProfile,
+            automation_potential: founderProfile.roi,
+            next_steps: getIndustrySpecificNextSteps(founderProfile.industry)
+          },
+          created_at: new Date().toISOString()
+        };
 
-      if (kpiError) {
-        console.warn('Warning: Could not insert baseline KPIs:', kpiError);
-        // Don't fail the onboarding for this
-      }
+        const { error: insightError } = await supabase
+          .from('ai_insights')
+          .insert(firstInsight);
 
-      // Create first AI insight based on founder profile
-      const firstInsight = {
-        org_id: companyId,
-        insight_type: 'welcome',
-        title: `Welcome to Nexus, ${getFounderName(founderProfile)}!`,
-        content: `Based on your ${founderProfile.industry} business profile, I've identified ${founderProfile.roi.hoursPerWeek} hours per week of automation potential. Your biggest challenge "${founderProfile.biggestChallenge}" is exactly what I'm here to help solve.`,
-        confidence_score: 0.95,
-        priority: 'high',
-        category: 'onboarding',
-        metadata: {
-          founder_profile: founderProfile,
-          automation_potential: founderProfile.roi,
-          next_steps: getIndustrySpecificNextSteps(founderProfile.industry)
-        },
-        created_at: new Date().toISOString()
-      };
-
-      const { error: insightError } = await supabase
-        .from('ai_insights')
-        .insert(firstInsight);
-
-      if (insightError) {
-        console.warn('Warning: Could not create welcome insight:', insightError);
+        if (insightError) {
+          console.warn('Warning: Could not create welcome insight:', insightError);
+        } else {
+          console.log('Welcome insight created successfully');
+        }
+      } catch (error) {
+        console.warn('Warning: Trial environment setup failed:', error);
+        // Don't fail the onboarding for trial setup issues
       }
     }
 
@@ -191,7 +209,11 @@ serve(async (req) => {
 
     if (eventError) {
       console.warn('Warning: Could not log onboarding event:', eventError);
+    } else {
+      console.log('Onboarding completion event logged');
     }
+
+    console.log('Founder onboarding completed successfully');
 
     return new Response(
       JSON.stringify({

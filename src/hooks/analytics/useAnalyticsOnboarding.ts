@@ -152,7 +152,7 @@ export const useAnalyticsOnboarding = (): AnalyticsOnboardingState & AnalyticsOn
     completeModule,
     skipModule,
     closeModule,
-    showProgress: showProgressHandler,
+    showProgressHandler,
     hideProgress,
     resetOnboarding,
     

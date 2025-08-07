@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Target, Lightbulb, Map, Play, ChevronRight, CheckCircle, Circle } from 'lucide-react';
 import { useFireCycleLogs } from '@/shared/hooks/useFireCycleLogs';
 import type { FireCyclePhase } from '@/types/business/fire-cycle';
+import { logger } from '@/shared/utils/logger';
 
 const PHASES: FireCyclePhase[] = [
   {
@@ -16,10 +17,7 @@ const PHASES: FireCyclePhase[] = [
         label: 'Set Focus',
         description: 'Define your current priority',
         type: 'primary',
-        onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Set Focus clicked')
+        onClick: () => logger.info('Set Focus clicked')
       }
     ]
   },
@@ -35,10 +33,7 @@ const PHASES: FireCyclePhase[] = [
         label: 'Review Insights',
         description: 'Analyze your data and trends',
         type: 'primary',
-        onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Review Insights clicked')
+        onClick: () => logger.info('Review Insights clicked')
       }
     ]
   },
@@ -54,10 +49,7 @@ const PHASES: FireCyclePhase[] = [
         label: 'Build Roadmap',
         description: 'Create your action plan',
         type: 'primary',
-        onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Build Roadmap clicked')
+        onClick: () => logger.info('Build Roadmap clicked')
       }
     ]
   },
@@ -73,10 +65,7 @@ const PHASES: FireCyclePhase[] = [
         label: 'Start Execution',
         description: 'Begin implementing your plan',
         type: 'primary',
-        onClick: () => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Start Execution clicked')
+        onClick: () => logger.info('Start Execution clicked')
       }
     ]
   }

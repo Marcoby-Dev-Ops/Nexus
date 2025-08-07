@@ -130,8 +130,8 @@ const IntegrationTrackingPage: React.FC = () => {
         setAnalytics(mockAnalytics);
         setComponentStats(mockAnalytics.topComponents);
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error loading integration data: ', error);
       } finally {

@@ -13,6 +13,7 @@ export default tseslint.config(
         ...globals.browser,
         ...globals.es2021,
         ...globals.node,
+        ...globals.jest,
       },
       parserOptions: {
         ecmaVersion: 'latest',

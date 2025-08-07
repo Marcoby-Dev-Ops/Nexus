@@ -45,8 +45,8 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
       setInsights(businessInsights);
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Failed to initialize centralized dashboard: ', error);
     } finally {
@@ -64,14 +64,14 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
         'current-user'
       );
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Unified command executed: ', result);
       // Show success/results in UI
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Failed to execute unified command: ', error);
     }
@@ -85,13 +85,13 @@ export const CentralizedAppsHub: React.FC<CentralizedAppsHubProps> = ({ classNam
         'current-user'
       );
 
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.log('Business function executed: ', result);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Failed to execute business function: ', error);
     }

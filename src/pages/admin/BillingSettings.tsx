@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { useAuth } from '@/hooks/index';
 import { useSubscription } from '@/components/admin/user/hooks/useSubscription';
 import { useService } from '@/shared/hooks/useService';
+import { logger } from '@/shared/utils/logger';
 // import { serviceFactory } from '@/core/services/ServiceFactory'; // TEMPORARILY DISABLED
 import { toast } from 'sonner';
 import { CreditCard, Calendar, ExternalLink, Download, Plus, Edit, Trash2, Crown, Sparkles, XCircle } from 'lucide-react';
@@ -56,25 +57,70 @@ const BillingSettings: React.FC = () => {
   const { user } = useAuth();
   const { plan } = useSubscription();
   
-  // Use BillingService hooks
+  // Use BillingService directly
   const billingService = useService('billing');
-  const { data: subscriptions, isLoading: isLoadingSubscriptions } = billingService.useList({ 
-    user_id: user?.id,
-    company_id: (user as any)?.company?.id 
-  });
-  const { data: paymentMethods, isLoading: isLoadingPaymentMethods } = billingService.useList({ 
-    user_id: user?.id,
-    company_id: (user as any)?.company?.id 
-  });
-  const { data: invoices, isLoading: isLoadingInvoices } = billingService.useList({ 
-    user_id: user?.id,
-    company_id: (user as any)?.company?.id 
-  });
-  
-  // Billing operations
-  const { mutate: updateSubscription, isLoading: isUpdatingSubscription } = billingService.useUpdate();
-  const { mutate: createPaymentMethod, isLoading: isCreatingPaymentMethod } = billingService.useCreate();
-  const { mutate: deletePaymentMethod, isLoading: isDeletingPaymentMethod } = billingService.useDelete();
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [isLoadingSubscriptions, setIsLoadingSubscriptions] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+  const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(false);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+  const [isUpdatingSubscription, setIsUpdatingSubscription] = useState(false);
+  const [isCreatingPaymentMethod, setIsCreatingPaymentMethod] = useState(false);
+  const [isDeletingPaymentMethod, setIsDeletingPaymentMethod] = useState(false);
+
+  // Fetch billing data
+  useEffect(() => {
+    const fetchBillingData = async () => {
+      if (!user?.id) return;
+      
+      const filters = {
+        user_id: user.id,
+        company_id: (user as any)?.company?.id
+      };
+
+      // Fetch subscriptions
+      setIsLoadingSubscriptions(true);
+      try {
+        const subscriptionsResult = await billingService.list(filters);
+        if (subscriptionsResult.success && subscriptionsResult.data) {
+          setSubscriptions(subscriptionsResult.data);
+        }
+              } catch (error) {
+          logger.error('Failed to fetch subscriptions:', error);
+        } finally {
+        setIsLoadingSubscriptions(false);
+      }
+
+      // Fetch payment methods
+      setIsLoadingPaymentMethods(true);
+      try {
+        const paymentMethodsResult = await billingService.list(filters);
+        if (paymentMethodsResult.success && paymentMethodsResult.data) {
+          setPaymentMethods(paymentMethodsResult.data);
+        }
+              } catch (error) {
+          logger.error('Failed to fetch payment methods:', error);
+        } finally {
+        setIsLoadingPaymentMethods(false);
+      }
+
+      // Fetch invoices
+      setIsLoadingInvoices(true);
+      try {
+        const invoicesResult = await billingService.list(filters);
+        if (invoicesResult.success && invoicesResult.data) {
+          setInvoices(invoicesResult.data);
+        }
+              } catch (error) {
+          logger.error('Failed to fetch invoices:', error);
+        } finally {
+        setIsLoadingInvoices(false);
+      }
+    };
+
+    fetchBillingData();
+  }, [user?.id, user?.company?.id, billingService]);
   
   const [showAddPaymentMethod, setShowAddPaymentMethod] = useState(false);
   const [showUsageDetails, setShowUsageDetails] = useState(false);
@@ -128,15 +174,30 @@ const BillingSettings: React.FC = () => {
   const handleUpgradePlan = async (newPlan: 'pro' | 'enterprise') => {
     if (!currentSubscription) return;
 
+    setIsUpdatingSubscription(true);
     try {
-      await updateSubscription((currentSubscription as any).id, {
+      const result = await billingService.update((currentSubscription as any).id, {
         plan_id: newPlan,
         status: 'active'
       });
       
-      toast.success(`Successfully upgraded to ${newPlan} plan`);
+      if (result.success) {
+        toast.success(`Successfully upgraded to ${newPlan} plan`);
+        // Refresh billing data
+        const refreshResult = await billingService.list({
+          user_id: user?.id,
+          company_id: (user as any)?.company?.id
+        });
+        if (refreshResult.success && refreshResult.data) {
+          setSubscriptions(refreshResult.data);
+        }
+      } else {
+        toast.error(result.error || 'Failed to upgrade plan');
+      }
     } catch (error) {
       toast.error('Failed to upgrade plan');
+    } finally {
+      setIsUpdatingSubscription(false);
     }
   };
 
@@ -156,8 +217,9 @@ const BillingSettings: React.FC = () => {
   const handleAddPaymentMethod = async (paymentData: any) => {
     if (!user?.id || !(user as any)?.company?.id) return;
 
+    setIsCreatingPaymentMethod(true);
     try {
-      await createPaymentMethod({
+      const result = await billingService.create({
         user_id: user.id,
         company_id: (user as any).company.id,
         type: paymentData.type,
@@ -168,19 +230,48 @@ const BillingSettings: React.FC = () => {
         is_default: paymentData.isDefault || false
       });
       
-      toast.success('Payment method added successfully');
-      setShowAddPaymentMethod(false);
+      if (result.success) {
+        toast.success('Payment method added successfully');
+        setShowAddPaymentMethod(false);
+        // Refresh payment methods
+        const refreshResult = await billingService.list({
+          user_id: user.id,
+          company_id: (user as any).company.id
+        });
+        if (refreshResult.success && refreshResult.data) {
+          setPaymentMethods(refreshResult.data);
+        }
+      } else {
+        toast.error(result.error || 'Failed to add payment method');
+      }
     } catch (error) {
       toast.error('Failed to add payment method');
+    } finally {
+      setIsCreatingPaymentMethod(false);
     }
   };
 
   const handleRemovePaymentMethod = async (paymentMethodId: string) => {
+    setIsDeletingPaymentMethod(true);
     try {
-      await deletePaymentMethod(paymentMethodId);
-      toast.success('Payment method removed successfully');
+      const result = await billingService.delete(paymentMethodId);
+      if (result.success) {
+        toast.success('Payment method removed successfully');
+        // Refresh payment methods
+        const refreshResult = await billingService.list({
+          user_id: user?.id,
+          company_id: (user as any)?.company?.id
+        });
+        if (refreshResult.success && refreshResult.data) {
+          setPaymentMethods(refreshResult.data);
+        }
+      } else {
+        toast.error(result.error || 'Failed to remove payment method');
+      }
     } catch (error) {
       toast.error('Failed to remove payment method');
+    } finally {
+      setIsDeletingPaymentMethod(false);
     }
   };
 

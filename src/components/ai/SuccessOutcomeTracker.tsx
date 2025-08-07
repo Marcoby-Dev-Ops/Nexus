@@ -146,8 +146,8 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
       });
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error creating success outcome: ', error);
     }
@@ -198,8 +198,8 @@ export const SuccessOutcomeTracker: React.FC<SuccessOutcomeTrackerProps> = ({
       });
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error updating outcome: ', error);
       showToast({

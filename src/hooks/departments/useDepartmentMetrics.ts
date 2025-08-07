@@ -19,8 +19,8 @@ export function useDepartmentMetrics(departmentId: DepartmentId) {
         .maybeSingle();
 
       if (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.warn(`[useDepartmentMetrics] error fetching ${departmentId}`, error.message);
       }

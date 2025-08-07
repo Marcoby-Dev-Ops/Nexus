@@ -81,8 +81,8 @@ export const useContextualDataCompletion = (
         loading: false 
       }));
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading proactive suggestions: ', error);
       setState(prev => ({ 
@@ -133,8 +133,8 @@ export const useContextualDataCompletion = (
       
       return analysis;
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error analyzing conversation: ', error);
       setState(prev => ({ 
@@ -170,8 +170,8 @@ export const useContextualDataCompletion = (
       
       return suggestions;
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error generating contextual suggestions: ', error);
       setState(prev => ({ 
@@ -212,8 +212,8 @@ export const useContextualDataCompletion = (
       
       return success;
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error completing gap: ', error);
       return false;
@@ -272,8 +272,8 @@ export const useContextualDataCompletion = (
       
       return false;
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error completing suggestion: ', error);
       return false;
@@ -302,8 +302,8 @@ export const useContextualDataCompletion = (
           'rejected'
         );
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error tracking suggestion dismissal: ', error);
       }
@@ -332,8 +332,8 @@ export const useContextualDataCompletion = (
           'deferred'
         );
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error('Error tracking suggestion deferral: ', error);
       }

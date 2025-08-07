@@ -11,6 +11,8 @@ import type {
 } from '@/core/types/callbacks';
 import { CallbackEvent } from '@/core/types/callbacks';
 import { callbackRegistry } from '@/shared/callbacks/CallbackRegistry';
+import { supabase } from '@/lib/supabase';
+import { logger } from '@/shared/utils/logger';
 
 /**
  * Built-in callback handlers
@@ -116,8 +118,8 @@ export class CallbackHandlers {
       }
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('OAuth callback error: ', error);
       
@@ -198,8 +200,8 @@ export class CallbackHandlers {
       };
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Webhook processing error: ', error);
       
@@ -282,8 +284,8 @@ export class CallbackHandlers {
       }
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('API key validation error: ', error);
       return {
@@ -361,8 +363,8 @@ export class CallbackHandlers {
       };
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Supabase redirect callback error: ', error);
       
@@ -387,8 +389,8 @@ export class CallbackHandlers {
     request: CallbackRequest,
     config: CallbackConfig
   ): Promise<CallbackResponse> {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+     
+     
     // eslint-disable-next-line no-console
     console.warn(`Custom callback handler not implemented for ${config.integrationSlug}`);
     return {
@@ -468,19 +470,31 @@ export class CallbackHandlers {
    */
   static async trackEvent(event: CallbackEvent, properties: Record<string, any>): Promise<void> {
     try {
-      // This would typically send to an analytics service
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log(`Callback Event: ${event}`, properties);
-      
-      // TODO: Store in database when callback_events table is created
-      // For now, just log the event
+      // Store event in database
+      const { error: dbError } = await supabase
+        .from('callback_events')
+        .insert({
+          event_type: event,
+          integration_slug: properties.integration || 'unknown',
+          user_id: properties.userId || properties.user_id,
+          company_id: properties.companyId || properties.company_id,
+          request_id: properties.requestId,
+          path: properties.path,
+          method: properties.method,
+          status_code: properties.statusCode,
+          response_time_ms: properties.responseTimeMs,
+          properties: properties,
+          error_message: properties.error
+        });
+
+      if (dbError) {
+        logger.warn('Failed to store callback event in database:', dbError);
+      }
+
+      // Also log for debugging
+      logger.info(`Callback Event: ${event}`, properties);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to track callback event: ', error);
+      logger.error('Failed to track callback event: ', error);
     }
   }
 }
@@ -582,8 +596,8 @@ export class CallbackProcessor {
       return response;
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Callback processing error: ', error);
       

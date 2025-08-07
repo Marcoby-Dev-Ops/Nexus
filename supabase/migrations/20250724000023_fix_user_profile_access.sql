@@ -50,19 +50,55 @@ DROP POLICY IF EXISTS "Allow users to read their own profile" ON public.user_pro
 DROP POLICY IF EXISTS "Allow users to insert their own profile" ON public.user_profiles;
 DROP POLICY IF EXISTS "Allow users to update their own profile" ON public.user_profiles;
 
--- Create clean, simple policies
-CREATE POLICY "Users can read own profile" ON public.user_profiles
-  FOR SELECT USING (auth.uid() = id);
+-- Create clean, simple policies (with IF NOT EXISTS checks)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'user_profiles' 
+        AND policyname = 'Users can read own profile'
+    ) THEN
+        CREATE POLICY "Users can read own profile" ON public.user_profiles
+            FOR SELECT USING (auth.uid() = id);
+    END IF;
+END $$;
 
-CREATE POLICY "Users can insert own profile" ON public.user_profiles
-  FOR INSERT WITH CHECK (auth.uid() = id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'user_profiles' 
+        AND policyname = 'Users can insert own profile'
+    ) THEN
+        CREATE POLICY "Users can insert own profile" ON public.user_profiles
+            FOR INSERT WITH CHECK (auth.uid() = id);
+    END IF;
+END $$;
 
-CREATE POLICY "Users can update own profile" ON public.user_profiles
-  FOR UPDATE USING (auth.uid() = id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'user_profiles' 
+        AND policyname = 'Users can update own profile'
+    ) THEN
+        CREATE POLICY "Users can update own profile" ON public.user_profiles
+            FOR UPDATE USING (auth.uid() = id);
+    END IF;
+END $$;
 
 -- Service role bypass for admin operations
-CREATE POLICY "Service role can manage all profiles" ON public.user_profiles
-  FOR ALL USING (auth.role() = 'service_role');
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'user_profiles' 
+        AND policyname = 'Service role can manage all profiles'
+    ) THEN
+        CREATE POLICY "Service role can manage all profiles" ON public.user_profiles
+            FOR ALL USING (auth.role() = 'service_role');
+    END IF;
+END $$;
 
 -- ====================================================================
 -- STEP 3: CREATE MISSING PROFILES FOR EXISTING USERS

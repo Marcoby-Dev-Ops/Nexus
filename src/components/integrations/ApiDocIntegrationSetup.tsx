@@ -7,7 +7,7 @@ import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { AlertCircle, Check, ChevronRight, FileUp, DownloadCloud, Globe, Key, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { ApiIntegrationService, type ApiIntegrationData } from '@/shared/services/apiIntegrationService';
+import { consolidatedIntegrationService, type ApiIntegrationData } from '@/services/integrations/consolidatedIntegrationService';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
 import { Progress } from '@/shared/components/ui/Progress.tsx';
 import { Badge } from '@/shared/components/ui/Badge.tsx';
@@ -364,8 +364,13 @@ ${analysisResult.patterns.map(pattern =>
         generatedCode
       };
       
-      const result = await ApiIntegrationService.saveApiIntegration(user.id, integrationData);
-      setSavedIntegrationId(result.userIntegration.id);
+      const { data: result, error } = await consolidatedIntegrationService.saveIntegration(integrationData);
+      
+      if (error) {
+        throw new Error(error);
+      }
+      
+      setSavedIntegrationId(result);
       
       // Complete the progress bar
       clearInterval(progressInterval);
@@ -384,8 +389,8 @@ ${analysisResult.patterns.map(pattern =>
       }, 500);
       
     } catch (err) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error generating integration: ', err);
       setError(`Failed to generate integration: ${err instanceof Error ? err.message : 'Unknown error'}`);

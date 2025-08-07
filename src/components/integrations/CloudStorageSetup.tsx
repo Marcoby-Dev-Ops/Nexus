@@ -94,8 +94,8 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
             syncStatus
           };
         } catch (error) {
-          // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+           
+     
     // eslint-disable-next-line no-console
     console.error(`Failed to check ${provider.name} status: `, error);
           return provider;
@@ -160,8 +160,8 @@ export function CloudStorageSetup({ onComplete, onClose }: CloudStorageSetupProp
 
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message: 'An unknown error occurred';
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+         
+     
     // eslint-disable-next-line no-console
     console.error(`Failed to sync ${provider.name}:`, error);
         results.push({ 

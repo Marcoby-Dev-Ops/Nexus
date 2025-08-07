@@ -69,8 +69,8 @@ const businessBenchmarkingService = {
 };
 
 const logger = {
-  error: (message: string, error: any) => // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+  error: (message: string, error: any) =>  
+     
     // eslint-disable-next-line no-console
     console.error(message, error)
 };

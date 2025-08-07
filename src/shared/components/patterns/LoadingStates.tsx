@@ -82,4 +82,17 @@ export const SetupLoader = ({
  */
 export const ButtonSpinner = ({
   className = '',
-}: { className?: string } = {}) => <Spinner size={16} className={className} />; 
+}: { className?: string } = {}) => <Spinner size={16} className={className} />;
+
+/**
+ * LoadingStates object for consistent usage pattern
+ * Provides access to all loading components through a single import
+ */
+export const LoadingStates = {
+  Spinner: LoadingSpinner,
+  Skeleton: LoadingSkeleton,
+  PageLoader,
+  TypingDots,
+  SetupLoader,
+  ButtonSpinner,
+}; 

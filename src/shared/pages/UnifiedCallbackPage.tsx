@@ -129,8 +129,8 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
       }
 
     } catch (error: any) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Callback processing error: ', error);
       

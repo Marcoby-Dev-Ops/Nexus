@@ -5,7 +5,7 @@
 export { default as Dashboard } from './dashboard/Dashboard';
 
 // Home pages
-
+export * from './home';
 
 // Analytics pages
 export * from './analytics';
@@ -41,4 +41,13 @@ export * from './departments';
 export * from './hype';
 
 // Email pages
-export * from './email'; 
+export * from './email';
+
+// Demo pages
+export * from './demo';
+
+// Tasks pages
+export * from './tasks';
+
+// Settings pages
+export * from './settings'; 

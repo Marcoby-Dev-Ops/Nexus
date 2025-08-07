@@ -22,6 +22,7 @@ export { Dialog } from './Dialog';
 // Missing exports for 1.0
 export { default as Breadcrumbs } from './Breadcrumbs';
 export { default as Dropdown } from './Dropdown';
+export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from './DropdownMenu';
 export { default as Form, FormField } from './Form';
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './Tooltip';
 

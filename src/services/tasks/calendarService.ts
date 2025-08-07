@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
@@ -71,11 +71,10 @@ export class CalendarService extends BaseService {
       }
 
       // Get user's connected calendar integrations
-      const { data: integrations, error: integrationError } = await supabase
-        .from('user_integrations')
-        .select('integration_type, status')
-        .eq('user_id', user.id)
-        .in('integration_type', ['microsoft', 'google', 'outlook']);
+      const { data: integrations, error: integrationError } = await select('user_integrations', 'integration_type, status', { 
+        user_id: user.id,
+        integration_type: ['microsoft', 'google', 'outlook']
+      });
 
       if (integrationError) {
         logger.error('Error fetching user integrations: ', integrationError);

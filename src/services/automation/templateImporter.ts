@@ -178,8 +178,8 @@ export class AutomationTemplateImporter {
       template.conversionStatus = 'converted';
     } catch (error) {
       template.conversionStatus = 'failed';
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.warn('Failed to convert Zapier template: ', error);
     }
@@ -217,8 +217,8 @@ export class AutomationTemplateImporter {
       template.conversionStatus = 'converted';
     } catch (error) {
       template.conversionStatus = 'failed';
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.warn('Failed to convert Make template: ', error);
     }

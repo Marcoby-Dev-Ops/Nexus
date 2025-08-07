@@ -148,8 +148,8 @@ export const BackendHealthMonitor: React.FC<BackendHealthMonitorProps> = ({
         <button
           onClick={() => {
             const health = backendConnector.getDetailedHealthStatus();
-            // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+             
+     
     // eslint-disable-next-line no-console
     console.log('Backend Health Status: ', health);
           }}

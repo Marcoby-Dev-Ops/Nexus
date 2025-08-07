@@ -55,8 +55,8 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
       }
 
     } catch (err) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Token check failed: ', err);
       setError(err instanceof Error ? err.message: 'Failed to check token status');
@@ -99,8 +99,8 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
       onSyncComplete?.();
 
     } catch (err) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Email sync failed: ', err);
       setError(err instanceof Error ? err.message: 'Failed to sync emails');

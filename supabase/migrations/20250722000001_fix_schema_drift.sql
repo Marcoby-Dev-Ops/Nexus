@@ -56,27 +56,8 @@ CREATE TABLE IF NOT EXISTS public.companies (
 );
 
 -- User profiles table (ensure it exists with all fields)
-CREATE TABLE IF NOT EXISTS public.user_profiles (
-    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    company_id UUID REFERENCES public.companies(id) ON DELETE SET NULL,
-    email TEXT,
-    first_name TEXT,
-    last_name TEXT,
-    full_name TEXT,
-    display_name TEXT,
-    avatar_url TEXT,
-    bio TEXT,
-    role TEXT DEFAULT 'user' CHECK (role IN ('owner', 'admin', 'manager', 'user')),
-    department TEXT,
-    job_title TEXT,
-    phone TEXT,
-    timezone TEXT DEFAULT 'UTC',
-    preferences JSONB DEFAULT '{"theme": "system", "notifications": true, "language": "en"}',
-    settings JSONB DEFAULT '{}',
-    onboarding_completed BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- Note: user_profiles table is created in 20250719190000_create_missing_tables.sql
+-- The company_id column is added in 20250805040226_add_company_id_to_user_profiles.sql
 
 -- Integrations table
 CREATE TABLE IF NOT EXISTS public.integrations (
@@ -260,7 +241,7 @@ CREATE INDEX IF NOT EXISTS idx_companies_name ON public.companies(name);
 CREATE INDEX IF NOT EXISTS idx_companies_domain ON public.companies(domain);
 
 -- User profiles indexes
-CREATE INDEX IF NOT EXISTS idx_user_profiles_company_id ON public.user_profiles(company_id);
+-- Note: idx_user_profiles_company_id is created in 20250805040226_add_company_id_to_user_profiles.sql
 CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON public.user_profiles(email);
 
 -- Integrations indexes
@@ -284,9 +265,9 @@ CREATE INDEX IF NOT EXISTS idx_ai_insights_insight_type ON public.ai_insights(in
 CREATE INDEX IF NOT EXISTS idx_ai_insights_category ON public.ai_insights(category);
 
 -- Thoughts indexes
+-- Note: thoughts table only has user_id, content, embedding, created_at, updated_at columns
+-- category and status columns don't exist in the actual table
 CREATE INDEX IF NOT EXISTS idx_thoughts_user_id ON public.thoughts(user_id);
-CREATE INDEX IF NOT EXISTS idx_thoughts_category ON public.thoughts(category);
-CREATE INDEX IF NOT EXISTS idx_thoughts_status ON public.thoughts(status);
 
 -- Action cards indexes
 CREATE INDEX IF NOT EXISTS idx_action_cards_user_id ON public.action_cards(user_id);
@@ -407,6 +388,8 @@ ALTER TABLE public.user_billing_plans ENABLE ROW LEVEL SECURITY;
 -- ====================================================================
 
 -- Companies - users can view companies they're associated with
+-- Note: This policy will be updated after company_id column is added to user_profiles
+-- For now, allow all authenticated users to view companies
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -414,13 +397,7 @@ BEGIN
         WHERE tablename = 'companies' 
         AND policyname = 'Users can view associated companies'
     ) THEN
-        CREATE POLICY "Users can view associated companies" ON public.companies FOR SELECT USING (
-            EXISTS (
-                SELECT 1 FROM public.user_profiles 
-                WHERE user_profiles.company_id = companies.id 
-                AND user_profiles.id = auth.uid()
-            )
-        );
+        CREATE POLICY "Users can view associated companies" ON public.companies FOR SELECT USING (auth.role() = 'authenticated');
     END IF;
 END $$;
 

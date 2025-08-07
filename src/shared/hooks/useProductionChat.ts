@@ -8,6 +8,8 @@ import { supabase } from '../core/supabase';
 import { quotaService } from '../services/quotaService';
 import type { ChatMessage, ChatState, ChatActions } from '../types/chat';
 import type { ChatQuotas } from '../types/licensing';
+import { logger } from '@/shared/utils/logger';
+import { select, insertOne, updateOne } from '@/lib/supabase';
 
 interface UseProductionChatOptions {
   conversationId: string;
@@ -114,8 +116,8 @@ export function useProductionChat(options: UseProductionChatOptions): Production
 
       return quotaCheck;
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Quota check failed: ', error);
       return { allowed: true };
@@ -258,8 +260,8 @@ export function useProductionChat(options: UseProductionChatOptions): Production
       setState(prev => ({ ...prev, isLoading: false }));
 
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error("Failed to send message: ", error);
       setState(prev => ({
@@ -297,49 +299,31 @@ export function useProductionChat(options: UseProductionChatOptions): Production
         costToday: stats.todayUsage.estimated_cost_usd,
       });
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('Failed to get usage stats: ', error);
+      logger.error('Failed to get usage stats: ', error);
     }
   }, [user?.id]);
 
   // Stub implementations
   const retryMessage = useCallback(async (messageId: string) => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Retry message: ', messageId);
+    logger.info('Retry message: ', messageId);
   }, []);
 
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Edit message: ', messageId, newContent);
+    logger.info('Edit message: ', messageId, newContent);
   }, []);
 
   const deleteMessage = useCallback(async (messageId: string) => {
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Delete message: ', messageId);
+    logger.info('Delete message: ', messageId);
   }, []);
 
   const reactToMessage = useCallback(async (messageId: string, emoji: string) => {
     if (!enableReactions) return;
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('React to message: ', messageId, emoji);
+    logger.info('React to message: ', messageId, emoji);
   }, [enableReactions]);
 
   const markAsRead = useCallback(async (messageId: string) => {
     if (!autoMarkAsRead) return;
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('Mark as read: ', messageId);
+    logger.info('Mark as read: ', messageId);
   }, [autoMarkAsRead]);
 
   useEffect(() => {

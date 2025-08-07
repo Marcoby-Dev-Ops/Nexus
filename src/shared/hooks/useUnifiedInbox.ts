@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { owaInboxService } from '@/services/email/owaInboxService';
 import type { OWAInboxFilters, OWAEmailItem } from '@/services/email/owaInboxService';
+import { logger } from '@/shared/utils/logger';
 
 export interface UseUnifiedInboxOptions {
   filters?: OWAInboxFilters;
@@ -30,21 +31,12 @@ export function useUnifiedInbox({ filters = {}, limit = 50, offset = 0 }: UseUni
     queryKey,
     queryFn: async () => {
       try {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('useUnifiedInbox: Starting email fetch with filters:', filters);
+        logger.info('useUnifiedInbox: Starting email fetch with filters:', filters);
         const result = await owaInboxService.getEmails(filters, limit, offset);
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.log('useUnifiedInbox: Successfully fetched emails:', result);
+        logger.info('useUnifiedInbox: Successfully fetched emails:', result);
         return result;
       } catch (error) {
-        // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
-    console.error('useUnifiedInbox: Error fetching emails:', error);
+        logger.error('useUnifiedInbox: Error fetching emails:', error);
         throw error;
       }
     },

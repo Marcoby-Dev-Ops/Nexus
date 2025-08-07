@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
+import { logger } from '@/shared/utils/logger';
 
 interface UseSubscriptionReturn {
   plan: 'free' | 'pro' | 'enterprise';
@@ -24,7 +25,7 @@ export const useSubscription = (): UseSubscriptionReturn => {
         setPlan('free');
       } catch (err) {
         setError('Failed to fetch subscription data');
-        console.error('Error fetching subscription:', err);
+        logger.error('Error fetching subscription', { error: err });
       } finally {
         setIsLoading(false);
       }

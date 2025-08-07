@@ -46,8 +46,8 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
       setBillingStatus(billingData);
       setRecommendations(recommendationData);
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error loading dashboard data: ', error);
     } finally {
@@ -71,8 +71,8 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
       // Refresh dashboard data
       loadDashboardData();
     } catch (error) {
-      // eslint-disable-next-line no-console
-    // eslint-disable-next-line no-console
+       
+     
     // eslint-disable-next-line no-console
     console.error('Error submitting feedback: ', error);
     }
