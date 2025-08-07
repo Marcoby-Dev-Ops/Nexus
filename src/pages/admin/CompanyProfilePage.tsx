@@ -11,7 +11,7 @@ import { Textarea } from '@/shared/components/ui/Textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { useService } from '@/shared/hooks/useService';
+import { useCompany } from '@/shared/contexts/CompanyContext';
 import { logger } from '@/shared/utils/logger';
 
 const companyProfileSchema = z.object({
@@ -34,11 +34,8 @@ export function CompanyProfilePage() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Use the CompanyService directly
-  const companyService = useService('company');
-  const companyId = (user as any)?.company?.id;
-  const [company, setCompany] = useState<any>(null);
-  const [isLoadingCompany, setIsLoadingCompany] = useState(false);
+  // Use CompanyContext for company data
+  const { company, loading: isLoadingCompany, refreshCompany, updateCompany } = useCompany();
   const [isUpdating, setIsUpdating] = useState(false);
 
   const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CompanyProfileFormData>({
@@ -53,47 +50,26 @@ export function CompanyProfilePage() {
     }
   });
 
-  // Load company data when available
+  // Sync form with company data
   useEffect(() => {
-    const fetchCompanyData = async () => {
-      if (!companyId) return;
-      
-      setIsLoadingCompany(true);
-      try {
-        const result = await companyService.get(companyId);
-        if (result.success && result.data) {
-          setCompany(result.data);
-          const companyData = result.data as any;
-          reset({
-            name: companyData.name || '',
-            industry: companyData.industry || '',
-            size: companyData.size || '',
-            website: companyData.website || '',
-            description: companyData.description || '',
-            clientbase_description: companyData.client_base_description || '',
-          });
-        }
-              } catch (error) {
-          logger.error('Failed to fetch company data:', error);
-          toast({
-            title: 'Error',
-            description: 'Failed to load company information.',
-            variant: 'destructive',
-          });
-        } finally {
-        setIsLoadingCompany(false);
-      }
-    };
-
-    fetchCompanyData();
-  }, [companyId, companyService, reset, toast]);
+    if (company) {
+      const companyData = company as any;
+      reset({
+        name: companyData.name || '',
+        industry: companyData.industry || '',
+        size: companyData.size || '',
+        website: companyData.website || '',
+        description: companyData.description || '',
+        clientbase_description: companyData.client_base_description || '',
+      });
+    }
+  }, [company, reset]);
 
   const onSubmit = async (data: CompanyProfileFormData) => {
-    const userCompanyId = (user as any)?.company?.id;
-    if (!userCompanyId) {
+    if (!company?.id) {
       toast({
         title: 'Error',
-        description: 'Company ID not found. Please try again.',
+        description: 'Company not found. Please try again.',
         variant: 'destructive',
       });
       return;
@@ -101,21 +77,15 @@ export function CompanyProfilePage() {
 
     setIsUpdating(true);
     try {
-      const result = await companyService.update(userCompanyId, data);
-      if (result.success) {
+      await updateCompany(data);
+      // If updateCompany throws, we handle in catch
+      await refreshCompany(true);
         completeStep('company_profile');
         toast({
           title: 'Profile Updated!',
           description: 'Your company information has been saved successfully.',
         });
         navigate('/dashboard');
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to save your information. Please try again.',
-          variant: 'destructive',
-        });
-      }
     } catch (error) {
       logger.error("Failed to update company profile: ", error);
       toast({

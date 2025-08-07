@@ -14,6 +14,7 @@ import { Shield, Lock, Key, Smartphone, Monitor, Clock, Trash2, RefreshCw, Eye, 
 // Import our new service patterns
 import { useService } from '@/shared/hooks/useService';
 import { useUserProfile } from '@/shared/contexts/UserContext';
+import { useCompany } from '@/shared/contexts/CompanyContext';
 import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
@@ -56,6 +57,7 @@ interface ActiveSession {
 const SecuritySettings: React.FC = () => {
   const { user } = useAuth();
   const { profile, loading: profileLoading } = useUserProfile();
+  const { company } = useCompany();
   
   // Use the UserService directly
   const userService = useService('user');

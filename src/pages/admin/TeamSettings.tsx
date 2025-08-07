@@ -9,7 +9,7 @@ import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Avatar } from '@/shared/components/ui/Avatar.tsx';
 import { useAuth } from '@/hooks/index';
 import { useService } from '@/shared/hooks/useService';
-import { useUserCompany } from '@/shared/contexts/UserContext';
+import { useCompany } from '@/shared/contexts/CompanyContext';
 import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { z } from 'zod';
@@ -82,7 +82,7 @@ const teamRoles: TeamRole[] = [
  */
 const TeamSettings: React.FC = () => {
   const { user } = useAuth();
-  const { company } = useUserCompany();
+  const { company } = useCompany();
   
   // Use UserService for team member management
   const userService = useService('user');
