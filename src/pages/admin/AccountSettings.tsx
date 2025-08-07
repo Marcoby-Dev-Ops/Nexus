@@ -28,39 +28,16 @@ import { useSearchParams } from 'react-router-dom';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
-import { useService } from '@/shared/hooks/useService';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 import { logger } from '@/shared/utils/logger';
 
 const AccountSettings: React.FC = () => {
   const { user } = useAuth();
   const { refreshIntegrations } = useIntegrations();
   
-  // Use the UserService directly
-  const userService = useService('user');
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-    const [isUpdating, setIsUpdating] = useState(false);
-
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user?.id) return;
-      
-      setIsLoadingProfile(true);
-      try {
-        const result = await userService.get(user.id);
-        if (result.success && result.data) {
-          setUserProfile(result.data);
-        }
-              } catch (error) {
-          logger.error('Failed to fetch user profile:', error);
-        } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [user?.id, userService]);
+  // Use UserContext for profile data
+  const { profile, loading: profileLoading, updateProfile } = useUserProfile();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [searchParams] = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
@@ -90,7 +67,7 @@ const AccountSettings: React.FC = () => {
       phone: '',
     },
     onSubmit: async (data: UserProfileFormData) => {
-      if (!user?.id) return;
+      if (!profile?.id) return;
 
       const updates = {
         first_name: data.firstName,
@@ -109,14 +86,9 @@ const AccountSettings: React.FC = () => {
 
       setIsUpdating(true);
       try {
-        const result = await userService.update(user.id, updates);
+        const result = await updateProfile(updates);
         if (result.success) {
           setIsEditing(false);
-          // Refresh user profile data
-          const refreshResult = await userService.get(user.id);
-          if (refreshResult.success && refreshResult.data) {
-            setUserProfile(refreshResult.data);
-          }
         } else {
           throw new Error(result.error || 'Failed to update profile');
         }
@@ -137,10 +109,9 @@ const AccountSettings: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Load profile data into form when userProfile is available
+  // Load profile data into form when profile is available
   useEffect(() => {
-    if (userProfile) {
-      const profile = userProfile as any;
+    if (profile) {
       form.reset({
         firstName: profile.first_name || '',
         lastName: profile.last_name || '',
@@ -157,7 +128,7 @@ const AccountSettings: React.FC = () => {
         phone: profile.phone || '',
       });
     }
-  }, [userProfile, form]);
+  }, [profile, form]);
 
   // Load integrations from auth store and force refresh to ensure latest data
   useEffect(() => {

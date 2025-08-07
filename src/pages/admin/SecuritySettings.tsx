@@ -13,10 +13,13 @@ import { Shield, Lock, Key, Smartphone, Monitor, Clock, Trash2, RefreshCw, Eye, 
 
 // Import our new service patterns
 import { useService } from '@/shared/hooks/useService';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { z } from 'zod';
+import { DateTime } from 'luxon';
+import { nowIsoUtc, toLocalDisplay } from '@/shared/utils/time';
 
 // Password change schema
 const passwordChangeSchema = z.object({
@@ -52,41 +55,21 @@ interface ActiveSession {
 
 const SecuritySettings: React.FC = () => {
   const { user } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile();
   
   // Use the UserService directly
   const userService = useService('user');
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-    const [isUpdating, setIsUpdating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user?.id) return;
-      
-      setIsLoadingProfile(true);
-      try {
-        const result = await userService.get(user.id);
-        if (result.success && result.data) {
-          setUserProfile(result.data);
-        }
-              } catch (error) {
-          logger.error('Failed to fetch user profile:', error);
-        } finally {
-        setIsLoadingProfile(false);
-      }
-    };
 
-    fetchUserProfile();
-  }, [user?.id, userService]);
 
   const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
     twoFactorEnabled: false,
     emailNotifications: true,
     loginNotifications: true,
     sessionTimeout: 30,
-    passwordLastChanged: new Date().toISOString(),
-    lastLogin: new Date().toISOString(),
+    passwordLastChanged: nowIsoUtc(),
+    lastLogin: nowIsoUtc(),
     failedLoginAttempts: 0,
     accountLocked: false
   });
@@ -104,11 +87,11 @@ const SecuritySettings: React.FC = () => {
       confirmPassword: ''
     },
     onSubmit: async (data: PasswordChangeData) => {
-      if (!user?.id) return;
+      if (!profile?.id) return;
 
       setIsUpdating(true);
       try {
-        const result = await userService.update(user.id, {
+        const result = await userService.update(profile.id, {
           password: data.newPassword
         });
         
@@ -144,7 +127,7 @@ const SecuritySettings: React.FC = () => {
           device: 'Chrome on Windows 11',
           location: 'San Francisco, CA',
           ipAddress: '192.168.1.100',
-          lastActive: new Date().toISOString(),
+          lastActive: nowIsoUtc(),
           isCurrent: true
         },
         {
@@ -152,14 +135,14 @@ const SecuritySettings: React.FC = () => {
           device: 'Safari on iPhone 15',
           location: 'San Francisco, CA',
           ipAddress: '192.168.1.101',
-          lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          lastActive: DateTime.utc().minus({ hours: 2 }).toISO()!,
           isCurrent: false
         }
       ];
 
       setActiveSessions(mockSessions);
     } catch (error) {
-      console.error('Error fetching security data: ', error);
+      logger.error('Error fetching security data: ', error);
       toast.error('Failed to load security information');
     } finally {
       setLoading(false);
@@ -178,7 +161,7 @@ const SecuritySettings: React.FC = () => {
       
       toast.success(`Two-factor authentication ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
-      console.error('Error updating 2FA settings:', error);
+      logger.error('Error updating 2FA settings:', error);
       toast.error('Failed to update two-factor authentication settings');
     } finally {
       setLoading(false);
@@ -197,7 +180,7 @@ const SecuritySettings: React.FC = () => {
       
       toast.success(`${type === 'email' ? 'Email' : 'Login'} notifications ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
-      console.error('Error updating notification settings:', error);
+      logger.error('Error updating notification settings:', error);
       toast.error('Failed to update notification settings');
     } finally {
       setLoading(false);
@@ -213,7 +196,7 @@ const SecuritySettings: React.FC = () => {
       
       toast.success('Session revoked successfully');
     } catch (error) {
-      console.error('Error revoking session:', error);
+      logger.error('Error revoking session:', error);
       toast.error('Failed to revoke session');
     } finally {
       setLoading(false);
@@ -229,7 +212,7 @@ const SecuritySettings: React.FC = () => {
       
       toast.success('All other sessions revoked successfully');
     } catch (error) {
-      console.error('Error revoking all sessions:', error);
+      logger.error('Error revoking all sessions:', error);
       toast.error('Failed to revoke sessions');
     } finally {
       setLoading(false);
@@ -326,7 +309,7 @@ const SecuritySettings: React.FC = () => {
             <div>
               <h4 className="font-medium">Password</h4>
               <p className="text-sm text-muted-foreground">
-                Last changed {new Date(securitySettings.passwordLastChanged).toLocaleDateString()}
+                Last changed {toLocalDisplay(securitySettings.passwordLastChanged)}
               </p>
             </div>
             <Button onClick={() => setShowPasswordModal(true)}>
@@ -435,7 +418,7 @@ const SecuritySettings: React.FC = () => {
                     {session.location} • {session.ipAddress}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Last active: {new Date(session.lastActive).toLocaleString()}
+                    Last active: {toLocalDisplay(session.lastActive)}
                   </p>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '@/hooks';
-import { useUser } from '@/hooks/useUser';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { OrganizationSelector } from '@/shared/components/organization/OrganizationSelector';
@@ -14,7 +14,7 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
   const { user } = useAuth();
-  const { profile } = useUser();
+  const { profile } = useUserProfile();
   const { pageTitle, pageSubtitle } = useHeaderContext();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);

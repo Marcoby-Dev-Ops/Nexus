@@ -31,6 +31,7 @@ import {
 import { useService } from '@/shared/hooks/useService';
 import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
 
@@ -144,30 +145,10 @@ export const Profile: React.FC = () => {
   
   // Use the new UserService hooks
   const userService = useService('user');
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const { profile, loading: profileLoading, updateProfile } = useUserProfile();
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user?.id) return;
-      
-      setIsLoadingProfile(true);
-      try {
-        const result = await userService.get(user.id);
-        if (result.success && result.data) {
-          setUserProfile(result.data);
-        }
-              } catch (error) {
-          logger.error('Failed to fetch user profile:', error);
-        } finally {
-        setIsLoadingProfile(false);
-      }
-    };
 
-    fetchUserProfile();
-  }, [user?.id, userService]);
 
   // Initialize form with our new pattern
   const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
@@ -188,7 +169,7 @@ export const Profile: React.FC = () => {
       phone: '',
     },
     onSubmit: async (data: UserProfileFormData) => {
-      if (!user?.id) return;
+      if (!profile?.id) return;
 
       const updates = {
         first_name: data.firstName,
@@ -207,14 +188,9 @@ export const Profile: React.FC = () => {
 
       setIsUpdating(true);
       try {
-        const result = await userService.update(user.id, updates);
+        const result = await updateProfile(updates);
         if (result.success) {
           setIsEditing(false);
-          // Refresh user profile data
-          const refreshResult = await userService.get(user.id);
-          if (refreshResult.success && refreshResult.data) {
-            setUserProfile(refreshResult.data);
-          }
         } else {
           throw new Error(result.error || 'Failed to update profile');
         }
@@ -229,28 +205,28 @@ export const Profile: React.FC = () => {
 
   // Update form when user profile loads
   useEffect(() => {
-    if (userProfile) {
+    if (profile) {
       form.reset({
-        firstName: userProfile.first_name || '',
-        lastName: userProfile.last_name || '',
-        displayName: userProfile.display_name || '',
-        jobTitle: userProfile.job_title || '',
-        company: userProfile.company || '',
-        role: userProfile.role || '',
-        department: userProfile.department || '',
-        businessEmail: userProfile.business_email || '',
-        personalEmail: userProfile.personal_email || '',
-        bio: userProfile.bio || '',
-        location: userProfile.location || '',
-        website: userProfile.linkedin_url || '',
-        phone: userProfile.phone || '',
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        displayName: profile.display_name || '',
+        jobTitle: profile.job_title || '',
+        company: profile.company || '',
+        role: profile.role || '',
+        department: profile.department || '',
+        businessEmail: profile.business_email || '',
+        personalEmail: profile.personal_email || '',
+        bio: profile.bio || '',
+        location: profile.location || '',
+        website: profile.linkedin_url || '',
+        phone: profile.phone || '',
       });
     }
-  }, [userProfile, form]);
+  }, [profile, form]);
 
   // Calculate profile completion percentage
   const calculateCompletionPercentage = useCallback(() => {
-    if (!userProfile) return 0;
+    if (!profile) return 0;
     
     const fields = [
       'first_name', 'last_name', 'avatar_url', 'bio', 'phone', 
@@ -258,12 +234,12 @@ export const Profile: React.FC = () => {
     ];
     
     const completedFields = fields.filter(field => {
-      const value = userProfile[field as keyof typeof userProfile];
+      const value = profile[field as keyof typeof profile];
       return value && value !== '';
     }).length;
     
     return Math.round((completedFields / fields.length) * 100);
-  }, [userProfile]);
+  }, [profile]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -272,23 +248,23 @@ export const Profile: React.FC = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     // Reset form to current values
-    if (userProfile) {
-      form.reset({
-        firstName: userProfile.first_name || '',
-        lastName: userProfile.last_name || '',
-        displayName: userProfile.display_name || '',
-        jobTitle: userProfile.job_title || '',
-        company: userProfile.company || '',
-        role: userProfile.role || '',
-        department: userProfile.department || '',
-        businessEmail: userProfile.business_email || '',
-        personalEmail: userProfile.personal_email || '',
-        bio: userProfile.bio || '',
-        location: userProfile.location || '',
-        website: userProfile.linkedin_url || '',
-        phone: userProfile.phone || '',
-      });
-    }
+      if (profile) {
+    form.reset({
+      firstName: profile.first_name || '',
+      lastName: profile.last_name || '',
+      displayName: profile.display_name || '',
+      jobTitle: profile.job_title || '',
+      company: profile.company || '',
+      role: profile.role || '',
+      department: profile.department || '',
+      businessEmail: profile.business_email || '',
+      personalEmail: profile.personal_email || '',
+      bio: profile.bio || '',
+      location: profile.location || '',
+      website: profile.linkedin_url || '',
+      phone: profile.phone || '',
+    });
+  }
   };
 
   const completionPercentage = calculateCompletionPercentage();
@@ -384,14 +360,14 @@ export const Profile: React.FC = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white font-bold text-xl">
-                    {userProfile?.first_name?.[0] || userProfile?.last_name?.[0] || 'U'}
+                    {profile?.first_name?.[0] || profile?.last_name?.[0] || 'U'}
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-semibold">
-                      {userProfile?.first_name} {userProfile?.last_name}
+                      {profile?.first_name} {profile?.last_name}
                     </h3>
-                    <p className="text-muted-foreground">{userProfile?.job_title}</p>
-                    <p className="text-sm text-muted-foreground">{userProfile?.department}</p>
+                    <p className="text-muted-foreground">{profile?.job_title}</p>
+                    <p className="text-sm text-muted-foreground">{profile?.department}</p>
                   </div>
                 </div>
 

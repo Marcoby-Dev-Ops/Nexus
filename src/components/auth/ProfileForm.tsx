@@ -1,4 +1,5 @@
 import React from 'react';
+import { logger } from '@/shared/utils/logger';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
@@ -7,7 +8,7 @@ import { Separator } from '@/shared/components/ui/Separator';
 import { FormField } from '@/shared/components/forms/FormField';
 import { useFormWithValidation } from '@/shared/components/forms/useFormWithValidation';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
-import { useUserProfile } from '@/hooks/auth';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 import { 
   User, 
   Mail, 
@@ -74,7 +75,7 @@ export function ProfileForm({
         await updateProfile(updates);
         onSave?.(data);
       } catch (error) {
-        console.error('Failed to update profile:', error);
+        logger.error('Failed to update profile:', error);
         throw error;
       }
     },

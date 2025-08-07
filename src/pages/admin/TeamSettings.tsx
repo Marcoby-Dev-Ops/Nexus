@@ -9,6 +9,7 @@ import { Badge } from '@/shared/components/ui/Badge.tsx';
 import { Avatar } from '@/shared/components/ui/Avatar.tsx';
 import { useAuth } from '@/hooks/index';
 import { useService } from '@/shared/hooks/useService';
+import { useUserCompany } from '@/shared/contexts/UserContext';
 import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { z } from 'zod';
@@ -81,6 +82,7 @@ const teamRoles: TeamRole[] = [
  */
 const TeamSettings: React.FC = () => {
   const { user } = useAuth();
+  const { company } = useUserCompany();
   
   // Use UserService for team member management
   const userService = useService('user');
@@ -93,12 +95,11 @@ const TeamSettings: React.FC = () => {
   // Fetch team members data
   useEffect(() => {
     const fetchTeamMembers = async () => {
-      const userCompanyId = (user as any)?.company?.id;
-      if (!userCompanyId) return;
+      if (!company?.id) return;
       
       setIsLoadingTeam(true);
       try {
-        const result = await userService.list({ company_id: userCompanyId });
+        const result = await userService.list({ company_id: company.id });
         if (result.success && result.data) {
           setTeamMembers(result.data);
         }
@@ -110,7 +111,7 @@ const TeamSettings: React.FC = () => {
     };
 
     fetchTeamMembers();
-  }, [user?.company?.id, userService]);
+  }, [company?.id, userService]);
 
   // Initialize form with our new pattern
   const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
@@ -120,15 +121,14 @@ const TeamSettings: React.FC = () => {
       role: 'member' as const
     },
     onSubmit: async (data: TeamInvitationData) => {
-      const userCompanyId = (user as any)?.company?.id;
-      if (!userCompanyId) return;
+      if (!company?.id) return;
 
       setIsInviting(true);
       try {
         const result = await userService.create({
           email: data.email,
           role: data.role,
-          company_id: userCompanyId,
+          company_id: company.id,
           status: 'invited'
         });
         
@@ -136,7 +136,7 @@ const TeamSettings: React.FC = () => {
           // Reset form after successful invitation
           form.reset();
           // Refresh team members list
-          const refreshResult = await userService.list({ company_id: userCompanyId });
+          const refreshResult = await userService.list({ company_id: company.id });
           if (refreshResult.success && refreshResult.data) {
             setTeamMembers(refreshResult.data);
           }
@@ -162,9 +162,8 @@ const TeamSettings: React.FC = () => {
       const result = await userService.update(memberId, { role: newRole });
       if (result.success) {
         // Refresh team members list
-        const userCompanyId = (user as any)?.company?.id;
-        if (userCompanyId) {
-          const refreshResult = await userService.list({ company_id: userCompanyId });
+        if (company?.id) {
+          const refreshResult = await userService.list({ company_id: company.id });
           if (refreshResult.success && refreshResult.data) {
             setTeamMembers(refreshResult.data);
           }
@@ -188,9 +187,8 @@ const TeamSettings: React.FC = () => {
       const result = await userService.delete(memberId);
       if (result.success) {
         // Refresh team members list
-        const userCompanyId = (user as any)?.company?.id;
-        if (userCompanyId) {
-          const refreshResult = await userService.list({ company_id: userCompanyId });
+        if (company?.id) {
+          const refreshResult = await userService.list({ company_id: company.id });
           if (refreshResult.success && refreshResult.data) {
             setTeamMembers(refreshResult.data);
           }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useUser } from '@/hooks/useUser';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 import { useOnboardingService } from '@/shared/hooks/useOnboardingService';
 import { onboardingService, ONBOARDING_PHASES } from '@/shared/services/OnboardingService';
 import { supabase } from '@/lib/supabase';
@@ -1989,7 +1989,7 @@ const FirstActionGuidanceStep: React.FC<OnboardingStepProps> = ({ onNext, onSkip
 
 // 5-Phase Onboarding Orchestration Component
 const FivePhaseOnboardingFlow: React.FC<{ onComplete: (data: any) => void }> = ({ onComplete }) => {
-  const { user } = useUser();
+  const { profile } = useUserProfile();
   const { 
     getOnboardingProgress, 
     completeOnboardingPhase, 
@@ -2435,7 +2435,7 @@ const FivePhaseOnboardingFlow: React.FC<{ onComplete: (data: any) => void }> = (
  * Only used on protected routes where user is authenticated
  */
 export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children }) => {
-  const { user, loading: authLoading, profile } = useUser();
+  const { profile, loading: profileLoading } = useUserProfile();
   const { getOnboardingStatus, completeOnboarding } = useOnboardingService();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState(false);
@@ -2455,10 +2455,10 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
 
   // Check if user is first-time user
   const checkFirstTimeUser = useCallback(async () => {
-    if (!user?.id) return;
+    if (!profile?.id) return;
 
     try {
-      const result = await onboardingService.isFirstTimeUser(user.id);
+      const result = await onboardingService.isFirstTimeUser(profile.id);
       if (result.success && result.data) {
         setIsFirstTimeUser(result.data);
         if (result.data) {
@@ -2468,10 +2468,10 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
     } catch (error) {
       console.error('Error checking first-time user status:', error);
     }
-  }, [user?.id]);
+  }, [profile?.id]);
 
   const checkOnboardingStatus = useCallback(async () => {
-    if (!user?.id || !mountedRef.current) {
+    if (!profile?.id || !mountedRef.current) {
       setIsCheckingOnboarding(false);
       return;
     }
@@ -2500,7 +2500,7 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
         await checkFirstTimeUser();
 
         // Then check onboarding completion
-        const status = await getOnboardingStatus(user.id);
+        const status = await getOnboardingStatus(profile.id);
         if (mountedRef.current) {
           if (status) {
             const isCompleted = status.isCompleted;
@@ -2543,14 +2543,14 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
         clearTimeout(checkTimeoutRef.current);
       }
     };
-  }, [authLoading, user, checkOnboardingStatus]);
+  }, [profileLoading, profile, checkOnboardingStatus]);
 
   const handleFirstTimeWelcomeComplete = useCallback(async () => {
-    if (!user?.id) return;
+    if (!profile?.id) return;
 
     try {
       // Mark first-time experience as complete
-      await onboardingService.markFirstTimeExperienceComplete(user.id);
+      await onboardingService.markFirstTimeExperienceComplete(profile.id);
       setShowFirstTimeWelcome(false);
       
       // Check onboarding completion after first-time welcome
@@ -2560,7 +2560,7 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
       setShowFirstTimeWelcome(false);
       setShowCompletionChecker(true);
     }
-  }, [user?.id]);
+  }, [profile?.id]);
 
   const handleFirstTimeWelcomeSkip = useCallback(() => {
     setShowFirstTimeWelcome(false);
@@ -2580,7 +2580,7 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
   }, []);
 
   const handleOnboardingComplete = useCallback(async (data: any) => {
-    if (!user?.id || !mountedRef.current) {
+    if (!profile?.id || !mountedRef.current) {
       console.error('User not authenticated during onboarding completion');
       return;
     }
@@ -2589,7 +2589,7 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
       // Complete onboarding with all collected data
       const success = await completeOnboarding({
         ...data,
-        userId: user.id,
+        userId: profile.id,
         completedAt: new Date().toISOString()
       });
 
@@ -2614,10 +2614,10 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }
-  }, [user?.id, completeOnboarding, isForceOnboarding]);
+  }, [profile?.id, completeOnboarding, isForceOnboarding]);
 
   // Show loading while checking onboarding status
-  if (authLoading || isCheckingOnboarding) {
+  if (profileLoading || isCheckingOnboarding) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -2629,10 +2629,10 @@ export const AppWithOnboarding = React.memo<AppWithOnboardingProps>(({ children 
   }
 
   // Show first-time welcome if user is first-time
-  if (showFirstTimeWelcome && user) {
+  if (showFirstTimeWelcome && profile) {
     return (
       <FirstTimeWelcome
-        userName={profile?.first_name || profile?.full_name?.split(' ')[0] || user.email?.split('@')[0]}
+        userName={profile?.first_name || profile?.full_name?.split(' ')[0] || profile?.email?.split('@')[0]}
         onComplete={handleFirstTimeWelcomeComplete}
         onSkip={handleFirstTimeWelcomeSkip}
       />

@@ -42,7 +42,7 @@ export default tseslint.config(
       'prefer-const': 'error',
       '@typescript-eslint/no-var-requires': 'error',
       'no-var': 'error',
-      'no-console': 'warn',
+      'no-console': 'error',
       'no-debugger': 'error',
       'no-restricted-syntax': [
         'error',

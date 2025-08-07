@@ -22,7 +22,7 @@ import {
   Globe
 } from 'lucide-react';
 import { onboardingService } from '@/shared/services/OnboardingService';
-import { useUser } from '@/hooks/useUser';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 
 interface OnboardingProgressDashboardProps {
   onComplete: () => void;
@@ -33,25 +33,25 @@ export const OnboardingProgressDashboard: React.FC<OnboardingProgressDashboardPr
   onComplete,
   onContinue
 }) => {
-  const { user, profile } = useUser();
+  const { profile, loading: profileLoading } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [completionData, setCompletionData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
+    if (profile?.id) {
       loadCompletionData();
     }
-  }, [user?.id]);
+  }, [profile?.id]);
 
   const loadCompletionData = async () => {
-    if (!user?.id) return;
+    if (!profile?.id) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await onboardingService.checkOnboardingCompletion(user.id);
+      const result = await onboardingService.checkOnboardingCompletion(profile.id);
       
       if (result.success && result.data) {
         setCompletionData(result.data);

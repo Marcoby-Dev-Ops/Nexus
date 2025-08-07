@@ -36,24 +36,29 @@ class Logger {
 
   debug(message: string, data?: any): void {
     if (this.shouldLog(LOG_LEVELS.DEBUG)) {
+      // Forward to console for dev, but projects rules prohibit direct use elsewhere
+      // eslint-disable-next-line no-console
       console.debug(this.formatMessage('DEBUG', message, data));
     }
   }
 
   info(message: string, data?: any): void {
     if (this.shouldLog(LOG_LEVELS.INFO)) {
+      // eslint-disable-next-line no-console
       console.info(this.formatMessage('INFO', message, data));
     }
   }
 
   warn(message: string, data?: any): void {
     if (this.shouldLog(LOG_LEVELS.WARN)) {
+      // eslint-disable-next-line no-console
       console.warn(this.formatMessage('WARN', message, data));
     }
   }
 
   error(message: string, data?: any): void {
     if (this.shouldLog(LOG_LEVELS.ERROR)) {
+      // eslint-disable-next-line no-console
       console.error(this.formatMessage('ERROR', message, data));
     }
   }

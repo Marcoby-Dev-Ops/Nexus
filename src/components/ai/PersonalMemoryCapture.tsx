@@ -3,7 +3,7 @@ import { Brain, Lightbulb, Target, BookOpen, Tag } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { supabase } from '@/lib/supabase';
 import { personalThoughtsService } from '@/core/services/PersonalThoughtsService';
-import { useUser } from '@/hooks/useUser';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 
 /**
  * PersonalMemoryCapture
@@ -42,7 +42,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
   const [tags, setTags] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
-  const { userProfile } = useUser();
+  const { profile } = useUserProfile();
 
   const categories = [
     { value: 'idea', label: 'Idea', icon: Lightbulb, color: 'bg-warning/10 text-warning-foreground' },
@@ -94,7 +94,7 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       const inserted = await personalThoughtsService.create({ 
         content: content.trim(),
         userid: user.id,
-        company_id: userProfile?.company_id,
+        company_id: profile?.company_id,
         tags: tags.split(',').map(t => t.trim()).filter(Boolean),
         metadata: {
           category: categoryMap[category],

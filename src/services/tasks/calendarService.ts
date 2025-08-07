@@ -4,6 +4,9 @@ import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import { OAuthTokenService } from '@/core/auth/OAuthTokenService';
 import { z } from 'zod';
+import { DateTime } from 'luxon';
+import { nowIsoUtc, addDaysUtcIso, fromMaybeDateOrIsoToDate } from '@/shared/utils/time';
+import { retryFetch } from '@/shared/utils/retry';
 
 // Calendar Event Schema
 export const CalendarEventSchema = z.object({
@@ -148,11 +151,11 @@ export class CalendarService extends BaseService {
    */
   private async fetchMicrosoftEvents(accessToken: string, filters: CalendarFilters): Promise<CalendarEvent[]> {
     return this.executeDbOperation(async () => {
-      const now = new Date();
-      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+      const startIso = nowIsoUtc();
+      const endIso = addDaysUtcIso(30);
 
-      const response = await fetch(
-        `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${now.toISOString()}&endDateTime=${endDate.toISOString()}`,
+      const response = await retryFetch(
+        `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${startIso}&endDateTime=${endIso}`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -175,11 +178,11 @@ export class CalendarService extends BaseService {
    */
   private async fetchGoogleEvents(accessToken: string, filters: CalendarFilters): Promise<CalendarEvent[]> {
     return this.executeDbOperation(async () => {
-      const now = new Date();
-      const endDate = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+      const startIso = nowIsoUtc();
+      const endIso = addDaysUtcIso(30);
 
-      const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${now.toISOString()}&timeMax=${endDate.toISOString()}&singleEvents=true`,
+      const response = await retryFetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${startIso}&timeMax=${endIso}&singleEvents=true`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -216,8 +219,8 @@ export class CalendarService extends BaseService {
       id: event.id,
       title: event.subject || 'Untitled Event',
       description: event.body?.content || '',
-      startDate: new Date(event.start.dateTime),
-      endDate: new Date(event.end.dateTime),
+      startDate: fromMaybeDateOrIsoToDate(event.start.dateTime),
+      endDate: fromMaybeDateOrIsoToDate(event.end.dateTime),
       allDay: event.isAllDay || false,
       location: event.location?.displayName || '',
       attendees: event.attendees?.map((a: any) => a.emailAddress.address) || [],
@@ -242,8 +245,8 @@ export class CalendarService extends BaseService {
       id: event.id,
       title: event.summary || 'Untitled Event',
       description: event.description || '',
-      startDate: new Date(event.start.dateTime || event.start.date),
-      endDate: new Date(event.end.dateTime || event.end.date),
+      startDate: fromMaybeDateOrIsoToDate(event.start.dateTime || event.start.date),
+      endDate: fromMaybeDateOrIsoToDate(event.end.dateTime || event.end.date),
       allDay: !!event.start.date,
       location: event.location || '',
       attendees: event.attendees?.map((a: any) => a.email) || [],
@@ -379,14 +382,14 @@ export class CalendarService extends BaseService {
       
       if (error) throw error;
 
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const tomorrow = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+      const now = DateTime.utc();
+      const today = now.startOf('day');
+      const tomorrow = today.plus({ days: 1 });
 
       const stats: CalendarStats = {
         totalEvents: events?.length || 0,
-        todayEvents: events?.filter(e => e.startDate >= today && e.startDate < tomorrow).length || 0,
-        upcomingEvents: events?.filter(e => e.startDate > now).length || 0,
+        todayEvents: events?.filter(e => DateTime.fromJSDate(e.startDate, { zone: 'utc' }) >= today && DateTime.fromJSDate(e.startDate, { zone: 'utc' }) < tomorrow).length || 0,
+        upcomingEvents: events?.filter(e => DateTime.fromJSDate(e.startDate, { zone: 'utc' }) > now).length || 0,
         highPriorityEvents: events?.filter(e => e.priority === 'high').length || 0,
         meetingsCount: events?.filter(e => e.category === 'meeting').length || 0,
         tasksCount: events?.filter(e => e.category === 'task').length || 0,

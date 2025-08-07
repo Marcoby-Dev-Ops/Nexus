@@ -1,10 +1,8 @@
 import React from 'react';
-import { useUser } from '@/hooks/useUser.ts';
-import { useAuth } from '@/hooks';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 
 export function UserProfile() {
-  const { user } = useAuth();
-  const { data: profile, isLoading, error } = useUser(user?.id);
+  const { profile, loading: isLoading, error } = useUserProfile();
 
   if (isLoading) {
     return (

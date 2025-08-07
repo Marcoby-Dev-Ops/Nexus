@@ -19,41 +19,18 @@ import {
 } from 'lucide-react';
 
 // Import our new service patterns
-import { useService } from '@/shared/hooks/useService';
 import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 
 const AccountSettings: React.FC = () => {
   const { user } = useAuth();
   
-  // Use the UserService directly
-  const userService = useService('user');
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-    const [isUpdating, setIsUpdating] = useState(false);
-
-  // Fetch user profile data
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user?.id) return;
-      
-      setIsLoadingProfile(true);
-      try {
-        const result = await userService.get(user.id);
-        if (result.success && result.data) {
-          setUserProfile(result.data);
-        }
-              } catch (error) {
-          logger.error('Failed to fetch user profile:', error);
-        } finally {
-        setIsLoadingProfile(false);
-      }
-    };
-
-    fetchUserProfile();
-  }, [user?.id, userService]);
+  // Use UserContext for profile data
+  const { profile, loading: profileLoading, updateProfile } = useUserProfile();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
 
@@ -76,7 +53,7 @@ const AccountSettings: React.FC = () => {
       phone: '',
     },
     onSubmit: async (data: UserProfileFormData) => {
-      if (!user?.id) return;
+      if (!profile?.id) return;
 
       const updates = {
         first_name: data.firstName,
@@ -95,14 +72,9 @@ const AccountSettings: React.FC = () => {
 
       setIsUpdating(true);
       try {
-        const result = await userService.update(user.id, updates);
+        const result = await updateProfile(updates);
         if (result.success) {
           setIsEditing(false);
-          // Refresh user profile data
-          const refreshResult = await userService.get(user.id);
-          if (refreshResult.success && refreshResult.data) {
-            setUserProfile(refreshResult.data);
-          }
         } else {
           throw new Error(result.error || 'Failed to update profile');
         }
@@ -115,26 +87,26 @@ const AccountSettings: React.FC = () => {
     successMessage: 'Profile updated successfully!',
   });
 
-  // Update form when user profile loads
+  // Update form when profile loads
   useEffect(() => {
-    if (userProfile) {
+    if (profile) {
       form.reset({
-        firstName: userProfile.first_name || '',
-        lastName: userProfile.last_name || '',
-        displayName: userProfile.display_name || '',
-        jobTitle: userProfile.job_title || '',
-        company: userProfile.company || '',
-        role: userProfile.role || '',
-        department: userProfile.department || '',
-        businessEmail: userProfile.business_email || '',
-        personalEmail: userProfile.personal_email || '',
-        bio: userProfile.bio || '',
-        location: userProfile.location || '',
-        website: userProfile.linkedin_url || '',
-        phone: userProfile.phone || '',
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        displayName: profile.display_name || '',
+        jobTitle: profile.job_title || '',
+        company: profile.company || '',
+        role: profile.role || '',
+        department: profile.department || '',
+        businessEmail: profile.business_email || '',
+        personalEmail: profile.personal_email || '',
+        bio: profile.bio || '',
+        location: profile.location || '',
+        website: profile.linkedin_url || '',
+        phone: profile.phone || '',
       });
     }
-  }, [userProfile, form]);
+  }, [profile, form]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -143,26 +115,26 @@ const AccountSettings: React.FC = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     // Reset form to current values
-    if (userProfile) {
+    if (profile) {
       form.reset({
-        firstName: userProfile.first_name || '',
-        lastName: userProfile.last_name || '',
-        displayName: userProfile.display_name || '',
-        jobTitle: userProfile.job_title || '',
-        company: userProfile.company || '',
-        role: userProfile.role || '',
-        department: userProfile.department || '',
-        businessEmail: userProfile.business_email || '',
-        personalEmail: userProfile.personal_email || '',
-        bio: userProfile.bio || '',
-        location: userProfile.location || '',
-        website: userProfile.linkedin_url || '',
-        phone: userProfile.phone || '',
+        firstName: profile.first_name || '',
+        lastName: profile.last_name || '',
+        displayName: profile.display_name || '',
+        jobTitle: profile.job_title || '',
+        company: profile.company || '',
+        role: profile.role || '',
+        department: profile.department || '',
+        businessEmail: profile.business_email || '',
+        personalEmail: profile.personal_email || '',
+        bio: profile.bio || '',
+        location: profile.location || '',
+        website: profile.linkedin_url || '',
+        phone: profile.phone || '',
       });
     }
   };
 
-  if (isLoadingProfile) {
+  if (profileLoading) {
     return (
       <div className="space-y-6">
         <div>

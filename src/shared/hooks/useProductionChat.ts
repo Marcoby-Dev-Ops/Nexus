@@ -116,10 +116,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
 
       return quotaCheck;
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Quota check failed: ', error);
+      logger.error('Quota check failed: ', error);
       return { allowed: true };
     }
   }, [user?.id, state.isQuotaExceeded]);
@@ -253,10 +250,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
       setState(prev => ({ ...prev, isLoading: false }));
 
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error("Failed to send message: ", error);
+      logger.error('Failed to send message: ', error);
       setState(prev => ({
         ...prev,
         messages: prev.messages.map(msg =>

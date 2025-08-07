@@ -13,7 +13,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { onboardingService } from '@/shared/services/OnboardingService';
-import { useUser } from '@/hooks/useUser';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 
 interface OnboardingCompletionCheckerProps {
   onComplete: () => void;
@@ -24,25 +24,25 @@ export const OnboardingCompletionChecker: React.FC<OnboardingCompletionCheckerPr
   onComplete,
   onIncomplete
 }) => {
-  const { user } = useUser();
+  const { profile } = useUserProfile();
   const [loading, setLoading] = useState(true);
   const [completionData, setCompletionData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
+    if (profile?.id) {
       checkCompletion();
     }
-  }, [user?.id]);
+  }, [profile?.id]);
 
   const checkCompletion = async () => {
-    if (!user?.id) return;
+    if (!profile?.id) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const result = await onboardingService.checkOnboardingCompletion(user.id);
+      const result = await onboardingService.checkOnboardingCompletion(profile.id);
       
       if (result.success && result.data) {
         setCompletionData(result.data);
