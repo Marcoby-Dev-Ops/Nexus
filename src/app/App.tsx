@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { UserProvider } from '@/shared/contexts/UserContext';
+import { CompanyProvider } from '@/shared/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { supabaseService } from '@/core/services/SupabaseService';
 import { authService } from '@/core/auth/AuthService';
@@ -200,7 +201,8 @@ function App() {
   return (
     <AuthProvider>
       <UserProvider>
-        <AppWithOnboarding>
+        <CompanyProvider>
+          <AppWithOnboarding>
           <div className="App">
           <Routes>
           {/* Public routes */}
@@ -1517,7 +1519,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
-      </AppWithOnboarding>
+          </AppWithOnboarding>
+        </CompanyProvider>
       </UserProvider>
     </AuthProvider>
   );
