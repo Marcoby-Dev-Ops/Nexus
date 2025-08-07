@@ -86,7 +86,11 @@ export class SupabaseService extends BaseService {
             return { data: session, error };
           },
           'Get Session',
-          { maxAttempts: retries }
+          { 
+            maxAttempts: retries,
+            baseDelay: 500, // Reduced from 1000ms to 500ms for faster retries
+            maxDelay: 2000  // Reduced from 10000ms to 2000ms for faster retries
+          }
         );
         
         return { session: result.data, error: result.error };

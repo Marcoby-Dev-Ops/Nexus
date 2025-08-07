@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
-import { sessionUtils, handleSupabaseError, selectOne, updateOne, callRPC } from '@/lib/supabase-compatibility';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { SupabaseService } from '@/core/services/SupabaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import type { Session } from '@supabase/supabase-js';
 import { logger } from './logger';
@@ -41,6 +41,8 @@ export interface SignUpRequest {
  * Extends BaseService for consistent error handling and logging
  */
 export class AuthService extends BaseService implements CrudServiceInterface<AuthUser> {
+  private supabaseService = SupabaseService.getInstance();
+
   constructor() {
     super();
   }
@@ -49,18 +51,19 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
    * Get a user by ID (implements CrudServiceInterface)
    */
   async get(id: string): Promise<ServiceResponse<AuthUser>> {
-    try {
+    return this.executeDbOperation(async () => {
       this.validateIdParam(id);
       
-      // Get user from Supabase using sessionUtils
-      const { user, error } = await sessionUtils.getUser();
+      // Get user from Supabase using service
+      const { user, error } = await this.supabaseService.sessionUtils.getUser();
       
       if (error) {
-        return this.createErrorResponse('Failed to get user', { error });
+        this.logger.error('Failed to get user:', error);
+        return { data: null, error: 'Failed to get user' };
       }
 
       if (!user) {
-        return this.createErrorResponse('User not found');
+        return { data: null, error: 'User not found' };
       }
 
       const authUser: AuthUser = {
@@ -72,10 +75,8 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         updatedAt: user.updated_at || new Date().toISOString(),
       };
 
-      return this.createSuccessResponse(authUser);
-    } catch (error) {
-      return this.handleError(error, 'get user');
-    }
+      return { data: authUser, error: null };
+    }, 'get user');
   }
 
   /**
@@ -106,22 +107,20 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
    * Delete a user (implements CrudServiceInterface)
    */
   async delete(id: string): Promise<ServiceResponse<boolean>> {
-    try {
+    return this.executeDbOperation(async () => {
       this.validateIdParam(id);
       
       // Delete user from Supabase
       const { error } = await supabase.auth.admin.deleteUser(id);
       
       if (error) {
-        const errorResult = handleSupabaseError(error, 'delete user');
-        return this.createErrorResponse(errorResult.error, { context: errorResult.context });
+        this.logger.error('Failed to delete user:', error);
+        return { data: null, error: 'Failed to delete user' };
       }
 
-      this.logSuccess('User deleted successfully', { userId: id });
-      return this.createSuccessResponse(true);
-    } catch (error) {
-      return this.handleError(error, 'delete user');
-    }
+      this.logger.info('User deleted successfully', { userId: id });
+      return { data: true, error: null };
+    }, 'delete user');
   }
 
   /**
@@ -140,7 +139,7 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
    * Sign in a user with email and password
    */
   async signIn(data: SignInRequest): Promise<ServiceResponse<AuthUser>> {
-    try {
+    return this.executeDbOperation(async () => {
       this.validateParams(data, ['email', 'password']);
       
       const { data: { user, session }, error } = await supabase.auth.signInWithPassword({
@@ -149,17 +148,17 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
       });
       
       if (error) {
-        const errorResult = handleSupabaseError(error, 'sign in');
-        return this.createErrorResponse('Authentication failed', { error: errorResult.error });
+        this.logger.error('Authentication failed:', error);
+        return { data: null, error: 'Authentication failed' };
       }
 
       if (!user) {
-        return this.createErrorResponse('User not found');
+        return { data: null, error: 'User not found' };
       }
 
       // Ensure user profile exists using RPC
       try {
-        const { error: rpcError } = await callRPC('ensure_user_profile', { user_id: user.id });
+        const { error: rpcError } = await this.supabaseService.callRPC('ensure_user_profile', { user_id: user.id });
         if (rpcError) {
           this.logger.error('Failed to ensure user profile exists', { error: rpcError });
           // Continue anyway - profile creation is not critical for sign in
@@ -178,18 +177,16 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         updatedAt: user.updated_at || new Date().toISOString(),
       };
 
-      this.logSuccess('User signed in successfully', { userId: user.id });
-      return this.createSuccessResponse(authUser);
-    } catch (error) {
-      return this.handleError(error, 'sign in');
-    }
+      this.logger.info('User signed in successfully', { userId: user.id });
+      return { data: authUser, error: null };
+    }, 'sign in');
   }
 
   /**
    * Sign up a new user
    */
   async signUp(data: SignUpRequest): Promise<ServiceResponse<AuthUser>> {
-    try {
+    return this.executeDbOperation(async () => {
       this.validateParams(data, ['email', 'password']);
       
       const { data: { user, session }, error } = await supabase.auth.signUp({
@@ -204,17 +201,17 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
       });
       
       if (error) {
-        const errorResult = handleSupabaseError(error, 'sign up');
-        return this.createErrorResponse('Registration failed', { error: errorResult.error });
+        this.logger.error('Registration failed:', error);
+        return { data: null, error: 'Registration failed' };
       }
 
       if (!user) {
-        return this.createErrorResponse('User creation failed');
+        return { data: null, error: 'User creation failed' };
       }
 
       // Ensure user profile exists using RPC
       try {
-        const { error: rpcError } = await callRPC('ensure_user_profile', { user_id: user.id });
+        const { error: rpcError } = await this.supabaseService.callRPC('ensure_user_profile', { user_id: user.id });
         if (rpcError) {
           this.logger.error('Failed to ensure user profile exists', { error: rpcError });
           // Continue anyway - profile creation is not critical for sign up
@@ -233,46 +230,51 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         updatedAt: user.updated_at || new Date().toISOString(),
       };
 
-      this.logSuccess('User registered successfully', { userId: user.id });
-      return this.createSuccessResponse(authUser);
-    } catch (error) {
-      return this.handleError(error, 'sign up');
-    }
+      this.logger.info('User registered successfully', { userId: user.id });
+      return { data: authUser, error: null };
+    }, 'sign up');
   }
 
   /**
    * Sign out the current user
    */
   async signOut(): Promise<ServiceResponse<boolean>> {
-    try {
+    return this.executeDbOperation(async () => {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        const errorResult = handleSupabaseError(error, 'sign out');
-        return this.createErrorResponse('Sign out failed', { error: errorResult.error });
+        this.logger.error('Sign out failed:', error);
+        return { data: null, error: 'Sign out failed' };
       }
 
-      this.logSuccess('User signed out successfully');
-      return this.createSuccessResponse(true);
-    } catch (error) {
-      return this.handleError(error, 'sign out');
-    }
+      this.logger.info('User signed out successfully');
+      return { data: true, error: null };
+    }, 'sign out');
   }
 
   /**
-   * Get the current session using sessionUtils
+   * Get the current session using service pattern
    */
   async getSession(): Promise<ServiceResponse<AuthSession>> {
-    try {
-      const { session, error } = await sessionUtils.getSession();
+    return this.executeDbOperation(async () => {
+      this.logger.info('Attempting to get session');
+      
+      const { session, error } = await this.supabaseService.sessionUtils.getSession();
       
       if (error) {
-        return this.createErrorResponse('Failed to get session', { error });
+        this.logger.error('Failed to get session:', error);
+        return { data: null, error: 'Failed to get session' };
       }
 
       if (!session) {
-        return this.createSuccessResponse({ user: null, session: null });
+        this.logger.info('No session found - user not authenticated');
+        return { data: { user: null, session: null }, error: null };
       }
+
+      this.logger.info('Session retrieved successfully', { 
+        userId: session.user?.id,
+        expiresAt: session.expires_at 
+      });
 
       const authUser: AuthUser = {
         id: session.user.id,
@@ -288,25 +290,24 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         session: session,
       };
 
-      return this.createSuccessResponse(authSession);
-    } catch (error) {
-      return this.handleError(error, 'get session');
-    }
+      return { data: authSession, error: null };
+    }, 'get session');
   }
 
   /**
    * Get the current user using sessionUtils
    */
   async getCurrentUser(): Promise<ServiceResponse<AuthUser>> {
-    try {
-      const { user, error } = await sessionUtils.getUser();
+    return this.executeDbOperation(async () => {
+      const { user, error } = await this.supabaseService.sessionUtils.getUser();
       
       if (error) {
-        return this.createErrorResponse('Failed to get current user', { error });
+        this.logger.error('Failed to get current user:', error);
+        return { data: null, error: 'Failed to get current user' };
       }
 
       if (!user) {
-        return this.createErrorResponse('No authenticated user');
+        return { data: null, error: 'No authenticated user' };
       }
 
       const authUser: AuthUser = {
@@ -318,17 +319,15 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         updatedAt: user.updated_at || new Date().toISOString(),
       };
 
-      return this.createSuccessResponse(authUser);
-    } catch (error) {
-      return this.handleError(error, 'get current user');
-    }
+      return { data: authUser, error: null };
+    }, 'get current user');
   }
 
   /**
-   * Update user profile using helper functions
+   * Update user profile using service pattern
    */
   async updateProfile(userId: string, data: Partial<AuthUser>): Promise<ServiceResponse<AuthUser>> {
-    try {
+    return this.executeDbOperation(async () => {
       this.validateIdParam(userId);
       
       // Update user metadata in Supabase
@@ -340,12 +339,12 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
       });
       
       if (error) {
-        const errorResult = handleSupabaseError(error, 'update profile');
-        return this.createErrorResponse('Failed to update profile', { error: errorResult.error });
+        this.logger.error('Failed to update profile:', error);
+        return { data: null, error: 'Failed to update profile' };
       }
 
       if (!user) {
-        return this.createErrorResponse('User not found');
+        return { data: null, error: 'User not found' };
       }
 
       const authUser: AuthUser = {
@@ -357,49 +356,44 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         updatedAt: user.updated_at || new Date().toISOString(),
       };
 
-      this.logSuccess('Profile updated successfully', { userId });
-      return this.createSuccessResponse(authUser);
-    } catch (error) {
-      return this.handleError(error, 'update profile');
-    }
+      this.logger.info('Profile updated successfully', { userId });
+      return { data: authUser, error: null };
+    }, 'update profile');
   }
 
   /**
    * Reset password for a user
    */
   async resetPassword(email: string): Promise<ServiceResponse<boolean>> {
-    try {
+    return this.executeDbOperation(async () => {
       this.validateStringParam(email, 'email');
       
       const { error } = await supabase.auth.resetPasswordForEmail(email);
       
       if (error) {
-        const errorResult = handleSupabaseError(error, 'reset password');
-        return this.createErrorResponse('Failed to send reset email', { error: errorResult.error });
+        this.logger.error('Failed to send reset email:', error);
+        return { data: null, error: 'Failed to send reset email' };
       }
 
-      this.logSuccess('Password reset email sent', { email });
-      return this.createSuccessResponse(true);
-    } catch (error) {
-      return this.handleError(error, 'reset password');
-    }
+      this.logger.info('Password reset email sent', { email });
+      return { data: true, error: null };
+    }, 'reset password');
   }
 
   /**
-   * Check if user is authenticated using sessionUtils
+   * Check if user is authenticated using service pattern
    */
   async isAuthenticated(): Promise<ServiceResponse<boolean>> {
-    try {
-      const { user, error } = await sessionUtils.getUser();
+    return this.executeDbOperation(async () => {
+      const { user, error } = await this.supabaseService.sessionUtils.getUser();
       
       if (error) {
-        return this.createErrorResponse('Failed to check authentication', { error });
+        this.logger.error('Failed to check authentication:', error);
+        return { data: null, error: 'Failed to check authentication' };
       }
 
-      return this.createSuccessResponse(!!user);
-    } catch (error) {
-      return this.handleError(error, 'check authentication');
-    }
+      return { data: !!user, error: null };
+    }, 'check authentication');
   }
 
   /**
@@ -407,40 +401,39 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
    * This method calls the ensure_user_profile RPC function
    */
   async ensureUserProfile(userId?: string): Promise<ServiceResponse<boolean>> {
-    try {
+    return this.executeDbOperation(async () => {
       const targetUserId = userId || (await this.getCurrentUser()).data?.id;
       
       if (!targetUserId) {
-        return this.createErrorResponse('No user ID provided and no authenticated user found');
+        return { data: null, error: 'No user ID provided and no authenticated user found' };
       }
 
-      const { error } = await callRPC('ensure_user_profile', { user_id: targetUserId });
+      const { error } = await this.supabaseService.callRPC('ensure_user_profile', { user_id: targetUserId });
       
       if (error) {
-        const errorResult = handleSupabaseError(error, 'ensure user profile');
-        return this.createErrorResponse('Failed to ensure user profile', { error: errorResult.error });
+        this.logger.error('Failed to ensure user profile:', error);
+        return { data: null, error: 'Failed to ensure user profile' };
       }
 
-      this.logSuccess('User profile ensured successfully', { userId: targetUserId });
-      return this.createSuccessResponse(true);
-    } catch (error) {
-      return this.handleError(error, 'ensure user profile');
-    }
+      this.logger.info('User profile ensured successfully', { userId: targetUserId });
+      return { data: true, error: null };
+    }, 'ensure user profile');
   }
 
   /**
-   * Refresh the current session using sessionUtils
+   * Refresh the current session using service pattern
    */
   async refreshSession(): Promise<ServiceResponse<AuthSession>> {
-    try {
-      const { session, error } = await sessionUtils.refreshSession();
+    return this.executeDbOperation(async () => {
+      const { session, error } = await this.supabaseService.sessionUtils.refreshSession();
       
       if (error) {
-        return this.createErrorResponse('Failed to refresh session', { error });
+        this.logger.error('Failed to refresh session:', error);
+        return { data: null, error: 'Failed to refresh session' };
       }
 
       if (!session) {
-        return this.createSuccessResponse({ user: null, session: null });
+        return { data: { user: null, session: null }, error: null };
       }
 
       const authUser: AuthUser = {
@@ -457,25 +450,24 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         session: session,
       };
 
-      return this.createSuccessResponse(authSession);
-    } catch (error) {
-      return this.handleError(error, 'refresh session');
-    }
+      return { data: authSession, error: null };
+    }, 'refresh session');
   }
 
   /**
-   * Force refresh the session using sessionUtils
+   * Force refresh the session using service pattern
    */
   async forceRefreshSession(): Promise<ServiceResponse<AuthSession>> {
-    try {
-      const { session, error } = await sessionUtils.forceRefreshSession();
+    return this.executeDbOperation(async () => {
+      const { session, error } = await this.supabaseService.sessionUtils.forceRefreshSession();
       
       if (error) {
-        return this.createErrorResponse('Failed to force refresh session', { error });
+        this.logger.error('Failed to force refresh session:', error);
+        return { data: null, error: 'Failed to force refresh session' };
       }
 
       if (!session) {
-        return this.createSuccessResponse({ user: null, session: null });
+        return { data: { user: null, session: null }, error: null };
       }
 
       const authUser: AuthUser = {
@@ -492,22 +484,18 @@ export class AuthService extends BaseService implements CrudServiceInterface<Aut
         session: session,
       };
 
-      return this.createSuccessResponse(authSession);
-    } catch (error) {
-      return this.handleError(error, 'force refresh session');
-    }
+      return { data: authSession, error: null };
+    }, 'force refresh session');
   }
 
   /**
-   * Ensure session is valid using sessionUtils
+   * Ensure session is valid using service pattern
    */
   async ensureSession(): Promise<ServiceResponse<boolean>> {
-    try {
-      const isValid = await sessionUtils.ensureSession();
-      return this.createSuccessResponse(isValid);
-    } catch (error) {
-      return this.handleError(error, 'ensure session');
-    }
+    return this.executeDbOperation(async () => {
+      const isValid = await this.supabaseService.sessionUtils.ensureSession();
+      return { data: isValid, error: null };
+    }, 'ensure session');
   }
 }
 

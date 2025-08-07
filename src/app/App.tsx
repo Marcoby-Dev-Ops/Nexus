@@ -1,8 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/index';
+import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { supabaseService } from '@/core/services/SupabaseService';
+import { authService } from '@/core/auth/AuthService';
 import { logger } from '@/shared/utils/logger';
 
 import { UnifiedLayout } from '@/shared/components/layout/UnifiedLayout';
@@ -132,26 +133,25 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const [profileEnsured, setProfileEnsured] = React.useState(false);
 
-  // Ensure user profile exists when user is authenticated
-  React.useEffect(() => {
+  // Ensure user profile exists
+  const ensureProfile = async () => {
     if (user?.id && !profileEnsured) {
-      const ensureProfile = async () => {
-        try {
-          // Use RPC call instead of edge function
-          const { error } = await callRPC('ensure_user_profile', { user_id: user.id });
-          if (error) {
-            logger.warn('Failed to ensure user profile', { error });
-          }
-          setProfileEnsured(true);
-        } catch (error) {
-          logger.warn('Failed to ensure user profile', { error });
-          // Continue anyway - profile creation is not critical
+      try {
+        // Call RPC to ensure user profile exists
+        const { error } = await supabaseService.callRPC('ensure_user_profile', { user_id: user.id });
+        if (error) {
+          logger.error('Failed to ensure user profile exists', { error });
+        } else {
           setProfileEnsured(true);
         }
-      };
-      
-      ensureProfile();
+      } catch (error) {
+        logger.error('Error ensuring user profile', { error });
+      }
     }
+  };
+
+  React.useEffect(() => {
+    ensureProfile();
   }, [user?.id, profileEnsured]);
 
   if (loading) {
@@ -160,11 +160,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (!user) {
     return <Navigate to="/login" replace />;
-  }
-
-  // Show loading while ensuring profile exists
-  if (!profileEnsured) {
-    return <LoadingSpinner />;
   }
 
   return <>{children}</>;
@@ -203,1322 +198,1324 @@ const RootRoute = () => {
 function App() {
   return (
     <AppWithOnboarding>
-      <div className="App">
-        <Routes>
-        {/* Public routes */}
-        <Route 
-          path="/login" 
-          element={
-            <PublicRoute>
-              <Login />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/signup" 
-          element={
-            <PublicRoute>
-              <SignupPage />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/privacy-policy" 
-          element={<PrivacyPolicyPage />} 
-        />
-        
-        <Route 
-          path="/terms-of-service" 
-          element={<TermsOfServicePage />} 
-        />
-        
-        {/* Protected routes */}
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <Dashboard />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/dashboard/home" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <Dashboard />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
+      <AuthProvider>
+        <div className="App">
+          <Routes>
+          {/* Public routes */}
+          <Route 
+            path="/login" 
+            element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/signup" 
+            element={
+              <PublicRoute>
+                <SignupPage />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/privacy-policy" 
+            element={<PrivacyPolicyPage />} 
+          />
+          
+          <Route 
+            path="/terms-of-service" 
+            element={<TermsOfServicePage />} 
+          />
+          
+          {/* Protected routes */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <Dashboard />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/dashboard/home" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <Dashboard />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
 
 
-        
-        {/* === CORE JOURNEY ROUTES === */}
-        
-        {/* Workspace routes */}
-        <Route 
-          path="/tasks/workspace" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">My Workspace</h1>
-                  <p className="text-muted-foreground">Your personalized productivity hub</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/tasks/workspace/actions" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Action Center</h1>
-                  <p className="text-muted-foreground">Manage tasks and priorities</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/tasks/workspace/inbox" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Unified Inbox</h1>
-                  <p className="text-muted-foreground">All communications in one place</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/tasks/workspace/calendar" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Calendar</h1>
-                  <p className="text-muted-foreground">Schedule and time management</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/tasks/workspace/today" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Today Dashboard</h1>
-                  <p className="text-muted-foreground">Focus on what matters today</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* FIRE Cycle routes */}
-        <Route 
-          path="/business/fire-cycle" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <FireCycleDashboard />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Demo routes removed during cleanup */}
-        
-        <Route 
-          path="/business/fire-cycle/focus" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Focus Phase</h1>
-                  <p className="text-muted-foreground">What matters most right now?</p>
-                  <div className="mt-4">
-                    <FireCycleDashboard selectedPhase="focus" />
+          
+          {/* === CORE JOURNEY ROUTES === */}
+          
+          {/* Workspace routes */}
+          <Route 
+            path="/tasks/workspace" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">My Workspace</h1>
+                    <p className="text-muted-foreground">Your personalized productivity hub</p>
                   </div>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/business/fire-cycle/insight" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Insight Phase</h1>
-                  <p className="text-muted-foreground">What are you learning?</p>
-                  <div className="mt-4">
-                    <FireCycleDashboard selectedPhase="insight" />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/tasks/workspace/actions" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Action Center</h1>
+                    <p className="text-muted-foreground">Manage tasks and priorities</p>
                   </div>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/business/fire-cycle/roadmap" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Roadmap Phase</h1>
-                  <p className="text-muted-foreground">What's the plan?</p>
-                  <div className="mt-4">
-                    <FireCycleDashboard selectedPhase="roadmap" />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/tasks/workspace/inbox" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Unified Inbox</h1>
+                    <p className="text-muted-foreground">All communications in one place</p>
                   </div>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/business/fire-cycle/execute" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Execute Phase</h1>
-                  <p className="text-muted-foreground">Take action and track progress</p>
-                  <div className="mt-4">
-                    <FireCycleDashboard selectedPhase="execute" />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/tasks/workspace/calendar" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Calendar</h1>
+                    <p className="text-muted-foreground">Schedule and time management</p>
                   </div>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Knowledge routes */}
-        <Route 
-          path="/integrations/knowledge" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Knowledge Enhancer</h1>
-                  <p className="text-muted-foreground">AI-powered knowledge management</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help-center/knowledge/center" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Knowledge Center</h1>
-                  <p className="text-muted-foreground">Review truths and insights we're uncovering</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help-center/knowledge/thoughts" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Thoughts & Ideas</h1>
-                  <p className="text-muted-foreground">Capture and organize your thoughts</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Organization routes */}
-        <Route 
-          path="/organizations" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <OrganizationsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/organizations/:orgId" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <OrganizationDetailsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/organizations/:orgId/settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <OrganizationSettingsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/organizations/:orgId/members" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <OrganizationMembersPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* === ADVANCED FEATURES ROUTES === */}
-        
-        {/* AI Hub routes */}
-        <Route 
-          path="/ai-hub" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AIHubPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/chat" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <ChatPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/chat/v2" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <ChatV2Page />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/ai-chat" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AIChatPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/ai-capabilities" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AICapabilities />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/ai-performance" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AIPerformancePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/ai-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AISettingsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/ai-model" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AIModelPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/ai-performance/models" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AIModelSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/ai-agent" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AIAgentPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/email-intelligence" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <EmailIntelligencePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Analytics routes */}
-        <Route 
-          path="/analytics" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <UnifiedAnalyticsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/unified" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <UnifiedAnalyticsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/data-warehouse" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <DataWarehouseHome />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/integrations" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/showcase" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationsShowcase />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/tracking" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationTrackingPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/google-callback" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <GoogleAnalyticsCallback />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/fire-cycle" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <FireCyclePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/business-health" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Business Health</h1>
-                  <p className="text-muted-foreground">Monitor business performance</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/cross-platform" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Cross-Platform Insights</h1>
-                  <p className="text-muted-foreground">Unified data insights</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/analytics/digestible-metrics" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Digestible Metrics</h1>
-                  <p className="text-muted-foreground">Simplified business metrics</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Automation routes */}
-        <Route 
-          path="/automation" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AutomationRecipesPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/automation/recipes" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AutomationRecipesPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/automation/act" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <ActPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Integration routes */}
-        <Route 
-          path="/integrations" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/hubspot" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <HubSpotDashboard />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/marketplace" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationMarketplacePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/client-intelligence" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <ClientIntelligencePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/hubspot/test" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <HubSpotTest />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/hubspot/callback" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <HubSpotCallbackPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/microsoft365/callback" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <Microsoft365CallbackPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationSettingsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/setup" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationSetupPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/api-learning" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <ApiLearning />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Admin routes */}
-        <Route 
-          path="/admin" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AdminPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/tenant-management" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <TenantManagementPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Debug route removed during cleanup */}
-        
-        <Route 
-          path="/admin/company-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <CompanySettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/account-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AccountSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/billing-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <BillingSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/integrations-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <IntegrationsSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/security-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <SecuritySettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/user-management" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <UserManagementPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/team-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <TeamSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/profile" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <Profile />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/notifications-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <NotificationsSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/onboarding-checklist" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <OnboardingChecklist />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/pricing" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <PricingPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/company-profile" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <React.Suspense fallback={<LoadingSpinner />}>
-                  <CompanyProfilePage />
-                </React.Suspense>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/billing-dashboard" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <BillingDashboard />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/billing" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <BillingPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/appearance-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AppearanceSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/assessment" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AssessmentPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/profile-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <ProfileSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/data-privacy-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <DataPrivacySettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/advanced-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AdvancedSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/continuous-improvement" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <ContinuousImprovementWrapper />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/feature-explorer" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <FeatureExplorer />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/ai-model-settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AIModelSettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Auth routes */}
-        <Route 
-          path="/admin/login" 
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/signup" 
-          element={
-            <PublicRoute>
-              <SignupPage />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/reset-password" 
-          element={
-            <PublicRoute>
-              <ResetPassword />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/password-reset" 
-          element={
-            <PublicRoute>
-              <PasswordResetPage />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/auth-callback" 
-          element={
-            <PublicRoute>
-              <AuthCallback />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/auth-status" 
-          element={
-            <PublicRoute>
-              <AuthStatus />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/email-not-verified" 
-          element={
-            <PublicRoute>
-              <EmailNotVerified />
-            </PublicRoute>
-          } 
-        />
-        
-        <Route 
-          path="/admin/waitlist" 
-          element={
-            <PublicRoute>
-              <WaitlistLanding />
-            </PublicRoute>
-          } 
-        />
-        
-        {/* Help Center routes */}
-        <Route 
-          path="/help/user-guide" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <UserGuidePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Help Center</h1>
-                  <p className="text-muted-foreground">Support and troubleshooting</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help/data-usage" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <DataUsagePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help/security-compliance" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <SecurityCompliancePage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help/about" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <AboutPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help-center/knowledge/center" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Knowledge Center</h1>
-                  <p className="text-muted-foreground">Review truths and insights we're uncovering</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/help-center/knowledge/thoughts" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Thoughts & Ideas</h1>
-                  <p className="text-muted-foreground">Capture and organize your thoughts</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/integrations/knowledge" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Knowledge Enhancer</h1>
-                  <p className="text-muted-foreground">AI-powered knowledge management</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/features" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Features</h1>
-                  <p className="text-muted-foreground">Explore platform capabilities</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <SettingsPage />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/settings/preferences" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Preferences</h1>
-                  <p className="text-muted-foreground">Customize your experience</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/settings/security" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <SecuritySettings />
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* === EXPERT FEATURES ROUTES === */}
-        
-        {/* Team & Operations routes */}
-        <Route 
-          path="/workspace/team" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Team Management</h1>
-                  <p className="text-muted-foreground">Manage team performance and collaboration</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/workspace/customer-insights" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Customer Insights</h1>
-                  <p className="text-muted-foreground">Analyze customer behavior and satisfaction</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/workspace/automation" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Process Automation</h1>
-                  <p className="text-muted-foreground">Automate repetitive tasks and workflows</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Business Department routes */}
-        <Route 
-          path="/sales" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Sales</h1>
-                  <p className="text-muted-foreground">Sales performance and pipeline management</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/finance" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Finance</h1>
-                  <p className="text-muted-foreground">Financial operations and reporting</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/operations" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Operations</h1>
-                  <p className="text-muted-foreground">Operational efficiency and processes</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        <Route 
-          path="/marketing" 
-          element={
-            <ProtectedRoute>
-              <UnifiedLayout>
-                <div className="p-6">
-                  <h1 className="text-2xl font-bold mb-4">Marketing</h1>
-                  <p className="text-muted-foreground">Marketing analytics and campaigns</p>
-                </div>
-              </UnifiedLayout>
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Root route - landing page for non-authenticated users, dashboard for authenticated */}
-        <Route 
-          path="/" 
-          element={<RootRoute />} 
-        />
-        
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/tasks/workspace/today" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Today Dashboard</h1>
+                    <p className="text-muted-foreground">Focus on what matters today</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* FIRE Cycle routes */}
+          <Route 
+            path="/business/fire-cycle" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <FireCycleDashboard />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Demo routes removed during cleanup */}
+          
+          <Route 
+            path="/business/fire-cycle/focus" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Focus Phase</h1>
+                    <p className="text-muted-foreground">What matters most right now?</p>
+                    <div className="mt-4">
+                      <FireCycleDashboard selectedPhase="focus" />
+                    </div>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/business/fire-cycle/insight" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Insight Phase</h1>
+                    <p className="text-muted-foreground">What are you learning?</p>
+                    <div className="mt-4">
+                      <FireCycleDashboard selectedPhase="insight" />
+                    </div>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/business/fire-cycle/roadmap" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Roadmap Phase</h1>
+                    <p className="text-muted-foreground">What's the plan?</p>
+                    <div className="mt-4">
+                      <FireCycleDashboard selectedPhase="roadmap" />
+                    </div>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/business/fire-cycle/execute" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Execute Phase</h1>
+                    <p className="text-muted-foreground">Take action and track progress</p>
+                    <div className="mt-4">
+                      <FireCycleDashboard selectedPhase="execute" />
+                    </div>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Knowledge routes */}
+          <Route 
+            path="/integrations/knowledge" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Knowledge Enhancer</h1>
+                    <p className="text-muted-foreground">AI-powered knowledge management</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help-center/knowledge/center" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Knowledge Center</h1>
+                    <p className="text-muted-foreground">Review truths and insights we're uncovering</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help-center/knowledge/thoughts" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Thoughts & Ideas</h1>
+                    <p className="text-muted-foreground">Capture and organize your thoughts</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Organization routes */}
+          <Route 
+            path="/organizations" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <OrganizationsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/organizations/:orgId" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <OrganizationDetailsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/organizations/:orgId/settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <OrganizationSettingsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/organizations/:orgId/members" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <OrganizationMembersPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* === ADVANCED FEATURES ROUTES === */}
+          
+          {/* AI Hub routes */}
+          <Route 
+            path="/ai-hub" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIHubPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/chat" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ChatPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/chat/v2" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ChatV2Page />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ai-chat" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIChatPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ai-capabilities" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AICapabilities />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ai-performance" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIPerformancePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ai-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AISettingsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ai-model" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIModelPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ai-performance/models" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIModelSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ai-agent" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIAgentPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/email-intelligence" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <EmailIntelligencePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Analytics routes */}
+          <Route 
+            path="/analytics" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <UnifiedAnalyticsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/unified" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <UnifiedAnalyticsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/data-warehouse" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <DataWarehouseHome />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/integrations" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/showcase" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationsShowcase />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/tracking" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationTrackingPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/google-callback" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <GoogleAnalyticsCallback />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/fire-cycle" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <FireCyclePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/business-health" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Business Health</h1>
+                    <p className="text-muted-foreground">Monitor business performance</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/cross-platform" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Cross-Platform Insights</h1>
+                    <p className="text-muted-foreground">Unified data insights</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/analytics/digestible-metrics" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Digestible Metrics</h1>
+                    <p className="text-muted-foreground">Simplified business metrics</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Automation routes */}
+          <Route 
+            path="/automation" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AutomationRecipesPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/automation/recipes" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AutomationRecipesPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/automation/act" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ActPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Integration routes */}
+          <Route 
+            path="/integrations" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/hubspot" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <HubSpotDashboard />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/marketplace" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationMarketplacePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/client-intelligence" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ClientIntelligencePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/hubspot/test" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <HubSpotTest />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/hubspot/callback" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <HubSpotCallbackPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/microsoft365/callback" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <Microsoft365CallbackPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationSettingsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/setup" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationSetupPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/api-learning" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ApiLearning />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Admin routes */}
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AdminPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/tenant-management" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <TenantManagementPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Debug route removed during cleanup */}
+          
+          <Route 
+            path="/admin/company-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <CompanySettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/account-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AccountSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/billing-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <BillingSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/integrations-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <IntegrationsSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/security-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <SecuritySettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/user-management" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <UserManagementPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/team-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <TeamSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/profile" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <Profile />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/notifications-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <NotificationsSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/onboarding-checklist" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <OnboardingChecklist />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/pricing" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <PricingPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/company-profile" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <React.Suspense fallback={<LoadingSpinner />}>
+                    <CompanyProfilePage />
+                  </React.Suspense>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/billing-dashboard" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <BillingDashboard />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/billing" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <BillingPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/appearance-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AppearanceSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/assessment" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AssessmentPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/profile-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ProfileSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/data-privacy-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <DataPrivacySettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/advanced-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AdvancedSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/continuous-improvement" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ContinuousImprovementWrapper />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/feature-explorer" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <FeatureExplorer />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/ai-model-settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIModelSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Auth routes */}
+          <Route 
+            path="/admin/login" 
+            element={
+              <PublicRoute>
+                <LoginPage />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/signup" 
+            element={
+              <PublicRoute>
+                <SignupPage />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/reset-password" 
+            element={
+              <PublicRoute>
+                <ResetPassword />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/password-reset" 
+            element={
+              <PublicRoute>
+                <PasswordResetPage />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/auth-callback" 
+            element={
+              <PublicRoute>
+                <AuthCallback />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/auth-status" 
+            element={
+              <PublicRoute>
+                <AuthStatus />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/email-not-verified" 
+            element={
+              <PublicRoute>
+                <EmailNotVerified />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/waitlist" 
+            element={
+              <PublicRoute>
+                <WaitlistLanding />
+              </PublicRoute>
+            } 
+          />
+          
+          {/* Help Center routes */}
+          <Route 
+            path="/help/user-guide" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <UserGuidePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Help Center</h1>
+                    <p className="text-muted-foreground">Support and troubleshooting</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help/data-usage" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <DataUsagePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help/security-compliance" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <SecurityCompliancePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help/about" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AboutPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help-center/knowledge/center" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Knowledge Center</h1>
+                    <p className="text-muted-foreground">Review truths and insights we're uncovering</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help-center/knowledge/thoughts" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Thoughts & Ideas</h1>
+                    <p className="text-muted-foreground">Capture and organize your thoughts</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/knowledge" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Knowledge Enhancer</h1>
+                    <p className="text-muted-foreground">AI-powered knowledge management</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/features" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Features</h1>
+                    <p className="text-muted-foreground">Explore platform capabilities</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/settings" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <SettingsPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/settings/preferences" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Preferences</h1>
+                    <p className="text-muted-foreground">Customize your experience</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/settings/security" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <SecuritySettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* === EXPERT FEATURES ROUTES === */}
+          
+          {/* Team & Operations routes */}
+          <Route 
+            path="/workspace/team" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Team Management</h1>
+                    <p className="text-muted-foreground">Manage team performance and collaboration</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/workspace/customer-insights" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Customer Insights</h1>
+                    <p className="text-muted-foreground">Analyze customer behavior and satisfaction</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/workspace/automation" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Process Automation</h1>
+                    <p className="text-muted-foreground">Automate repetitive tasks and workflows</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Business Department routes */}
+          <Route 
+            path="/sales" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Sales</h1>
+                    <p className="text-muted-foreground">Sales performance and pipeline management</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/finance" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Finance</h1>
+                    <p className="text-muted-foreground">Financial operations and reporting</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/operations" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Operations</h1>
+                    <p className="text-muted-foreground">Operational efficiency and processes</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/marketing" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Marketing</h1>
+                    <p className="text-muted-foreground">Marketing analytics and campaigns</p>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Root route - landing page for non-authenticated users, dashboard for authenticated */}
+          <Route 
+            path="/" 
+            element={<RootRoute />} 
+          />
+          
+          {/* Catch all route */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </AuthProvider>
     </AppWithOnboarding>
   );
 }
