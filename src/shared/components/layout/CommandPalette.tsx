@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';

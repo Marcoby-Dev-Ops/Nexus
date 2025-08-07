@@ -340,7 +340,7 @@ export class EmailIntelligenceService extends BaseService {
   private async executeWorkflows(workflows: AutomatedWorkflow[]): Promise<void> {
     try {
       for (const workflow of workflows) {
-        await this.executeWorkflowAction(workflow);
+        await this.executeWorkflowActionInternal(workflow);
       }
     } catch (error) {
       this.logger.error('Error executing workflows', { error });
@@ -350,7 +350,7 @@ export class EmailIntelligenceService extends BaseService {
   /**
    * Execute individual workflow action
    */
-  private async executeWorkflowAction(workflow: AutomatedWorkflow): Promise<void> {
+  private async executeWorkflowActionInternal(workflow: AutomatedWorkflow): Promise<void> {
     try {
       for (const action of workflow.actions) {
         switch (action.type) {

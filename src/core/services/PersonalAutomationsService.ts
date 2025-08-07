@@ -13,8 +13,8 @@ export const PersonalAutomationSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
   config: z.record(z.any()).optional(),
-  createdat: z.string().datetime().optional(),
-  updatedat: z.string().datetime().optional(),
+  createdat: z.string().optional(),
+  updatedat: z.string().optional(),
 });
 
 export type PersonalAutomation = z.infer<typeof PersonalAutomationSchema>;

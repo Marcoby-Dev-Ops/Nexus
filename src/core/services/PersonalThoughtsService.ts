@@ -12,8 +12,8 @@ export const PersonalThoughtSchema = z.object({
   content: z.string().min(1, 'Content is required'),
   userid: z.string().uuid(),
   company_id: z.string().uuid().optional(),
-  createdat: z.string().datetime().optional(),
-  updatedat: z.string().datetime().optional(),
+  createdat: z.string().optional(),
+  updatedat: z.string().optional(),
   tags: z.array(z.string()).optional(),
   metadata: z.record(z.any()).optional(),
 });

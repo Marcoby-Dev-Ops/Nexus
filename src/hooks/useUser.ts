@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { useState, useCallback, useEffect } from 'react';
 import { userService } from '@/services/business/UserService';
 import { logger } from '@/shared/utils/logger';

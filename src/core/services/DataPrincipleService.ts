@@ -89,13 +89,13 @@ export class DataPrincipleService extends BaseService {
       async () => {
         try {
           // Get principle details
-          const principle = await this.getPrincipleById(principleId);
-          if (!principle) {
-            return { data: null, error: 'Principle not found' };
+          const principleResult = await this.getPrincipleById(principleId);
+          if (!principleResult.success || !principleResult.data) {
+            return { data: null, error: principleResult.error || 'Principle not found' };
           }
 
           // Perform compliance audit
-          const audit = await this.performComplianceAudit(principle, auditorId);
+          const audit = await this.performComplianceAudit(principleResult.data, auditorId);
 
           return { data: audit, error: null };
         } catch (error) {
@@ -437,10 +437,6 @@ export class DataPrincipleService extends BaseService {
   }
 
   // Private helper methods
-  private async getPrincipleById(principleId: string): Promise<DataPrinciple | null> {
-    const result = await this.getPrincipleById(principleId);
-    return result.success ? result.data : null;
-  }
 
   private async performComplianceAudit(principle: DataPrinciple, auditorId: string): Promise<ComplianceAudit> {
     // Simulate compliance audit

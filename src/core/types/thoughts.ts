@@ -92,7 +92,7 @@ export type AIInteractionType = 'insight' | 'suggestion' | 'reminder' | 'analysi
 // Main Thought interface matching database schema
 export interface Thought {
   id: string;
-  userid: string;
+  user_id: string;
   created_by?: string;
   updated_by?: string;
   creationdate: Date;
@@ -143,7 +143,7 @@ export interface ThoughtRelationship {
 // AI interaction interface
 export interface AIInteraction {
   id: string;
-  userid: string;
+  user_id: string;
   thought_id?: string;
   prompt_text?: string;
   ai_response?: string;
@@ -208,7 +208,7 @@ export interface AIInsights {
 // Interactive prompt data
 export interface InteractivePrompt {
   id: string;
-  userid: string;
+  user_id: string;
   prompttext: string;
   prompttype: 'question' | 'suggestion' | 'reminder' | 'insight';
   context: {

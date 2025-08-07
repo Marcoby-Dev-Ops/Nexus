@@ -4,7 +4,7 @@
  * Pillar: 1,2 - Automated business health assessment
  */
 
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase-compatibility';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
 interface DomainAnalysis {
@@ -33,7 +33,7 @@ export class DomainAnalysisService extends BaseService {
 
     return this.executeDbOperation(
       async () => {
-        const { data, error } = await selectOne('domain_analyses', { 
+        const { data, error } = await select('domain_analyses', '*', { 
           user_id: userId, 
           domain 
         });

@@ -5,7 +5,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { logger } from '@/shared/utils/logger';
 

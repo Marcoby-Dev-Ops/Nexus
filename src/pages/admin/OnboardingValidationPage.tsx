@@ -3,7 +3,7 @@ import { OnboardingValidationDisplay } from '@/shared/components/ui/OnboardingVa
 import { OnboardingTrigger } from '@/shared/components/ui/OnboardingTrigger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { validateOnboardingWithProfiles, checkOnboardingTrulyCompleted } from '@/shared/utils/triggerOnboarding';
 import { logger } from '@/shared/utils/logger';
 

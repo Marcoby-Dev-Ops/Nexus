@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { dataConnectivityHealthService, type ConnectivityHealthData } from '@/services/business/dataConnectivityHealthService';
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useAuth } from '@/hooks';
 import { logger } from '@/shared/utils/logger.ts';
 
 interface UseDataConnectivityHealthResult {

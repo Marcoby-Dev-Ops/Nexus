@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { sessionUtils, callEdgeFunction, insertOne } from '@/lib/supabase-compatibility';
 
 export interface BusinessProfile {
   id?: string;
@@ -85,11 +86,7 @@ export class BusinessProfileService extends BaseService {
 
     return this.executeDbOperation(
       async () => {
-        const { data, error } = await supabase
-          .from('organizations')
-          .select('*')
-          .eq('id', orgId)
-          .single();
+        const { data, error } = await selectOne('organizations', orgId);
         
         if (error) {
           return { data: { exists: false }, error };
@@ -120,11 +117,7 @@ export class BusinessProfileService extends BaseService {
 
     return this.executeDbOperation(
       async () => {
-        const { data, error } = await supabase
-          .from('user_organizations')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('org_id', orgId);
+        const { data, error } = await select('user_organizations', '*', { user_id: userId, org_id: orgId });
         
         if (error) {
           return { data: { isMember: false }, error };
@@ -160,25 +153,19 @@ export class BusinessProfileService extends BaseService {
     return this.executeDbOperation(
       async () => {
         // Get current user ID
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await sessionUtils.getUser();
         if (!user?.id) {
           return { data: null, error: 'No authenticated user found' };
         }
 
         // Call edge function to create organization
-        const { data, error } = await supabase.functions.invoke('create-organization', {
-          body: {
-            tenantId,
-            name,
-            description,
-            userId: user.id,
-            userRole: 'owner'
-          }
+        const data = await callEdgeFunction('create-organization', {
+          tenantId,
+          name,
+          description,
+          userId: user.id,
+          userRole: 'owner'
         });
-
-        if (error) {
-          return { data: null, error: error.message || 'Failed to create organization' };
-        }
 
         if (!data.success) {
           return { data: null, error: data.error || 'Failed to create organization' };
@@ -214,16 +201,14 @@ export class BusinessProfileService extends BaseService {
 
     return this.executeDbOperation(
       async () => {
-        const { error } = await supabase
-          .from('user_organizations')
-          .insert({
-            user_id: userId,
-            org_id: orgId,
-            role,
-            permissions: [],
-            is_primary: false,
-            joined_at: new Date().toISOString()
-          });
+        const { error } = await insertOne('user_organizations', {
+          user_id: userId,
+          org_id: orgId,
+          role,
+          permissions: [],
+          is_primary: false,
+          joined_at: new Date().toISOString()
+        });
 
         return { data: !error, error };
       },
@@ -248,7 +233,7 @@ export class BusinessProfileService extends BaseService {
     return this.executeDbOperation(
       async () => {
         // Get current user ID
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user } } = await sessionUtils.getUser();
         if (!user?.id) {
           return { data: null, error: 'No authenticated user found' };
         }

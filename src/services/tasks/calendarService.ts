@@ -1,4 +1,4 @@
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase-compatibility';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';

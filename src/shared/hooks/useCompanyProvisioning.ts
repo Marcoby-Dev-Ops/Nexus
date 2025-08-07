@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useAuth } from '@/hooks';
 import { companyProvisioningService } from '@/services/business';
 import type { CompanyProvisioningOptions, ProvisioningResult } from '@/services/business';
 import { logger } from '@/shared/utils/logger.ts';

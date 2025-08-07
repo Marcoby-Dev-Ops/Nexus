@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { select, selectOne } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
 

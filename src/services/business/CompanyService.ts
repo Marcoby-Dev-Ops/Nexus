@@ -53,8 +53,8 @@ export const CompanySchema = z.object({
   key_metrics: z.record(z.any()).optional(),
   
   // Metadata
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type Company = z.infer<typeof CompanySchema>;
@@ -70,8 +70,8 @@ export const DepartmentSchema = z.object({
   budget: z.number().nonnegative().optional(),
   headcount: z.number().nonnegative().optional(),
   goals: z.array(z.string()).optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type Department = z.infer<typeof DepartmentSchema>;
@@ -84,8 +84,8 @@ export const CompanyRoleSchema = z.object({
   description: z.string().optional(),
   permissions: z.array(z.string()),
   is_system_role: z.boolean(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type CompanyRole = z.infer<typeof CompanyRoleSchema>;
@@ -99,8 +99,8 @@ export const UserCompanyRoleSchema = z.object({
   department_id: z.string().uuid().optional(),
   is_primary: z.boolean(),
   assigned_by: z.string().uuid(),
-  assigned_at: z.string().datetime(),
-  expires_at: z.string().datetime().optional(),
+  assigned_at: z.string(),
+  expires_at: z.string().optional(),
 });
 
 export type UserCompanyRole = z.infer<typeof UserCompanyRoleSchema>;
@@ -117,8 +117,8 @@ export const CompanyAnalyticsSchema = z.object({
   user_engagement_score: z.number().min(0).max(100),
   security_score: z.number().min(0).max(100),
   compliance_score: z.number().min(0).max(100),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type CompanyAnalytics = z.infer<typeof CompanyAnalyticsSchema>;
@@ -133,10 +133,10 @@ export const CompanyHealthSchema = z.object({
   user_engagement_score: z.number().min(0).max(100),
   system_health_score: z.number().min(0).max(100),
   recommendations: z.array(z.string()),
-  last_assessment: z.string().datetime(),
-  next_assessment: z.string().datetime(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  last_assessment: z.string(),
+  next_assessment: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type CompanyHealth = z.infer<typeof CompanyHealthSchema>;

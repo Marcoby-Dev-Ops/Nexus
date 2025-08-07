@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
+import { select, selectOne } from '@/lib/supabase-compatibility';
 
 export interface Organization {
   id: string;
@@ -50,27 +51,24 @@ interface OrgStoreState {
 export const getOrganizations = async (userId: string): Promise<Organization[]> => {
   try {
     // Get organizations through user_organizations join
-    const { data, error } = await supabase
-      .from('user_organizations')
-      .select(`
-        org_id,
-        role,
-        permissions,
-        is_primary,
-        joined_at,
-        organizations (
-          id,
-          name,
-          description,
-          slug,
-          tenant_id,
-          org_group_id,
-          settings,
-          created_at,
-          updated_at
-        )
-      `)
-      .eq('user_id', userId);
+    const { data, error } = await select('user_organizations', `
+      org_id,
+      role,
+      permissions,
+      is_primary,
+      joined_at,
+      organizations (
+        id,
+        name,
+        description,
+        slug,
+        tenant_id,
+        org_group_id,
+        settings,
+        created_at,
+        updated_at
+      )
+    `, { user_id: userId });
     
     if (error) {
       logger.error({ error }, 'Failed to fetch organizations');
@@ -91,11 +89,7 @@ export const getOrganizations = async (userId: string): Promise<Organization[]> 
 
 export const getOrganization = async (orgId: string): Promise<Organization | null> => {
   try {
-    const { data, error } = await supabase
-      .from('organizations')
-      .select('*')
-      .eq('id', orgId)
-      .single();
+    const { data, error } = await selectOne('organizations', orgId);
     
     if (error) {
       logger.error({ error }, 'Failed to fetch organization');
@@ -110,23 +104,20 @@ export const getOrganization = async (orgId: string): Promise<Organization | nul
 
 export const getOrganizationMembers = async (orgId: string): Promise<OrganizationMember[]> => {
   try {
-    const { data, error } = await supabase
-      .from('user_organizations')
-      .select(`
+    const { data, error } = await select('user_organizations', `
+      id,
+      user_id,
+      org_id,
+      role,
+      permissions,
+      is_primary,
+      joined_at,
+      user_profiles (
         id,
-        user_id,
-        org_id,
-        role,
-        permissions,
-        is_primary,
-        joined_at,
-        user_profiles (
-          id,
-          name,
-          email
-        )
-      `)
-      .eq('org_id', orgId);
+        name,
+        email
+      )
+    `, { org_id: orgId });
     
     if (error) {
       logger.error({ error }, 'Failed to fetch organization members');

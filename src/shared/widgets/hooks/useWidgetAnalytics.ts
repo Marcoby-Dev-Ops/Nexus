@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth.ts';
-import { insertOne } from '@/lib/supabase';
+import { useAuth } from '@/hooks';
+import { insertOne } from '@/lib/supabase-compatibility';
 import { logger } from '@/shared/utils/logger.ts';
 
 interface WidgetEvent {

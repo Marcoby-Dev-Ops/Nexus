@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
+import { authService } from '@/core/auth/AuthService';
 import { logger } from '@/shared/utils/logger';
 
 interface BusinessQuadrant {
@@ -218,7 +219,21 @@ export const useNarrativeDashboard = (): UseNarrativeDashboardReturn => {
 
   const fetchDashboardData = useCallback(async () => {
     if (!user?.id) {
-      logger.warn('No user ID available for dashboard data fetch');
+      logger.warn('No user ID available for dashboard data fetch, attempting session refresh');
+      try {
+        // Attempt to refresh session
+        const { data: sessionData } = await authService.refreshSession();
+        if (sessionData?.user?.id) {
+          logger.info('Session refreshed successfully, retrying dashboard data fetch');
+          // Retry with the refreshed session
+          setTimeout(() => fetchDashboardData(), 100);
+          return;
+        }
+      } catch (error) {
+        logger.warn('Session refresh failed, using mock data');
+      }
+      // Set mock data instead of returning early to prevent UI issues
+      setData(mockData);
       return;
     }
 

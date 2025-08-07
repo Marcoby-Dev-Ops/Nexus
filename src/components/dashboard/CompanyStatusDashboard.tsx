@@ -35,10 +35,17 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
   const fetchStatus = async () => {
     try {
       setRefreshing(true);
-      const statusData = await companyStatusService.getCompanyStatusOverview();
-      setStatus(statusData);
-      setError(null);
-      logger.info({ overallScore: statusData.overallHealth.score }, 'Company status loaded');
+      const response = await companyStatusService.getCompanyStatusOverview();
+      
+      if (response.success && response.data) {
+        setStatus(response.data);
+        setError(null);
+        logger.info({ overallScore: response.data.overallHealth.score }, 'Company status loaded');
+      } else {
+        const errorMessage = response.error || 'Failed to load company status';
+        setError(errorMessage);
+        logger.error({ error: response.error }, 'Failed to load company status');
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message: 'Failed to load company status';
       setError(errorMessage);

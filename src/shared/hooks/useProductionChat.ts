@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useAuth } from '@/hooks';
 import { supabase } from '../core/supabase';
 import { quotaService } from '../services/quotaService';
 import type { ChatMessage, ChatState, ChatActions } from '../types/chat';
@@ -144,12 +144,11 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
+      const { data, error } = await select('chat_messages', '*', { conversation_id: conversationId }, {
+        orderBy: { column: 'created_at', ascending: false },
+        limit: pageSize,
+        offset: page * pageSize
+      });
 
       if (error) throw error;
 
@@ -215,19 +214,13 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     }));
 
     try {
-      const { error: saveError } = await supabase
-        .from('chat_messages')
-        .insert([
-          {
-            conversationid: conversationId,
-            userid: user.id,
-            role: 'user',
-            content: content.trim(),
-            metadata: {},
-          },
-        ])
-        .select()
-        .single();
+      const { error: saveError } = await insertOne('chat_messages', {
+        conversationid: conversationId,
+        userid: user.id,
+        role: 'user',
+        content: content.trim(),
+        metadata: {},
+      });
 
       if (saveError) throw saveError;
 

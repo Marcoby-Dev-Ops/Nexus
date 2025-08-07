@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { businessBenchmarkingService, type LivingAssessment } from '@/services/business/businessBenchmarkingService';
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useAuth } from '@/hooks';
 import { logger } from '@/shared/utils/logger.ts';
 
 interface UseLivingBusinessAssessmentResult {

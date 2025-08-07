@@ -56,6 +56,7 @@ export default defineConfig(({ mode }) => {
         '@/domains/entrepreneur': resolve(__dirname, 'src/domains/entrepreneur'),
         '@/domains/admin/development': resolve(__dirname, 'src/domains/admin/development'),
         '@/domains/departments': resolve(__dirname, 'src/domains/departments'),
+        '@/business': resolve(__dirname, 'src/business'),
         '@/archive': resolve(__dirname, 'src/archive'),
       },
     },

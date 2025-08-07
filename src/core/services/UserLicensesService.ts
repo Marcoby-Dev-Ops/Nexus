@@ -11,8 +11,8 @@ export const UserLicenseSchema = z.object({
   id: z.string().uuid().optional(),
   user_id: z.string().uuid(),
   license_type: z.string().min(1, 'License type is required'),
-  issued_at: z.string().datetime().optional(),
-  expires_at: z.string().datetime().optional(),
+  issued_at: z.string().optional(),
+  expires_at: z.string().optional(),
   metadata: z.record(z.any()).optional(),
 });
 

@@ -16,10 +16,10 @@ export const DealSchema = z.object({
   notes: z.string().optional(),
   user_id: z.string().uuid(),
   company_id: z.string().uuid().optional(),
-  expected_close_date: z.string().datetime().optional(),
+  expected_close_date: z.string().optional(),
   hubspotid: z.string().optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type Deal = z.infer<typeof DealSchema>;

@@ -6,7 +6,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger.ts';
-import { useAuth } from '@/hooks/useAuth.ts';
+import { useAuth } from '@/hooks';
 import { n8nService } from '@/services/automation/n8nService';
 
 interface UsagePattern {

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { useUser } from '@/hooks/useUser';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';

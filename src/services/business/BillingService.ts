@@ -19,8 +19,8 @@ export const BillingPlanSchema = z.object({
   is_active: z.boolean().default(true),
   max_users: z.number().positive().optional(),
   max_storage_gb: z.number().positive().optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type BillingPlan = z.infer<typeof BillingPlanSchema>;
@@ -32,14 +32,14 @@ export const SubscriptionSchema = z.object({
   company_id: z.string().uuid(),
   plan_id: z.string().uuid(),
   status: z.enum(['active', 'canceled', 'past_due', 'unpaid', 'trialing']),
-  current_period_start: z.string().datetime(),
-  current_period_end: z.string().datetime(),
+  current_period_start: z.string(),
+  current_period_end: z.string(),
   cancel_at_period_end: z.boolean().default(false),
-  canceled_at: z.string().datetime().optional(),
-  trial_start: z.string().datetime().optional(),
-  trial_end: z.string().datetime().optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  canceled_at: z.string().optional(),
+  trial_start: z.string().optional(),
+  trial_end: z.string().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type Subscription = z.infer<typeof SubscriptionSchema>;
@@ -56,10 +56,10 @@ export const InvoiceSchema = z.object({
   billing_reason: z.enum(['subscription_cycle', 'subscription_update', 'manual', 'upcoming']),
   hosted_invoice_url: z.string().url().optional(),
   invoice_pdf: z.string().url().optional(),
-  due_date: z.string().datetime().optional(),
-  paid_at: z.string().datetime().optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  due_date: z.string().optional(),
+  paid_at: z.string().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type Invoice = z.infer<typeof InvoiceSchema>;
@@ -76,8 +76,8 @@ export const PaymentMethodSchema = z.object({
   exp_year: z.number().min(2020).optional(),
   is_default: z.boolean().default(false),
   is_active: z.boolean().default(true),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
@@ -90,9 +90,9 @@ export const BillingUsageSchema = z.object({
   subscription_id: z.string().uuid(),
   metric: z.string(),
   quantity: z.number().nonnegative(),
-  period_start: z.string().datetime(),
-  period_end: z.string().datetime(),
-  created_at: z.string().datetime(),
+  period_start: z.string(),
+  period_end: z.string(),
+  created_at: z.string(),
 });
 
 export type BillingUsage = z.infer<typeof BillingUsageSchema>;

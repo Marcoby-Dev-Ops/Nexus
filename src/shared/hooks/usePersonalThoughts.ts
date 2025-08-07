@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { personalThoughtsService, type PersonalThought, type CreatePersonalThought } from '@/core/services/PersonalThoughtsService';
 import { useNotifications } from './NotificationContext';
 

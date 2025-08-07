@@ -7,7 +7,8 @@
 
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { supabase, select, selectOne, insertOne } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
+import { SupabaseService } from '@/core/services/SupabaseService';
 import { z } from 'zod';
 
 // Data Point Mapping Schema
@@ -61,6 +62,8 @@ export type UnmappedDataPoints = z.infer<typeof UnmappedDataPointsSchema>;
  * Ensures all data points in dictionaries have proper database landing spots
  */
 export class DataPointMappingService extends BaseService {
+  private supabaseService = SupabaseService.getInstance();
+
   /**
    * Generate a comprehensive mapping report for a user
    */
@@ -68,7 +71,12 @@ export class DataPointMappingService extends BaseService {
     return this.executeDbOperation(async () => {
       try {
         // Get all user integrations
-        const userIntegrations = await select('user_integrations', '*', { user_id: userId });
+        const { data: userIntegrations, error: integrationsError } = await this.supabaseService.select('user_integrations', '*', { user_id: userId });
+        
+        if (integrationsError) {
+          this.logger.error('Failed to fetch user integrations:', integrationsError);
+          return { data: null, error: 'Failed to fetch user integrations' };
+        }
 
         if (!userIntegrations?.length) {
           const emptyReport: MappingReport = {
@@ -96,7 +104,13 @@ export class DataPointMappingService extends BaseService {
         for (const integration of userIntegrations) {
           try {
             // Get data point definitions for this integration
-            const dataPoints = await select('data_point_definitions', '*', { user_integration_id: integration.id });
+            const { data: dataPoints, error: dataPointsError } = await this.supabaseService.select('data_point_definitions', '*', { user_integration_id: integration.id });
+
+            if (dataPointsError) {
+              this.logger.warn(`Failed to fetch data points for integration ${integration.id}:`, dataPointsError);
+              issues.push(`Failed to fetch data points for integration: ${integration.integration_name}`);
+              continue;
+            }
 
             if (!dataPoints?.length) {
               issues.push(`No data points found for integration: ${integration.integration_name}`);
@@ -107,7 +121,7 @@ export class DataPointMappingService extends BaseService {
               totalDataPoints++;
 
               // Check if this data point has data
-              const dataRecords = await select('integration_data', 'id, created_at', { 
+              const { data: dataRecords, error: dataRecordsError } = await this.supabaseService.select('integration_data', 'id, created_at', { 
                 user_integration_id: integration.id, 
                 datapoint_definition_id: dataPoint.id 
               });

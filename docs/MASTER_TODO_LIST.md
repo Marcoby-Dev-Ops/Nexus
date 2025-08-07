@@ -31,9 +31,11 @@
   - [ ] Implement Finance dashboard business logic (invoicing, expense tracking)
   - [ ] Build Operations dashboard workflows (task management, process automation)
   - [ ] Create Support dashboard functionality (ticket management, knowledge base)
+  - [x] ✅ **COMPLETED**: Test CompanyStatusService functionality with real data (fixed ServiceResponse handling)
 
 ### **Database & Infrastructure**
 - [ ] **Complete Database Schema**
+  - [x] ✅ **COMPLETED**: Create company_status table with proper RLS policies (`create_company_status_table_fixed` migration)
   - [ ] Add missing tables for business health tracking
   - [ ] Implement proper foreign key relationships
   - [ ] Set up RLS policies for all new tables
@@ -97,6 +99,24 @@
   - [ ] Add user behavior tracking
   - [ ] Implement personalized AI suggestions
   - [ ] Create learning feedback loops
+
+### **Strategic Business Opportunities**
+- [ ] **Cloud Adoption Strategy Platform** - Transform Nexus into the central hub for Microsoft Cloud Adoption Framework
+  - [ ] **Phase 1: Foundation** (Next 2 weeks)
+    - [ ] Add cloud-specific thought categories and templates
+    - [ ] Create cloud adoption assessment workflows
+    - [ ] Implement basic ROI tracking for cloud initiatives
+    - [ ] Build stakeholder analysis and resource planning tools
+  - [ ] **Phase 2: Integration** (Next month)
+    - [ ] Connect with Azure/AWS cost APIs for real-time data
+    - [ ] Create cloud migration progress dashboards
+    - [ ] Implement risk assessment and mitigation workflows
+    - [ ] Add compliance and security tracking features
+  - [ ] **Phase 3: Advanced Features** (Next quarter)
+    - [ ] Build AI-powered cloud optimization recommendations
+    - [ ] Create predictive analytics for cloud adoption success
+    - [ ] Implement multi-cloud strategy management
+    - [ ] Add enterprise governance and approval workflows
 
 ### **User Experience**
 - [ ] **Mobile Optimization**
@@ -165,6 +185,61 @@
   - [ ] Add project management tools
   - [ ] Create custom API builder
 
+### **Cloud Adoption Strategy Platform**
+- [ ] **Microsoft Cloud Adoption Framework Integration**
+  - [ ] **Strategy Assessment & Documentation**
+    - [ ] Create cloud adoption assessment templates
+    - [ ] Implement readiness evaluation workflows
+    - [ ] Add strategic planning thought categories
+    - [ ] Build cross-functional collaboration features
+  - [ ] **Motivation & Mission Definition**
+    - [ ] Add cloud-specific categories: "Cloud Migration", "Digital Transformation", "Cost Optimization"
+    - [ ] Implement impact tracking for cloud initiatives
+    - [ ] Create success metrics tracking for KPIs
+    - [ ] Build ROI measurement dashboards
+  - [ ] **Team Strategy & Organization**
+    - [ ] Organize cloud adoption by department tracking
+    - [ ] Implement stakeholder analysis mapping
+    - [ ] Add resource requirements tracking
+    - [ ] Create team skill gap assessments
+  - [ ] **Financial Efficiency & Cost Management**
+    - [ ] Track cloud migration budgets via cost_estimate field
+    - [ ] Implement ROI monitoring for cloud investments
+    - [ ] Create budget planning alignment tools
+    - [ ] Add cloud cost optimization recommendations
+  - [ ] **Risk Assessment & Mitigation**
+    - [ ] Document cloud migration risks via risk_assessment field
+    - [ ] Track technical dependencies through dependencies field
+    - [ ] Create implementation notes for lessons learned
+    - [ ] Build risk mitigation workflow templates
+  - [ ] **AI Integration Strategy**
+    - [ ] Capture AI strategy recommendations via aiinsights field
+    - [ ] Refine AI implementation plans with ai_clarification_data
+    - [ ] Create technology roadmap planning tools
+    - [ ] Implement AI adoption alongside cloud migration
+  - [ ] **Security & Compliance**
+    - [ ] Document security requirements and compliance needs
+    - [ ] Track security policies and governance frameworks
+    - [ ] Maintain audit trails for security decisions
+    - [ ] Create compliance reporting dashboards
+  - [ ] **Sustainability & Resiliency**
+    - [ ] Track environmental impact of cloud decisions
+    - [ ] Document disaster recovery and business continuity plans
+    - [ ] Monitor system reliability and uptime metrics
+    - [ ] Create sustainability goal tracking
+  - [ ] **Platform Enhancements**
+    - [ ] Create reusable templates for cloud adoption scenarios
+    - [ ] Implement version control for cloud strategies
+    - [ ] Add approval workflows for governance decisions
+    - [ ] Build collaboration status coordination tools
+    - [ ] Create timeline tracking for project milestones
+  - [ ] **Integration & Reporting**
+    - [ ] Connect with cloud provider APIs for real-time data
+    - [ ] Build cloud adoption progress tracking dashboards
+    - [ ] Create ROI reporting and analytics
+    - [ ] Implement cost optimization recommendations
+    - [ ] Add performance monitoring and alerting
+
 ### **Documentation & Testing**
 - [ ] **Comprehensive Testing**
   - [ ] Add unit tests for all new features
@@ -187,6 +262,8 @@
 - [ ] Replace mock business health data with real implementations
 - [ ] Connect at least 2 real data sources (HubSpot + QuickBooks)
 - [ ] Implement basic business logic for Sales dashboard
+- [x] ✅ **COMPLETED**: Create company_status table with RLS policies and test functionality
+- [ ] **Fix Authentication Context Issues** - Resolve "Failed to ensure user profile" and "No user ID available" errors
 - [ ] Complete database schema for business health tracking
 - [ ] **Start API Service Layer Cleanup** - Create Service Registry and interfaces
 - [ ] **Begin Forms & Validation Cleanup** - Reference: `docs/development/CLEANUP_PRIORITY_ROADMAP.md`

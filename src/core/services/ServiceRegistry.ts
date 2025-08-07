@@ -1,100 +1,295 @@
-import { billingService } from '@/services/business/BillingService';
-import { analyticsService } from '@/services/analytics/analyticsService';
-import { aiService } from '@/services/ai/AIService';
-import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
+/**
+ * Service Registry
+ * 
+ * Centralized service registration and management.
+ * Automatically registers all services and provides easy access.
+ */
+
+import { serviceFactory, registerService } from './ServiceFactory';
+import { BaseService } from './BaseService';
+
+// Import all services
+import { UserService } from '@/services/business/UserService';
+import { CompanyService } from '@/services/business/CompanyService';
+import { DealService } from '@/services/business/DealService';
+import { ContactService } from '@/services/business/ContactService';
+import { NotificationService } from '@/services/business/NotificationService';
+import { BillingService } from '@/services/business/BillingService';
+import { CalendarService } from '@/services/business/CalendarService';
 import { TenantService } from '@/services/business/TenantService';
-import { onboardingService } from '@/shared/services/OnboardingService';
-import { logger } from '@/shared/utils/logger.ts';
+import { CompanyOwnershipService } from '@/services/business/CompanyOwnershipService';
+import { CompanyProvisioningService } from '@/services/business/CompanyProvisioningService';
+import { UserProfileService } from '@/services/business/userProfileService';
 
-// Legacy services have been migrated to core services
-// These imports are kept for reference during migration
+// Core services
+import { WorkflowService } from './workflowService';
+import { SupabaseService } from './SupabaseService';
+import { DataPrincipleService } from './DataPrincipleService';
+import { PersonalThoughtsService } from './PersonalThoughtsService';
+import { PersonalAutomationsService } from './PersonalAutomationsService';
+import { ChatUsageTrackingService } from './ChatUsageTrackingService';
+import { UserLicensesService } from './UserLicensesService';
 
-export interface ServiceRegistry {
-  billing: typeof billingService;
-  analytics: typeof analyticsService;
-  ai: typeof aiService;
-  integration: typeof consolidatedIntegrationService;
-  tenant: typeof TenantService;
-  onboarding: typeof onboardingService;
+// Integration services
+import { IntegrationService } from '@/services/integrations/integrationService';
+import { IntegrationDataService } from '@/services/integrations/integrationDataService';
+import { DataPointMappingService } from '@/services/integrations/dataPointMappingService';
+import { DataPointDictionaryService } from '@/services/integrations/DataPointDictionaryService';
+import { UniversalIntegrationService } from '@/services/integrations/universalIntegrationService';
+import { SalesforceStyleDataService } from '@/services/integrations/SalesforceStyleDataService';
+import { RealTimeCrossDepartmentalSync } from '@/services/integrations/realTimeCrossDepartmentalSync';
+import { ConsolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
+import { IntegrationRegistryService } from '@/services/integrations/core/IntegrationRegistryService';
+import { DataMappingService } from '@/services/integrations/core/DataMappingService';
+
+// Email services
+import { EmailService } from '@/services/email/EmailService';
+import { EmailIntegrationService } from '@/services/email/emailIntegrationService';
+import { OWAInboxService } from '@/services/email/owaInboxService';
+
+// Dashboard services
+import { DashboardService } from '@/services/dashboard/dashboardService';
+
+// Task services
+import { TaskService } from '@/services/tasks/taskService';
+import { CalendarService as TaskCalendarService } from '@/services/tasks/calendarService';
+
+// Shared services
+import { QuotaService } from '@/shared/services/quotaService';
+import { AuditLogService } from '@/shared/services/auditLogService';
+import { DemoService } from '@/shared/services/demoService';
+import { OnboardingService } from '@/shared/services/OnboardingService';
+import { BusinessProfileService } from '@/shared/lib/business/businessProfileService';
+import { UserCompanyIntegrationBridgeService } from '@/shared/services/UserCompanyIntegrationBridgeService';
+import { CompanyIntelligenceService } from '@/shared/services/CompanyIntelligenceService';
+import { BusinessProcessAutomationService } from '@/shared/services/BusinessProcessAutomationService';
+
+// Auth services
+import { AuthService } from '@/core/auth/AuthService';
+import { OAuthTokenService } from '@/core/auth/OAuthTokenService';
+
+// Admin services
+import { WaitlistService } from '@/components/admin/onboarding/lib/waitlistService';
+
+// Business services
+import { DomainAnalysisService } from '@/business/services/domainAnalysisService';
+
+// AI services
+import { ThoughtsService } from '@/lib/services/thoughtsService';
+
+// Validation services
+import { OnboardingValidationService } from '@/shared/utils/onboardingValidation';
+
+/**
+ * Service registration interface
+ */
+export interface ServiceRegistration {
+  name: string;
+  service: BaseService;
+  description?: string;
+  category?: string;
 }
 
-export const serviceRegistry: ServiceRegistry = {
-  billing: billingService,
-  analytics: analyticsService,
-  ai: aiService,
-  integration: consolidatedIntegrationService,
-  tenant: TenantService,
-  onboarding: onboardingService,
-};
+/**
+ * Service Registry Class
+ * 
+ * Manages automatic registration of all services and provides
+ * centralized access to the service layer.
+ */
+export class ServiceRegistry {
+  private static instance: ServiceRegistry;
+  private registrations: ServiceRegistration[] = [];
 
-// Migration helper functions
-export const MigrationHelper = {
-  /**
-   * Check if a service has been migrated to the new core service
-   */
-  isServiceMigrated(serviceName: string): boolean {
-    const migratedServices = ['billing', 'analytics', 'ai', 'integration', 'tenant', 'onboarding'];
-    return migratedServices.includes(serviceName);
-  },
+  private constructor() {
+    this.registerAllServices();
+  }
 
   /**
-   * Get the appropriate service (core or legacy) based on migration status
+   * Get singleton instance
    */
-  getService<T extends keyof ServiceRegistry>(serviceName: T): ServiceRegistry[T] {
-    if (this.isServiceMigrated(serviceName as string)) {
-      return serviceRegistry[serviceName];
+  static getInstance(): ServiceRegistry {
+    if (!ServiceRegistry.instance) {
+      ServiceRegistry.instance = new ServiceRegistry();
     }
-    
-    logger.warn(`Service ${serviceName} not yet migrated, using legacy service`);
-    throw new Error(`Service ${serviceName} not yet migrated`);
-  },
+    return ServiceRegistry.instance;
+  }
 
   /**
-   * Get legacy service for migration purposes
+   * Register all services automatically
    */
-  getLegacyService<T extends string>(serviceName: T): never {
-    throw new Error(`Legacy service ${serviceName} has been migrated to core services`);
-  },
+  private registerAllServices(): void {
+    // Business Services
+    this.registerService('user', new UserService(), 'User management', 'business');
+    this.registerService('company', new CompanyService(), 'Company management', 'business');
+    this.registerService('deal', new DealService(), 'Deal management', 'business');
+    this.registerService('contact', new ContactService(), 'Contact management', 'business');
+    this.registerService('notification', new NotificationService(), 'Notification management', 'business');
+    this.registerService('billing', new BillingService(), 'Billing management', 'business');
+    this.registerService('calendar', new CalendarService(), 'Calendar management', 'business');
+    this.registerService('tenant', new TenantService(), 'Tenant management', 'business');
+    this.registerService('company-ownership', new CompanyOwnershipService(), 'Company ownership', 'business');
+    this.registerService('company-provisioning', new CompanyProvisioningService(), 'Company provisioning', 'business');
+    this.registerService('user-profile', new UserProfileService(), 'User profile management', 'business');
+
+    // Core Services
+    this.registerService('workflow', WorkflowService.getInstance(), 'Workflow management', 'core');
+    this.registerService('supabase', SupabaseService.getInstance(), 'Supabase operations', 'core');
+    this.registerService('data-principle', new DataPrincipleService(), 'Data principle management', 'core');
+    this.registerService('personal-thoughts', new PersonalThoughtsService(), 'Personal thoughts', 'core');
+    this.registerService('personal-automations', new PersonalAutomationsService(), 'Personal automations', 'core');
+    this.registerService('chat-usage-tracking', new ChatUsageTrackingService(), 'Chat usage tracking', 'core');
+    this.registerService('user-licenses', new UserLicensesService(), 'User license management', 'core');
+
+    // Integration Services
+    this.registerService('integration', new IntegrationService(), 'Integration management', 'integration');
+    this.registerService('integration-data', new IntegrationDataService(), 'Integration data', 'integration');
+    this.registerService('data-point-mapping', new DataPointMappingService(), 'Data point mapping', 'integration');
+    this.registerService('data-point-dictionary', new DataPointDictionaryService(), 'Data point dictionary', 'integration');
+    this.registerService('universal-integration', new UniversalIntegrationService(), 'Universal integration', 'integration');
+    this.registerService('salesforce-style-data', new SalesforceStyleDataService(), 'Salesforce style data', 'integration');
+    this.registerService('real-time-sync', new RealTimeCrossDepartmentalSync(), 'Real-time sync', 'integration');
+    this.registerService('consolidated-integration', new ConsolidatedIntegrationService(), 'Consolidated integration', 'integration');
+    this.registerService('integration-registry', new IntegrationRegistryService(), 'Integration registry', 'integration');
+    this.registerService('data-mapping', new DataMappingService(), 'Data mapping', 'integration');
+
+    // Email Services
+    this.registerService('email', new EmailService(), 'Email management', 'email');
+    this.registerService('email-integration', new EmailIntegrationService(), 'Email integration', 'email');
+    this.registerService('owa-inbox', new OWAInboxService(), 'OWA inbox', 'email');
+
+    // Dashboard Services
+    this.registerService('dashboard', new DashboardService(), 'Dashboard management', 'dashboard');
+
+    // Task Services
+    this.registerService('task', new TaskService(), 'Task management', 'task');
+    this.registerService('task-calendar', new TaskCalendarService(), 'Task calendar', 'task');
+
+    // Shared Services
+    this.registerService('quota', new QuotaService(), 'Quota management', 'shared');
+    this.registerService('audit-log', new AuditLogService(), 'Audit logging', 'shared');
+    this.registerService('demo', new DemoService(), 'Demo management', 'shared');
+    this.registerService('onboarding', new OnboardingService(), 'Onboarding management', 'shared');
+    this.registerService('business-profile', new BusinessProfileService(), 'Business profile', 'shared');
+    this.registerService('user-company-bridge', new UserCompanyIntegrationBridgeService(), 'User company bridge', 'shared');
+    this.registerService('company-intelligence', new CompanyIntelligenceService(), 'Company intelligence', 'shared');
+    this.registerService('business-process-automation', new BusinessProcessAutomationService(), 'Business process automation', 'shared');
+
+    // Auth Services
+    this.registerService('auth', new AuthService(), 'Authentication', 'auth');
+    this.registerService('oauth-token', new OAuthTokenService(), 'OAuth token management', 'auth');
+
+    // Admin Services
+    this.registerService('waitlist', new WaitlistService(), 'Waitlist management', 'admin');
+
+    // Business Services
+    this.registerService('domain-analysis', new DomainAnalysisService(), 'Domain analysis', 'business');
+
+    // AI Services
+    this.registerService('thoughts', new ThoughtsService(), 'Thoughts management', 'ai');
+
+    // Validation Services
+    this.registerService('onboarding-validation', new OnboardingValidationService(), 'Onboarding validation', 'validation');
+  }
 
   /**
-   * Migration status for each service
+   * Register a service with metadata
    */
-  getMigrationStatus(): Record<string, { migrated: boolean; targetService: string }> {
-    return {
-      billingService: { migrated: true, targetService: 'billing' },
-      googleAnalyticsService: { migrated: true, targetService: 'analytics' },
-      googleWorkspaceService: { migrated: true, targetService: 'analytics' },
-      integrationTracker: { migrated: true, targetService: 'integration' },
-      agentRegistry: { migrated: true, targetService: 'ai' },
-      continuousImprovementService: { migrated: true, targetService: 'ai' },
-      slashCommandService: { migrated: true, targetService: 'ai' },
-      tenantService: { migrated: true, targetService: 'tenant' },
-      onboardingService: { migrated: true, targetService: 'onboarding' },
-    };
-  },
+  private registerService(
+    name: string,
+    service: BaseService,
+    description?: string,
+    category?: string
+  ): void {
+    registerService(name, service);
+    
+    this.registrations.push({
+      name,
+      service,
+      description,
+      category,
+    });
+  }
 
   /**
-   * Get migration recommendations
+   * Get all service registrations
    */
-  getMigrationRecommendations(): string[] {
-    const recommendations: string[] = [];
+  getRegistrations(): ServiceRegistration[] {
+    return [...this.registrations];
+  }
+
+  /**
+   * Get services by category
+   */
+  getServicesByCategory(category: string): ServiceRegistration[] {
+    return this.registrations.filter(reg => reg.category === category);
+  }
+
+  /**
+   * Get service by name
+   */
+  getService<T extends BaseService>(name: string): T {
+    return serviceFactory.get<T>(name);
+  }
+
+  /**
+   * Check if service exists
+   */
+  hasService(name: string): boolean {
+    return serviceFactory.has(name);
+  }
+
+  /**
+   * List all service names
+   */
+  listServiceNames(): string[] {
+    return serviceFactory.list();
+  }
+
+  /**
+   * Get service count
+   */
+  getServiceCount(): number {
+    return serviceFactory.size();
+  }
+
+  /**
+   * Get services by category
+   */
+  getCategories(): string[] {
+    const categories = new Set(this.registrations.map(reg => reg.category).filter((category): category is string => Boolean(category)));
+    return Array.from(categories);
+  }
+
+  /**
+   * Get service statistics
+   */
+  getStatistics(): {
+    total: number;
+    byCategory: Record<string, number>;
+    categories: string[];
+  } {
+    const byCategory: Record<string, number> = {};
     
-    // Check for any remaining legacy service usage
-    const migrationStatus = this.getMigrationStatus();
-    
-    Object.entries(migrationStatus).forEach(([service, status]) => {
-      if (status.migrated) {
-        recommendations.push(`✅ ${service} → ${status.targetService} (migrated)`);
-      } else {
-        recommendations.push(`⚠️  ${service} → ${status.targetService} (pending)`);
+    this.registrations.forEach(reg => {
+      if (reg.category) {
+        byCategory[reg.category] = (byCategory[reg.category] || 0) + 1;
       }
     });
 
-    return recommendations;
-  },
-};
+    return {
+      total: this.registrations.length,
+      byCategory,
+      categories: this.getCategories(),
+    };
+  }
+}
 
-// Export individual services for direct access
-export { billingService, analyticsService, aiService, consolidatedIntegrationService as integrationService, TenantService, onboardingService };
+/**
+ * Global service registry instance
+ */
+export const serviceRegistry = ServiceRegistry.getInstance();
 
-// All legacy services have been migrated to core services 
+/**
+ * Auto-register services on import
+ */
+serviceRegistry; 

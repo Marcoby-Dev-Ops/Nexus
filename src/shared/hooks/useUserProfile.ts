@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { selectOne, updateOne } from '@/lib/supabase';
+import { selectOne, updateOne } from '@/lib/supabase-compatibility';
 import { logger } from '@/shared/utils/logger';
 
 interface UserProfile {

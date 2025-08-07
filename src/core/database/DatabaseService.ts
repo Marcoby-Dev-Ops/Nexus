@@ -4,7 +4,7 @@
  * Updated to use SupabaseService for all database operations
  */
 
-import { supabaseService } from '@/core/services/SupabaseService';
+import { SupabaseService } from '@/core/services/SupabaseService';
 import { BaseService } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import type { ServiceResponse } from '@/core/services/BaseService';
@@ -49,6 +49,8 @@ export interface DatabaseProfile {
 }
 
 export class DatabaseService extends BaseService {
+  private supabaseService = SupabaseService.getInstance();
+
   constructor() {
     super();
   }
@@ -57,35 +59,19 @@ export class DatabaseService extends BaseService {
    * Get user profile by ID
    */
   async getUserProfile(userId: string): Promise<ServiceResponse<DatabaseProfile>> {
-    try {
-      logger.info('Getting user profile', { userId });
+    return this.executeDbOperation(async () => {
+      this.logger.info('Getting user profile', { userId });
       
-      const result = await supabaseService.selectOne<DatabaseProfile>('user_profiles', userId);
+      const result = await this.supabaseService.selectOne<DatabaseProfile>('user_profiles', userId);
       
       if (result.error) {
-        logger.error('Failed to get user profile', { userId, error: result.error });
-        return {
-          success: false,
-          error: result.error || 'Failed to fetch user profile',
-          data: null,
-        };
+        this.logger.error('Failed to get user profile', { userId, error: result.error });
+        return { data: null, error: result.error || 'Failed to fetch user profile' };
       }
 
-      logger.info('Successfully retrieved user profile', { userId });
-      return {
-        success: true,
-        data: result.data,
-        error: null,
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('Error getting user profile', { userId, error: errorMessage });
-      return {
-        success: false,
-        error: typeof errorMessage === 'string' ? errorMessage : 'Unknown error',
-        data: null,
-      };
-    }
+      this.logger.info('Successfully retrieved user profile', { userId });
+      return { data: result.data, error: null };
+    }, 'get user profile');
   }
 
   /**

@@ -6,7 +6,7 @@ import { Textarea } from '@/shared/components/ui/Textarea';
 import { Badge } from '@/shared/components/ui/Badge';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { Building2, Users, DollarSign, Target, TrendingUp } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import { useOrganizationStore } from '@/shared/stores/organizationStore';
 import { businessProfileService } from '@/shared/lib/business/businessProfileService';
 import { logger } from '@/shared/utils/logger';

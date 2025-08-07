@@ -1,4 +1,4 @@
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase-compatibility';
 import { logger } from '@/shared/utils/logger';
 
 interface Token {

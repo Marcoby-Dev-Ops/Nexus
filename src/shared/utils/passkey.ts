@@ -1,7 +1,7 @@
 import { browserSupportsWebAuthn, startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import { supabase } from "@/lib/supabase";
 import { toast } from 'sonner';
-import { select, insertOne, updateOne } from '@/lib/supabase';
+import { select, insertOne, updateOne, deleteOne } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
 
 export interface PasskeyRegistrationOptions {
@@ -36,42 +36,30 @@ export async function registerPasskey(options: PasskeyRegistrationOptions): Prom
   }
 
   // Ensure we have a valid session
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sessionUtils.getSession();
   if (!session) {
     throw new Error('No Supabase session found – please re-login.');
   }
 
   // Step 1: Get registration challenge from server
-  const { data: challengeOptions, error: challengeErr } = await supabase.functions.invoke(
-    'passkey-register-challenge',
-    {
-      body: { 
-        userId: options.userId, 
-        friendlyName: options.friendlyName?.trim() || undefined 
-      },
-      headers: { Authorization: `Bearer ${session.access_token}` },
-    },
-  );
+  const challengeOptions = await callEdgeFunction('passkey-register-challenge', {
+    userId: options.userId, 
+    friendlyName: options.friendlyName?.trim() || undefined 
+  });
   
-  if (challengeErr) {
-    throw new Error(challengeErr.message || 'Failed to get registration challenge');
+  if (!challengeOptions) {
+    throw new Error('Failed to get registration challenge');
   }
 
   // Step 2: Start browser-native WebAuthn registration flow
   const attestationResponse = await startRegistration({ optionsJSON: challengeOptions });
 
   // Step 3: Verify and persist on the backend
-  const { error: verifyErr } = await supabase.functions.invoke('passkey-register-verify', {
-    body: { 
-      userId: options.userId, 
-      attestationResponse,
-      friendlyName: options.friendlyName?.trim() || undefined
-    },
+  await callEdgeFunction('passkey-register-verify', {
+    userId: options.userId, 
+    attestationResponse,
+    friendlyName: options.friendlyName?.trim() || undefined
   });
-  
-  if (verifyErr) {
-    throw new Error(verifyErr.message || 'Failed to verify passkey registration');
-  }
 }
 
 /**
@@ -88,13 +76,12 @@ export async function authenticateWithPasskey(options: PasskeyAuthenticationOpti
   }
 
   // Step 1: Get authentication challenge from server
-  const { data: challengeData, error: challengeErr } = await supabase.functions.invoke(
-    'passkey-auth-challenge',
-    { body: { email: options.email } },
-  );
+  const challengeData = await callEdgeFunction('passkey-auth-challenge', { 
+    email: options.email 
+  });
   
-  if (challengeErr) {
-    throw new Error(challengeErr.message || 'Failed to get authentication challenge');
+  if (!challengeData) {
+    throw new Error('Failed to get authentication challenge');
   }
 
   const { userId } = challengeData;
@@ -103,13 +90,13 @@ export async function authenticateWithPasskey(options: PasskeyAuthenticationOpti
   const assertionResponse = await startAuthentication({ optionsJSON: publicKeyOptions });
 
   // Step 3: Verify on server
-  const { data: verifyRes, error: verifyErr } = await supabase.functions.invoke(
-    'passkey-auth-verify',
-    { body: { userId, assertionResponse } },
-  );
+  const verifyRes = await callEdgeFunction('passkey-auth-verify', { 
+    userId, 
+    assertionResponse 
+  });
   
-  if (verifyErr) {
-    throw new Error(verifyErr.message || 'Failed to verify passkey authentication');
+  if (!verifyRes) {
+    throw new Error('Failed to verify passkey authentication');
   }
 
   return verifyRes;
@@ -119,16 +106,12 @@ export async function authenticateWithPasskey(options: PasskeyAuthenticationOpti
  * Fetch all passkeys for the current user
  */
 export async function fetchUserPasskeys(): Promise<PasskeyRecord[]> {
-  const { data, error } = await supabase
-    .from('ai_passkeys')
-    .select('credential_id, friendly_name, created_at, device_type')
-    .order('created_at', { ascending: false });
+  const { data, error } = await select('ai_passkeys', 'credential_id, friendly_name, created_at, device_type', {}, {
+    orderBy: { column: 'created_at', ascending: false }
+  });
   
   if (error) {
-     
-     
-    // eslint-disable-next-line no-console
-    console.error('[Passkey] Failed to fetch passkeys', error);
+    logger.error('[Passkey] Failed to fetch passkeys', { error });
     throw new Error('Failed to load passkeys');
   }
   
@@ -139,10 +122,7 @@ export async function fetchUserPasskeys(): Promise<PasskeyRecord[]> {
  * Delete a passkey by credential ID
  */
 export async function deletePasskey(credentialId: string): Promise<void> {
-  const { error } = await supabase
-    .from('ai_passkeys')
-    .delete()
-    .eq('credential_id', credentialId);
+  const { error } = await deleteOne('ai_passkeys', credentialId, 'credential_id');
   
   if (error) {
     throw new Error(error.message || 'Failed to delete passkey');
@@ -163,9 +143,9 @@ export async function establishPasskeySession(authResult: {
 
   if (authResult.access_token && authResult.refresh_token) {
     // Set session with returned tokens
-    const { error: sessionErr } = await supabase.auth.setSession({
-      accesstoken: authResult.access_token,
-      refreshtoken: authResult.refresh_token,
+    const { error: sessionErr } = await sessionUtils.setSession({
+      access_token: authResult.access_token,
+      refresh_token: authResult.refresh_token,
     });
     
     if (sessionErr) {
@@ -173,7 +153,7 @@ export async function establishPasskeySession(authResult: {
     }
   } else {
     // Fallback: attempt to refresh session
-    const { error: refreshErr } = await supabase.auth.refreshSession();
+    const { error: refreshErr } = await sessionUtils.refreshSession();
     if (refreshErr) {
       throw new Error('Failed to establish session after passkey authentication');
     }

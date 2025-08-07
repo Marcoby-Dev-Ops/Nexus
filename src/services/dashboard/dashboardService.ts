@@ -3,7 +3,7 @@
  * Provides centralized dashboard functionality and metrics
  */
 
-import { select, selectOne, selectWithOptions } from '@/lib/supabase';
+import { select, selectOne, selectWithOptions } from '@/lib/supabase-compatibility';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';

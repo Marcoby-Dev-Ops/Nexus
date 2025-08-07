@@ -1,4 +1,4 @@
-import { selectOne, insertOne } from '@/lib/supabase';
+import { selectOne, insertOne } from '@/lib/supabase-compatibility';
 import { logger } from '@/shared/utils/logger';
 
 export const ensureUserProfile = async (userId: string, email: string) => {

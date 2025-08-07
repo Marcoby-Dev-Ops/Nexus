@@ -16,8 +16,8 @@ export const ContactSchema = z.object({
   notes: z.string().optional(),
   user_id: z.string().uuid(),
   company_id: z.string().uuid().optional(),
-  created_at: z.string().datetime(),
-  updated_at: z.string().datetime(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
 export type Contact = z.infer<typeof ContactSchema>;

@@ -1,7 +1,7 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import { supabase } from '@/lib/supabase';
-import { supabaseService } from '@/core/services/SupabaseService';
+import { SupabaseService } from '@/core/services/SupabaseService';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -43,6 +43,8 @@ export interface TokenValidationResult {
  * Updated to use helper functions from src/lib/supabase.ts
  */
 export class OAuthTokenService extends BaseService implements CrudServiceInterface<OAuthToken> {
+  private supabaseService = SupabaseService.getInstance();
+
   constructor() {
     super();
   }
@@ -52,24 +54,20 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
    */
   async get(id: string): Promise<ServiceResponse<OAuthToken>> {
     return this.executeDbOperation(async () => {
-      try {
-        this.validateIdParam(id);
-        
-        const { data, error } = await selectOne('oauth_tokens', id);
-        
-        if (error) {
-          const errorResult = handleSupabaseError(error, 'get OAuth token');
-          return { data: null, error: errorResult.error };
-        }
-
-        if (!data) {
-          return { data: null, error: 'OAuth token not found' };
-        }
-
-        return { data: data as OAuthToken, error: null };
-      } catch (error) {
+      this.validateIdParam(id);
+      
+      const { data, error } = await this.supabaseService.selectOne('oauth_tokens', id);
+      
+      if (error) {
+        this.logger.error('Failed to get OAuth token:', error);
         return { data: null, error: 'Failed to get OAuth token' };
       }
+
+      if (!data) {
+        return { data: null, error: 'OAuth token not found' };
+      }
+
+      return { data: data as OAuthToken, error: null };
     }, 'get OAuth token');
   }
 
@@ -78,28 +76,24 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
    */
   async create(data: Partial<OAuthToken>): Promise<ServiceResponse<OAuthToken>> {
     return this.executeDbOperation(async () => {
-      try {
-        this.validateParams(data, ['user_id', 'provider', 'access_token', 'token_type']);
-        
-        const tokenData = {
-          ...data,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          status: data.status || 'active'
-        };
+      this.validateParams(data, ['user_id', 'provider', 'access_token', 'token_type']);
+      
+      const tokenData = {
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        status: data.status || 'active'
+      };
 
-        const { data: result, error } = await insertOne('oauth_tokens', tokenData);
-        
-        if (error) {
-          const errorResult = handleSupabaseError(error, 'create OAuth token');
-          return { data: null, error: errorResult.error };
-        }
-
-        this.logSuccess('OAuth token created successfully', { provider: data.provider });
-        return { data: result as OAuthToken, error: null };
-      } catch (error) {
+      const { data: result, error } = await this.supabaseService.insertOne('oauth_tokens', tokenData);
+      
+      if (error) {
+        this.logger.error('Failed to create OAuth token:', error);
         return { data: null, error: 'Failed to create OAuth token' };
       }
+
+      this.logger.info('OAuth token created successfully', { provider: data.provider });
+      return { data: result as OAuthToken, error: null };
     }, 'create OAuth token');
   }
 
@@ -108,30 +102,26 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
    */
   async update(id: string, data: Partial<OAuthToken>): Promise<ServiceResponse<OAuthToken>> {
     return this.executeDbOperation(async () => {
-      try {
-        this.validateIdParam(id);
-        
-        const updateData = {
-          ...data,
-          updated_at: new Date().toISOString()
-        };
+      this.validateIdParam(id);
+      
+      const updateData = {
+        ...data,
+        updated_at: new Date().toISOString()
+      };
 
-        const { data: result, error } = await updateOne('oauth_tokens', id, updateData);
-        
-        if (error) {
-          const errorResult = handleSupabaseError(error, 'update OAuth token');
-          return { data: null, error: errorResult.error };
-        }
-
-        if (!result) {
-          return { data: null, error: 'OAuth token not found' };
-        }
-
-        this.logSuccess('OAuth token updated successfully', { tokenId: id });
-        return { data: result as OAuthToken, error: null };
-      } catch (error) {
+      const { data: result, error } = await this.supabaseService.updateOne('oauth_tokens', id, updateData);
+      
+      if (error) {
+        this.logger.error('Failed to update OAuth token:', error);
         return { data: null, error: 'Failed to update OAuth token' };
       }
+
+      if (!result) {
+        return { data: null, error: 'OAuth token not found' };
+      }
+
+      this.logger.info('OAuth token updated successfully', { tokenId: id });
+      return { data: result as OAuthToken, error: null };
     }, 'update OAuth token');
   }
 
