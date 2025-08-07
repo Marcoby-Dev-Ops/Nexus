@@ -9,7 +9,7 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { supabase } from '@/lib/supabase';
-import { sessionUtils } from '@/lib/supabase';
+import { sessionUtils } from '@/lib/supabase-compatibility';
 import { z } from 'zod';
 
 // Data Point Analytics Schema
@@ -100,7 +100,7 @@ export class IntegrationDataService extends BaseService {
         const { data: userIntegrations, error: integrationsError } = await this.supabase
           .from('user_integrations')
           .select('*')
-          .eq('userid', targetUserId);
+          .eq('user_id', targetUserId);
 
         if (integrationsError) {
           this.logger.error('Failed to get user integrations:', integrationsError);
@@ -194,7 +194,7 @@ export class IntegrationDataService extends BaseService {
         const { data: userIntegrations, error: integrationsError } = await this.supabase
           .from('user_integrations')
           .select('*')
-          .eq('userid', targetUserId);
+          .eq('user_id', targetUserId);
 
         if (integrationsError) {
           this.logger.error('Failed to get user integrations:', integrationsError);
