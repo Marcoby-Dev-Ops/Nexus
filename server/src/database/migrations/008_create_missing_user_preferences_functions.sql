@@ -1,6 +1,42 @@
 -- Migration: Create Missing User Preferences Functions
 -- This creates the missing functions needed by the user-preferences service
 
+-- Function to get user preferences
+CREATE OR REPLACE FUNCTION get_user_preferences(user_id_param UUID)
+RETURNS TABLE (
+    id UUID,
+    user_id UUID,
+    theme VARCHAR(50),
+    language VARCHAR(10),
+    timezone VARCHAR(100),
+    notifications_enabled BOOLEAN,
+    email_notifications BOOLEAN,
+    push_notifications BOOLEAN,
+    sidebar_collapsed BOOLEAN,
+    preferences JSONB,
+    created_at TIMESTAMP WITH TIME ZONE,
+    updated_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+    RETURN QUERY 
+    SELECT 
+        up.id,
+        up.user_id,
+        up.theme,
+        up.language,
+        up.timezone,
+        up.notifications_enabled,
+        up.email_notifications,
+        up.push_notifications,
+        up.sidebar_collapsed,
+        up.preferences,
+        up.created_at,
+        up.updated_at
+    FROM user_preferences up
+    WHERE up.user_id = get_user_preferences.user_id_param;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Function to upsert user preferences
 CREATE OR REPLACE FUNCTION upsert_user_preferences(user_id_param UUID, preferences_json JSONB)
 RETURNS TABLE (

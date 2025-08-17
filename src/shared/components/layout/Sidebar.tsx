@@ -116,8 +116,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                 
                 {/* Tooltip for description */}
                 {hovered === item.name && item.description && (
-                  <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-card border border-border rounded-md shadow-lg p-2 z-50">
-                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                  <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
+                    <p className="text-xs text-popover-foreground">{item.description}</p>
                   </div>
                 )}
 
@@ -191,8 +191,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     
                     {/* Tooltip for description */}
                     {hovered === item.name && item.description && (
-                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-card border border-border rounded-md shadow-lg p-2 z-50">
-                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
+                        <p className="text-xs text-popover-foreground">{item.description}</p>
                       </div>
                     )}
 
@@ -266,8 +266,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     
                     {/* Tooltip for description */}
                     {hovered === item.name && item.description && (
-                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-card border border-border rounded-md shadow-lg p-2 z-50">
-                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
+                        <p className="text-xs text-popover-foreground">{item.description}</p>
                       </div>
                     )}
 
@@ -341,8 +341,8 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     
                     {/* Tooltip for description */}
                     {hovered === item.name && item.description && (
-                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-card border border-border rounded-md shadow-lg p-2 z-50">
-                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
+                        <p className="text-xs text-popover-foreground">{item.description}</p>
                       </div>
                     )}
 

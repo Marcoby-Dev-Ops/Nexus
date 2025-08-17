@@ -49,11 +49,13 @@ export const OrgSwitcher: React.FC = () => {
         <ChevronDown className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute right-0 mt-2 w-56 bg-background border border-border rounded-md shadow-lg z-[70]">
+        <div className="absolute right-0 mt-2 w-56 bg-popover border border-border rounded-md shadow-lg z-dropdown">
           {orgs.map((org) => (
             <button
               key={org.id}
-              className={`w-full text-left px-4 py-2 text-sm hover: bg-accent ${org.id === activeOrgId ? 'bg-muted' : ''}`}
+              className={`w-full text-left px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors ${
+                org.id === activeOrgId ? 'bg-accent text-accent-foreground' : ''
+              }`}
               onClick={() => {
                 setActiveOrg(org.id);
                 setOpen(false);

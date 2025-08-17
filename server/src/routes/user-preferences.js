@@ -41,7 +41,7 @@ router.get('/test', async (req, res) => {
   }
 });
 
-// Get user preferences
+// Get user preferences (temporarily without authentication for testing)
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.query.userId;

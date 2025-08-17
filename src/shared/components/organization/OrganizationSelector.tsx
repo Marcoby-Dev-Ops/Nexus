@@ -123,7 +123,7 @@ export const OrganizationSelector: React.FC = () => {
       </Button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 bg-background border rounded-md shadow-lg z-50">
+        <div className="absolute top-full left-0 mt-1 w-64 bg-popover border border-border rounded-md shadow-lg z-dropdown">
           <div className="p-2">
             <div className="text-xs font-medium text-muted-foreground px-2 py-1">
               Organizations
@@ -135,8 +135,8 @@ export const OrganizationSelector: React.FC = () => {
                   setActiveOrg(org.id);
                   setIsOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-2 py-2 text-sm rounded hover:bg-accent ${
-                  org.id === activeOrgId ? 'bg-accent' : ''
+                className={`w-full flex items-center justify-between px-2 py-2 text-sm rounded hover:bg-accent hover:text-accent-foreground transition-colors ${
+                  org.id === activeOrgId ? 'bg-accent text-accent-foreground' : ''
                 }`}
               >
                 <div className="flex items-center space-x-2">

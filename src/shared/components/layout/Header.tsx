@@ -221,13 +221,13 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                
                                {isDropdownOpen && (
                   <div 
-                    className="absolute right-0 top-12 w-72 bg-background border border-border rounded-lg shadow-2xl z-50"
+                    className="absolute right-0 top-12 w-72 bg-popover border border-border rounded-lg shadow-lg z-dropdown"
                   >
                      <div className="p-3 border-b border-border">
                        <div className="flex flex-col space-y-2">
                          <div className="flex items-center gap-3">
                            <Sparkles className="w-4 h-4 text-primary" />
-                           <p className="text-sm font-semibold leading-none text-foreground">{getDisplayName()}</p>
+                           <p className="text-sm font-semibold leading-none text-popover-foreground">{getDisplayName()}</p>
                          </div>
                          <p className="text-xs leading-none text-muted-foreground ml-7">
                            {user.email}
@@ -237,7 +237,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                      
                      <div className="p-2">
                        <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
+                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                          onClick={handleProfileClick}
                        >
                          <User className="mr-3 h-4 w-4 text-muted-foreground" />
@@ -245,7 +245,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        </button>
                        
                        <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
+                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                          onClick={handleCompanySettingsClick}
                        >
                          <Building2 className="mr-3 h-4 w-4 text-muted-foreground" />
@@ -253,7 +253,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        </button>
                        
                        <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
+                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                          onClick={handleAIAssistantClick}
                        >
                          <Brain className="mr-3 h-4 w-4 text-muted-foreground" />
@@ -261,7 +261,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        </button>
                        
                        <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
+                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                          onClick={handleSecurityClick}
                        >
                          <Shield className="mr-3 h-4 w-4 text-muted-foreground" />
@@ -271,7 +271,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        <div className="h-px bg-border my-2" />
                        
                        <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
+                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
                          onClick={handlePreferencesClick}
                        >
                          <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
@@ -280,8 +280,8 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        
                        <div className="h-px bg-border my-2" />
                        
-                                                                      <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-left"
+                       <button 
+                         className="w-full flex items-center px-3 py-2.5 rounded-md text-destructive hover:text-destructive-foreground hover:bg-destructive/10 transition-colors text-left"
                          onClick={handleSignOut}
                        >
                          <LogOut className="mr-3 h-4 w-4" />
