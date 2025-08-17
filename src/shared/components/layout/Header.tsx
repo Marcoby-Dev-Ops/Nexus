@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { OrganizationSelector } from '@/shared/components/organization/OrganizationSelector';
-import { User, Settings, LogOut, Menu, Sparkles, Building2, Shield, Brain, ChevronDown } from 'lucide-react';
+import { User, Settings, LogOut, Menu, Sparkles, Building2, Shield, Brain } from 'lucide-react';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 
 interface HeaderProps {
@@ -13,14 +13,70 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const { profile } = useUserProfile();
   const { pageTitle, pageSubtitle } = useHeaderContext();
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSignOut = () => {
-    // Handle sign out logic
+    try {
+      // Clear all auth-related storage
+      localStorage.removeItem('authentik_session');
+      localStorage.removeItem('authentik_token');
+      localStorage.removeItem('authentik_refresh_token');
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('supabase.auth.refreshToken');
+      localStorage.removeItem('supabase.auth.expiresAt');
+      localStorage.removeItem('supabase.auth.expiresIn');
+      localStorage.removeItem('supabase.auth.tokenType');
+      localStorage.removeItem('supabase.auth.user');
+      localStorage.removeItem('supabase.auth.session');
+      
+      // Clear session storage
+      sessionStorage.clear();
+      
+      // Force redirect to login
+      window.location.href = '/login';
+    } catch (error) {
+      // Force redirect even on error
+      window.location.href = '/login';
+    }
+  };
+
+  const handleSignIn = async () => {
+    try {
+      await signIn();
+    } catch (error) {
+      // Handle sign in error silently
+    }
+  };
+
+  // Navigation handlers for dropdown items
+  const handleProfileClick = () => {
+    setIsDropdownOpen(false);
+    navigate('/settings/profile');
+  };
+
+  const handleCompanySettingsClick = () => {
+    setIsDropdownOpen(false);
+    navigate('/settings');
+  };
+
+  const handleAIAssistantClick = () => {
+    setIsDropdownOpen(false);
+    navigate('/ai-hub');
+  };
+
+  const handleSecurityClick = () => {
+    setIsDropdownOpen(false);
+    navigate('/settings/security');
+  };
+
+  const handlePreferencesClick = () => {
+    setIsDropdownOpen(false);
+    navigate('/settings');
   };
 
   // Close dropdown when clicking outside
@@ -128,18 +184,18 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
             </Button>
           )}
           
-          {/* Page-specific header content */}
-          {pageTitle && (
-            <div className="flex items-center space-x-3">
-              <h1 className="text-lg font-semibold">{pageTitle}</h1>
-              {pageSubtitle && (
-                <>
-                  <span className="text-muted-foreground">•</span>
-                  <p className="text-sm text-muted-foreground">{pageSubtitle}</p>
-                </>
-              )}
-            </div>
-          )}
+          {/* Page title (optional) + always-on ticker/subtitle */}
+          <div className="flex items-center gap-3 min-w-0">
+            {pageTitle ? (
+              <h1 className="text-lg font-semibold whitespace-nowrap">{pageTitle}</h1>
+            ) : null}
+            {pageTitle && pageSubtitle ? (
+              <span className="text-muted-foreground">•</span>
+            ) : null}
+            {pageSubtitle ? (
+              <span className="text-sm text-muted-foreground truncate">{pageSubtitle}</span>
+            ) : null}
+          </div>
         </div>
         
         <div className="flex items-center space-x-4">
@@ -163,15 +219,10 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                  </Avatar>
                </Button>
                
-               {isDropdownOpen && createPortal(
-                 <div 
-                   className="fixed inset-0 z-[9999]"
-                   onClick={() => setIsDropdownOpen(false)}
-                 >
-                   <div 
-                     className="absolute right-4 top-16 w-72 bg-background border border-border rounded-lg shadow-2xl animate-in fade-in-0 zoom-in-95"
-                     onClick={(e) => e.stopPropagation()}
-                   >
+                               {isDropdownOpen && (
+                  <div 
+                    className="absolute right-0 top-12 w-72 bg-background border border-border rounded-lg shadow-2xl z-50"
+                  >
                      <div className="p-3 border-b border-border">
                        <div className="flex flex-col space-y-2">
                          <div className="flex items-center gap-3">
@@ -187,7 +238,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                      <div className="p-2">
                        <button 
                          className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
-                         onClick={() => setIsDropdownOpen(false)}
+                         onClick={handleProfileClick}
                        >
                          <User className="mr-3 h-4 w-4 text-muted-foreground" />
                          <span className="font-medium">My Profile</span>
@@ -195,7 +246,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        
                        <button 
                          className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
-                         onClick={() => setIsDropdownOpen(false)}
+                         onClick={handleCompanySettingsClick}
                        >
                          <Building2 className="mr-3 h-4 w-4 text-muted-foreground" />
                          <span className="font-medium">Company Settings</span>
@@ -203,7 +254,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        
                        <button 
                          className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
-                         onClick={() => setIsDropdownOpen(false)}
+                         onClick={handleAIAssistantClick}
                        >
                          <Brain className="mr-3 h-4 w-4 text-muted-foreground" />
                          <span className="font-medium">AI Assistant</span>
@@ -211,7 +262,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        
                        <button 
                          className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
-                         onClick={() => setIsDropdownOpen(false)}
+                         onClick={handleSecurityClick}
                        >
                          <Shield className="mr-3 h-4 w-4 text-muted-foreground" />
                          <span className="font-medium">Security</span>
@@ -221,7 +272,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        
                        <button 
                          className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-muted/50 hover:text-foreground transition-colors text-left"
-                         onClick={() => setIsDropdownOpen(false)}
+                         onClick={handlePreferencesClick}
                        >
                          <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
                          <span className="font-medium">Preferences</span>
@@ -229,27 +280,22 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        
                        <div className="h-px bg-border my-2" />
                        
-                       <button 
+                                                                      <button 
                          className="w-full flex items-center px-3 py-2.5 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors text-left"
-                         onClick={() => {
-                           handleSignOut();
-                           setIsDropdownOpen(false);
-                         }}
+                         onClick={handleSignOut}
                        >
                          <LogOut className="mr-3 h-4 w-4" />
                          <span className="font-medium">Sign Out</span>
                        </button>
                      </div>
                    </div>
-                 </div>,
-                 document.body
-               )}
-             </div>
-           ) : (
-            <Button variant="outline">Sign In</Button>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-}; 
+                 )}
+               </div>
+             ) : (
+               <Button variant="outline" onClick={handleSignIn}>Sign In</Button>
+             )}
+           </div>
+         </div>
+       </header>
+     );
+   }; 

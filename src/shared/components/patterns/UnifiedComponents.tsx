@@ -7,11 +7,10 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Skeleton } from '@/shared/components/ui/Skeleton.tsx';
-import { cn } from '@/shared/utils/styles.ts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+
+import { cn } from '@/shared/utils/styles';
 import { TrendingUp, TrendingDown, Minus, Sparkles, Brain, Zap, Lightbulb, BookOpen } from 'lucide-react';
 
 // ===== UNIFIED METRIC COMPONENTS =====

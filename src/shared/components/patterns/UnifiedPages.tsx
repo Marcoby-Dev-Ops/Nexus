@@ -7,11 +7,11 @@
  */
 
 import React, { useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Alert } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Alert } from '@/shared/components/ui/Alert';
 import { 
   Brain, 
   Zap, 
@@ -93,7 +93,7 @@ const ContentSection: React.FC<{ title: string; children: React.ReactNode; class
   </div>
 );
 
-const SimpleBarChart: React.FC<{ data: any }> = ({ data }) => (
+const SimpleBarChart: React.FC<{ data: any }> = ({ _data }) => (
   <div className="h-full flex items-end justify-center space-x-1">
     <div className="text-xs text-muted-foreground">Chart placeholder</div>
   </div>
@@ -132,7 +132,6 @@ export const UnifiedSettingsPage: React.FC<{ config: SettingsConfig }> = ({ conf
   const [activeSection, setActiveSection] = React.useState(config.sections[0]?.id);
 
   const currentSection = config.sections.find(s => s.id === activeSection);
-  const CurrentComponent = currentSection?.component;
 
   return (
     <div className="space-y-6">
@@ -189,7 +188,6 @@ export const UnifiedAnalyticsPage: React.FC<{ config: AnalyticsConfig }> = ({ co
   const [activeTab, setActiveTab] = React.useState(config.tabs[0]?.id);
 
   const currentTab = config.tabs.find(t => t.id === activeTab);
-  const CurrentComponent = currentTab?.content;
 
   return (
     <DashboardLayout

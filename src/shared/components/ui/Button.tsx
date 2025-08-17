@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/shared/lib/utils';
@@ -33,21 +34,33 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
+  asChild?: boolean;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, isLoading, children, ...props }, ref) => {
+  ({ className, variant, size, isLoading, asChild = false, children, ...props }, ref) => {
+    const Comp: React.ElementType = asChild ? Slot : 'button';
+    const elementChildren = React.Children.toArray(children).filter((child) =>
+      React.isValidElement(child)
+    ) as React.ReactElement[];
+    
+    if (asChild && elementChildren.length !== 1) {
+      return null;
+    }
+    
+    const slottableChild = asChild ? elementChildren[0] : children;
     return (
-      <button
+      <Comp
         className={cn(buttonVariants({ variant, size, className }))}
-        ref={ref}
-        disabled={isLoading || props.disabled}
+        // Only attach ref when rendering a real button to avoid type mismatches
+        ref={asChild ? undefined : ref}
+        disabled={!asChild && (isLoading || props.disabled)}
         {...props}
       >
-        {isLoading && (
+        {!asChild && isLoading && (
           <svg
             className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
-            xmlns="http: //www.w3.org/2000/svg"
+            xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
           >
@@ -66,8 +79,8 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
             ></path>
           </svg>
         )}
-        {children}
-      </button>
+        {slottableChild}
+      </Comp>
     );
   }
 );

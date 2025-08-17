@@ -1,8 +1,7 @@
 import { browserSupportsWebAuthn, startRegistration, startAuthentication } from '@simplewebauthn/browser';
-import { supabase } from "@/lib/supabase";
 import { toast } from 'sonner';
-import { select, insertOne, updateOne, deleteOne } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 export interface PasskeyRegistrationOptions {
   userId: string;
@@ -28,42 +27,74 @@ export function isPasskeySupported(): boolean {
 }
 
 /**
- * Register a new passkey for the user
+ * Register a new passkey for the user with Authentik
  */
 export async function registerPasskey(options: PasskeyRegistrationOptions): Promise<void> {
   if (!isPasskeySupported()) {
     throw new Error('Your browser does not support passkeys');
   }
 
-  // Ensure we have a valid session
-  const { data: { session } } = await sessionUtils.getSession();
-  if (!session) {
-    throw new Error('No Supabase session found – please re-login.');
+  try {
+    // Ensure we have a valid Authentik session
+    const sessionResult = await authentikAuthService.getSession();
+    if (!sessionResult.success || !sessionResult.data) {
+      throw new Error('No valid Authentik session found – please re-login.');
+    }
+
+    // Step 1: Get registration challenge from Authentik
+    const challengeResponse = await fetch(`${import.meta.env.VITE_AUTHENTIK_URL}/api/v3/authenticators/webauthn/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionResult.data.session.accessToken}`,
+      },
+      body: JSON.stringify({
+        name: options.friendlyName || 'Passkey',
+        type: 'webauthn',
+        user: options.userId,
+      }),
+    });
+
+    if (!challengeResponse.ok) {
+      throw new Error('Failed to get registration challenge from Authentik');
+    }
+
+    const challengeData = await challengeResponse.json();
+    
+    // Step 2: Start browser-native WebAuthn registration flow
+    const attestationResponse = await startRegistration({
+      optionsJSON: challengeData.challenge,
+    });
+
+    // Step 3: Complete registration with Authentik
+    const verifyResponse = await fetch(`${import.meta.env.VITE_AUTHENTIK_URL}/api/v3/authenticators/webauthn/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionResult.data.session.accessToken}`,
+      },
+      body: JSON.stringify({
+        id: challengeData.id,
+        response: attestationResponse,
+      }),
+    });
+
+    if (!verifyResponse.ok) {
+      throw new Error('Failed to complete passkey registration with Authentik');
+    }
+
+    toast.success('Passkey registered successfully!');
+    logger.info('Passkey registration completed', { userId: options.userId });
+
+  } catch (error) {
+    logger.error('Passkey registration failed', { error, userId: options.userId });
+    toast.error('Failed to register passkey. Please try again.');
+    throw error;
   }
-
-  // Step 1: Get registration challenge from server
-  const challengeOptions = await callEdgeFunction('passkey-register-challenge', {
-    userId: options.userId, 
-    friendlyName: options.friendlyName?.trim() || undefined 
-  });
-  
-  if (!challengeOptions) {
-    throw new Error('Failed to get registration challenge');
-  }
-
-  // Step 2: Start browser-native WebAuthn registration flow
-  const attestationResponse = await startRegistration({ optionsJSON: challengeOptions });
-
-  // Step 3: Verify and persist on the backend
-  await callEdgeFunction('passkey-register-verify', {
-    userId: options.userId, 
-    attestationResponse,
-    friendlyName: options.friendlyName?.trim() || undefined
-  });
 }
 
 /**
- * Authenticate using a passkey
+ * Authenticate using a passkey with Authentik
  */
 export async function authenticateWithPasskey(options: PasskeyAuthenticationOptions): Promise<{
   verified: boolean;
@@ -75,212 +106,150 @@ export async function authenticateWithPasskey(options: PasskeyAuthenticationOpti
     throw new Error('Your browser does not support passkeys');
   }
 
-  // Step 1: Get authentication challenge from server
-  const challengeData = await callEdgeFunction('passkey-auth-challenge', { 
-    email: options.email 
-  });
-  
-  if (!challengeData) {
-    throw new Error('Failed to get authentication challenge');
-  }
+  try {
+    // Step 1: Get authentication challenge from Authentik
+    const challengeResponse = await fetch(`${import.meta.env.VITE_AUTHENTIK_URL}/api/v3/authenticators/webauthn/authenticate/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: options.email,
+      }),
+    });
 
-  const { userId } = challengeData;
+    if (!challengeResponse.ok) {
+      throw new Error('Failed to get authentication challenge from Authentik');
+    }
 
-  // Step 2: Browser authentication prompt
-  const assertionResponse = await startAuthentication({ optionsJSON: publicKeyOptions });
+    const challengeData = await challengeResponse.json();
 
-  // Step 3: Verify on server
-  const verifyRes = await callEdgeFunction('passkey-auth-verify', { 
-    userId, 
-    assertionResponse 
-  });
-  
-  if (!verifyRes) {
-    throw new Error('Failed to verify passkey authentication');
-  }
+    // Step 2: Browser authentication prompt
+    const assertionResponse = await startAuthentication({
+      optionsJSON: challengeData.challenge,
+    });
 
-  return verifyRes;
-}
+    // Step 3: Verify authentication with Authentik
+    const verifyResponse = await fetch(`${import.meta.env.VITE_AUTHENTIK_URL}/api/v3/authenticators/webauthn/authenticate/`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        response: assertionResponse,
+      }),
+    });
 
-/**
- * Fetch all passkeys for the current user
- */
-export async function fetchUserPasskeys(): Promise<PasskeyRecord[]> {
-  const { data, error } = await select('ai_passkeys', 'credential_id, friendly_name, created_at, device_type', {}, {
-    orderBy: { column: 'created_at', ascending: false }
-  });
-  
-  if (error) {
-    logger.error('[Passkey] Failed to fetch passkeys', { error });
-    throw new Error('Failed to load passkeys');
-  }
-  
-  return data || [];
-}
+    if (!verifyResponse.ok) {
+      throw new Error('Failed to verify passkey authentication with Authentik');
+    }
 
-/**
- * Delete a passkey by credential ID
- */
-export async function deletePasskey(credentialId: string): Promise<void> {
-  const { error } = await deleteOne('ai_passkeys', credentialId, 'credential_id');
-  
-  if (error) {
-    throw new Error(error.message || 'Failed to delete passkey');
-  }
-}
+    const authResult = await verifyResponse.json();
 
-/**
- * Establish a Supabase session after successful passkey authentication
- */
-export async function establishPasskeySession(authResult: {
-  verified: boolean;
-  access_token?: string;
-  refresh_token?: string;
-}): Promise<void> {
-  if (!authResult.verified) {
-    throw new Error('Passkey verification failed');
-  }
-
-  if (authResult.access_token && authResult.refresh_token) {
-    // Set session with returned tokens
-    const { error: sessionErr } = await sessionUtils.setSession({
+    return {
+      verified: true,
+      user: authResult.user,
       access_token: authResult.access_token,
       refresh_token: authResult.refresh_token,
-    });
-    
-    if (sessionErr) {
-      throw new Error(sessionErr.message || 'Failed to establish session');
-    }
-  } else {
-    // Fallback: attempt to refresh session
-    const { error: refreshErr } = await sessionUtils.refreshSession();
-    if (refreshErr) {
-      throw new Error('Failed to establish session after passkey authentication');
-    }
-  }
-}
+    };
 
-/**
- * Helper to show appropriate error messages for passkey operations
- */
-export function handlePasskeyError(error: unknown, operation: 'registration' | 'authentication'): void {
-  const errorMessage = error instanceof Error ? error.message: `Passkey ${operation} failed`;
-  
-  // Handle specific error cases
-  if (errorMessage.includes('User cancelled') || errorMessage.includes('NotAllowedError')) {
-    toast.error(`Passkey ${operation} was cancelled`);
-  } else if (errorMessage.includes('not supported')) {
-    toast.error('Your browser does not support passkeys');
-  } else if (errorMessage.includes('timeout')) {
-    toast.error(`Passkey ${operation} timed out. Please try again.`);
-  } else {
-    toast.error(errorMessage);
-  }
-  
-   
-     
-    // eslint-disable-next-line no-console
-    console.error(`[Passkey] ${operation} failed: `, error);
-}
-
-/**
- * Handle successful passkey authentication with redirect
- */
-export function handlePasskeySignInSuccess(
-  redirectTo?: string, 
-  onSuccess?: () => void
-): void {
-  // Show success message
-  toast.success('Welcome back! Signed in with passkey.');
-  
-  // Call custom success callback if provided
-  if (onSuccess) {
-    onSuccess();
-    return;
-  }
-  
-  // Fallback redirect logic
-  const targetPath = redirectTo || '/home';
-  
-  // Use window.location for reliable navigation
-  if (typeof window !== 'undefined') {
-    window.location.href = targetPath;
-  }
-}
-
-/**
- * Handle successful passkey registration with UI feedback
- */
-export function handlePasskeyRegistrationSuccess(): void {
-  toast.success('Passkey added successfully! You can now sign in securely.');
-}
-
-/**
- * Complete passkey sign-in flow with session establishment and redirect
- */
-export async function handleCompletePasskeySignIn(
-  email: string,
-  redirectTo?: string,
-  onSuccess?: () => void
-): Promise<void> {
-  try {
-    // Authenticate with passkey
-    const authResult = await authenticateWithPasskey({ email });
-    
-    if (!authResult.verified) {
-      throw new Error('Passkey verification failed');
-    }
-    
-    // Establish session
-    await establishPasskeySession(authResult);
-    
-    // Handle success with redirect
-    handlePasskeySignInSuccess(redirectTo, onSuccess);
-    
   } catch (error) {
-    handlePasskeyError(error, 'authentication');
-    throw error; // Re-throw for caller to handle if needed
+    logger.error('Passkey authentication failed', { error, email: options.email });
+    return {
+      verified: false,
+    };
   }
-} 
+}
 
-export const getPasskeys = async (userId: string) => {
+/**
+ * Get user's registered passkeys from Authentik
+ */
+export async function getUserPasskeys(): Promise<PasskeyRecord[]> {
   try {
-    const { data, error } = await select('user_passkeys', '*', { user_id: userId });
-    if (error) {
-      logger.error({ error }, 'Failed to fetch passkeys');
-      return [];
+    const sessionResult = await authentikAuthService.getSession();
+    if (!sessionResult.success || !sessionResult.data) {
+      throw new Error('No valid Authentik session found');
     }
-    return data || [];
-  } catch (err) {
-    logger.error({ err }, 'Error fetching passkeys');
+
+    const response = await fetch(`${import.meta.env.VITE_AUTHENTIK_URL}/api/v3/authenticators/webauthn/`, {
+      headers: {
+        'Authorization': `Bearer ${sessionResult.data.session.accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch passkeys from Authentik');
+    }
+
+    const passkeys = await response.json();
+    
+    return passkeys.results.map((passkey: any) => ({
+      credentialid: passkey.credential_id,
+      friendlyname: passkey.name,
+      createdat: passkey.created_on,
+      devicetype: passkey.type === 'webauthn' ? 'multi_device' : 'single_device',
+    }));
+
+  } catch (error) {
+    logger.error('Failed to fetch user passkeys', { error });
     return [];
   }
-};
+}
 
-export const addPasskey = async (userId: string, passkey: any) => {
+/**
+ * Delete a passkey from Authentik
+ */
+export async function deletePasskey(credentialId: string): Promise<boolean> {
   try {
-    const { data, error } = await insertOne('user_passkeys', { ...passkey, user_id: userId });
-    if (error) {
-      logger.error({ error }, 'Failed to add passkey');
-      return null;
+    const sessionResult = await authentikAuthService.getSession();
+    if (!sessionResult.success || !sessionResult.data) {
+      throw new Error('No valid Authentik session found');
     }
-    return data;
-  } catch (err) {
-    logger.error({ err }, 'Error adding passkey');
-    return null;
-  }
-};
 
-export const updatePasskey = async (id: string, updates: any) => {
-  try {
-    const { data, error } = await updateOne('user_passkeys', id, updates);
-    if (error) {
-      logger.error({ error }, 'Failed to update passkey');
-      return null;
+    const response = await fetch(`${import.meta.env.VITE_AUTHENTIK_URL}/api/v3/authenticators/webauthn/${credentialId}/`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${sessionResult.data.session.accessToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete passkey from Authentik');
     }
-    return data;
-  } catch (err) {
-    logger.error({ err }, 'Error updating passkey');
-    return null;
+
+    toast.success('Passkey deleted successfully');
+    logger.info('Passkey deleted', { credentialId });
+    return true;
+
+  } catch (error) {
+    logger.error('Failed to delete passkey', { error, credentialId });
+    toast.error('Failed to delete passkey');
+    return false;
   }
-}; 
+}
+
+/**
+ * Check if user has any registered passkeys
+ */
+export async function hasPasskeys(): Promise<boolean> {
+  const passkeys = await getUserPasskeys();
+  return passkeys.length > 0;
+}
+
+/**
+ * Get passkey registration status for the current user
+ */
+export async function getPasskeyStatus(): Promise<{
+  hasPasskeys: boolean;
+  passkeyCount: number;
+  isSupported: boolean;
+}> {
+  const isSupported = isPasskeySupported();
+  const passkeys = await getUserPasskeys();
+  
+  return {
+    hasPasskeys: passkeys.length > 0,
+    passkeyCount: passkeys.length,
+    isSupported,
+  };
+}

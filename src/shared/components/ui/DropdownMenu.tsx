@@ -38,7 +38,7 @@ export const DropdownMenu: React.FC<DropdownMenuProps> = ({ children }) => {
 
 export const DropdownMenuTrigger: React.FC<DropdownMenuTriggerProps> = ({ 
   children, 
-  asChild = false 
+  _asChild = false 
 }) => {
   return <div className="cursor-pointer">{children}</div>;
 };
