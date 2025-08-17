@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
 import { useAuth } from '@/hooks/index';
-import { API_CONFIG } from '@/core/constants.ts';
-import { Skeleton } from '@/shared/components/ui/Skeleton.tsx';
+import { API_CONFIG } from '@/core/constants';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/Table';
-import Modal from '@/shared/components/ui/Modal.tsx';
+import Modal from '@/shared/components/ui/Modal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
 
 interface User {
   id: string;

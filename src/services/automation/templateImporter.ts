@@ -1,4 +1,4 @@
-import { supabase, select, selectOne, updateOne, insertOne } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, callEdgeFunction } from '@/lib/api-client';
 import type { N8nWorkflowDefinition } from './n8nWorkflowBuilder';
 import { N8nWorkflowBuilder } from './n8nWorkflowBuilder';
 import { n8nService } from '@/services/automation/n8nService';

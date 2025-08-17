@@ -51,7 +51,7 @@ const SERVICE_MIGRATION_DATA = {
     'IntegrationService',
     'IntegrationDataService',
     'DataPointMappingService',
-    'DataPointDictionaryService',
+  
     'UniversalIntegrationService',
     'SalesforceStyleDataService',
     'RealTimeCrossDepartmentalSync',

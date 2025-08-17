@@ -1,7 +1,7 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
-import { supabase } from '@/lib/supabase';
-import { SupabaseService } from '@/core/services/SupabaseService';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -43,7 +43,7 @@ export interface TokenValidationResult {
  * Updated to use helper functions from src/lib/supabase.ts
  */
 export class OAuthTokenService extends BaseService implements CrudServiceInterface<OAuthToken> {
-  private supabaseService = SupabaseService.getInstance();
+  // Using direct API calls instead of UnifiedDatabaseService
 
   constructor() {
     super();
@@ -56,7 +56,7 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
     return this.executeDbOperation(async () => {
       this.validateIdParam(id);
       
-      const { data, error } = await this.supabaseService.selectOne('oauth_tokens', id);
+      const { data, error } = await this.databaseService.selectOne('oauth_tokens', id);
       
       if (error) {
         this.logger.error('Failed to get OAuth token:', error);
@@ -85,7 +85,7 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
         status: data.status || 'active'
       };
 
-      const { data: result, error } = await this.supabaseService.insertOne('oauth_tokens', tokenData);
+      const { data: result, error } = await this.databaseService.insertOne('oauth_tokens', tokenData);
       
       if (error) {
         this.logger.error('Failed to create OAuth token:', error);
@@ -109,7 +109,7 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
         updated_at: new Date().toISOString()
       };
 
-      const { data: result, error } = await this.supabaseService.updateOne('oauth_tokens', id, updateData);
+      const { data: result, error } = await this.databaseService.updateOne('oauth_tokens', id, updateData);
       
       if (error) {
         this.logger.error('Failed to update OAuth token:', error);
@@ -175,10 +175,11 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
     return this.executeDbOperation(async () => {
       try {
         // Get current user ID
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const userResult = await authentikAuthService.getSession();
+        const user = userResult.data?.user;
         
-        if (userError || !user) {
-          const errorResult = handleSupabaseError(userError || new Error('No user found'), 'get user for token');
+        if (!user) {
+          const errorResult = handleSupabaseError(new Error('No user found'), 'get user for token');
           return { data: null, error: errorResult.error };
         }
 
@@ -211,10 +212,11 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
     return this.executeDbOperation(async () => {
       try {
         // Get current user ID
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const authResult = await authentikAuthService.getSession();
+        const user = authResult.data?.user;
         
-        if (userError || !user) {
-          const errorResult = handleSupabaseError(userError || new Error('No user found'), 'get user for token storage');
+        if (!user) {
+          const errorResult = handleSupabaseError(new Error('No user found'), 'get user for token storage');
           return { data: null, error: errorResult.error };
         }
 
@@ -256,16 +258,37 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
           return { data: null, error: `No token found for ${refreshData.provider}` };
         }
 
-        // Simulate token refresh (in real implementation, this would call the OAuth provider's refresh endpoint)
-        const refreshedToken = {
-          ...tokenResult.data,
-          access_token: `refreshed_${Date.now()}`, // Simulated new access token
+        let refreshedTokenData: any = null;
+
+        // Implement provider-specific token refresh
+        switch (refreshData.provider) {
+          case 'microsoft':
+            refreshedTokenData = await this.refreshMicrosoftToken(refreshData.refresh_token);
+            break;
+          case 'google':
+            refreshedTokenData = await this.refreshGoogleToken(refreshData.refresh_token);
+            break;
+          case 'hubspot':
+            refreshedTokenData = await this.refreshHubSpotToken(refreshData.refresh_token);
+            break;
+          default:
+            return { data: null, error: `Token refresh not implemented for provider: ${refreshData.provider}` };
+        }
+
+        if (!refreshedTokenData) {
+          return { data: null, error: 'Failed to refresh token' };
+        }
+
+        // Update the token in database
+        const updateData = {
+          access_token: refreshedTokenData.access_token,
+          refresh_token: refreshedTokenData.refresh_token || refreshData.refresh_token,
+          expires_at: refreshedTokenData.expires_at ? new Date(refreshedTokenData.expires_at).getTime() : undefined,
           updated_at: new Date().toISOString(),
           status: 'active' as const
         };
 
-        // Update the token in database
-        const updateResult = await this.update(tokenResult.data.id, refreshedToken);
+        const updateResult = await this.update(tokenResult.data.id, updateData);
         
         if (!updateResult.success) {
           return { data: null, error: 'Failed to update refreshed token' };
@@ -277,6 +300,69 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
         return { data: null, error: `Failed to refresh token for ${refreshData.provider}` };
       }
     }, `refresh token for ${refreshData.provider}`);
+  }
+
+  /**
+   * Refresh Microsoft Graph token
+   */
+  private async refreshMicrosoftToken(refreshToken: string): Promise<any> {
+    const response = await fetch('/api/oauth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'microsoft',
+        refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to refresh Microsoft token: ${errorData.details || errorData.error}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Refresh Google token
+   */
+  private async refreshGoogleToken(refreshToken: string): Promise<any> {
+    const response = await fetch('/api/oauth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'google',
+        refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to refresh Google token: ${errorData.details || errorData.error}`);
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Refresh HubSpot token
+   */
+  private async refreshHubSpotToken(refreshToken: string): Promise<any> {
+    const response = await fetch('/api/oauth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'hubspot',
+        refreshToken,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Failed to refresh HubSpot token: ${errorData.details || errorData.error}`);
+    }
+
+    return response.json();
   }
 
   /**
@@ -297,6 +383,35 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
       const now = Date.now();
       const isExpired = token.expires_at ? now > token.expires_at : false;
       const expiresIn = token.expires_at ? token.expires_at - now : undefined;
+
+      // If token is expired, try to refresh it
+      if (isExpired && token.status !== 'expired' && token.refresh_token) {
+        this.logger.info('Token expired, attempting refresh', { provider });
+        
+        try {
+          const refreshResult = await this.refreshToken({
+            provider,
+            refresh_token: token.refresh_token
+          });
+          
+          if (refreshResult.success && refreshResult.data) {
+            this.logger.info('Token refreshed successfully', { provider });
+            return this.createSuccessResponse({ 
+              isValid: true, 
+              isExpired: false,
+              expiresIn: refreshResult.data.expires_at ? refreshResult.data.expires_at - now : undefined
+            });
+          } else {
+            this.logger.warn('Token refresh failed', { provider, error: refreshResult.error });
+            // Update token status to expired
+            await this.update(token.id, { status: 'expired' });
+          }
+        } catch (refreshError) {
+          this.logger.error('Token refresh error', { provider, error: refreshError });
+          // Update token status to expired
+          await this.update(token.id, { status: 'expired' });
+        }
+      }
 
       // Update token status if expired
       if (isExpired && token.status !== 'expired') {
@@ -350,10 +465,11 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
     return this.executeDbOperation(async () => {
       try {
         // Get current user ID
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        const authResult = await authentikAuthService.getSession();
+        const user = authResult.data?.user;
         
-        if (userError || !user) {
-          const errorResult = handleSupabaseError(userError || new Error('No user found'), 'get user for active tokens');
+        if (!user) {
+          const errorResult = handleSupabaseError(new Error('No user found'), 'get user for active tokens');
           return { data: null, error: errorResult.error };
         }
 

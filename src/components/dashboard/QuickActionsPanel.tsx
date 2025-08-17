@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
 import { CheckCircle2 } from 'lucide-react';
 // Local starter config for demonstration
 export type QuickActionType = 'global' | 'department' | 'page';

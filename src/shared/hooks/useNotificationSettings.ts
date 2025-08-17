@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { select, selectOne, updateOne } from '@/lib/supabase';
+import { selectData as select, selectOne, updateOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface NotificationSettings {
@@ -22,7 +22,7 @@ export const useNotificationSettings = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await selectOne('notification_settings', { user_id: userId });
+      const { data, error } = await selectOne('notification_settings', userId, 'user_id');
       if (error) {
         logger.error({ error }, 'Failed to fetch notification settings');
         setError('Failed to fetch settings');
@@ -41,7 +41,7 @@ export const useNotificationSettings = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await updateOne('notification_settings', { user_id: userId }, updates);
+      const { data, error } = await updateOne('notification_settings', userId, updates, 'user_id');
       if (error) {
         logger.error({ error }, 'Failed to update notification settings');
         setError('Failed to update settings');

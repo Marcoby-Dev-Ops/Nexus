@@ -6,8 +6,8 @@ import { ThemeProvider } from '@/shared/components/ui/theme-provider';
 import { ToastProvider } from '@/shared/ui/components/Toast';
 import { NotificationProvider } from '@/shared/hooks/NotificationContext';
 import App from './App';
-import { logger } from '@/shared/utils/logger.ts';
-import { initializeStorageCleanup } from '@/shared/utils/storageUtils.ts';
+import { logger } from '@/shared/utils/logger';
+import { initializeStorageCleanup } from '@/shared/utils/storageUtils';
 
 // Import global styles
 import '@/shared/assets/index.css';
@@ -38,10 +38,10 @@ const queryClient = new QueryClient({
 // Initialize environment validation
 const validateEnvironment = async () => {
   try {
-    // Simple environment check
+    // Check for required environment variables
     const requiredEnvVars = [
-      'VITE_SUPABASE_URL',
-      'VITE_SUPABASE_ANON_KEY'
+      'VITE_AUTHENTIK_CLIENT_ID',
+      'VITE_AUTHENTIK_BASE_URL'
     ];
     
     const missingVars = requiredEnvVars.filter(
@@ -49,12 +49,16 @@ const validateEnvironment = async () => {
     );
     
     if (missingVars.length > 0) {
-      throw new Error(`Missing environment variables: ${missingVars.join(', ')}`);
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
     }
+
+    // Note: DATABASE_URL is only needed for server-side operations
+    // Frontend database access goes through API endpoints
     
     logger.info('Environment configuration validated successfully');
   } catch (error) {
-    logger.error('Environment validation failed', { error });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('Environment validation failed', { error: errorMessage });
   }
 };
 
@@ -137,22 +141,35 @@ const initializeApp = async () => {
     const root = ReactDOM.createRoot(rootElement);
     
     logger.info('Rendering application...');
+    
+    // Conditionally enable StrictMode based on environment
+    // Disable in development to reduce double rendering during debugging
+    const enableStrictMode = import.meta.env.PROD || import.meta.env.VITE_ENABLE_STRICT_MODE === 'true';
+    
+    const appElement = (
+      <RootErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <Router>
+            <ThemeProvider defaultTheme="system">
+              <NotificationProvider>
+                <ToastProvider>
+                  <App />
+                </ToastProvider>
+              </NotificationProvider>
+            </ThemeProvider>
+          </Router>
+        </QueryClientProvider>
+      </RootErrorBoundary>
+    );
+    
     root.render(
-      <React.StrictMode>
-        <RootErrorBoundary>
-          <QueryClientProvider client={queryClient}>
-            <Router>
-              <ThemeProvider defaultTheme="system">
-                <NotificationProvider>
-                  <ToastProvider>
-                    <App />
-                  </ToastProvider>
-                </NotificationProvider>
-              </ThemeProvider>
-            </Router>
-          </QueryClientProvider>
-        </RootErrorBoundary>
-      </React.StrictMode>
+      enableStrictMode ? (
+        <React.StrictMode>
+          {appElement}
+        </React.StrictMode>
+      ) : (
+        appElement
+      )
     );
     
     logger.info('Application rendered successfully');

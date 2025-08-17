@@ -5,14 +5,15 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { Loader2, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
 import { callbackRegistry } from '@/shared/callbacks/CallbackRegistry';
 import { CallbackProcessor } from '@/shared/callbacks/CallbackHandler';
 import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';
 import type { CallbackConfig, CallbackResponse } from '@/core/types/callbacks';
+import { getEnvVar } from '@/lib/env-utils';
 
 type CallbackStatus = 'processing' | 'success' | 'error' | 'timeout';
 
@@ -308,7 +309,7 @@ export const UnifiedCallbackPage: React.FC<CallbackPageProps> = ({
           </div>
           
           {/* Debug information in development */}
-          {process.env.NODE_ENV === 'development' && config && (
+          {getEnvVar('NODE_ENV') === 'development' && config && (
             <div className="mt-6 p-4 bg-muted rounded-lg">
               <h4 className="font-medium mb-2">Debug Information</h4>
               <div className="text-xs space-y-1">

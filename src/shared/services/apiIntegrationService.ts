@@ -1,6 +1,6 @@
 // src/shared/services/apiIntegrationService.ts
 
-import { select, insertOne, updateOne } from '@/lib/supabase';
+import { selectData, insertOne, updateOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 export type ApiIntegrationData = {
@@ -19,7 +19,7 @@ export type ApiIntegrationData = {
 
 export const getIntegrations = async (userId: string) => {
   try {
-    const { data, error } = await select('user_integrations', '*', { user_id: userId });
+    const { data, error } = await selectData('user_integrations', { filters: { user_id: userId } });
     if (error) {
       logger.error({ error }, 'Failed to fetch integrations');
       return [];

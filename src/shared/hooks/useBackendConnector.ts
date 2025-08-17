@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks';
-import { select, selectOne } from '@/lib/supabase';
+import { selectData as select, selectOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
+import { ensureUserProfile } from '@/shared/utils/ensureUserProfile';
 
 interface BackendStatus {
   connected: boolean;
@@ -33,24 +34,33 @@ export const useBackendConnector = () => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const checkConnection = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      logger.warn('useBackendConnector: No user ID available for connection check');
+      return false;
+    }
+
+    // Additional validation to ensure user ID is valid
+    if (user.id === 'undefined' || user.id === 'null' || !user.id.toString().trim()) {
+      logger.warn('useBackendConnector: Invalid user ID for connection check', { userId: user.id });
+      return false;
+    }
 
     try {
       const startTime = Date.now();
       
-      // Test connection by fetching user profile
-      const { data, error } = await selectOne('user_profiles', user.id);
+      // Test connection by ensuring user profile exists
+      const profile = await ensureUserProfile(user.id, user.email || '');
       
       const latency = Date.now() - startTime;
       
-      if (error) {
-        logger.error({ error }, 'Backend connection test failed');
+      if (!profile) {
+        logger.error('Failed to ensure user profile exists');
         setState(prev => ({
           ...prev,
           status: {
             ...prev.status,
             connected: false,
-            error: error.message,
+            error: 'Failed to ensure user profile',
             latency,
           },
         }));
@@ -81,13 +91,15 @@ export const useBackendConnector = () => {
       }));
       return false;
     }
-  }, [user?.id]);
+  }, [user?.id, user?.email]);
 
   const startHeartbeat = useCallback(() => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current);
     }
 
+    // Use longer intervals in development to reduce resource usage
+    const heartbeatInterval = process.env.NODE_ENV === 'development' ? 60000 : 30000; // 1min dev, 30s prod
     heartbeatIntervalRef.current = setInterval(async () => {
       const isConnected = await checkConnection();
       
@@ -97,7 +109,7 @@ export const useBackendConnector = () => {
           reconnectAttempts: prev.reconnectAttempts + 1,
         }));
       }
-    }, 30000); // 30 seconds
+    }, heartbeatInterval);
   }, [checkConnection, state.reconnectAttempts]);
 
   const stopHeartbeat = useCallback(() => {
@@ -108,7 +120,16 @@ export const useBackendConnector = () => {
   }, []);
 
   const connect = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      logger.warn('useBackendConnector: Cannot connect - no user ID available');
+      return;
+    }
+
+    // Additional validation to ensure user ID is valid
+    if (user.id === 'undefined' || user.id === 'null' || !user.id.toString().trim()) {
+      logger.warn('useBackendConnector: Cannot connect - invalid user ID', { userId: user.id });
+      return;
+    }
 
     setState(prev => ({ ...prev, isConnecting: true }));
     

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { cn } from '@/shared/utils/styles.ts';
+import { cn } from '@/shared/utils/styles';
 
 export interface SimpleTooltipProps {
   content: string;

@@ -11,6 +11,7 @@ interface Toast {
 
 interface ToastContextType {
   showToast: (toast: Omit<Toast, 'id'>) => void;
+  toast: (toast: Omit<Toast, 'id'>) => void; // alias for compatibility
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -41,7 +42,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast, toast: showToast }}>
       {children}
       <div className="fixed bottom-0 right-0 p-4 space-y-4 z-50">
         <AnimatePresence>

@@ -1,4 +1,4 @@
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import type { ServiceResponse } from '@/core/types/service';
 
 export interface DataServiceConfig {
@@ -10,7 +10,7 @@ export interface DataServiceConfig {
 export const useDataService = () => {
   const fetchData = async (config: DataServiceConfig): Promise<ServiceResponse<any[]>> => {
     try {
-      const { data, error } = await select(config.table, config.select, config.filters);
+      const { data, error } = await selectData(config.table, config.select, config.filters);
       
       if (error) {
         return { success: false, error: error.message };

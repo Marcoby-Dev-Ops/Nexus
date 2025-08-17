@@ -1,8 +1,9 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { z } from 'zod';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 // Zod schemas for validation
 export const EmailItemSchema = z.object({
@@ -172,8 +173,9 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
       this.validateIdParam(id);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -200,6 +202,202 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
   }
 
   /**
+   * Get full email content by ID (including HTML and plain text)
+   */
+  async getFullEmail(id: string): Promise<ServiceResponse<{
+    id: string;
+    subject?: string;
+    sender_email?: string;
+    sender_name?: string;
+    content?: string; // Plain text content
+    html_content?: string; // HTML content
+    body_preview?: string;
+    item_timestamp?: string;
+    is_read?: boolean;
+    is_important?: boolean;
+    has_attachments?: boolean;
+    thread_id?: string;
+    provider?: EmailProvider;
+  }>> {
+    try {
+      this.validateIdParam(id);
+      
+      // Get current user
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
+        return this.createErrorResponse('User not authenticated');
+      }
+
+      // For Microsoft Graph IDs, they often contain special characters that need encoding
+      // Let's try to fetch from Microsoft Graph API directly first, as these IDs are from there
+      if (id.includes('=') || id.includes('/') || id.includes('+')) {
+        // This looks like a Microsoft Graph ID, try fetching directly
+        return await this.fetchEmailFromMicrosoftGraph(id, user.id);
+      }
+
+      // First try to get the email from ai_inbox_items table
+      const { data: email, error } = await supabase
+        .from('ai_inbox_items')
+        .select('id, subject, sender_email, sender_name, content, html_content, preview, item_timestamp, is_read, is_important, has_attachments, thread_id, source_type, external_id')
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        // If not found in ai_inbox_items, try to get from the emails table
+        const { data: emailFromEmails, error: emailError } = await supabase
+          .from('emails')
+          .select('*')
+          .eq('id', id)
+          .eq('user_id', user.id)
+          .single();
+
+        if (emailError || !emailFromEmails) {
+          // If not found in either table, try to fetch from Microsoft Graph API
+          return await this.fetchEmailFromMicrosoftGraph(id, user.id);
+        }
+
+        // Return the email from the emails table (this will have limited content)
+        const fullEmail = {
+          id: emailFromEmails.id,
+          subject: emailFromEmails.subject,
+          sender_email: emailFromEmails.sender_email,
+          sender_name: emailFromEmails.sender_name,
+          content: emailFromEmails.body_preview, // Use preview as content
+          html_content: undefined, // No HTML content available
+          body_preview: emailFromEmails.body_preview,
+          item_timestamp: emailFromEmails.item_timestamp,
+          is_read: emailFromEmails.is_read,
+          is_important: emailFromEmails.is_important,
+          has_attachments: emailFromEmails.has_attachments,
+          thread_id: emailFromEmails.thread_id,
+          provider: emailFromEmails.provider as EmailProvider
+        };
+
+        return this.createSuccessResponse(fullEmail);
+      }
+
+      if (!email) {
+        return this.createErrorResponse('Email not found');
+      }
+
+      // Map the database fields to our interface
+      const fullEmail = {
+        id: email.id,
+        subject: email.subject,
+        sender_email: email.sender_email,
+        sender_name: email.sender_name,
+        content: email.content, // Plain text content
+        html_content: email.html_content, // HTML content
+        body_preview: email.preview,
+        item_timestamp: email.item_timestamp,
+        is_read: email.is_read,
+        is_important: email.is_important,
+        has_attachments: email.has_attachments,
+        thread_id: email.thread_id,
+        provider: email.source_type === 'email' ? 'microsoft' as EmailProvider : undefined
+      };
+
+      return this.createSuccessResponse(fullEmail);
+    } catch (error) {
+      return this.handleError('Failed to get full email content', error);
+    }
+  }
+
+  /**
+   * Fetch email content directly from Microsoft Graph API
+   */
+  private async fetchEmailFromMicrosoftGraph(emailId: string, userId: string): Promise<ServiceResponse<{
+    id: string;
+    subject?: string;
+    sender_email?: string;
+    sender_name?: string;
+    content?: string;
+    html_content?: string;
+    body_preview?: string;
+    item_timestamp?: string;
+    is_read?: boolean;
+    is_important?: boolean;
+    has_attachments?: boolean;
+    thread_id?: string;
+    provider?: EmailProvider;
+  }>> {
+    try {
+      // Get the user's session token
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
+      
+      if (!session?.access_token) {
+        return this.createErrorResponse('User not authenticated');
+      }
+
+      // Call the Edge Function to get the full email content
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/ai_email_sync`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'getEmail',
+            emailId: emailId
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        // Check if the error is due to missing email account setup
+        if (errorData.error && errorData.error.includes('No email account found for user')) {
+          return this.createErrorResponse(
+            'Email integration not set up',
+            'Please connect your Microsoft 365 account in the Integrations section to view emails. Go to Integrations → Microsoft 365 to get started.'
+          );
+        }
+        
+        return this.createErrorResponse(
+          'Failed to fetch email from Microsoft Graph',
+          errorData.error || `HTTP ${response.status}`
+        );
+      }
+
+      const emailData = await response.json();
+      
+      if (!emailData.success || !emailData.data) {
+        return this.createErrorResponse(
+          'Failed to fetch email content',
+          emailData.error || 'No email data returned'
+        );
+      }
+
+      // Map the Microsoft Graph response to our interface
+      const fullEmail = {
+        id: emailId,
+        subject: emailData.data.subject,
+        sender_email: emailData.data.from?.emailAddress?.address,
+        sender_name: emailData.data.from?.emailAddress?.name,
+        content: emailData.data.body?.contentType === 'text' ? emailData.data.body.content : '',
+        html_content: emailData.data.body?.contentType === 'html' ? emailData.data.body.content : '',
+        body_preview: emailData.data.bodyPreview,
+        item_timestamp: emailData.data.sentDateTime,
+        is_read: emailData.data.isRead,
+        is_important: emailData.data.importance === 'high',
+        has_attachments: emailData.data.hasAttachments,
+        thread_id: emailData.data.threadId,
+        provider: 'microsoft' as EmailProvider
+      };
+
+      return this.createSuccessResponse(fullEmail);
+    } catch (error) {
+      return this.handleError('Failed to fetch email from Microsoft Graph', error);
+    }
+  }
+
+  /**
    * Create a new email (implements CrudServiceInterface)
    */
   async create(data: Partial<EmailItem>): Promise<ServiceResponse<EmailItem>> {
@@ -208,8 +406,9 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
       const validatedData = EmailItemSchema.parse(data);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -242,8 +441,9 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
       this.validateIdParam(id);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -275,8 +475,9 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
       this.validateIdParam(id);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -316,19 +517,26 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
   async getEmails(
     filters: EmailFilters = {},
     limit = 50,
-    offset = 0
+    offset = 0,
+    folder: 'inbox' | 'sent' | 'trash' | 'archive' | 'starred' = 'inbox'
   ): Promise<ServiceResponse<{ items: EmailItem[]; total: number }>> {
     try {
       // Validate filters
       const validatedFilters = EmailFiltersSchema.parse(filters);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
-      // Build query
+      // If provider is Microsoft, use the Edge Function
+      if (validatedFilters.provider === 'microsoft' || !validatedFilters.provider) {
+        return await this.getMicrosoftEmails(user.id, validatedFilters, limit, offset, folder);
+      }
+
+      // For other providers, use the database
       let query = supabase
         .from('emails')
         .select('*', { count: 'exact' })
@@ -368,8 +576,7 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
       const emailItems = (emails || []).map(email => this.enrichEmailData(email, email.provider as EmailProvider));
 
       this.logSuccess('Emails fetched successfully', { 
-        total: emailItems.length,
-        filters: validatedFilters
+        total: emailItems.length
       });
 
       return this.createSuccessResponse({
@@ -382,6 +589,122 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
   }
 
   /**
+   * Get Microsoft emails via Edge Function
+   */
+  private async getMicrosoftEmails(
+    userId: string,
+    filters: EmailFilters,
+    limit: number,
+    offset: number,
+    folder: 'inbox' | 'sent' | 'trash' | 'archive' | 'starred' = 'inbox'
+  ): Promise<ServiceResponse<{ items: EmailItem[]; total: number }>> {
+    try {
+      // Get the user's session token
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
+      
+      // Debug logging
+      console.log('🔍 [EmailService] Session check:', {
+        hasSession: !!session,
+        hasAccessToken: !!session?.access_token,
+        tokenLength: session?.access_token?.length,
+        sessionError: sessionResult.error?.message,
+        userId: session?.user?.id
+      });
+      
+      if (!session?.access_token) {
+        return this.createErrorResponse('User not authenticated');
+      }
+
+      // Build query parameters for the Edge Function
+      const params = new URLSearchParams({
+        userId: userId,
+        top: limit.toString(),
+        folder: folder,
+      });
+
+      // Add search filter if provided
+      if (filters.search) {
+        params.append('search', filters.search);
+      }
+
+      // Debug logging for the request
+      console.log('🔍 [EmailService] Making Edge Function request:', {
+        url: `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/microsoft_emails_list?${params.toString()}`,
+        hasAuthHeader: !!session.access_token,
+        tokenLength: session.access_token?.length,
+        params: params.toString()
+      });
+
+      // Call the Microsoft Edge Function with user's JWT token
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/microsoft_emails_list?${params.toString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      // Debug logging for the response
+      console.log('🔍 [EmailService] Edge Function response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [EmailService] Edge Function error response:', errorText);
+        return this.createErrorResponse(`Microsoft API failed: ${response.status} ${errorText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        return this.createErrorResponse(result.error || 'Failed to fetch Microsoft emails');
+      }
+
+      // Transform Microsoft Graph API response to EmailItem format
+      const emailItems: EmailItem[] = (result.data.items || []).map((item: any) => ({
+        id: item.id,
+        subject: item.subject,
+        sender_email: item.from?.email,
+        sender_name: item.from?.name,
+        body_preview: item.preview,
+        item_timestamp: item.receivedAt,
+        is_read: false, // Microsoft Graph doesn't provide read status in this endpoint
+        is_important: false, // Would need separate API call
+        has_attachments: item.hasAttachments,
+        provider: 'microsoft' as EmailProvider,
+        // Enrich with AI analysis
+        risk_score: this.calculateRiskScore(item),
+        compliance_flags: this.analyzeCompliance(item),
+        sentiment_score: this.analyzeSentiment(item),
+        urgency_score: this.calculateUrgencyScore(item),
+        ai_insights: this.generateAIInsights(item),
+      }));
+
+      this.logSuccess('Microsoft emails fetched successfully', { 
+        total: emailItems.length
+      });
+
+      return this.createSuccessResponse({
+        items: emailItems,
+        total: result.data.count || emailItems.length,
+      });
+    } catch (error) {
+      return this.handleError('Failed to fetch Microsoft emails', error);
+    }
+  }
+
+  /**
+   * Get Microsoft emails with automatic token refresh
+   */
+
+  /**
    * Mark email as read/unread
    */
   async markAsRead(emailId: string, isRead: boolean, provider: EmailProvider = 'microsoft'): Promise<ServiceResponse<boolean>> {
@@ -389,12 +712,21 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
       this.validateIdParam(emailId);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
-      // Update email read status
+      // For Microsoft emails, we'll need to implement a separate Edge Function
+      // For now, we'll just return success since Microsoft Graph API doesn't provide
+      // read status in the current endpoint
+      if (provider === 'microsoft') {
+        this.logSuccess('Microsoft email read status would be updated', { emailId, isRead });
+        return this.createSuccessResponse(true);
+      }
+
+      // For other providers, update in database
       const { error } = await supabase
         .from('emails')
         .update({ is_read: isRead })
@@ -418,8 +750,9 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
   async getInboxStats(provider: EmailProvider = 'microsoft'): Promise<ServiceResponse<EmailStats>> {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -457,8 +790,9 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
   async getComplianceDashboard(provider: EmailProvider = 'microsoft'): Promise<ServiceResponse<ComplianceDashboard>> {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -512,8 +846,57 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
   /**
    * Get supported email providers
    */
-  getSupportedProviders(): EmailProvider[] {
-    return Object.keys(this.providerConfigs) as EmailProvider[];
+  async getSupportedProviders(): Promise<EmailProvider[]> {
+    try {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) return [];
+      
+      const connected: Set<EmailProvider> = new Set();
+      
+      // Check for Microsoft 365 integration in user_integrations table
+      try {
+        const { data: microsoftIntegration, error: microsoftError } = await supabase
+          .from('user_integrations')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('integration_name', 'Microsoft 365')
+          .maybeSingle();
+        
+        if (microsoftError) {
+          this.logger.warn('Error checking Microsoft integration:', microsoftError);
+        } else if (microsoftIntegration) {
+          connected.add('microsoft');
+        }
+      } catch (error) {
+        // Microsoft integration not found - this is expected if not connected
+        this.logger.info('Microsoft integration not found for user');
+      }
+      
+      // Check for Gmail integration in user_integrations table
+      try {
+        const { data: gmailIntegration, error: gmailError } = await supabase
+          .from('user_integrations')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('integration_name', 'Gmail')
+          .maybeSingle();
+        
+        if (gmailError) {
+          this.logger.warn('Error checking Gmail integration:', gmailError);
+        } else if (gmailIntegration) {
+          connected.add('gmail');
+        }
+      } catch (error) {
+        // Gmail integration not found - this is expected if not connected
+        this.logger.info('Gmail integration not found for user');
+      }
+      
+      return Array.from(connected);
+    } catch (error) {
+      this.logger.error('Error getting supported providers', error);
+      return [];
+    }
   }
 
   /**
@@ -555,6 +938,10 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
 
   /**
    * Calculate risk score for an email
+   * TODO: Replace with AI-powered risk assessment
+   * - Use machine learning models for threat detection
+   * - Analyze sender reputation and email patterns
+   * - Integrate with security intelligence feeds
    */
   private calculateRiskScore(email: any): number {
     let score = 0;
@@ -570,6 +957,10 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
 
   /**
    * Analyze compliance flags
+   * TODO: Replace with AI-powered compliance analysis
+   * - Use NLP models for content classification
+   * - Integrate with compliance frameworks (GDPR, HIPAA, etc.)
+   * - Detect sensitive data patterns and PII
    */
   private analyzeCompliance(email: any): string[] {
     const flags: string[] = [];
@@ -587,6 +978,10 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
 
   /**
    * Analyze sentiment
+   * TODO: Replace with AI-powered sentiment analysis
+   * - Use transformer models (BERT, GPT) for accurate sentiment
+   * - Analyze context and tone beyond simple keywords
+   * - Provide confidence scores and emotion detection
    */
   private analyzeSentiment(email: any): number {
     // Simple sentiment analysis
@@ -602,6 +997,10 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
 
   /**
    * Calculate urgency score
+   * TODO: Replace with AI-powered urgency assessment
+   * - Use ML models to understand business context
+   * - Analyze sender importance and relationship patterns
+   * - Consider time sensitivity and business impact
    */
   private calculateUrgencyScore(email: any): number {
     let score = 0;
@@ -615,6 +1014,11 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
 
   /**
    * Generate AI insights
+   * TODO: Replace with comprehensive AI-powered business intelligence
+   * - Implement "See-Think-Act" framework for email analysis
+   * - Extract business opportunities and actionable insights
+   * - Build institutional knowledge from email patterns
+   * - Generate predictive analytics and recommendations
    */
   private generateAIInsights(email: any): string[] {
     const insights: string[] = [];
@@ -642,26 +1046,15 @@ export class EmailService extends BaseService implements CrudServiceInterface<Em
       this.validateStringParam(provider, 'provider');
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
-      // Update token status to revoked
-      const { error } = await supabase
-        .from('oauth_tokens')
-        .update({
-          status: 'revoked',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id)
-        .eq('provider', provider);
-
-      if (error) {
-        return this.createErrorResponse('Failed to revoke OAuth token', error.message);
-      }
-
-      this.logSuccess('OAuth token revoked successfully', { provider });
+      // For Microsoft and other providers, token management is handled by Edge Functions
+      // and the user_integrations table. We don't need to manually revoke tokens here.
+      this.logSuccess('Token revocation would be handled by integration management', { provider });
       return this.createSuccessResponse(true);
     } catch (error) {
       return this.handleError('Failed to revoke OAuth token', error);

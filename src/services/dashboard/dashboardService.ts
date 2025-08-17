@@ -3,10 +3,8 @@
  * Provides centralized dashboard functionality and metrics
  */
 
-import { select, selectOne, selectWithOptions } from '@/lib/supabase-compatibility';
-import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
-import { BaseService } from '@/core/services/BaseService';
-import type { ServiceResponse } from '@/core/services/BaseService';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { selectData, selectOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // Enhanced Dashboard Types
@@ -61,72 +59,64 @@ export interface DashboardData {
  * Extends BaseService for consistent error handling and logging
  */
 export class DashboardService extends BaseService {
-  private queryWrapper = new DatabaseQueryWrapper();
-
   /**
    * Get enhanced dashboard data for the EnhancedDashboard component
    */
-  async getEnhancedDashboardData(): Promise<ServiceResponse<{ metrics: DashboardMetrics; activities: DashboardActivity[] }>> {
+  async getEnhancedDashboardData(userId: string): Promise<ServiceResponse<{ metrics: DashboardMetrics; activities: DashboardActivity[] }>> {
     return this.executeDbOperation(async () => {
-      // Mock enhanced dashboard data
+      // Get user integrations for data sources using API client
+      const { data: integrations, error: integrationsError } = await selectData<any>('user_integrations', '*', { user_id: userId });
+
+      if (integrationsError) {
+        this.logger.warn('Failed to fetch user integrations for enhanced dashboard', { error: integrationsError, userId });
+        // Continue with empty integrations rather than failing completely
+      }
+
+      // AI insights are currently disabled due to RLS policy issues
+      // Using fallback data until the table permissions are resolved
+      const aiInsights: any[] = [];
+
+      // Calculate real metrics based on actual data
       const metrics: DashboardMetrics = {
         think: {
-          ideasCaptured: 42,
-          collaborationSessions: 15,
-          innovationScore: 85,
-          crossDeptConnections: 8
+          ideasCaptured: 0, // Removed business_profiles dependency
+          collaborationSessions: 0, // Removed business_profiles dependency
+          innovationScore: 0, // Removed business_profiles dependency
+          crossDeptConnections: 0 // Removed business_profiles dependency
         },
         see: {
-          dataSourcesConnected: 12,
-          realTimeInsights: 156,
-          predictiveAccuracy: 92,
-          alertsGenerated: 3
+          dataSourcesConnected: integrations?.length || 0,
+          realTimeInsights: aiInsights?.length || 0,
+          predictiveAccuracy: 0, // Removed business_profiles dependency
+          alertsGenerated: 0 // Removed business_profiles dependency
         },
         act: {
-          automationsRunning: 7,
-          workflowsOptimized: 23,
-          timeSaved: 45,
-          processEfficiency: 78
+          automationsRunning: 0, // Removed business_profiles dependency
+          workflowsOptimized: 0, // Removed business_profiles dependency
+          timeSaved: 0, // Removed business_profiles dependency
+          processEfficiency: 0 // Removed business_profiles dependency
         }
       };
 
-      const activities: DashboardActivity[] = [
-        {
-          id: '1',
-          type: 'think',
-          message: 'New innovation idea captured',
-          timestamp: new Date().toISOString(),
-          status: 'success',
-          priority: 'medium'
-        },
-        {
-          id: '2',
-          type: 'see',
-          message: 'Real-time insight generated',
-          timestamp: new Date(Date.now() - 300000).toISOString(),
-          status: 'success',
-          priority: 'high'
-        },
-        {
-          id: '3',
-          type: 'act',
-          message: 'Automation workflow completed',
-          timestamp: new Date(Date.now() - 600000).toISOString(),
-          status: 'success',
-          priority: 'medium'
-        },
-        {
-          id: '4',
-          type: 'think',
-          message: 'Cross-department collaboration initiated',
-          timestamp: new Date(Date.now() - 900000).toISOString(),
-          status: 'warning',
-          priority: 'low'
-        }
-      ];
+      // Generate real activities from integrations and AI insights
+      const activities: DashboardActivity[] = [];
+      
+      // Add activities based on integrations
+      if (integrations && integrations.length > 0) {
+        integrations.slice(0, 3).forEach((integration, index) => {
+          activities.push({
+            id: `integration-${index}`,
+            type: 'integration',
+            message: `Connected to ${integration.provider_name || 'external service'}`,
+            timestamp: integration.created_at || new Date().toISOString(),
+            status: 'success',
+            priority: 'medium'
+          });
+        });
+      }
 
       return { data: { metrics, activities }, error: null };
-    }, 'get enhanced dashboard data');
+    }, `get enhanced dashboard data for user ${userId}`);
   }
 
   /**
@@ -135,50 +125,65 @@ export class DashboardService extends BaseService {
   async getDashboardData(userId?: string): Promise<ServiceResponse<DashboardData>> {
     return this.executeDbOperation(async () => {
       if (!userId) {
+        this.logger.warn('getDashboardData called without userId');
         return { data: null, error: 'User ID required' };
       }
 
-      // Test database connection with proper authentication
-      try {
-        await select('user_profiles', 'id');
-      } catch (dbError) {
-        logger.error('Database connection test failed:', dbError);
-        return { data: null, error: dbError };
+      // Get user integrations for data sources using API client
+      const { data: integrations, error: integrationsError } = await selectData<any>('user_integrations', '*', { user_id: userId });
+
+      if (integrationsError) {
+        this.logger.warn('Failed to fetch user integrations for dashboard', { error: integrationsError, userId });
+        // Continue with empty integrations rather than failing completely
       }
 
-      // Mock dashboard data for now
-      const mockData: DashboardData = {
-        metrics: {
-          totalUsers: 1250,
-          activeUsers: 890,
-          totalRevenue: 125000,
-          growthRate: 15.5
-        },
-        recentActivity: [
-          {
-            id: '1',
-            type: 'user_registration',
-            message: 'New user registered',
-            timestamp: new Date().toISOString()
-          },
-          {
-            id: '2',
-            type: 'revenue_milestone',
-            message: 'Revenue milestone reached',
-            timestamp: new Date(Date.now() - 3600000).toISOString()
-          }
-        ],
-        alerts: [
-          {
-            id: '1',
-            type: 'warning',
-            message: 'System performance alert',
-            timestamp: new Date().toISOString()
-          }
-        ]
+      // Recent activity from AI insights is currently disabled due to RLS policy issues
+      // Using fallback data until the table permissions are resolved
+      const recentActivity: any[] = [];
+
+      // Calculate real metrics
+      const metrics: LegacyDashboardMetrics = {
+        totalUsers: 1, // Single user dashboard
+        activeUsers: 1,
+        totalRevenue: 0, // Placeholder, no business_profiles data
+        growthRate: 0 // Placeholder, no business_profiles data
       };
 
-      return { data: mockData, error: null };
+      // Convert recent activity to dashboard format
+      const dashboardActivity = recentActivity?.map((activity, index) => ({
+        id: activity.id || `activity-${index}`,
+        type: 'ai_insight',
+        message: activity.title || 'AI insight generated',
+        timestamp: activity.created_at || new Date().toISOString()
+      })) || [];
+
+      // Generate alerts based on business profile status
+      const alerts: any[] = [];
+      if (false) { // No business_profiles data
+        alerts.push({
+          id: 'profile-incomplete',
+          type: 'warning',
+          message: 'Complete your business profile for better insights',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      if (false) { // No business_profiles data
+        alerts.push({
+          id: 'low-confidence',
+          type: 'info',
+          message: 'Consider providing more business information for better analysis',
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      const dashboardData: DashboardData = {
+        metrics,
+        recentActivity: dashboardActivity,
+        alerts
+      };
+
+      return { data: dashboardData, error: null };
     }, `get dashboard data for user ${userId}`);
   }
 
@@ -187,54 +192,68 @@ export class DashboardService extends BaseService {
    */
   async getUserDashboard(userId: string): Promise<ServiceResponse<any>> {
     return this.executeDbOperation(async () => {
-      if (!userId) {
-        return { data: null, error: 'User ID required' };
+      // Validate userId parameter
+      if (!userId || userId === 'undefined' || userId === 'null') {
+        this.logger.warn('getUserDashboard called with invalid userId', { userId });
+        return { data: null, error: 'Invalid user ID' };
       }
 
-      // Get user profile
-      const { data: userProfile, error: profileError } = await selectOne('user_profiles', 'id', userId);
-      
-      if (profileError) {
-        return { data: null, error: profileError };
-      }
+      // Get comprehensive user data using API client
+      const [userProfileResult, businessProfileResult, integrationsResult] = await Promise.all([
+        selectOne<any>('user_profiles', userId),
+        selectOne<any>('business_profiles', userId),
+        selectData<any>('user_integrations', '*', { user_id: userId })
+      ]);
 
-      // Get user-specific metrics
-      const userMetrics = {
-        totalTasks: 0,
-        completedTasks: 0,
-        pendingTasks: 0,
-        recentActivity: []
+      return {
+        data: {
+          user: userProfileResult.data,
+          business: businessProfileResult.data,
+          integrations: integrationsResult.data || [],
+          metrics: {
+            profileCompletion: businessProfileResult.data?.assessment_completion_percentage || 0,
+            activeIntegrations: integrationsResult.data?.length || 0,
+            lastActivity: userProfileResult.data?.updated_at || new Date().toISOString()
+          }
+        },
+        error: null
       };
-
-      return { data: { userProfile, metrics: userMetrics }, error: null };
     }, `get user dashboard for user ${userId}`);
   }
 
   /**
-   * Get company-specific dashboard data
+   * Get company dashboard data
    */
   async getCompanyDashboard(companyId: string): Promise<ServiceResponse<any>> {
     return this.executeDbOperation(async () => {
-      if (!companyId) {
-        return { data: null, error: 'Company ID required' };
-      }
-
-      // Get company profile
-      const { data: companyProfile, error: profileError } = await selectOne('companies', 'id', companyId);
+      // Get company data using API client
+      const { data: companyData, error: companyError } = await selectOne<any>('companies', companyId);
       
-      if (profileError) {
-        return { data: null, error: profileError };
+      if (companyError) {
+        this.logger.error('Failed to fetch company data for dashboard', { error: companyError, companyId });
+        return { data: null, error: companyError };
       }
 
-      // Get company-specific metrics
-      const companyMetrics = {
-        totalUsers: 0,
-        totalRevenue: 0,
-        activeProjects: 0,
-        recentActivity: []
-      };
+      // Get company users using API client
+      const { data: companyUsers, error: usersError } = await selectData<any>('user_profiles', '*', { company_id: companyId });
+      
+      if (usersError) {
+        this.logger.warn('Failed to fetch company users for dashboard', { error: usersError, companyId });
+        // Continue with empty users rather than failing completely
+      }
 
-      return { data: { companyProfile, metrics: companyMetrics }, error: null };
+      return {
+        data: {
+          company: companyData,
+          users: companyUsers || [],
+          metrics: {
+            totalUsers: companyUsers?.length || 0,
+            activeUsers: companyUsers?.length || 0,
+            lastActivity: companyData?.updated_at || new Date().toISOString()
+          }
+        },
+        error: null
+      };
     }, `get company dashboard for company ${companyId}`);
   }
 }

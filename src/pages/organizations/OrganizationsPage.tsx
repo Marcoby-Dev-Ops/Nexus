@@ -10,7 +10,7 @@ import { Building2, Plus, Users, Settings, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const OrganizationsPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const { createOrganization } = useOrganization();
   const {
@@ -21,11 +21,28 @@ export const OrganizationsPage: React.FC = () => {
   } = useOrganizationStore();
   const [showCreateForm, setShowCreateForm] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadOrganizations();
+  // Check if user has valid authentication session
+  const hasValidSession = () => {
+    try {
+      const sessionData = localStorage.getItem('authentik_session');
+      if (!sessionData) return false;
+      
+      const session = JSON.parse(sessionData);
+      return !!(session?.accessToken);
+    } catch {
+      return false;
     }
-  }, [user]);
+  };
+
+  useEffect(() => {
+    // Wait for auth to be fully loaded and user to be authenticated
+    if (authLoading) return;
+    if (!user?.id) return;
+    if (!isAuthenticated) return;
+    if (!hasValidSession()) return;
+    
+    loadOrganizations();
+  }, [user?.id, authLoading, isAuthenticated]);
 
   const loadOrganizations = async () => {
     if (!user) return;
@@ -102,11 +119,11 @@ export const OrganizationsPage: React.FC = () => {
                   <Building2 className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">{org.name}</CardTitle>
                 </div>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to={`/organizations/${org.id}`}>
+                <Link to={`/organizations/${org.id}`}>
+                  <Button variant="ghost" size="sm" className="px-3 py-2">
                     <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </Button>
+                  </Button>
+                </Link>
               </div>
             </CardHeader>
             <CardContent>
@@ -122,12 +139,14 @@ export const OrganizationsPage: React.FC = () => {
                   <span>{org.member_count || 0} members</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Button variant="outline" size="sm" asChild>
-                    <Link to={`/organizations/${org.id}/settings`}>
-                      <Settings className="h-4 w-4 mr-1" />
-                      Settings
-                    </Link>
-                  </Button>
+                  <Link to={`/organizations/${org.id}/settings`}>
+                    <Button variant="outline" size="sm" className="px-3 py-2">
+                      <div className="flex items-center">
+                        <Settings className="h-4 w-4 mr-1" />
+                        Settings
+                      </div>
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </CardContent>

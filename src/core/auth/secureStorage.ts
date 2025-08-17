@@ -5,8 +5,8 @@
  */
 
 import { STORAGE_CONFIG } from '@/core/constants/security';
-import { supabase } from '@/lib/supabase';
-import { supabaseService } from '@/core/services/SupabaseService';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 // Simple encryption/decryption using Web Crypto API
 class SecureStorage {
@@ -28,7 +28,8 @@ class SecureStorage {
   private async logStorageOperation(operation: string, key: string, success: boolean, error?: any): Promise<void> {
     try {
       // Get current session context
-      const { data: { session } } = await supabase.auth.getSession();
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
       
       const logData = {
         operation,
@@ -56,13 +57,14 @@ class SecureStorage {
    */
   private async validateSession(): Promise<boolean> {
     try {
-      const { session, error } = await supabaseService.sessionUtils.getSession();
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
       
-      if (error || !session) {
+      if (sessionResult.error || !session) {
         return false;
       }
 
-      return supabaseService.sessionUtils.isSessionValid(session);
+      return authentikAuthService.isSessionValid(session);
     } catch (error) {
       return false;
     }
@@ -488,7 +490,8 @@ class SecureStorage {
   public async syncStorageMetadata(): Promise<void> {
     try {
       const stats = await this.getStorageStats();
-      const { data: { session } } = await supabase.auth.getSession();
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
       
       await supabaseService.callEdgeFunction('store_storage_metadata', {
         userId: session?.user?.id || 'anonymous',

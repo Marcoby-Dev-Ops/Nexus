@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Separator } from '@/shared/components/ui/Separator';
 import { FileText, Shield, Users, CreditCard, Zap } from 'lucide-react';
 

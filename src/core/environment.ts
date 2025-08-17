@@ -4,6 +4,22 @@
  */
 
 interface EnvironmentConfig {
+  database: {
+    url: string;
+    host: string;
+    port: number;
+    name: string;
+    user: string;
+    password: string;
+  };
+  postgres: {
+    url: string;
+    host: string;
+    port: number;
+    database: string;
+    user: string;
+    password: string;
+  };
   supabase: {
     url: string;
     anonKey: string;
@@ -23,10 +39,11 @@ interface EnvironmentConfig {
     publishableKey: string;
     webhookSecret: string;
   };
-  integrations: {
-    hubspot: {
-      clientId: string;
-    };
+      integrations: {
+      hubspot: {
+        clientId: string;
+        clientSecret: string;
+      };
     slack: {
       clientId: string;
     };
@@ -41,7 +58,7 @@ interface EnvironmentConfig {
     isTest: boolean;
   };
   features: {
-    chatV2: boolean;
+    // Feature flags can be added here as needed
   };
   app: {
     version: string;
@@ -71,24 +88,42 @@ function requireEnvVar(name: string, value: string | undefined): string {
 
 /**
  * Helper to get environment variables from either import.meta.env (frontend) or process.env (backend)
+ * Follows industry standards for environment variable access
  */
 function getEnvVar(
   names: string[],
   fallback: string = ''
 ): string | undefined {
-  // Try import.meta.env (Vite/frontend)
+  // Try import.meta.env (Vite/frontend) - standard for React apps
   if (typeof import.meta !== 'undefined' && import.meta.env) {
     for (const name of names) {
       if (import.meta.env[name]) return import.meta.env[name];
     }
   }
-  // Try process.env (Node.js/backend)
+  
+  // Try process.env (Node.js/backend) - standard for Node.js
   if (typeof process !== 'undefined' && process.env) {
     for (const name of names) {
       if (process.env[name]) return process.env[name];
     }
   }
+  
   return fallback;
+}
+
+/**
+ * Universal environment variable accessor
+ * Works in both frontend and backend environments
+ */
+export function getUniversalEnvVar(name: string): string | undefined {
+  return getEnvVar([name]);
+}
+
+/**
+ * Get environment variable with fallback
+ */
+export function getEnvVarWithFallback(name: string, fallback: string): string {
+  return getEnvVar([name], fallback);
 }
 
 /**
@@ -97,19 +132,26 @@ function getEnvVar(
 export function getEnvironmentConfig(): EnvironmentConfig {
   try {
     const config: EnvironmentConfig = {
+      database: {
+        url: getEnvVar(['DATABASE_URL']) || 'postgresql://postgres:postgres@localhost:5433/vector_db',
+        host: getEnvVar(['DB_HOST']) || 'localhost',
+        port: Number(getEnvVar(['DB_PORT'])) || 5433,
+        name: getEnvVar(['DB_NAME']) || 'vector_db',
+        user: getEnvVar(['DB_USER']) || 'postgres',
+        password: getEnvVar(['DB_PASSWORD']) || 'postgres',
+      },
+      postgres: {
+        url: getEnvVar(['VITE_POSTGRES_URL', 'POSTGRES_URL']) || 'postgresql://postgres:postgres@localhost:5433/vector_db',
+        host: getEnvVar(['VITE_POSTGRES_HOST', 'POSTGRES_HOST']) || 'localhost',
+        port: Number(getEnvVar(['VITE_POSTGRES_PORT', 'POSTGRES_PORT'])) || 5433,
+        database: getEnvVar(['VITE_POSTGRES_DB', 'POSTGRES_DB']) || 'vector_db',
+        user: getEnvVar(['VITE_POSTGRES_USER', 'POSTGRES_USER']) || 'postgres',
+        password: getEnvVar(['VITE_POSTGRES_PASSWORD', 'POSTGRES_PASSWORD']) || 'postgres',
+      },
       supabase: {
-        url: requireEnvVar(
-          'SUPABASE_URL',
-          getEnvVar(['VITE_SUPABASE_URL', 'SUPABASE_URL'])
-        ),
-        anonKey: requireEnvVar(
-          'SUPABASE_ANON_KEY',
-          getEnvVar(['VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY'])
-        ),
-        serviceRoleKey: requireEnvVar(
-          'SUPABASE_SERVICE_ROLE_KEY',
-          getEnvVar(['VITE_SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SERVICE_ROLE_KEY'])
-        ),
+        url: getEnvVar(['VITE_SUPABASE_URL', 'SUPABASE_URL']) || '',
+        anonKey: getEnvVar(['VITE_SUPABASE_ANON_KEY', 'SUPABASE_ANON_KEY']) || '',
+        serviceRoleKey: getEnvVar(['VITE_SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SERVICE_ROLE_KEY']) || '',
       },
       google: {
         mapsApiKey:
@@ -134,6 +176,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
       integrations: {
         hubspot: {
           clientId: getEnvVar(['VITE_HUBSPOT_CLIENT_ID', 'HUBSPOT_CLIENT_ID']) || '',
+          clientSecret: getEnvVar(['VITE_HUBSPOT_CLIENT_SECRET', 'HUBSPOT_CLIENT_SECRET']) || '',
         },
         slack: {
           clientId: getEnvVar(['VITE_SLACK_CLIENT_ID', 'SLACK_CLIENT_ID']) || '',
@@ -151,7 +194,7 @@ export function getEnvironmentConfig(): EnvironmentConfig {
         isTest: getEnvVar(['NODE_ENV']) === 'test',
       },
       features: {
-        chatV2: getEnvVar(['VITE_CHAT_V2']) === '1',
+      
       },
       app: {
         version: getEnvVar(['VITE_APP_VERSION', 'APP_VERSION']) || '1.0.0',
@@ -160,21 +203,23 @@ export function getEnvironmentConfig(): EnvironmentConfig {
       },
     };
 
-    // Validate Supabase URL format
-    try {
-      new URL(config.supabase.url);
-    } catch {
-      throw new EnvironmentError(
-        'SUPABASE_URL must be a valid URL (e.g., https: //your-project.supabase.co)'
-      );
-    }
+    // Remove Supabase environment validation
+    // if (config.supabase.url && config.supabase.url.trim() !== '') {
+    //   try {
+    //     new URL(config.supabase.url);
+    //   } catch {
+    //     throw new EnvironmentError(
+    //       'SUPABASE_URL must be a valid URL (e.g., https://your-project.supabase.co)'
+    //     );
+    //   }
 
-    // Validate Supabase anon key format (basic check)
-    if (config.supabase.anonKey.length < 100) {
-      throw new EnvironmentError(
-        'SUPABASE_ANON_KEY appears to be invalid. Please check your Supabase project settings.'
-      );
-    }
+    //   // Validate Supabase anon key format (basic check) - only if URL is provided
+    //   if (config.supabase.anonKey && config.supabase.anonKey.length < 100) {
+    //     throw new EnvironmentError(
+    //       'SUPABASE_ANON_KEY appears to be invalid. Please check your Supabase project settings.'
+    //     );
+    //   }
+    // }
 
     return config;
   } catch (error) {
@@ -185,59 +230,63 @@ export function getEnvironmentConfig(): EnvironmentConfig {
   }
 }
 
+// Lazy initialization to avoid build-time issues
+let _env: EnvironmentConfig | null = null;
+
 /**
- * Environment configuration singleton
+ * Environment configuration singleton - lazy loaded
  */
-export const env = getEnvironmentConfig();
+export function getEnv(): EnvironmentConfig {
+  if (!_env) {
+    _env = getEnvironmentConfig();
+  }
+  return _env;
+}
 
 /**
  * Type-safe environment checks
  */
-export const isDevelopment = env.development.isDevelopment;
-export const isProduction = env.development.isProduction;
-export const isTest = env.development.isTest;
+export function getIsDevelopment(): boolean {
+  return getEnv().development.isDevelopment;
+}
+
+export function getIsProduction(): boolean {
+  return getEnv().development.isProduction;
+}
+
+export function getIsTest(): boolean {
+  return getEnv().development.isTest;
+}
 
 /**
  * Production logging utility that only logs in development
  */
 export const devLog = {
   info: (message: string, data?: any) => {
-    if (isDevelopment && data) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.log(`[DEV] ${message}`, data);
-    } else if (isDevelopment) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.log(`[DEV] ${message}`);
+    if (getIsDevelopment() && data) {
+      // eslint-disable-next-line no-console
+      console.log(`[DEV] ${message}`, data);
+    } else if (getIsDevelopment()) {
+      // eslint-disable-next-line no-console
+      console.log(`[DEV] ${message}`);
     }
   },
   warn: (message: string, data?: any) => {
-    if (isDevelopment && data) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.warn(`[DEV] ${message}`, data);
-    } else if (isDevelopment) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.warn(`[DEV] ${message}`);
+    if (getIsDevelopment() && data) {
+      // eslint-disable-next-line no-console
+      console.warn(`[DEV] ${message}`, data);
+    } else if (getIsDevelopment()) {
+      // eslint-disable-next-line no-console
+      console.warn(`[DEV] ${message}`);
     }
   },
   error: (message: string, error?: any) => {
-    if (isDevelopment && error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error(`[DEV] ${message}`, error);
-    } else if (isDevelopment) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error(`[DEV] ${message}`);
+    if (getIsDevelopment() && error) {
+      // eslint-disable-next-line no-console
+      console.error(`[DEV] ${message}`, error);
+    } else if (getIsDevelopment()) {
+      // eslint-disable-next-line no-console
+      console.error(`[DEV] ${message}`);
     }
   },
 };
@@ -262,41 +311,115 @@ export function validateEnvironment(): void {
  * This provides a centralized way to access environment variables
  */
 export const environment = {
+  // Database
+  get DATABASE_URL() { return getEnv().database.url; },
+  get DB_HOST() { return getEnv().database.host; },
+  get DB_PORT() { return getEnv().database.port; },
+  get DB_NAME() { return getEnv().database.name; },
+  get DB_USER() { return getEnv().database.user; },
+  get DB_PASSWORD() { return getEnv().database.password; },
+  
   // Supabase
-  SUPABASEURL: env.supabase.url,
-  SUPABASEANON_KEY: env.supabase.anonKey,
-  SUPABASESERVICE_ROLE_KEY: env.supabase.serviceRoleKey,
+  get supabase() { 
+    return {
+      url: getEnv().supabase.url,
+      anonKey: getEnv().supabase.anonKey,
+      serviceRoleKey: getEnv().supabase.serviceRoleKey,
+    };
+  },
   
   // Google
-  GOOGLEMAPS_API_KEY: env.google.mapsApiKey,
-  GOOGLEPLACES_API_KEY: env.google.placesApiKey,
-  GOOGLECLIENT_ID: env.google.clientId,
-  GOOGLECLIENT_SECRET: env.google.clientSecret,
+  get GOOGLEMAPS_API_KEY() { return getEnv().google.mapsApiKey; },
+  get GOOGLEPLACES_API_KEY() { return getEnv().google.placesApiKey; },
+  get GOOGLECLIENT_ID() { return getEnv().google.clientId; },
+  get GOOGLECLIENT_SECRET() { return getEnv().google.clientSecret; },
   
   // OpenAI
-  OPENAIAPI_KEY: env.openai.apiKey,
-  MONTHLYAI_BUDGET: env.openai.monthlyBudget,
+  get OPENAIAPI_KEY() { return getEnv().openai.apiKey; },
+  get MONTHLYAI_BUDGET() { return getEnv().openai.monthlyBudget; },
   
   // Stripe
-  STRIPEPUBLISHABLE_KEY: env.stripe.publishableKey,
-  STRIPEWEBHOOK_SECRET: env.stripe.webhookSecret,
+  get STRIPEPUBLISHABLE_KEY() { return getEnv().stripe.publishableKey; },
+  get STRIPEWEBHOOK_SECRET() { return getEnv().stripe.webhookSecret; },
   
   // Integrations
-  HUBSPOTCLIENT_ID: env.integrations.hubspot.clientId,
-  SLACKCLIENT_ID: env.integrations.slack.clientId,
-  PAYPALCLIENT_ID: env.integrations.paypal.clientId,
-  PAYPALENV: env.integrations.paypal.environment,
+  get HUBSPOTCLIENT_ID() { return getEnv().integrations.hubspot.clientId; },
+  get SLACKCLIENT_ID() { return getEnv().integrations.slack.clientId; },
+  get PAYPALCLIENT_ID() { return getEnv().integrations.paypal.clientId; },
+  get PAYPALENV() { return getEnv().integrations.paypal.environment; },
   
   // Features
-  CHATV2: env.features.chatV2,
+  // Feature getters can be added here as needed
   
   // App
-  APPVERSION: env.app.version,
-  BUILDTIME: env.app.buildTime,
-  BASEURL: env.app.baseUrl,
+  get APPVERSION() { return getEnv().app.version; },
+  get BUILDTIME() { return getEnv().app.buildTime; },
+  get BASEURL() { return getEnv().app.baseUrl; },
   
   // Development
-  DEV: isDevelopment,
-  PROD: isProduction,
-  TEST: isTest,
-}; 
+  get DEV() { return getIsDevelopment(); },
+  get PROD() { return getIsProduction(); },
+  get TEST() { return getIsTest(); },
+};
+
+// Backward compatibility - export env as a function that returns the environment
+export const env = (): EnvironmentConfig => ({
+  // Database
+  database: {
+    url: getEnv().database.url || '',
+    host: getEnv().database.host || '',
+    port: getEnv().database.port || 5432,
+    name: getEnv().database.name || '',
+    user: getEnv().database.user || '',
+    password: getEnv().database.password || '',
+  },
+  postgres: {
+    url: getEnv().postgres.url || '',
+    host: getEnv().postgres.host || '',
+    port: getEnv().postgres.port || 5432,
+    database: getEnv().postgres.database || '',
+    user: getEnv().postgres.user || '',
+    password: getEnv().postgres.password || '',
+  },
+  // Supabase configuration removed - using PostgreSQL directly
+  google: {
+    mapsApiKey: getEnv().google.mapsApiKey || '',
+    placesApiKey: getEnv().google.placesApiKey || '',
+    clientId: getEnv().google.clientId || '',
+    clientSecret: getEnv().google.clientSecret || '',
+  },
+  openai: {
+    apiKey: getEnv().openai.apiKey || '',
+    monthlyBudget: getEnv().openai.monthlyBudget || 0,
+  },
+  stripe: {
+    publishableKey: getEnv().stripe.publishableKey || '',
+    webhookSecret: getEnv().stripe.webhookSecret || '',
+  },
+  integrations: {
+    hubspot: {
+      clientId: getEnv().integrations.hubspot.clientId || '',
+      clientSecret: getEnv().integrations.hubspot.clientSecret || '',
+    },
+    slack: {
+      clientId: getEnv().integrations.slack.clientId || '',
+    },
+    paypal: {
+      clientId: getEnv().integrations.paypal.clientId || '',
+      environment: getEnv().integrations.paypal.environment || 'sandbox',
+    },
+  },
+  development: {
+    isDevelopment: getEnv().development.isDevelopment || false,
+    isProduction: getEnv().development.isProduction || false,
+    isTest: getEnv().development.isTest || false,
+  },
+  features: {
+    // Feature flags can be added here as needed
+  },
+  app: {
+    version: getEnv().app.version || '1.0.0',
+    buildTime: getEnv().app.buildTime || '',
+    baseUrl: getEnv().app.baseUrl || '',
+  },
+}); 

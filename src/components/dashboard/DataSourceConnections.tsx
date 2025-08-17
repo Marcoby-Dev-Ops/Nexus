@@ -17,7 +17,7 @@ import {
   AlertTriangle, 
   Star 
 } from 'lucide-react';
-import { useLiveBusinessHealth } from '../../hooks/useLiveBusinessHealth';
+import { useDataConnectivityHealth } from '@/hooks/dashboard/useDataConnectivityHealth';
 
 interface DataSourceConnectionsProps {
   className?: string;
@@ -26,7 +26,7 @@ interface DataSourceConnectionsProps {
 const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({ 
   className = '' 
 }) => {
-  const { healthData, loading, refresh } = useLiveBusinessHealth();
+  const { healthData, loading, refresh } = useDataConnectivityHealth();
   const [connectingTo, setConnectingTo] = useState<string | null>(null);
 
   const handleConnect = async (sourceId: string) => {
@@ -127,7 +127,10 @@ const DataSourceConnections: React.FC<DataSourceConnectionsProps> = ({
   }
 
   // Group sources by category
-  const allSources = [...(healthData?.connectedSources || []), ...(healthData?.unconnectedSources || [])];
+  const allSources = [
+    ...(((healthData as any)?.connectedSources) || []),
+    ...(((healthData as any)?.unconnectedSources) || []),
+  ];
   const sourcesByCategory = allSources.reduce((acc, source) => {
     if (!acc[source.category]) {
       acc[source.category] = [];

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from "@/lib/supabase";
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Alert } from '@/shared/components/ui/Alert.tsx';
-import { Card } from '@/shared/components/ui/Card.tsx';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
+import { Alert } from '@/shared/components/ui/Alert';
+import { Card } from '@/shared/components/ui/Card';
 
 /**
  * ResetPassword - Allows users to set a new password after requesting a reset
@@ -25,7 +25,8 @@ export default function ResetPassword() {
     const checkSession = async () => {
       try {
         // Check if we have a session
-        const { data: { session } } = await supabase.auth.getSession();
+        const result = await authentikAuthService.getSession();
+        const session = result.data;
         
         if (session) {
           setHasValidSession(true);
@@ -36,15 +37,16 @@ export default function ResetPassword() {
           
           if (accessToken && refreshToken) {
             // Try to set the session with the tokens from the URL
-            const { data, error } = await supabase.auth.setSession({
+            const sessionData = {
               access_token: accessToken,
               refresh_token: refreshToken,
-            });
+            };
+            const sessionResult = await authentikAuthService.setSession(sessionData);
             
-            if (!error && data.session) {
+            if (sessionResult.data) {
               setHasValidSession(true);
             } else {
-              console.warn('Failed to set session from reset tokens:', error);
+              console.warn('Failed to set session from reset tokens:', sessionResult.error);
             }
           }
         }
@@ -77,16 +79,17 @@ export default function ResetPassword() {
 
     try {
       // Update password
-      const { error } = await supabase.auth.updateUser({ password });
+      const updateResult = await authentikAuthService.updateUser({ password });
       
-      if (error) {
-        throw error;
+      if (updateResult.error) {
+        throw updateResult.error;
       }
       
       console.log('✅ Password updated successfully');
       
       // Try to get the current session after password update
-      const { data: { session } } = await supabase.auth.getSession();
+      const sessionData = await authentikAuthService.getSession();
+      const session = sessionData.data;
       
       if (session) {
         console.log('✅ User has active session after password reset');

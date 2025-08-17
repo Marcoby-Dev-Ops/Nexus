@@ -1,8 +1,9 @@
 import { FireCycleProcessor, type ProcessedInput } from './fireCycleProcessor';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import type { UserContext } from './fireCycleLogic';
 import { thoughtsService } from '@/lib/services/thoughtsService';
 import { logger } from '@/shared/utils/logger';
+
 
 /**
  * FIRE Cycle Chat Integration
@@ -466,27 +467,23 @@ export class FireCycleChatIntegration {
   ) {
     try {
       // Fire-and-forget AI processing
-      supabase.functions.invoke('ai_embed_thought', {
-        body: {
-          thoughtId,
-          content,
-        },
-      }).catch((err) => {
-        logger.error('Failed to invoke ai_embed_thought:', err);
+      await callEdgeFunction('ai_embed_thought', {
+        thought: content,
+        userId: userId,
+        metadata: {
+          source: 'fire-cycle-chat',
+          timestamp: new Date().toISOString()
+        }
       });
 
       // Trigger intelligent thought processor
-      supabase.functions.invoke('trigger-n8n-workflow', {
-        body: {
-          workflowname: 'intelligent_thought_processor',
-          thoughtid: thoughtId,
-          userid: userId,
-          companyid: companyId,
-          triggersource: 'chat_integration',
-          context: { source: 'fire_cycle_chat' }
-        },
-      }).catch((err) => {
-        logger.error('Failed to trigger intelligent thought processor:', err);
+      await callEdgeFunction('trigger-n8n-workflow', {
+        workflow: 'fire-cycle-processing',
+        data: {
+          thoughtId: thoughtId,
+          userId: userId,
+          action: 'process'
+        }
       });
 
     } catch (error) {

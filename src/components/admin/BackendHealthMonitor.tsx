@@ -9,7 +9,7 @@ interface BackendHealthMonitorProps {
 
 export const BackendHealthMonitor: React.FC<BackendHealthMonitorProps> = ({
   showDetails = false,
-  refreshInterval = 30000 // 30 seconds
+  refreshInterval = process.env.NODE_ENV === 'development' ? 60000 : 30000 // 1min dev, 30s prod
 }) => {
   const [services, setServices] = useState<BackendService[]>([]);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());

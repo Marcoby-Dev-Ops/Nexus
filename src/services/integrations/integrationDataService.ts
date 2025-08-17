@@ -8,8 +8,8 @@
 
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { supabase } from '@/lib/supabase';
-import { sessionUtils } from '@/lib/supabase-compatibility';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 import { z } from 'zod';
 
 // Data Point Analytics Schema
@@ -232,7 +232,7 @@ export class IntegrationDataService extends BaseService {
 
             const summary: IntegrationDataSummary = {
               integrationId: integration.id,
-              integrationName: integration.integration_name,
+              integrationName: integration.integration_slug,
               status: integration.status,
               dataPoints: analytics,
               lastSync: integration.last_sync,

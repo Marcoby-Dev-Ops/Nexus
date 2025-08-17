@@ -13,14 +13,16 @@ export default defineConfig(({ mode }) => {
   // Load env file based on `mode` in the current working directory.
   const env = loadEnv(mode, process.cwd(), '')
   
-  // Only include bundle analyzer for analysis builds
-  const plugins: PluginOption[] = [react()];
-  if (process.env.ANALYZE === 'true') {
-    plugins.push(visualizer({ 
-      filename: 'dist/bundle-analysis.html', 
-      open: true 
-    }));
-  }
+     // Only include bundle analyzer for analysis builds
+   const plugins: PluginOption[] = [react()];
+   if (process.env.ANALYZE === 'true') {
+     plugins.push(visualizer({ 
+       filename: 'dist/bundle-analysis.html', 
+       open: true 
+     }));
+   }
+   
+   
   
   return {
     base: '/',
@@ -39,6 +41,7 @@ export default defineConfig(({ mode }) => {
         '@/utils': resolve(__dirname, 'src/utils'),
         '@/types': resolve(__dirname, 'src/types'),
         '@/styles': resolve(__dirname, 'src/styles'),
+        '@/ai': resolve(__dirname, 'src/ai'),
         '@/domains/dashboard': resolve(__dirname, 'src/domains/dashboard'),
         '@/domains/tasks/workspace': resolve(__dirname, 'src/domains/tasks/workspace'),
         '@/domains/marketplace': resolve(__dirname, 'src/domains/marketplace'),
@@ -58,6 +61,7 @@ export default defineConfig(({ mode }) => {
         '@/domains/departments': resolve(__dirname, 'src/domains/departments'),
         '@/business': resolve(__dirname, 'src/business'),
         '@/archive': resolve(__dirname, 'src/archive'),
+        
       },
     },
     define: {
@@ -66,6 +70,8 @@ export default defineConfig(({ mode }) => {
       // Inject environment variables
       __VUE_OPTIONS_API__: true,
       __VUE_PROD_DEVTOOLS__: false,
+      // Global polyfills for browser compatibility
+      global: 'globalThis',
       // Inject all VITE_ environment variables
       ...Object.keys(env).reduce((acc, key) => {
         if (key.startsWith('VITE_')) {
@@ -75,11 +81,12 @@ export default defineConfig(({ mode }) => {
       }, {} as Record<string, string>),
     },
     server: {
+      port: 5173,
+      host: true,
       proxy: {
         '/api': {
-          target: 'https://kqclbpimkraenvbffnpk.functions.supabase.co',
+          target: 'http://localhost:3001',
           changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api/, ''),
           configure: (proxy, options) => {
             proxy.on('error', (err, req, res) => {
               console.log('proxy error', err);
@@ -100,58 +107,56 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       allowedHosts: ['nexus.marcoby.net', 'localhost', '.marcoby.net'],
     },
-    optimizeDeps: {
-      // Optimize dependencies for better performance
-      include: [
-        '@supabase/supabase-js',
-        'react',
-        'react-dom',
-        'zustand',
-        'lucide-react',
-        '@radix-ui/react-dialog',
-        '@radix-ui/react-dropdown-menu',
-        '@radix-ui/react-select',
-        '@radix-ui/react-toast',
-        'react-hook-form',
-        'zod',
-        'framer-motion',
-        'recharts',
-        'react-router-dom',
-        'axios',
-        'date-fns',
-        'clsx',
-        'tailwind-merge',
-        'class-variance-authority',
-        'next-themes',
-        'sonner',
-        'vaul',
-        'react-confetti',
-        'react-day-picker',
-        'react-error-boundary',
-        'react-use',
-        'i18next',
-        'openai',
-        'pino',
-        'uuid',
-        'immer',
-        'tailwindcss-animate',
-        '@simplewebauthn/browser',
-        'rehype-highlight',
-        'rehype-raw',
-        'remark-gfm',
-        'react-markdown',
-        'react-window',
-        'react-virtualized-auto-sizer',
-        '@dnd-kit/core',
-        '@dnd-kit/sortable',
-        '@dnd-kit/utilities'
-      ]
-    },
+                 optimizeDeps: {
+       // Include cookie package to ensure proper ES module handling
+       include: ['cookie']
+     },
     build: {
       // Configure build for better Microsoft Graph Toolkit compatibility
       chunkSizeWarningLimit: 1500, // Increase from 1000KB to 1.5MB
       rollupOptions: {
-        external: [],
+        external: [
+          // Node.js modules that should not be bundled for browser
+          'pg',
+          'events',
+          'util',
+          'crypto',
+          'fs',
+          'path',
+          'os',
+          'net',
+          'tls',
+          'stream',
+          'buffer',
+          'querystring',
+          'url',
+          'http',
+          'https',
+          'zlib',
+          'assert',
+          'constants',
+          'domain',
+          'punycode',
+          'string_decoder',
+          'timers',
+          'tty',
+          'vm',
+          'worker_threads',
+          'child_process',
+          'cluster',
+          'dgram',
+          'dns',
+          'module',
+          'perf_hooks',
+          'process',
+          'readline',
+          'repl',
+          'string_decoder',
+          'sys',
+          'trace_events',
+          'v8',
+          'wasi'
+        ],
         output: {
           // Separate chunks for better performance
           manualChunks: (id) => {
@@ -159,9 +164,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes('framer-motion')) {
               return 'framer-motion';
             }
-            if (id.includes('@supabase/supabase-js')) {
-              return 'supabase-js';
-            }
+            
             if (id.includes('axios')) {
               return 'axios';
             }
@@ -192,9 +195,7 @@ export default defineConfig(({ mode }) => {
             if (id.includes('date-fns')) {
               return 'date-fns';
             }
-            if (id.includes('react-markdown')) {
-              return 'react-markdown';
-            }
+            
             if (id.includes('react-window')) {
               return 'react-window';
             }

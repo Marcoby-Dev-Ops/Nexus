@@ -1,6 +1,8 @@
 import { IntegrationBaseService, type IntegrationConfig, type TestConnectionResult, type SyncResult } from '../core/IntegrationBaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { DataMappingService } from '../core/DataMappingService';
+import { nowIsoUtc } from '@/shared/utils/time';
+import { retryFetch } from '@/shared/utils/retry';
 
 /**
  * HubSpot Integration Service
@@ -29,7 +31,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
 
       try {
         // Test HubSpot API connection
-        const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
+        const response = await retryFetch('https://api.hubapi.com/crm/v3/objects/contacts', {
           headers: {
             'Authorization': `Bearer ${integration.credentials?.accessToken}`,
             'Content-Type': 'application/json',
@@ -101,7 +103,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
 
         // Update integration status
         await this.updateStatus(integrationId, 'connected', {
-          lastSync: new Date().toISOString(),
+          lastSync: nowIsoUtc(),
           dataCount: recordsProcessed,
         });
 
@@ -113,7 +115,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
             recordsProcessed,
             errors,
             duration,
-            lastSync: new Date().toISOString(),
+            lastSync: nowIsoUtc(),
           },
           error: null,
         };
@@ -249,7 +251,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
    */
   private async syncContacts(integration: any): Promise<{ recordsProcessed: number; errors: string[] }> {
     try {
-      const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts?limit=100', {
+      const response = await retryFetch('https://api.hubapi.com/crm/v3/objects/contacts?limit=100', {
         headers: {
           'Authorization': `Bearer ${integration.credentials?.accessToken}`,
           'Content-Type': 'application/json',
@@ -285,7 +287,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
               entity_type: 'contact',
               external_id: contact.id,
               data: transformedContact.data,
-              synced_at: new Date().toISOString(),
+              synced_at: nowIsoUtc(),
             });
 
           if (error) throw error;
@@ -309,7 +311,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
    */
   private async syncCompanies(integration: any): Promise<{ recordsProcessed: number; errors: string[] }> {
     try {
-      const response = await fetch('https://api.hubapi.com/crm/v3/objects/companies?limit=100', {
+      const response = await retryFetch('https://api.hubapi.com/crm/v3/objects/companies?limit=100', {
         headers: {
           'Authorization': `Bearer ${integration.credentials?.accessToken}`,
           'Content-Type': 'application/json',
@@ -345,7 +347,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
               entity_type: 'company',
               external_id: company.id,
               data: transformedCompany.data,
-              synced_at: new Date().toISOString(),
+              synced_at: nowIsoUtc(),
             });
 
           if (error) throw error;
@@ -369,7 +371,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
    */
   private async syncDeals(integration: any): Promise<{ recordsProcessed: number; errors: string[] }> {
     try {
-      const response = await fetch('https://api.hubapi.com/crm/v3/objects/deals?limit=100', {
+      const response = await retryFetch('https://api.hubapi.com/crm/v3/objects/deals?limit=100', {
         headers: {
           'Authorization': `Bearer ${integration.credentials?.accessToken}`,
           'Content-Type': 'application/json',
@@ -405,7 +407,7 @@ export class HubSpotIntegrationService extends IntegrationBaseService {
               entity_type: 'deal',
               external_id: deal.id,
               data: transformedDeal.data,
-              synced_at: new Date().toISOString(),
+              synced_at: nowIsoUtc(),
             });
 
           if (error) throw error;

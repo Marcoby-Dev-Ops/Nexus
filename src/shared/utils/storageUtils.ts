@@ -4,6 +4,7 @@
  */
 
 import { logger } from './logger';
+import { getEnvVar } from '@/lib/env-utils';
 
 /**
  * Safely gets and parses a value from localStorage
@@ -222,10 +223,11 @@ function initializeStorageCleanup(): void {
     }
   });
 
-  // Set up periodic cleanup (every 5 minutes)
+  // Set up periodic cleanup (every 10 minutes in dev, 5 minutes in prod)
+  const cleanupInterval = getEnvVar('NODE_ENV') === 'development' ? 10 * 60 * 1000 : 5 * 60 * 1000;
   setInterval(() => {
     cleanupLocalStorage();
-  }, 5 * 60 * 1000);
+  }, cleanupInterval);
 }
 
 /**

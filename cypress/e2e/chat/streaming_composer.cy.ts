@@ -3,7 +3,7 @@ describe('StreamingComposer', () => {
     // Set env flag before visiting
     cy.visit('/', {
       onBeforeLoad(win) {
-        win.importMeta = { env: { VITE_CHAT_V2: '1' } };
+      
       },
     });
   });

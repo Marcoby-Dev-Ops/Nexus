@@ -8,7 +8,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface User {
@@ -28,7 +28,7 @@ export const useUserManagement = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await select('users', '*');
+      const { data, error } = await selectData('users');
       if (error) {
         logger.error({ error }, 'Failed to fetch users');
         setError('Failed to fetch users');

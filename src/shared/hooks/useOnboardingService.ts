@@ -152,18 +152,20 @@ export function useOnboardingService(): UseOnboardingServiceReturn {
 
       if (!result.success) {
         setError(result.error || 'Failed to get onboarding progress');
-        return null;
+        return result; // Return the full result object instead of null
       }
 
-      setProgress(result.data);
-      setCurrentPhase(result.data.currentPhase);
-      setCurrentStep(result.data.currentStep);
-      return result.data;
+      if (result.data) {
+        setProgress(result.data);
+        setCurrentPhase(result.data.currentPhase);
+        setCurrentStep(result.data.currentStep);
+      }
+      return result; // Return the full result object
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       logger.error('Failed to get onboarding progress:', err);
-      return null;
+      return { success: false, error: errorMessage, data: null }; // Return error response object
     } finally {
       setIsProcessing(false);
     }
@@ -186,16 +188,16 @@ export function useOnboardingService(): UseOnboardingServiceReturn {
 
       if (!result.success) {
         setError(result.error || 'Failed to complete onboarding phase');
-        return null;
+        return result; // Return the full result object instead of null
       }
 
       logger.info('Onboarding phase completed successfully', { userId, phaseId });
-      return result.data;
+      return result; // Return the full result object
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       logger.error('Failed to complete onboarding phase:', err);
-      return null;
+      return { success: false, error: errorMessage, data: null }; // Return error response object
     } finally {
       setIsProcessing(false);
     }
@@ -210,15 +212,15 @@ export function useOnboardingService(): UseOnboardingServiceReturn {
 
       if (!result.success) {
         setError(result.error || 'Failed to get phase configuration');
-        return null;
+        return result; // Return the full result object instead of null
       }
 
-      return result.data;
+      return result; // Return the full result object
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       logger.error('Failed to get phase configuration:', err);
-      return null;
+      return { success: false, error: errorMessage, data: null }; // Return error response object
     } finally {
       setIsProcessing(false);
     }
@@ -233,15 +235,15 @@ export function useOnboardingService(): UseOnboardingServiceReturn {
 
       if (!result.success) {
         setError(result.error || 'Failed to validate step data');
-        return null;
+        return result; // Return the full result object instead of null
       }
 
-      return result.data;
+      return result; // Return the full result object
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       logger.error('Failed to validate step data:', err);
-      return null;
+      return { success: false, error: errorMessage, data: null }; // Return error response object
     } finally {
       setIsProcessing(false);
     }

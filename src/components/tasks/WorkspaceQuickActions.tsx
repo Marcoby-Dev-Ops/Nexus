@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { Zap, CheckSquare, FileText, Lightbulb, Focus, Coffee, BookOpen, Timer, Moon } from 'lucide-react';
 interface QuickAction {
   id: string;

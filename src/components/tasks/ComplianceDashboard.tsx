@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, AlertTriangle, FileText, Archive } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { owaInboxService } from '@/services/email/owaInboxService';
 import { useQuery } from '@tanstack/react-query';
 

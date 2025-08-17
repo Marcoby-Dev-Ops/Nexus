@@ -65,12 +65,14 @@ export const OrganizationDetailsPage: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               The organization you're looking for doesn't exist or you don't have access to it.
             </p>
-            <Button asChild>
-              <Link to="/organizations">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Organizations
-              </Link>
-            </Button>
+            <Link to="/organizations">
+              <Button>
+                <div className="flex items-center">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Organizations
+                </div>
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -82,12 +84,14 @@ export const OrganizationDetailsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/organizations">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
+                      <Link to="/organizations">
+                        <Button variant="ghost" size="sm">
+                          <div className="flex items-center">
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                          </div>
+                        </Button>
+                      </Link>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">{organization.name}</h1>
             <p className="text-muted-foreground">
@@ -96,12 +100,14 @@ export const OrganizationDetailsPage: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" asChild>
-            <Link to={`/organizations/${orgId}/settings`}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Link>
-          </Button>
+                      <Link to={`/organizations/${orgId}/settings`}>
+                        <Button variant="outline">
+                          <div className="flex items-center">
+                            <Settings className="h-4 w-4 mr-2" />
+                            Settings
+                          </div>
+                        </Button>
+                      </Link>
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Invite Member
@@ -201,24 +207,30 @@ export const OrganizationDetailsPage: React.FC = () => {
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link to={`/organizations/${orgId}/business-profile`}>
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Business Profile
-                </Link>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link to={`/organizations/${orgId}/members`}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Manage Members
-                </Link>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link to={`/organizations/${orgId}/settings`}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  Organization Settings
-                </Link>
-              </Button>
+                              <Link to={`/organizations/${orgId}/business-profile`}>
+                                <Button variant="outline" className="w-full justify-start">
+                                  <div className="flex items-center">
+                                    <Building2 className="h-4 w-4 mr-2" />
+                                    Business Profile
+                                  </div>
+                                </Button>
+                              </Link>
+                              <Link to={`/organizations/${orgId}/members`}>
+                                <Button variant="outline" className="w-full justify-start">
+                                  <div className="flex items-center">
+                                    <Users className="h-4 w-4 mr-2" />
+                                    Manage Members
+                                  </div>
+                                </Button>
+                              </Link>
+                              <Link to={`/organizations/${orgId}/settings`}>
+                                <Button variant="outline" className="w-full justify-start">
+                                  <div className="flex items-center">
+                                    <Settings className="h-4 w-4 mr-2" />
+                                    Organization Settings
+                                  </div>
+                                </Button>
+                              </Link>
             </CardContent>
           </Card>
 

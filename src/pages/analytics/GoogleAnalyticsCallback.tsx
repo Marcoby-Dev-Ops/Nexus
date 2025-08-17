@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Button } from '@/shared/components/ui/Button';
 import { 
   CheckCircle, 
   AlertCircle, 

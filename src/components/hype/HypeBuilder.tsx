@@ -7,11 +7,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Twitter, Linkedin, Facebook, Copy, Users, Flame, Zap, Trophy, Target, MessageCircle, ArrowUp, Gift, Crown, Rocket, CheckCircle2, Volume2, VolumeX, Star, Bolt, Clock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 
 interface ShareWidget {
   platform: string;

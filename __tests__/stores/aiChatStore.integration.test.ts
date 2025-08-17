@@ -1,10 +1,10 @@
 import { useAIChatStore } from '../../src/lib/stores/aiChatStore';
 
-// Mock fetch for Supabase edge functions
+// Mock fetch for API calls
 global.fetch = jest.fn();
 const mockFetch = fetch as jest.MockedFunction<typeof fetch>;
 
-describe('aiChatStore Supabase Integration', () => {
+describe('aiChatStore API Integration', () => {
   beforeEach(() => {
     // Reset store state manually since there's no reset method
     useAIChatStore.setState({
@@ -17,7 +17,7 @@ describe('aiChatStore Supabase Integration', () => {
   });
 
   describe('Message Persistence', () => {
-    it('should persist messages to Supabase on sendMessage', async () => {
+    it('should persist messages to API on sendMessage', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ success: true }),
@@ -26,7 +26,7 @@ describe('aiChatStore Supabase Integration', () => {
       const convId = await useAIChatStore.getState().newConversation('Test');
       await useAIChatStore.getState().sendMessage(convId, 'Hello AI', 'user-123', 'test-company-id');
 
-      expect(mockFetch).toHaveBeenCalledWith('/functions/v1/ai_chat', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -54,7 +54,7 @@ describe('aiChatStore Supabase Integration', () => {
   });
 
   describe('Conversation Loading', () => {
-    it('should load conversation from Supabase', async () => {
+    it('should load conversation from API', async () => {
       const mockConversation = {
         id: 'conv-123',
         title: 'Loaded Chat',
@@ -73,7 +73,7 @@ describe('aiChatStore Supabase Integration', () => {
       await useAIChatStore.getState().loadConversation('conv-123');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        '/functions/v1/ai_chat?conversationId=conv-123',
+        '/api/ai/chat?conversationId=conv-123',
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },
@@ -84,7 +84,7 @@ describe('aiChatStore Supabase Integration', () => {
       expect(conversation).toEqual(mockConversation);
     });
 
-    it('should create empty conversation if Supabase load fails', async () => {
+    it('should create empty conversation if API load fails', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 404,
@@ -104,7 +104,7 @@ describe('aiChatStore Supabase Integration', () => {
   });
 
   describe('Error Handling', () => {
-    it('should handle malformed Supabase responses', async () => {
+    it('should handle malformed API responses', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => { throw new Error('Invalid JSON'); },

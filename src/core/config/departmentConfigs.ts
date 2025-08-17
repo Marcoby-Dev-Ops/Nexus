@@ -8,7 +8,7 @@
 
 import { Activity, Package, Settings, Users, TrendingUp, Target, Handshake, UserPlus, FileText, Plus, Wrench, CreditCard, Receipt, Calculator, Monitor, Shield, Code, Heart, Scale, Briefcase } from 'lucide-react';
 import { logger } from '@/shared/utils/logger';
-import { supabaseService } from '@/core/services/SupabaseService';
+import { callEdgeFunction } from '@/lib/api-client';
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -52,7 +52,7 @@ export interface DepartmentConfig {
  */
 const logDepartmentAction = async (department: string, action: string, details?: any): Promise<void> => {
   try {
-          await supabaseService.callEdgeFunction('log_department_action', {
+          await callEdgeFunction('log_department_action', {
       department,
       action,
       details,

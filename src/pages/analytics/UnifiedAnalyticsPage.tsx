@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useSearchParams, useLocation } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import {
   BarChart3,
   Brain,

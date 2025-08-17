@@ -6,7 +6,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface Company {

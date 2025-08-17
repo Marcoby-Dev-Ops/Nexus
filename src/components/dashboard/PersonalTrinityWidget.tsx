@@ -1,9 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { supabase, callRPC } from '@/lib/supabase';
+import { callRPC } from '@/lib/api-client';
 import { Brain, Eye, Zap, Plus, ExternalLink } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { PersonalMemoryCapture } from '@/components/ai/PersonalMemoryCapture';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/shared/components/ui/Dialog';
@@ -122,6 +123,7 @@ const fetchPersonalAutomations = async (): Promise<PersonalAutomation[]> => {
 };
 
 export const PersonalTrinityWidget: React.FC = () => {
+  const navigate = useNavigate();
   const {
     data: thoughts = [],
     isLoading: loadingThoughts, 
@@ -163,10 +165,21 @@ export const PersonalTrinityWidget: React.FC = () => {
   const summaryAnalytics = analytics;
   const summaryAutomation = automations[0];
 
-  // Placeholder handlers for navigation
+  // Navigation handlers for SEE / ACT / THINK
   const handleSeeAll = (section: string) => {
-    // TODO: Implement navigation to full-feature page for section
-    alert(`Navigate to full ${section} page`);
+    switch (section) {
+      case 'see':
+        navigate('/analytics');
+        break;
+      case 'act':
+        navigate('/automation');
+        break;
+      case 'think':
+        navigate('/ai-hub');
+        break;
+      default:
+        navigate('/dashboard');
+    }
   };
 
   return (

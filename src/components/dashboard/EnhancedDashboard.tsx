@@ -14,24 +14,31 @@ import {
   DollarSign,
   Globe,
   Shield,
-  AlertCircle
+  AlertCircle,
+  Lightbulb,
+  Target,
+  Clock,
+  Settings
 } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useAuth } from '@/hooks/index';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
+import { useUserProfile } from '@/shared/contexts/UserContext';
 import { CompanyStatusDashboard } from './CompanyStatusDashboard';
 import LivingBusinessAssessment from './LivingBusinessAssessment';
 import UnifiedCommunicationDashboard from './UnifiedCommunicationDashboard';
-// import { realDataService } from '@/services/realDataService';
+import { useSimpleDashboard } from '@/hooks/dashboard/useSimpleDashboard';
 
 // Import consolidated analytics components
 import { DigestibleMetricsDashboard, FireCycleDashboard } from '@/components/analytics';
 import CrossPlatformInsightsEngine from '@/components/analytics/CrossPlatformInsightsEngine';
+import { Switch } from '@/shared/components/ui/Switch';
+import { Label } from '@/shared/components/ui/Label';
 
 /**
  * Smart display name logic based on real-world best practices
@@ -83,9 +90,8 @@ const DashboardSuspenseFallback = () => (
 const EnhancedDashboard: React.FC = () => {
   const { user } = useAuth();
   const { setHeaderContent } = useHeaderContext();
-  const [dashboardData, setDashboardData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { profile } = useUserProfile();
+  const { data: dashboardData, loading, error, refresh } = useSimpleDashboard();
   const [refreshing, setRefreshing] = useState(false);
   const [widgetConfigs, setWidgetConfigs] = useState<WidgetConfig[]>([
     { key: 'see', label: 'See', visible: true },
@@ -95,81 +101,37 @@ const EnhancedDashboard: React.FC = () => {
 
   // Set header content when component mounts
   useEffect(() => {
-    const displayName = getDisplayName();
+    const displayName = getCurrentDisplayName();
     setHeaderContent('Dashboard', `Welcome back, ${displayName}`);
     
     // Cleanup when component unmounts
     return () => {
       setHeaderContent(null, null);
     };
-  }, [setHeaderContent, user]);
+  }, [setHeaderContent, user, profile]);
 
-  const getDisplayName = () => {
-    if (user?.firstName) {
-      return user.firstName;
-    }
-    
-    if (user?.email) {
-      const username = user.email.split('@')[0];
-      return username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
-    }
-    
-    return 'User';
+  const getCurrentDisplayName = () => {
+    return getDisplayName(profile, user);
   };
 
   const handleCompleteOnboarding = async () => {
-    // Handle onboarding completion
+    // TODO: Implement onboarding completion
+    console.log('Onboarding completed');
   };
 
   const handleWidgetToggle = (key: WidgetConfig['key']) => {
-    setWidgetConfigs(prev => 
-      prev.map(widget => 
-        widget.key === key 
-          ? { ...widget, visible: !widget.visible }
-          : widget
-      )
-    );
-  };
-
-  const fetchDashboardData = async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data for demonstration
-      const mockData = {
-        metrics: {
-          revenue: '$2.4M',
-          users: '1,247',
-          markets: '23',
-          uptime: '99.9%'
-        },
-        recentActivity: [
-          { id: 1, type: 'sale', message: 'New deal closed', time: '2 hours ago' },
-          { id: 2, type: 'user', message: 'New user registered', time: '4 hours ago' },
-          { id: 3, type: 'system', message: 'System update completed', time: '6 hours ago' }
-        ]
-      };
-
-      setDashboardData(mockData);
-    } catch (err) {
-      setError('Failed to load dashboard data');
-      console.error('Dashboard data fetch error:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    setWidgetConfigs(prev => prev.map(widget => 
+      widget.key === key ? { ...widget, visible: !widget.visible } : widget
+    ));
   };
 
   const handleManualRefresh = async () => {
-    await fetchDashboardData(true);
+    setRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   function getStatusColor(status: string): string {
@@ -196,6 +158,12 @@ const EnhancedDashboard: React.FC = () => {
         return <Users className="w-4 h-4" />;
       case 'system':
         return <Activity className="w-4 h-4" />;
+      case 'ai_insight':
+        return <Brain className="w-4 h-4" />;
+      case 'insight':
+        return <Lightbulb className="w-4 h-4" />;
+      case 'recommendation':
+        return <Target className="w-4 h-4" />;
       default:
         return <Activity className="w-4 h-4" />;
     }
@@ -212,9 +180,7 @@ const EnhancedDashboard: React.FC = () => {
 
   const allowedWidgetConfigs = widgetConfigs.filter(isWidgetAllowed);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+
 
   if (loading) {
     return <DashboardSuspenseFallback />;
@@ -227,11 +193,10 @@ const EnhancedDashboard: React.FC = () => {
           <AlertCircle className="w-12 h-12 mx-auto text-destructive" />
           <h2 className="text-xl font-semibold">Failed to load dashboard data</h2>
           <p className="text-muted-foreground">
-            We couldn't load your dashboard data. Please try refreshing the page.
+            {error}
           </p>
-          <Button onClick={handleManualRefresh} variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh Dashboard
+          <Button onClick={() => refresh()} variant="outline">
+            Try Again
           </Button>
         </div>
       </div>
@@ -239,179 +204,219 @@ const EnhancedDashboard: React.FC = () => {
   }
 
   return (
-    <div className="w-full space-y-4">
-      {/* Key Metrics Row - Responsive Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="h-20">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Revenue</p>
-                <p className="text-lg font-bold">$2.4M</p>
-                <p className="text-xs text-success">+15% YoY</p>
-              </div>
-              <DollarSign className="w-6 h-6 text-success" />
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b border-border bg-card">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">
+                Welcome back, {getCurrentDisplayName()}!
+              </h1>
+              <p className="text-muted-foreground">
+                Here's what's happening with your business today.
+              </p>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="h-20">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Active Users</p>
-                <p className="text-lg font-bold">1,247</p>
-                <p className="text-xs text-primary">+8% MTD</p>
-              </div>
-              <Users className="w-6 h-6 text-primary" />
+            <div className="flex items-center space-x-2">
+              <Button
+                onClick={handleManualRefresh}
+                disabled={refreshing}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="h-20">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Markets</p>
-                <p className="text-lg font-bold">23</p>
-                <p className="text-xs text-secondary">Global Reach</p>
-              </div>
-              <Globe className="w-6 h-6 text-secondary" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="h-20">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-muted-foreground">Uptime</p>
-                <p className="text-lg font-bold">99.9%</p>
-                <p className="text-xs text-warning">System Health</p>
-              </div>
-              <Shield className="w-6 h-6 text-warning" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
-      {/* Main Content Area - Responsive Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-        {/* Left Column - Core Widgets */}
-        <div className="xl:col-span-3 space-y-4">
-          {/* Trinity Widgets - Responsive Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {allowedWidgetConfigs.map(widget => (
-              <Card key={widget.key} className="relative h-24">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xs font-medium flex items-center gap-2">
-                    {widget.key === 'see' && <Eye className="w-3 h-3" />}
-                    {widget.key === 'act' && <Zap className="w-3 h-3" />}
-                    {widget.key === 'think' && <Brain className="w-3 h-3" />}
-                    {widget.label}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-1">
-                    <div className="text-lg font-bold">
-                      {widget.key === 'see' && '1,247'}
-                      {widget.key === 'act' && '89'}
-                      {widget.key === 'think' && '156'}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {widget.key === 'see' && 'Active insights'}
-                      {widget.key === 'act' && 'Pending actions'}
-                      {widget.key === 'think' && 'AI suggestions'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      {/* Main Content */}
+      <div className="container mx-auto px-6 py-6">
+        {/* Metrics Overview */}
+        {dashboardData?.metrics && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  ${dashboardData.metrics.totalRevenue?.toLocaleString() || '0'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {dashboardData.metrics.growthRate > 0 ? '+' : ''}{dashboardData.metrics.growthRate || 0}% from last month
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{dashboardData.metrics.activeUsers || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  {dashboardData.metrics.totalUsers || 0} total users
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">System Status</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-success">Operational</div>
+                <p className="text-xs text-muted-foreground">
+                  All systems running smoothly
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {dashboardData.recentActivity?.length || 0}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  New activities today
+                </p>
+              </CardContent>
+            </Card>
           </div>
+        )}
 
-          {/* Company Status Dashboard */}
-          <CompanyStatusDashboard />
-
-          {/* Living Business Assessment */}
-          <LivingBusinessAssessment />
-
-          {/* Unified Communication Dashboard */}
-          <UnifiedCommunicationDashboard />
-
-          {/* Analytics Components */}
-          <DigestibleMetricsDashboard />
-          <FireCycleDashboard />
-          <CrossPlatformInsightsEngine />
-        </div>
-
-        {/* Right Column - Sidebar Widgets */}
-        <div className="space-y-4">
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium">Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs">
-                <TrendingUp className="w-3 h-3 mr-2" />
-                View Analytics
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs">
-                <Users className="w-3 h-3 mr-2" />
-                Manage Team
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs">
-                <Building2 className="w-3 h-3 mr-2" />
-                Company Settings
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium">Recent Activity</CardTitle>
+        {/* Recent Activity */}
+        {dashboardData?.recentActivity && dashboardData.recentActivity.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {dashboardData?.recentActivity?.map((activity: any) => (
-                  <div key={activity.id} className="flex items-start gap-2">
-                    <div className="mt-1">
+              <div className="space-y-4">
+                {dashboardData.recentActivity.map((activity: any) => (
+                  <div key={activity.id} className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
                       {getTypeIcon(activity.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {activity.message}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <Badge variant="outline" className={getStatusColor(activity.status || 'default')}>
+                        {activity.status || 'default'}
+                      </Badge>
                     </div>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* System Status */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-xs font-medium">System Status</CardTitle>
+        {/* Alerts */}
+        {dashboardData?.alerts && dashboardData.alerts.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Alerts & Notifications</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">API Health</span>
-                  <Badge variant="default" className="text-xs">Healthy</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">Database</span>
-                  <Badge variant="default" className="text-xs">Online</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs">AI Services</span>
-                  <Badge variant="default" className="text-xs">Active</Badge>
-                </div>
+              <div className="space-y-4">
+                {dashboardData.alerts.map((alert: any) => (
+                  <div key={alert.id} className="flex items-center space-x-4">
+                    <div className="flex-shrink-0">
+                      <AlertCircle className={`w-5 h-5 ${getStatusColor(alert.type)}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">
+                        {alert.message}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(alert.timestamp).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <Badge variant="outline" className={getStatusColor(alert.type)}>
+                        {alert.type}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
+
+        {/* Widget Controls */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Dashboard Widgets</CardTitle>
+            <CardDescription>
+              Customize your dashboard view by toggling widgets on and off.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-4">
+              {widgetConfigs.map((widget) => (
+                <div key={widget.key} className="flex items-center space-x-2">
+                  <Switch
+                    checked={widget.visible}
+                    onCheckedChange={() => handleWidgetToggle(widget.key)}
+                  />
+                  <Label>{widget.label}</Label>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Executive Actions */}
+        {canPerformExecutiveActions() && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                Perform common executive tasks quickly.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button onClick={() => handleCompleteOnboarding()} variant="outline" className="h-20">
+                  <div className="text-center">
+                    <Settings className="w-6 h-6 mx-auto mb-2" />
+                    <span className="text-sm">Complete Onboarding</span>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-20">
+                  <div className="text-center">
+                    <BarChart3 className="w-6 h-6 mx-auto mb-2" />
+                    <span className="text-sm">View Analytics</span>
+                  </div>
+                </Button>
+                <Button variant="outline" className="h-20">
+                  <div className="text-center">
+                    <Users className="w-6 h-6 mx-auto mb-2" />
+                    <span className="text-sm">Manage Team</span>
+                  </div>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

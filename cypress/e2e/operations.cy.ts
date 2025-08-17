@@ -4,10 +4,10 @@
 
 describe('OperationsDashboard', () => {
   it('displays ops score', () => {
-    // Mock the Supabase RPC response
-    cy.intercept('POST', '**/rpc/calc_ops_score', {
+    // Mock the operations score calculation
+    cy.intercept('POST', '**/api/operations/score', {
       statusCode: 200,
-      body: 0.82,
+      body: { score: 0.82 },
     }).as('calcOps');
 
     cy.visit('/operations');

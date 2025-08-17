@@ -1,7 +1,7 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Progress } from '@/shared/components/ui/Progress';
 import { useAssessmentData } from '@/components/admin/onboarding/hooks/useAssessmentData';
 import Questionnaire from '@/components/admin/onboarding/pages/Questionnaire';
 

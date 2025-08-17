@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { useAuth } from '@/hooks/index';
 import { DataPointMappingService, type MappingReport } from '@/services/integrations';
 import { RefreshCw, AlertTriangle, CheckCircle, Database, TrendingUp } from 'lucide-react';

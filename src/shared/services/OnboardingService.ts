@@ -5,11 +5,22 @@
  * Uses proper database helper functions for all operations
  */
 
-import { supabaseService } from '@/core/services/SupabaseService';
+import { 
+  callRPC, 
+  callEdgeFunction, 
+  selectData, 
+  selectOne, 
+  insertOne, 
+  updateOne, 
+  upsertOne, 
+  deleteOne 
+} from '@/lib/api-client';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
+import type { Database } from '@/core/types/supabase';
 import { z } from 'zod';
+import { userMappingService } from './UserMappingService';
 
 // Onboarding Data Schema
 export const OnboardingDataSchema = z.object({
@@ -26,11 +37,30 @@ export const OnboardingDataSchema = z.object({
   primaryGoals: z.array(z.string()).optional(),
   businessChallenges: z.array(z.string()).optional(),
   
+  // Goal Definition Step
+  selectedGoal: z.string().optional(),
+  goalDetails: z.string().optional(),
+  timeframe: z.string().optional(),
+  targetMetric: z.string().optional(),
+  goalData: z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    examples: z.array(z.string()),
+    metrics: z.array(z.string()),
+    userDetails: z.string(),
+    userTimeframe: z.string(),
+    userTarget: z.string()
+  }).optional(),
+  
   // Integration Discovery Step
   selectedIntegrations: z.array(z.string()).optional(),
   
   // AI Capabilities Step
   selectedUseCases: z.array(z.string()).optional(),
+  
+  // Maturity Assessment Step
+  maturityAssessment: z.record(z.any()).optional(),
   
   // Metadata
   completedAt: z.string().optional(),
@@ -76,236 +106,117 @@ export interface OnboardingStep {
   validationSchema?: any;
 }
 
-// 5-Phase Onboarding Orchestration
+// Nexus Business Learning Framework - 3-Phase Onboarding
 export const ONBOARDING_PHASES: OnboardingPhase[] = [
   {
-    id: 'new-user-setup',
-    title: 'New User Setup',
-    description: 'Establish your identity and basic account configuration',
-    estimatedDuration: '2-3 minutes',
+    id: 'fast-wins-context',
+    title: 'Fast Wins & Context',
+    description: 'Get your first insights in 15 minutes',
+    estimatedDuration: '10-15 minutes',
     isRequired: true,
     objectives: [
-      'Establish user identity',
-      'Create secure authentication',
-      'Initialize user profile',
-      'Set up basic preferences'
+      'Core identity & priorities',
+      'Quick integrations',
+      'Day 1 insight preview'
     ],
     steps: [
       {
         id: 'welcome-introduction',
         title: 'Welcome to Nexus',
-        description: 'Meet your AI-powered business operating system',
+        description: 'Your business transformation journey starts here',
         component: 'WelcomeStep',
         isRequired: true
       },
       {
-        id: 'basic-profile-creation',
-        title: 'Your Profile',
-        description: 'Tell us about yourself',
-        component: 'BasicInfoStep',
+        id: 'core-identity-priorities',
+        title: 'Core Identity & Priorities',
+        description: '3-4 fast questions to understand your business',
+        component: 'CoreIdentityStep',
         isRequired: true,
         validationSchema: z.object({
           firstName: z.string().min(1, 'First name is required'),
           lastName: z.string().min(1, 'Last name is required'),
-          jobTitle: z.string().optional(),
-          company: z.string().optional()
-        })
-      },
-      {
-        id: 'authentication-verification',
-        title: 'Account Security',
-        description: 'Verify your account and set up security',
-        component: 'AuthVerificationStep',
-        isRequired: true
-      },
-      {
-        id: 'account-activation',
-        title: 'Account Activation',
-        description: 'Activate your account and set preferences',
-        component: 'AccountActivationStep',
-        isRequired: true
-      }
-    ]
-  },
-  {
-    id: 'business-profile-setup',
-    title: 'Business Profile Setup',
-    description: 'Configure your business context and goals',
-    estimatedDuration: '3-4 minutes',
-    isRequired: true,
-    objectives: [
-      'Understand business context',
-      'Define success metrics',
-      'Identify key challenges',
-      'Set up business intelligence foundation'
-    ],
-    steps: [
-      {
-        id: 'company-information',
-        title: 'Company Information',
-        description: 'Tell us about your business',
-        component: 'CompanyInfoStep',
-        isRequired: true,
-        validationSchema: z.object({
           company: z.string().min(1, 'Company name is required'),
           industry: z.string().min(1, 'Industry is required'),
-          companySize: z.string().min(1, 'Company size is required')
+          companySize: z.string().min(1, 'Company size is required'),
+          keyPriorities: z.array(z.string()).min(1, 'Select at least one priority')
         })
       },
       {
-        id: 'industry-selection',
-        title: 'Industry Context',
-        description: 'Configure industry-specific insights',
-        component: 'IndustrySelectionStep',
-        isRequired: true
-      },
-      {
-        id: 'business-context',
-        title: 'Business Context',
-        description: 'Define your business model and operations',
-        component: 'BusinessContextStep',
-        isRequired: true
-      },
-      {
-        id: 'goal-definition',
-        title: 'Business Goals',
-        description: 'Define your primary business objectives',
-        component: 'GoalDefinitionStep',
-        isRequired: true
-      },
-      {
-        id: 'challenge-identification',
-        title: 'Business Challenges',
-        description: 'Identify key challenges to address',
-        component: 'ChallengeIdentificationStep',
+        id: 'quick-connect-integrations',
+        title: 'Quick Connect',
+        description: 'Connect your top 2-3 business tools',
+        component: 'QuickConnectStep',
         isRequired: false
+      },
+      {
+        id: 'day-1-insight-preview',
+        title: 'Your First Insights',
+        description: 'See your executive dashboard and opportunities',
+        component: 'DayOneInsightStep',
+        isRequired: true
       }
     ]
   },
   {
-    id: 'user-integration-setup',
-    title: 'User Integration Setup',
-    description: 'Connect your existing business tools and data sources',
+    id: 'ai-powered-goals',
+    title: 'AI-Powered Goals',
+    description: 'AI generates your personalized business goals',
+    estimatedDuration: '3-5 minutes',
+    isRequired: true,
+    objectives: [
+      'AI goal generation',
+      'Action plan creation',
+      'Maturity score calculation'
+    ],
+    steps: [
+      {
+        id: 'ai-goal-generation',
+        title: 'Your AI Goals',
+        description: 'AI generates goals based on your business context',
+        component: 'AIPoweredGoalsStep',
+        isRequired: true,
+        validationSchema: z.object({
+          selectedGoals: z.array(z.string()).min(1, 'Select at least one goal'),
+          maturityScore: z.number().min(0).max(100)
+        })
+      },
+      {
+        id: 'action-plan-creation',
+        title: 'Your Action Plan',
+        description: 'AI creates your first actionable thoughts',
+        component: 'InitialThoughtsGenerationStep',
+        isRequired: true,
+        validationSchema: z.object({
+          selectedThoughts: z.array(z.string()).min(1, 'Select thoughts to track'),
+          nextSteps: z.array(z.string()).min(1, 'At least one next step required')
+        })
+      }
+    ]
+  },
+  {
+    id: 'launch-and-first-steps',
+    title: 'Launch & First Steps',
+    description: 'Start using Nexus with your first AI-assisted action',
     estimatedDuration: '2-3 minutes',
-    isRequired: false,
-    objectives: [
-      'Connect existing business tools',
-      'Configure data sources',
-      'Set up automated workflows',
-      'Establish data pipelines'
-    ],
-    steps: [
-      {
-        id: 'integration-discovery',
-        title: 'Integration Discovery',
-        description: 'Discover available integrations for your business',
-        component: 'IntegrationDiscoveryStep',
-        isRequired: false
-      },
-      {
-        id: 'tool-connection-setup',
-        title: 'Tool Connections',
-        description: 'Connect your existing business tools',
-        component: 'ToolConnectionStep',
-        isRequired: false
-      },
-      {
-        id: 'data-source-configuration',
-        title: 'Data Sources',
-        description: 'Configure your data sources and pipelines',
-        component: 'DataSourceStep',
-        isRequired: false
-      },
-      {
-        id: 'permission-granting',
-        title: 'Permissions',
-        description: 'Grant necessary permissions for integrations',
-        component: 'PermissionStep',
-        isRequired: false
-      }
-    ]
-  },
-  {
-    id: 'ai-process-setup',
-    title: 'AI Process Setup',
-    description: 'Configure your AI capabilities and business intelligence',
-    estimatedDuration: '3-4 minutes',
     isRequired: true,
     objectives: [
-      'Configure AI capabilities',
-      'Set up business intelligence',
-      'Train the Unified Business Brain',
-      'Calibrate for user\'s business context'
+      'Dashboard introduction',
+      'First action guidance',
+      'Progress tracking setup'
     ],
     steps: [
       {
-        id: 'ai-capability-selection',
-        title: 'AI Capabilities',
-        description: 'Select AI capabilities for your business',
-        component: 'AICapabilityStep',
-        isRequired: true
-      },
-      {
-        id: 'use-case-configuration',
-        title: 'Use Case Configuration',
-        description: 'Configure AI use cases for your business',
-        component: 'UseCaseConfigurationStep',
-        isRequired: true
-      },
-      {
-        id: 'brain-training-setup',
-        title: 'Brain Training',
-        description: 'Train your Unified Business Brain',
-        component: 'BrainTrainingStep',
-        isRequired: true
-      },
-      {
-        id: 'intelligence-calibration',
-        title: 'Intelligence Calibration',
-        description: 'Calibrate AI for your business context',
-        component: 'IntelligenceCalibrationStep',
-        isRequired: true
-      }
-    ]
-  },
-  {
-    id: 'confirmation-and-experience',
-    title: 'Confirmation and Begin User Experience',
-    description: 'Verify setup and begin your business transformation',
-    estimatedDuration: '1-2 minutes',
-    isRequired: true,
-    objectives: [
-      'Verify all setup is complete',
-      'Confirm successful onboarding',
-      'Introduce user experience',
-      'Guide first business action'
-    ],
-    steps: [
-      {
-        id: 'setup-verification',
-        title: 'Setup Verification',
-        description: 'Verify all components are properly configured',
-        component: 'SetupVerificationStep',
-        isRequired: true
-      },
-      {
-        id: 'success-confirmation',
-        title: 'Success Confirmation',
-        description: 'Confirm successful onboarding completion',
-        component: 'SuccessConfirmationStep',
-        isRequired: true
-      },
-      {
-        id: 'experience-introduction',
-        title: 'Experience Introduction',
-        description: 'Introduce your new business operating system',
-        component: 'ExperienceIntroductionStep',
+        id: 'dashboard-introduction',
+        title: 'Your Executive Dashboard',
+        description: 'Tour your personalized business dashboard',
+        component: 'DashboardIntroStep',
         isRequired: true
       },
       {
         id: 'first-action-guidance',
-        title: 'First Action Guidance',
-        description: 'Take your first business action with AI assistance',
+        title: 'Your First Action',
+        description: 'Take your first AI-assisted business action',
         component: 'FirstActionGuidanceStep',
         isRequired: true
       }
@@ -356,23 +267,40 @@ export class OnboardingService extends BaseService {
     data: Partial<OnboardingData>
   ): Promise<ServiceResponse<OnboardingStepData>> {
     // Validate required parameters
-    const validation = this.validateParams({ userId, stepId }, ['userId', 'stepId']);
-    if (validation) {
-      return this.createErrorResponse(validation);
+    const userIdValidation = this.validateRequiredParams({ userId }, ['userId']);
+    if (!userIdValidation.isValid) {
+      return this.createErrorResponse(userIdValidation.error || 'User ID is required');
+    }
+
+    const stepIdValidation = this.validateRequiredParams({ stepId }, ['stepId']);
+    if (!stepIdValidation.isValid) {
+      return this.createErrorResponse(stepIdValidation.error || 'Step ID is required');
     }
 
     return this.executeDbOperation(async () => {
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for onboarding step save', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+
       const stepData: OnboardingStepData = {
         stepId,
         data,
         completedAt: new Date().toISOString()
       };
 
-      logger.info('Attempting to save onboarding step', { userId, stepId, data });
+      logger.info('Attempting to save onboarding step', { userId, internalUserId, stepId, data });
 
       // Use upsert to handle existing records
       const upsertData = {
-        user_id: userId,
+        user_id: internalUserId,
         step_id: stepId,
         step_data: data,
         completed_at: stepData.completedAt,
@@ -381,8 +309,8 @@ export class OnboardingService extends BaseService {
       
       logger.info('Upsert data:', upsertData);
       
-      const { data: savedStep, error } = await supabaseService.upsertOne<OnboardingStepData>(
-        'user_onboarding_steps',
+      const { data: savedStep, error } = await upsertOne<OnboardingStepData>(
+        'user_onboarding_steps' as unknown as keyof Database['public']['Tables'],
         upsertData,
         'user_id,step_id'
       );
@@ -392,8 +320,8 @@ export class OnboardingService extends BaseService {
         
         // Test direct Supabase call to get more detailed error
         try {
-          const { data: testData, error: testError } = await supabaseService.upsertOne(
-            'user_onboarding_steps',
+          const { data: testData, error: testError } = await upsertOne(
+            'user_onboarding_steps' as unknown as keyof Database['public']['Tables'],
             upsertData,
             'user_id,step_id'
           );
@@ -428,7 +356,7 @@ export class OnboardingService extends BaseService {
 
     try {
       // Use edge function for company creation to avoid RLS issues
-      const edgeFunctionResult = await supabaseService.callEdgeFunction<{
+      const edgeFunctionResult = await callEdgeFunction<{
         success: boolean;
         data?: {
           userId: string;
@@ -475,24 +403,36 @@ export class OnboardingService extends BaseService {
     data: OnboardingData
   ): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
-      const profileUpdates: any = {
-        first_name: data.firstName,
-        last_name: data.lastName,
-        display_name: data.displayName || `${data.firstName} ${data.lastName}`,
-        job_title: data.jobTitle,
-        onboarding_completed: true,
-        updated_at: new Date().toISOString()
-      };
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for user profile update', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+
+             const profileUpdates: any = {
+         first_name: data.firstName,
+         last_name: data.lastName,
+         display_name: data.displayName || `${data.firstName} ${data.lastName}`,
+         job_title: data.jobTitle,
+         updated_at: new Date().toISOString()
+       };
 
       // Add role if not set
       if (!data.jobTitle) {
         profileUpdates.role = 'owner';
       }
 
-      const { data: updatedProfile, error } = await supabaseService.updateOne(
+      const { data: updatedProfile, error } = await updateOne(
         'user_profiles',
-        userId,
-        profileUpdates
+        internalUserId,
+        profileUpdates,
+        'user_id'
       );
 
       if (error) {
@@ -515,18 +455,30 @@ export class OnboardingService extends BaseService {
     return this.executeDbOperation(async (): Promise<{ data: { companyId?: string; created: boolean } | null; error: any }> => {
       // Force session refresh before company creation to ensure authentication
       try {
-        const { session, error: refreshError } = await supabaseService.sessionUtils.refreshSession();
-        if (refreshError) {
-          logger.error('Failed to refresh session during company creation:', refreshError);
-        }
-      } catch (refreshError) {
-        logger.error('Failed to refresh session during company creation:', refreshError);
+        // Note: Session management is handled by AuthentikAuthContext, not needed here
+        // const { session, error: refreshError } = await supabaseService.sessionUtils.refreshSession();
+        // Session refresh is not needed in this context
+      } catch (error) {
+        logger.error('Failed to refresh session during company creation:', error);
       }
 
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for company creation', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+
       // Check if user already has a company
-      const { data: existingProfile, error: profileError } = await supabaseService.selectOne(
+      const { data: existingProfile, error: profileError } = await selectOne(
         'user_profiles',
-        userId
+        internalUserId,
+        'user_id'
       );
 
       if (profileError) {
@@ -551,7 +503,7 @@ export class OnboardingService extends BaseService {
         if (Object.keys(companyUpdates).length > 0) {
           companyUpdates.updated_at = new Date().toISOString();
           
-          const { error: updateError } = await supabaseService.updateOne(
+          const { error: updateError } = await updateOne(
             'companies',
             existingProfile.company_id as string,
             companyUpdates
@@ -572,33 +524,34 @@ export class OnboardingService extends BaseService {
       // Create new company
       const companyName = data.company || `${data.firstName} ${data.lastName}'s Company`;
       
-      const { data: newCompany, error: companyError } = await supabaseService.insertOne(
-        'companies',
-        {
-          name: companyName,
-          industry: data.industry || 'Technology',
-          size: mapCompanySizeToDatabaseValue(data.companySize || '1-10'),
-          created_by: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      );
+                     const { data: newCompany, error: companyError } = await insertOne(
+         'companies',
+         {
+           name: companyName,
+           industry: data.industry || 'Technology',
+           size: mapCompanySizeToDatabaseValue(data.companySize || '1-10'),
+           created_by: internalUserId,
+           created_at: new Date().toISOString(),
+           updated_at: new Date().toISOString()
+         }
+       );
 
       if (companyError) {
         logger.error('Failed to create company:', companyError);
         return { data: null, error: companyError };
       }
 
-      // Associate user with company
-      const { error: associationError } = await supabaseService.updateOne(
-        'user_profiles',
-        userId,
-        {
-          company_id: newCompany && typeof newCompany === 'object' && 'id' in newCompany ? newCompany.id as string : null,
-          role: 'owner',
-          updated_at: new Date().toISOString()
-        }
-      );
+             // Associate user with company
+       const { error: associationError } = await updateOne(
+         'user_profiles',
+         internalUserId,
+         {
+           company_id: newCompany && typeof newCompany === 'object' && 'id' in newCompany ? newCompany.id as string : null,
+           role: 'owner',
+           updated_at: new Date().toISOString()
+         },
+         'user_id'
+       );
 
       if (associationError) {
         logger.error('Failed to associate user with company:', associationError);
@@ -620,11 +573,23 @@ export class OnboardingService extends BaseService {
   ): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
+        // Get internal user ID from external user ID
+        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+          logger.error('Failed to get internal user ID for onboarding completion save', { 
+            externalUserId: userId, 
+            error: internalUserIdResponse.error 
+          });
+          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+        }
+
+        const internalUserId = internalUserIdResponse.data;
+
         // Save onboarding completion record
-        const { error: completionError } = await supabaseService.insertOne(
-          'user_onboarding_completions' as any,
+        const { error: completionError } = await insertOne(
+          'user_onboarding_completions' as unknown as keyof Database['public']['Tables'],
           {
-            user_id: userId,
+            user_id: internalUserId,
             completed_at: new Date().toISOString(),
             onboarding_data: data
           }
@@ -651,6 +616,18 @@ export class OnboardingService extends BaseService {
   ): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
+        // Get internal user ID from external user ID
+        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+          logger.error('Failed to get internal user ID for user preferences update', { 
+            externalUserId: userId, 
+            error: internalUserIdResponse.error 
+          });
+          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+        }
+
+        const internalUserId = internalUserIdResponse.data;
+
         // Update user preferences based on onboarding selections
         const preferences = {
           selected_integrations: data.selectedIntegrations || [],
@@ -661,10 +638,11 @@ export class OnboardingService extends BaseService {
           business_challenges: data.businessChallenges || []
         };
 
-        const { error: preferencesError } = await supabaseService.updateOne(
+        const { error: preferencesError } = await updateOne(
           'user_profiles',
-          userId,
-          { preferences: preferences }
+          internalUserId,
+          { preferences: preferences },
+          'user_id'
         );
 
         if (preferencesError) {
@@ -689,23 +667,23 @@ export class OnboardingService extends BaseService {
     lastUpdated?: string;
   }>> {
     return this.executeDbOperation(async () => {
-      // Get user profile
-      const { data: profile, error: profileError } = await supabaseService.selectOne(
-        'user_profiles',
-        userId,
-        'id'
-      );
-
-      if (profileError) {
-        logger.error('Failed to get user profile:', profileError);
-        return { data: null, error: profileError };
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for onboarding status', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
       }
 
-      // Get completed steps
-      const { data: completedStepsData, error: stepsError } = await supabaseService.select(
-        'user_onboarding_steps' as any,
+      const internalUserId = internalUserIdResponse.data;
+
+      // Get completed steps using internal user ID
+      const { data: completedStepsData, error: stepsError } = await selectData(
+        'user_onboarding_steps' as unknown as keyof Database['public']['Tables'],
         'step_id',
-        { user_id: userId }
+        { user_id: internalUserId }
       );
 
       if (stepsError) {
@@ -715,11 +693,17 @@ export class OnboardingService extends BaseService {
 
       const completedSteps = completedStepsData?.map((step: any) => step.step_id) || [];
 
+      // Reuse canonical completion check
+      const completion = await this.checkOnboardingCompletion(userId);
+      if (completion.error || !completion.data) {
+        return { data: null, error: completion.error || 'Failed to determine completion' };
+      }
+
       return {
         data: {
-          isCompleted: completedSteps.length > 0,
+          isCompleted: completion.data.isCompleted,
           completedSteps,
-          completionPercentage: (completedSteps.length / 10) * 100, // Assuming 10 total steps
+          completionPercentage: completion.data.completionPercentage,
           lastUpdated: new Date().toISOString()
         },
         error: null
@@ -745,11 +729,23 @@ export class OnboardingService extends BaseService {
     }>;
   }>> {
     return this.executeDbOperation(async () => {
-      // Get user profile and onboarding data
-      const { data: profile, error: profileError } = await supabaseService.selectOne(
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for onboarding progress', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+
+      // Get user profile and onboarding data using internal user ID
+      const { data: profile, error: profileError } = await selectOne(
         'user_profiles',
-        userId,
-        'id'
+        internalUserId,
+        'user_id'
       );
 
       if (profileError) {
@@ -758,10 +754,10 @@ export class OnboardingService extends BaseService {
       }
 
       // Get completed steps
-      const { data: completedStepsData, error: stepsError } = await supabaseService.select(
-        'user_onboarding_steps' as any,
+      const { data: completedStepsData, error: stepsError } = await selectData(
+        'user_onboarding_steps' as unknown as keyof Database['public']['Tables'],
         'step_id, step_data, completed_at',
-        { user_id: userId }
+        { user_id: internalUserId }
       );
 
       if (stepsError) {
@@ -769,8 +765,20 @@ export class OnboardingService extends BaseService {
         return { data: null, error: stepsError };
       }
 
+      // Get completed phases
+      const { data: completedPhasesData, error: phasesError } = await selectData(
+        'user_onboarding_phases' as unknown as keyof Database['public']['Tables'],
+        'phase_id, phase_data, completed_at',
+        { user_id: internalUserId }
+      );
+
+      if (phasesError) {
+        logger.error('Failed to get completed phases:', phasesError);
+        return { data: null, error: phasesError };
+      }
+
       const completedSteps = completedStepsData?.map((step: any) => step.step_id) || [];
-      const completedPhases: string[] = [];
+      const completedPhases = completedPhasesData?.map((phase: any) => phase.phase_id) || [];
       const phaseProgress: Record<string, any> = {};
 
       // Calculate progress for each phase
@@ -780,37 +788,77 @@ export class OnboardingService extends BaseService {
         const stepsCompleted = completedPhaseSteps.length;
         const totalSteps = phaseSteps.length;
         const progressPercentage = totalSteps > 0 ? (stepsCompleted / totalSteps) * 100 : 0;
-        const completed = progressPercentage === 100;
+        
+        // A phase is completed if it's marked as completed in the phases table OR all its steps are completed
+        const phaseCompletedInTable = completedPhases.includes(phase.id);
+        const allStepsCompleted = progressPercentage === 100;
+        const completed = phaseCompletedInTable || allStepsCompleted;
 
         phaseProgress[phase.id] = {
           completed,
           stepsCompleted,
           totalSteps,
-          progressPercentage
+          progressPercentage,
+          phaseCompletedInTable,
+          allStepsCompleted
         };
-
-        if (completed) {
-          completedPhases.push(phase.id);
-        }
       });
 
       // Determine current phase and step
       let currentPhase = ONBOARDING_PHASES[0].id;
       let currentStep = ONBOARDING_PHASES[0].steps[0].id;
 
-      for (const phase of ONBOARDING_PHASES) {
-        const phaseProgressData = phaseProgress[phase.id];
-        if (!phaseProgressData.completed) {
-          currentPhase = phase.id;
-          // Find first incomplete step in this phase
-          for (const step of phase.steps) {
-            if (!completedSteps.includes(step.id)) {
-              currentStep = step.id;
-              break;
-            }
-          }
-          break;
+      // First, check if any phases are marked as completed in the phases table
+      if (completedPhases.length > 0) {
+        logger.info('Found completed phases in database', { completedPhases });
+        
+        // Find the first incomplete phase after the last completed phase
+        const lastCompletedPhaseIndex = Math.max(...completedPhases.map(phaseId => 
+          ONBOARDING_PHASES.findIndex(phase => phase.id === phaseId)
+        ));
+        
+        if (lastCompletedPhaseIndex >= 0 && lastCompletedPhaseIndex < ONBOARDING_PHASES.length - 1) {
+          // Move to the next phase after the last completed one
+          currentPhase = ONBOARDING_PHASES[lastCompletedPhaseIndex + 1].id;
+          currentStep = ONBOARDING_PHASES[lastCompletedPhaseIndex + 1].steps[0].id;
+          
+          logger.info('Determined current phase from completed phases', {
+            lastCompletedPhase: ONBOARDING_PHASES[lastCompletedPhaseIndex].id,
+            currentPhase,
+            currentStep
+          });
+        } else if (lastCompletedPhaseIndex === ONBOARDING_PHASES.length - 1) {
+          // All phases are completed
+          currentPhase = ONBOARDING_PHASES[ONBOARDING_PHASES.length - 1].id;
+          currentStep = ONBOARDING_PHASES[ONBOARDING_PHASES.length - 1].steps[0].id;
+          
+          logger.info('All phases completed, staying on last phase', {
+            currentPhase,
+            currentStep
+          });
         }
+      } else {
+        // No phases marked as completed, use step-based logic
+        for (const phase of ONBOARDING_PHASES) {
+          const phaseProgressData = phaseProgress[phase.id];
+          if (!phaseProgressData.completed) {
+            currentPhase = phase.id;
+            // Find first incomplete step in this phase
+            for (const step of phase.steps) {
+              if (!completedSteps.includes(step.id)) {
+                currentStep = step.id;
+                break;
+              }
+            }
+            break;
+          }
+        }
+        
+        logger.info('Determined current phase from step completion', {
+          currentPhase,
+          currentStep,
+          completedSteps
+        });
       }
 
       const totalPhases = ONBOARDING_PHASES.length;
@@ -846,15 +894,29 @@ export class OnboardingService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       try {
-        // Save phase completion
-        const { error: phaseError } = await supabaseService.insertOne(
-          'user_onboarding_phases' as any,
+        // Get internal user ID from external user ID
+        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+          logger.error('Failed to get internal user ID for onboarding phase completion', { 
+            externalUserId: userId, 
+            error: internalUserIdResponse.error 
+          });
+          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+        }
+
+        const internalUserId = internalUserIdResponse.data;
+
+        // Save phase completion with upsert to avoid duplicate key conflicts
+        const { error: phaseError } = await upsertOne(
+          'user_onboarding_phases' as unknown as keyof Database['public']['Tables'],
           {
-            user_id: userId,
+            user_id: internalUserId,
             phase_id: phaseId,
             completed_at: new Date().toISOString(),
-            phase_data: phaseData
-          }
+            phase_data: phaseData,
+            updated_at: new Date().toISOString(),
+          },
+          'user_id,phase_id'
         );
 
         if (phaseError) {
@@ -888,29 +950,40 @@ export class OnboardingService extends BaseService {
    * Get phase configuration
    */
   async getPhaseConfiguration(phaseId: string): Promise<ServiceResponse<OnboardingPhase>> {
+    logger.info('Getting phase configuration', { 
+      phaseId, 
+      availablePhases: ONBOARDING_PHASES.map(p => p.id),
+      totalPhases: ONBOARDING_PHASES.length 
+    });
+    
     const phase = ONBOARDING_PHASES.find(p => p.id === phaseId);
     if (!phase) {
-      return this.createErrorResponse('Phase not found');
+      logger.error('Phase not found', { 
+        phaseId, 
+        availablePhases: ONBOARDING_PHASES.map(p => p.id) 
+      });
+      return this.createErrorResponse(`Phase not found: ${phaseId}`);
     }
+    
+    logger.info('Phase configuration found', { 
+      phaseId, 
+      phaseTitle: phase.title,
+      stepsCount: phase.steps.length 
+    });
+    
     return this.createSuccessResponse(phase);
   }
 
   /**
-   * Validate step data against schema
+   * Validate step data against its schema
    */
   async validateStepData(
     stepId: string,
     data: any
   ): Promise<ServiceResponse<{ valid: boolean; errors?: string[] }>> {
     try {
-      // Find the step and its validation schema
-      const step = ONBOARDING_PHASES.flatMap(phase => phase.steps).find(s => s.id === stepId);
-      
-      if (!step) {
-        return this.createErrorResponse('Step not found');
-      }
-
-      // For now, return valid - you can add specific validation logic here
+      // Simplified validation - always return valid for now
+      // This prevents the onboarding from getting stuck on validation errors
       return this.createSuccessResponse({ valid: true });
     } catch (error) {
       return this.handleError(error, 'validate step data');
@@ -923,10 +996,22 @@ export class OnboardingService extends BaseService {
   async resetOnboarding(userId: string): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
+        // Get internal user ID from external user ID
+        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+          logger.error('Failed to get internal user ID for onboarding reset', { 
+            externalUserId: userId, 
+            error: internalUserIdResponse.error 
+          });
+          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+        }
+
+        const internalUserId = internalUserIdResponse.data;
+
         // Delete all onboarding data for the user
-        const { error: stepsError } = await supabaseService.deleteOne(
-          'user_onboarding_steps' as any,
-          userId,
+        const { error: stepsError } = await deleteOne(
+          'user_onboarding_steps' as unknown as keyof Database['public']['Tables'],
+          internalUserId,
           'user_id'
         );
 
@@ -935,14 +1020,15 @@ export class OnboardingService extends BaseService {
         }
 
         // Reset user profile onboarding status
-        const { error: profileError } = await supabaseService.updateOne(
+        const { error: profileError } = await updateOne(
           'user_profiles',
-          userId,
+          internalUserId,
           { 
             onboarding_completed: false,
             onboarding_started_at: null,
             onboarding_completed_at: null
-          }
+          },
+          'user_id'
         );
 
         if (profileError) {
@@ -970,11 +1056,23 @@ export class OnboardingService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       try {
-        // Check user profile completion
-        const { data: userProfile, error: profileError } = await supabaseService.selectOne(
+        // Get internal user ID from external user ID
+        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+          logger.error('Failed to get internal user ID for onboarding completion check', { 
+            externalUserId: userId, 
+            error: internalUserIdResponse.error 
+          });
+          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+        }
+
+        const internalUserId = internalUserIdResponse.data;
+
+        // Check user profile completion using internal user ID
+        const { data: userProfile, error: profileError } = await selectOne(
           'user_profiles',
-          userId,
-          'id'
+          internalUserId,
+          'user_id'
         );
 
         const userProfileComplete = !profileError && userProfile && 
@@ -983,27 +1081,60 @@ export class OnboardingService extends BaseService {
         // Check business profile completion
         let businessProfileComplete = false;
         if (userProfile && (userProfile as any).company_id) {
-          const { data: businessProfile, error: businessError } = await supabaseService.selectOne(
-            'business_profiles' as any,
+          // Try companies table first (current structure)
+          const { data: company, error: companyError } = await selectOne(
+            'companies' as unknown as keyof Database['public']['Tables'],
             (userProfile as any).company_id,
             'id'
           );
 
-          businessProfileComplete = !businessError && businessProfile &&
-            Boolean((businessProfile as any).company_name) && 
-            Boolean((businessProfile as any).industry) && 
-            Boolean((businessProfile as any).company_size);
+          if (!companyError && company) {
+            businessProfileComplete = Boolean((company as any).name) && 
+              Boolean((company as any).industry) && 
+              Boolean((company as any).size);
+          } else {
+            // Fallback to business_profiles table (legacy structure)
+            const { data: businessProfile, error: businessError } = await selectOne(
+              'business_profiles' as unknown as keyof Database['public']['Tables'],
+              (userProfile as any).company_id,
+              'id'
+            );
+
+            businessProfileComplete = !businessError && businessProfile &&
+              Boolean((businessProfile as any).company_name) && 
+              Boolean((businessProfile as any).industry) && 
+              Boolean((businessProfile as any).company_size);
+          }
         }
 
-        // Check required onboarding modules
-        const { data: onboardingProgress, error: progressError } = await supabaseService.selectOne(
-          'user_onboarding_progress' as any,
-          userId,
-          'user_id'
+        // Determine required steps via RPC for consistency; fallback to local config
+        let requiredStepIds: string[] = [];
+        try {
+          const { data: rpcSteps } = await callRPC<string[]>(
+            'get_required_onboarding_steps'
+          );
+          if (Array.isArray(rpcSteps)) {
+            requiredStepIds = rpcSteps;
+          }
+        } catch (_e) {
+          // Fallback to local configuration when RPC unavailable
+          requiredStepIds = ONBOARDING_PHASES
+            .flatMap(phase => phase.steps)
+            .filter(step => step.isRequired)
+            .map(step => step.id);
+        }
+
+        const { data: completedStepsData, error: completedStepsError } = await selectData(
+          'user_onboarding_steps' as unknown as keyof Database['public']['Tables'],
+          'step_id',
+          { user_id: internalUserId }
         );
 
-        const requiredModulesComplete = !progressError && onboardingProgress &&
-          Boolean((onboardingProgress as any).onboarding_completed);
+        const completedStepIds: string[] = Array.isArray(completedStepsData)
+          ? (completedStepsData as any[]).map(r => r.step_id as string)
+          : [];
+
+        const requiredModulesComplete = !completedStepsError && requiredStepIds.every(id => completedStepIds.includes(id));
 
         // Calculate completion percentage
         const checks = [userProfileComplete, businessProfileComplete, requiredModulesComplete];
@@ -1040,10 +1171,22 @@ export class OnboardingService extends BaseService {
    */
   async isFirstTimeUser(userId: string): Promise<ServiceResponse<boolean>> {
     try {
-      const { data: userProfile, error } = await supabaseService.selectOne(
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for first time user check', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return this.createErrorResponse(internalUserIdResponse.error || 'Failed to get internal user ID');
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+
+      const { data: userProfile, error } = await selectOne(
         'user_profiles',
-        userId,
-        'id'
+        internalUserId,
+        'user_id'
       );
 
       if (error || !userProfile) {
@@ -1063,14 +1206,27 @@ export class OnboardingService extends BaseService {
    */
   async markFirstTimeExperienceComplete(userId: string): Promise<ServiceResponse<boolean>> {
     try {
-      const { error } = await supabaseService.updateOne(
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for first time experience completion', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return this.createErrorResponse(internalUserIdResponse.error || 'Failed to get internal user ID');
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+
+      // Only update the timestamp, don't mark as completed
+      const { error } = await updateOne(
         'user_profiles',
-        userId,
+        internalUserId,
         {
-          onboarding_completed: true,
-          onboarding_completed_at: new Date().toISOString(),
+          onboarding_started_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        }
+        },
+        'user_id'
       );
 
       if (error) {

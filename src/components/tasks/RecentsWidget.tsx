@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { selectWithOptions, deleteOne } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { selectWithOptions, deleteOne } from '@/lib/api-client';
+import { logger } from '@/shared/utils/logger';
 
 interface Pin {
   id: string;

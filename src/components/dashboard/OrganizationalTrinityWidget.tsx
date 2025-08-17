@@ -1,10 +1,10 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Brain, Eye, Zap, ExternalLink } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card.tsx';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card';
 import { crossDepartmentalContext } from '@/services/ai/crossDepartmentalContext';
 import { useState } from 'react';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
 
 interface OrgMetric {
   label: string;

@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { postgres } from "@/lib/postgres";
 
 export function useRealtimeTable(table: "Recent" | "Pin", onChange: () => void) {
   useEffect(() => {
-    const channel = supabase
+    const channel = postgres
       .channel(`realtime: ${table}`)
       .on(
         "postgres_changes",
@@ -15,7 +15,7 @@ export function useRealtimeTable(table: "Recent" | "Pin", onChange: () => void) 
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      postgres.removeChannel(channel);
     };
   }, [table, onChange]);
 } 

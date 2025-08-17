@@ -3,7 +3,7 @@
  * Advanced AI-powered email analysis and processing
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
 export interface EmailAnalysis {

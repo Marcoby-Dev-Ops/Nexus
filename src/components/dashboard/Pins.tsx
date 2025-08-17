@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeTable } from "@/core/hooks/useRealtimeTable";
-import { supabase } from "@/lib/supabase";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { postgres } from "@/lib/postgres";
+import type { DatabaseError } from "@/core/types/errors";
 import { formatDistanceToNow } from "date-fns";
 import { useWidgetAnalytics } from '@/shared/features/widgets/hooks/useWidgetAnalytics';
 import { useEffect } from "react";
@@ -15,7 +15,7 @@ type PinItem = {
 };
 
 async function fetchPins(): Promise<PinItem[]> {
-  const { data, error }: { data: PinItem[] | null; error: PostgrestError | null } = await supabase
+  const { data, error }: { data: PinItem[] | null; error: DatabaseError | null } = await postgres
     .from("Pin")
     .select("*")
     .order("pinnedAt", { ascending: false })

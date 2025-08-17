@@ -1,7 +1,8 @@
-import { supabase, callRPC } from '@/lib/supabase';
+import { callRPC } from '@/lib/api-client';
 import type { WorkflowGenerationRequest } from './n8nWorkflowBuilder';
 import { N8nWorkflowBuilder } from './n8nWorkflowBuilder';
 import { n8nService } from '@/services/automation/n8nService';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 export interface AutomationRecipe {
   id: string;
@@ -372,15 +373,16 @@ class AutomationRecipeEngine {
     deploymentId: string,
     webhookUrl?: string
   ): Promise<string> {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
+    const result = await authentikAuthService.getSession();
+    const userData = result.data?.user;
+    if (!userData) {
       throw new Error('User not authenticated');
     }
 
     const { data, error } = await supabase
       .from('action_cards')
       .insert({
-        userid: userData.user.id,
+        userid: userData.id,
         domain: 'automation',
         kind: 'notification',
         title: `${recipe.name} Deployed Successfully`,

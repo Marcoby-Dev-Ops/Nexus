@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { selectData, selectOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface RedirectRule {
@@ -59,10 +59,7 @@ export const useRedirectManager = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
-        .from('redirect_rules')
-        .select('*')
-        .eq('user_id', userId);
+      const { data, error } = await selectData('redirect_rules', '*', { user_id: userId });
       
       if (error) {
         logger.error('Failed to fetch redirect rules', { error });
@@ -80,11 +77,7 @@ export const useRedirectManager = () => {
 
   const getRedirectById = useCallback(async (id: string) => {
     try {
-      const { data, error } = await supabase
-        .from('redirect_rules')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await selectOne('redirect_rules', id);
       
       if (error) {
         logger.error('Failed to fetch redirect rule', { error });

@@ -8,12 +8,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { 
   Users, 
   Building2, 
@@ -23,8 +23,10 @@ import {
   RefreshCw,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  Brain
 } from 'lucide-react';
+
 
 interface HubSpotDashboardData {
   contacts: {
@@ -62,6 +64,7 @@ export default function HubSpotDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [clientIntelligenceSyncing, setClientIntelligenceSyncing] = useState(false);
 
   useEffect(() => {
     loadDashboardData();
@@ -206,8 +209,10 @@ export default function HubSpotDashboard() {
       }
       
       // Trigger manual sync
-      const { error } = await supabase.functions.invoke('hubspot-sync', {
-        body: { userId: user.id }
+      const { error } = await callEdgeFunction('hubspot-sync', {
+        userId: user.id,
+        action: 'sync',
+        timestamp: new Date().toISOString()
       });
 
       if (error) throw error;
@@ -218,6 +223,38 @@ export default function HubSpotDashboard() {
       setError(err.message);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleClientIntelligenceSync = async () => {
+    try {
+      setClientIntelligenceSyncing(true);
+      setError(null);
+      
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Trigger client intelligence sync
+      const { data: syncResult, error } = await callEdgeFunction('hubspot-client-intelligence-sync', {
+        userId: user.id,
+        action: 'sync-intelligence',
+        timestamp: new Date().toISOString()
+      });
+
+      if (error) throw error;
+
+      if (syncResult?.success) {
+        // Show success message
+        console.log('Client intelligence sync completed:', syncResult.data);
+        // You could add a toast notification here
+      } else {
+        throw new Error('Client intelligence sync failed');
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setClientIntelligenceSyncing(false);
     }
   };
 
@@ -262,19 +299,38 @@ export default function HubSpotDashboard() {
           <h1 className="text-2xl font-bold">Nexus Business Platform</h1>
           <p className="text-muted-foreground">HubSpot Integration Dashboard</p>
         </div>
-        <Button onClick={handleSync} disabled={syncing}>
-          {syncing ? (
-            <>
-              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
-              Syncing...
-            </>
-          ) : (
-            <>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Sync Now
-            </>
-          )}
-        </Button>
+        <div className="flex space-x-2">
+          <Button onClick={handleSync} disabled={syncing}>
+            {syncing ? (
+              <>
+                <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+                Syncing...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Sync Now
+              </>
+            )}
+          </Button>
+          <Button 
+            onClick={handleClientIntelligenceSync} 
+            disabled={clientIntelligenceSyncing}
+            variant="outline"
+          >
+            {clientIntelligenceSyncing ? (
+              <>
+                <Brain className="h-4 w-4 animate-spin mr-2" />
+                Processing...
+              </>
+            ) : (
+              <>
+                <Brain className="h-4 w-4 mr-2" />
+                Client Intelligence
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Sync Status */}

@@ -55,7 +55,7 @@ interface BusinessProfileData {
 
 export const QuickBusinessSetup: React.FC = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { activeOrgId, loadMemberships } = useOrganizationStore();
   const [isLoading, setIsLoading] = useState(false);
   
@@ -241,13 +241,30 @@ Use this context to provide specific, actionable business advice tailored to ${p
     }
   }, [user, profile, transformProfileToDatabaseFormat, generateBusinessContext, loadMemberships, toast]);
 
-  React.useEffect(() => {
-    if (user) {
-      loadMemberships(user.id).catch((error) => {
-        logger.error('Failed to load memberships', { error, userId: user.id });
-      });
+  // Check if user has valid authentication session
+  const hasValidSession = () => {
+    try {
+      const sessionData = localStorage.getItem('authentik_session');
+      if (!sessionData) return false;
+      
+      const session = JSON.parse(sessionData);
+      return !!(session?.accessToken);
+    } catch {
+      return false;
     }
-  }, [user?.id, loadMemberships]);
+  };
+
+  React.useEffect(() => {
+    // Wait for auth to be fully loaded and user to be authenticated
+    if (authLoading) return;
+    if (!user?.id) return;
+    if (!isAuthenticated) return;
+    if (!hasValidSession()) return;
+    
+    loadMemberships(user.id).catch((error) => {
+      logger.error('Failed to load memberships', { error, userId: user.id });
+    });
+  }, [user?.id, authLoading, isAuthenticated, loadMemberships]);
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">

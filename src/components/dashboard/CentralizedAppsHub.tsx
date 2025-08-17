@@ -6,9 +6,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Building2, Zap, Brain, TrendingUp, AlertCircle, CheckCircle, Settings, Play, BarChart3, Users, DollarSign, MessageSquare, Globe, Database, Layers, ArrowRight, RefreshCw, Target, Workflow, Plus } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
 // import { orchestrator } from '@/services/integrations/centralizedAppsOrchestrator';
 // import type { BusinessApp, BusinessFunction, AppCategory } from '@/services/integrations/centralizedAppsOrchestrator';
 

@@ -6,21 +6,31 @@ const passwordSchema = z.string().min(8, 'Password must be at least 8 characters
 const phoneSchema = z.string().regex(/^\+?[\d\s-()]+$/, 'Please enter a valid phone number');
 const urlSchema = z.string().url('Please enter a valid URL').optional().or(z.literal(''));
 
+// Helpers to treat empty strings as undefined for optional fields
+const emptyToUndefined = <T>(schema: z.ZodType<T>) =>
+  z.preprocess((val) => (val === '' ? undefined : val), schema.optional());
+
+const optionalStringMin = (min: number, message: string) =>
+  emptyToUndefined(z.string().min(min, message));
+
+const optionalEmail = emptyToUndefined(emailSchema);
+const optionalPhone = emptyToUndefined(phoneSchema);
+
 // User Profile Schema
 export const userProfileSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  displayName: z.string().min(2, 'Display name must be at least 2 characters').optional(),
-  jobTitle: z.string().min(2, 'Job title must be at least 2 characters').optional(),
-  company: z.string().min(2, 'Company name must be at least 2 characters').optional(),
+  firstName: z.string().min(2, 'First name must be at least 2 characters').or(z.literal('')),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters').or(z.literal('')),
+  displayName: optionalStringMin(2, 'Display name must be at least 2 characters'),
+  jobTitle: optionalStringMin(2, 'Job title must be at least 2 characters'),
+  company: optionalStringMin(2, 'Company name must be at least 2 characters'),
   role: z.string().min(1, 'Role is required').optional(),
-  department: z.string().min(2, 'Department must be at least 2 characters').optional(),
-  businessEmail: emailSchema.optional(),
-  personalEmail: emailSchema.optional(),
+  department: optionalStringMin(2, 'Department must be at least 2 characters'),
+  businessEmail: optionalEmail,
+  personalEmail: optionalEmail,
   bio: z.string().max(500, 'Bio must be 500 characters or less').optional(),
-  location: z.string().min(2, 'Location must be at least 2 characters').optional(),
+  location: optionalStringMin(2, 'Location must be at least 2 characters'),
   website: urlSchema,
-  phone: phoneSchema.optional(),
+  phone: optionalPhone,
 });
 
 export type UserProfileFormData = z.infer<typeof userProfileSchema>;
@@ -92,6 +102,21 @@ export const integrationSetupSchema = z.object({
 });
 
 export type IntegrationSetupFormData = z.infer<typeof integrationSetupSchema>;
+
+// User Preferences Schema
+export const userPreferencesSchema = z.object({
+  theme: z.enum(['light', 'dark', 'system'], {
+    required_error: 'Please select a theme',
+  }),
+  language: z.string().min(2, 'Language must be at least 2 characters'),
+  timezone: z.string().min(1, 'Timezone is required'),
+  notifications_enabled: z.boolean(),
+  email_notifications: z.boolean(),
+  push_notifications: z.boolean(),
+  sidebar_collapsed: z.boolean(),
+});
+
+export type UserPreferencesFormData = z.infer<typeof userPreferencesSchema>;
 
 // Search and Filter Schemas
 export const searchFiltersSchema = z.object({

@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
-import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { logger } from '@/shared/utils/logger';
 
 // Notification Schemas
 export const NotificationSchema = z.object({

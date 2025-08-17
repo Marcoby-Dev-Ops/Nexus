@@ -1,36 +1,37 @@
-import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
+import { businessHealthService } from '@/core/services/BusinessHealthService';
+import { dataConnectivityHealthService } from '@/services/business/dataConnectivityHealthService';
+import { analyticsService } from '@/services/analytics/analyticsService';
+import { logger } from '@/shared/utils/logger';
 
-// Types
 export interface UserProfile {
   id: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  avatar?: string;
-  role?: string;
-  companyId?: string;
+  role: string;
+  companyId: string;
 }
 
 export interface SystemStatus {
-  home?: {
+  home: {
     insights: number;
     alerts: number;
-    lastUpdated?: string;
+    lastUpdated: string;
   };
-  workspace?: {
+  workspace: {
     actions: number;
     automations: number;
     decisions: number;
   };
-  fire?: {
+  fire: {
     focus: number;
     insight: number;
     roadmap: number;
     execute: number;
   };
-  integrations?: {
+  integrations: {
     connected: number;
     insights: number;
     dataPoints: number;
@@ -52,7 +53,7 @@ export interface BusinessData {
   };
 }
 
-export interface DataContextType {
+interface DataContextType {
   profile: UserProfile | null;
   systemStatus: SystemStatus | null;
   businessData: BusinessData | null;
@@ -64,12 +65,18 @@ export interface DataContextType {
   clearWarnings: () => void;
 }
 
-// Create context
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Provider component
+export const useData = () => {
+  const context = useContext(DataContext);
+  if (context === undefined) {
+    throw new Error('useData must be used within a DataProvider');
+  }
+  return context;
+};
+
 interface DataProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
@@ -81,46 +88,6 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
 
-  // Mock data for development - replace with actual API calls
-  const mockSystemStatus: SystemStatus = {
-    home: {
-      insights: 12,
-      alerts: 3,
-      lastUpdated: new Date().toISOString(),
-    },
-    workspace: {
-      actions: 8,
-      automations: 5,
-      decisions: 2,
-    },
-    fire: {
-      focus: 75,
-      insight: 60,
-      roadmap: 45,
-      execute: 30,
-    },
-    integrations: {
-      connected: 4,
-      insights: 15,
-      dataPoints: 1200,
-    },
-  };
-
-  const mockBusinessData: BusinessData = {
-    id: 'business-1',
-    name: 'Nexus Business',
-    health: {
-      score: 85,
-      trend: 'up',
-      summary: 'Strong performance with positive growth indicators',
-    },
-    metrics: {
-      revenue: 125000,
-      growth: 12.5,
-      efficiency: 78,
-    },
-  };
-
   const loadData = async () => {
     if (!user) {
       setLoading(false);
@@ -131,31 +98,83 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      // Mock API calls - replace with actual implementations
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API delay
+      // Load real data from services
+      const [healthResult, connectivityResult, metricsResult] = await Promise.all([
+        businessHealthService.readLatest(),
+        dataConnectivityHealthService.getConnectivityStatus(user.id),
+        analyticsService.getBusinessMetrics(user.id)
+      ]);
 
-      // Set mock profile data
+      // Set profile data from user
       setProfile({
         id: user.id,
-        firstName: 'John',
-        lastName: 'Doe',
+        firstName: user.user_metadata?.first_name || user.email?.split('@')[0] || 'User',
+        lastName: user.user_metadata?.last_name || '',
         email: user.email || '',
-        role: 'admin',
-        companyId: 'company-1',
+        role: user.user_metadata?.role || 'user',
+        companyId: user.user_metadata?.company_id || 'default',
       });
 
-      // Set mock system status
-      setSystemStatus(mockSystemStatus);
+      // Set system status based on real data
+      const realSystemStatus: SystemStatus = {
+        home: {
+          insights: connectivityResult.success ? (connectivityResult.data?.connectedSources.length || 0) * 3 : 0,
+          alerts: connectivityResult.success ? (connectivityResult.data?.unconnectedSources.length || 0) : 0,
+          lastUpdated: new Date().toISOString(),
+        },
+        workspace: {
+          actions: metricsResult.success ? (metricsResult.data?.actions || 0) : 0,
+          automations: metricsResult.success ? (metricsResult.data?.automations || 0) : 0,
+          decisions: metricsResult.success ? (metricsResult.data?.decisions || 0) : 0,
+        },
+        fire: {
+          focus: healthResult.success ? (healthResult.data?.category_scores?.focus || 0) : 0,
+          insight: healthResult.success ? (healthResult.data?.category_scores?.insight || 0) : 0,
+          roadmap: healthResult.success ? (healthResult.data?.category_scores?.roadmap || 0) : 0,
+          execute: healthResult.success ? (healthResult.data?.category_scores?.execute || 0) : 0,
+        },
+        integrations: {
+          connected: connectivityResult.success ? (connectivityResult.data?.connectedSources.length || 0) : 0,
+          insights: connectivityResult.success ? (connectivityResult.data?.insights || 0) : 0,
+          dataPoints: connectivityResult.success ? (connectivityResult.data?.dataPoints || 0) : 0,
+        },
+      };
+      setSystemStatus(realSystemStatus);
 
-      // Set mock business data
-      setBusinessData(mockBusinessData);
+      // Set business data based on real metrics
+      const realBusinessData: BusinessData = {
+        id: 'business-1',
+        name: 'Nexus Business',
+        health: {
+          score: healthResult.success ? (healthResult.data?.overall_score || 0) : 0,
+          trend: healthResult.success ? 'up' : 'stable',
+          summary: healthResult.success ? 'Real-time business health monitoring active' : 'Health monitoring not available',
+        },
+        metrics: {
+          revenue: metricsResult.success ? (metricsResult.data?.revenue || 0) : 0,
+          growth: metricsResult.success ? (metricsResult.data?.growth || 0) : 0,
+          efficiency: metricsResult.success ? (metricsResult.data?.efficiency || 0) : 0,
+        },
+      };
+      setBusinessData(realBusinessData);
 
-      // Clear any existing warnings
-      setWarnings([]);
+      // Set warnings based on data quality
+      const newWarnings: string[] = [];
+      if (!healthResult.success) {
+        newWarnings.push('Business health data unavailable');
+      }
+      if (!connectivityResult.success) {
+        newWarnings.push('Integration connectivity data unavailable');
+      }
+      if (!metricsResult.success) {
+        newWarnings.push('Business metrics data unavailable');
+      }
+      setWarnings(newWarnings);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load data');
       setWarnings(['Some data may be outdated']);
+      logger.error('Error loading data context', { error: err });
     } finally {
       setLoading(false);
     }
@@ -195,13 +214,4 @@ export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
       {children}
     </DataContext.Provider>
   );
-};
-
-// Hook to use the data context
-export const useData = (): DataContextType => {
-  const context = useContext(DataContext);
-  if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
-  }
-  return context;
 }; 

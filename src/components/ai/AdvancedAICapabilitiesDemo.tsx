@@ -18,10 +18,10 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Spinner } from '@/shared/components/ui/Spinner.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Spinner } from '@/shared/components/ui/Spinner';
 
 interface AICapability {
   id: string;

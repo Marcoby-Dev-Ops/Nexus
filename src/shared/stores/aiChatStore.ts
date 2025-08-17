@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import { supabase } from "@/lib/supabase";
-import { API_CONFIG } from '@/core/constants.ts';
+import { postgres } from "@/lib/postgres";
+import { API_CONFIG } from '@/core/constants';
+import { callEdgeFunction } from '@/lib/api-client';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 export interface AIMessage {
   id: string;
@@ -40,7 +42,8 @@ export const useAIChatStore = create<AIChatStoreState>()(
 
     async sendMessage(conversationId, message, userId, companyId) {
       set({ loading: true, error: null });
-      const { data: { session } } = await supabase.auth.getSession();
+      const result = await authentikAuthService.getSession();
+      const session = result.data;
       if (!session) {
         set({ error: 'Not authenticated', loading: false });
         return;
@@ -103,14 +106,12 @@ export const useAIChatStore = create<AIChatStoreState>()(
             const conversationText = get().conversations[conversationId].messages.map(m => `${m.role}: ${m.content}`).join('\n');
             
             // Fire-and-forget, no need to await
-            supabase.functions.invoke('trigger-n8n-workflow', {
-              body: {
-                workflowid: 'living_assessment_agent',
-                payload: {
-                  companyid: companyId,
-                  userid: userId,
-                  conversationtext: conversationText,
-                }
+            await callEdgeFunction('trigger-n8n-workflow', {
+              workflow: 'ai-chat-processing',
+              data: {
+                message: message,
+                userId: session?.user?.id,
+                timestamp: new Date().toISOString()
               }
             });
 
@@ -132,7 +133,8 @@ export const useAIChatStore = create<AIChatStoreState>()(
 
     async loadConversation(conversationId) {
       set({ loading: true, error: null });
-      const { data: { session } } = await supabase.auth.getSession();
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
       if (!session) {
         set({ error: 'Not authenticated', loading: false });
         return;

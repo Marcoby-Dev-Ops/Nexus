@@ -4,7 +4,7 @@ import { ContentCard } from '@/shared/components/patterns/ContentCard';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { SimpleBarChart } from '@/components/dashboard/SimpleBarChart';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
+import { analyticsService, type IntegrationAnalytics, type DataSource, type DataUsageByCategory, type RecentSyncActivity } from '@/services/AnalyticsService';
 import AnalyticsOnboardingTrigger from '@/components/analytics/AnalyticsOnboardingTrigger';
 
 /**
@@ -69,197 +69,62 @@ const DataWarehouseHome: React.FC = () => {
     try {
       setError(null);
       
-      // Get integration analytics using the database function
-      const { data: analyticsData, error: analyticsError } = await supabase
-        .rpc('get_user_integration_analytics', { user_uuid: user.id });
+      // Get all analytics data using the service
+      const [
+        analyticsResult,
+        dataSourcesResult,
+        usageByCategoryResult,
+        recentActivityResult,
+        dailyActivityResult
+      ] = await Promise.all([
+        analyticsService.getUserIntegrationAnalytics(user.id),
+        analyticsService.getUserDataSources(user.id),
+        analyticsService.getUsageByCategory(user.id),
+        analyticsService.getRecentSyncActivity(user.id, 10),
+        analyticsService.getDailySyncActivity(user.id, 7)
+      ]);
 
-      if (analyticsError) throw analyticsError;
-      
-      if (analyticsData && analyticsData.length > 0) {
-        setAnalytics(analyticsData[0]);
+      // Handle analytics data
+      if (analyticsResult.success && analyticsResult.data) {
+        setAnalytics(analyticsResult.data);
       }
 
-      // Get detailed data sources information
-      const { data: sourcesData, error: sourcesError } = await supabase
-        .from('user_integrations')
-        .select(`
-          id,
-          integration_name,
-          status,
-          last_sync_at,
-          error_message,
-          integrations (
-            name,
-            auth_type,
-            category
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('last_sync_at', { ascending: false });
-
-      if (sourcesError) throw sourcesError;
-
-      // Get data record counts for each integration
-      const sourcePromises = sourcesData?.map(async (source) => {
-        const { count } = await supabase
-          .from('integration_data')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_integration_id', source.id);
-
-        // Handle integrations property which might be an array or object
-        const integration = Array.isArray(source.integrations) ? source.integrations[0] : source.integrations;
-
-                 return {
-           id: source.id,
-           name: source.integration_name || integration?.name || 'Unknown',
-           integrationname: integration?.name || 'Unknown',
-           status: source.status,
-           lastsyncat: source.last_sync_at,
-           totalsyncs: 0, // total_syncs column doesn't exist in user_integrations table
-           datarecordcount: count || 0,
-           authtype: integration?.auth_type || 'unknown',
-           error_message: source.error_message
-         };
-      }) || [];
-
-      const resolvedSources = await Promise.all(sourcePromises);
-      setDataSources(resolvedSources);
-
-      // Get usage by category
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('user_integrations')
-        .select(`
-          integrations (
-            category
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-
-      if (!categoryError && categoryData) {
-        const categoryMap = new Map<string, { count: number; integrations: number }>();
-        
-        categoryData.forEach(item => {
-          // Handle integrations property which might be an array or object
-          const integration = Array.isArray(item.integrations) ? item.integrations[0] : item.integrations;
-          const category = integration?.category || 'other';
-          const current = categoryMap.get(category) || { count: 0, integrations: 0 };
-          categoryMap.set(category, {
-            count: current.count,
-            integrations: current.integrations + 1
-          });
-        });
-
-        // Get record counts per category
-        for (const [category, data] of categoryMap.entries()) {
-          const { count } = await supabase
-            .from('integration_data')
-            .select('*', { count: 'exact', head: true })
-            .in('user_integration_id', 
-              resolvedSources
-                .filter(s => {
-                  const sourceData = sourcesData?.find(sd => sd.id === s.id);
-                  if (!sourceData) return false;
-                  const integration = Array.isArray(sourceData.integrations) ? sourceData.integrations[0] : sourceData.integrations;
-                  return s.integrationname && integration?.category === category;
-                })
-                .map(s => s.id)
-            );
-          
-          data.count = count || 0;
-        }
-
-        const categoryUsage = Array.from(categoryMap.entries()).map(([category, data]) => ({
-          category: category.charAt(0).toUpperCase() + category.slice(1),
-          recordcount: data.count,
-          integrationcount: data.integrations
-        }));
-
-        setUsageByCategory(categoryUsage);
+      // Handle data sources
+      if (dataSourcesResult.success && dataSourcesResult.data) {
+        setDataSources(dataSourcesResult.data);
       }
 
-      // Get recent sync activity
-      const { data: activityData, error: activityError } = await supabase
-        .from('integration_sync_logs')
-        .select(`
-          sync_type,
-          status,
-          started_at,
-          duration_ms,
-          processed_records,
-          user_integrations (
-            name,
-            integrations (
-              name
-            )
-          )
-        `)
-        .in('user_integration_id', resolvedSources.map(s => s.id))
-        .order('started_at', { ascending: false })
-        .limit(10);
-
-      if (!activityError && activityData) {
-        const formattedActivity = activityData.map(item => {
-          // Handle nested integrations property
-          const userIntegration = item.user_integrations;
-          const integration = Array.isArray(userIntegration?.integrations) ? 
-            userIntegration.integrations[0] : userIntegration?.integrations;
-          
-          return {
-            integrationname: integration?.name || userIntegration?.name || 'Unknown',
-            synctype: item.sync_type,
-            status: item.status,
-            startedat: item.started_at,
-            durationms: item.duration_ms,
-            processedrecords: item.processed_records || 0
-          };
-        });
-        setRecentActivity(formattedActivity);
+      // Handle usage by category
+      if (usageByCategoryResult.success && usageByCategoryResult.data) {
+        setUsageByCategory(usageByCategoryResult.data);
       }
 
-      // Get daily sync activity for the last 7 days
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      // Handle recent activity
+      if (recentActivityResult.success && recentActivityResult.data) {
+        setRecentActivity(recentActivityResult.data);
+      }
 
-      const { data: dailyData, error: dailyError } = await supabase
-        .from('integration_sync_logs')
-        .select('started_at, status')
-        .in('user_integration_id', resolvedSources.map(s => s.id))
-        .gte('started_at', sevenDaysAgo.toISOString())
-        .eq('status', 'completed');
+      // Handle daily activity
+      if (dailyActivityResult.success && dailyActivityResult.data) {
+        setDailySyncActivity(dailyActivityResult.data);
+      }
 
-      if (!dailyError && dailyData) {
-        const dailyMap = new Map<string, number>();
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        
-        // Initialize with 0s
-        for (let i = 0; i < 7; i++) {
-          const date = new Date();
-          date.setDate(date.getDate() - i);
-          dailyMap.set(days[date.getDay()], 0);
-        }
+      // Check for any errors
+      const errors = [
+        analyticsResult.error,
+        dataSourcesResult.error,
+        usageByCategoryResult.error,
+        recentActivityResult.error,
+        dailyActivityResult.error
+      ].filter(Boolean);
 
-        // Count actual syncs
-        dailyData.forEach(item => {
-          const date = new Date(item.started_at);
-          const dayName = days[date.getDay()];
-          dailyMap.set(dayName, (dailyMap.get(dayName) || 0) + 1);
-        });
-
-        const dailyActivity = Array.from(dailyMap.entries()).map(([name, value]) => ({
-          name,
-          value
-        }));
-
-        setDailySyncActivity(dailyActivity);
+      if (errors.length > 0) {
+        setError(`Some data failed to load: ${errors.join(', ')}`);
       }
 
     } catch (err) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching analytics: ', err);
-      setError(err instanceof Error ? err.message: 'Failed to load analytics data');
+      console.error('Error fetching analytics data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch analytics data');
     } finally {
       setLoading(false);
       setRefreshing(false);

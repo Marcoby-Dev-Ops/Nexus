@@ -5,7 +5,7 @@
  * Extends BaseService for consistent error handling and logging
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';

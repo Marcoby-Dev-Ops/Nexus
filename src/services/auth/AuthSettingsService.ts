@@ -1,7 +1,6 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { supabase } from '@/lib/supabase';
-
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 export interface AuthSettings {
   id?: string;
   user_id: string;

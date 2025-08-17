@@ -1,6 +1,6 @@
 import React from 'react';
 import { BillingDashboard } from './BillingDashboard';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { CreditCard } from 'lucide-react';
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { select, selectOne, updateOne } from '@/lib/supabase';
+import { selectData as select, selectOne, updateOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface OnboardingStep {

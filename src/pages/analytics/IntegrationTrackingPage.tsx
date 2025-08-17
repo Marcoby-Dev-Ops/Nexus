@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, TrendingUp, Activity, CheckCircle, Clock, ArrowRight, BarChart3, Network, Component, Eye, MapPin, Users, Zap } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Input } from '@/shared/components/ui/Input';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
 // import { IntegrationService } from '@/services/integrations';
 import type { ComponentUsage } from '@/services/integrations';

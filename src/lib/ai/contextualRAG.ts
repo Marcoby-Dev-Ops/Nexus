@@ -1,5 +1,4 @@
-import { supabase } from '@/lib/supabase';
-
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 export interface RAGContext {
   userId: string;
   companyId?: string;

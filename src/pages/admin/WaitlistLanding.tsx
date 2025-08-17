@@ -8,12 +8,12 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { waitlistService, type WaitlistSignup } from '@/components/admin/onboarding/lib/waitlistService';
 import { ArrowRight, Users, Sparkles, Check, Zap, Shield, Globe, Twitter, Linkedin, Facebook, Copy, CheckCircle2, BarChart3, Crown, Bolt, AlertCircle } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Card, CardContent } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Spinner } from '@/shared/components/ui/Spinner.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
+import { Card, CardContent } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Spinner } from '@/shared/components/ui/Spinner';
 import Confetti from '@/shared/components/Confetti';
 
 interface WaitlistEntry {

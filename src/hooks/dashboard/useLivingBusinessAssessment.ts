@@ -2,12 +2,14 @@
  * Living Business Assessment Hook
  * Comprehensive hook that provides business health data with peer comparisons,
  * trends, achievements, and benchmarking for motivation and continuous improvement
+ * Uses the updated BusinessBenchmarkingService with real database queries
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { businessBenchmarkingService, type LivingAssessment } from '@/services/business/businessBenchmarkingService';
 import { useAuth } from '@/hooks';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
+import { businessBenchmarkingService, type LivingAssessment } from '@/services/business/businessBenchmarkingService';
+import { userMappingService } from '@/shared/services/UserMappingService';
 
 interface UseLivingBusinessAssessmentResult {
   assessment: LivingAssessment | null;
@@ -26,17 +28,7 @@ export function useLivingBusinessAssessment(): UseLivingBusinessAssessmentResult
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  const getBusinessProfile = useCallback(() => {
-    // In a real app, this would come from user settings or profile data
-    // For now, we'll use mock data based on common business types
-    return {
-      industry: 'Technology', // Could be derived from connected tools or user input
-      size: 'Small Business', // Could be derived from employee count or revenue
-      founded: '2023' // Could be from business registration data
-    };
-  }, []);
-
-  // Fetch comprehensive living assessment
+  // Fetch comprehensive living assessment using the real service
   const fetchAssessment = useCallback(async () => {
     if (!user?.id) return;
 
@@ -44,19 +36,52 @@ export function useLivingBusinessAssessment(): UseLivingBusinessAssessmentResult
       setLoading(true);
       setError(null);
 
-      const businessProfile = getBusinessProfile();
-      const data = await businessBenchmarkingService.getLivingAssessment(user.id, businessProfile);
-      
-      setAssessment(data);
-      setLastUpdated(new Date().toISOString());
+      // Get the internal user ID from the mapping
+      let internalUserId: string | null = null;
+      try {
+        const userId = typeof user.id === 'string' ? user.id : String(user.id);
+        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+        
+        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+          logger.error('Failed to get internal user ID for business assessment', {
+            externalUserId: userId,
+            error: internalUserIdResponse.error
+          });
+          setLoading(false);
+          return;
+        }
+        
+        internalUserId = internalUserIdResponse.data;
+      } catch (error) {
+        logger.error('Failed to get internal user ID for business assessment', error);
+        setLoading(false);
+        return;
+      }
+
+      // Get business profile for the service
+      const businessProfile = {
+        industry: 'technology', // Default, will be overridden by service
+        size: 'small',
+        founded: '2020'
+      };
+
+      // Use the real businessBenchmarkingService with internal user ID
+      const result = await businessBenchmarkingService.getLivingAssessment(internalUserId, businessProfile);
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch business assessment');
+      }
+
+      setAssessment(result.data);
+      setLastUpdated(result.data.lastUpdated);
 
       logger.info({ 
-        currentScore: data.currentScore,
-        rank: data.benchmarks.yourRank,
-        percentile: data.benchmarks.percentile,
-        achievements: data.achievements.length,
-        similarBusinesses: data.peerComparison.similarBusinesses
-      }, 'Fetched living business assessment');
+        currentScore: result.data.currentScore,
+        rank: result.data.benchmarks.yourRank,
+        percentile: result.data.benchmarks.percentile,
+        achievements: result.data.achievements.length,
+        similarBusinesses: result.data.peerComparison.similarBusinesses
+      }, 'Fetched living business assessment from real service');
 
     } catch (error: any) {
       logger.error({ error }, 'Failed to fetch living business assessment');
@@ -64,7 +89,7 @@ export function useLivingBusinessAssessment(): UseLivingBusinessAssessmentResult
     } finally {
       setLoading(false);
     }
-  }, [user?.id, getBusinessProfile]);
+  }, [user?.id]);
 
   // Refresh assessment manually
   const refresh = useCallback(async () => {
@@ -73,20 +98,25 @@ export function useLivingBusinessAssessment(): UseLivingBusinessAssessmentResult
 
   // Initial fetch
   useEffect(() => {
-    fetchAssessment();
-  }, [fetchAssessment]);
+    if (user?.id) {
+      fetchAssessment();
+    }
+  }, [user?.id]); // Remove fetchAssessment from dependencies
 
-  // Auto-refresh every 2 minutes to keep assessment current
+  // Auto-refresh - longer intervals in development
   useEffect(() => {
+    if (!user?.id) return;
+    
+    const refreshInterval = process.env.NODE_ENV === 'development' ? 10 * 60 * 1000 : 5 * 60 * 1000; // 10min dev, 5min prod
     const interval = setInterval(() => {
       fetchAssessment();
-    }, 2 * 60 * 1000);
+    }, refreshInterval);
 
     return () => clearInterval(interval);
-  }, [fetchAssessment]);
+  }, [user?.id]); // Remove fetchAssessment from dependencies
 
   // Calculate derived values
-  const isImproving = assessment?.trends.monthlyChange ? assessment.trends.monthlyChange > 0: false;
+  const isImproving = assessment?.trends.direction === 'up';
   
   const getMotivationalMessage = useCallback((): string | null => {
     if (!assessment) return null;
@@ -160,7 +190,44 @@ export function useBusinessMotivation() {
   const { assessment, isImproving, motivationalMessage } = useLivingBusinessAssessment();
 
   const getNextMilestone = useCallback(() => {
-    return assessment?.nextMilestones[0] || null;
+    // Generate next milestones based on current assessment
+    if (!assessment) return null;
+
+    const { currentScore, achievements } = assessment;
+    const hasIntegrationAchievement = achievements.some(a => a.category === 'integration');
+    const hasProfileAchievement = achievements.some(a => a.category === 'profile');
+
+    if (!hasIntegrationAchievement) {
+      return {
+        id: 'first-integration',
+        title: 'Connect Your First Integration',
+        description: 'Connect a data source to start building your business health score',
+        targetScore: currentScore + 10,
+        reward: 'Basic Analytics Dashboard'
+      };
+    }
+
+    if (!hasProfileAchievement) {
+      return {
+        id: 'complete-profile',
+        title: 'Complete Business Profile',
+        description: 'Fill out your complete business profile for personalized insights',
+        targetScore: currentScore + 20,
+        reward: 'Personalized AI Recommendations'
+      };
+    }
+
+    if (currentScore < 80) {
+      return {
+        id: 'reach-excellent',
+        title: 'Reach Excellent Health',
+        description: 'Achieve an 80+ business health score',
+        targetScore: 80,
+        reward: 'Premium Business Insights'
+      };
+    }
+
+    return null;
   }, [assessment]);
 
   const getRecentAchievement = useCallback(() => {
@@ -168,7 +235,7 @@ export function useBusinessMotivation() {
     
     // Return most recent achievement
     return assessment.achievements.sort((a, b) => 
-      new Date(b.unlockedAt).getTime() - new Date(a.unlockedAt).getTime()
+      new Date(b.date).getTime() - new Date(a.date).getTime()
     )[0];
   }, [assessment]);
 

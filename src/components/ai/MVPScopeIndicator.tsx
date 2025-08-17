@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, Info, X } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
 
 interface MVPScopeIndicatorProps {
   onDismiss?: () => void;

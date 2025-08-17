@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/shared/components/ui/Card.tsx';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/shared/components/ui/Card';
 import { Lightbulb, AlertTriangle, Loader2 } from 'lucide-react';
 import type { DepartmentId } from '@/shared/constants/departments';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/hooks/index';
-import { API_CONFIG } from '@/core/constants.ts';
+import { API_CONFIG } from '@/core/constants';
 
 interface AISuggestionCardProps {
   departmentId: DepartmentId;

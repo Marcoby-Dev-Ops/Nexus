@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks/index';
-import { useRedirectManager } from '@/shared/hooks/useRedirectManager.ts';
+import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { HeaderProvider } from '@/shared/hooks/useHeaderContext';

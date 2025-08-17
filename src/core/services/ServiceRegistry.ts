@@ -6,7 +6,7 @@
  */
 
 import { serviceFactory, registerService } from './ServiceFactory';
-import { BaseService } from './BaseService';
+import type { BaseService } from './BaseService';
 
 // Import all services
 import { UserService } from '@/services/business/UserService';
@@ -23,18 +23,19 @@ import { UserProfileService } from '@/services/business/userProfileService';
 
 // Core services
 import { WorkflowService } from './workflowService';
-import { SupabaseService } from './SupabaseService';
+import { databaseService } from './DatabaseService';
 import { DataPrincipleService } from './DataPrincipleService';
 import { PersonalThoughtsService } from './PersonalThoughtsService';
 import { PersonalAutomationsService } from './PersonalAutomationsService';
 import { ChatUsageTrackingService } from './ChatUsageTrackingService';
 import { UserLicensesService } from './UserLicensesService';
+import { CentralizedRLSService } from './CentralizedRLSService';
 
 // Integration services
 import { IntegrationService } from '@/services/integrations/integrationService';
 import { IntegrationDataService } from '@/services/integrations/integrationDataService';
 import { DataPointMappingService } from '@/services/integrations/dataPointMappingService';
-import { DataPointDictionaryService } from '@/services/integrations/DataPointDictionaryService';
+
 import { UniversalIntegrationService } from '@/services/integrations/universalIntegrationService';
 import { SalesforceStyleDataService } from '@/services/integrations/SalesforceStyleDataService';
 import { RealTimeCrossDepartmentalSync } from '@/services/integrations/realTimeCrossDepartmentalSync';
@@ -65,7 +66,7 @@ import { CompanyIntelligenceService } from '@/shared/services/CompanyIntelligenc
 import { BusinessProcessAutomationService } from '@/shared/services/BusinessProcessAutomationService';
 
 // Auth services
-import { AuthService } from '@/core/auth/AuthService';
+import { AuthentikAuthService } from '@/core/auth/AuthentikAuthService';
 import { OAuthTokenService } from '@/core/auth/OAuthTokenService';
 
 // Admin services
@@ -133,18 +134,22 @@ export class ServiceRegistry {
 
     // Core Services
     this.registerService('workflow', WorkflowService.getInstance(), 'Workflow management', 'core');
-    this.registerService('supabase', SupabaseService.getInstance(), 'Supabase operations', 'core');
+    // Only register database service if it's available (server-side only)
+    if (databaseService) {
+      this.registerService('database', databaseService, 'Database operations', 'core');
+    }
     this.registerService('data-principle', new DataPrincipleService(), 'Data principle management', 'core');
     this.registerService('personal-thoughts', new PersonalThoughtsService(), 'Personal thoughts', 'core');
     this.registerService('personal-automations', new PersonalAutomationsService(), 'Personal automations', 'core');
     this.registerService('chat-usage-tracking', new ChatUsageTrackingService(), 'Chat usage tracking', 'core');
     this.registerService('user-licenses', new UserLicensesService(), 'User license management', 'core');
+    this.registerService('centralized-rls', new CentralizedRLSService(), 'Centralized RLS management', 'core');
 
     // Integration Services
     this.registerService('integration', new IntegrationService(), 'Integration management', 'integration');
     this.registerService('integration-data', new IntegrationDataService(), 'Integration data', 'integration');
     this.registerService('data-point-mapping', new DataPointMappingService(), 'Data point mapping', 'integration');
-    this.registerService('data-point-dictionary', new DataPointDictionaryService(), 'Data point dictionary', 'integration');
+
     this.registerService('universal-integration', new UniversalIntegrationService(), 'Universal integration', 'integration');
     this.registerService('salesforce-style-data', new SalesforceStyleDataService(), 'Salesforce style data', 'integration');
     this.registerService('real-time-sync', new RealTimeCrossDepartmentalSync(), 'Real-time sync', 'integration');
@@ -175,7 +180,7 @@ export class ServiceRegistry {
     this.registerService('business-process-automation', new BusinessProcessAutomationService(), 'Business process automation', 'shared');
 
     // Auth Services
-    this.registerService('auth', new AuthService(), 'Authentication', 'auth');
+    this.registerService('auth', new AuthentikAuthService(), 'Authentication', 'auth');
     this.registerService('oauth-token', new OAuthTokenService(), 'OAuth token management', 'auth');
 
     // Admin Services
@@ -200,14 +205,16 @@ export class ServiceRegistry {
     description?: string,
     category?: string
   ): void {
-    registerService(name, service);
-    
-    this.registrations.push({
-      name,
-      service,
-      description,
-      category,
-    });
+    // Make registration idempotent across HMR/re-mounts
+    if (!serviceFactory.has(name)) {
+      registerService(name, service);
+      this.registrations.push({
+        name,
+        service,
+        description,
+        category,
+      });
+    }
   }
 
   /**

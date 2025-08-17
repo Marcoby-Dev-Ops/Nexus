@@ -336,11 +336,13 @@ export const useSecondBrain = (config: SecondBrainConfig = {
   // Generate insights periodically
   useEffect(() => {
     if (user?.id) {
+      // Use longer intervals in development to reduce resource usage
+      const refreshInterval = process.env.NODE_ENV === 'development' ? 60 * 60 * 1000 : 30 * 60 * 1000; // 1hour dev, 30min prod
       const interval = setInterval(() => {
         generateContextualInsights();
         generateProgressiveActions();
         identifyAutomationOpportunities();
-      }, 30 * 60 * 1000); // Every 30 minutes
+      }, refreshInterval);
       
       return () => clearInterval(interval);
     }

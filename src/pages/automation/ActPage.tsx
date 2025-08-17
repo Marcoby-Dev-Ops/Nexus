@@ -1,5 +1,5 @@
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/Table';
 import { AutomationOnboardingTrigger } from '@/components/automation/AutomationOnboardingTrigger';
 

@@ -5,9 +5,12 @@ require('whatwg-fetch');
 // Mock import.meta.env for Jest
 global.importMeta = {
   env: {
-    VITE_SUPABASE_URL: 'https://test.supabase.co',
-    VITE_SUPABASE_ANON_KEY: 'test-anon-key',
-    VITE_SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+      VITE_POSTGRES_URL: 'postgresql://postgres:postgres@localhost:5433/vector_db',
+  VITE_POSTGRES_HOST: 'localhost',
+  VITE_POSTGRES_PORT: 5433,
+  VITE_POSTGRES_DB: 'vector_db',
+  VITE_POSTGRES_USER: 'postgres',
+  VITE_POSTGRES_PASSWORD: 'postgres',
     VITE_OPENROUTER_API_KEY: 'test-openrouter-key',
     VITE_GOOGLE_CLIENT_ID: 'test-google-client-id',
     VITE_GOOGLE_CLIENT_SECRET: 'test-google-client-secret',
@@ -25,7 +28,7 @@ global.importMeta = {
     VITE_NINJARMM_CLIENT_ID: 'test-ninjarmm-client-id',
     VITE_N8N_URL: 'https://test.n8n.io',
     VITE_N8N_API_KEY: 'test-n8n-api-key',
-    VITE_CHAT_V2: '1',
+
     VITE_AI_CHAT_URL: 'https://localhost:5173/functions/v1/ai_chat',
     VITE_NEXT_PUBLIC_APP_URL: 'https://nexux.marcoby.com',
     VITE_DEV_APP_URL: 'http://localhost:5173',

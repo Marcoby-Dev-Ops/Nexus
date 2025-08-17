@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import OrganizationalHealthScore from '../../src/components/dashboard/OrganizationalHealthScore';
-import { useAuth } from '../../src/contexts/AuthContext';
+import { useAuth } from '../../src/hooks/useAuth';
 import { businessHealthService } from '../../src/lib/services/businessHealthService';
 import { useToast } from '../../src/components/ui/Toast';
 

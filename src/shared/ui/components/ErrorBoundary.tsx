@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { logger } from '@/shared/utils/logger';
+import { getEnvVar } from '@/lib/env-utils';
 
 interface Props {
   children: ReactNode;
@@ -32,10 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // Log the error details
-     
-     
-    // eslint-disable-next-line no-console
-    console.error('ErrorBoundary caught an error: ', error, errorInfo);
+    logger.error('ErrorBoundary caught an error', { error, errorInfo });
     
     this.setState({
       error,
@@ -62,20 +61,14 @@ class ErrorBoundary extends Component<Props, State> {
                 JSON.parse(value); // Test if it's valid JSON
               }
             } catch {
-               
-     
-    // eslint-disable-next-line no-console
-    console.warn(`Removing corrupted localStorage key: ${key}`);
+              logger.warn(`Removing corrupted localStorage key: ${key}`);
               localStorage.removeItem(key);
             }
           }
         });
       });
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.warn('Error cleaning localStorage: ', error);
+      logger.warn('Error cleaning localStorage: ', error);
     }
     
     // Reset state and reload
@@ -113,7 +106,7 @@ class ErrorBoundary extends Component<Props, State> {
               An unexpected error occurred while loading the application. This might be due to a temporary issue.
             </p>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {getEnvVar('NODE_ENV') === 'development' && this.state.error && (
               <details className="mb-6 text-left">
                 <summary className="cursor-pointer text-sm text-muted-foreground dark:text-muted-foreground mb-2">
                   Error Details (Development)

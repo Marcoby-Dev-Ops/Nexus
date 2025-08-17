@@ -3,16 +3,21 @@
  */
 
 export const HUBSPOT_REQUIRED_SCOPES = [
-  'contacts',
+  'crm.lists.read',
+  'crm.lists.write',
   'crm.objects.contacts.read',
   'crm.objects.contacts.write',
   'crm.objects.companies.read',
   'crm.objects.companies.write',
   'crm.objects.deals.read',
   'crm.objects.deals.write',
-  'crm.schemas.contacts.read',
-  'crm.schemas.companies.read',
-  'crm.schemas.deals.read'
+  'crm.objects.goals.read',
+  'crm.objects.goals.write',
+  'crm.objects.leads.read',
+  'crm.objects.leads.write',
+  'crm.schemas.appointments.read',
+  'crm.schemas.appointments.write',
+  'oauth'
 ];
 
 export const HUBSPOT_API_BASE_URL = 'https://api.hubapi.com';

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Star, ThumbsDown } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
 
 interface FeedbackButtonProps {
   messageId: string;

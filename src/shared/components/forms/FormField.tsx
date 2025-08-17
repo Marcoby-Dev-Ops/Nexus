@@ -2,6 +2,7 @@ import React from 'react';
 import { Controller } from 'react-hook-form';
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { Label } from '@/shared/components/ui/Label';
+import { Input } from '@/shared/components/ui/Input';
 import { cn } from '@/shared/utils/styles';
 
 export interface FormFieldProps<
@@ -73,25 +74,49 @@ export const FormField = <
       <Controller
         name={name}
         control={control}
-        render={({ field, fieldState }) => (
-          <div className="space-y-1">
-            {children({
-              ...field,
-              id: name, // Ensure the field has the correct id
-              disabled: disabled || fieldState.disabled,
-            })}
-            
-            {error && (
-              <p className="text-sm text-destructive" role="alert">
-                {error}
-              </p>
-            )}
-            
-            {hint && !error && (
-              <p className="text-sm text-muted-foreground">{hint}</p>
-            )}
-          </div>
-        )}
+        render={({ field, fieldState }) => {
+          // Safety check to ensure field is properly initialized
+          if (!field) {
+            console.warn(`FormField: field is undefined for name "${name}"`);
+            return (
+              <div className="space-y-1">
+                <Input
+                  id={name}
+                  disabled={disabled}
+                  placeholder="Loading..."
+                />
+                {error && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {error}
+                  </p>
+                )}
+                {hint && !error && (
+                  <p className="text-sm text-muted-foreground">{hint}</p>
+                )}
+              </div>
+            );
+          }
+          
+          return (
+            <div className="space-y-1">
+              {children({
+                ...field,
+                id: name, // Ensure the field has the correct id
+                disabled: disabled || fieldState.disabled,
+              })}
+              
+              {error && (
+                <p className="text-sm text-destructive" role="alert">
+                  {error}
+                </p>
+              )}
+              
+              {hint && !error && (
+                <p className="text-sm text-muted-foreground">{hint}</p>
+              )}
+            </div>
+          );
+        }}
       />
     </div>
   );

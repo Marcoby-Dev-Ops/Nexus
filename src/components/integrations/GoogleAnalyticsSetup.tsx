@@ -1,393 +1,312 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, CardContent, CardHeader, CardTitle,
-  Button,
-  Badge,
-  Alert, AlertDescription
-} from '@/shared/components/ui';
+import { useAuth } from '@/hooks/index';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Progress } from '@/shared/components/ui/Progress';
 import { 
   BarChart3, 
-  Users, 
-  Eye, 
-  TrendingUp, 
-  Clock, 
+  CheckCircle, 
+  XCircle, 
+  RefreshCw, 
+  Settings, 
   ExternalLink,
-  CheckCircle,
   AlertCircle,
-  Loader2,
-  Settings,
-  RefreshCw
+  Loader2
 } from 'lucide-react';
-import { analyticsService } from '@/services/analytics';
-import { supabase } from "@/lib/supabase";
-import { useAuth } from '@/hooks/index';
-import { useNotifications } from '@/shared/hooks/NotificationContext';
+import { logger } from '@/shared/utils/logger';
+import { GoogleAnalyticsService } from '@/services/integrations/google-analytics/GoogleAnalyticsService';
 
-interface GoogleAnalyticsSetupProps {
-  onComplete?: () => void;
-  onClose?: () => void;
+// Google Analytics OAuth scopes
+const GOOGLE_ANALYTICS_REQUIRED_SCOPES = [
+  'https://www.googleapis.com/auth/analytics.readonly',
+  'https://www.googleapis.com/auth/analytics'
+];
+
+interface ConnectionStatus {
+  connected: boolean;
+  lastSync?: string;
+  accountInfo?: {
+    accountId?: string;
+    propertyId?: string;
+    viewId?: string;
+  };
+  error?: string;
 }
 
-interface Property {
-  id: string;
-  name: string;
-  websiteUrl: string;
-}
-
-const GoogleAnalyticsSetup: React.FC<GoogleAnalyticsSetupProps> = ({ 
-  onComplete, 
-  onClose 
-}) => {
+const GoogleAnalyticsSetup: React.FC = () => {
   const { user } = useAuth();
-  const { addNotification } = useNotifications();
-  const [currentStep, setCurrentStep] = useState<'connect' | 'properties' | 'test' | 'complete'>('connect');
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const [testResults, setTestResults] = useState<{ success: boolean; message: string } | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState<'setup' | 'sync'>('setup');
 
   useEffect(() => {
-    // Check if already authenticated
-    const authenticated = analyticsService.isAuthenticated();
-    
-    // If authenticated, skip to properties step
-    if (authenticated) {
-      setCurrentStep('properties');
-      loadProperties();
-    }
+    checkConnectionStatus();
   }, []);
 
-  const handleOAuthConnect = async () => {
-    setIsConnecting(true);
+  const checkConnectionStatus = async () => {
+    if (!user?.id) return;
+
+    setLoading(true);
     setError(null);
 
     try {
-      const authUrl = await analyticsService.initializeOAuth();
-      
-      // Open OAuth in popup
-      const popup = window.open(
-        authUrl,
-        'google-analytics-oauth',
-        'width=600,height=700,scrollbars=yes,resizable=yes'
-      );
+      // Use the GoogleAnalyticsService to check connection status
+      const googleAnalyticsService = new GoogleAnalyticsService();
+      const result = await googleAnalyticsService.getConnectionStatus(user.id);
 
-      // Listen for OAuth completion
-      const checkOAuth = setInterval(async () => {
-        try {
-          if (popup?.closed) {
-            clearInterval(checkOAuth);
-            
-            // Check if authentication succeeded
-            if (analyticsService.isAuthenticated()) {
-              setCurrentStep('properties');
-              await loadProperties();
-            } else {
-              setError('Authentication was cancelled or failed');
-            }
-            setIsConnecting(false);
-          }
-        } catch {
-          clearInterval(checkOAuth);
-          setError('Authentication failed');
-          setIsConnecting(false);
+      if (result.success && result.data) {
+        const status = {
+          connected: result.data.connected,
+          lastSync: result.data.lastSync,
+          accountInfo: {
+            accountId: undefined,
+            propertyId: undefined,
+            viewId: undefined,
+          },
+          error: result.data.status === 'error' ? 'Connection error' : undefined,
+        };
+        
+        setConnectionStatus(status);
+        
+        if (status.connected) {
+          setCurrentStep('sync');
         }
-      }, 1000);
-
-      // Fallback timeout
-      setTimeout(() => {
-        clearInterval(checkOAuth);
-        if (isConnecting) {
-          setIsConnecting(false);
-          setError('Authentication timed out');
-        }
-      }, 300000); // 5 minutes
-
-    } catch (err: any) {
-      setError(err.message || 'Failed to start authentication');
-      setIsConnecting(false);
-    }
-  };
-
-  const loadProperties = async () => {
-    try {
-      const availableProperties = await analyticsService.getAvailableProperties();
-      setProperties(availableProperties);
-      
-      if (availableProperties.length === 1) {
-        // Auto-select if only one property
-        setSelectedProperty(availableProperties[0]);
+      } else {
+        setConnectionStatus({ 
+          connected: false, 
+          error: result.error || 'Failed to check connection status' 
+        });
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load properties');
+    } catch (error) {
+      logger.error('Error checking Google Analytics connection status', { error });
+      setConnectionStatus({ connected: false, error: 'Failed to check connection status' });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handlePropertySelect = async (property: Property) => {
-    setSelectedProperty(property);
-    
-    try {
-      await analyticsService.setActiveProperty(property.id);
-      setCurrentStep('test');
-      await runConnectionTest();
-    } catch (err: any) {
-      setError(err.message || 'Failed to set property');
+  const handleConnect = async () => {
+    if (!user?.id) {
+      setError('Please log in to connect Google Analytics');
+      return;
     }
-  };
 
-  const runConnectionTest = async () => {
+    setConnecting(true);
+    setError(null);
+
     try {
-      const result = await analyticsService.testConnection();
-      setTestResults(result);
+      // Use the Google client ID from environment (like Microsoft/HubSpot)
+      // Get client ID from server (public info only)
+  const [clientId, setClientId] = useState<string>('');
+  
+  useEffect(() => {
+    fetch('/api/oauth/config/google_analytics')
+      .then(res => res.json())
+      .then(config => setClientId(config.clientId))
+      .catch(err => console.error('Failed to get Google Analytics config:', err));
+  }, []);
       
+      if (!clientId) {
+        setError('Google client ID not configured. Please check your environment variables.');
+        setConnecting(false);
+        return;
+      }
+
+      // Configure OAuth settings - redirect to frontend callback page
+      const redirectUri = `${window.location.origin}/integrations/google-analytics/callback`;
+      
+      // Create state parameter with user ID and timestamp for security (like HubSpot)
+      const state = btoa(JSON.stringify({ 
+        timestamp: Date.now(),
+        service: 'google_analytics',
+        userId: user?.id || null
+      }));
+      
+      logger.info('🔧 [GoogleAnalyticsSetup] Creating OAuth URL with: ', {
+        clientId: clientId ? '***' : 'missing',
+        redirectUri,
+        windowOrigin: window.location.origin,
+        scopes: GOOGLE_ANALYTICS_REQUIRED_SCOPES,
+        state: state ? '***' : 'missing',
+        userId: user?.id || 'missing'
+      });
+      
+      // Build Google OAuth URL
+      const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      authUrl.searchParams.set('client_id', clientId);
+      authUrl.searchParams.set('redirect_uri', redirectUri);
+      authUrl.searchParams.set('response_type', 'code');
+      authUrl.searchParams.set('scope', GOOGLE_ANALYTICS_REQUIRED_SCOPES.join(' '));
+      authUrl.searchParams.set('state', state);
+      authUrl.searchParams.set('access_type', 'offline');
+      authUrl.searchParams.set('prompt', 'consent');
+      
+      logger.info('🔧 [GoogleAnalyticsSetup] Redirecting to Google OAuth');
+      
+      // Redirect to Google OAuth (like Microsoft/HubSpot)
+      window.location.href = authUrl.toString();
+      
+    } catch (error) {
+      logger.error('Failed to initiate Google Analytics OAuth', { error });
+      setError('Failed to start Google Analytics connection. Please try again.');
+      setConnecting(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Use the consolidated integration service to disconnect
+      const { consolidatedIntegrationService } = await import('@/services/integrations/consolidatedIntegrationService');
+      const result = await consolidatedIntegrationService.disconnectIntegration(user.id, 'google-analytics');
+
       if (result.success) {
-        setCurrentStep('complete');
-        await saveIntegration();
+        setConnectionStatus({ connected: false });
+        setCurrentStep('setup');
+        logger.info('Google Analytics disconnected successfully');
+      } else {
+        setError(result.error || 'Failed to disconnect Google Analytics');
       }
-    } catch (err: any) {
-      setTestResults({
-        success: false,
-        message: err.message || 'Connection test failed'
-      });
+    } catch (error) {
+      logger.error('Error disconnecting Google Analytics', { error });
+      setError('Failed to disconnect Google Analytics');
     }
   };
 
-  const saveIntegration = async () => {
-    if (!user || !selectedProperty) return;
+  const handleSync = async () => {
+    if (!user?.id) return;
 
     try {
-      // Save to user_integrations table
-      
+      // Use the GoogleAnalyticsService to sync data
+      const googleAnalyticsService = new GoogleAnalyticsService();
+      const result = await googleAnalyticsService.syncGoogleAnalyticsDataWithIntelligence(user.id);
 
-      if (dbError) throw dbError;
-
-      addNotification({
-        type: 'success',
-        message: `Google Analytics Connected: Successfully connected to ${selectedProperty.name}`
-      });
-
-      onComplete?.();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save integration');
+      if (result.success) {
+        await checkConnectionStatus();
+        logger.info('Google Analytics sync completed');
+      } else {
+        setError(result.error || 'Failed to sync Google Analytics data');
+      }
+    } catch (error) {
+      logger.error('Error syncing Google Analytics', { error });
+      setError('Failed to sync Google Analytics data');
     }
   };
 
-  const renderConnectStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <BarChart3 className="w-16 h-16 text-destructive mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Connect Google Analytics</h3>
-        <p className="text-muted-foreground">
-          Connect your Google Analytics account to track website performance
-        </p>
-      </div>
-
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          We'll access your Google Analytics data in read-only mode to provide insights and reporting.
-        </AlertDescription>
-      </Alert>
-
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-muted-foreground" />
-          <span>Visitor analytics</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Eye className="w-4 h-4 text-muted-foreground" />
-          <span>Page views</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <TrendingUp className="w-4 h-4 text-muted-foreground" />
-          <span>Traffic sources</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Clock className="w-4 h-4 text-muted-foreground" />
-          <span>Real-time data</span>
-        </div>
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <Button 
-        onClick={handleOAuthConnect} 
-        disabled={isConnecting}
-        className="w-full"
-        size="lg"
-      >
-        {isConnecting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Connecting...
-          </>
-        ) : (
-          <>
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Connect with Google
-          </>
-        )}
-      </Button>
-    </div>
-  );
-
-  const renderPropertiesStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <Settings className="w-16 h-16 text-destructive mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Select Property</h3>
-        <p className="text-muted-foreground">
-          Choose which Google Analytics property to connect
-        </p>
-      </div>
-
-      {properties.length === 0 ? (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            No Google Analytics properties found. Make sure you have GA4 properties set up.
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <div className="space-y-4">
-          {properties.map((property) => (
-            <Card 
-              key={property.id}
-              className={`cursor-pointer transition-colors hover: bg-muted ${
-                selectedProperty?.id === property.id ? 'ring-2 ring-primary' : ''
-              }`}
-              onClick={() => handlePropertySelect(property)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-medium">{property.name}</h4>
-                    {property.websiteUrl && (
-                      <p className="text-sm text-muted-foreground">{property.websiteUrl}</p>
-                    )}
-                  </div>
-                  <Badge variant="outline">GA4</Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-    </div>
-  );
-
-  const renderTestStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="w-16 h-16 mx-auto mb-4">
-          {testResults ? (
-            testResults.success ? (
-              <CheckCircle className="w-16 h-16 text-success" />
-            ) : (
-              <AlertCircle className="w-16 h-16 text-destructive" />
-            )
-          ) : (
-            <Loader2 className="w-16 h-16 text-muted-foreground animate-spin" />
-          )}
-        </div>
-        <h3 className="text-xl font-semibold mb-2">Testing Connection</h3>
-        <p className="text-muted-foreground">
-          Verifying access to your Google Analytics data
-        </p>
-      </div>
-
-      {testResults && (
-        <Alert variant={testResults.success ? "default" : "destructive"}>
-          <AlertDescription>{testResults.message}</AlertDescription>
-        </Alert>
-      )}
-
-      {!testResults?.success && (
-        <Button onClick={runConnectionTest} className="w-full">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Retry Test
-        </Button>
-      )}
-    </div>
-  );
-
-  const renderCompleteStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <CheckCircle className="w-16 h-16 text-success mx-auto mb-4" />
-        <h3 className="text-xl font-semibold mb-2">Connected Successfully!</h3>
-        <p className="text-muted-foreground">
-          Your Google Analytics account is now connected
-        </p>
-      </div>
-
-      {selectedProperty && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="font-medium">{selectedProperty.name}</p>
-              {selectedProperty.websiteUrl && (
-                <p className="text-sm text-muted-foreground">{selectedProperty.websiteUrl}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="flex gap-4">
-        <Button onClick={onClose} variant="outline" className="flex-1">
-          Close
-        </Button>
-        <Button onClick={onComplete} className="flex-1">
-          View Dashboard
-        </Button>
-      </div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Checking Google Analytics connection...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
+    <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5" />
-          Google Analytics Setup
-        </CardTitle>
-        
-        {/* Progress indicator */}
-        <div className="flex items-center gap-2 mt-4">
-          {['connect', 'properties', 'test', 'complete'].map((step, index) => (
-            <React.Fragment key={step}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
-                currentStep === step || 
-                (['connect', 'properties', 'test', 'complete'].indexOf(currentStep) > index)
-                  ? 'bg-primary text-primary-foreground' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {index + 1}
-              </div>
-              {index < 3 && <div className="flex-1 h-px bg-muted" />}
-            </React.Fragment>
-          ))}
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-blue-100 rounded-lg">
+            <BarChart3 className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <CardTitle className="flex items-center space-x-2">
+              Google Analytics
+              {connectionStatus?.connected && (
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Connected
+                </Badge>
+              )}
+            </CardTitle>
+            <CardDescription>
+              Connect your Google Analytics account to track website performance and marketing metrics
+            </CardDescription>
+          </div>
         </div>
       </CardHeader>
+      
+      <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      <CardContent>
-        {currentStep === 'connect' && renderConnectStep()}
-        {currentStep === 'properties' && renderPropertiesStep()}
-        {currentStep === 'test' && renderTestStep()}
-        {currentStep === 'complete' && renderCompleteStep()}
+        {connectionStatus?.connected ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm font-medium text-gray-600">Account ID</p>
+                <p className="text-sm">{connectionStatus.accountInfo?.accountId || 'N/A'}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm font-medium text-gray-600">Property ID</p>
+                <p className="text-sm">{connectionStatus.accountInfo?.propertyId || 'N/A'}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm font-medium text-gray-600">Last Sync</p>
+                <p className="text-sm">{connectionStatus.lastSync ? new Date(connectionStatus.lastSync).toLocaleString() : 'Never'}</p>
+              </div>
+            </div>
+
+            <div className="flex space-x-2">
+              <Button onClick={handleSync} variant="outline" size="sm">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Sync Data
+              </Button>
+              <Button onClick={handleDisconnect} variant="outline" size="sm">
+                <XCircle className="h-4 w-4 mr-2" />
+                Disconnect
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-blue-900 mb-2">What you'll get:</h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Website traffic and visitor analytics</li>
+                <li>• Marketing campaign performance data</li>
+                <li>• Conversion tracking and goal completion</li>
+                <li>• Real-time user behavior insights</li>
+                <li>• Automated reporting and alerts</li>
+              </ul>
+            </div>
+
+            <Button 
+              onClick={handleConnect} 
+              disabled={connecting}
+              className="w-full"
+            >
+              {connecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Connecting...
+                </>
+              ) : (
+                <>
+                  <BarChart3 className="h-4 w-4 mr-2" />
+                  Connect Google Analytics
+                </>
+              )}
+            </Button>
+
+            <p className="text-xs text-gray-500 text-center">
+              You'll be redirected to Google to authorize access to your Analytics data
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

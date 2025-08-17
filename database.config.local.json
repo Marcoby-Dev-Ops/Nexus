@@ -1,0 +1,21 @@
+{
+  "database": {
+    "host": "localhost",
+    "port": 5433,
+    "name": "vector_db",
+    "user": "postgres",
+    "password": "postgres",
+    "url": "postgresql://postgres:postgres@localhost:5433/vector_db"
+  },
+  "vector": {
+    "enabled": true,
+    "dimensions": 1536,
+    "index_type": "ivfflat",
+    "similarity_metric": "cosine"
+  },
+  "admin": {
+    "email": "admin@nexus.local",
+    "password": "admin123"
+  },
+  "environment": "local"
+}

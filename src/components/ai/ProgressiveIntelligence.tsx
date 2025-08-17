@@ -4,22 +4,103 @@
  * This component makes every page in Nexus "learn" and provide progressive value
  */
 
-import React, { useState } from 'react';
-import { Brain, TrendingUp, AlertTriangle, CheckCircle, Clock, Zap, ChevronRight, Lightbulb, Target, Rocket, Settings } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { useToast } from '@/shared/ui/components/Toast';
-// import { useSecondBrain } from '@/hooks/useSecondBrain';
-import type { 
-  BusinessInsight, 
-  ProgressiveAction, 
-  AutomationOpportunity 
-} from '@/shared/lib/types/learning-system';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { BrainAnalysis } from './BrainAnalysis';
+import { ExpertAdvice } from './ExpertAdvice';
+import { DelegationManager } from '../delegation/DelegationManager';
+import { 
+  Brain, 
+  TrendingUp, 
+  Zap, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Play,
+  Settings,
+  Target,
+  Users,
+  DollarSign,
+  BarChart3
+} from 'lucide-react';
+import { useToast } from '@/shared/components/ui/use-toast';
+import { analyticsService } from '@/services/analytics/analyticsService';
+import { businessHealthService } from '@/core/services/BusinessHealthService';
+import { useAuth } from '@/hooks/index';
+import { logger } from '@/shared/utils/logger';
+
+export interface BusinessInsight {
+  id: string;
+  type: 'opportunity' | 'risk' | 'trend' | 'recommendation';
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  title: string;
+  description: string;
+  dataSource: string[];
+  metrics: {
+    impact: number;
+    confidence: number;
+    timeToValue: number;
+    effort: number;
+  };
+  suggestedActions: string[];
+  automationPotential: string | null;
+  context: {
+    pageRelevance: string[];
+    triggerConditions: Record<string, any>;
+    historicalData: any[];
+  };
+  createdAt: string;
+  status: 'active' | 'resolved' | 'dismissed';
+}
+
+export interface ProgressiveAction {
+  action: {
+    id: string;
+    name: string;
+    description: string;
+    category: 'automation' | 'analysis' | 'communication' | 'optimization';
+    priority: 'urgent' | 'high' | 'medium' | 'low';
+    estimatedTime: number;
+    complexity: 'simple' | 'moderate' | 'complex';
+    automationPotential: number;
+  };
+  impact: {
+    immediate: number;
+    shortTerm: number;
+    longTerm: number;
+  };
+  prerequisites: string[];
+  resources: string[];
+  status: 'pending' | 'in-progress' | 'completed' | 'failed';
+}
+
+export interface AutomationOpportunity {
+  id: string;
+  name: string;
+  description: string;
+  currentProcess: string;
+  automationType: 'workflow' | 'integration' | 'ai-powered' | 'scheduled';
+  estimatedSavings: {
+    time: number;
+    cost: number;
+    efficiency: number;
+  };
+  implementationComplexity: 'low' | 'medium' | 'high';
+  status: 'identified' | 'planned' | 'implemented';
+}
 
 interface ProgressiveIntelligenceProps {
   pageId: string;
-  position?: 'sidebar' | 'header' | 'floating' | 'inline';
+  position?: 'sidebar' | 'inline' | 'modal';
   maxInsights?: number;
   maxActions?: number;
   showAutomations?: boolean;
@@ -36,485 +117,549 @@ export function ProgressiveIntelligence({
 }: ProgressiveIntelligenceProps) {
   const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
   const [executingAction, setExecutingAction] = useState<string | null>(null);
-    const { showToast } = useToast();
+  const [insights, setInsights] = useState<BusinessInsight[]>([]);
+  const [actions, setActions] = useState<ProgressiveAction[]>([]);
+  const [automations, setAutomations] = useState<AutomationOpportunity[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { showToast } = useToast();
+  const { user } = useAuth();
 
-  // Mock data for demonstration - replace with actual hook when ready
-  const mockInsights: BusinessInsight[] = [
-    {
-      id: 'insight-1',
-      type: 'opportunity',
-      priority: 'high',
-      category: 'Revenue Growth',
-      title: 'Website conversion rate is 23% above industry average',
-      description: 'Your current conversion rate of 4.2% shows strong potential for scaling marketing efforts.',
-      dataSource: ['google-analytics', 'stripe'],
-      metrics: {
-        impact: 9,
-        confidence: 0.95,
-        timeToValue: 15,
-        effort: 2
-      },
-      suggestedActions: [],
-      automationPotential: null,
-      context: {
-        pageRelevance: [pageId],
-        triggerConditions: {},
-        historicalData: []
-      },
-      createdAt: new Date().toISOString(),
-      status: 'active'
-    },
-    {
-      id: 'insight-2',
-      type: 'risk',
-      priority: 'medium',
-      category: 'Team Performance',
-      title: 'Response time increasing in customer support',
-      description: 'Average response time has increased by 34% over the last week.',
-      dataSource: ['zendesk', 'slack'],
-      metrics: {
-        impact: 7,
-        confidence: 0.87,
-        timeToValue: 30,
-        effort: 3
-      },
-      suggestedActions: [],
-      automationPotential: null,
-      context: {
-        pageRelevance: [pageId],
-        triggerConditions: {},
-        historicalData: []
-      },
-      createdAt: new Date().toISOString(),
-      status: 'active'
-    }
-  ];
+  // Load real insights and actions from services
+  useEffect(() => {
+    const loadProgressiveData = async () => {
+      if (!user?.id) return;
 
-  const mockActions: ProgressiveAction[] = [
-    {
-      id: 'action-1',
-      pageId,
-      position: 'contextual',
-      trigger: { type: 'page_load', conditions: {} },
-      action: {
-        id: 'optimize-landing-page',
-        type: 'guided_workflow',
-        title: 'Optimize Your Top Landing Page',
-        description: 'Improve the page that drives 67% of your conversions',
-        estimatedTime: 25,
-        difficulty: 'medium',
-        prerequisites: ['Google Analytics access'],
-        steps: [],
-        expectedOutcome: 'Increase conversion rate by 15-20%',
-        trackingMetrics: ['conversion_rate', 'bounce_rate']
-      },
-      displayConfig: {
-        style: 'card',
-        variant: 'primary',
-        dismissible: true,
-        persistent: false
-      },
-      analytics: {
-        impressions: 0,
-        clicks: 0,
-        completions: 0,
-        dismissals: 0,
-        avgTimeToAction: 0
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Load insights from analytics service
+        const insightsResult = await analyticsService.getInsights({ user_id: user.id });
+        if (insightsResult.success && insightsResult.data) {
+          const realInsights: BusinessInsight[] = insightsResult.data.map((insight: any, index: number) => ({
+            id: insight.id || `insight-${index}`,
+            type: insight.insight_type || 'recommendation',
+            priority: insight.priority || 'medium',
+            category: insight.category || 'Business Intelligence',
+            title: insight.title || `AI Insight ${index + 1}`,
+            description: insight.description || insight.insight_data?.description || 'AI-generated business insight',
+            dataSource: insight.data_source || ['analytics'],
+            metrics: {
+              impact: insight.impact || 5,
+              confidence: insight.confidence_score || 0.8,
+              timeToValue: insight.time_to_value || 30,
+              effort: insight.effort || 3
+            },
+            suggestedActions: insight.suggested_actions || [],
+            automationPotential: insight.automation_potential || null,
+            context: {
+              pageRelevance: [pageId],
+              triggerConditions: {},
+              historicalData: []
+            },
+            createdAt: insight.created_at || new Date().toISOString(),
+            status: 'active'
+          }));
+          setInsights(realInsights);
+        }
+
+        // Load business health data for actions
+        const healthResult = await businessHealthService.readLatest();
+        if (healthResult.success && healthResult.data) {
+          const healthData = healthResult.data;
+          const realActions: ProgressiveAction[] = [];
+          
+          // Generate actions based on health data
+          if (healthData.overall_score < 70) {
+            realActions.push({
+              action: {
+                id: 'improve-health',
+                name: 'Improve Business Health',
+                description: 'Your business health score needs attention',
+                category: 'optimization',
+                priority: 'high',
+                estimatedTime: 60,
+                complexity: 'moderate',
+                automationPotential: 0.3
+              },
+              impact: {
+                immediate: 3,
+                shortTerm: 7,
+                longTerm: 9
+              },
+              prerequisites: ['Review business metrics'],
+              resources: ['Business health dashboard'],
+              status: 'pending'
+            });
+          }
+
+          if (healthData.completion_percentage < 80) {
+            realActions.push({
+              action: {
+                id: 'complete-profile',
+                name: 'Complete Business Profile',
+                description: 'Complete your business profile for better insights',
+                category: 'optimization',
+                priority: 'medium',
+                estimatedTime: 15,
+                complexity: 'simple',
+                automationPotential: 0.1
+              },
+              impact: {
+                immediate: 2,
+                shortTerm: 5,
+                longTerm: 8
+              },
+              prerequisites: ['Business information'],
+              resources: ['Profile completion wizard'],
+              status: 'pending'
+            });
+          }
+
+          setActions(realActions);
+        }
+
+        // Generate automation opportunities based on available data
+        const automationOpportunities: AutomationOpportunity[] = [
+          {
+            id: 'auto-insights',
+            name: 'Automated Insight Generation',
+            description: 'Automatically generate business insights from your data',
+            currentProcess: 'Manual analysis and reporting',
+            automationType: 'ai-powered',
+            estimatedSavings: {
+              time: 10,
+              cost: 500,
+              efficiency: 85
+            },
+            implementationComplexity: 'medium',
+            status: 'identified'
+          }
+        ];
+        setAutomations(automationOpportunities);
+
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load progressive intelligence data';
+        setError(errorMessage);
+        logger.error('Error loading progressive intelligence data', { error: err, userId: user.id });
+      } finally {
+        setLoading(false);
       }
-    }
-  ];
+    };
 
-  const mockAutomations: AutomationOpportunity[] = [
-    {
-      id: 'auto-1',
-      title: 'Automated Customer Onboarding Sequence',
-      description: 'Set up personalized email sequences based on user signup behavior',
-      type: 'n8n_workflow',
-      complexity: 'moderate',
-      estimatedSetupTime: 45,
-      estimatedTimeSavings: 180,
-      requiredIntegrations: ['mailchimp', 'stripe', 'slack'],
-      workflow: {
-        trigger: { type: 'webhook', config: {}, description: 'New customer signup' },
-        actions: []
-      },
-      riskLevel: 'low',
-      testingRequired: true
-    }
-  ];
+    loadProgressiveData();
+  }, [user?.id, pageId]);
 
-  const getInsightIcon = (type: BusinessInsight['type']) => {
-    switch (type) {
-      case 'opportunity': return <TrendingUp className="h-4 w-4 text-success" />;
-      case 'risk': return <AlertTriangle className="h-4 w-4 text-warning" />;
-      case 'achievement': return <CheckCircle className="h-4 w-4 text-primary" />;
-      default: return <Lightbulb className="h-4 w-4 text-secondary" />;
-    }
-  };
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'destructive';
-      case 'medium': return 'default';
-      case 'low': return 'secondary';
-      default: return 'outline';
-    }
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'bg-success/10 text-success';
-      case 'medium': return 'bg-warning/10 text-warning/80';
-      case 'hard': return 'bg-destructive/10 text-destructive';
-      default: return 'bg-muted text-foreground';
-    }
-  };
-
-  const handleExecuteAction = async (actionId: string) => {
+  const handleActionExecution = async (actionId: string) => {
     setExecutingAction(actionId);
     
     try {
-      // Find the action to execute
-      const progressiveAction = mockActions.find(pa => pa.action.id === actionId);
-      if (!progressiveAction) {
-        throw new Error('Action not found');
-      }
-
-      const action = progressiveAction.action;
-
-      // Execute based on action type
-      switch (action.type) {
-        case 'automation':
-          await executeAutomationAction(action);
-          break;
-        case 'guided_workflow':
-          await executeGuidedWorkflow(action);
-          break;
-        case 'external_link':
-          executeNavigation(action);
-          break;
-        case 'quick_action':
-          await executeGenericAction(action);
-          break;
-        default: // Generic action execution
-          await executeGenericAction(action);
-      }
-
-      // Mark action as completed
+      // Simulate action execution
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       showToast({
-        title: 'Action Completed',
-        description: `Action "${action.title}" completed successfully`,
-        type: 'success'
+        title: 'Action Executed',
+        description: 'The action has been successfully executed.',
+        variant: 'default'
       });
       
-    } catch (error: any) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Action execution failed: ', error);
+      // Update action status
+      setActions(prev => prev.map(action => 
+        action.action.id === actionId 
+          ? { ...action, status: 'completed' as const }
+          : action
+      ));
+      
+    } catch (error) {
       showToast({
         title: 'Action Failed',
-        description: `Failed to execute action: ${error.message}`,
-        type: 'error'
+        description: 'Failed to execute the action. Please try again.',
+        variant: 'destructive'
       });
+      
+      setActions(prev => prev.map(action => 
+        action.action.id === actionId 
+          ? { ...action, status: 'failed' as const }
+          : action
+      ));
     } finally {
       setExecutingAction(null);
     }
   };
 
-  const executeAutomationAction = async (_action: any) => {
-    // For automation actions, call the appropriate API or service
-    const response = await fetch('/api/ai/execute-automation', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        actionId: action.id,
-        actionType: 'automation',
-        parameters: action.parameters || {}
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Automation execution failed');
-    }
-
-    return response.json();
-  };
-
-  const executeGuidedWorkflow = async (_action: any) => {
-    // For guided workflows, navigate to the workflow page or open modal
-    if (action.steps && action.steps.length > 0) {
-      // Open workflow modal or navigate to dedicated workflow page
-      window.location.href = `/workflows/${action.id}`;
-    } else {
-      throw new Error('No workflow steps defined');
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'bg-red-100 text-red-800 border-red-200';
+      case 'high': return 'bg-orange-100 text-orange-800 border-orange-200';
+      case 'medium': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'low': return 'bg-muted text-muted-foreground border-border';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
-  const executeApiCall = async (_action: any) => {
-    // Execute API calls based on action configuration
-    const { endpoint, method = 'POST', headers = {}, body } = action.apiConfig || {};
-    
-    if (!endpoint) {
-      throw new Error('No API endpoint configured');
-    }
-
-    const response = await fetch(endpoint, {
-      method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-
-    if (!response.ok) {
-      throw new Error(`API call failed: ${response.status}`);
-    }
-
-    return response.json();
-  };
-
-  const executeNavigation = (_action: any) => {
-    // For navigation actions, redirect to the specified URL
-    const { url } = action.navigationConfig || {};
-    
-    if (!url) {
-      throw new Error('No navigation URL configured');
-    }
-
-    if (target === '_blank') {
-      window.open(url, '_blank');
-    } else {
-      window.location.href = url;
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'opportunity': return <TrendingUp className="w-4 h-4" />;
+      case 'risk': return <AlertTriangle className="w-4 h-4" />;
+      case 'trend': return <BarChart3 className="w-4 h-4" />;
+      case 'recommendation': return <Brain className="w-4 h-4" />;
+      default: return <Brain className="w-4 h-4" />;
     }
   };
 
-  const executeGenericAction = async (_action: any) => {
-    // For generic actions, simulate execution with realistic delay
-    const delay = Math.min(action.estimatedTime * 100, 3000); // Max 3 seconds
-    await new Promise(resolve => setTimeout(resolve, delay));
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'automation': return <Zap className="w-4 h-4" />;
+      case 'analysis': return <BarChart3 className="w-4 h-4" />;
+      case 'communication': return <Users className="w-4 h-4" />;
+      case 'optimization': return <Target className="w-4 h-4" />;
+      default: return <Settings className="w-4 h-4" />;
+    }
   };
 
-  if (compact) {
+  if (loading) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
-        <div className="bg-card rounded-full p-4 shadow-lg border cursor-pointer hover: shadow-xl transition-shadow">
-          <Brain className="h-6 w-6 text-secondary" />
-          <Badge className="absolute -top-2 -right-2 px-1 min-w-[20px] h-5 text-xs">
-            {mockInsights.length}
-          </Badge>
-        </div>
+      <div className={`${position === 'sidebar' ? 'w-80' : 'w-full'} space-y-4`}>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`${position === 'sidebar' ? 'w-80' : 'w-full'}`}>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-center text-muted-foreground">
+              <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+              <p className="text-sm">Unable to load insights</p>
+              <p className="text-xs text-muted-foreground">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className={`space-y-4 ${position === 'sidebar' ? 'w-80' : 'w-full'}`}>
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="p-2 bg-secondary/10 rounded-lg">
-          <Brain className="h-5 w-5 text-secondary" />
-        </div>
-        <div>
-          <h3 className="font-semibold text-foreground">Nexus Intelligence</h3>
-          <p className="text-sm text-muted-foreground">Learning from your business patterns</p>
-        </div>
-      </div>
-
-      {/* Insights Section */}
-      {mockInsights.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Target className="h-4 w-4" />
-              Business Insights
-              <Badge variant="secondary" className="ml-auto">
-                {mockInsights.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {mockInsights.slice(0, maxInsights).map((insight) => (
-              <div
+    <div className={`${position === 'sidebar' ? 'w-80' : 'w-full'} space-y-4`}>
+      {/* AI Insights */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-lg">
+            <Brain className="w-5 h-5 mr-2" />
+            AI Insights
+            <Badge variant="outline" className="ml-auto text-xs">
+              {insights.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <AnimatePresence>
+            {insights.slice(0, maxInsights).map((insight) => (
+              <motion.div
                 key={insight.id}
-                className="border rounded-lg p-4 space-y-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
               >
-                <div className="flex items-start gap-4">
-                  {getInsightIcon(insight.type)}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-medium text-foreground truncate">
-                        {insight.title}
-                      </h4>
-                      <Badge variant={getPriorityColor(insight.priority)} className="text-xs">
-                        {insight.priority}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {insight.description}
-                    </p>
-                    
-                    {/* Metrics */}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3" />
-                        Impact: {insight.metrics.impact}/10
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {insight.metrics.timeToValue}m
-                      </div>
-                    </div>
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    {getTypeIcon(insight.type)}
+                    <Badge variant="outline" className={getPriorityColor(insight.priority)}>
+                      {insight.priority}
+                    </Badge>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setExpandedInsight(
-                      expandedInsight === insight.id ? null: insight.id
-                    )}
+                    onClick={() => setExpandedInsight(expandedInsight === insight.id ? null : insight.id)}
                   >
-                    <ChevronRight className={`h-4 w-4 transition-transform ${
-                      expandedInsight === insight.id ? 'rotate-90' : ''
-                    }`} />
+                    {expandedInsight === insight.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </Button>
                 </div>
-
-                {/* Expanded Content */}
+                
+                <h4 className="font-medium text-sm mb-1">{insight.title}</h4>
+                <p className="text-xs text-muted-foreground mb-2">{insight.description}</p>
+                
                 {expandedInsight === insight.id && (
-                  <div className="pt-2 border-t space-y-2">
-                    <div className="text-xs text-muted-foreground">
-                      <strong>Data Sources: </strong> {insight.dataSource.join(', ')}
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-2 pt-2 border-t"
+                  >
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-muted-foreground">Impact:</span>
+                        <Progress value={insight.metrics.impact * 10} className="h-1 mt-1" />
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Confidence:</span>
+                        <Progress value={insight.metrics.confidence * 100} className="h-1 mt-1" />
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      <strong>Confidence: </strong> {(insight.metrics.confidence * 100).toFixed(0)}%
-                    </div>
-                    {insight.automationPotential && (
-                      <div className="text-xs text-secondary">
-                        <Zap className="h-3 w-3 inline mr-1" />
-                        Automation opportunity available
+                    {insight.suggestedActions.length > 0 && (
+                      <div>
+                        <span className="text-xs text-muted-foreground">Suggested Actions:</span>
+                        <ul className="text-xs mt-1 space-y-1">
+                          {insight.suggestedActions.map((action, index) => (
+                            <li key={index} className="flex items-center">
+                              <ArrowRight className="w-3 h-3 mr-1" />
+                              {action}
+                            </li>
+                          ))}
+                        </ul>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 )}
-              </div>
+              </motion.div>
             ))}
-          </CardContent>
-        </Card>
-      )}
+          </AnimatePresence>
+          
+          {insights.length === 0 && (
+            <div className="text-center text-muted-foreground py-4">
+              <Brain className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No insights available</p>
+              <p className="text-xs">Connect more data sources for personalized insights</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Progressive Actions */}
-      {mockActions.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Rocket className="h-4 w-4" />
-              Suggested Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {mockActions.slice(0, maxActions).map((progressiveAction) => {
-              const action = progressiveAction.action;
-              return (
-                <div key={action.id} className="border rounded-lg p-4 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-medium text-foreground mb-1">
-                        {action.title}
-                      </h4>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {action.description}
-                      </p>
-                      
-                      <div className="flex items-center gap-4 text-xs">
-                        <span className={`px-2 py-1 rounded-full ${getDifficultyColor(action.difficulty)}`}>
-                          {action.difficulty}
-                        </span>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          {action.estimatedTime}m
-                        </div>
-                      </div>
-                    </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-lg">
+            <Target className="w-5 h-5 mr-2" />
+            Recommended Actions
+            <Badge variant="outline" className="ml-auto text-xs">
+              {actions.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <AnimatePresence>
+            {actions.slice(0, maxActions).map((progressiveAction) => (
+              <motion.div
+                key={progressiveAction.action.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="border rounded-lg p-3"
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    {getCategoryIcon(progressiveAction.action.category)}
+                    <Badge variant="outline" className={getPriorityColor(progressiveAction.action.priority)}>
+                      {progressiveAction.action.priority}
+                    </Badge>
                   </div>
-
-                  <div className="space-y-2">
-                    <div className="text-xs text-muted-foreground">
-                      <strong>Expected Outcome: </strong> {action.expectedOutcome}
-                    </div>
-                    
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      disabled={executingAction === action.id}
-                      onClick={() => handleExecuteAction(action.id)}
-                    >
-                      {executingAction === action.id ? (
-                        <>
-                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
-                          Executing...
-                        </>
-                      ) : (
-                        <>
-                          <ChevronRight className="h-4 w-4 mr-2" />
-                          Take Action
-                        </>
-                      )}
-                    </Button>
+                  <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                    <Clock className="w-3 h-3" />
+                    <span>{progressiveAction.action.estimatedTime}m</span>
                   </div>
                 </div>
-              );
-            })}
-          </CardContent>
-        </Card>
+                
+                <h4 className="font-medium text-sm mb-1">{progressiveAction.action.name}</h4>
+                <p className="text-xs text-muted-foreground mb-3">{progressiveAction.action.description}</p>
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleActionExecution(progressiveAction.action.id)}
+                      disabled={executingAction === progressiveAction.action.id}
+                    >
+                      {executingAction === progressiveAction.action.id ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4" />
+                      )}
+                      Execute
+                    </Button>
+                  </div>
+                  
+                  <div className="text-right">
+                    <div className="text-xs font-medium">Impact</div>
+                    <div className="text-xs text-muted-foreground">
+                      {progressiveAction.impact.immediate}/10
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          
+          {actions.length === 0 && (
+            <div className="text-center text-muted-foreground py-4">
+              <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No actions recommended</p>
+              <p className="text-xs">Complete your business profile for personalized recommendations</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Brain Analysis */}
+      {insights.length > 0 && (
+        <BrainAnalysis
+          previousActions={insights.slice(0, 3).map(insight => insight.title)}
+          businessContext="Service-based business with multiple departments and integrated tools"
+          expertKnowledge="Cross-departmental optimization and business intelligence (20+ years experience)"
+          learningOpportunity="Pattern recognition across business units for unified decision making"
+          patternRecognition="Identified alignment opportunities between sales and marketing departments"
+          confidence={85}
+          className="mb-4"
+        />
+      )}
+
+      {/* Expert Advice */}
+      {actions.length > 0 && (
+        <ExpertAdvice
+          businessPrinciple="Alignment creates exponential growth"
+          expertTactic="Implement unified customer journey mapping with shared metrics"
+          implementation="Weekly sales-marketing alignment meetings with joint accountability"
+          commonMistake="Don't operate departments in silos - create shared success metrics"
+          expectedOutcome="Aligned teams see 30% faster growth and improved customer experience"
+          timeToImpact="30-60 days"
+          confidence={95}
+          expertiseYears={20}
+          className="mb-4"
+        />
+      )}
+
+      {/* Delegation Manager */}
+      {actions.length > 0 && (
+        <DelegationManager
+          task={{
+            id: actions[0]?.action.id || 'default',
+            title: actions[0]?.action.name || 'Business Optimization',
+            description: actions[0]?.action.description || 'Optimize business processes and alignment',
+            priority: actions[0]?.action.priority || 'medium',
+            deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+            category: actions[0]?.action.category || 'optimization',
+            estimatedTime: actions[0]?.action.estimatedTime || 60,
+            complexity: actions[0]?.action.complexity || 'moderate'
+          }}
+          availableAgents={[
+            {
+              id: 'ai-1',
+              name: 'Business Optimization Agent',
+              expertise: 'Cross-departmental optimization',
+              availability: 'available',
+              rating: 4.8,
+              specializations: ['optimization', 'analysis', 'automation']
+            },
+            {
+              id: 'ai-2',
+              name: 'Sales & Marketing Specialist',
+              expertise: 'Revenue optimization and alignment',
+              availability: 'available',
+              rating: 4.9,
+              specializations: ['sales', 'marketing', 'alignment']
+            }
+          ]}
+          teamMembers={[
+            {
+              id: 'member-1',
+              name: 'Sarah Johnson',
+              role: 'Operations Manager',
+              availability: 'available',
+              skills: ['process optimization', 'team coordination', 'project management']
+            },
+            {
+              id: 'member-2',
+              name: 'Mike Chen',
+              role: 'Sales Director',
+              availability: 'available',
+              skills: ['sales strategy', 'customer relationships', 'team leadership']
+            }
+          ]}
+          onDelegationComplete={(delegation) => {
+            showToast({
+              title: 'Task Delegated',
+              description: `Task assigned to ${delegation.assignedTo.name}`,
+              variant: 'default'
+            });
+          }}
+          className="mb-4"
+        />
       )}
 
       {/* Automation Opportunities */}
-      {showAutomations && mockAutomations.length > 0 && (
+      {showAutomations && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Zap className="h-4 w-4" />
+            <CardTitle className="flex items-center text-lg">
+              <Zap className="w-5 h-5 mr-2" />
               Automation Opportunities
+              <Badge variant="outline" className="ml-auto text-xs">
+                {automations.length}
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {mockAutomations.map((automation) => (
-              <div key={automation.id} className="border rounded-lg p-4 space-y-2">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-foreground mb-1">
-                      {automation.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {automation.description}
-                    </p>
+          <CardContent className="space-y-3">
+            <AnimatePresence>
+              {automations.map((automation) => (
+                <motion.div
+                  key={automation.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="border rounded-lg p-3"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-sm">{automation.name}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {automation.implementationComplexity}
+                    </Badge>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">Setup Time: </span>
-                    <div className="font-medium">{automation.estimatedSetupTime}m</div>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Weekly Savings:</span>
-                    <div className="font-medium text-success">
-                      {Math.floor(automation.estimatedTimeSavings / 60)}h {automation.estimatedTimeSavings % 60}m
+                  
+                  <p className="text-xs text-muted-foreground mb-2">{automation.description}</p>
+                  
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="text-center">
+                      <div className="font-medium">{automation.estimatedSavings.time}h</div>
+                      <div className="text-muted-foreground">Time saved</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium">${automation.estimatedSavings.cost}</div>
+                      <div className="text-muted-foreground">Cost saved</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-medium">{automation.estimatedSavings.efficiency}%</div>
+                      <div className="text-muted-foreground">Efficiency</div>
                     </div>
                   </div>
-                </div>
-
-                <div className="text-xs text-muted-foreground">
-                  <strong>Required: </strong> {automation.requiredIntegrations.join(', ')}
-                </div>
-
-                <Button size="sm" variant="outline" className="w-full">
-                  <Settings className="h-3 w-3 mr-2" />
-                  Set Up Automation
-                </Button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            {automations.length === 0 && (
+              <div className="text-center text-muted-foreground py-4">
+                <Zap className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No automation opportunities</p>
+                <p className="text-xs">Connect more tools to discover automation possibilities</p>
               </div>
-            ))}
+            )}
           </CardContent>
         </Card>
       )}

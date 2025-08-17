@@ -1,17 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks';
 import { useToast } from '@/shared/ui/components/Toast';
-
-interface Integration {
-  id: string;
-  type: string;
-  credentials: Record<string, any>;
-  settings: Record<string, any>;
-  userId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { integrationService, type Integration, type UserIntegration } from '@/services/integrations/IntegrationService';
 
 interface UseIntegrationsReturn {
   integrations: Integration[];
@@ -38,66 +28,90 @@ export const useIntegrations = (): UseIntegrationsReturn => {
     }
   }, [authIntegrations]);
 
+  // Subscribe to integration service updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const unsubscribe = integrationService.subscribe((data, loading) => {
+      if (data) {
+        // Transform UserIntegration to Integration format
+        const transformedIntegrations: Integration[] = data.map(item => ({
+          id: item.id,
+          type: item.integration_type,
+          credentials: item.credentials || {},
+          settings: item.settings || {},
+          userId: item.user_id,
+          createdAt: new Date(item.created_at),
+          updatedAt: new Date(item.updated_at),
+        }));
+        setIntegrations(transformedIntegrations);
+      }
+      setIsLoading(loading);
+    });
+
+    return unsubscribe;
+  }, [user?.id]);
+
   const refreshIntegrations = useCallback(async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setIsLoading(true);
       setError(null);
       
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('🔄 Starting integration refresh for user: ', user.id);
+      console.log('🔄 Starting integration refresh for user: ', user.id);
       
-      const { data, error } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (error) {
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('❌ Failed to fetch integrations: ', error);
-        throw error;
+      const result = await integrationService.getUserIntegrations(user.id);
+      
+      if (!result.success) {
+        console.error('❌ Failed to fetch integrations: ', result.error);
+        throw new Error(result.error || 'Failed to fetch integrations');
       }
 
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('✅ Successfully fetched integrations: ', data?.length || 0);
-      setIntegrations(data || []);
+      console.log('✅ Successfully fetched integrations: ', result.data?.length || 0);
+      
+      // Transform UserIntegration to Integration format
+      const transformedIntegrations: Integration[] = (result.data || []).map(item => ({
+        id: item.id,
+        type: item.integration_type,
+        credentials: item.credentials || {},
+        settings: item.settings || {},
+        userId: item.user_id,
+        createdAt: new Date(item.created_at),
+        updatedAt: new Date(item.updated_at),
+      }));
+      
+      setIntegrations(transformedIntegrations);
     } catch (err) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('❌ Error refreshing integrations: ', err);
-      setError(err instanceof Error ? err: new Error('An error occurred'));
+      console.error('❌ Error refreshing integrations: ', err);
+      setError(err instanceof Error ? err : new Error('An error occurred'));
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   const addIntegration = useCallback(async (integration: Omit<Integration, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data: newIntegration, error: insertError } = await supabase
-        .from('user_integrations')
-        .insert({
-          ...integration,
-          userid: user.id,
-        })
-        .select()
-        .single();
+      const result = await integrationService.addIntegration(user.id, {
+        user_id: user.id,
+        integration_id: integration.type, // Use type as integration_id for now
+        integration_slug: integration.type,
+        integration_type: integration.type,
+        status: 'active',
+        credentials: integration.credentials,
+        settings: integration.settings,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
 
-      if (insertError) throw insertError;
-
-      setIntegrations(prev => [...prev, newIntegration]);
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to add integration');
+      }
 
       showToast({
         title: 'Success',
@@ -105,7 +119,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         type: 'success'
       });
     } catch (err) {
-      setError(err instanceof Error ? err: new Error('An error occurred'));
+      setError(err instanceof Error ? err : new Error('An error occurred'));
       showToast({
         title: 'Error',
         description: 'Failed to add integration',
@@ -115,23 +129,20 @@ export const useIntegrations = (): UseIntegrationsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, showToast]);
+  }, [user?.id, showToast]);
 
   const removeIntegration = useCallback(async (integrationId: string) => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const { error: deleteError } = await supabase
-        .from('user_integrations')
-        .delete()
-        .eq('id', integrationId);
+      const result = await integrationService.removeIntegration(integrationId);
 
-      if (deleteError) throw deleteError;
-
-      setIntegrations(prev => prev.filter(integration => integration.id !== integrationId));
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to remove integration');
+      }
 
       showToast({
         title: 'Success',
@@ -139,7 +150,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         type: 'success'
       });
     } catch (err) {
-      setError(err instanceof Error ? err: new Error('An error occurred'));
+      setError(err instanceof Error ? err : new Error('An error occurred'));
       showToast({
         title: 'Error',
         description: 'Failed to remove integration',
@@ -149,30 +160,25 @@ export const useIntegrations = (): UseIntegrationsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, showToast]);
+  }, [user?.id, showToast]);
 
   const updateIntegration = useCallback(async (integrationId: string, updates: Partial<Integration>) => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data: updatedIntegration, error: updateError } = await supabase
-        .from('user_integrations')
-        .update({
-          ...updates,
-          updatedat: new Date().toISOString(),
-        })
-        .eq('id', integrationId)
-        .select()
-        .single();
+      const result = await integrationService.updateIntegration(integrationId, {
+        integration_type: updates.type,
+        credentials: updates.credentials,
+        settings: updates.settings,
+        updated_at: new Date().toISOString(),
+      });
 
-      if (updateError) throw updateError;
-
-      setIntegrations(prev => prev.map(integration => 
-        integration.id === integrationId ? updatedIntegration: integration
-      ));
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to update integration');
+      }
 
       showToast({
         title: 'Success',
@@ -180,7 +186,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
         type: 'success'
       });
     } catch (err) {
-      setError(err instanceof Error ? err: new Error('An error occurred'));
+      setError(err instanceof Error ? err : new Error('An error occurred'));
       showToast({
         title: 'Error',
         description: 'Failed to update integration',
@@ -190,7 +196,7 @@ export const useIntegrations = (): UseIntegrationsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, showToast]);
+  }, [user?.id, showToast]);
 
   return {
     integrations,

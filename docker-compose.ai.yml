@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  # vLLM server for text generation models
+  vllm-server:
+    image: vllm/vllm:latest
+    container_name: nexus-vllm-server
+    ports:
+      - "8000:8000"
+    environment:
+      - CUDA_VISIBLE_DEVICES=0
+      - MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
+      - MAX_MODEL_LEN=8192
+      - TENSOR_PARALLEL_SIZE=1
+      - QUANTIZATION=awq
+    volumes:
+      - ./models:/models
+      - ./logs:/var/log/vllm
+    command: >
+      --model meta-llama/Llama-3.1-8B-Instruct
+      --host 0.0.0.0
+      --port 8000
+      --max-model-len 8192
+      --tensor-parallel-size 1
+      --quantization awq
+      --trust-remote-code
+    restart: unless-stopped
+    networks:
+      - nexus-ai-network
+
+  # BGE-M3 embeddings server
+  bge-embeddings:
+    image: vllm/vllm:latest
+    container_name: nexus-bge-embeddings
+    ports:
+      - "8001:8000"
+    environment:
+      - CUDA_VISIBLE_DEVICES=1
+      - MODEL_NAME=BAAI/bge-m3
+      - MAX_MODEL_LEN=8192
+    volumes:
+      - ./models:/models
+      - ./logs:/var/log/vllm
+    command: >
+      --model BAAI/bge-m3
+      --host 0.0.0.0
+      --port 8000
+      --max-model-len 8192
+      --tensor-parallel-size 1
+      --trust-remote-code
+    restart: unless-stopped
+    networks:
+      - nexus-ai-network
+
+  # BGE Reranker server
+  bge-reranker:
+    image: vllm/vllm:latest
+    container_name: nexus-bge-reranker
+    ports:
+      - "8002:8000"
+    environment:
+      - CUDA_VISIBLE_DEVICES=2
+      - MODEL_NAME=BAAI/bge-reranker-v2-m3
+      - MAX_MODEL_LEN=512
+    volumes:
+      - ./models:/models
+      - ./logs:/var/log/vllm
+    command: >
+      --model BAAI/bge-reranker-v2-m3
+      --host 0.0.0.0
+      --port 8000
+      --max-model-len 512
+      --tensor-parallel-size 1
+      --trust-remote-code
+    restart: unless-stopped
+    networks:
+      - nexus-ai-network
+
+  # Alternative: Text Generation Inference (TGI) server
+  tgi-server:
+    image: ghcr.io/huggingface/text-generation-inference:latest
+    container_name: nexus-tgi-server
+    ports:
+      - "8003:80"
+    environment:
+      - MODEL_ID=meta-llama/Llama-3.1-8B-Instruct
+      - MAX_INPUT_LENGTH=8192
+      - MAX_TOTAL_TOKENS=8192
+      - QUANTIZE=bitsandbytes-nf4
+    volumes:
+      - ./models:/models
+      - ./logs:/var/log/tgi
+    command: >
+      --model-id meta-llama/Llama-3.1-8B-Instruct
+      --port 80
+      --max-input-length 8192
+      --max-total-tokens 8192
+      --quantize bitsandbytes-nf4
+    restart: unless-stopped
+    networks:
+      - nexus-ai-network
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-ai-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - nexus-ai-network
+
+  # AI Gateway health checker
+  ai-health-checker:
+    image: curlimages/curl:latest
+    container_name: nexus-ai-health-checker
+    depends_on:
+      - vllm-server
+      - bge-embeddings
+      - bge-reranker
+    volumes:
+      - ./scripts:/scripts
+    command: >
+      sh -c "
+        echo 'Waiting for AI services to start...' &&
+        sleep 30 &&
+        echo 'Checking vLLM server...' &&
+        curl -f http://vllm-server:8000/v1/models &&
+        echo 'Checking BGE embeddings...' &&
+        curl -f http://bge-embeddings:8000/v1/models &&
+        echo 'Checking BGE reranker...' &&
+        curl -f http://bge-reranker:8000/v1/models &&
+        echo 'All AI services are healthy!'
+      "
+    restart: "no"
+    networks:
+      - nexus-ai-network
+
+volumes:
+  redis-data:
+    driver: local
+
+networks:
+  nexus-ai-network:
+    driver: bridge
+    name: nexus-ai-network

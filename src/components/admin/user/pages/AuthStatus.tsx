@@ -12,8 +12,9 @@ import {
   RefreshCw,
   LogOut
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 interface AuthStatusInfo {
   isAuthenticated: boolean;
@@ -38,8 +39,9 @@ export const AuthStatus: React.FC = () => {
   const loadAuthStatus = async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const result = await authentikAuthService.getSession();
+      const session = result.data;
+      const currentUser = result.data?.user;
 
       const info: AuthStatusInfo = {
         isAuthenticated: !!session,
@@ -62,9 +64,9 @@ export const AuthStatus: React.FC = () => {
   const refreshSession = async () => {
     setRefreshing(true);
     try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        logger.error('Session refresh failed', { error });
+      const refreshResult = await authentikAuthService.refreshSession();
+      if (refreshResult.error) {
+        logger.error('Session refresh failed', { error: refreshResult.error });
       } else {
         await loadAuthStatus();
       }

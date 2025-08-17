@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { select, insertOne, updateOne } from '@/lib/supabase';
+import { selectData, insertOne, updateOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface ChatMessage {

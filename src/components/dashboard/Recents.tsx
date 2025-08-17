@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeTable } from "@/core/hooks/useRealtimeTable";
-import { supabase } from "@/lib/supabase";
-import type { PostgrestError } from "@supabase/supabase-js";
+import { postgres } from "@/lib/postgres";
+import type { DatabaseError } from "@/core/types/errors";
 import { formatDistanceToNow } from "date-fns";
 import { useWidgetAnalytics } from '@/shared/features/widgets/hooks/useWidgetAnalytics';
 import { useEffect } from "react";
@@ -15,7 +15,7 @@ type RecentItem = {
 };
 
 async function fetchRecents(): Promise<RecentItem[]> {
-  const { data, error }: { data: RecentItem[] | null; error: PostgrestError | null } = await supabase
+  const { data, error }: { data: RecentItem[] | null; error: DatabaseError | null } = await postgres
     .from("Recent")
     .select("*")
     .order("viewedAt", { ascending: false })

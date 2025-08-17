@@ -4,9 +4,9 @@
  */
 
 import React from 'react';
-import { useBackendConnector } from '@/shared/hooks/useBackendConnector.ts';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { useBackendConnector } from '@/shared/hooks/useBackendConnector';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/Tooltip';
 import { 
   CheckCircle, 

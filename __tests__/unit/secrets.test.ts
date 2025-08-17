@@ -5,8 +5,8 @@ describe('Secrets Utility', () => {
     it('should return mock secrets for testing', async () => {
       const secrets = await getTestSecrets();
       
-      expect(secrets.VITE_SUPABASE_URL).toBe('https://test.supabase.co');
-      expect(secrets.VITE_SUPABASE_ANON_KEY).toBe('test-anon-key');
+      expect(secrets.VITE_POSTGRES_URL).toBe('postgresql://postgres:postgres@localhost:5433/vector_db');
+      expect(secrets.VITE_POSTGRES_HOST).toBe('localhost');
       expect(secrets.VITE_OPENROUTER_API_KEY).toBe('test-openrouter-key');
       expect(secrets.VITE_GOOGLE_CLIENT_ID).toBe('test-google-client-id');
       expect(secrets.VITE_MICROSOFT_CLIENT_ID).toBe('test-microsoft-client-id');
@@ -20,8 +20,8 @@ describe('Secrets Utility', () => {
     it('should set environment variables from secrets', async () => {
       await setEnvFromSecrets();
       
-      expect(process.env.VITE_SUPABASE_URL).toBe('https://test.supabase.co');
-      expect(process.env.VITE_SUPABASE_ANON_KEY).toBe('test-anon-key');
+      expect(process.env.VITE_POSTGRES_URL).toBe('postgresql://postgres:postgres@localhost:5433/vector_db');
+      expect(process.env.VITE_POSTGRES_HOST).toBe('localhost');
       expect(process.env.VITE_OPENROUTER_API_KEY).toBe('test-openrouter-key');
     });
   });
@@ -30,8 +30,8 @@ describe('Secrets Utility', () => {
     it('should return mock secrets object', () => {
       const secrets = mockSecrets();
       
-      expect(secrets.VITE_SUPABASE_URL).toBe('https://test.supabase.co');
-      expect(secrets.VITE_SUPABASE_ANON_KEY).toBe('test-anon-key');
+      expect(secrets.VITE_POSTGRES_URL).toBe('postgresql://postgres:postgres@localhost:5433/vector_db');
+      expect(secrets.VITE_POSTGRES_HOST).toBe('localhost');
       expect(secrets.VITE_OPENROUTER_API_KEY).toBe('test-openrouter-key');
       expect(secrets.VITE_GOOGLE_CLIENT_ID).toBe('test-google-client-id');
       expect(secrets.VITE_MICROSOFT_CLIENT_ID).toBe('test-microsoft-client-id');
@@ -50,12 +50,12 @@ describe('API Integration with Secrets', () => {
     await setEnvFromSecrets();
   });
 
-  it('should connect to Supabase with real secrets', async () => {
+  it('should connect to PostgreSQL with real secrets', async () => {
     const secrets = await getTestSecrets();
     
     // Your integration test here
-    expect(secrets.VITE_SUPABASE_URL).toBeDefined();
-    expect(process.env.VITE_SUPABASE_URL).toBe(secrets.VITE_SUPABASE_URL);
+    expect(secrets.VITE_POSTGRES_URL).toBeDefined();
+    expect(process.env.VITE_POSTGRES_URL).toBe(secrets.VITE_POSTGRES_URL);
   });
 });
 */ 

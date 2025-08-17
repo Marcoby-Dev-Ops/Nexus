@@ -7,7 +7,6 @@ export { default as AICapabilities } from './AICapabilities';
 export { default as AIHubPage } from './AIHubPage';
 export { default as AIPerformancePage } from './AIPerformancePage';
 export { default as ChatPage } from './ChatPage';
-export { default as ChatV2Page } from './ChatV2Page';
 export { default as AIChatPage } from './ChatPage';
 
 // Implemented AI management pages

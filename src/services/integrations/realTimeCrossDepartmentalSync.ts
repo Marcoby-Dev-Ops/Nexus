@@ -10,7 +10,7 @@
 
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { nexusUnifiedBrain } from '@/services/ai/nexusUnifiedBrain';
 import { z } from 'zod';
 

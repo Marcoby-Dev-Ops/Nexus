@@ -9,8 +9,8 @@
  * - Record Level Security (Sharing)
  */
 
-import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { logger } from '@/shared/utils/logger';
 
 export interface Permission {
   id: string;

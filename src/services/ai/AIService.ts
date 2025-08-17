@@ -2,8 +2,9 @@ import { z } from 'zod';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
-import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { logger } from '@/shared/utils/logger';
+import { NexusAIGatewayService } from '@/ai/services/NexusAIGatewayService';
 
 // AI Schemas
 export const AIOperationSchema = z.object({
@@ -149,6 +150,8 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
   private commandCache: Map<string, SlashCommand> = new Map();
   private cacheTimeout = 10 * 60 * 1000; // 10 minutes
   private lastCacheUpdate = 0;
+  private gateway: NexusAIGatewayService = new NexusAIGatewayService();
+  private defaultTenantId = 'default-tenant';
 
   private metrics: ImprovementMetrics = {
     accuracy: 0.85,
@@ -246,120 +249,79 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     }, `list ${this.config.tableName}`);
   }
 
-  // Generate AI response
+  // Generate AI response (delegates to NexusAIGatewayService)
   async generateResponse(prompt: string, context: any = {}) {
     this.logMethodCall('generateResponse', { prompt, context });
-    
     try {
-      const operation = {
-        user_id: context.userId || 'system',
-        company_id: context.companyId,
-        operation_type: 'chat' as const,
-        model: context.model || 'gpt-4',
-        prompt,
-        input_data: context,
-        status: 'pending' as const,
-        created_at: new Date().toISOString(),
-      };
+      const tenantId: string = context.tenantId || context.companyId || this.defaultTenantId;
 
-      const result = await this.create(operation);
-      
-      if (result.success && result.data) {
-        // Simulate AI processing
-        const aiResponse = await this.processAIRequest(result.data);
-        
-        // Update operation with results
-        await this.update(result.data.id!, {
-          ...aiResponse,
-          status: 'completed' as const,
-          updated_at: new Date().toISOString(),
-        });
+      const chat = await this.gateway.chat({
+        messages: [
+          context.system ? { role: 'system', content: String(context.system) } : undefined,
+          { role: 'user', content: prompt },
+        ].filter(Boolean) as Array<{ role: 'system' | 'user'; content: string }>,
+        system: context.system,
+        role: context.role || 'chat',
+        sensitivity: context.sensitivity || 'internal',
+        budgetCents: context.budgetCents,
+        latencyTargetMs: context.latencyTargetMs,
+        json: context.json,
+        tools: context.tools,
+        tenantId,
+        userId: context.userId,
+      });
 
-        return {
-          data: aiResponse.output_data,
-          error: null,
-          success: true,
-        };
+      if (!chat.success || !chat.data) {
+        return { success: false, error: chat.error || 'AI chat failed' };
       }
 
-      return result;
+      return {
+        success: true,
+        data: {
+          response: chat.data.message,
+          model: chat.data.model,
+          tokens_used: (chat.data.tokens?.prompt || 0) + (chat.data.tokens?.completion || 0),
+          cost: (chat.data.costCents || 0) / 100,
+          processing_time: chat.data.latencyMs,
+        },
+        error: null,
+      };
     } catch (error) {
       return this.handleError('generateResponse', error);
     }
   }
 
-  // Analyze data with AI
+  // Analyze data with AI (delegates to NexusAIGatewayService)
   async analyzeData(data: any, analysisType: string) {
     this.logMethodCall('analyzeData', { analysisType });
-    
     try {
-      const operation = {
-        user_id: data.userId || 'system',
-        company_id: data.companyId,
-        operation_type: 'analysis' as const,
-        model: data.model || 'gpt-4',
-        input_data: { data, analysisType },
-        status: 'pending' as const,
-        created_at: new Date().toISOString(),
-      };
-
-      const result = await this.create(operation);
-      
-      if (result.success && result.data) {
-        const analysis = await this.processAnalysis(result.data);
-        
-        await this.update(result.data.id!, {
-          ...analysis,
-          status: 'completed' as const,
-          updated_at: new Date().toISOString(),
-        });
-
-        return {
-          data: analysis.output_data,
-          error: null,
-          success: true,
-        };
-      }
-
-      return result;
+      const tenantId: string = data?.tenantId || data?.companyId || this.defaultTenantId;
+      const res = await this.gateway.analyzeBusinessData(
+        data,
+        (analysisType as 'financial' | 'operational' | 'strategic') || 'strategic',
+        tenantId,
+        data?.userId
+      );
+      if (!res.success) return { success: false, error: res.error || 'Analysis failed' };
+      return { success: true, data: res.data, error: null };
     } catch (error) {
       return this.handleError('analyzeData', error);
     }
   }
 
-  // Generate insights
+  // Generate insights (delegates to NexusAIGatewayService)
   async generateInsights(userId: string, data: any) {
     this.logMethodCall('generateInsights', { userId });
-    
     try {
-      const operation = {
-        user_id: userId,
-        operation_type: 'generation' as const,
-        model: 'gpt-4',
-        input_data: data,
-        status: 'pending' as const,
-        created_at: new Date().toISOString(),
-      };
-
-      const result = await this.create(operation);
-      
-      if (result.success && result.data) {
-        const insights = await this.processInsights(result.data);
-        
-        await this.update(result.data.id!, {
-          ...insights,
-          status: 'completed' as const,
-          updated_at: new Date().toISOString(),
-        });
-
-        return {
-          data: insights.output_data,
-          error: null,
-          success: true,
-        };
-      }
-
-      return result;
+      const tenantId: string = data?.tenantId || this.defaultTenantId;
+      const res = await this.gateway.generateRecommendations(
+        JSON.stringify(data),
+        'growth',
+        tenantId,
+        userId
+      );
+      if (!res.success) return { success: false, error: res.error || 'Insight generation failed' };
+      return { success: true, data: res.data, error: null };
     } catch (error) {
       return this.handleError('generateInsights', error);
     }
@@ -447,9 +409,20 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
         created_at: new Date().toISOString(),
       };
 
-      // Mock implementation - in real app, this would save to conversations table
+      // Save conversation to database
+      const { data: savedConversation, error } = await supabase
+        .from('ai_conversations')
+        .insert(conversation)
+        .select()
+        .single();
+
+      if (error) {
+        this.logger.error('Failed to create conversation', { error });
+        return this.handleError('createConversation', error);
+      }
+
       return {
-        data: conversation,
+        data: savedConversation,
         error: null,
         success: true,
       };
@@ -463,9 +436,24 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     this.logMethodCall('addMessageToConversation', { conversationId, message });
     
     try {
-      // Mock implementation - in real app, this would update conversations table
+      // Update conversation with new message
+      const { data: updatedConversation, error } = await supabase
+        .from('ai_conversations')
+        .update({
+          messages: supabase.sql`messages || ${JSON.stringify([message])}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', conversationId)
+        .select()
+        .single();
+
+      if (error) {
+        this.logger.error('Failed to add message to conversation', { error });
+        return this.handleError('addMessageToConversation', error);
+      }
+
       return {
-        data: { message: 'Message added to conversation' },
+        data: updatedConversation,
         error: null,
         success: true,
       };
@@ -479,9 +467,20 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     this.logMethodCall('getConversationHistory', { userId });
     
     try {
-      // Mock implementation - in real app, this would query conversations table
+      // Get conversations from database
+      const { data: conversations, error } = await supabase
+        .from('ai_conversations')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        this.logger.error('Failed to get conversation history', { error });
+        return this.handleError('getConversationHistory', error);
+      }
+
       return {
-        data: [],
+        data: conversations || [],
         error: null,
         success: true,
       };
@@ -522,39 +521,59 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     this.logMethodCall('getAvailableModels');
     
     try {
-      // Mock available models
-      const models = [
-        {
-          id: 'gpt-4',
-          name: 'GPT-4',
-          version: '4.0',
-          provider: 'openai',
-          capabilities: ['chat', 'analysis', 'generation'],
-          cost_per_token: 0.00003,
-          max_tokens: 8192,
-          status: 'active' as const,
-        },
-        {
-          id: 'gpt-3.5-turbo',
-          name: 'GPT-3.5 Turbo',
-          version: '3.5',
-          provider: 'openai',
-          capabilities: ['chat', 'analysis'],
-          cost_per_token: 0.000002,
-          max_tokens: 4096,
-          status: 'active' as const,
-        },
-        {
-          id: 'claude-3',
-          name: 'Claude 3',
-          version: '3.0',
-          provider: 'anthropic',
-          capabilities: ['chat', 'analysis', 'generation'],
-          cost_per_token: 0.000015,
-          max_tokens: 100000,
-          status: 'active' as const,
-        },
-      ];
+      // Get models from database
+      const { data: models, error } = await supabase
+        .from('ai_models')
+        .select('*')
+        .eq('status', 'active')
+        .order('name');
+
+      if (error) {
+        this.logger.error('Failed to get available models', { error });
+        return this.handleError('getAvailableModels', error);
+      }
+
+      // If no models in database, return default models
+      if (!models || models.length === 0) {
+        const defaultModels = [
+          {
+            id: 'gpt-4',
+            name: 'GPT-4',
+            version: '4.0',
+            provider: 'openai',
+            capabilities: ['chat', 'analysis', 'generation'],
+            cost_per_token: 0.00003,
+            max_tokens: 8192,
+            status: 'active' as const,
+          },
+          {
+            id: 'gpt-3.5-turbo',
+            name: 'GPT-3.5 Turbo',
+            version: '3.5',
+            provider: 'openai',
+            capabilities: ['chat', 'analysis'],
+            cost_per_token: 0.000002,
+            max_tokens: 4096,
+            status: 'active' as const,
+          },
+          {
+            id: 'claude-3',
+            name: 'Claude 3',
+            version: '3.0',
+            provider: 'anthropic',
+            capabilities: ['chat', 'analysis', 'generation'],
+            cost_per_token: 0.000015,
+            max_tokens: 100000,
+            status: 'active' as const,
+          },
+        ];
+
+        return {
+          data: defaultModels,
+          error: null,
+          success: true,
+        };
+      }
 
       return {
         data: models,
@@ -1110,30 +1129,13 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     };
   }
 
-  // Embedding functionality
+  // Embedding functionality (delegates to NexusAIGatewayService)
   async generateEmbedding(text: string, model: string = 'text-embedding-3-small') {
     this.logMethodCall('generateEmbedding', { text: text.substring(0, 100), model });
-    
     try {
-      const operation = {
-        user_id: 'system',
-        operation_type: 'generation' as const,
-        model,
-        prompt: `Generate embedding for: ${text.substring(0, 200)}`,
-        input_data: { text, model },
-        status: 'pending' as const,
-        created_at: new Date().toISOString(),
-      };
-
-      const result = await this.create(operation);
-      
-      if (result.success && result.data) {
-        // Simulate embedding generation
-        const embedding = await this.processEmbeddingRequest(result.data);
-        return { success: true, data: embedding };
-      }
-      
-      return { success: false, error: 'Failed to create embedding operation' };
+      const res = await this.gateway.generateEmbeddings({ text, model, tenantId: this.defaultTenantId });
+      if (!res.success || !res.data) return { success: false, error: res.error || 'Embedding failed' };
+      return { success: true, data: res.data.embedding };
     } catch (error) {
       this.logError('generateEmbedding', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
@@ -1170,7 +1172,7 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
       
       if (embeddingResult.success && embeddingResult.data) {
         // Store embedding in company profiles table
-        const { error } = await this.supabase
+        const { error } = await supabase
           .from('ai_company_profiles')
           .update({ content_embedding: embeddingResult.data })
           .eq('company_id', companyId);
@@ -1191,22 +1193,19 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
   }
 
   private async processEmbeddingRequest(operation: AIOperation) {
-    // Simulate embedding generation
-    // In production, this would call OpenAI's embedding API
-    const embedding = new Array(1536).fill(0).map(() => Math.random() - 0.5);
-    
-    // Update operation with results
+    // Deprecated: embeddings now delegated to NexusAIGatewayService
+    const res = await this.gateway.generateEmbeddings({ text: operation.prompt || '', tenantId: this.defaultTenantId });
+    if (!res.success || !res.data) return new Array(1536).fill(0);
     await this.update(operation.id!, {
       ...operation,
-      output_data: { embedding },
+      output_data: { embedding: res.data.embedding },
       status: 'completed' as const,
-      tokens_used: 100,
-      cost: 0.0001,
-      processing_time: 0.5,
+      tokens_used: (res.data.tokens?.prompt || 0) + (res.data.tokens?.completion || 0),
+      cost: 0,
+      processing_time: res.data.latencyMs || 0,
       updated_at: new Date().toISOString(),
     });
-
-    return embedding;
+    return res.data.embedding;
   }
 
   private async refreshCommandCache(): Promise<void> {

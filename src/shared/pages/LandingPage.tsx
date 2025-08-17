@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
 import { PublicHeader } from '@/shared/components/layout/PublicHeader';
 import { 
   Brain, 
@@ -13,10 +13,74 @@ import {
   Target, 
   Sparkles,
   ArrowRight,
-  Play
+  Play,
+  CheckCircle,
+  AlertTriangle,
+  Clock,
+  DollarSign,
+  BarChart3,
+  Workflow,
+  Shield,
+  Globe,
+  Smartphone,
+  Monitor,
+  Star
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
+  const painPoints = [
+    {
+      icon: AlertTriangle,
+      problem: "Data scattered across 15+ tools",
+      solution: "Unified dashboard connects everything",
+      benefit: "See the full picture instantly"
+    },
+    {
+      icon: Clock,
+      problem: "Spending 20+ hours weekly on reports",
+      solution: "AI generates insights automatically",
+      benefit: "Focus on decisions, not data entry"
+    },
+    {
+      icon: DollarSign,
+      problem: "Missing revenue opportunities",
+      solution: "Predictive analytics spots trends",
+      benefit: "Act before competitors do"
+    }
+  ];
+
+  const useCases = [
+    {
+      type: "E-commerce Store",
+      scenario: "Sales dropping but can't see why",
+      solution: "Nexus connects Shopify, Google Analytics, and email data to show exactly where customers are abandoning",
+      result: "Recovered $45K in lost revenue"
+    },
+    {
+      type: "SaaS Startup",
+      scenario: "Growing but churn is high",
+      solution: "AI analyzes user behavior patterns to predict who will cancel and why",
+      result: "Reduced churn by 32%"
+    },
+    {
+      type: "Service Business",
+      scenario: "Team overwhelmed with manual processes",
+      solution: "Automated workflows handle repetitive tasks while you focus on clients",
+      result: "Saved 25 hours per week"
+    }
+  ];
+
+  const integrations = [
+    { name: "Shopify", category: "E-commerce" },
+    { name: "Salesforce", category: "CRM" },
+    { name: "QuickBooks", category: "Accounting" },
+    { name: "Slack", category: "Communication" },
+    { name: "Google Analytics", category: "Analytics" },
+    { name: "Mailchimp", category: "Marketing" },
+    { name: "Zapier", category: "Automation" },
+    { name: "Stripe", category: "Payments" }
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       {/* Public Header */}
@@ -24,7 +88,7 @@ export const LandingPage: React.FC = () => {
       
       {/* Hero Section */}
       <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm: px-6 lg:px-8 py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
           <div className="text-center">
             <Badge variant="secondary" className="mb-4">
               <Sparkles className="w-4 h-4 mr-2" />
@@ -35,28 +99,93 @@ export const LandingPage: React.FC = () => {
               <span className="text-primary"> Operating System</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-              Nexus transforms your business into a self-optimizing, intelligent organism. 
-              No degree required – just the vision to grow.
+              Stop juggling 15+ tools. Nexus connects everything into one intelligent system that 
+              predicts problems, automates solutions, and grows your business while you sleep.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button size="lg" className="w-full sm:w-auto">
                 <Link to="/signup" className="flex items-center justify-center w-full">
-                  Get Started Free
+                  Start Free Trial
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                <Link to="/login" className="flex items-center justify-center w-full">
-                  Log In
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="w-full sm:w-auto">
                 <Link to="/demo/nexus-operating-system" className="flex items-center justify-center w-full">
                   <Play className="mr-2 h-4 w-4" />
-                  Watch Demo
+                  See It In Action
                 </Link>
               </Button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Problem/Solution Section */}
+      <div className="py-16 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Sound Familiar?
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              These are the problems Nexus was built to solve
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {painPoints.map((item, index) => (
+              <Card key={index} className="border-l-4 border-l-red-500">
+                <CardHeader>
+                  <div className="flex items-center mb-4">
+                    <item.icon className="w-6 h-6 text-red-500 mr-3" />
+                    <CardTitle className="text-lg text-red-600">{item.problem}</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <ArrowRight className="w-4 h-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
+                      <p className="text-sm text-muted-foreground">{item.solution}</p>
+                    </div>
+                    <Badge variant="secondary" className="text-xs">
+                      {item.benefit}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Use Cases Section */}
+      <div className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Real Results, Real Businesses
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              See how different businesses use Nexus to solve their biggest challenges
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            {useCases.map((useCase, index) => (
+              <Card key={index} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <Badge variant="outline" className="w-fit mb-3">{useCase.type}</Badge>
+                  <CardTitle className="text-lg">{useCase.scenario}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground mb-4 text-sm">{useCase.solution}</p>
+                  <div className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    <span className="text-sm font-medium text-green-600">{useCase.result}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -73,7 +202,7 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid md: grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             <Card className="border-2 hover:border-primary/50 transition-colors">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
@@ -83,18 +212,32 @@ export const LandingPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
-                  Advanced AI analyzes patterns, predicts outcomes, and generates insights across all business operations.
+                  AI analyzes your data to predict trends, identify opportunities, and generate actionable insights.
                 </p>
+                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Predict customer churn before it happens
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Identify revenue opportunities in your data
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Generate weekly performance reports automatically
+                  </li>
+                </ul>
                 <Button variant="ghost" size="sm">
                   <Link to="/demo/trinity-brain" className="flex items-center">
-                    Explore Brain Demo
+                    See AI in Action
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 hover: border-primary/50 transition-colors">
+            <Card className="border-2 hover:border-primary/50 transition-colors">
               <CardHeader>
                 <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
                   <Eye className="w-6 h-6 text-primary" />
@@ -103,11 +246,25 @@ export const LandingPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
-                  Real-time visibility into every aspect of your business with predictive analytics and trend detection.
+                  Real-time dashboards show you exactly what's happening across your entire business.
                 </p>
+                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Live sales, marketing, and operations data
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Cross-department performance insights
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Custom alerts for critical metrics
+                  </li>
+                </ul>
                 <Button variant="ghost" size="sm">
                   <Link to="/demo/cross-departmental-intelligence" className="flex items-center">
-                    Explore Vision Demo
+                    View Dashboard Demo
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -123,11 +280,25 @@ export const LandingPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
-                  Automated workflows and intelligent actions that optimize operations without human intervention.
+                  Automated workflows handle repetitive tasks and take action based on your business rules.
                 </p>
+                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Auto-send follow-ups to leads
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Schedule team tasks based on workload
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Reorder inventory when stock is low
+                  </li>
+                </ul>
                 <Button variant="ghost" size="sm">
                   <Link to="/demo/automated-workflow" className="flex items-center">
-                    Explore Action Demo
+                    Watch Automation Demo
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -137,8 +308,43 @@ export const LandingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Features Section */}
+      {/* Integrations Section */}
       <div className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Works With Your Existing Tools
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Connect your favorite apps and start seeing the full picture in minutes
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+            {integrations.map((integration, index) => (
+              <Card key={index} className="p-4 text-center hover:shadow-md transition-shadow">
+                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mx-auto mb-2">
+                  <Globe className="w-6 h-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium">{integration.name}</p>
+                <p className="text-xs text-muted-foreground">{integration.category}</p>
+              </Card>
+            ))}
+          </div>
+          
+          <div className="text-center mt-8">
+            <p className="text-muted-foreground mb-4">
+              Don't see your tool? We can integrate with any API
+            </p>
+            <Button variant="outline">
+              <Link to="/integrations">View All Integrations</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div className="py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
@@ -149,40 +355,46 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid md: grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: TrendingUp,
                 title: "Predictive Analytics",
-                description: "Forecast trends and opportunities before they happen"
+                description: "Forecast trends and opportunities before they happen",
+                example: "Predict which customers will churn next month"
               },
               {
                 icon: Users,
                 title: "Team Coordination",
-                description: "Seamless collaboration across all departments"
+                description: "Seamless collaboration across all departments",
+                example: "Automatically assign tasks based on workload"
               },
               {
                 icon: Target,
                 title: "Goal Optimization",
-                description: "Automatically adjust strategies to hit targets"
+                description: "Automatically adjust strategies to hit targets",
+                example: "AI suggests marketing budget reallocation"
               },
               {
                 icon: Sparkles,
                 title: "AI-Powered Insights",
-                description: "Get actionable recommendations 24/7"
+                description: "Get actionable recommendations 24/7",
+                example: "Daily email with 3 priority actions"
               },
               {
                 icon: Eye,
                 title: "Real-time Monitoring",
-                description: "Track performance across all business metrics"
+                description: "Track performance across all business metrics",
+                example: "Live dashboard updates every 5 minutes"
               },
               {
                 icon: Zap,
                 title: "Automated Workflows",
-                description: "Eliminate repetitive tasks and focus on growth"
+                description: "Eliminate repetitive tasks and focus on growth",
+                example: "Auto-follow up with leads after 24 hours"
               }
             ].map((feature, index) => (
-              <Card key={index} className="hover: shadow-lg transition-shadow">
+              <Card key={index} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
                     <feature.icon className="w-5 h-5 text-primary" />
@@ -190,7 +402,10 @@ export const LandingPage: React.FC = () => {
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                  <p className="text-muted-foreground mb-3">{feature.description}</p>
+                  <Badge variant="secondary" className="text-xs">
+                    {feature.example}
+                  </Badge>
                 </CardContent>
               </Card>
             ))}
@@ -200,7 +415,7 @@ export const LandingPage: React.FC = () => {
 
       {/* CTA Section */}
       <div className="py-16 bg-primary/5">
-        <div className="max-w-4xl mx-auto px-4 sm: px-6 lg:px-8 text-center">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">
             Ready to Transform Your Business?
           </h2>
@@ -249,7 +464,7 @@ export const LandingPage: React.FC = () => {
               <h3 className="font-semibold text-foreground mb-4">Product</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link to="/pricing" className="text-muted-foreground hover: text-primary transition-colors">
+                  <Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
                     Pricing
                   </Link>
                 </li>

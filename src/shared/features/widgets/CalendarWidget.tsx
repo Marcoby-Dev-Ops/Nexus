@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CalendarContent, CalendarHeader, CalendarTitle } from '@/shared/components/ui/Calendar';
 import { Badge } from '@/shared/components/ui/Badge';
-import { select } from '@/lib/supabase';
+import { selectData } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface CalendarEvent {
@@ -30,7 +30,7 @@ export const CalendarWidget: React.FC<CalendarWidgetProps> = ({ className = '' }
       setLoading(true);
       
       // Fetch calendar events from the database
-      const { data, error } = await select('calendar_events', '*');
+      const { data, error } = await selectData('calendar_events', '*');
       
       if (error) {
         logger.error({ error }, 'Failed to fetch calendar events');

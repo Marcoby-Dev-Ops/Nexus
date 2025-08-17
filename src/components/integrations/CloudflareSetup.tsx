@@ -10,7 +10,7 @@ import {
 } from '@/shared/components/ui';
 import { Shield, Globe, BarChart3, CheckCircle, AlertCircle, Loader2, ExternalLink, Copy, Eye, EyeOff } from 'lucide-react';
 import { cloudflareService } from '@/services/cloudflareService';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';
 

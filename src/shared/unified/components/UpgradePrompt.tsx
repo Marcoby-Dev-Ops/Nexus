@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
 
 interface UpgradePromptProps {
   feature: string;

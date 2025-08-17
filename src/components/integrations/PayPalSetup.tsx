@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { 
   DollarSign, 
   CheckCircle, 
@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import { useNotifications } from '@/shared/hooks/NotificationContext';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { PayPalAnalyticsSimple } from './PayPalAnalyticsSimple';
 import { PayPalIntegrationService } from '@/services/integrations/paypal/PayPalIntegrationService';
+
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 interface PayPalSetupProps {
   onComplete?: () => void;
@@ -58,11 +60,12 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     
     try {
       // Debug authentication status
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const result = await authentikAuthService.getSession();
+      const session = result.data;
        
      
     // eslint-disable-next-line no-console
-    console.log('Current session: ', session ? 'Authenticated' : 'Not authenticated', sessionError);
+    console.log('Current session: ', session ? 'Authenticated' : 'Not authenticated', result.error);
       
       if (!session) {
          
@@ -145,7 +148,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
         .select('*')
         .eq('user_id', user.id)
         .eq('integration_id', integrationId)
-        .eq('status', 'active')
+        .eq('status', 'connected')
         .maybeSingle();
 
       if (userIntegrationError) {
@@ -189,15 +192,17 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     setIsConnecting(true);
     
     try {
-      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      // Get PayPal OAuth configuration from server-side API
+      const configResponse = await fetch('/api/oauth/config/paypal');
+      if (!configResponse.ok) {
+        throw new Error('Failed to get PayPal configuration from server.');
+      }
+      
+      const config = await configResponse.json();
+      const { clientId, redirectUri, baseUrl } = config;
       
       if (!clientId || clientId === 'your_paypal_client_id_here') {
         throw new Error('PayPal OAuth credentials not configured. Please set up PayPal Developer credentials in the environment variables. See docs/PAYPAL_OAUTH_SETUP.md for setup instructions.');
-      }
-      
-      if (!supabaseUrl) {
-        throw new Error('Supabase URL not configured. Please check your environment variables.');
       }
 
       // Create state parameter with user ID and timestamp for security
@@ -206,11 +211,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       // Store state for verification
       sessionStorage.setItem('paypal_oauth_state', state);
       
-      const redirectUri = `${supabaseUrl}/functions/v1/paypal_oauth_callback`;
       const scopes = encodeURIComponent('openid profile https: //uri.paypal.com/services/paypalattributes');
-      const baseUrl = import.meta.env.VITE_PAYPAL_ENV === 'live' 
-        ? 'https: //www.paypal.com' 
-        : 'https://www.sandbox.paypal.com';
 
       const authUrl = `${baseUrl}/signin/authorize?response_type=code&client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
 
@@ -271,15 +272,17 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
     setIsConnecting(true);
     
     try {
-      const clientId = import.meta.env.VITE_PAYPAL_CLIENT_ID;
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      // Get PayPal OAuth configuration from server-side API
+      const configResponse = await fetch('/api/oauth/config/paypal');
+      if (!configResponse.ok) {
+        throw new Error('Failed to get PayPal configuration from server.');
+      }
+      
+      const config = await configResponse.json();
+      const { clientId, redirectUri, baseUrl } = config;
       
       if (!clientId || clientId === 'your_paypal_client_id_here') {
         throw new Error('PayPal OAuth credentials not configured. Please set up PayPal Developer credentials in the environment variables. See docs/PAYPAL_OAUTH_SETUP.md for setup instructions.');
-      }
-      
-      if (!supabaseUrl) {
-        throw new Error('Supabase URL not configured. Please check your environment variables.');
       }
 
       // Create state parameter with user ID and timestamp for security
@@ -288,11 +291,7 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
       // Store state for verification
       sessionStorage.setItem('paypal_oauth_state', state);
       
-      const redirectUri = `${supabaseUrl}/functions/v1/paypal_oauth_callback`;
       const scopes = encodeURIComponent('openid profile https: //uri.paypal.com/services/paypalattributes');
-      const baseUrl = import.meta.env.VITE_PAYPAL_ENV === 'live' 
-        ? 'https: //www.paypal.com' 
-        : 'https://www.sandbox.paypal.com';
 
       const authUrl = `${baseUrl}/signin/authorize?response_type=code&client_id=${clientId}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
 
@@ -395,8 +394,10 @@ const PayPalSetup: React.FC<PayPalSetupProps> = ({
 
     try {
       // Call the token refresh function
-      const { error } = await supabase.functions.invoke('paypal_refresh_token', {
-        body: { user_id: user.id }
+      const { error } = await callEdgeFunction('paypal_refresh_token', {
+        userId: user.id,
+        action: 'refresh',
+        timestamp: new Date().toISOString()
       });
 
       if (error) throw error;

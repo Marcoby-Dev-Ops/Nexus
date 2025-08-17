@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Brain, Lightbulb, Target, BookOpen, Tag } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { personalThoughtsService } from '@/core/services/PersonalThoughtsService';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 
@@ -57,15 +57,15 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
     setLoading(true);
     try {
       // ---- Check for similar thoughts first (Smart Deduplication) ----
-      await supabase.functions.invoke('trigger-n8n-workflow', {
-        body: {
-          workflowname: 'smart_thought_deduplication',
+      await callEdgeFunction('trigger-n8n-workflow', {
+        workflow: 'smart_thought_deduplication',
+        data: {
           content: content.trim(),
-          userid: user.id,
-          companyid: user.company_id,
+          userId: user.id,
+          companyId: profile?.company_id,
           category: category,
           context: currentContext
-        },
+        }
       });
 
       // If deduplication found matches, it will create an action card for user approval
@@ -126,43 +126,33 @@ export const PersonalMemoryCapture: React.FC<PersonalMemoryCaptureProps> = ({
       // Fire-and-forget AI processing (no await to keep UI snappy)
       if (inserted.success && inserted.data?.id) {
         // Fire embedding
-        supabase.functions.invoke('ai_embed_thought', {
-          body: {
-            thoughtId: inserted.data.id,
-            content: inserted.data.content,
-          },
-        }).catch((err) => {
-           
-     
-    // eslint-disable-next-line no-console
-    console.error('Failed to invoke aiembed_thought: ', err);
+        await callEdgeFunction('ai_embed_thought', {
+          thought: content.trim(),
+          userId: user.id,
+          metadata: {
+            source: 'personal-memory-capture',
+            timestamp: new Date().toISOString()
+          }
         });
 
         // Trigger n8n Intelligent Thought Processor workflow
-        supabase.functions.invoke('trigger-n8n-workflow', {
-          body: {
-            workflowname: 'intelligent_thought_processor',
-            thoughtid: inserted.data.id,
-            userid: user.id,
-            companyid: user.company_id,
-            triggersource: 'thought_creation',
-            context: currentContext
-          },
-        }).catch((err) => {
-           
-     
-    // eslint-disable-next-line no-console
-    console.error('Failed to trigger intelligent thought processor: ', err);
+        await callEdgeFunction('trigger-n8n-workflow', {
+          workflow: 'thought-processing',
+          data: {
+            thoughtId: inserted.data.id,
+            userId: user.id,
+            action: 'process'
+          }
         });
 
         // Legacy: Trigger suggestion generation (integration-aware) - will be replaced by n8n
-        supabase.functions.invoke('ai_generate_thought_suggestions', {
-          body: { thoughtId: inserted.data.id },
-        }).catch((err) => {
-           
-     
-    // eslint-disable-next-line no-console
-    console.error('Failed to invoke aigenerate_thought_suggestions: ', err);
+        await callEdgeFunction('ai_generate_thought_suggestions', {
+          thought: content.trim(),
+          userId: user.id,
+          context: {
+            source: 'personal-memory-capture',
+            timestamp: new Date().toISOString()
+          }
         });
       }
     } catch (error) {

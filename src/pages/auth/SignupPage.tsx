@@ -1,49 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/index';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Card } from '@/shared/components/ui/Card.tsx';
-import { Mail, Lock, User } from 'lucide-react';
-
-// Import our new form patterns
-import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
-import { FormField } from '@/shared/components/forms/FormField';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { signupSchema, type SignupFormData } from '@/shared/validation/schemas';
+import { useAuthentikAuth } from '@/shared/contexts/AuthentikAuthContext';
+import { Card } from '@/shared/components/ui/Card';
 
 /**
- * Modernized SignupPage using unified form patterns
+ * SignupPage - Redirects to Authentik for user registration
  * 
- * Features:
- * - Email validation with real-time feedback
- * - Password strength requirements
- * - Password confirmation matching
- * - Unified error handling and loading states
- * - Consistent styling with other forms
+ * Since Authentik handles user registration, this page provides
+ * information about the registration process and redirects users.
  */
 export default function SignupPage() {
-  const { signUp, loading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { signIn } = useAuthentikAuth();
 
-  const { form, handleSubmit, isSubmitting, errors } = useFormWithValidation({
-    schema: signupSchema,
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      companyName: '',
-    },
-    onSubmit: async (data: SignupFormData) => {
-      const result = await signUp(data.email, data.password, data.firstName, data.lastName);
-      if (result.error) {
-        throw new Error(result.error);
+  const handleSignUp = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // For Authentik, signup is typically handled through the same OAuth flow
+      // Users will be redirected to Authentik where they can register if needed
+      const result = await signIn();
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to initiate registration');
       }
-    },
-    successMessage: 'Account created successfully! Welcome to Nexus!',
-  });
-
-  const isFormLoading = loading || isSubmitting;
+      // If successful, the user will be redirected to Authentik automatically
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -56,73 +46,38 @@ export default function SignupPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                label="First Name"
-                placeholder="John"
-                icon={<User className="w-4 h-4" />}
-                error={errors.firstName}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                label="Last Name"
-                placeholder="Doe"
-                icon={<User className="w-4 h-4" />}
-                error={errors.lastName}
-              />
-            </div>
+          <div className="space-y-6">
+                         <div className="text-center">
+               <p className="text-sm text-muted-foreground mb-6">
+                 Create your account through Marcoby
+               </p>
+               <p className="text-sm text-muted-foreground mb-6">
+                 You'll be redirected to Marcoby where you can register your account securely.
+               </p>
+             </div>
 
-            <FormField
-              control={form.control}
-              name="email"
-              label="Email Address"
-              type="email"
-              placeholder="john@example.com"
-              icon={<Mail className="w-4 h-4" />}
-              error={errors.email}
-            />
-
-            <FormField
-              control={form.control}
-              name="password"
-              label="Password"
-              type="password"
-              placeholder="Create a strong password"
-              icon={<Lock className="w-4 h-4" />}
-              error={errors.password}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              label="Confirm Password"
-              type="password"
-              placeholder="Confirm your password"
-              icon={<Lock className="w-4 h-4" />}
-              error={errors.confirmPassword}
-            />
-
-            <FormField
-              control={form.control}
-              name="companyName"
-              label="Company Name (Optional)"
-              placeholder="Your Company"
-              icon={<User className="w-4 h-4" />}
-              error={errors.companyName}
-            />
-
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isFormLoading}
+            <button
+              type="button"
+              onClick={handleSignUp}
+              disabled={loading}
+              className="w-full py-3 px-4 border border-transparent text-sm font-medium rounded-md text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition-colors"
             >
-              {isFormLoading ? 'Creating account...' : 'Create account'}
-            </Button>
-          </form>
+                             {loading ? (
+                 <>
+                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2 inline"></div>
+                   Redirecting to Marcoby...
+                 </>
+               ) : (
+                 'Create Account with Marcoby'
+               )}
+            </button>
+
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+          </div>
 
           <div className="text-center">
             <p className="text-sm text-muted-foreground">

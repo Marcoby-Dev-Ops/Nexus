@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { Brain, TrendingUp, TrendingDown, BarChart3, Target, Zap, AlertTriangle, CheckCircle2, ArrowRight, Lightbulb, DollarSign, Clock, Users, Activity, RefreshCw } from 'lucide-react';
 interface DataCorrelation {
   id: string;

@@ -5,12 +5,12 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { dataConnectivityHealthService, type ConnectivityHealthData } from '@/services/business/dataConnectivityHealthService';
+import { businessHealthService, type BusinessHealthSnapshot } from '@/core/services/BusinessHealthService';
 import { useAuth } from '@/hooks';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
 
 interface UseDataConnectivityHealthResult {
-  healthData: ConnectivityHealthData | null;
+  healthData: (BusinessHealthSnapshot & { overallScore?: number; completionPercentage?: number; dataQualityScore?: number }) | null;
   loading: boolean;
   error: string | null;
   lastUpdated: string | null;
@@ -23,7 +23,7 @@ interface UseDataConnectivityHealthResult {
 
 export function useLiveBusinessHealth(): UseDataConnectivityHealthResult {
   const { user } = useAuth();
-  const [healthData, setHealthData] = useState<ConnectivityHealthData | null>(null);
+  const [healthData, setHealthData] = useState<UseDataConnectivityHealthResult['healthData']>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -36,17 +36,33 @@ export function useLiveBusinessHealth(): UseDataConnectivityHealthResult {
       setLoading(true);
       setError(null);
 
-      const data = await dataConnectivityHealthService.getConnectivityStatus(user.id);
-      
-      setHealthData(data);
+      const result = await businessHealthService.readLatest();
+      if (result.success) {
+        const snapshot = result.data;
+        const adapted = snapshot
+          ? {
+              ...snapshot,
+              overallScore: snapshot.overall_score,
+              completionPercentage: snapshot.completion_percentage,
+              dataQualityScore: snapshot.data_quality_score,
+              connectedSources: new Array(snapshot.connected_sources).fill(0).map((_, i) => ({ id: String(i + 1), name: '', type: '', status: 'active' as const, lastSync: '', dataQuality: 0, verificationStatus: 'verified' as const })),
+              unconnectedSources: new Array(Math.max(0, 0)).fill(0),
+            }
+          : null;
+        setHealthData(adapted);
+      } else {
+        throw new Error(result.error || 'Failed to fetch');
+      }
       setLastUpdated(new Date().toISOString());
 
-      logger.info({ 
-        overallScore: data.overallScore,
-        connectedSources: data.connectedSources.length,
-        completionPercentage: data.completionPercentage,
-        dataQualityScore: data.dataQualityScore
-      }, 'Fetched data connectivity health');
+      if (healthData) {
+        logger.info({ 
+          overallScore: healthData.overallScore ?? healthData.overall_score,
+          connectedSources: (healthData as any).connectedSources?.length ?? healthData.connected_sources,
+          completionPercentage: healthData.completionPercentage ?? healthData.completion_percentage,
+          dataQualityScore: healthData.dataQualityScore ?? healthData.data_quality_score
+        }, 'Fetched business health');
+      }
 
     } catch (error: any) {
       logger.error({ error }, 'Failed to fetch data connectivity health');
@@ -81,9 +97,9 @@ export function useLiveBusinessHealth(): UseDataConnectivityHealthResult {
     error,
     lastUpdated,
     refresh,
-    isLiveDataActive: (healthData?.connectedSources.length || 0) > 0,
-    dataCompletion: healthData?.completionPercentage || 0,
-    connectedCount: healthData?.connectedSources.length || 0,
-    totalCount: (healthData?.connectedSources.length || 0) + (healthData?.unconnectedSources.length || 0)
+    isLiveDataActive: ((healthData as any)?.connectedSources?.length || healthData?.connected_sources || 0) > 0,
+    dataCompletion: (healthData?.completionPercentage ?? healthData?.completion_percentage) || 0,
+    connectedCount: ((healthData as any)?.connectedSources?.length ?? healthData?.connected_sources) || 0,
+    totalCount: (((healthData as any)?.connectedSources?.length ?? healthData?.connected_sources) || 0)
   };
 } 

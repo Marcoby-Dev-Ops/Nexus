@@ -1,5 +1,5 @@
 import React from 'react';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Badge } from '@/shared/components/ui/Badge';
 
 interface Props {
   title: string;

@@ -1,16 +1,17 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { logger } from '@/shared/utils/logger';
+import { getEnvVar } from '@/lib/env-utils';
 
 // Simple logger for notification events
 const notificationLogger = {
   info: (message: string, data?: any) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (getEnvVar('NODE_ENV') === 'development') {
       logger.info(`[Notifications] ${message}`, data);
     }
     // In production, this would send to your logging service
   },
   error: (message: string, error?: any) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (getEnvVar('NODE_ENV') === 'development') {
       console.error(`[Notifications Error] ${message}`, error);
     }
     // In production, this would send to your error tracking service

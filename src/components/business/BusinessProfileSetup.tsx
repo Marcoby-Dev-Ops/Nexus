@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Badge } from '@/shared/components/ui/Badge';
 import { useToast } from '@/shared/ui/components/Toast';
 import { useAuth } from '@/hooks/index';
 import { businessProfileService } from '@/shared/lib/business/businessProfileService';

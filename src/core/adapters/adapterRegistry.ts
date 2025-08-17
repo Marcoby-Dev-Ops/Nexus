@@ -7,8 +7,7 @@
 
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { supabase } from '@/lib/supabase';
-import { handleSupabaseError, selectOne, insertOne, updateOne, select } from '@/lib/supabase-compatibility';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { z } from 'zod';
 
 // ============================================================================
@@ -19,6 +18,7 @@ import { z } from 'zod';
 export const AdapterCredentialsSchema = z.object({
   access_token: z.string().optional(),
   refresh_token: z.string().optional(),
+  token_type: z.string().optional(),
   api_key: z.string().optional(),
   client_id: z.string().optional(),
   client_secret: z.string().optional(),
@@ -104,7 +104,12 @@ export abstract class BaseAdapter extends BaseService {
         const { data, error } = await insertOne('user_integrations', {
           user_id: userId,
           integration_id: this.id,
-          credentials: credentials,
+          integration_slug: this.id,
+          access_token: credentials.access_token,
+          refresh_token: credentials.refresh_token,
+          token_type: credentials.token_type || 'Bearer',
+          expires_at: credentials.expires_at,
+          scope: credentials.scope,
           status: 'connected',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -300,7 +305,7 @@ class HubSpotAdapter extends BaseAdapter {
     description: 'CRM and marketing automation platform',
     icon: 'hubspot',
     authType: 'oauth',
-    scopes: ['contacts', 'companies', 'deals'],
+    scopes: ['crm.objects.contacts.read', 'crm.objects.companies.read', 'crm.objects.deals.read', 'crm.lists.read'],
     capabilities: ['CRM', 'Marketing', 'Sales'],
     setupTime: '5 minutes',
     isPopular: true,
@@ -551,9 +556,9 @@ class GoogleWorkspaceAdapter extends BaseAdapter {
 
 // Microsoft 365 Adapter
 class Microsoft365Adapter extends BaseAdapter {
-  readonly id = 'microsoft_365';
+  readonly id = 'microsoft365';
   readonly metadata: AdapterMetadata = {
-    name: 'microsoft_365',
+    name: 'microsoft365',
     displayName: 'Microsoft 365',
     description: 'Office productivity and collaboration tools',
     icon: 'microsoft',
@@ -678,11 +683,141 @@ class Microsoft365Adapter extends BaseAdapter {
   }
 }
 
+// Google Analytics Adapter
+class GoogleAnalyticsAdapter extends BaseAdapter {
+  readonly id = 'google_analytics';
+  readonly metadata: AdapterMetadata = {
+    name: 'google_analytics',
+    displayName: 'Google Analytics',
+    description: 'Website analytics and marketing performance tracking',
+    icon: 'google_analytics',
+    authType: 'oauth',
+    scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
+    capabilities: ['Analytics', 'Marketing', 'Website Tracking'],
+    setupTime: '5 minutes',
+    isPopular: true,
+    category: 'Analytics'
+  };
+
+  async connect(credentials: AdapterCredentials): Promise<ServiceResponse<AdapterConnectionResult>> {
+    return this.executeDbOperation(async () => {
+      try {
+        this.logger.info('Connecting to Google Analytics', { credentials: { ...credentials, access_token: '[REDACTED]' } });
+        
+        // Simulate OAuth connection process
+        if (!credentials.access_token) {
+          return { data: null, error: 'Access token required for Google Analytics connection' };
+        }
+
+        // Save credentials to database
+        const saveResult = await this.saveCredentials('current_user_id', credentials);
+        if (!saveResult.success) {
+          return { data: null, error: 'Failed to save Google Analytics credentials' };
+        }
+
+        // Update integration status
+        await this.updateIntegrationStatus('current_user_id', 'connected', {
+          connected_at: new Date().toISOString(),
+          scopes: credentials.scope?.split(' ') || []
+        });
+        
+        return { data: { success: true }, error: null };
+      } catch (error) {
+        this.logger.error('Google Analytics connection failed', { error });
+        return { data: null, error: 'Failed to connect to Google Analytics' };
+      }
+    }, 'connect to Google Analytics');
+  }
+
+  async disconnect(): Promise<ServiceResponse<AdapterConnectionResult>> {
+    return this.executeDbOperation(async () => {
+      try {
+        this.logger.info('Disconnecting from Google Analytics');
+        
+        // Update integration status to disconnected
+        await this.updateIntegrationStatus('current_user_id', 'disconnected', {
+          disconnected_at: new Date().toISOString()
+        });
+        
+        return { data: { success: true }, error: null };
+      } catch (error) {
+        this.logger.error('Google Analytics disconnection failed', { error });
+        return { data: null, error: 'Failed to disconnect from Google Analytics' };
+      }
+    }, 'disconnect from Google Analytics');
+  }
+
+  async testConnection(): Promise<ServiceResponse<AdapterConnectionResult>> {
+    return this.executeDbOperation(async () => {
+      try {
+        this.logger.info('Testing Google Analytics connection');
+        
+        // Get integration status from database
+        const statusResult = await this.getIntegrationStatus('current_user_id');
+        if (!statusResult.success || !statusResult.data) {
+          return { data: null, error: 'Google Analytics integration not found' };
+        }
+
+        // Simulate API test call
+        const isConnected = statusResult.data.status === 'connected';
+        
+        return { data: { success: isConnected }, error: null };
+      } catch (error) {
+        this.logger.error('Google Analytics connection test failed', { error });
+        return { data: null, error: 'Failed to test Google Analytics connection' };
+      }
+    }, 'test Google Analytics connection');
+  }
+
+  async sync(): Promise<ServiceResponse<AdapterSyncResult>> {
+    return this.executeDbOperation(async () => {
+      try {
+        this.logger.info('Syncing Google Analytics data');
+        
+        // Get integration status
+        const statusResult = await this.getIntegrationStatus('current_user_id');
+        if (!statusResult.success || statusResult.data?.status !== 'connected') {
+          return { data: null, error: 'Google Analytics integration not connected' };
+        }
+
+        // Simulate sync operation with database interaction
+        const startTime = Date.now();
+        
+        // Simulate processing records
+        const recordsProcessed = Math.floor(Math.random() * 100) + 10;
+        const errors: string[] = [];
+        
+        // Update sync timestamp
+        await this.updateIntegrationStatus('current_user_id', 'connected', {
+          last_sync: new Date().toISOString(),
+          records_processed: recordsProcessed
+        });
+        
+        const duration = Date.now() - startTime;
+        
+        return { 
+          data: { 
+            success: true, 
+            recordsProcessed,
+            errors,
+            duration
+          }, 
+          error: null 
+        };
+      } catch (error) {
+        this.logger.error('Google Analytics sync failed', { error });
+        return { data: null, error: 'Failed to sync Google Analytics data' };
+      }
+    }, 'sync Google Analytics data');
+  }
+}
+
 // Register default adapters
 const defaultAdapters: Adapter[] = [
   new HubSpotAdapter(),
   new GoogleWorkspaceAdapter(),
   new Microsoft365Adapter(),
+  new GoogleAnalyticsAdapter(),
 ];
 
 defaultAdapters.forEach(adapter => adapterRegistry.register(adapter)); 

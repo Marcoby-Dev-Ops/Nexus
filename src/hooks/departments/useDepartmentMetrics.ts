@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { postgres } from '@/lib/postgres';
 import type { DepartmentId, DepartmentMetrics } from '../types';
 
 /**
@@ -12,7 +12,7 @@ export function useDepartmentMetrics(departmentId: DepartmentId) {
   return useQuery<DepartmentMetrics>({
     queryKey: ['dept-metrics', departmentId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await (postgres as any)
         .from('department_metrics_view')
         .select('*')
         .eq('department', departmentId)

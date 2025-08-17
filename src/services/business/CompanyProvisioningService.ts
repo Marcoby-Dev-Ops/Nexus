@@ -5,11 +5,11 @@
  * Provides graceful fallbacks instead of throwing errors.
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
 import { z } from 'zod';
 import type { Database } from '@/core/types/supabase';
 

@@ -3,7 +3,8 @@
  * Main service for workflow interactions and automation
  */
 
-import axios, { AxiosError } from 'axios';
+import type { AxiosError } from 'axios';
+import axios from 'axios';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { userN8nConfigService } from './userN8nConfig';
 

@@ -11,7 +11,7 @@ import {
   Badge
 } from '@/shared/components/ui';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
 import { 
   Mail, 
   Shield, 

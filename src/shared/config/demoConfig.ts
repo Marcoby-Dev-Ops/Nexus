@@ -212,6 +212,24 @@ export const isDemoMode = (): boolean => {
   return DEMO_MODE_CONFIG.enabled;
 };
 
+/**
+ * Check if demo mode should be available for the current user
+ * This function can be used to conditionally disable demo features for authenticated users
+ */
+export const shouldShowDemoMode = (userEmail?: string | null): boolean => {
+  // If demo mode is globally disabled, never show it
+  if (!DEMO_MODE_CONFIG.enabled) {
+    return false;
+  }
+  
+  // If user is authenticated with a real account (non-demo), disable demo mode
+  if (userEmail && !isDemoAccount(userEmail)) {
+    return false;
+  }
+  
+  return true;
+};
+
 export const isDemoAccount = (email: string): boolean => {
   return DEMO_ACCOUNTS.some(account => account.email === email);
 }; 

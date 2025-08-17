@@ -3,11 +3,11 @@ import { DndContext, DragOverlay, useSensor, useSensors, PointerSensor } from '@
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Input } from '@/shared/components/ui/Input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/ui/Dialog';
 import { Plus, Grid, Save, Share, Download, Upload, Settings, Eye, EyeOff, GripVertical, Trash2, Palette, Zap, Brain, BarChart3, Mail, Calendar, CheckSquare, Lightbulb, Shield, MessageSquare, Activity, Target, AlertTriangle } from 'lucide-react';
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';

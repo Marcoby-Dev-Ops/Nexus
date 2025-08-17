@@ -1,4 +1,4 @@
-import { supabaseService } from '@/core/services/SupabaseService';
+import { callEdgeFunction } from '@/lib/api-client';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
@@ -300,7 +300,7 @@ export class CompanyIntelligenceService extends BaseService {
   private async calculateIntelligenceScore(companyId: string): Promise<ServiceResponse<{ score: number }>> {
     try {
       // Call the database function to calculate intelligence score
-      const { data, error } = await supabaseService.callEdgeFunction('calculate-company-intelligence', {
+      const { data, error } = await callEdgeFunction('calculate-company-intelligence', {
         companyId
       });
 
@@ -324,7 +324,7 @@ export class CompanyIntelligenceService extends BaseService {
   ): Promise<ServiceResponse<{ insightsCount: number; recommendationsCount: number }>> {
     try {
       // Call AI insights generation edge function
-      const { data: insightsData, error } = await supabaseService.callEdgeFunction('generate-company-insights', {
+      const { data: insightsData, error } = await callEdgeFunction('generate-company-insights', {
         companyId,
         intelligenceData: data
       });

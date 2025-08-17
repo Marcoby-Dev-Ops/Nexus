@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 /**
  * AuthCallback - Handles auth redirects from Supabase (magic links, password reset, etc.)
@@ -27,14 +27,9 @@ export default function AuthCallback() {
         }
 
         // Wait for auth state to settle
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const result = await authentikAuthService.getSession();
+        const session = result.data;
         
-        if (sessionError) {
-          console.error('Failed to get session:', sessionError);
-          navigate('/login', { replace: true });
-          return;
-        }
-
         if (session) {
           console.log('Auth callback successful, redirecting to:', next || '/home');
           navigate(next || '/home', { replace: true });

@@ -16,6 +16,7 @@
       "@/utils/*":         ["src/utils/*"],
       "@/types/*":         ["src/types/*"],
       "@/styles/*":        ["src/styles/*"],
+      "@/ai/*":            ["src/ai/*"],
 
       "@dashboard/*":     ["src/domains/dashboard/*"],
       "@workspace/*":     ["src/domains/workspace/*"],

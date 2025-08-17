@@ -1,16 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
+import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { AlertCircle, Check, ChevronRight, FileUp, DownloadCloud, Globe, Key, Lock } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { consolidatedIntegrationService, type ApiIntegrationData } from '@/services/integrations/consolidatedIntegrationService';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Separator } from '@/shared/components/ui/Separator';
 
 // Import HubSpot integration as an example

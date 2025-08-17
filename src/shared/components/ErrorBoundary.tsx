@@ -1,8 +1,9 @@
 import type { ErrorInfo, ReactNode } from 'react';
 import React, { Component } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { getEnvVar } from '@/lib/env-utils';
 
 interface Props {
   children: ReactNode;
@@ -53,7 +54,7 @@ export class ErrorBoundary extends Component<Props, State> {
               An unexpected error occurred. Please try refreshing the page or contact support if the problem persists.
             </p>
             
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {getEnvVar('NODE_ENV') === 'development' && this.state.error && (
               <details className="text-xs">
                 <summary className="cursor-pointer text-muted-foreground">
                   Error details (development only)

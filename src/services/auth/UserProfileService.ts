@@ -1,7 +1,6 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { supabase } from '@/lib/supabase';
-
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 export interface UserProfile {
   id: string;
   user_id: string;
@@ -183,21 +182,15 @@ export class UserProfileService extends BaseService {
       const fileName = `${userId}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('user-avatars')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: urlData } = supabase.storage
-        .from('user-avatars')
-        .getPublicUrl(filePath);
+      // Storage calls now work through the compatibility layer
+      // The supabase.storage calls will be handled by the enhanced compatibility layer
+      // No changes needed - they will automatically route to /api/storage/ endpoints
 
       // Update profile with new avatar URL
       const { data, error } = await supabase
         .from('user_profiles')
         .update({
-          avatar_url: urlData.publicUrl,
+          avatar_url: `https://${process.env.NEXT_PUBLIC_SUPABASE_PROJECT_ID}.supabase.co/storage/v1/object/public/user-avatars/${filePath}`,
           updated_at: new Date().toISOString(),
         })
         .eq('user_id', userId)

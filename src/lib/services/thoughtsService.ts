@@ -6,6 +6,7 @@
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { Thought, ThoughtCategory, ThoughtStatus } from '@/core/types/thoughts';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/api-client';
 
 // ============================================================================
 // THOUGHTS SERVICE CLASS
@@ -25,36 +26,17 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getThoughts', { userId, options });
 
-      let query = this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      // Build filters for the query
+      const filters: Record<string, any> = { user_id: userId };
+      if (options?.category) filters.category = options.category;
+      if (options?.status) filters.status = options.status;
 
-      if (options?.limit) {
-        query = query.limit(options.limit);
-      }
-
-      if (options?.offset) {
-        query = query.range(options.offset, options.offset + (options.limit || 10) - 1);
-      }
-
-      if (options?.tags && options.tags.length > 0) {
-        query = query.overlaps('tags', options.tags);
-      }
-
-      if (options?.category) {
-        query = query.eq('category', options.category);
-      }
-
-      if (options?.status) {
-        query = query.eq('status', options.status);
-      }
-
-      const { data, error } = await query;
+      // Use the API client for the query
+      const result = await selectData<any>('thoughts', '*', filters);
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('getThoughts', error.message);
+        this.logFailure('getThoughts', error);
         return { data: null, error };
       }
 
@@ -118,168 +100,140 @@ export class ThoughtsService extends BaseService {
   }
 
   /**
-   * Get a thought by ID
+   * Get a single thought by ID
    */
-  async getThoughtById(thoughtId: string): Promise<ServiceResponse<Thought | null>> {
+  async getThought(thoughtId: string): Promise<ServiceResponse<Thought>> {
     return this.executeDbOperation(async () => {
-      this.logMethodCall('getThoughtById', { thoughtId });
+      this.logMethodCall('getThought', { thoughtId });
 
-      const { data, error } = await this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('id', thoughtId)
-        .single();
+      const result = await selectOne<any>('thoughts', thoughtId);
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('getThoughtById', error.message);
+        this.logFailure('getThought', error);
         return { data: null, error };
       }
 
-      // Transform the data to match the comprehensive Thought type
-      const transformedThought = {
+      if (!data) {
+        this.logFailure('getThought', 'Thought not found');
+        return { data: null, error: 'Thought not found' };
+      }
+
+      const transformedData = {
         id: data.id,
         user_id: data.user_id,
-        created_by: undefined, // Not in database schema
-        updated_by: undefined, // Not in database schema
+        created_by: data.created_by,
+        updated_by: data.updated_by,
         creationdate: new Date(data.created_at || new Date()),
         lastupdated: new Date(data.updated_at || new Date()),
         content: data.content,
-        category: (data.category as any) || 'idea',
-        status: (data.status as any) || 'concept',
-        personal_or_professional: undefined, // Not in database schema
-        mainsubcategories: [], // Not in database schema
-        initiative: false, // Not in database schema
-        impact: undefined, // Not in database schema
-        parent_idea_id: undefined, // Not in database schema
-        workflow_stage: undefined, // Not in database schema
-        department: undefined, // Not in database schema
-        priority: undefined, // Not in database schema
-        estimated_effort: undefined, // Not in database schema
-        ai_clarification_data: undefined, // Not in database schema
-        aiinsights: {}, // Not in database schema
-        interaction_method: undefined, // Not in database schema
-        company_id: undefined, // Not in database schema
+        category: data.category || 'idea',
+        status: data.status || 'concept',
+        personal_or_professional: data.personal_or_professional || 'personal',
+        mainsubcategories: data.mainsubcategories || [],
+        initiative: data.initiative || false,
+        impact: data.impact,
+        parent_idea_id: data.parent_idea_id,
+        workflow_stage: data.workflow_stage || 'concept',
+        department: data.department,
+        priority: data.priority || 'medium',
+        estimated_effort: data.estimated_effort,
+        ai_clarification_data: data.ai_clarification_data,
+        aiinsights: data.aiinsights || {},
+        interaction_method: data.interaction_method,
+        company_id: data.company_id,
+        tags: data.tags || [],
+        attachments: data.attachments || [],
+        visibility: data.visibility || 'private',
+        collaboration_status: data.collaboration_status || 'individual',
+        review_status: data.review_status || 'pending',
+        approval_status: data.approval_status || 'pending',
+        implementation_notes: data.implementation_notes,
+        success_metrics: data.success_metrics,
+        risk_assessment: data.risk_assessment,
+        cost_estimate: data.cost_estimate,
+        timeline_estimate: data.timeline_estimate,
+        stakeholder_analysis: data.stakeholder_analysis,
+        resource_requirements: data.resource_requirements,
+        dependencies: data.dependencies || [],
+        related_thoughts: data.related_thoughts || [],
+        version: data.version || 1,
+        is_template: data.is_template || false,
+        template_category: data.template_category,
+        usage_count: data.usage_count || 0,
+        rating: data.rating,
+        feedback: data.feedback,
+        last_activity: data.last_activity ? new Date(data.last_activity) : undefined,
+        completion_date: data.completion_date ? new Date(data.completion_date) : undefined,
+        archived: data.archived || false,
+        archive_date: data.archive_date ? new Date(data.archive_date) : undefined,
+        archive_reason: data.archive_reason,
         createdat: new Date(data.created_at || new Date()),
         updatedat: new Date(data.updated_at || new Date()),
       } as Thought;
 
-      this.logSuccess('getThoughtById', `Retrieved thought ${thoughtId}`);
-      return { data: transformedThought, error: null };
-    }, 'getThoughtById');
+      this.logSuccess('getThought', `Retrieved thought ${thoughtId}`);
+      return { data: transformedData, error: null };
+    }, 'getThought');
   }
 
   /**
    * Create a new thought
    */
-  async createThought(thought: Omit<Thought, 'id' | 'createdat' | 'updatedat' | 'creationdate' | 'lastupdated'>): Promise<ServiceResponse<Thought>> {
+  async createThought(thoughtData: Partial<Thought>): Promise<ServiceResponse<Thought>> {
     return this.executeDbOperation(async () => {
-      this.logMethodCall('createThought', { userId: thought.user_id, category: thought.category });
+      this.logMethodCall('createThought', { thoughtData });
 
-      const { data, error } = await this.supabase
-        .from('thoughts')
-        .insert({
-          user_id: thought.user_id,
-          content: thought.content,
-          category: thought.category,
-          status: thought.status,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const result = await insertOne<any>('thoughts', thoughtData);
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('createThought', error.message);
+        this.logFailure('createThought', error);
         return { data: null, error };
       }
 
-      const transformedThought = {
-        ...data,
-        creationdate: new Date(data.created_at),
-        lastupdated: new Date(data.updated_at),
-        createdat: new Date(data.created_at),
-        updatedat: new Date(data.updated_at),
-      } as Thought;
-
-      this.logSuccess('createThought', `Created thought ${data.id} for user ${thought.userid}`);
-      return { data: transformedThought, error: null };
+      this.logSuccess('createThought', `Created thought ${data?.id}`);
+      return { data: data as Thought, error: null };
     }, 'createThought');
   }
 
   /**
-   * Update a thought
+   * Update an existing thought
    */
   async updateThought(thoughtId: string, updates: Partial<Thought>): Promise<ServiceResponse<Thought>> {
     return this.executeDbOperation(async () => {
-      this.logMethodCall('updateThought', { thoughtId });
+      this.logMethodCall('updateThought', { thoughtId, updates });
 
-      // Map Thought interface fields to database column names
-      const dbUpdates: any = {};
-      if (updates.content !== undefined) dbUpdates.content = updates.content;
-      if (updates.category !== undefined) dbUpdates.category = updates.category;
-      if (updates.status !== undefined) dbUpdates.status = updates.status;
-      if (updates.personal_or_professional !== undefined) dbUpdates.personal_or_professional = updates.personal_or_professional;
-      if (updates.mainsubcategories !== undefined) dbUpdates.mainsubcategories = updates.mainsubcategories;
-      if (updates.initiative !== undefined) dbUpdates.initiative = updates.initiative;
-      if (updates.impact !== undefined) dbUpdates.impact = updates.impact;
-      if (updates.parent_idea_id !== undefined) dbUpdates.parent_idea_id = updates.parent_idea_id;
-      if (updates.workflow_stage !== undefined) dbUpdates.workflow_stage = updates.workflow_stage;
-      if (updates.department !== undefined) dbUpdates.department = updates.department;
-      if (updates.priority !== undefined) dbUpdates.priority = updates.priority;
-      if (updates.estimated_effort !== undefined) dbUpdates.estimated_effort = updates.estimated_effort;
-      if (updates.ai_clarification_data !== undefined) dbUpdates.ai_clarification_data = updates.ai_clarification_data;
-      if (updates.aiinsights !== undefined) dbUpdates.aiinsights = updates.aiinsights;
-      if (updates.interaction_method !== undefined) dbUpdates.interaction_method = updates.interaction_method;
-      if (updates.company_id !== undefined) dbUpdates.company_id = updates.company_id;
-      if (updates.user_id !== undefined) dbUpdates.user_id = updates.user_id;
-
-      const { data, error } = await this.supabase
-        .from('thoughts')
-        .update({
-          ...dbUpdates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', thoughtId)
-        .select()
-        .single();
+      const result = await updateOne<any>('thoughts', thoughtId, updates);
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('updateThought', error.message);
+        this.logFailure('updateThought', error);
         return { data: null, error };
       }
 
-      const transformedThought = {
-        ...data,
-        creationdate: new Date(data.created_at),
-        lastupdated: new Date(data.updated_at),
-        createdat: new Date(data.created_at),
-        updatedat: new Date(data.updated_at),
-      } as Thought;
-
       this.logSuccess('updateThought', `Updated thought ${thoughtId}`);
-      return { data: transformedThought, error: null };
+      return { data: data as Thought, error: null };
     }, 'updateThought');
   }
 
   /**
    * Delete a thought
    */
-  async deleteThought(thoughtId: string): Promise<ServiceResponse<void>> {
+  async deleteThought(thoughtId: string): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('deleteThought', { thoughtId });
 
-      const { error } = await this.supabase
-        .from('thoughts')
-        .delete()
-        .eq('id', thoughtId);
+      const result = await deleteOne('thoughts', thoughtId);
+      const { error } = result;
 
       if (error) {
-        this.logFailure('deleteThought', error.message);
+        this.logFailure('deleteThought', error);
         return { data: null, error };
       }
 
       this.logSuccess('deleteThought', `Deleted thought ${thoughtId}`);
-      return { data: null, error: null };
+      return { data: true, error: null };
     }, 'deleteThought');
   }
 
@@ -290,15 +244,12 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('searchThoughts', { userId, query });
 
-      const { data, error } = await this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', userId)
-        .textSearch('content', query)
-        .order('created_at', { ascending: false });
+      // Use RPC for search functionality
+      const result = await callRPC('search_thoughts', { userId, query });
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('searchThoughts', error.message);
+        this.logFailure('searchThoughts', error);
         return { data: null, error };
       }
 
@@ -318,59 +269,20 @@ export class ThoughtsService extends BaseService {
   /**
    * Get thought statistics
    */
-  async getThoughtStats(userId: string): Promise<ServiceResponse<{
-    total: number;
-    byCategory: Record<string, number>;
-    byStatus: Record<string, number>;
-    byFirePhase: Record<string, number>;
-    recentActivity: number;
-  }>> {
+  async getThoughtStats(userId: string): Promise<ServiceResponse<any>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getThoughtStats', { userId });
 
-      const { data: thoughts, error } = await this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', userId);
+      const result = await callRPC('get_thought_stats', { userId });
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('getThoughtStats', error.message);
+        this.logFailure('getThoughtStats', error);
         return { data: null, error };
       }
 
-      const stats = {
-        total: thoughts?.length || 0,
-        byCategory: {} as Record<string, number>,
-        byStatus: {} as Record<string, number>,
-        byFirePhase: {} as Record<string, number>,
-        recentActivity: 0
-      };
-
-      // Group by category, status, and fire phase
-      thoughts?.forEach(thought => {
-        // Count by category
-        const category = thought.category || 'unknown';
-        stats.byCategory[category] = (stats.byCategory[category] || 0) + 1;
-
-        // Count by status
-        const status = thought.status || 'unknown';
-        stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
-
-        // Count by fire phase (workflow_stage)
-        const firePhase = thought.workflow_stage || 'unknown';
-        stats.byFirePhase[firePhase] = (stats.byFirePhase[firePhase] || 0) + 1;
-      });
-
-      // Count recent activity (last 7 days)
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      stats.recentActivity = thoughts?.filter(thought => 
-        new Date(thought.updated_at) > oneWeekAgo
-      ).length || 0;
-
-      this.logSuccess('getThoughtStats', `Retrieved stats: ${stats.total} total thoughts, ${stats.recentActivity} recent`);
-      return { data: stats, error: null };
+      this.logSuccess('getThoughtStats', `Retrieved stats for user ${userId}`);
+      return { data, error: null };
     }, 'getThoughtStats');
   }
 
@@ -381,15 +293,14 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getThoughtsByFirePhase', { userId, phase });
 
-      const { data, error } = await this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('workflow_stage', phase)
-        .order('created_at', { ascending: false });
+      const result = await selectData<any>('thoughts', '*', { 
+        user_id: userId, 
+        workflow_stage: phase 
+      });
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('getThoughtsByFirePhase', error.message);
+        this.logFailure('getThoughtsByFirePhase', error);
         return { data: null, error };
       }
 
@@ -413,13 +324,11 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getPublicThoughts', {});
 
-      const { data, error } = await this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('is_public', true);
+      const result = await selectData<any>('thoughts', '*', { is_public: true });
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('getPublicThoughts', error.message);
+        this.logFailure('getPublicThoughts', error);
         return { data: null, error };
       }
 
@@ -443,14 +352,14 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getThoughtsByCategory', { userId, category });
 
-      const { data, error } = await this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('category', category);
+      const result = await selectData<any>('thoughts', '*', { 
+        user_id: userId, 
+        category: category 
+      });
+      const { data, error } = result;
 
       if (error) {
-        this.logFailure('getThoughtsByCategory', error.message);
+        this.logFailure('getThoughtsByCategory', error);
         return { data: null, error };
       }
 

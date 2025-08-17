@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Separator } from '@/shared/components/ui/Separator';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Building2, Camera, X, AlertCircle, Save, Edit, CheckCircle, Settings, Activity, Users, UserPlus } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 interface CompanyData {
   name: string;
   industry: string;

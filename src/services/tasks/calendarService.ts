@@ -1,4 +1,4 @@
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase-compatibility';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { nowIsoUtc, addDaysUtcIso, fromMaybeDateOrIsoToDate } from '@/shared/utils/time';
 import { retryFetch } from '@/shared/utils/retry';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 // Calendar Event Schema
 export const CalendarEventSchema = z.object({
@@ -68,21 +69,30 @@ export class CalendarService extends BaseService {
    */
   async getEvents(filters: CalendarFilters = {}): Promise<ServiceResponse<CalendarEvent[]>> {
     return this.executeDbOperation(async () => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const userResult = await authentikAuthService.getSession();
+      const user = userResult.data?.user;
+      if (!user) {
         throw new Error('User not authenticated');
       }
 
-      // Get user's connected calendar integrations
-      const { data: integrations, error: integrationError } = await select('user_integrations', 'integration_type, status', { 
-        user_id: user.id,
-        integration_type: ['microsoft', 'google', 'outlook']
-      });
+      // Get user's connected calendar integrations - fetch individually to avoid .in() issues
+      const integrationNames = ['microsoft', 'microsoft365', 'google', 'outlook'];
+      const integrationPromises = integrationNames.map(name => 
+        select('user_integrations', 'integration_slug, status', { 
+          user_id: user.id,
+          integration_slug: name
+        })
+      );
 
-      if (integrationError) {
-        logger.error('Error fetching user integrations: ', integrationError);
-        throw integrationError;
+      const integrationResults = await Promise.all(integrationPromises);
+      const integrationErrors = integrationResults.filter(result => result.error);
+      
+      if (integrationErrors.length > 0) {
+        logger.error('Error fetching user integrations: ', integrationErrors[0].error);
+        throw integrationErrors[0].error;
       }
+
+      const integrations = integrationResults.flatMap(result => result.data || []);
 
       const events: CalendarEvent[] = [];
 
@@ -90,7 +100,7 @@ export class CalendarService extends BaseService {
       for (const integration of integrations || []) {
         if (integration.status === 'connected') {
           const sourceEvents = await this.fetchEventsFromSource(
-            integration.integration_type as 'microsoft' | 'google' | 'outlook',
+            integration.integration_slug as 'microsoft' | 'microsoft365' | 'google' | 'outlook',
             filters
           );
           events.push(...sourceEvents);
@@ -114,7 +124,8 @@ export class CalendarService extends BaseService {
     filters: CalendarFilters
   ): Promise<CalendarEvent[]> {
     return this.executeDbOperation(async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const userResult = await authentikAuthService.getSession();
+      const user = userResult.data?.user;
       if (!user) throw new Error('User not authenticated');
 
       // Get access token for the specific source

@@ -64,6 +64,14 @@ export const UserJourneyGuide: React.FC<UserJourneyGuideProps> = ({
       required: false,
       order: 5,
     },
+    {
+      id: 'business-assessment',
+      title: 'Complete Business Assessment',
+      description: 'Set up your business goals and success metrics',
+      completed: false,
+      required: true,
+      order: 6,
+    },
   ]);
 
   const completedSteps = journeySteps.filter(step => step.completed).length;

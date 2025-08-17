@@ -4,6 +4,7 @@
  */
 
 import { useAuth } from '@/hooks';
+import { logger } from '@/shared/utils/logger';
 import { useUserProfile, useUserCompany } from '@/shared/contexts/UserContext';
 
 export interface UserProfile {
@@ -56,8 +57,7 @@ export interface UseUserReturn {
 }
 
 export function useUser(): UseUserReturn {
-  // eslint-disable-next-line no-console
-  console.warn(
+  logger.warn(
     'useUser from \'@/hooks/useUser\' is deprecated. Use UserContext hooks from \'@/shared/contexts/UserContext\' instead.'
   );
 
@@ -78,8 +78,7 @@ export function useUser(): UseUserReturn {
   } = useUserCompany();
 
   const updateCompany = async (_updates: Partial<Company>) => {
-    // eslint-disable-next-line no-console
-    console.warn('updateCompany not implemented yet. Pending CompanyContext.');
+    logger.warn('updateCompany not implemented yet. Pending CompanyContext.');
     return { success: false, error: 'Company updates not yet implemented' };
   };
 

@@ -118,8 +118,7 @@ temp/
 .env.test.local
 .env.production.local
 
-# Supabase
-.supabase
+
 
 # Cypress
 cypress/videos

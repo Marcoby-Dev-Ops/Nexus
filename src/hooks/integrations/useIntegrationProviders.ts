@@ -1,5 +1,6 @@
 import { analyticsService } from '@/services/analytics';
-import { OAuthTokenService } from '@/services/integrations/oauthTokenService';
+import { serviceRegistry } from '@/core/services/ServiceRegistry';
+import type { OAuthTokenService } from '@/core/auth/OAuthTokenService';
 import { useState, useEffect } from 'react';
 
 interface ProviderState {
@@ -11,13 +12,8 @@ interface ProviderState {
 }
 
 interface UseIntegrationProvidersReturn {
-  google: Omit<ProviderState, 'needsAttention'>;
-  microsoft: Omit<ProviderState, 'connect' | 'disconnect' | 'needsAttention'> & {
-      connect: () => Promise<void>;
-      disconnect: () => Promise<void>;
-      needsAttention: boolean;
-  };
-  isLoading: boolean;
+  google: ProviderState;
+  microsoft: ProviderState;
 }
 
 export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
@@ -47,7 +43,10 @@ export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
     (async () => {
       try {
         setIsMicrosoftConnecting(true);
-        const connected = await OAuthTokenService.hasValidTokens('microsoft');
+        // Use the service registry to get the OAuth token service
+        const oauthTokenService = serviceRegistry.getService<OAuthTokenService>('oauth-token');
+        const validationResult = await oauthTokenService.validateToken('microsoft');
+        const connected = validationResult.success && validationResult.data?.isValid === true;
         setIsMicrosoftConnected(connected);
       } catch (e: any) {
         setMicrosoftError(e);
@@ -78,22 +77,46 @@ export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
     console.log("Disconnecting from Google is not yet implemented.");
   };
 
+  const connectMicrosoft = async () => {
+    try {
+      setIsMicrosoftConnecting(true);
+      // Redirect to Microsoft OAuth
+      window.location.href = '/integrations/microsoft365';
+    } catch (e: any) {
+      setMicrosoftError(e);
+    } finally {
+      setIsMicrosoftConnecting(false);
+    }
+  };
+
+  const disconnectMicrosoft = async () => {
+    try {
+      setIsMicrosoftConnecting(true);
+      // Use the service registry to get the OAuth token service
+      const oauthTokenService = serviceRegistry.getService<OAuthTokenService>('oauth-token');
+      await oauthTokenService.revokeToken('microsoft');
+      setIsMicrosoftConnected(false);
+    } catch (e: any) {
+      setMicrosoftError(e);
+    } finally {
+      setIsMicrosoftConnecting(false);
+    }
+  };
+
   return {
     google: {
       isConnected: isGoogleConnected,
       isConnecting: isGoogleConnecting,
       error: googleError,
       connect: connectGoogle,
-      disconnect: disconnectGoogle
+      disconnect: disconnectGoogle,
     },
     microsoft: {
       isConnected: isMicrosoftConnected,
       isConnecting: isMicrosoftConnecting,
-      needsAttention: false,
       error: microsoftError,
-      connect: () => Promise.resolve(),
-      disconnect: () => Promise.resolve()
+      connect: connectMicrosoft,
+      disconnect: disconnectMicrosoft,
     },
-    isLoading: isGoogleConnecting || isMicrosoftConnecting,
   };
 }; 

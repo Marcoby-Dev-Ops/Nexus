@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { select, selectWithOptions } from '@/lib/supabase';
+import { selectData as select, selectWithOptions } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface ActionCard {

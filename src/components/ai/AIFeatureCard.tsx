@@ -5,9 +5,9 @@
 
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Card } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
 
 interface AIFeature {
   id: string;

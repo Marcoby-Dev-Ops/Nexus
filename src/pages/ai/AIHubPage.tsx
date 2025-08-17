@@ -1,421 +1,345 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Brain, MessageSquare, Zap, TrendingUp, Users, Settings, Target, Activity, Sparkles, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { AIService } from '@/services/ai';
 import type { Agent } from '@/services/ai';
+import { logger } from '@/shared/utils/logger';
 
-// Mock functions - replace with actual service calls
+// Real service calls
 const getAllAgents = async (): Promise<Agent[]> => {
-  // TODO: Replace with actual service call
-  return [];
+  try {
+    const aiService = new AIService();
+    const result = await aiService.getAllAgents();
+    if (result.success && result.data) {
+      return result.data;
+    }
+    return [];
+  } catch (error) {
+    logger.error('Error fetching all agents', { error });
+    return [];
+  }
 };
 
 const getAgentsByType = async (type: string): Promise<Agent[]> => {
-  // TODO: Replace with actual service call
-  return [];
-};
-
-const continuousImprovementService = {
-  getImprovementDashboard: async (period: string) => {
-    // TODO: Replace with actual service call
-    return {};
+  try {
+    const aiService = new AIService();
+    const result = await aiService.getAgentsByType(type);
+    if (result.success && result.data) {
+      return result.data;
+    }
+    return [];
+  } catch (error) {
+    logger.error('Error fetching agents by type', { error, type });
+    return [];
   }
 };
-import { ProgressiveIntelligence } from '@/components/ai/ProgressiveIntelligence';
-import { AIFeatureCard } from '@/components/ai/AIFeatureCard';
-import { ModelPerformanceMonitor } from '@/components/ai/ModelPerformanceMonitor';
-import { AdvancedAICapabilitiesDemo } from '@/components/ai/AdvancedAICapabilitiesDemo';
-import { AIOnboardingDashboard } from '@/components/ai/AIOnboardingDashboard';
-import { LoadingStates } from '@/shared/components/patterns/LoadingStates';
 
 interface AIHubStats {
   totalAgents: number;
-  activeConversations: number;
+  activeAgents: number;
+  totalConversations: number;
   averageResponseTime: number;
-  userSatisfaction: number;
-  costSavings: number;
-  automationRate: number;
-}
-
-interface AIFeature {
-  id: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  status: 'available' | 'demo' | 'development';
-  usage: number;
-  potential: number;
+  successRate: number;
+  totalTokensUsed: number;
 }
 
 export default function AIHubPage() {
   const { user } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<AIHubStats>({
     totalAgents: 0,
-    activeConversations: 0,
+    activeAgents: 0,
+    totalConversations: 0,
     averageResponseTime: 0,
-    userSatisfaction: 0,
-    costSavings: 0,
-    automationRate: 0
+    successRate: 0,
+    totalTokensUsed: 0
   });
-  const [loading, setLoading] = useState(true);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   useEffect(() => {
-    loadAIHubData();
-  }, []);
+    const loadAIData = async () => {
+      if (!user?.id) return;
 
-  const loadAIHubData = async () => {
-    setLoading(true);
-    try {
-      // Load all agents - make this async since getAllAgents returns a Promise
-      const allAgents = await getAllAgents();
-      setAgents(allAgents);
+      try {
+        setLoading(true);
+        setError(null);
 
-      // Load performance metrics
-      const dashboard = await continuousImprovementService.getImprovementDashboard('week');
-      
-      // Calculate stats - make these async too
-      const executiveAgents = await getAgentsByType('executive');
-      const departmentalAgents = await getAgentsByType('departmental');
-      const specialistAgents = await getAgentsByType('specialist');
+        // Load all agents
+        const allAgents = await getAllAgents();
+        setAgents(allAgents);
 
-      setStats({
-        totalAgents: allAgents.length,
-        activeConversations: Math.floor(Math.random() * 50) + 10, // Mock data
-        averageResponseTime: 2.3,
-        userSatisfaction: 4.2,
-        costSavings: 12500,
-        automationRate: 68
-      });
-    } catch (error) {
-      console.error('Error loading AI Hub data: ', error);
-    } finally {
-      setLoading(false);
+        // Calculate stats from agents
+        const activeAgents = allAgents.filter(agent => agent.status === 'active');
+        setStats({
+          totalAgents: allAgents.length,
+          activeAgents: activeAgents.length,
+          totalConversations: allAgents.reduce((sum, agent) => sum + (agent.conversationCount || 0), 0),
+          averageResponseTime: allAgents.length > 0 ? 
+            allAgents.reduce((sum, agent) => sum + (agent.averageResponseTime || 0), 0) / allAgents.length : 0,
+          successRate: allAgents.length > 0 ? 
+            allAgents.reduce((sum, agent) => sum + (agent.successRate || 0), 0) / allAgents.length : 0,
+          totalTokensUsed: allAgents.reduce((sum, agent) => sum + (agent.tokensUsed || 0), 0)
+        });
+
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load AI data';
+        setError(errorMessage);
+        logger.error('Error loading AI hub data', { error: err, userId: user.id });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAIData();
+  }, [user?.id]);
+
+  const getAgentTypeIcon = (type: string) => {
+    switch (type) {
+      case 'assistant': return <Brain className="w-5 h-5" />;
+      case 'chat': return <MessageSquare className="w-5 h-5" />;
+      case 'automation': return <Zap className="w-5 h-5" />;
+      case 'analytics': return <TrendingUp className="w-5 h-5" />;
+      default: return <Brain className="w-5 h-5" />;
     }
   };
-
-  const aiFeatures: AIFeature[] = [
-    {
-      id: 'contextual-chat',
-      title: 'Contextual Chat',
-      description: 'AI that understands your business context and provides personalized responses',
-      icon: MessageSquare,
-      status: 'available',
-      usage: 85,
-      potential: 95
-    },
-    {
-      id: 'workflow-automation',
-      title: 'Workflow Automation',
-      description: 'Automate repetitive tasks and optimize business processes',
-      icon: Zap,
-      status: 'available',
-      usage: 62,
-      potential: 88
-    },
-    {
-      id: 'predictive-analytics',
-      title: 'Predictive Analytics',
-      description: 'Forecast trends and identify opportunities using AI',
-      icon: TrendingUp,
-      status: 'demo',
-      usage: 45,
-      potential: 92
-    },
-    {
-      id: 'cross-departmental',
-      title: 'Cross-Departmental Intelligence',
-      description: 'Connect insights across all business departments',
-      icon: Users,
-      status: 'available',
-      usage: 73,
-      potential: 89
-    },
-    {
-      id: 'continuous-improvement',
-      title: 'Continuous Improvement',
-      description: 'AI that learns and improves from every interaction',
-      icon: Brain,
-      status: 'available',
-      usage: 78,
-      potential: 94
-    },
-    {
-      id: 'advanced-capabilities',
-      title: 'Advanced Capabilities',
-      description: 'Multi-modal AI with voice, image, and document processing',
-      icon: Sparkles,
-      status: 'development',
-      usage: 32,
-      potential: 96
-    }
-  ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'available': return 'text-success';
-      case 'demo': return 'text-primary';
-      case 'development': return 'text-warning';
-      default: return 'text-muted-foreground';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'available': return <CheckCircle className="w-4 h-4" />;
-      case 'demo': return <Clock className="w-4 h-4" />;
-      case 'development': return <AlertCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
+      case 'active': return 'bg-green-100 text-green-800 border-green-200';
+      case 'inactive': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'error': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <LoadingStates.Skeleton />
-        <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded"></div>
+      <div className="space-y-6 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="space-y-6 p-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+              <h3 className="text-lg font-semibold mb-2">Error Loading AI Hub</h3>
+              <p className="text-muted-foreground">{error}</p>
+              <Button className="mt-4" onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Brain className="w-8 h-8 text-primary" />
-            AI Hub
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Your central command center for all AI capabilities and insights
-          </p>
+          <h1 className="text-3xl font-bold">AI Hub</h1>
+          <p className="text-muted-foreground">Manage your AI agents and monitor performance</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Settings className="w-4 h-4" />
-          AI Settings
+        <Button>
+          <Sparkles className="w-4 h-4 mr-2" />
+          Create New Agent
         </Button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total AI Agents</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Agents</CardTitle>
             <Brain className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalAgents}</div>
             <p className="text-xs text-muted-foreground">
-              Executive, Departmental & Specialist
+              {stats.activeAgents} active
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Conversations</CardTitle>
+            <CardTitle className="text-sm font-medium">Conversations</CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeConversations}</div>
+            <div className="text-2xl font-bold">{stats.totalConversations}</div>
             <p className="text-xs text-muted-foreground">
-              +12% from last week
+              Total interactions
             </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Response Time</CardTitle>
+            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{(stats.successRate * 100).toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">
+              Average across agents
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Tokens Used</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averageResponseTime}s</div>
-            <p className="text-xs text-muted-foreground">
-              -0.3s from last week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">User Satisfaction</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.userSatisfaction}/5</div>
-            <p className="text-xs text-muted-foreground">
-              +0.2 from last week
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cost Savings</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${stats.costSavings.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{stats.totalTokensUsed.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">
               This month
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Automation Rate</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.automationRate}%</div>
-            <p className="text-xs text-muted-foreground">
-              +5% from last month
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Main Content */}
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="agents">AI Agents</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="capabilities">Capabilities</TabsTrigger>
+      {/* Agents Tabs */}
+      <Tabs defaultValue="all" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="all">All Agents ({agents.length})</TabsTrigger>
+          <TabsTrigger value="assistant">Assistants</TabsTrigger>
+          <TabsTrigger value="chat">Chat Agents</TabsTrigger>
+          <TabsTrigger value="automation">Automation</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          {/* AI Features Grid */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">AI Capabilities</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {aiFeatures.map((feature) => (
-                <AIFeatureCard
-                  key={feature.id}
-                  feature={feature}
-                  onLearnMore={(feature) =>  
-     
-    // eslint-disable-next-line no-console
-    console.log('Learn more: ', feature.id)}
-                  onDemo={(feature) =>  
-     
-    // eslint-disable-next-line no-console
-    console.log('Demo: ', feature.id)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Progressive Intelligence */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Smart Insights</h2>
-            <ProgressiveIntelligence
-              pageId="ai-hub"
-              position="inline"
-              maxInsights={3}
-              maxActions={2}
-              compact={false}
-            />
-          </div>
-
-          {/* AI Onboarding Dashboard */}
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Learning Center</h2>
-            <AIOnboardingDashboard 
-              showProgress={true}
-              onModuleStart={(moduleId) => {
-                // eslint-disable-next-line no-console
-                console.log('Started module:', moduleId);
-              }}
-              onModuleComplete={(moduleId) => {
-                // eslint-disable-next-line no-console
-                console.log('Completed module:', moduleId);
-              }}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="agents" className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">AI Agents</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {agents.map((agent) => (
-                <Card key={agent.id} className="cursor-pointer hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
+        <TabsContent value="all" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {agents.map((agent) => (
+              <Card key={agent.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      {getAgentTypeIcon(agent.type)}
                       <CardTitle className="text-lg">{agent.name}</CardTitle>
-                      <Badge variant="outline" className={getStatusColor('available')}>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon('available')}
-                          {agent.type}
-                        </div>
-                      </Badge>
                     </div>
-                    <CardDescription>{agent.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {agent.specialties && agent.specialties.length > 0 && (
+                    <Badge variant="outline" className={getStatusColor(agent.status)}>
+                      {agent.status}
+                    </Badge>
+                  </div>
+                  <CardDescription>{agent.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Conversations:</span>
+                      <div className="font-medium">{agent.conversationCount || 0}</div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Success Rate:</span>
+                      <div className="font-medium">{((agent.successRate || 0) * 100).toFixed(1)}%</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      <span>{(agent.averageResponseTime || 0).toFixed(1)}s avg</span>
+                    </div>
+                    <Button size="sm" variant="outline">
+                      Configure
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        {['assistant', 'chat', 'automation', 'analytics'].map((type) => (
+          <TabsContent key={type} value={type} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {agents
+                .filter(agent => agent.type === type)
+                .map((agent) => (
+                  <Card key={agent.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          {getAgentTypeIcon(agent.type)}
+                          <CardTitle className="text-lg">{agent.name}</CardTitle>
+                        </div>
+                        <Badge variant="outline" className={getStatusColor(agent.status)}>
+                          {agent.status}
+                        </Badge>
+                      </div>
+                      <CardDescription>{agent.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
                         <div>
-                          <p className="text-sm font-medium text-muted-foreground">Specialties: </p>
-                          <div className="flex flex-wrap gap-1 mt-1">
-                            {agent.specialties.slice(0, 3).map((specialty, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {specialty}
-                              </Badge>
-                            ))}
-                            {agent.specialties.length > 3 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{agent.specialties.length - 3} more
-                              </Badge>
-                            )}
-                          </div>
+                          <span className="text-muted-foreground">Conversations:</span>
+                          <div className="font-medium">{agent.conversationCount || 0}</div>
                         </div>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="w-full mt-4"
-                        onClick={() => setSelectedAgent(agent)}
-                      >
-                        <MessageSquare className="w-4 h-4 mr-2" />
-                        Start Chat
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                        <div>
+                          <span className="text-muted-foreground">Success Rate:</span>
+                          <div className="font-medium">{((agent.successRate || 0) * 100).toFixed(1)}%</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          <span>{(agent.averageResponseTime || 0).toFixed(1)}s avg</span>
+                        </div>
+                        <Button size="sm" variant="outline">
+                          Configure
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
             </div>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">AI Performance</h2>
-            <ModelPerformanceMonitor />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="capabilities" className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4">Advanced Capabilities</h2>
-            <AdvancedAICapabilitiesDemo />
-          </div>
-        </TabsContent>
+          </TabsContent>
+        ))}
       </Tabs>
+
+      {agents.length === 0 && (
+        <Card>
+          <CardContent className="p-8">
+            <div className="text-center">
+              <Brain className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No AI Agents Found</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first AI agent to get started with intelligent automation
+              </p>
+              <Button>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Create Your First Agent
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 } 

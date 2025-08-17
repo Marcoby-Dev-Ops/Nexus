@@ -241,7 +241,7 @@ export class ContextualDataCompletionService extends BaseService {
     try {
       let enhancedValue = value;
       let confidence = 0.5;
-      let source = 'pattern_matching';
+      const source = 'pattern_matching';
       
       switch (field.toLowerCase()) {
         case 'name':

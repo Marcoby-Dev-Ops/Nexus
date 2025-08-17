@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
 import { Mail, Shield } from 'lucide-react';
 import type { EmailProvider } from '@/shared/types/email';
 

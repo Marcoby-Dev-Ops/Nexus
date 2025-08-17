@@ -9,7 +9,7 @@ import { quotaService } from '../services/quotaService';
 import type { ChatMessage, ChatState, ChatActions } from '../types/chat';
 import type { ChatQuotas } from '../types/licensing';
 import { logger } from '@/shared/utils/logger';
-import { select, insertOne, updateOne } from '@/lib/supabase';
+import { selectData, insertOne, updateOne } from '@/lib/api-client';
 
 interface UseProductionChatOptions {
   conversationId: string;
@@ -141,7 +141,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const { data, error } = await select('chat_messages', '*', { conversation_id: conversationId }, {
+      const { data, error } = await selectData('chat_messages', '*', { conversation_id: conversationId }, {
         orderBy: { column: 'created_at', ascending: false },
         limit: pageSize,
         offset: page * pageSize
@@ -320,10 +320,12 @@ export function useProductionChat(options: UseProductionChatOptions): Production
   }, [conversationId, fetchMessages, checkQuotas, getUsageStats]);
 
   useEffect(() => {
+    // Use longer intervals in development to reduce resource usage
+    const refreshInterval = process.env.NODE_ENV === 'development' ? 10 * 60 * 1000 : 5 * 60 * 1000; // 10min dev, 5min prod
     const interval = setInterval(() => {
       refreshQuotas();
       getUsageStats();
-    }, 5 * 60 * 1000);
+    }, refreshInterval);
     return () => clearInterval(interval);
   }, [refreshQuotas, getUsageStats]);
 

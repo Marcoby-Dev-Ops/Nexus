@@ -5,10 +5,10 @@
  */
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { MessageSquare, Video, Users, TrendingUp, BarChart3, Zap, Lightbulb, CheckCircle2, Play, Shield, Globe, Building } from 'lucide-react';
 import DualPlatformDemo from '@/components/integrations/DualPlatformDemo';
 import UnifiedCommunicationDashboard from '@/components/dashboard/UnifiedCommunicationDashboard';

@@ -1,6 +1,6 @@
 import React from 'react';
-import NarrativeDashboard from '@/components/dashboard/NarrativeDashboard';
+import MVPDashboard from '@/components/dashboard/MVPDashboard';
 
 export default function Dashboard() {
-  return <NarrativeDashboard />;
+  return <MVPDashboard />;
 } 

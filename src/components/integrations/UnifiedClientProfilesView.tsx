@@ -1,69 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
+import { UnifiedClientService, type UnifiedClientProfile, type ClientInteraction, type ClientIntelligenceAlert } from '@/services/integrations/UnifiedClientService';
 import { Users, Search, TrendingUp, AlertCircle, Mail, Phone, MapPin, Building, Calendar, DollarSign, Activity, Zap, Brain, Target, Star, RefreshCw, Download, Eye, MessageSquare, Lightbulb } from 'lucide-react';
-interface UnifiedClientProfile {
-  id: string;
-  clientid: string;
-  profiledata: {
-    name?: string;
-    email?: string;
-    phone?: string;
-    company?: string;
-    location?: string;
-    industry?: string;
-    website?: string;
-    social_profiles?: {
-      linkedin?: string;
-      twitter?: string;
-    };
-    demographics?: {
-      company_size?: string;
-      revenue_range?: string;
-      role?: string;
-    };
-  };
-  sourceintegrations: string[];
-  primarysource: string;
-  completenessscore: number;
-  engagementscore: number;
-  estimatedvalue: number;
-  lastinteraction: string;
-  lastenrichmentat: string;
-  insights: any[];
-  createdat: string;
-  updatedat: string;
-}
-
-interface ClientInteraction {
-  id: string;
-  clientprofileid: string;
-  interactiontype: 'email' | 'call' | 'meeting' | 'transaction' | 'support' | 'website_visit';
-  channel: string;
-  summary: string;
-  sentiment: 'positive' | 'neutral' | 'negative';
-  value: number;
-  metadata: any;
-  occurredat: string;
-}
-
-interface ClientIntelligenceAlert {
-  id: string;
-  clientprofileid: string;
-  alerttype: 'opportunity' | 'risk' | 'milestone' | 'anomaly';
-  title: string;
-  description: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  isresolved: boolean;
-  createdat: string;
-}
+// Using imported types from UnifiedClientService
 
 const UnifiedClientProfilesView: React.FC = () => {
   const { user } = useAuth();
@@ -88,40 +34,44 @@ const UnifiedClientProfilesView: React.FC = () => {
     try {
       setIsLoading(true);
       
-      let query = supabase
-        .from('ai_unified_client_profiles')
-        .select('*')
-        .eq('user_id', user!.id);
+      const result = await UnifiedClientService.getUnifiedClientProfiles(user!.id);
+      
+      if (result.success && result.data) {
+        let filteredProfiles = result.data;
 
-      // Apply filters
-      if (filterBy === 'high_value') {
-        query = query.gte('estimated_value', 10000);
-      } else if (filterBy === 'recent') {
-        query = query.gte('last_interaction', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-      } else if (filterBy === 'at_risk') {
-        query = query.lt('engagement_score', 30);
+        // Apply filters
+        if (filterBy === 'high_value') {
+          filteredProfiles = filteredProfiles.filter(p => p.estimated_value >= 10000);
+        } else if (filterBy === 'recent') {
+          const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+          filteredProfiles = filteredProfiles.filter(p => new Date(p.last_interaction) >= weekAgo);
+        } else if (filterBy === 'at_risk') {
+          filteredProfiles = filteredProfiles.filter(p => p.engagement_score < 30);
+        }
+
+        // Apply sorting
+        filteredProfiles.sort((a, b) => {
+          switch (sortBy) {
+            case 'engagement':
+              return b.engagement_score - a.engagement_score;
+            case 'value':
+              return b.estimated_value - a.estimated_value;
+            case 'recent':
+              return new Date(b.last_interaction).getTime() - new Date(a.last_interaction).getTime();
+            case 'completeness':
+              return b.completeness_score - a.completeness_score;
+            default:
+              return 0;
+          }
+        });
+
+        setProfiles(filteredProfiles.slice(0, 50));
+      } else {
+        setProfiles([]);
       }
-
-      // Apply sorting
-      if (sortBy === 'engagement') {
-        query = query.order('engagement_score', { ascending: false });
-      } else if (sortBy === 'value') {
-        query = query.order('estimated_value', { ascending: false });
-      } else if (sortBy === 'recent') {
-        query = query.order('last_interaction', { ascending: false });
-      } else if (sortBy === 'completeness') {
-        query = query.order('completeness_score', { ascending: false });
-      }
-
-      const { data, error } = await query.limit(50);
-
-      if (error) throw error;
-      setProfiles(data || []);
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching client profiles: ', error);
+      console.error('Error fetching client profiles: ', error);
+      setProfiles([]);
     } finally {
       setIsLoading(false);
     }
@@ -129,62 +79,58 @@ const UnifiedClientProfilesView: React.FC = () => {
 
   const fetchInteractions = async () => {
     try {
-      const { data, error } = await supabase
-        .from('ai_client_interactions')
-        .select('*')
-        .order('occurred_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setInteractions(data || []);
+      const result = await UnifiedClientService.getClientInteractions(user!.id);
+      
+      if (result.success && result.data) {
+        setInteractions(result.data.slice(0, 100));
+      } else {
+        setInteractions([]);
+      }
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching interactions: ', error);
+      console.error('Error fetching interactions: ', error);
+      setInteractions([]);
     }
   };
 
   const fetchAlerts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('ai_client_intelligence_alerts')
-        .select('*')
-        .eq('is_resolved', false)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      setAlerts(data || []);
+      const result = await UnifiedClientService.getClientIntelligenceAlerts(user!.id);
+      
+      if (result.success && result.data) {
+        setAlerts(result.data.slice(0, 50));
+      } else {
+        setAlerts([]);
+      }
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching alerts: ', error);
+      console.error('Error fetching alerts: ', error);
+      setAlerts([]);
     }
   };
 
-  const triggerClientUnification = async (clientId: string) => {
+  const triggerClientUnification = async () => {
     try {
-      const response = await fetch('https: //automate.marcoby.net/webhook/client-data-unification', {
+      // Call the edge function to populate unified clients
+      const response = await fetch('/api/supabase/functions/unified-client-populate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          clientid: clientId,
-          userid: user?.id,
-          companyid: user?.company_id,
-          type: 'profile_refresh'
+          userId: user!.id
         })
       });
 
       if (response.ok) {
-        await fetchClientProfiles();
+        const result = await response.json();
+        if (result.success) {
+          // Refresh the data
+          await fetchClientProfiles();
+          await fetchInteractions();
+          await fetchAlerts();
+        }
       }
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error triggering client unification: ', error);
+      console.error('Error triggering client unification: ', error);
     }
   };
 
@@ -255,6 +201,10 @@ const UnifiedClientProfilesView: React.FC = () => {
           <Button variant="outline" onClick={fetchClientProfiles}>
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
+          </Button>
+          <Button onClick={triggerClientUnification}>
+            <Zap className="w-4 h-4 mr-2" />
+            Populate from Integrations
           </Button>
           <Button variant="outline">
             <Download className="w-4 h-4 mr-2" />
@@ -523,7 +473,7 @@ const UnifiedClientProfilesView: React.FC = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => triggerClientUnification(profile.client_id)}
+                    onClick={() => triggerClientUnification()}
                   >
                     <Zap className="w-4 h-4 mr-2" />
                     Refresh

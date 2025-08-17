@@ -361,16 +361,15 @@ export const supabaseAuthCallback: CallbackConfig = {
 
 export const microsoftCallback: CallbackConfig = {
   id: 'microsoft-oauth',
-  integrationSlug: 'microsoft',
+  integrationSlug: 'microsoft365',
   type: 'oauth',
-  path: '/integrations/microsoft/callback',
+  path: '/integrations/microsoft365/callback',
   methods: ['GET'],
-  handler: 'handleSupabaseRedirectCallback',
+  handler: 'handleOAuthCallback',
   config: {
     oauth: {
       validateState: true,
-      supabaseFunctionUrl: '/functions/v1/microsoft-graph-oauth-callback',
-      redirectUrl: '/onboarding',
+      redirectUrl: '/integrations',
       flowType: 'redirect'
     }
   },
@@ -383,12 +382,12 @@ export const microsoftCallback: CallbackConfig = {
     }
   },
   metadata: {
-    description: 'Microsoft OAuth 2.0 callback handler',
-    tags: ['oauth', 'microsoft', 'teams'],
-    version: '1.0.0',
+    description: 'Microsoft 365 OAuth callback handler',
+    tags: ['oauth', 'microsoft', 'graph'],
+    version: '1.0.1',
     analytics: {
       trackEvents: true,
-      eventPrefix: 'microsoft'
+      eventPrefix: 'microsoft365'
     },
     errorHandling: {
       logErrors: true,

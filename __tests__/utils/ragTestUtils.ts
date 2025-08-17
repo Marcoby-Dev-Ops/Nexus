@@ -162,25 +162,7 @@ export const mockCloudDocuments: CloudDocument[] = [
   }
 ];
 
-// Mock Supabase client
-export const mockSupabaseClient = {
-  auth: {
-    getUser: jest.fn().mockResolvedValue({
-      data: { user: { id: 'test-user-id', email: 'test@company.com' } },
-      error: null
-    })
-  },
-  from: jest.fn(() => ({
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    upsert: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({ data: mockUserContext, error: null }),
-    then: jest.fn().mockResolvedValue({ data: [], error: null })
-  }))
-};
+
 
 // Mock database queries
 export const mockDatabaseQueries = {

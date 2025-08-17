@@ -1,6 +1,6 @@
 import React from 'react';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Brain, Users, Settings, Sparkles } from 'lucide-react';
 import type { Agent } from '@/services/ai';
 

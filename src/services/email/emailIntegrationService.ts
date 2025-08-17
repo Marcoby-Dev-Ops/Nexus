@@ -3,9 +3,11 @@
  * Real-time email processing and integration with business systems
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+// Avoid importing OAuthTokenService here to prevent noisy logs during optional checks
 import { EmailIntelligenceService } from '../ai/emailIntelligenceService';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 export interface EmailAnalysisResult {
   emailId: string;
@@ -52,10 +54,88 @@ export class EmailIntegrationService extends BaseService {
   private webhookSubscriptions: Map<string, any> = new Map();
   private emailIntelligenceService!: EmailIntelligenceService;
 
+  // Idempotent initialization guard to avoid double init under StrictMode
+  private static hasInitializedForWindow = false;
+
   constructor() {
     super();
     this.emailIntelligenceService = new EmailIntelligenceService();
-    this.initializeRealTimeProcessing();
+    if (!EmailIntegrationService.hasInitializedForWindow) {
+      EmailIntegrationService.hasInitializedForWindow = true;
+      // Defer initialization until we confirm an email account is connected
+      // This prevents the Mail service from starting when no account is linked
+      // and aligns with requirement to avoid side-effects before integration.
+      // Use setTimeout to defer initialization and avoid blocking the main thread
+      setTimeout(() => {
+        void this.maybeInitialize();
+      }, 0);
+    } else {
+      this.logger.debug('EmailIntegrationService initialization skipped (already initialized)');
+    }
+  }
+
+  /**
+   * Conditionally initialize based on whether an email account is connected
+   */
+  private async maybeInitialize(): Promise<void> {
+    try {
+      // Check if we have a valid session before proceeding
+      const sessionResult = await authentikAuthService.getSession();
+      if (!sessionResult.success || !sessionResult.data) {
+        this.logger.info('No valid session available; skipping email integration initialization');
+        return;
+      }
+
+      const isConnected = await this.isEmailIntegrationConnected();
+      if (!isConnected) {
+        this.logger.info('Email integration not connected; skipping real-time initialization');
+        return;
+      }
+      await this.initializeRealTimeProcessing();
+    } catch (error) {
+      this.logger.error('Error during conditional initialization', error);
+    }
+  }
+
+  /**
+   * Determine whether the current user has a connected email account
+   * Checks active OAuth tokens for email providers and falls back to user_integrations
+   */
+  private async isEmailIntegrationConnected(): Promise<boolean> {
+    try {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
+        return false;
+      }
+
+      // Check: look for a user_integrations record indicating email connection
+      const { data: integrations, error } = await supabase
+        .from('user_integrations')
+        .select('integration_name, status')
+        .eq('user_id', user.id);
+
+      if (error) {
+        return false;
+      }
+
+      const normalize = (v: unknown) => (typeof v === 'string' ? v.toLowerCase() : '');
+      const isActive = (s: unknown) => {
+        const status = normalize(s);
+        return status === 'connected';
+      };
+
+      const hasEmailIntegration = (integrations || []).some((i: any) => {
+        const name = normalize(i.integration_name);
+        const emailProviders = ['microsoft', 'gmail', 'google', 'outlook'];
+        const matchesProvider = emailProviders.some((p) => name.includes(p));
+        return matchesProvider && isActive(i.status);
+      });
+
+      return hasEmailIntegration;
+    } catch (_e) {
+      return false;
+    }
   }
 
   /**
@@ -66,7 +146,7 @@ export class EmailIntegrationService extends BaseService {
       if (this.config.realTimeProcessing) {
         await this.setupWebhookSubscriptions();
         await this.startBackgroundProcessing();
-        this.logger.info('Real-time email processing initialized');
+      this.logger.info('Real-time email processing initialized');
       }
     } catch (error) {
       this.logger.error('Error initializing real-time processing', error);
@@ -784,5 +864,4 @@ export class EmailIntegrationService extends BaseService {
   }
 }
 
-// Export singleton instance
-export const emailIntegrationService = new EmailIntegrationService(); 
+// Do not export a global singleton. Use the ServiceRegistry-managed instance instead.

@@ -32,28 +32,32 @@ export const FirstTimeWelcome: React.FC<FirstTimeWelcomeProps> = ({
 
   const steps = [
     {
-      title: 'Welcome to Nexus',
-      description: 'Your AI-powered business operating system',
+      title: 'Welcome!',
+      description: 'We\'re glad you\'re here',
       icon: <Sparkles className="w-8 h-8 text-primary" />,
-      content: 'Nexus is designed to help innovators, thinkers, and self-starters start, standardize, operate, and grow businesses without requiring formal business education.'
+      content: `You're all set up and ready to go.
+Let's get you started with your business journey.`
     },
     {
-      title: 'AI-Powered Insights',
-      description: 'Get intelligent recommendations for your business decisions',
+      title: 'What to Expect',
+      description: 'A quick overview of what\'s ahead',
       icon: <BarChart3 className="w-8 h-8 text-primary" />,
-      content: 'Our AI analyzes your data to provide actionable insights and recommendations tailored to your business needs.'
+      content: `We'll help you set up your profile and connect your tools.
+Then you'll be ready to start building your business.`
     },
     {
-      title: 'Automated Workflows',
-      description: 'Streamline your business processes with smart automation',
+      title: 'Getting Started',
+      description: 'Just a few quick steps',
       icon: <Zap className="w-8 h-8 text-primary" />,
-      content: 'Automate repetitive tasks and create intelligent workflows that save you time and reduce errors.'
+      content: `We'll walk you through the basics.
+It only takes a few minutes to get everything configured.`
     },
     {
-      title: 'Team Collaboration',
-      description: 'Work together seamlessly with your team',
-      icon: <Users className="w-8 h-8 text-primary" />,
-      content: 'Invite team members, assign roles, and collaborate on projects with real-time updates and shared insights.'
+      title: 'Ready to Begin',
+      description: 'Let\'s get you set up',
+      icon: <Rocket className="w-8 h-8 text-primary" />,
+      content: `Everything looks good!
+Let's start building your business.`
     }
   ];
 
@@ -116,20 +120,13 @@ export const FirstTimeWelcome: React.FC<FirstTimeWelcomeProps> = ({
           </CardHeader>
           
           <CardContent className="space-y-6">
-            <div className="text-center">
-              <p className="text-muted-foreground text-base leading-relaxed">
-                {currentStepData.content}
-              </p>
-            </div>
+                         <div className="text-center">
+               <p className="text-muted-foreground text-base leading-relaxed">
+                 {currentStepData.content}
+               </p>
+             </div>
 
-            {currentStep === 0 && userName && (
-              <div className="text-center p-4 bg-primary/5 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Welcome, <span className="font-semibold text-foreground">{userName}</span>! 
-                  We're excited to help you transform your business.
-                </p>
-              </div>
-            )}
+
 
             <div className="flex justify-between items-center pt-4">
               <Button 

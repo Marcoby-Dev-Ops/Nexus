@@ -5,9 +5,9 @@
  */
 
 import { SECURITY_CHECKS } from '@/core/constants/security';
-import { supabase } from '@/lib/supabase';
-import { supabaseService } from '@/core/services/SupabaseService';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import pino from 'pino';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 // Sensitive patterns to filter from logs
 const SENSITIVE_PATTERNS = [
@@ -94,7 +94,7 @@ export class SecureLogger {
   private async sendSecurityLogToSupabase(logEntry: any): Promise<void> {
     try {
           // Use the callEdgeFunction helper to send security logs
-    await supabaseService.callEdgeFunction('security_log', {
+    await callEdgeFunction('security_log', {
         timestamp: logEntry.timestamp,
         type: logEntry.type,
         message: logEntry.message,
@@ -115,7 +115,7 @@ export class SecureLogger {
   private async storeLogInDatabase(logEntry: any): Promise<void> {
     try {
           // Use the callEdgeFunction helper to store logs
-    await supabaseService.callEdgeFunction('store_log', {
+    await callEdgeFunction('store_log', {
         timestamp: logEntry.timestamp,
         level: logEntry.type,
         message: logEntry.message,
@@ -330,9 +330,10 @@ export class SecureLogger {
    */
   public async getSessionContext(): Promise<any> {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const result = await authentikAuthService.getSession();
+      const session = result.data;
       
-      if (error || !session) {
+      if (result.error || !session) {
         return { userId: null, sessionId: null };
       }
 

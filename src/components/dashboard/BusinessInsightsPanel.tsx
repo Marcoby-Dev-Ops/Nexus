@@ -1,318 +1,339 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { TrendingUp, AlertTriangle, CheckCircle2, Lightbulb, ArrowRight, DollarSign, Users, Target, Clock, Zap } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
+import { 
+  TrendingUp, 
+  AlertTriangle, 
+  CheckCircle, 
+  Brain, 
+  ArrowRight,
+  Zap,
+  Target,
+  Clock
+} from 'lucide-react';
+import { analyticsService } from '@/services/analytics/analyticsService';
+import { businessHealthService } from '@/core/services/BusinessHealthService';
+import { useAuth } from '@/hooks/index';
+import { logger } from '@/shared/utils/logger';
 
-interface BusinessInsight {
+export interface BusinessInsight {
   id: string;
-  type: 'opportunity' | 'alert' | 'achievement' | 'trend';
+  type: 'opportunity' | 'risk' | 'achievement' | 'recommendation';
+  priority: 'high' | 'medium' | 'low';
+  category: string;
   title: string;
   description: string;
-  impact: 'high' | 'medium' | 'low';
-  metric?: string;
-  change?: string;
-  actionable?: boolean;
-  category: 'revenue' | 'operations' | 'team' | 'customer' | 'efficiency';
+  impact: number;
+  confidence: number;
+  timeToValue: number;
+  effort: number;
+  dataSource: string[];
+  suggestedActions: string[];
+  automationPotential: string | null;
+  createdAt: string;
+  status: 'active' | 'resolved' | 'dismissed';
 }
 
 interface BusinessInsightsPanelProps {
-  className?: string;
+  maxInsights?: number;
+  showAutomations?: boolean;
+  compact?: boolean;
 }
 
-const mockInsights: BusinessInsight[] = [
-  {
-    id: '1',
-    type: 'opportunity',
-    title: 'Close 3 High-Value Deals This Week',
-    description: 'You have 3 deals worth $180K in negotiation stage. Focus on closing these before month-end.',
-    impact: 'high',
-    metric: '$180K',
-    change: 'potential revenue',
-    actionable: true,
-    category: 'revenue'
-  },
-  {
-    id: '2',
-    type: 'alert',
-    title: 'Review 5 Support Tickets',
-    description: 'Customer response time increased 15%. Review these escalated tickets to prevent churn.',
-    impact: 'high',
-    metric: '5 tickets',
-    change: 'need attention',
-    actionable: true,
-    category: 'customer'
-  },
-  {
-    id: '3',
-    type: 'opportunity',
-    title: 'Automate Invoice Processing',
-    description: 'Set up automated invoice processing to save 8 hours/week and reduce errors by 90%.',
-    impact: 'medium',
-    metric: '8 hrs/week',
-    change: 'time savings',
-    actionable: true,
-    category: 'efficiency'
-  },
-  {
-    id: '4',
-    type: 'achievement',
-    title: 'Celebrate Team Success',
-    description: 'Your team exceeded monthly targets by 12%. Consider team recognition or bonus.',
-    impact: 'medium',
-    metric: '+12%',
-    change: 'above target',
-    actionable: true,
-    category: 'team'
-  },
-  {
-    id: '5',
-    type: 'alert',
-    title: 'Schedule Q4 Planning Session',
-    description: 'Q4 planning is due. Schedule sessions with department heads to set goals and budgets.',
-    impact: 'high',
-    metric: '4 sessions',
-    change: 'overdue',
-    actionable: true,
-    category: 'operations'
-  },
-  {
-    id: '6',
-    type: 'opportunity',
-    title: 'Upsell to 8 Existing Customers',
-    description: 'Analysis shows 8 customers are ready for premium features. Reach out this week.',
-    impact: 'medium',
-    metric: '8 customers',
-    change: 'ready to upgrade',
-    actionable: true,
-    category: 'revenue'
-  }
-];
-
-export const BusinessInsightsPanel: React.FC<BusinessInsightsPanelProps> = ({ className = '' }) => {
+export function BusinessInsightsPanel({ 
+  maxInsights = 5, 
+  showAutomations = true, 
+  compact = false 
+}: BusinessInsightsPanelProps) {
   const [insights, setInsights] = useState<BusinessInsight[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  // Simulate loading real data
   useEffect(() => {
     const loadInsights = async () => {
+      if (!user?.id) return;
+
       try {
-        setIsLoading(true);
+        setLoading(true);
         setError(null);
-        
-        // Simulate API call delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In a real app, this would be an API call
-        setInsights(mockInsights);
+
+        // Load insights from analytics service
+        const insightsResult = await analyticsService.getInsights({ user_id: user.id });
+        if (insightsResult.success && insightsResult.data) {
+          const realInsights: BusinessInsight[] = insightsResult.data.map((insight: any, index: number) => ({
+            id: insight.id || `insight-${index}`,
+            type: insight.insight_type || 'recommendation',
+            priority: insight.priority || 'medium',
+            category: insight.category || 'Business Intelligence',
+            title: insight.title || `AI Insight ${index + 1}`,
+            description: insight.description || insight.insight_data?.description || 'AI-generated business insight',
+            impact: insight.impact || 5,
+            confidence: insight.confidence_score || 0.8,
+            timeToValue: insight.time_to_value || 30,
+            effort: insight.effort || 3,
+            dataSource: insight.data_source || ['analytics'],
+            suggestedActions: insight.suggested_actions || [],
+            automationPotential: insight.automation_potential || null,
+            createdAt: insight.created_at || new Date().toISOString(),
+            status: 'active'
+          }));
+          setInsights(realInsights);
+        }
+
+        // If no insights from analytics, generate some based on business health
+        if (!insightsResult.success || !insightsResult.data || insightsResult.data.length === 0) {
+          const healthResult = await businessHealthService.readLatest();
+          if (healthResult.success && healthResult.data) {
+            const healthData = healthResult.data;
+            const generatedInsights: BusinessInsight[] = [];
+
+            if (healthData.overall_score < 70) {
+              generatedInsights.push({
+                id: 'health-improvement',
+                type: 'recommendation',
+                priority: 'high',
+                category: 'Business Health',
+                title: 'Improve Business Health Score',
+                description: `Your business health score is ${healthData.overall_score}%. Focus on areas with lower scores to improve overall performance.`,
+                impact: 8,
+                confidence: 0.9,
+                timeToValue: 60,
+                effort: 4,
+                dataSource: ['business-health'],
+                suggestedActions: ['Review business metrics', 'Complete missing data', 'Connect more integrations'],
+                automationPotential: 'Automated health monitoring',
+                createdAt: new Date().toISOString(),
+                status: 'active'
+              });
+            }
+
+            if (healthData.completion_percentage < 80) {
+              generatedInsights.push({
+                id: 'profile-completion',
+                type: 'opportunity',
+                priority: 'medium',
+                category: 'Profile Completion',
+                title: 'Complete Your Business Profile',
+                description: `Your profile is ${healthData.completion_percentage}% complete. Complete it for better insights and recommendations.`,
+                impact: 6,
+                confidence: 0.95,
+                timeToValue: 15,
+                effort: 2,
+                dataSource: ['profile'],
+                suggestedActions: ['Fill missing business information', 'Add company details', 'Connect business tools'],
+                automationPotential: null,
+                createdAt: new Date().toISOString(),
+                status: 'active'
+              });
+            }
+
+            setInsights(generatedInsights);
+          }
+        }
+
       } catch (err) {
-        setError('Failed to load business insights. Please try again.');
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('Error loading insights: ', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load business insights';
+        setError(errorMessage);
+        logger.error('Error loading business insights', { error: err, userId: user.id });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     loadInsights();
-  }, []);
+  }, [user?.id]);
 
   const getInsightIcon = (type: BusinessInsight['type']) => {
     switch (type) {
-      case 'achievement':
-        return <CheckCircle2 className="w-5 h-5 text-success" />;
-      case 'opportunity':
-        return <Lightbulb className="w-5 h-5 text-primary" />;
-      case 'alert':
-        return <AlertTriangle className="w-5 h-5 text-warning" />;
-      case 'trend':
-        return <TrendingUp className="w-5 h-5 text-secondary" />;
-      default: return <CheckCircle2 className="w-5 h-5 text-muted-foreground" />;
+      case 'opportunity': return <TrendingUp className="h-4 w-4 text-success" />;
+      case 'risk': return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      case 'achievement': return <CheckCircle className="h-4 w-4 text-primary" />;
+      case 'recommendation': return <Brain className="h-4 w-4 text-accent" />;
+      default: return <Brain className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
-  const getInsightColor = (type: BusinessInsight['type']) => {
-    switch (type) {
-      case 'achievement':
-        return 'border-success/80 bg-success/40 hover:bg-success/50 text-success-foreground shadow-sm';
-      case 'opportunity':
-        return 'border-primary/80 bg-primary/40 hover:bg-primary/50 text-primary-foreground shadow-sm';
-      case 'alert':
-        return 'border-warning/80 bg-warning/40 hover:bg-warning/50 text-warning-foreground shadow-sm';
-      case 'trend':
-        return 'border-secondary/80 bg-secondary/40 hover:bg-secondary/50 text-secondary-foreground shadow-sm';
-      default:
-        return 'border-border/80 bg-muted/40 hover:bg-muted/50 text-foreground shadow-sm';
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'bg-destructive/20 text-destructive border-destructive/30';
+      case 'medium': return 'bg-warning/20 text-warning border-warning/30';
+      case 'low': return 'bg-primary/20 text-primary border-primary/30';
+      default: return 'bg-muted/30 text-muted-foreground border-border';
     }
   };
 
-  const getImpactBadge = (impact: BusinessInsight['impact']) => {
-    switch (impact) {
-      case 'high':
-        return <Badge variant="destructive" className="bg-destructive/40 text-destructive border-destructive/70 font-semibold">High Impact</Badge>;
-      case 'medium':
-        return <Badge variant="secondary" className="bg-warning/40 text-warning border-warning/70 font-semibold">Medium Impact</Badge>;
-      case 'low':
-        return <Badge variant="outline" className="bg-muted/35 text-muted-foreground border-muted/60 font-medium">Low Impact</Badge>;
-    }
+  const getImpactColor = (impact: number) => {
+    if (impact >= 8) return 'text-success';
+    if (impact >= 6) return 'text-warning';
+    return 'text-destructive';
   };
 
-  const getCategoryIcon = (category: BusinessInsight['category']) => {
-    switch (category) {
-      case 'revenue':
-        return <DollarSign className="w-4 h-4" />;
-      case 'team':
-        return <Users className="w-4 h-4" />;
-      case 'customer':
-        return <Target className="w-4 h-4" />;
-      case 'operations':
-        return <Clock className="w-4 h-4" />;
-      case 'efficiency':
-        return <Zap className="w-4 h-4" />;
-      default: return <CheckCircle2 className="w-4 h-4" />;
-    }
-  };
-
-  const filteredInsights = selectedCategory === 'all' 
-    ? insights 
-    : insights.filter(insight => insight.category === selectedCategory);
-
-  const categories = ['all', 'revenue', 'team', 'customer', 'operations', 'efficiency'];
-
-  const handleRetry = () => {
-    setInsights([]);
-    setError(null);
-    setIsLoading(true);
-    
-    // Retry loading
-    setTimeout(() => {
-      setInsights(mockInsights);
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  return (
-    <div className={`space-y-6 ${className}`}>
+  if (loading) {
+    return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="w-6 h-6 text-primary" />
-            Business Insights
-          </CardTitle>
-          <CardDescription>
-            AI-powered insights about your business performance and opportunities
-          </CardDescription>
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-32" />
         </CardHeader>
-        <CardContent>
-          {/* Error State */}
-          {error && (
-            <div className="text-center py-8">
-              <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-orange-500" />
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={handleRetry} variant="outline">
-                Try Again
-              </Button>
+        <CardContent className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-3/4" />
             </div>
-          )}
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
-          {/* Loading State */}
-          {isLoading && !error && (
-            <div className="space-y-4">
-              <div className="flex space-x-2 mb-6">
-                {categories.map((category) => (
-                  <div key={category} className="h-8 bg-muted animate-pulse rounded w-20"></div>
-                ))}
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="text-center text-muted-foreground">
+            <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
+            <p className="text-sm">Unable to load insights</p>
+            <p className="text-xs text-muted-foreground">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (compact) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-sm">
+            <Brain className="w-4 h-4 mr-2" />
+            Business Insights
+            <Badge variant="outline" className="ml-auto text-xs">
+              {insights.length}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {insights.slice(0, maxInsights).map((insight) => (
+            <div key={insight.id} className="flex items-center space-x-2 p-2 rounded-lg hover:bg-muted/50">
+              {getInsightIcon(insight.type)}
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate">{insight.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{insight.description}</p>
               </div>
-              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="p-4 border rounded-lg">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="h-5 w-5 bg-muted animate-pulse rounded"></div>
-                      <div className="h-6 w-20 bg-muted animate-pulse rounded"></div>
-                    </div>
-                    <div className="h-5 bg-muted animate-pulse rounded mb-2"></div>
-                    <div className="h-4 bg-muted animate-pulse rounded mb-3 w-3/4"></div>
-                    <div className="h-8 bg-muted animate-pulse rounded"></div>
-                  </div>
-                ))}
-              </div>
+              <Badge variant="outline" className={getPriorityColor(insight.priority)}>
+                {insight.priority}
+              </Badge>
             </div>
-          )}
-
-          {/* Content */}
-          {!isLoading && !error && (
-            <>
-              {/* Category Filter */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {categories.map((category) => (
-                  <Button
-                    key={category}
-                    variant={selectedCategory === category ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedCategory(category)}
-                    className="capitalize"
-                  >
-                    {category === 'all' ? 'All' : category}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Insights Grid */}
-              <div className="grid grid-cols-1 md: grid-cols-2 gap-4">
-                {filteredInsights.map((insight, index) => (
-                  <motion.div
-                    key={insight.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className={`p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer ${getInsightColor(insight.type)}`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        {getInsightIcon(insight.type)}
-                        <div className="flex items-center gap-1 text-xs text-foreground">
-                          {getCategoryIcon(insight.category)}
-                          <span className="capitalize">{insight.category}</span>
-                        </div>
-                      </div>
-                      {getImpactBadge(insight.impact)}
-                    </div>
-
-                    <h4 className="font-semibold mb-2 text-current">{insight.title}</h4>
-                    <p className="text-sm mb-3 text-foreground">{insight.description}</p>
-
-                    {insight.metric && (
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-lg font-bold text-current">{insight.metric}</span>
-                        <span className="text-xs text-foreground">{insight.change}</span>
-                      </div>
-                    )}
-
-                    {insight.actionable && (
-                      <Button size="sm" variant="outline" className="w-full border-current/30 hover:bg-current/10">
-                        Take Action
-                        <ArrowRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-
-              {filteredInsights.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Lightbulb className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>No insights available for this category</p>
-                </div>
-              )}
-            </>
+          ))}
+          {insights.length === 0 && (
+            <div className="text-center text-muted-foreground py-4">
+              <Brain className="w-6 h-6 mx-auto mb-2 opacity-50" />
+              <p className="text-xs">No insights available</p>
+            </div>
           )}
         </CardContent>
       </Card>
-    </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <Brain className="w-5 h-5 mr-2" />
+          Business Insights
+          <Badge variant="outline" className="ml-auto">
+            {insights.length}
+          </Badge>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {insights.slice(0, maxInsights).map((insight) => (
+          <div key={insight.id} className="border rounded-lg p-4 space-y-3">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-2">
+                {getInsightIcon(insight.type)}
+                <Badge variant="outline" className={getPriorityColor(insight.priority)}>
+                  {insight.priority}
+                </Badge>
+                <span className="text-xs text-muted-foreground">{insight.category}</span>
+              </div>
+              <div className="text-right">
+                <div className={`text-sm font-medium ${getImpactColor(insight.impact)}`}>
+                  Impact: {insight.impact}/10
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Confidence: {(insight.confidence * 100).toFixed(0)}%
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="font-medium text-sm mb-1">{insight.title}</h4>
+              <p className="text-sm text-muted-foreground">{insight.description}</p>
+            </div>
+            
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-1">
+                  <Clock className="w-3 h-3" />
+                  <span>{insight.timeToValue}m</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Target className="w-3 h-3" />
+                  <span>Effort: {insight.effort}/5</span>
+                </div>
+              </div>
+              
+              {insight.automationPotential && (
+                <div className="flex items-center space-x-1 text-primary">
+                  <Zap className="w-3 h-3" />
+                  <span>Automation available</span>
+                </div>
+              )}
+            </div>
+            
+            {insight.suggestedActions.length > 0 && (
+              <div className="pt-2 border-t">
+                <p className="text-xs font-medium mb-2">Suggested Actions:</p>
+                <div className="space-y-1">
+                  {insight.suggestedActions.map((action, index) => (
+                    <div key={index} className="flex items-center space-x-2 text-xs">
+                      <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                      <span>{action}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-between pt-2 border-t">
+              <div className="text-xs text-muted-foreground">
+                Data sources: {insight.dataSource.join(', ')}
+              </div>
+              <Button size="sm" variant="outline">
+                Take Action
+                <ArrowRight className="w-3 h-3 ml-1" />
+              </Button>
+            </div>
+          </div>
+        ))}
+        
+        {insights.length === 0 && (
+          <div className="text-center text-muted-foreground py-8">
+            <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
+            <p className="text-sm font-medium mb-2">No insights available</p>
+            <p className="text-xs">Complete your business profile and connect data sources for personalized insights</p>
+            <Button size="sm" className="mt-4">
+              Complete Profile
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
-}; 
+} 

@@ -121,12 +121,14 @@ export const OrganizationSettingsPage: React.FC = () => {
             <p className="text-muted-foreground mb-6">
               The organization you're looking for doesn't exist or you don't have access to it.
             </p>
-            <Button asChild>
-              <Link to="/organizations">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Organizations
-              </Link>
-            </Button>
+            <Link to="/organizations">
+              <Button>
+                <div className="flex items-center">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Organizations
+                </div>
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -138,12 +140,14 @@ export const OrganizationSettingsPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" asChild>
-            <Link to={`/organizations/${orgId}`}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Link>
-          </Button>
+                      <Link to={`/organizations/${orgId}`}>
+                        <Button variant="ghost" size="sm">
+                          <div className="flex items-center">
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                          </div>
+                        </Button>
+                      </Link>
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Organization Settings</h1>
             <p className="text-muted-foreground">

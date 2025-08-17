@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { supabase } from "@/lib/supabase";
-import type { SupabaseClient } from '@supabase/supabase-js';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import Modal from '@/shared/components/ui/Modal.tsx';
+import { postgres } from "@/lib/postgres";
+import type { DatabaseClient } from "@/core/types/database";
+import { Button } from '@/shared/components/ui/Button';
+import Modal from '@/shared/components/ui/Modal';
 import { toast } from 'sonner';
 import { sendAuditLog } from '@/shared/services/auditLogService';
 
@@ -35,7 +35,7 @@ export interface ActionCardProps {
   /**
    * Optionally override the Supabase client if a shared instance exists.
    */
-  supabaseClient?: SupabaseClient;
+  supabaseClient?: DatabaseClient;
   className?: string;
 }
 
@@ -52,7 +52,7 @@ export const ActionCard: React.FC<ActionCardProps> = ({
   const [modalOpen, setModalOpen] = useState(false);
   const [executingActionId, setExecutingActionId] = useState<string | null>(null);
 
-  const client = supabaseClient ?? supabase;
+  const client = supabaseClient ?? postgres;
 
   const handleExecute = useCallback(
     async (action: Action) => {

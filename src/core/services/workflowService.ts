@@ -3,32 +3,9 @@
  * Handles business logic workflows and ensures proper data flow
  */
 
-import { supabase } from '@/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/core/types/supabase';
+import { databaseService } from './DatabaseService';
 import { logger } from '@/shared/utils/logger';
-import { environment } from '@/core/environment';
 import { BaseService, type ServiceResponse } from './BaseService';
-
-// Service role client for server-side operations (created lazily)
-let supabaseServiceRole: any = null;
-
-const getServiceRoleClient = () => {
-  if (!supabaseServiceRole && typeof window === 'undefined') {
-    // Only create service role client on server-side
-    supabaseServiceRole = createClient<Database>(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false
-        }
-      }
-    );
-  }
-  return supabaseServiceRole;
-};
 
 // ============================================================================
 // INTERFACES
@@ -214,48 +191,52 @@ export class WorkflowService extends BaseService {
 
       // Step 2: Create user profile
       await this.executeStep(steps[1], async () => {
-        const { error } = await this.supabase
-          .from('user_profiles')
-          .upsert({
-            id: workflow.userId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { error } = await databaseService.query(
+          `INSERT INTO user_profiles (id, created_at, updated_at) 
+           VALUES ($1, $2, $3) 
+           ON CONFLICT (id) DO UPDATE SET updated_at = $3`,
+          [workflow.userId, new Date().toISOString(), new Date().toISOString()]
+        );
+
+        if (error) throw new Error(error);
         return { profileCreated: true };
       });
       completedSteps++;
 
       // Step 3: Setup default company
       await this.executeStep(steps[2], async () => {
-        const { error } = await this.supabase
-          .from('companies')
-          .insert({
-            name: 'My Company',
-            owner_id: workflow.userId,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { error } = await databaseService.query(
+          `INSERT INTO companies (name, owner_id, created_at, updated_at) 
+           VALUES ($1, $2, $3, $4)`,
+          ['My Company', workflow.userId, new Date().toISOString(), new Date().toISOString()]
+        );
+
+        if (error) throw new Error(error);
         return { companyCreated: true };
       });
       completedSteps++;
 
       // Step 4: Initialize user preferences
       await this.executeStep(steps[3], async () => {
-        const { error } = await this.supabase
-          .from('user_preferences')
-          .insert({
-            user_id: workflow.userId,
-            theme: 'light',
-            notifications_enabled: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { error } = await databaseService.query(
+          `INSERT INTO user_preferences (user_id, theme, notifications_enabled, created_at, updated_at) 
+           VALUES ($1, $2, $3, $4, $5)`,
+          [workflow.userId, 'light', true, new Date().toISOString(), new Date().toISOString()]
+        );
+
+        if (error) throw new Error(error);
         return { preferencesInitialized: true };
       });
       completedSteps++;
@@ -327,12 +308,16 @@ export class WorkflowService extends BaseService {
     try {
       // Step 1: Validate integrations
       const integrations = await this.executeStep(steps[0], async () => {
-        const { data, error } = await this.supabase
-          .from('user_integrations')
-          .select('*')
-          .eq('user_id', workflow.userId);
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { data, error } = await databaseService.query(
+          'SELECT * FROM user_integrations WHERE user_id = $1',
+          [workflow.userId]
+        );
+
+        if (error) throw new Error(error);
         return data || [];
       });
       completedSteps++;
@@ -347,16 +332,17 @@ export class WorkflowService extends BaseService {
 
       // Step 3: Update analytics
       await this.executeStep(steps[2], async () => {
-        const { error } = await this.supabase
-          .from('analytics_sync_logs')
-          .insert({
-            user_id: workflow.userId,
-            sync_timestamp: new Date().toISOString(),
-            records_synced: syncedData.syncedRecords,
-            status: 'completed',
-          });
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { error } = await databaseService.query(
+          `INSERT INTO analytics_sync_logs (user_id, sync_timestamp, records_synced, status) 
+           VALUES ($1, $2, $3, $4)`,
+          [workflow.userId, new Date().toISOString(), syncedData.syncedRecords, 'completed']
+        );
+
+        if (error) throw new Error(error);
         return { analyticsUpdated: true };
       });
       completedSteps++;
@@ -420,16 +406,20 @@ export class WorkflowService extends BaseService {
     try {
       // Step 1: Fetch business data
       const businessData = await this.executeStep(steps[0], async () => {
-        const { data, error } = await this.supabase
-          .from('business_health')
-          .select('*')
-          .eq('user_id', workflow.userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error && error.code !== 'PGRST116') throw error;
-        return data || { userid: workflow.userId, healthscore: 0 };
+        const { data, error } = await databaseService.query(
+          `SELECT * FROM business_health 
+           WHERE userid = $1 
+           ORDER BY createdat DESC 
+           LIMIT 1`,
+          [workflow.userId]
+        );
+
+        if (error) throw new Error(error);
+        return data?.[0] || { userid: workflow.userId, healthscore: 0 };
       });
       completedSteps++;
 
@@ -448,15 +438,24 @@ export class WorkflowService extends BaseService {
 
       // Step 3: Store health results
       await this.executeStep(steps[2], async () => {
-        const { error } = await this.supabase
-          .from('business_health')
-          .insert({
-            userid: workflow.userId,
-            ...healthMetrics,
-            createdat: new Date().toISOString(),
-          });
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { error } = await databaseService.query(
+          `INSERT INTO business_health (userid, overallscore, financialhealth, operationalefficiency, marketposition, createdat) 
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            workflow.userId,
+            healthMetrics.overallscore,
+            healthMetrics.financialhealth,
+            healthMetrics.operationalefficiency,
+            healthMetrics.marketposition,
+            new Date().toISOString()
+          ]
+        );
+
+        if (error) throw new Error(error);
         return healthMetrics;
       });
       completedSteps++;
@@ -529,17 +528,17 @@ export class WorkflowService extends BaseService {
 
       // Step 2: Create integration record
       await this.executeStep(steps[1], async () => {
-        const { error } = await this.supabase
-          .from('user_integrations')
-          .insert({
-            user_id: workflow.userId,
-            integration_type: config.integrationType,
-            status: 'pending',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          });
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { error } = await databaseService.query(
+          `INSERT INTO user_integrations (user_id, integration_type, status, created_at, updated_at) 
+           VALUES ($1, $2, $3, $4, $5)`,
+          [workflow.userId, config.integrationType, 'pending', new Date().toISOString(), new Date().toISOString()]
+        );
+
+        if (error) throw new Error(error);
         return { integrationCreated: true };
       });
       completedSteps++;
@@ -611,13 +610,18 @@ export class WorkflowService extends BaseService {
     try {
       // Step 1: Collect analytics data
       const analyticsData = await this.executeStep(steps[0], async () => {
-        const { data, error } = await this.supabase
-          .from('analytics_events')
-          .select('*')
-          .eq('user_id', workflow.userId)
-          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { data, error } = await databaseService.query(
+          `SELECT * FROM analytics_events 
+           WHERE user_id = $1 
+           AND created_at >= $2`,
+          [workflow.userId, new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()]
+        );
+
+        if (error) throw new Error(error);
         return data || [];
       });
       completedSteps++;
@@ -636,17 +640,23 @@ export class WorkflowService extends BaseService {
 
       // Step 3: Store processed data
       await this.executeStep(steps[2], async () => {
-        const { error } = await this.supabase
-          .from('analytics_processed_data')
-          .insert({
-            user_id: workflow.userId,
-            processing_date: new Date().toISOString(),
-            total_events: processedData.totalEvents,
-            processed_events: processedData.processedEvents,
-            insights_generated: processedData.insights,
-          });
+        if (!databaseService) {
+          throw new Error('Database service not available');
+        }
 
-        if (error) throw error;
+        const { error } = await databaseService.query(
+          `INSERT INTO analytics_processed_data (user_id, processing_date, total_events, processed_events, insights_generated) 
+           VALUES ($1, $2, $3, $4, $5)`,
+          [
+            workflow.userId,
+            new Date().toISOString(),
+            processedData.totalEvents,
+            processedData.processedEvents,
+            processedData.insights
+          ]
+        );
+
+        if (error) throw new Error(error);
         return { dataStored: true };
       });
       completedSteps++;

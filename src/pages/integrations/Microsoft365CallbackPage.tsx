@@ -1,229 +1,397 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { 
-  Building2, 
-  CheckCircle2, 
-  AlertTriangle, 
-  Loader2, 
-  ArrowRight,
-  XCircle
-} from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Building2, Loader2, XCircle, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { logger } from '@/shared/utils/logger.ts';
+import { useAuth } from '@/hooks/useAuth';
+import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
+import { logger } from '@/shared/utils/logger';
+import { msalInstance, msalReady } from '@/shared/auth/msal';
+import Microsoft365ServiceDiscovery from '@/components/integrations/Microsoft365ServiceDiscovery';
 
 const Microsoft365CallbackPage: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { toast } = useToast();
-  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  const [status, setStatus] = useState<'processing' | 'success' | 'error' | 'discovery'>('processing');
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const hasProcessed = useRef(false);
+  const { user, loading } = useAuth();
+  
+  // Add a ref to track if the component has been initialized
+  const isInitialized = useRef(false);
+
+  // Helper function to extract refresh token from MSAL cache
+  const extractRefreshTokenFromMSAL = async (cache: any, account: any): Promise<string | null> => {
+    // Ensure MSAL is initialized before accessing its methods
+    await msalReady;
+    try {
+      logger.info('Attempting to extract refresh token from MSAL', {
+        hasCache: !!cache,
+        hasAccount: !!account,
+        accountId: account?.homeAccountId,
+        username: account?.username
+      });
+
+      // Method 1: Try to get from MSAL's internal storage using proper API
+      if (msalInstance && msalInstance.getTokenCache) {
+        try {
+          const tokenCache = msalInstance.getTokenCache();
+          // MSAL doesn't expose refresh tokens directly, so we need to look in storage
+          logger.info('MSAL token cache available, searching storage for refresh tokens');
+        } catch (e) {
+          logger.warn('Failed to access MSAL token cache', { error: e });
+        }
+      }
+
+      // Method 2: Try to get from session storage (MSAL stores some data there)
+      const sessionKeys = Object.keys(sessionStorage);
+      const msalKeys = sessionKeys.filter(key => 
+        key.includes('msal') && 
+        (key.includes('refresh') || key.includes('token')) &&
+        key.includes(account.homeAccountId)
+      );
+      
+      logger.info('Searching session storage for MSAL keys', { 
+        totalKeys: sessionKeys.length,
+        msalKeys: msalKeys.length,
+        accountId: account.homeAccountId
+      });
+
+      for (const key of msalKeys) {
+        const value = sessionStorage.getItem(key);
+        if (value) {
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed.secret) {
+              logger.info('Found refresh token in session storage', { key });
+              return parsed.secret;
+            }
+            // Also check for refresh_token field
+            if (parsed.refresh_token) {
+              logger.info('Found refresh_token in session storage', { key });
+              return parsed.refresh_token;
+            }
+          } catch (e) {
+            // Continue searching
+          }
+        }
+      }
+
+      // Method 3: Try to get from MSAL's browser cache
+      const browserCacheKeys = Object.keys(localStorage);
+      const msalBrowserKeys = browserCacheKeys.filter(key => 
+        key.includes('msal') && 
+        key.includes(account.homeAccountId) &&
+        (key.includes('refresh') || key.includes('token'))
+      );
+
+      for (const key of msalBrowserKeys) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed.secret) {
+              logger.info('Found refresh token in browser cache', { key });
+              return parsed.secret;
+            }
+            if (parsed.refresh_token) {
+              logger.info('Found refresh_token in browser cache', { key });
+              return parsed.refresh_token;
+            }
+          } catch (e) {
+            // Continue searching
+          }
+        }
+      }
+
+      // Method 4: Try to get from MSAL's internal cache using different approach
+      if (cache && typeof cache.getAllRefreshTokens === 'function') {
+        try {
+          const allRefreshTokens = await cache.getAllRefreshTokens();
+          logger.info('Found refresh tokens in cache', { count: allRefreshTokens.length });
+          
+          for (const token of allRefreshTokens) {
+            if (token.homeAccountId === account.homeAccountId) {
+              logger.info('Found matching refresh token for account');
+              return token.secret;
+            }
+          }
+        } catch (e) {
+          logger.warn('Failed to get all refresh tokens', { error: e });
+        }
+      }
+
+      logger.warn('No refresh token found in any MSAL storage location', {
+        accountId: account.homeAccountId,
+        username: account.username,
+        sessionKeys: sessionKeys.filter(k => k.includes('msal')).length,
+        browserKeys: browserCacheKeys.filter(k => k.includes('msal')).length
+      });
+      
+      return null;
+    } catch (error) {
+      logger.error('Error extracting refresh token from MSAL', { error });
+      return null;
+    }
+  };
 
   useEffect(() => {
-    handleCallback();
-  }, []);
+    // Prevent multiple initializations
+    if (isInitialized.current) {
+      logger.info('Microsoft365CallbackPage already initialized, skipping...');
+      return;
+    }
+    
+    isInitialized.current = true;
+    
+    logger.info('Microsoft365CallbackPage mounted', {
+      url: window.location.href,
+      search: window.location.search,
+      hash: window.location.hash,
+      referrer: document.referrer
+    });
+    
+    // Only proceed if authentication is not loading
+    if (!loading) {
+      handleCallback();
+    }
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      logger.info('Microsoft365CallbackPage unmounting');
+    };
+  }, [navigate, loading]);
 
-  const handleCallback = async () => {
+  const handleCallback = useCallback(async () => {
     // Prevent multiple executions
     if (hasProcessed.current) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('Callback already processed, skipping...');
+      logger.info('Microsoft callback already processed, skipping...');
       return;
     }
     
     hasProcessed.current = true;
     setStatus('processing');
     
+    // Add a small delay to ensure the component is fully mounted
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Check if user is authenticated
+    logger.info('Checking user authentication', { 
+      hasUser: !!user, 
+      userId: user?.id,
+      userEmail: user?.email,
+      loading 
+    });
+    
+    // Wait for authentication to load
+    if (loading) {
+      logger.info('Authentication still loading, waiting...');
+      return;
+    }
+    
+    if (!user?.id) {
+      logger.error('User not authenticated');
+      setStatus('error');
+      setError('Please log in to connect Microsoft 365');
+      return;
+    }
+
     try {
-      // Get OAuth parameters from URL
-      const code = searchParams.get('code');
-      const state = searchParams.get('state');
-      const errorParam = searchParams.get('error');
-      const errorDescription = searchParams.get('error_description');
+      // Handle MSAL response and get tokens
+      logger.info('Processing MSAL response');
 
-      // Check for OAuth errors
-      if (errorParam) {
-        logger.error({ error: errorParam, description: errorDescription }, 'Microsoft OAuth error');
-        setError(errorDescription || errorParam);
-        setStatus('error');
-        return;
-      }
-
-      // Validate required parameters
-      if (!code || !state) {
-        const errorMsg = 'Missing required OAuth parameters';
-        logger.error({ code: !!code, state: !!state }, errorMsg);
-        setError(errorMsg);
-        setStatus('error');
-        return;
-      }
-
-      // Get code verifier from session storage
-      const codeVerifier = sessionStorage.getItem('microsoft_code_verifier');
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('Retrieved code verifier: ', { 
-        hasCodeVerifier: !!codeVerifier, 
-        codeVerifierLength: codeVerifier?.length,
-        currentUrl: window.location.href,
-        currentOrigin: window.location.origin,
-        sessionStorageKeys: Object.keys(sessionStorage)
-      });
+      // Wait for MSAL to be initialized before using it
+      await msalReady;
       
-      if (!codeVerifier) {
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('Code verifier not found in session storage!');
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('Available session storage keys: ', Object.keys(sessionStorage));
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('This will cause the OAuth flow to fail with code_verifier mismatch');
-        throw new Error('Code verifier not found. Please try connecting again.');
-      }
-
-      // Clear code verifier from session storage (only if it exists)
-      if (codeVerifier) {
-        sessionStorage.removeItem('microsoft_code_verifier');
-      }
-
-      // Exchange code for tokens directly in the browser (SPA requirement)
-      const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
-      const redirectUri = import.meta.env.VITE_NEXT_PUBLIC_APP_URL 
-        ? `${import.meta.env.VITE_NEXT_PUBLIC_APP_URL}/integrations/microsoft/callback`
-        : `${window.location.origin}/integrations/microsoft/callback`;
+      // Use MSAL to handle the response and get tokens
+      const response = await msalInstance.handleRedirectPromise();
       
-      const params = new URLSearchParams({
-        clientid: clientId,
-        scope: 'User.Read Organization.Read.All openid profile email offline_access',
-        code,
-        redirecturi: redirectUri,
-        granttype: 'authorization_code',
-        ...(codeVerifier && { codeverifier: codeVerifier }),
-      });
-
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('Token exchange parameters: ', {
-        clientid: clientId,
-        scope: 'User.Read Organization.Read.All openid profile email offline_access',
-        codelength: code?.length,
-        redirecturi: redirectUri,
-        granttype: 'authorization_code',
-        hascode_verifier: !!codeVerifier,
-        codeverifier_length: codeVerifier?.length,
-        paramsstring: params.toString()
-      });
-
-      const tokenResponse = await fetch('https: //login.microsoftonline.com/common/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: params.toString(),
-      });
-
-      if (!tokenResponse.ok) {
-        const errorData = await tokenResponse.json();
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('Token exchange failed: ', {
-          status: tokenResponse.status,
-          statusText: tokenResponse.statusText,
-          error: errorData
+      if (response) {
+        logger.info('MSAL response received', {
+          hasAccessToken: !!response.accessToken,
+          hasIdToken: !!response.idToken,
+          scopes: response.scopes,
+          account: response.account
         });
-        throw new Error(errorData.error_description || `Token exchange failed: ${tokenResponse.status}`);
-      }
 
-      const tokenData = await tokenResponse.json();
+        // Set the active account if it's not already set
+        if (response.account) {
+          msalInstance.setActiveAccount(response.account);
+          logger.info('Set active account in MSAL', { 
+            username: response.account.username,
+            homeAccountId: response.account.homeAccountId
+          });
+        }
 
-                      // Now call the Edge Function with the tokens
-                const { data: { session } } = await supabase.auth.getSession();
-                if (!session?.access_token) {
-                  throw new Error('No valid session found');
-                }
+        // Get the account from MSAL (use response account as fallback)
+        let account = msalInstance.getActiveAccount();
+        if (!account) {
+          logger.warn('No active account found in MSAL, using response account', {
+            responseAccount: response.account,
+            allAccounts: msalInstance.getAllAccounts()
+          });
+          account = response.account;
+        }
+        
+        if (!account) {
+          logger.error('No account available for token acquisition', {
+            responseAccount: response.account,
+            activeAccount: msalInstance.getActiveAccount(),
+            allAccounts: msalInstance.getAllAccounts()
+          });
+          throw new Error('No account available for token acquisition');
+        }
 
-                 
-     
-    // eslint-disable-next-line no-console
-    console.log('Calling edge function with session token: ', {
-                  hasSessionToken: !!session.access_token,
-                  tokenLength: session.access_token?.length,
-                  supabaseUrl: import.meta.env.VITE_SUPABASE_URL
-                });
+        logger.info('Using account for token acquisition', {
+          username: account.username,
+          homeAccountId: account.homeAccountId
+        });
 
-                const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/microsoft-graph-oauth-callback`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}`,
-                  },
-                  body: JSON.stringify({
-                    accesstoken: tokenData.access_token,
-                    refreshtoken: tokenData.refresh_token,
-                    expiresin: tokenData.expires_in,
-                    scope: tokenData.scope,
-                    tokentype: tokenData.token_type,
-                  }),
-                });
+        // Get refresh token from MSAL cache
+        const silentRequest = {
+          account: account,
+          scopes: [
+            'User.Read',
+            'Mail.Read',
+            'Mail.ReadWrite', 
+            'Calendars.Read',
+            'Files.Read.All',
+            'Contacts.Read',
+            'offline_access'
+          ]
+        };
 
-                 
-     
-    // eslint-disable-next-line no-console
-    console.log('Edge function response: ', {
-                  status: response.status,
-                  statusText: response.statusText,
-                  ok: response.ok
-                });
+        const silentResult = await msalInstance.acquireTokenSilent(silentRequest);
+        
+        logger.info('MSAL silent token acquisition', {
+          hasAccessToken: !!silentResult.accessToken,
+          expiresOn: silentResult.expiresOn
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('Edge function error response: ', errorData);
-        throw new Error(errorData.error_description || errorData.error || `Failed to complete OAuth flow: ${response.status}`);
-      }
+        // Extract refresh token from MSAL cache
+        // MSAL stores refresh tokens in the cache, we need to extract them
+        const cache = msalInstance.getTokenCache();
+        const refreshToken = await extractRefreshTokenFromMSAL(cache, account);
 
-      const result = await response.json();
-      const success = result.success;
-      
-      if (success) {
-        setStatus('success');
+        // If we can't extract refresh token from MSAL, we'll need to handle this differently
+        // For now, we'll store the connection and handle token refresh through our Edge Function
+        if (!refreshToken) {
+          logger.warn('No refresh token extracted from MSAL - will need to reconnect when token expires');
+        }
+
+        // Persist connection in our DB via service layer
+        if (!user?.id) {
+          throw new Error('User not authenticated');
+        }
+
+        const expiresAtIso = silentResult.expiresOn ? silentResult.expiresOn.toISOString() : new Date(Date.now() + (3600 * 1000)).toISOString();
+
+        logger.info('Attempting to save Microsoft connection via MSAL', { 
+          userId: user.id, 
+          hasAccessToken: !!silentResult.accessToken,
+          hasRefreshToken: !!refreshToken,
+          expiresAt: expiresAtIso
+        });
+
+        const result = await consolidatedIntegrationService.connectIntegration(
+          user.id,
+          'microsoft365',
+          {
+            access_token: silentResult.accessToken,
+            refresh_token: refreshToken || '', // Store the actual refresh token if available
+            scope: 'User.Read Mail.Read Mail.ReadWrite Calendars.Read Files.Read.All Contacts.Read offline_access',
+            expires_at: expiresAtIso,
+          }
+        );
+
+        logger.info('MSAL connection result', { success: result.success, error: result.error });
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to save Microsoft connection');
+        }
+
+        setStatus('discovery');
         toast({
           title: 'Connection Successful',
-          description: 'Microsoft 365 has been connected successfully!',
+          description: 'Microsoft 365 has been connected successfully! Now let\'s discover your available services.',
         });
+        return;
       } else {
-        throw new Error('Failed to complete OAuth flow');
+        // No MSAL response - this might be a direct navigation
+        logger.warn('No MSAL response found - this might be a direct navigation');
+        throw new Error('No OAuth response found. Please try the connection process again.');
       }
     } catch (error) {
-      logger.error({ error }, 'Microsoft 365 callback failed');
-      setError(error instanceof Error ? error.message: 'Unknown error occurred');
+      logger.error('Microsoft 365 callback failed', { 
+        error: error instanceof Error ? error.message : error,
+        errorStack: error instanceof Error ? error.stack : undefined,
+        errorType: typeof error,
+        debugInfo 
+      });
+      setError(error instanceof Error ? error.message : 'Unknown error occurred');
       setStatus('error');
     }
-  };
+  }, [navigate, user?.id, loading]);
 
   const handleContinue = () => {
-    navigate('/integrations');
+    navigate('/integrations/marketplace');
+  };
+
+  const handleDiscoveryComplete = () => {
+    setStatus('success');
+  };
+
+  const handleDiscoverySkip = () => {
+    setStatus('success');
   };
 
   const handleRetry = () => {
-    navigate('/integrations');
+    // Clear Microsoft and MSAL session storage
+    const allKeys = Object.keys(sessionStorage);
+    const microsoftKeys = allKeys.filter(key => key.includes('microsoft') || key.includes('msal'));
+    
+    microsoftKeys.forEach(key => {
+      sessionStorage.removeItem(key);
+      logger.info('Cleared session storage key', { key });
+    });
+    
+    logger.info('Cleared Microsoft and MSAL session storage', { 
+      clearedKeys: microsoftKeys,
+      remainingKeys: Object.keys(sessionStorage)
+    });
+    
+    navigate('/integrations/microsoft365');
   };
+
+  // Show loading state while authentication is loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-6 w-6 text-blue-600" />
+              Loading Authentication
+            </CardTitle>
+            <CardDescription>
+              Verifying your authentication...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            </div>
+            <p className="text-sm text-muted-foreground text-center">
+              Please wait while we verify your authentication.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (status === 'processing') {
     return (
@@ -271,6 +439,18 @@ const Microsoft365CallbackPage: React.FC = () => {
                 {error || 'An unknown error occurred while connecting Microsoft 365.'}
               </AlertDescription>
             </Alert>
+            {debugInfo && (
+              <Alert>
+                <AlertDescription>
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-sm font-medium">Debug Information</summary>
+                    <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">
+                      {debugInfo}
+                    </pre>
+                  </details>
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="flex gap-2">
               <Button onClick={handleRetry} variant="outline" className="flex-1">
                 Try Again
@@ -286,25 +466,36 @@ const Microsoft365CallbackPage: React.FC = () => {
     );
   }
 
+  if (status === 'discovery') {
+    return (
+      <Microsoft365ServiceDiscovery
+        onComplete={handleDiscoveryComplete}
+        onSkip={handleDiscoverySkip}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-6 w-6 text-success" />
+            <Building2 className="h-6 w-6 text-green-600" />
             Connection Successful
           </CardTitle>
           <CardDescription>
-            Microsoft 365 has been connected successfully!
+            Microsoft 365 has been connected successfully
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <CheckCircle2 className="h-4 w-4" />
-            <AlertDescription>
-              Your Microsoft 365 account is now connected and ready to sync data.
-            </AlertDescription>
-          </Alert>
+          <div className="flex items-center justify-center py-8">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <Building2 className="h-8 w-8 text-green-600" />
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Your Microsoft 365 account is now connected and ready to use.
+          </p>
           <Button onClick={handleContinue} className="w-full">
             <ArrowRight className="w-4 h-4 mr-2" />
             Continue to Integrations

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Loader2, CheckCircle, AlertCircle, ExternalLink, Shield, Monitor } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';

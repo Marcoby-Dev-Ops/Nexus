@@ -4,10 +4,11 @@
  * Updated to use SupabaseService for all database operations
  */
 
-import { SupabaseService } from '@/core/services/SupabaseService';
+import { UnifiedDatabaseService } from '@/core/services/UnifiedDatabaseService';
 import { BaseService } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import type { ServiceResponse } from '@/core/services/BaseService';
+import { userMappingService } from '@/shared/services/UserMappingService';
 
 export interface DatabaseProfile {
   id?: string;
@@ -49,7 +50,7 @@ export interface DatabaseProfile {
 }
 
 export class DatabaseService extends BaseService {
-  private supabaseService = SupabaseService.getInstance();
+  private unifiedDatabaseService = UnifiedDatabaseService.getInstance();
 
   constructor() {
     super();
@@ -62,14 +63,26 @@ export class DatabaseService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logger.info('Getting user profile', { userId });
       
-      const result = await this.supabaseService.selectOne<DatabaseProfile>('user_profiles', userId);
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        this.logger.error('Failed to get internal user ID for user profile', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+      
+      const result = await this.unifiedDatabaseService.selectOne<DatabaseProfile>('user_profiles', internalUserId);
       
       if (result.error) {
-        this.logger.error('Failed to get user profile', { userId, error: result.error });
+        this.logger.error('Failed to get user profile', { userId, internalUserId, error: result.error });
         return { data: null, error: result.error || 'Failed to fetch user profile' };
       }
 
-      this.logger.info('Successfully retrieved user profile', { userId });
+      this.logger.info('Successfully retrieved user profile', { userId, internalUserId });
       return { data: result.data, error: null };
     }, 'get user profile');
   }
@@ -81,12 +94,28 @@ export class DatabaseService extends BaseService {
     try {
       logger.info('Updating user profile', { userId, fields: Object.keys(profileData) });
       
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for user profile update', { 
+          externalUserId: userId, 
+          error: internalUserIdResponse.error 
+        });
+        return {
+          success: false,
+          error: internalUserIdResponse.error || 'Failed to get internal user ID',
+          data: null,
+        };
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+      
       const updateData = {
         ...profileData,
         updated_at: new Date().toISOString(),
       };
 
-      const result = await supabaseService.updateOne<DatabaseProfile>('user_profiles', userId, updateData);
+      const result = await this.unifiedDatabaseService.updateOne<DatabaseProfile>('user_profiles', internalUserId, updateData);
       
       if (result.error) {
         logger.error('Failed to update user profile', { userId, error: result.error });
@@ -127,7 +156,7 @@ export class DatabaseService extends BaseService {
         updated_at: new Date().toISOString(),
       };
 
-      const result = await supabaseService.insertOne<DatabaseProfile>('user_profiles', insertData);
+      const result = await this.unifiedDatabaseService.insertOne<DatabaseProfile>('user_profiles', insertData);
       
       if (result.error) {
         logger.error('Failed to create user profile', { userId: profileData.id, error: result.error });
@@ -162,7 +191,7 @@ export class DatabaseService extends BaseService {
     try {
       logger.info('Deleting user profile', { userId });
       
-      const result = await supabaseService.deleteOne('user_profiles', userId);
+      const result = await this.unifiedDatabaseService.deleteOne('user_profiles', userId);
       
       if (result.error) {
         logger.error('Failed to delete user profile', { userId, error: result.error });
@@ -203,7 +232,7 @@ export class DatabaseService extends BaseService {
         filter.company_id = companyId;
       }
 
-      const result = await supabaseService.selectWithOptions<DatabaseProfile>('user_profiles', {
+      const result = await this.unifiedDatabaseService.selectWithOptions<DatabaseProfile>('user_profiles', {
         filter,
         columns: '*'
       });
@@ -253,7 +282,7 @@ export class DatabaseService extends BaseService {
     try {
       logger.info('Getting profiles by company', { companyId });
       
-      const result = await supabaseService.selectWithOptions<DatabaseProfile>('user_profiles', {
+      const result = await this.unifiedDatabaseService.selectWithOptions<DatabaseProfile>('user_profiles', {
         filter: { company_id: companyId },
         orderBy: { column: 'created_at', ascending: false }
       });
@@ -368,7 +397,7 @@ export class DatabaseService extends BaseService {
       
       const filter = companyId ? { company_id: companyId } : undefined;
       
-      const result = await supabaseService.selectWithOptions<DatabaseProfile>('user_profiles', {
+      const result = await this.unifiedDatabaseService.selectWithOptions<DatabaseProfile>('user_profiles', {
         filter,
         columns: 'id,status,profile_completion_percentage'
       });

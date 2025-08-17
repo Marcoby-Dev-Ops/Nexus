@@ -7,8 +7,7 @@
 
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { supabase } from '@/lib/supabase';
-import { SupabaseService } from '@/core/services/SupabaseService';
+import { selectData, selectOne, insertOne } from '@/lib/api-client';
 import { z } from 'zod';
 
 // Data Point Mapping Schema
@@ -58,368 +57,237 @@ export type UnmappedDataPoints = z.infer<typeof UnmappedDataPointsSchema>;
 /**
  * Data Point Mapping Service
  * 
- * MIGRATED: Now extends BaseService for consistent error handling and logging
- * Ensures all data points in dictionaries have proper database landing spots
+ * Browser-safe version that uses API endpoints instead of direct database access
  */
 export class DataPointMappingService extends BaseService {
-  private supabaseService = SupabaseService.getInstance();
 
   /**
    * Generate a comprehensive mapping report for a user
    */
   async generateMappingReport(userId: string): Promise<ServiceResponse<MappingReport>> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get all user integrations
-        const { data: userIntegrations, error: integrationsError } = await this.supabaseService.select('user_integrations', '*', { user_id: userId });
-        
-        if (integrationsError) {
-          this.logger.error('Failed to fetch user integrations:', integrationsError);
-          return { data: null, error: 'Failed to fetch user integrations' };
-        }
-
-        if (!userIntegrations?.length) {
-          const emptyReport: MappingReport = {
-            totalDataPoints: 0,
-            dataPointsWithData: 0,
-            dataPointsWithoutData: 0,
-            coveragePercentage: 0,
-            highValueDataPoints: 0,
-            mediumValueDataPoints: 0,
-            lowValueDataPoints: 0,
-            issues: ['No integrations found'],
-            mappings: [],
-          };
-          return { data: MappingReportSchema.parse(emptyReport), error: null };
-        }
-
-        const mappings: DataPointMapping[] = [];
-        const issues: string[] = [];
-        let totalDataPoints = 0;
-        let dataPointsWithData = 0;
-        let highValueDataPoints = 0;
-        let mediumValueDataPoints = 0;
-        let lowValueDataPoints = 0;
-
-        for (const integration of userIntegrations) {
-          try {
-            // Get data point definitions for this integration
-            const { data: dataPoints, error: dataPointsError } = await this.supabaseService.select('data_point_definitions', '*', { user_integration_id: integration.id });
-
-            if (dataPointsError) {
-              this.logger.warn(`Failed to fetch data points for integration ${integration.id}:`, dataPointsError);
-              issues.push(`Failed to fetch data points for integration: ${integration.integration_name}`);
-              continue;
-            }
-
-            if (!dataPoints?.length) {
-              issues.push(`No data points found for integration: ${integration.integration_name}`);
-              continue;
-            }
-
-            for (const dataPoint of dataPoints) {
-              totalDataPoints++;
-
-              // Check if this data point has data
-              const { data: dataRecords, error: dataRecordsError } = await this.supabaseService.select('integration_data', 'id, created_at', { 
-                user_integration_id: integration.id, 
-                datapoint_definition_id: dataPoint.id 
-              });
-
-              const hasData = Boolean(dataRecords && dataRecords.length > 0);
-              const dataCount = dataRecords?.length || 0;
-              const lastUpdate = dataRecords && dataRecords.length > 0 
-                ? dataRecords[0].created_at : null;
-
-              if (hasData) {
-                dataPointsWithData++;
-              } else {
-                issues.push(`Data point "${dataPoint.data_point_name}" has no data records`);
-              }
-
-              // Count by business value
-              const businessValue = dataPoint.business_value || 'low';
-              if (businessValue === 'high') {
-                highValueDataPoints++;
-              } else if (businessValue === 'medium') {
-                mediumValueDataPoints++;
-              } else {
-                lowValueDataPoints++;
-              }
-
-              const mapping: DataPointMapping = {
-                dataPointId: dataPoint.id,
-                dataPointName: dataPoint.data_point_name,
-                category: dataPoint.category || 'other',
-                businessValue: businessValue as 'high' | 'medium' | 'low',
-                hasData,
-                dataCount,
-                lastUpdate,
-                integrationName: integration.integration_name,
-                integrationStatus: integration.status,
-              };
-
-              mappings.push(DataPointMappingSchema.parse(mapping));
-            }
-          } catch (error) {
-            this.logger.warn(`Failed to process integration ${integration.id}:`, error);
-            issues.push(`Failed to process integration: ${integration.integration_name}`);
-          }
-        }
-
-        const coveragePercentage = totalDataPoints > 0 ? (dataPointsWithData / totalDataPoints) * 100 : 0;
-
-        const report: MappingReport = {
-          totalDataPoints,
-          dataPointsWithData,
-          dataPointsWithoutData: totalDataPoints - dataPointsWithData,
-          coveragePercentage,
-          highValueDataPoints,
-          mediumValueDataPoints,
-          lowValueDataPoints,
-          issues,
-          mappings,
-        };
-
-        return { data: MappingReportSchema.parse(report), error: null };
-      } catch (error) {
-        this.logger.error('Error generating mapping report:', error);
-        return { data: null, error: 'Failed to generate mapping report' };
+    try {
+      // Get all user integrations
+      const integrationsResult = await selectData('user_integrations', 'id', { user_id: userId });
+      if (integrationsResult.error) {
+        return { data: null, error: 'Failed to fetch user integrations', success: false };
       }
-    }, `generate mapping report for user ${userId}`);
+
+      const userIntegrations = integrationsResult.data || [];
+      
+      // Get all data point definitions
+      const definitionsResult = await selectData('datapoint_definitions', 'id', {});
+      if (definitionsResult.error) {
+        return { data: null, error: 'Failed to fetch data point definitions', success: false };
+      }
+
+      const allDefinitions = definitionsResult.data || [];
+      
+      // Get integration data to check which data points have actual data
+      const dataResult = await selectData('integration_data', 'id', { user_id: userId });
+      if (dataResult.error) {
+        return { data: null, error: 'Failed to fetch integration data', success: false };
+      }
+
+      const integrationData = dataResult.data || [];
+
+      // Calculate metrics
+      const totalDataPoints = allDefinitions.length;
+      const dataPointsWithData = integrationData.length;
+      const dataPointsWithoutData = totalDataPoints - dataPointsWithData;
+      const coveragePercentage = totalDataPoints > 0 ? (dataPointsWithData / totalDataPoints) * 100 : 0;
+
+      // Categorize by value (simplified logic)
+      const highValueDataPoints = allDefinitions.filter((def: any) => 
+        ['revenue', 'customers', 'conversion_rate', 'mrr'].includes(def.name?.toLowerCase() || '')
+      ).length;
+      
+      const mediumValueDataPoints = allDefinitions.filter((def: any) => 
+        ['leads', 'opportunities', 'response_time', 'satisfaction'].includes(def.name?.toLowerCase() || '')
+      ).length;
+      
+      const lowValueDataPoints = totalDataPoints - highValueDataPoints - mediumValueDataPoints;
+
+      // Identify issues
+      const issues: string[] = [];
+      if (coveragePercentage < 50) {
+        issues.push('Low data coverage - less than 50% of data points have data');
+      }
+      if (userIntegrations.length === 0) {
+        issues.push('No integrations configured');
+      }
+
+      // Create mappings array based on existing data
+      const mappings: DataPointMapping[] = integrationData.map((data: any) => {
+        const definition = allDefinitions.find((def: any) => def.id === data.datapoint_definition_id) as any;
+        const integration = userIntegrations.find((int: any) => int.id === data.user_integration_id) as any;
+        
+        return {
+          dataPointId: data.datapoint_definition_id,
+          dataPointName: definition?.name || 'Unknown',
+          category: definition?.category || 'general',
+          businessValue: this.getBusinessValue(definition?.name || ''),
+          hasData: true,
+          dataCount: 1,
+          lastUpdate: data.updated_at || null,
+          integrationName: integration?.name || 'Unknown',
+          integrationStatus: integration?.status || 'unknown',
+        };
+      });
+
+      const report: MappingReport = {
+        totalDataPoints,
+        dataPointsWithData,
+        dataPointsWithoutData,
+        coveragePercentage: Math.round(coveragePercentage * 100) / 100,
+        highValueDataPoints,
+        mediumValueDataPoints,
+        lowValueDataPoints,
+        issues,
+        mappings,
+      };
+      
+      return { data: report, error: null, success: true };
+    } catch (error) {
+      this.logger.error('Error generating mapping report:', error);
+      return { data: null, error: 'Failed to generate mapping report', success: false };
+    }
   }
 
   /**
-   * Ensure a data point has data by creating sample data if needed
+   * Helper method to determine business value of a data point
    */
-  async ensureDataPointHasData(
-    userIntegrationId: string,
-    dataPointDefinitionId: string,
-    sampleData: any
-  ): Promise<ServiceResponse<{ success: boolean; error?: string }>> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Check if data already exists
-        const existingData = await select('integration_data', 'id', { 
-          user_integration_id: userIntegrationId, 
-          datapoint_definition_id: dataPointDefinitionId 
-        });
-
-        if (existingData && existingData.length > 0) {
-          return { data: { success: true }, error: null };
-        }
-
-        // Insert sample data
-        const { error: insertError } = await insertOne('integration_data', {
-          user_integration_id: userIntegrationId,
-          datapoint_definition_id: dataPointDefinitionId,
-          data_value: sampleData,
-          raw_data: sampleData,
-          sync_status: 'synced',
-          last_synced_at: new Date().toISOString(),
-        });
-
-        if (insertError) {
-          this.logger.error('Failed to insert sample data:', insertError);
-          return { data: { success: false, error: 'Failed to insert sample data' }, error: null };
-        }
-
-        this.logger.info(`Created sample data for data point ${dataPointDefinitionId}`);
-        return { data: { success: true }, error: null };
-      } catch (error) {
-        this.logger.error('Error ensuring data point has data:', error);
-        return { data: { success: false, error: 'Failed to ensure data point has data' }, error: null };
-      }
-    }, `ensure data point has data for integration ${userIntegrationId}, data point ${dataPointDefinitionId}`);
+  private getBusinessValue(dataPointName: string): 'high' | 'medium' | 'low' {
+    const name = dataPointName.toLowerCase();
+    if (['revenue', 'customers', 'conversion_rate', 'mrr'].includes(name)) {
+      return 'high';
+    }
+    if (['leads', 'opportunities', 'response_time', 'satisfaction'].includes(name)) {
+      return 'medium';
+    }
+    return 'low';
   }
 
   /**
    * Get unmapped data points for a user
    */
   async getUnmappedDataPoints(userId: string): Promise<ServiceResponse<UnmappedDataPoints>> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get all user integrations
-        const userIntegrations = await select('user_integrations', '*', { user_id: userId });
-
-        if (!userIntegrations?.length) {
-          return { 
-            data: { unmappedDataPoints: [], totalUnmapped: 0 }, 
-            error: null 
-          };
-        }
-
-        const unmappedDataPoints: UnmappedDataPoints['unmappedDataPoints'] = [];
-        let totalUnmapped = 0;
-
-        for (const integration of userIntegrations) {
-          try {
-            // Get data point definitions for this integration
-            const dataPoints = await select('data_point_definitions', '*', { user_integration_id: integration.id });
-
-            if (!dataPoints?.length) {
-              continue;
-            }
-
-            for (const dataPoint of dataPoints) {
-              // Check if this data point has data
-              const dataRecords = await select('integration_data', 'id', { 
-                user_integration_id: integration.id, 
-                datapoint_definition_id: dataPoint.id 
-              });
-
-              const hasData = Boolean(dataRecords && dataRecords.length > 0);
-
-              if (!hasData) {
-                totalUnmapped++;
-                unmappedDataPoints.push({
-                  dataPointId: dataPoint.id,
-                  dataPointName: dataPoint.data_point_name,
-                  integrationName: integration.integration_name,
-                  category: dataPoint.category || 'other',
-                  businessValue: dataPoint.business_value || 'low',
-                });
-              }
-            }
-          } catch (error) {
-            this.logger.warn(`Failed to process integration ${integration.id}:`, error);
-          }
-        }
-
-        const result: UnmappedDataPoints = {
-          unmappedDataPoints,
-          totalUnmapped,
-        };
-
-        return { data: UnmappedDataPointsSchema.parse(result), error: null };
-      } catch (error) {
-        this.logger.error('Error getting unmapped data points:', error);
-        return { data: null, error: 'Failed to get unmapped data points' };
+    try {
+      // Get all data point definitions
+      const definitionsResult = await selectData('datapoint_definitions', 'id', {});
+      if (definitionsResult.error) {
+        return { data: null, error: 'Failed to fetch data point definitions', success: false };
       }
-    }, `get unmapped data points for user ${userId}`);
+
+      const allDefinitions = definitionsResult.data || [];
+      
+      // Get existing mappings for this user
+      const mappingsResult = await selectData('datapoint_mappings', 'id', { user_id: userId });
+      if (mappingsResult.error) {
+        return { data: null, error: 'Failed to fetch data point mappings', success: false };
+      }
+
+      const existingMappings = mappingsResult.data || [];
+      
+      // Find unmapped data points
+      const mappedDefinitionIds = new Set(existingMappings.map((mapping: any) => mapping.datapoint_definition_id));
+      const unmappedDataPoints = allDefinitions.filter((definition: any) => !mappedDefinitionIds.has(definition.id));
+
+      const result: UnmappedDataPoints = {
+        unmappedDataPoints: unmappedDataPoints.map((definition: any) => ({
+          dataPointId: definition.id,
+          dataPointName: definition.name,
+          integrationName: 'Unknown', // No direct integration mapping for unmapped points
+          category: definition.category,
+          businessValue: 'low', // Default for unmapped
+        })),
+        totalUnmapped: unmappedDataPoints.length,
+      };
+      
+      return { data: result, error: null, success: true };
+    } catch (error) {
+      this.logger.error('Error getting unmapped data points:', error);
+      return { data: null, error: 'Failed to get unmapped data points', success: false };
+    }
   }
 
   /**
-   * Get mapping statistics for a user
+   * Create a new data point mapping
    */
-  async getMappingStatistics(userId: string): Promise<ServiceResponse<{
-    totalDataPoints: number;
-    mappedDataPoints: number;
-    unmappedDataPoints: number;
-    coveragePercentage: number;
-    highValueCoverage: number;
-    mediumValueCoverage: number;
-    lowValueCoverage: number;
-  }>> {
-    return this.executeDbOperation(async () => {
-      try {
-        const reportResult = await this.generateMappingReport(userId);
-        if (reportResult.error || !reportResult.data) {
-          return { data: null, error: reportResult.error || 'Failed to generate mapping report' };
-        }
-
-        const report = reportResult.data;
-        const totalDataPoints = report.totalDataPoints;
-        const mappedDataPoints = report.dataPointsWithData;
-        const unmappedDataPoints = report.dataPointsWithoutData;
-        const coveragePercentage = report.coveragePercentage;
-
-        // Calculate coverage by business value
-        const highValueCoverage = report.highValueDataPoints > 0 
-          ? (report.highValueDataPoints / totalDataPoints) * 100 
-          : 0;
-        const mediumValueCoverage = report.mediumValueDataPoints > 0 
-          ? (report.mediumValueDataPoints / totalDataPoints) * 100 
-          : 0;
-        const lowValueCoverage = report.lowValueDataPoints > 0 
-          ? (report.lowValueDataPoints / totalDataPoints) * 100 
-          : 0;
-
-        return {
-          data: {
-            totalDataPoints,
-            mappedDataPoints,
-            unmappedDataPoints,
-            coveragePercentage,
-            highValueCoverage,
-            mediumValueCoverage,
-            lowValueCoverage,
-          },
-          error: null,
-        };
-      } catch (error) {
-        this.logger.error('Error getting mapping statistics:', error);
-        return { data: null, error: 'Failed to get mapping statistics' };
+  async createDataPointMapping(mapping: {
+    userId: string;
+    dataPointDefinitionId: string;
+    integrationId: string;
+    mappingType?: string;
+    mappingConfig?: any;
+    isActive?: boolean;
+  }): Promise<ServiceResponse<DataPointMapping>> {
+    try {
+      // Validate that the user integration exists
+      const integrationResult = await selectOne('user_integrations', 'id', mapping.integrationId);
+      if (integrationResult.error || !integrationResult.data) {
+        return { data: null, error: 'Invalid user integration', success: false };
       }
-    }, `get mapping statistics for user ${userId}`);
-  }
 
-  /**
-   * Validate data point mapping
-   */
-  async validateDataPointMapping(
-    userIntegrationId: string,
-    dataPointDefinitionId: string
-  ): Promise<ServiceResponse<{
-    isValid: boolean;
-    hasData: boolean;
-    dataCount: number;
-    lastUpdate: string | null;
-    issues: string[];
-  }>> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Check if data point definition exists
-        const dataPoint = await selectOne('data_point_definitions', '*', { id: dataPointDefinitionId });
-        if (!dataPoint) {
-          return { 
-            data: { 
-              isValid: false, 
-              hasData: false, 
-              dataCount: 0, 
-              lastUpdate: null, 
-              issues: ['Data point definition not found'] 
-            }, 
-            error: null 
-          };
-        }
-
-        // Check if data exists
-        const dataRecords = await select('integration_data', 'id, created_at', { 
-          user_integration_id: userIntegrationId, 
-          datapoint_definition_id: dataPointDefinitionId 
-        });
-
-        const hasData = Boolean(dataRecords && dataRecords.length > 0);
-        const dataCount = dataRecords?.length || 0;
-        const lastUpdate = dataRecords && dataRecords.length > 0 
-          ? dataRecords[0].created_at : null;
-
-        const issues: string[] = [];
-        if (!hasData) {
-          issues.push('No data records found for this data point');
-        }
-
-        if (dataPoint.is_required && !hasData) {
-          issues.push('Required data point has no data');
-        }
-
-        const isValid = issues.length === 0;
-
-        return {
-          data: {
-            isValid,
-            hasData,
-            dataCount,
-            lastUpdate,
-            issues,
-          },
-          error: null,
-        };
-      } catch (error) {
-        this.logger.error('Error validating data point mapping:', error);
-        return { data: null, error: 'Failed to validate data point mapping' };
+      // Validate that the data point definition exists
+      const definitionResult = await selectOne('datapoint_definitions', 'id', mapping.dataPointDefinitionId);
+      if (definitionResult.error || !definitionResult.data) {
+        return { data: null, error: 'Invalid data point definition', success: false };
       }
-    }, `validate data point mapping for integration ${userIntegrationId}, data point ${dataPointDefinitionId}`);
+
+      // Check if mapping already exists
+      const existingResult = await selectData('datapoint_mappings', 'id', {
+        user_id: mapping.userId,
+        datapoint_definition_id: mapping.dataPointDefinitionId,
+        user_integration_id: mapping.integrationId,
+      });
+
+      if (existingResult.error) {
+        return { data: null, error: 'Failed to check existing mapping', success: false };
+      }
+
+      if (existingResult.data && existingResult.data.length > 0) {
+        return { data: null, error: 'Mapping already exists', success: false };
+      }
+
+      // Create the mapping
+      const insertResult = await insertOne('datapoint_mappings', {
+        user_id: mapping.userId,
+        datapoint_definition_id: mapping.dataPointDefinitionId,
+        user_integration_id: mapping.integrationId,
+        mapping_type: mapping.mappingType || 'direct',
+        mapping_config: mapping.mappingConfig || {},
+        is_active: mapping.isActive !== false, // Default to true
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      });
+
+      if (insertResult.error) {
+        this.logger.error('Failed to create data point mapping:', insertResult.error);
+        return { data: null, error: 'Failed to create data point mapping', success: false };
+      }
+
+      const createdMapping: DataPointMapping = {
+        dataPointId: (insertResult.data as any).id,
+        dataPointName: (definitionResult.data as any).name || 'Unknown',
+        category: (definitionResult.data as any).category || 'general',
+        businessValue: this.getBusinessValue((definitionResult.data as any).name || ''),
+        hasData: false, // Will be updated when data is added
+        dataCount: 0,
+        lastUpdate: (insertResult.data as any).created_at,
+        integrationName: (integrationResult.data as any).integration_name || 'Unknown',
+        integrationStatus: (integrationResult.data as any).status || 'unknown',
+      };
+
+      this.logger.info('Created data point mapping', { 
+        userId: mapping.userId, 
+        dataPointDefinitionId: mapping.dataPointDefinitionId,
+        integrationId: mapping.integrationId 
+      });
+
+      return { data: createdMapping, error: null, success: true };
+    } catch (error) {
+      this.logger.error('Error creating data point mapping:', error);
+      return { data: null, error: 'Failed to create data point mapping', success: false };
+    }
   }
 } 

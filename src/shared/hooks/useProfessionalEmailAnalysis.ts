@@ -5,7 +5,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
-import { select, insertOne } from '@/lib/supabase';
+import { selectData, insertOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface EmailAnalysis {
@@ -26,7 +26,7 @@ export const useProfessionalEmailAnalysis = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await select('email_analyses', '*', { user_id: userId });
+      const { data, error } = await selectData('email_analyses', '*', { user_id: userId });
       if (error) {
         logger.error({ error }, 'Failed to fetch email analyses');
         setError('Failed to fetch analyses');

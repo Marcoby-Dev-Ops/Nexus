@@ -44,18 +44,79 @@ export default tseslint.config(
       'no-var': 'error',
       'no-console': 'error',
       'no-debugger': 'error',
-      'no-restricted-syntax': [
+
+      // Database Access Pattern Enforcement
+      'no-restricted-imports': [
         'error',
         {
-          selector: "CallExpression[callee.object.name='supabase'][callee.property.name=/from|insert|update|delete|rpc/]",
-          message: 'Use helper functions from src/lib/supabase instead of direct supabase-js calls.',
-        },
+          patterns: [
+            {
+              group: ['@/lib/supabase'],
+              message: 'Use api-client for components, this.database for services. See docs/current/development/DATABASE_ACCESS_PATTERNS.md'
+            }
+          ]
+        }
       ],
     },
     settings: {
       react: {
         version: 'detect',
       },
+    },
+  },
+  // Database Access Pattern Enforcement for different file types
+  {
+    files: ['src/**/*.tsx', 'src/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/lib/supabase'],
+              message: 'Use api-client for components, this.database for services. See docs/current/development/DATABASE_ACCESS_PATTERNS.md'
+            }
+          ]
+        }
+      ],
+    },
+  },
+  // Service files - enforce this.database usage
+  {
+    files: ['src/**/services/**/*.ts', 'src/**/core/services/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/lib/supabase'],
+              message: 'Services must use this.database or this.postgres, not direct Supabase imports'
+            },
+            {
+              group: ['@/lib/api-client'],
+              message: 'Services must use this.database or this.postgres, not api-client'
+            }
+          ]
+        }
+      ],
+    },
+  },
+  // Component files - enforce api-client usage
+  {
+    files: ['src/**/*.tsx', 'src/**/hooks/**/*.ts', 'src/**/pages/**/*.tsx'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/lib/supabase'],
+              message: 'Components must use api-client, not direct Supabase imports'
+            }
+          ]
+        }
+      ],
     },
   },
   {
@@ -76,7 +137,7 @@ export default tseslint.config(
       'jest.setup.cjs',
       'jest.transformer.cjs',
       'scripts/**',
-      'supabase/**',
+
       'docs/**',
       'archive/**',
       'backups/**',

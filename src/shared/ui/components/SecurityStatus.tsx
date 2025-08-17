@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { select } from '@/lib/supabase-compatibility';
+import { selectData } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Shield, AlertTriangle, CheckCircle } from 'lucide-react';

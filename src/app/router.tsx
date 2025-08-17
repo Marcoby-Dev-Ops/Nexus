@@ -10,7 +10,7 @@ import { OrganizationMembersPage } from '@/pages/organizations/[orgId]/Organizat
 export const ROUTELABELS: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/chat': 'Chat',
-  '/chat/v2': 'Chat V2',
+
   '/ai-chat': 'AI Chat',
   '/ai-hub': 'AI Hub',
   '/ai-capabilities': 'AI Capabilities',
@@ -63,6 +63,7 @@ export const ROUTELABELS: Record<string, string> = {
   '/integrations/microsoft365/callback': 'Microsoft 365 Callback',
   '/integrations/settings': 'Integration Settings',
   '/integrations/setup': 'Integration Setup',
+  '/integrations/data-point-mapping': 'Data Point Mapping',
   '/automation': 'Automation',
   '/automation/recipes': 'Automation Recipes',
   '/automation/act': 'Automation Act',
@@ -97,6 +98,8 @@ export const ROUTELABELS: Record<string, string> = {
   '/admin/advanced-settings': 'Advanced Settings',
   '/admin/continuous-improvement': 'Continuous Improvement',
   '/admin/feature-explorer': 'Feature Explorer',
+  '/auth/test': 'Authentication Test',
+  '/auth/signup': 'Sign Up',
   '/admin/ai-model-settings': 'AI Model Settings',
   '/admin/login': 'Login',
   '/admin/signup': 'Sign Up',
@@ -111,6 +114,7 @@ export const ROUTELABELS: Record<string, string> = {
   '/admin/auth-status': 'Auth Status',
   '/admin/email-not-verified': 'Email Not Verified',
   '/admin/waitlist': 'Waitlist',
+  '/experience/purposeful': 'Purposeful Experience Design',
   // FIRE Cycle routes
   '/business/fire-cycle': 'FIRE Cycle Dashboard',
   // Demo routes removed during cleanup
@@ -118,12 +122,12 @@ export const ROUTELABELS: Record<string, string> = {
   '/business/fire-cycle/insight': 'Insight Phase',
   '/business/fire-cycle/roadmap': 'Roadmap Phase',
   '/business/fire-cycle/execute': 'Execute Phase',
+  '/business/fire-cycle/goals': 'Business Goals',
   // Workspace routes
-  '/tasks/workspace': 'My Workspace',
   '/tasks/workspace/actions': 'Action Center',
   '/tasks/workspace/inbox': 'Unified Inbox',
   '/tasks/workspace/calendar': 'Calendar',
-  '/tasks/workspace/today': 'Today Dashboard',
+  '/tasks/workspace/clients': 'Clients',
   '/workspace/team': 'Team Management',
   '/workspace/customer-insights': 'Customer Insights',
   '/workspace/automation': 'Process Automation',

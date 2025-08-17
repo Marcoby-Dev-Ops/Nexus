@@ -1,17 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
-import { dbService, testAuthenticationFlow, sessionUtils } from '@/lib/supabase-compatibility';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 import { consolidatedIntegrationService, type IntegrationDataSummary } from '@/services/integrations/consolidatedIntegrationService';
-import { DataPointDictionaryService, type DataPointDefinition, type DataPointSummary } from '@/services/integrations';
+
 import { toast } from 'sonner';
+import Microsoft365Setup from '@/components/integrations/Microsoft365Setup';
+import { GoogleWorkspaceSetup } from '@/components/integrations/GoogleWorkspaceSetup';
+import SlackSetup from '@/components/integrations/SlackSetup';
+import PayPalSetup from '@/components/integrations/PayPalSetup';
+import QuickBooksSetup from '@/components/integrations/QuickBooksSetup';
+import StripeFinancialSetup from '@/components/integrations/StripeFinancialSetup';
+import GoogleAnalyticsSetup from '@/components/integrations/GoogleAnalyticsSetup';
 import {
   CheckCircle2,
   AlertCircle,
@@ -34,19 +41,15 @@ import {
   ArrowRight,
   Settings,
   XCircle,
-  DollarSign
+  DollarSign,
+  Calculator,
+  CreditCard
 } from 'lucide-react';
 
 // Import setup components
-import GoogleWorkspaceSetup from '@/components/integrations/GoogleWorkspaceSetup';
-import Microsoft365Setup from '@/components/integrations/Microsoft365Setup';
-import { HubSpotSetup } from '@/components/integrations/HubSpotSetup';
-import PayPalSetup from '@/components/integrations/PayPalSetup';
-import GoogleAnalyticsSetup from '@/components/integrations/GoogleAnalyticsSetup';
-import SlackSetup from '@/components/integrations/SlackSetup';
+// Inline setup components removed from this page – users will use the marketplace
 
-// Initialize services
-const dataPointDictionaryService = new DataPointDictionaryService();
+
 
 interface IntegrationStatus {
   id: string;
@@ -118,6 +121,19 @@ const IntegrationsPage: React.FC = () => {
       dataFields: ['emails', 'calendarEvents', 'files', 'contacts', 'analytics', 'docs', 'tasks']
     },
     {
+      id: 'google-analytics',
+      name: 'Google Analytics',
+      provider: 'Google',
+      description: 'Connect Google Analytics for website traffic, marketing performance, and user behavior insights.',
+      category: 'Analytics',
+      icon: <BarChart3 className="h-6 w-6 text-blue-600" />,
+      setupComponent: GoogleAnalyticsSetup,
+      authType: 'oauth',
+      setupTime: '5 minutes',
+      isPopular: true,
+      dataFields: ['pageViews', 'sessions', 'users', 'trafficSources', 'conversions', 'goals', 'events']
+    },
+    {
       id: 'dropbox',
       name: 'Dropbox',
       provider: 'Dropbox',
@@ -159,7 +175,6 @@ const IntegrationsPage: React.FC = () => {
       description: 'Connect HubSpot for marketing, sales, and CRM automation.',
       category: 'CRM',
       icon: <Zap className="h-6 w-6 text-orange-500" />,
-      setupComponent: HubSpotSetup,
       authType: 'oauth',
       setupTime: '7 minutes',
       isPopular: true,
@@ -234,6 +249,32 @@ const IntegrationsPage: React.FC = () => {
       dataFields: ['transactions', 'invoices', 'refunds', 'payouts']
     },
     {
+      id: 'quickbooks',
+      name: 'QuickBooks',
+      provider: 'Intuit',
+      description: 'Connect QuickBooks for comprehensive accounting, invoicing, and financial reporting.',
+      category: 'Finance',
+      icon: <Calculator className="h-6 w-6 text-blue-600" />,
+      setupComponent: QuickBooksSetup,
+      authType: 'oauth',
+      setupTime: '5 minutes',
+      isPopular: true,
+      dataFields: ['revenue', 'expenses', 'invoices', 'accounts', 'reports']
+    },
+    {
+      id: 'stripe-financial',
+      name: 'Stripe Financial Data',
+      provider: 'Stripe',
+      description: 'Connect Stripe for transaction data, revenue analytics, and payment insights.',
+      category: 'Finance',
+      icon: <CreditCard className="h-6 w-6 text-purple-600" />,
+      setupComponent: StripeFinancialSetup,
+      authType: 'oauth',
+      setupTime: '5 minutes',
+      isPopular: true,
+      dataFields: ['transactions', 'revenue', 'customers', 'payments', 'analytics']
+    },
+    {
       id: 'google-analytics',
       name: 'Google Analytics',
       provider: 'Google',
@@ -248,12 +289,7 @@ const IntegrationsPage: React.FC = () => {
     }
   ];
 
-  const [dataPointSummary, setDataPointSummary] = useState<DataPointSummary | null>(null);
-  const [discoveredDataPoints, setDiscoveredDataPoints] = useState<DataPointDefinition[]>([]);
-  const [discoveringDataPoints, setDiscoveringDataPoints] = useState(false);
-  const [selectedIntegrationForDiscovery, setSelectedIntegrationForDiscovery] = useState<string | null>(null);
-  const [analyzingDataPoint, setAnalyzingDataPoint] = useState<string | null>(null);
-  const [analysisResults, setAnalysisResults] = useState<any[]>([]);
+
 
   useEffect(() => {
     if (user?.id) {
@@ -275,10 +311,7 @@ const IntegrationsPage: React.FC = () => {
     console.log('🔄 Fetching integration status for user: ', user!.id);
       
       // Get basic integration status
-      const { data: userIntegrations, error } = await dbService.getIntegrationStatus(
-        user!.id,
-        'IntegrationsPage.fetchIntegrationStatus'
-      );
+      const { data: userIntegrations, error } = await consolidatedIntegrationService.getUserIntegrations(user!.id);
 
       if (error) {
          
@@ -494,197 +527,11 @@ const IntegrationsPage: React.FC = () => {
   const totalIntegrations = integrationStatus.length;
   const healthScore = totalIntegrations > 0 ? Math.round((activeIntegrations / totalIntegrations) * 100) : 0;
 
-  // Data Point Dictionary functions
-  const loadDataPointSummary = async () => {
-    if (!user) return;
-    
-          try {
-        const { data: summary, error } = await dataPointDictionaryService.getDataPointSummary(user.id);
-        
-        if (error) {
-          console.error('Error getting data point summary:', error);
-          toast.error('Failed to load data point summary');
-          return;
-        }
-        
-        setDataPointSummary(summary);
-    } catch (error: any) {
-      if (error.message && error.message.includes('No valid session')) {
-        // Show a clear error and optionally redirect
-        toast.error('Your session has expired. Please log in again.');
-        // Optionally, redirect to login page:
-        // window.location.href = '/login';
-      } else {
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('Error loading data point summary: ', error);
-        toast.error('Failed to load data point summary');
-      }
-    }
-  };
 
-  const discoverDataPoints = async (userIntegrationId: string) => {
-    setDiscoveringDataPoints(true);
-    try {
-      const { data: discoveryLog, error } = await dataPointDictionaryService.discoverDataPoints(userIntegrationId);
-      
-      if (error) {
-        toast.error(`Discovery failed: ${error}`);
-        return;
-      }
-      
-      if (discoveryLog?.discoveryStatus === 'completed') {
-        toast.success(`Discovered ${discoveryLog.newDataPoints} new data points from ${discoveryLog.endpointsScanned} endpoints`);
-        await loadDataPointSummary();
-      } else {
-        toast.error(`Discovery failed: ${discoveryLog?.errorMessage || 'Unknown error'}`);
-      }
-    } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error discovering data points: ', error);
-      toast.error('Failed to discover data points');
-    } finally {
-      setDiscoveringDataPoints(false);
-      setSelectedIntegrationForDiscovery(null);
-    }
-  };
 
-  const loadDiscoveredDataPoints = async () => {
-    if (!user) return;
-    
-    try {
-      // First check if session is valid
-      const hasValidSession = await sessionUtils.ensureSession();
-      if (!hasValidSession) {
-        toast.error('Your session has expired. Please log in again.');
-        return;
-      }
-
-      const { data: userIntegrations } = await supabase
-        .from('user_integrations')
-        .select('id')
-        .eq('user_id', user.id);
-
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('User integrations found: ', userIntegrations);
-
-      if (!userIntegrations?.length) return;
-
-      const allDataPoints: DataPointDefinition[] = [];
-      
-      for (const userIntegration of userIntegrations) {
-        try {
-           
-     
-    // eslint-disable-next-line no-console
-    console.log('Loading data points for integration: ', userIntegration.id);
-          const { data: dataPoints, error: dataPointsError } = await dataPointDictionaryService.getDataPoints(userIntegration.id);
-          
-          if (dataPointsError) {
-            console.error(`Error getting data points for integration ${userIntegration.id}:`, dataPointsError);
-            continue;
-          }
-          
-           
-     
-    // eslint-disable-next-line no-console
-    console.log('Data points found: ', dataPoints?.length || 0);
-          if (dataPoints) {
-            allDataPoints.push(...dataPoints);
-          }
-        } catch (integrationError: any) {
-           
-     
-    // eslint-disable-next-line no-console
-    console.error(`Error loading data points for integration ${userIntegration.id}:`, integrationError);
-          
-          // Check if it's an authentication error
-          if (integrationError.message && integrationError.message.includes('session')) {
-            toast.error('Authentication error. Please refresh the page and try again.');
-            return;
-          }
-          
-          // Continue with other integrations if one fails
-          continue;
-        }
-      }
-
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('Total data points loaded: ', allDataPoints.length);
-      setDiscoveredDataPoints(allDataPoints);
-    } catch (error: any) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error loading discovered data points: ', error);
-      
-      // Check if it's an authentication error
-      if (error.message && error.message.includes('session')) {
-        toast.error('Your session has expired. Please log in again.');
-      } else {
-        toast.error('Failed to load discovered data points');
-      }
-    }
-  };
-
-  useEffect(() => {
-    loadDataPointSummary();
-    loadDiscoveredDataPoints();
-  }, [user]);
 
   // Data analysis functions
-  const handleAnalyzeDataPoint = async (dataPoint: DataPointDefinition) => {
-    setAnalyzingDataPoint(dataPoint.id);
-    try {
-      // Get user integration ID from the data point
-      const userIntegrationId = dataPoint.userIntegrationId;
-      
-      // Analyze the data point
-      // Note: analyzeIntegrationData method doesn't exist in DataPointDictionaryService
-      // This functionality may need to be implemented or moved to a different service
-      console.log('Data point analysis not implemented yet');
-      
-              setAnalysisResults({ success: true, data: { message: 'Analysis not implemented yet' } });
-      toast.success(`Analysis complete for ${dataPoint.dataPointName}`);
-    } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error analyzing data point: ', error);
-      toast.error('Failed to analyze data point');
-    } finally {
-      setAnalyzingDataPoint(null);
-    }
-  };
 
-  const handleStoreSampleData = async (dataPoint: DataPointDefinition) => {
-    try {
-      // Store sample data for the data point
-      const dataPointService = new DataPointDictionaryService();
-      await dataPointService.storeIntegrationData(
-        dataPoint.userIntegrationId,
-        dataPoint.id,
-        dataPoint.sampleValue,
-        `sample_${Date.now()}`,
-        { source: 'manual_entry', timestamp: new Date().toISOString() }
-      );
-      
-      toast.success(`Sample data stored for ${dataPoint.dataPointName}`);
-    } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error storing sample data: ', error);
-      toast.error('Failed to store sample data');
-    }
-  };
 
   // Debug authentication
   const handleTestAuth = async () => {
@@ -1053,82 +900,26 @@ const IntegrationsPage: React.FC = () => {
             </Card>
           </div>
 
-          {/* Available Integrations */}
-          {getUnconnectedIntegrations().length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Available Integrations
-                </CardTitle>
-                <CardDescription>
-                  Connect these integrations to unlock more insights and automation
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {getUnconnectedIntegrations().slice(0, 4).map((integration) => (
-                    <div
-                      key={integration.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover: bg-accent/50 transition-colors"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="flex-shrink-0">
-                          {integration.icon}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-medium text-sm">{integration.name}</h4>
-                            {integration.isPopular && (
-                              <Badge variant="secondary" className="text-xs">
-                                <Star className="w-3 h-3 mr-1" />
-                                Popular
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {integration.description}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {integration.authType === 'oauth' ? 'OAuth' : 'API Key'}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {integration.setupTime}
-                            </span>
-                          </div>
-                          {/* Data fields row */}
-                          <div className="flex flex-wrap gap-1 mt-2 items-center">
-                            <span className="text-xs text-muted-foreground mr-1">Data Mapped: </span>
-                            {integration.dataFields.map((field) => (
-                              <Badge key={field} variant="outline" className="text-2xs">
-                                {field}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        onClick={() => handleConnectIntegration(integration)}
-                        className="ml-4 flex-shrink-0"
-                      >
-                        Connect
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-                {getUnconnectedIntegrations().length > 4 && (
-                  <div className="mt-4 text-center">
-                    <Button variant="outline" onClick={() => navigate('/integrations/marketplace')}>
-                      View All Available Integrations
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+          {/* Marketplace CTA replacing local available integrations list */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Plus className="h-5 w-5 mr-2" />
+                Explore Integrations
+              </CardTitle>
+              <CardDescription>
+                Browse the marketplace to connect integrations and unlock more automation
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <Button variant="outline" onClick={() => navigate('/integrations/marketplace')}>
+                  Browse Marketplace
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="connected" className="space-y-6">
@@ -1215,309 +1006,6 @@ const IntegrationsPage: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="data-points" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Data Point Dictionary</h2>
-                <p className="text-muted-foreground">
-                  Discover, store, and analyze data points from your connected integrations
-                </p>
-              </div>
-              <Button 
-                onClick={() => loadDataPointSummary()}
-                variant="outline"
-                size="sm"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-
-            {/* Data Point Summary */}
-            {dataPointSummary && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Database className="h-5 w-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-medium">Total Data Points</p>
-                        <p className="text-2xl font-bold">{dataPointSummary?.totalDataPoints || 0}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-success" />
-                      <div>
-                        <p className="text-sm font-medium">High Value</p>
-                        <p className="text-2xl font-bold">{dataPointSummary.businessValueBreakdown?.high || 0}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-secondary" />
-                      <div>
-                        <p className="text-sm font-medium">Customer Data</p>
-                        <p className="text-2xl font-bold">{dataPointSummary?.categories?.customer || 0}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5 text-warning" />
-                      <div>
-                        <p className="text-sm font-medium">Financial Data</p>
-                        <p className="text-2xl font-bold">{dataPointSummary?.categories?.financial || 0}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* Discovery Controls */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Search className="h-5 w-5" />
-                  Discover Data Points
-                </CardTitle>
-                <CardDescription>
-                  Scan your integrations to automatically discover available data points
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {integrationStatus.map(integration => (
-                    <div key={integration.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <div className={`w-3 h-3 rounded-full ${
-                          integration.status === 'active' ? 'bg-success' : 'bg-gray-400'
-                        }`} />
-                        <div>
-                          <div className="font-medium">{integration.name}</div>
-                          <div className="text-sm text-muted-foreground">{integration.category}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={integration.status === 'active' ? 'default' : 'secondary'}>
-                          {integration.status}
-                        </Badge>
-                        {integration.status === 'active' && (
-                          <Button
-                            onClick={() => {
-                              setSelectedIntegrationForDiscovery(integration.id);
-                              discoverDataPoints(integration.id);
-                            }}
-                            disabled={discoveringDataPoints}
-                            size="sm"
-                          >
-                            {discoveringDataPoints && selectedIntegrationForDiscovery === integration.id ? (
-                              <>
-                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                Discovering...
-                              </>
-                            ) : (
-                              <>
-                                <Search className="h-4 w-4 mr-2" />
-                                Discover
-                              </>
-                            )}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Data Storage and Analysis */}
-            {discoveredDataPoints.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5" />
-                    Data Storage & Analysis
-                  </CardTitle>
-                  <CardDescription>
-                    Store and analyze data from your discovered data points
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {discoveredDataPoints.slice(0, 5).map(dataPoint => (
-                      <div key={dataPoint.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-2 h-2 rounded-full ${
-                            dataPoint.businessValue === 'high' ? 'bg-success' :
-                            dataPoint.businessValue === 'medium' ? 'bg-warning' : 'bg-gray-400'
-                          }`} />
-                          <div>
-                            <div className="font-medium">{dataPoint.dataPointName}</div>
-                            <div className="text-sm text-muted-foreground">{dataPoint.description}</div>
-                            <div className="flex gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {dataPoint.category}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {dataPoint.dataPointType}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {dataPoint.refreshFrequency}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="text-right">
-                            <div className="text-sm font-medium">{dataPoint.endpointPath}</div>
-                            <div className="text-xs text-muted-foreground">{dataPoint.endpointMethod}</div>
-                          </div>
-                          <Button
-                            onClick={() => handleAnalyzeDataPoint(dataPoint)}
-                            disabled={analyzingDataPoint === dataPoint.id}
-                            size="sm"
-                            variant="outline"
-                          >
-                            {analyzingDataPoint === dataPoint.id ? (
-                              <>
-                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                                Analyzing...
-                              </>
-                            ) : (
-                              <>
-                                <Activity className="h-4 w-4 mr-2" />
-                                Analyze
-                              </>
-                            )}
-                          </Button>
-                          <Button
-                            onClick={() => handleStoreSampleData(dataPoint)}
-                            size="sm"
-                            variant="outline"
-                          >
-                            <Database className="h-4 w-4 mr-2" />
-                            Store Sample
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Analysis Results */}
-            {analysisResults.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Analysis Results
-                  </CardTitle>
-                  <CardDescription>
-                    Insights and recommendations from data analysis
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {analysisResults.map((result, index) => (
-                      <div key={index} className="p-4 border rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">{result.analysisType}</Badge>
-                          {result.confidenceScore && (
-                            <Badge variant="secondary">
-                              {Math.round(result.confidenceScore * 100)}% confidence
-                            </Badge>
-                          )}
-                        </div>
-                        {result.insights && result.insights.length > 0 && (
-                          <div className="mb-2">
-                            <div className="text-sm font-medium mb-1">Insights: </div>
-                            <ul className="text-sm text-muted-foreground">
-                              {result.insights.map((insight: string, i: number) => (
-                                <li key={i}>• {insight}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                        {result.recommendations && result.recommendations.length > 0 && (
-                          <div>
-                            <div className="text-sm font-medium mb-1">Recommendations: </div>
-                            <ul className="text-sm text-muted-foreground">
-                              {result.recommendations.map((rec: string, i: number) => (
-                                <li key={i}>• {rec}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Discovered Data Points */}
-            {discoveredDataPoints.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5" />
-                    Discovered Data Points
-                  </CardTitle>
-                  <CardDescription>
-                    {discoveredDataPoints.length} data points found across your integrations
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {discoveredDataPoints.map(dataPoint => (
-                      <div key={dataPoint.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div className={`w-2 h-2 rounded-full ${
-                            dataPoint.businessValue === 'high' ? 'bg-success' :
-                            dataPoint.businessValue === 'medium' ? 'bg-warning' : 'bg-gray-400'
-                          }`} />
-                          <div>
-                            <div className="font-medium">{dataPoint.dataPointName}</div>
-                            <div className="text-sm text-muted-foreground">{dataPoint.description}</div>
-                            <div className="flex gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {dataPoint.category}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {dataPoint.dataPointType}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {dataPoint.refreshFrequency}
-                              </Badge>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-medium">{dataPoint.endpointPath}</div>
-                          <div className="text-xs text-muted-foreground">{dataPoint.endpointMethod}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
       </Tabs>
 
       {/* Setup Modal */}

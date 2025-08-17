@@ -3,18 +3,7 @@
  * Provides OAuth and API utilities for HubSpot integration
  */
 
-export const HUBSPOT_REQUIRED_SCOPES = [
-  'contacts',
-  'crm.objects.contacts.read',
-  'crm.objects.contacts.write',
-  'crm.objects.companies.read',
-  'crm.objects.companies.write',
-  'crm.objects.deals.read',
-  'crm.objects.deals.write',
-  'crm.schemas.contacts.read',
-  'crm.schemas.companies.read',
-  'crm.schemas.deals.read'
-];
+import { HUBSPOT_REQUIRED_SCOPES } from './constants';
 
 export interface HubSpotAuthUrlParams {
   clientId: string;

@@ -1,49 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '@/hooks/index';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Card } from '@/shared/components/ui/Card.tsx';
-import { Mail, Lock, User } from 'lucide-react';
-
-// Import our new form patterns
-import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
-import { FormField } from '@/shared/components/forms/FormField';
-import { Input } from '@/shared/components/ui/Input.tsx';
-import { signupSchema, type SignupFormData } from '@/shared/validation/schemas';
+import { useAuthentikAuth } from '@/shared/contexts/AuthentikAuthContext';
+import { Card } from '@/shared/components/ui/Card';
 
 /**
- * Modernized SignupPage using unified form patterns
+ * SignupPage - Redirects to Authentik for user registration
  * 
- * Features:
- * - Email validation with real-time feedback
- * - Password strength requirements
- * - Password confirmation matching
- * - Unified error handling and loading states
- * - Consistent styling with other forms
+ * Since Authentik handles user registration, this page provides
+ * information about the registration process and redirects users.
  */
 export default function SignupPage() {
-  const { signUp, loading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { signIn } = useAuthentikAuth();
 
-  const { form, handleSubmit, isSubmitting, errors } = useFormWithValidation({
-    schema: signupSchema,
-    defaultValues: {
-      email: '',
-      password: '',
-      confirmPassword: '',
-      firstName: '',
-      lastName: '',
-      companyName: '',
-    },
-    onSubmit: async (data: SignupFormData) => {
-      const result = await signUp(data.email, data.password, data.firstName, data.lastName);
-      if (result.error) {
-        throw new Error(result.error);
+  const handleSignUp = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      // For Authentik, signup is typically handled through the same OAuth flow
+      // Users will be redirected to Authentik where they can register if needed
+      const result = await signIn();
+      
+      if (!result.success) {
+        setError(result.error || 'Failed to initiate registration');
       }
-    },
-    successMessage: 'Account created successfully! Welcome to Nexus!',
-  });
-
-  const isFormLoading = loading || isSubmitting;
+      // If successful, the user will be redirected to Authentik automatically
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -55,174 +45,37 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                name="firstName"
-                label="First Name"
-                control={form.control}
-                error={errors.firstName?.message}
-                required
-              >
-                {({ field }) => (
-                  <div className="relative">
-                    <Input
-                      {...field}
-                      id="firstName"
-                      placeholder="First name"
-                      disabled={isFormLoading}
-                      className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
-                      autoComplete="given-name"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-card-foreground" />
-                    </div>
-                  </div>
-                )}
-              </FormField>
+        <div className="space-y-6">
+                     <div className="text-center">
+             <p className="text-sm text-muted-foreground mb-6">
+               Create your account through Marcoby
+             </p>
+             <p className="text-sm text-muted-foreground mb-6">
+               You'll be redirected to Marcoby where you can register your account securely.
+             </p>
+           </div>
 
-              <FormField
-                name="lastName"
-                label="Last Name"
-                control={form.control}
-                error={errors.lastName?.message}
-                required
-              >
-                {({ field }) => (
-                  <div className="relative">
-                    <Input
-                      {...field}
-                      id="lastName"
-                      placeholder="Last name"
-                      disabled={isFormLoading}
-                      className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
-                      autoComplete="family-name"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <User className="h-5 w-5 text-card-foreground" />
-                    </div>
-                  </div>
-                )}
-              </FormField>
-            </div>
-
-            {/* Company Name */}
-            <FormField
-              name="companyName"
-              label="Company Name"
-              control={form.control}
-              error={errors.companyName?.message}
-              required
-            >
-              {({ field }) => (
-                <div className="relative">
-                                      <Input
-                      {...field}
-                      id="companyName"
-                      placeholder="Your company name"
-                      disabled={isFormLoading}
-                      className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
-                      autoComplete="organization"
-                    />
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <svg className="h-5 w-5 text-card-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-            </FormField>
-
-            {/* Email Field */}
-            <FormField
-              name="email"
-              label="Email Address"
-              control={form.control}
-              error={errors.email?.message}
-              required
-              hint="We'll use this for important updates"
-            >
-              {({ field }) => (
-                <div className="relative">
-                  <Input
-                    {...field}
-                    id="email"
-                    type="email"
-                    placeholder="Email address"
-                    disabled={isFormLoading}
-                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
-                    autoComplete="email"
-                  />
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-card-foreground" />
-                  </div>
-                </div>
-              )}
-            </FormField>
-
-            {/* Password Fields */}
-            <FormField
-              name="password"
-              label="Password"
-              control={form.control}
-              error={errors.password?.message}
-              required
-              hint="Must be at least 8 characters long"
-            >
-              {({ field }) => (
-                <div className="relative">
-                  <Input
-                    {...field}
-                    id="password"
-                    type="password"
-                    placeholder="Password"
-                    disabled={isFormLoading}
-                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
-                    autoComplete="new-password"
-                  />
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-card-foreground" />
-                  </div>
-                </div>
-              )}
-            </FormField>
-
-            <FormField
-              name="confirmPassword"
-              label="Confirm Password"
-              control={form.control}
-              error={errors.confirmPassword?.message}
-              required
-              hint="Please confirm your password"
-            >
-              {({ field }) => (
-                <div className="relative">
-                  <Input
-                    {...field}
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Confirm password"
-                    disabled={isFormLoading}
-                    className="pl-12 h-12 text-base rounded-xl transition-all duration-200"
-                    autoComplete="new-password"
-                  />
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-card-foreground" />
-                  </div>
-                </div>
-              )}
-            </FormField>
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 border-0 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-            disabled={isFormLoading}
+          <button
+            type="button"
+            onClick={handleSignUp}
+            disabled={loading}
+            className="w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl transition-all duration-200 disabled:opacity-50"
           >
-            {isFormLoading ? 'Creating Account...' : 'Create Account'}
-          </Button>
+                         {loading ? (
+               <div className="flex items-center justify-center">
+                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                 Redirecting to Marcoby...
+               </div>
+             ) : (
+               'Create Account with Marcoby'
+             )}
+          </button>
+
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4">
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
 
           <div className="text-center">
             <div className="text-sm text-muted-foreground">
@@ -235,7 +88,7 @@ export default function SignupPage() {
               </Link>
             </div>
           </div>
-        </form>
+        </div>
       </Card>
     </div>
   );

@@ -1,24 +1,42 @@
 import React from 'react';
-import { useOrganizationStore } from '@/shared/stores/organizationStore.ts';
+import { useOrganizationStore } from '@/shared/stores/organizationStore';
 import { useAuth } from '@/hooks/index';
 import { ChevronDown } from 'lucide-react';
 
 export const OrgSwitcher: React.FC = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const { orgs, activeOrgId, setActiveOrg, loadMemberships } = useOrganizationStore();
 
-  React.useEffect(() => {
-    if (user) {
-      loadMemberships(user.id);
+  // Check if user has valid authentication session
+  const hasValidSession = () => {
+    try {
+      const sessionData = localStorage.getItem('authentik_session');
+      if (!sessionData) return false;
+      
+      const session = JSON.parse(sessionData);
+      return !!(session?.accessToken);
+    } catch {
+      return false;
     }
+  };
+
+  React.useEffect(() => {
+    // Wait for auth to be fully loaded and user to be authenticated
+    if (authLoading) return;
+    if (!user?.id) return;
+    if (!isAuthenticated) return;
+    if (!hasValidSession()) return;
+    
+    loadMemberships(user.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, authLoading, isAuthenticated]);
 
   const [open, setOpen] = React.useState(false);
 
   const active = orgs.find((o) => o.id === activeOrgId);
 
-  if (!activeOrgId) return null;
+  // Don't render if not authenticated or no active org
+  if (!isAuthenticated || !hasValidSession() || !activeOrgId) return null;
 
   return (
     <div className="relative" onBlur={() => setOpen(false)} tabIndex={0}>

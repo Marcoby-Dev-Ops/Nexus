@@ -32,6 +32,10 @@ export { default as StreamingComposer } from './StreamingComposer';
 export { default as SuccessOutcomeTracker } from './SuccessOutcomeTracker';
 export { default as UserKnowledgeViewer } from './UserKnowledgeViewer';
 
+// Nexus Core Components
+export { BrainAnalysis } from './BrainAnalysis';
+export { ExpertAdvice } from './ExpertAdvice';
+
 // Onboarding Components
 export { default as AIOnboardingModules } from './AIOnboardingModules';
 export { default as AIOnboardingDashboard } from './AIOnboardingDashboard';

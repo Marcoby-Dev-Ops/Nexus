@@ -11,6 +11,7 @@ import {
   getDemoAccount, 
   isDemoAccount, 
   isDemoMode, 
+  shouldShowDemoMode,
   type DemoAccount 
 } from '@/shared/config/demoConfig';
 
@@ -48,9 +49,19 @@ export function useDemoAuth() {
         isDemoAuthenticated: true,
       }));
     } else if (user) {
+      // User is authenticated with a real account - disable demo mode
       setDemoState(prev => ({
         ...prev,
         isDemoMode: false,
+        demoUser: null,
+        isDemoAuthenticated: false,
+      }));
+    } else {
+      // No user - check if demo mode should be available
+      const canShowDemo = shouldShowDemoMode(null);
+      setDemoState(prev => ({
+        ...prev,
+        isDemoMode: canShowDemo,
         demoUser: null,
         isDemoAuthenticated: false,
       }));

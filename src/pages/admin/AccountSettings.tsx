@@ -1,63 +1,87 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
-import { useIntegrations } from '@/hooks/integrations/useIntegrations';
 // import { IntegrationService } from '@/services/integrations';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Separator } from '@/shared/components/ui/Separator';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
+import { Progress } from '@/shared/components/ui/Progress';
 import { 
   X,
-  Plus,
   Edit,
   CheckCircle,
-  Zap,
-  Database,
   AlertTriangle,
   XCircle,
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { TokenManager } from '@/services/tokenManager';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { useSearchParams } from 'react-router-dom';
 
 // Import our new form patterns
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
+import type { z } from 'zod';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { logger } from '@/shared/utils/logger';
+import { companyService } from '@/services/business/CompanyService';
+import { useCompany } from '@/shared/contexts/CompanyContext';
+import { useUserPreferences } from '@/shared/contexts/UserPreferencesContext';
+import { userPreferencesSchema, type UserPreferencesFormData } from '@/shared/validation/schemas';
+import { Switch } from '@/shared/components/ui/Switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
+import { Label } from '@/shared/components/ui/Label';
 
 const AccountSettings: React.FC = () => {
   const { user } = useAuth();
-  const { refreshIntegrations } = useIntegrations();
   
   // Use UserContext for profile data
-  const { profile, loading: profileLoading, updateProfile } = useUserProfile();
-  const [isUpdating, setIsUpdating] = useState(false);
-
+  const { profile, loading: profileLoading, updateProfile, refreshProfile } = useUserProfile();
+  const { company, refreshCompany } = useCompany();
+  const { preferences, loading: preferencesLoading, updatePreferences } = useUserPreferences();
+  
   const [searchParams] = useSearchParams();
   const [isEditing, setIsEditing] = useState(false);
-  const [integrations, setIntegrations] = useState<any[]>([]);
-  const [loadingIntegrations, setLoadingIntegrations] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
+  const [hasInitialized, setHasInitialized] = useState(false);
+  
+  // Debug: Log profile state
+  useEffect(() => {
+    logger.info('Profile state changed', { 
+      hasProfile: !!profile, 
+      profileLoading, 
+      profileId: profile?.id,
+      firstName: profile?.first_name,
+      lastName: profile?.last_name,
+      profileType: typeof profile,
+      profileKeys: profile ? Object.keys(profile) : []
+    });
+  }, [profile, profileLoading]);
 
-  // Enhanced integration status checking
-  const [integrationDetails, setIntegrationDetails] = useState<any[]>([]);
+  // Track when initial loading is complete
+  useEffect(() => {
+    if (!profileLoading && !hasInitialized) {
+      logger.info('Initial profile loading complete', { 
+        hasProfile: !!profile, 
+        profileId: profile?.id 
+      });
+      setHasInitialized(true);
+    }
+  }, [profileLoading, hasInitialized, profile]);
 
-  // Initialize form with our new pattern
-  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
-    schema: userProfileSchema,
+  // Integrations removed from this page
+
+  // Initialize form with profile data - handle both loading and loaded states
+  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation<UserProfileFormData>({
+    schema: userProfileSchema as unknown as z.ZodType<UserProfileFormData, any, any>,
     defaultValues: {
       firstName: '',
       lastName: '',
       displayName: '',
       jobTitle: '',
       company: '',
-      role: '',
+      role: 'user' as "user" | "owner" | "admin" | "manager",
       department: '',
       businessEmail: '',
       personalEmail: '',
@@ -67,94 +91,272 @@ const AccountSettings: React.FC = () => {
       phone: '',
     },
     onSubmit: async (data: UserProfileFormData) => {
-      if (!profile?.id) return;
+      logger.info('Form submission started', { 
+        hasProfile: !!profile, 
+        profileId: profile?.id,
+        formData: data 
+      });
+
+      if (!profile?.id) {
+        logger.error('Cannot save: No profile ID available');
+        return;
+      }
+
+      // Normalize empty strings to undefined for optional fields
+      const toUndef = (v: string | undefined) => (v === '' ? undefined : v);
+      
+      // Handle company and department linkage to organizations
+      let companyId = profile.company_id;
+      const companyNameInput = (data.company || '').trim();
+      const departmentNameInput = (data.department || '').trim();
+
+      if (companyNameInput) {
+        try {
+          // Find existing company or create new one
+          const existing = await companyService.list({ name: companyNameInput });
+          if (existing.success && existing.data && existing.data.length > 0) {
+            companyId = existing.data[0].id;
+            logger.info('Found existing company', { companyId, companyName: companyNameInput });
+          } else {
+            // Create new company
+            const created = await companyService.create({ 
+              name: companyNameInput, 
+              owner_id: user?.id 
+            });
+            if (created.success && created.data) {
+              companyId = created.data.id;
+              logger.info('Created new company', { companyId, companyName: companyNameInput });
+            }
+          }
+        } catch (err) {
+          logger.error('Error ensuring company linkage', { error: err, companyNameInput });
+        }
+      }
+
+      if (companyId && departmentNameInput) {
+        try {
+          // Ensure department exists for the company
+          const departments = await companyService.getCompanyDepartments(companyId);
+          const existingDept = departments.success ? 
+            (departments.data || []).find(d => d.name?.toLowerCase() === departmentNameInput.toLowerCase()) : 
+            undefined;
+          
+          if (!existingDept) {
+            const createdDept = await companyService.createDepartment({ 
+              company_id: companyId, 
+              name: departmentNameInput 
+            } as any);
+            if (createdDept.success) {
+              logger.info('Created new department', { 
+                departmentId: createdDept.data?.id, 
+                departmentName: departmentNameInput,
+                companyId 
+              });
+            }
+          }
+        } catch (err) {
+          logger.error('Error ensuring department linkage', { error: err, departmentNameInput, companyId });
+        }
+      }
 
       const updates = {
         first_name: data.firstName,
         last_name: data.lastName,
-        display_name: data.displayName,
-        job_title: data.jobTitle,
-        role: data.role,
-        department: data.department,
-        business_email: data.businessEmail,
-        personal_email: data.personalEmail,
-        bio: data.bio,
-        location: data.location,
-        linkedin_url: data.website,
-        phone: data.phone,
-      };
+        display_name: toUndef(data.displayName),
+        job_title: toUndef(data.jobTitle),
+        role: data.role as "user" | "owner" | "admin" | "manager",
+        department: toUndef(data.department),
+        company_id: companyId,
+        business_email: toUndef(data.businessEmail),
+        personal_email: toUndef(data.personalEmail),
+        bio: toUndef(data.bio),
+        location: toUndef(data.location),
+        linkedin_url: toUndef(data.website),
+        phone: toUndef(data.phone),
+      } as const;
 
-      setIsUpdating(true);
+      logger.info('Attempting to update profile', { updates });
+
       try {
         const result = await updateProfile(updates);
+        logger.info('Profile update result', { success: result.success, error: result.error });
+        
         if (result.success) {
+          // Ensure we fetch the latest profile and company data from DB/cache
+          await Promise.all([refreshProfile(), refreshCompany()]);
           setIsEditing(false);
+          logger.info('Profile updated successfully, editing mode disabled');
         } else {
-          throw new Error(result.error || 'Failed to update profile');
+          logger.error('Profile update failed', { error: result.error });
+          throw new Error(result.error || 'Update failed');
         }
       } catch (error) {
-        throw new Error('Failed to update profile');
-      } finally {
-        setIsUpdating(false);
+        logger.error('Exception during profile update', { error });
+        throw error;
       }
     },
-    successMessage: 'Profile updated successfully!',
+    successMessage: 'Profile updated successfully',
+    errorMessage: 'Failed to update profile',
   });
+
+  // Initialize preferences form
+  const { 
+    form: preferencesForm, 
+    handleSubmit: handlePreferencesSubmit, 
+    isSubmitting: isPreferencesSubmitting, 
+    isValid: isPreferencesValid, 
+    errors: preferencesErrors 
+  } = useFormWithValidation<UserPreferencesFormData>({
+    schema: userPreferencesSchema as unknown as z.ZodType<UserPreferencesFormData, any, any>,
+    defaultValues: {
+      theme: 'system',
+      language: 'en',
+      timezone: 'UTC',
+      notifications_enabled: true,
+      email_notifications: true,
+      push_notifications: false,
+      sidebar_collapsed: false,
+    },
+    onSubmit: async (data: UserPreferencesFormData) => {
+      logger.info('Preferences form submission started', { formData: data });
+
+      try {
+        const result = await updatePreferences(data);
+        logger.info('Preferences update result', { success: result.success, error: result.error });
+
+        if (result.success) {
+          logger.info('Preferences updated successfully');
+        } else {
+          logger.error('Preferences update failed', { error: result.error });
+          throw new Error(result.error || 'Update failed');
+        }
+      } catch (error) {
+        logger.error('Exception during preferences update', { error });
+        throw error;
+      }
+    },
+    successMessage: 'Preferences updated successfully',
+    errorMessage: 'Failed to update preferences',
+  });
+
+  // Update form values when profile data becomes available
+  useEffect(() => {
+    logger.info('Form reset effect triggered', { 
+      hasProfile: !!profile, 
+      profileLoading, 
+      profileId: profile?.id,
+      hasInitialized
+    });
+    
+    if (profile && !profileLoading) {
+      // Use company name from linked company if available, otherwise fall back to profile.company
+      const companyName = company?.name || (typeof profile.company === 'string' ? profile.company : '') || '';
+      
+      logger.info('Setting form values for profile', { 
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        jobTitle: profile.job_title,
+        role: profile.role,
+        companyName
+      });
+      
+      // Set each field individually to ensure they update
+      form.setValue('firstName', profile.first_name || '');
+      form.setValue('lastName', profile.last_name || '');
+      form.setValue('displayName', profile.display_name || '');
+      form.setValue('jobTitle', profile.job_title || '');
+      form.setValue('company', companyName);
+      form.setValue('role', (profile.role as "user" | "owner" | "admin" | "manager") || 'user');
+      form.setValue('department', profile.department || '');
+      form.setValue('businessEmail', profile.business_email || '');
+      form.setValue('personalEmail', profile.personal_email || '');
+      form.setValue('bio', profile.bio || '');
+      form.setValue('location', profile.location || '');
+      form.setValue('website', profile.linkedin_url || '');
+      form.setValue('phone', profile.phone || '');
+      
+      logger.info('Form values set successfully');
+    }
+  }, [profile, profileLoading, company, form]);
+
+  // Update preferences form values when preferences data becomes available
+  useEffect(() => {
+    logger.info('Preferences form reset effect triggered', {
+      hasPreferences: !!preferences,
+      preferencesLoading,
+      preferencesId: preferences?.id
+    });
+
+    if (preferences && !preferencesLoading) {
+      logger.info('Setting preferences form values', {
+        theme: preferences.theme,
+        language: preferences.language,
+        timezone: preferences.timezone
+      });
+
+      preferencesForm.setValue('theme', preferences.theme);
+      preferencesForm.setValue('language', preferences.language);
+      preferencesForm.setValue('timezone', preferences.timezone);
+      preferencesForm.setValue('notifications_enabled', preferences.notifications_enabled);
+      preferencesForm.setValue('email_notifications', preferences.email_notifications);
+      preferencesForm.setValue('push_notifications', preferences.push_notifications);
+      preferencesForm.setValue('sidebar_collapsed', preferences.sidebar_collapsed);
+
+      logger.info('Preferences form values set successfully');
+    }
+  }, [preferences, preferencesLoading, preferencesForm]);
 
   // Handle URL parameter for tab navigation
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['profile', 'integrations', 'preferences'].includes(tabParam)) {
+    if (tabParam && ['profile', 'preferences'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
 
-  // Load profile data into form when profile is available
-  useEffect(() => {
-    if (profile) {
-      form.reset({
-        firstName: profile.first_name || '',
-        lastName: profile.last_name || '',
-        displayName: profile.display_name || '',
-        jobTitle: profile.job_title || '',
-        company: profile.company || '',
-        role: profile.role || '',
-        department: profile.department || '',
-        businessEmail: profile.business_email || '',
-        personalEmail: profile.personal_email || '',
-        bio: profile.bio || '',
-        location: profile.location || '',
-        website: profile.linkedin_url || '',
-        phone: profile.phone || '',
-      });
-    }
-  }, [profile, form]);
+  // Integrations removed from this page
 
-  // Load integrations from auth store and force refresh to ensure latest data
-  useEffect(() => {
-    const loadIntegrations = async () => {
-      if (user?.id) {
-        setLoadingIntegrations(true);
-        try {
-          // Force refresh integrations to get the latest data
-          await refreshIntegrations();
-        } catch (error) {
-          console.error('Failed to refresh integrations: ', error);
-        } finally {
-          setLoadingIntegrations(false);
-        }
-      }
-    };
+  // Show loading state while profile or preferences are being loaded
+  if (profileLoading || preferencesLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-3 text-muted-foreground">Loading profile...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-    loadIntegrations();
-  }, [user?.id, refreshIntegrations]);
-
-  // Check integration health when integrations change
-  useEffect(() => {
-    if (user?.integrations) {
-      checkIntegrationHealth();
-    }
-  }, [user?.integrations]);
+  // Show error state if profile failed to load - only after initial loading is complete
+  if (!profile && !profileLoading && hasInitialized) {
+    logger.warn('No profile available, showing error state', { 
+      profileLoading, 
+      hasProfile: !!profile,
+      hasInitialized
+    });
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">Failed to load profile</h3>
+              <p className="text-muted-foreground">Please refresh the page and try again.</p>
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="mt-4"
+              >
+                Refresh Page
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const calculateProfileCompletion = () => {
     const formValues = form.getValues();
@@ -173,92 +375,9 @@ const AccountSettings: React.FC = () => {
     return Math.round((filledFields / fields.length) * 100);
   };
 
-  const checkIntegrationHealth = async () => {
-    if (!user?.integrations) return;
-    
-    const details = await Promise.all(
-      user.integrations.map(async (integration) => {
-        try {
-          // Check if tokens exist and are valid
-          const tokens = await TokenManager.getAllTokens(user?.id || '');
-      const hasTokens = tokens.some(token => token.integration_type === integration.integration_type);
-          
-          // Get OAuth token details if they exist
-          let tokenStatus = 'not_connected';
-          let lastRefresh = null;
-          
-          if (hasTokens) {
-            try {
-              const { data: { session } } = await supabase.auth.getSession();
-              if (session) {
-                // Check token validity with integration service
-                const tokenInfo = await integrationService.checkTokenHealth(integration.integration_type || '');
-                tokenStatus = tokenInfo.isValid ? 'valid' : 'expired';
-                lastRefresh = tokenInfo.lastRefresh;
-              }
-            } catch (error) {
-              tokenStatus = 'error';
-            }
-          }
-          
-          return {
-            ...integration,
-            tokenStatus,
-            lastRefresh,
-            hasTokens,
-          };
-        } catch (error) {
-          return {
-            ...integration,
-            tokenStatus: 'error',
-            lastRefresh: null,
-            hasTokens: false,
-          };
-        }
-      })
-    );
-    
-    setIntegrationDetails(details);
-  };
+  // (moved into useCallback above)
 
-  const getTokenStatusIcon = (status: string) => {
-    switch (status) {
-      case 'valid':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'expired':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return <X className="h-4 w-4 text-gray-400" />;
-    }
-  };
-
-  const getTokenStatusText = (status: string) => {
-    switch (status) {
-      case 'valid':
-        return 'Connected';
-      case 'expired':
-        return 'Token Expired';
-      case 'error':
-        return 'Connection Error';
-      default:
-        return 'Not Connected';
-    }
-  };
-
-  const getTokenStatusColor = (status: string) => {
-    switch (status) {
-      case 'valid':
-        return 'bg-green-100 text-green-800';
-      case 'expired':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'error':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  // Integration helper functions removed
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -267,24 +386,45 @@ const AccountSettings: React.FC = () => {
   const handleCancelEdit = () => {
     setIsEditing(false);
     // Reset form to original values
-    if (user?.profile) {
-      form.reset({
-        firstName: user.profile.first_name || '',
-        lastName: user.profile.last_name || '',
-        displayName: user.profile.display_name || '',
-        jobTitle: user.profile.job_title || '',
-        company: user.profile.company || '',
-        role: user.profile.role || '',
-        department: user.profile.department || '',
-        businessEmail: user.profile.business_email || '',
-        personalEmail: user.profile.personal_email || '',
-        bio: user.profile.bio || '',
-        location: user.profile.location || '',
-        website: user.profile.linkedin_url || '',
-        phone: user.profile.phone || '',
-      });
+    if (profile) {
+      const companyName = typeof profile.company === 'string' ? profile.company : profile.company?.name || '';
+      
+      try {
+        const formValues = {
+          firstName: profile.first_name || '',
+          lastName: profile.last_name || '',
+          displayName: profile.display_name || '',
+          jobTitle: profile.job_title || '',
+          company: companyName,
+          role: (profile.role as "user" | "owner" | "admin" | "manager") || 'user',
+          department: profile.department || '',
+          businessEmail: profile.business_email || '',
+          personalEmail: profile.personal_email || '',
+          bio: profile.bio || '',
+          location: profile.location || '',
+          website: profile.linkedin_url || '',
+          phone: profile.phone || '',
+        };
+        
+        form.reset(formValues, {
+          keepDirty: false,
+          keepErrors: false,
+          keepIsSubmitted: false,
+          keepTouched: false,
+        });
+      } catch (error) {
+        logger.error('Error resetting form values', error);
+      }
     }
   };
+
+  // Debug: Log that we're about to render the main component
+  logger.info('Rendering AccountSettings main component', { 
+    profileId: profile?.id,
+    profileLoading,
+    isEditing,
+    activeTab
+  });
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -298,15 +438,14 @@ const AccountSettings: React.FC = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="integrations">Integrations</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-          </TabsList>
+         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+           <TabsList className="grid w-full grid-cols-2">
+             <TabsTrigger value="profile">Profile</TabsTrigger>
+             <TabsTrigger value="preferences">Preferences</TabsTrigger>
+           </TabsList>
 
           <TabsContent value="profile" className="space-y-6">
-            <Card>
+             <Card key={profile?.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -338,13 +477,13 @@ const AccountSettings: React.FC = () => {
                         error={errors.firstName?.message}
                         required
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="Enter your first name"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             placeholder="Enter your first name"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
 
                       <FormField
@@ -354,13 +493,13 @@ const AccountSettings: React.FC = () => {
                         error={errors.lastName?.message}
                         required
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="Enter your last name"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             placeholder="Enter your last name"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
                     </div>
 
@@ -371,13 +510,13 @@ const AccountSettings: React.FC = () => {
                       error={errors.displayName?.message}
                       description="How your name appears to others"
                     >
-                      {({ field }) => (
-                        <Input
-                          {...field}
-                          placeholder="Enter your display name"
-                          disabled={!isEditing}
-                        />
-                      )}
+                      {(field) => (
+                         <Input
+                           {...field}
+                           placeholder="Enter your display name"
+                           disabled={!isEditing}
+                         />
+                       )}
                     </FormField>
                   </FormSection>
 
@@ -392,13 +531,13 @@ const AccountSettings: React.FC = () => {
                         control={form.control}
                         error={errors.jobTitle?.message}
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="e.g., Senior Developer"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             placeholder="e.g., Senior Developer"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
 
                       <FormField
@@ -407,13 +546,13 @@ const AccountSettings: React.FC = () => {
                         control={form.control}
                         error={errors.company?.message}
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="Enter your company name"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             placeholder="Enter your company name"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
                     </div>
 
@@ -424,13 +563,13 @@ const AccountSettings: React.FC = () => {
                         control={form.control}
                         error={errors.role?.message}
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="e.g., Developer, Manager"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             placeholder="e.g., Developer, Manager"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
 
                       <FormField
@@ -439,13 +578,13 @@ const AccountSettings: React.FC = () => {
                         control={form.control}
                         error={errors.department?.message}
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            placeholder="e.g., Engineering, Marketing"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             placeholder="e.g., Engineering, Marketing"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
                     </div>
                   </FormSection>
@@ -462,14 +601,14 @@ const AccountSettings: React.FC = () => {
                         error={errors.businessEmail?.message}
                         hint="Your work email address"
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder="work@company.com"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             type="email"
+                             placeholder="work@company.com"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
 
                       <FormField
@@ -479,14 +618,14 @@ const AccountSettings: React.FC = () => {
                         error={errors.personalEmail?.message}
                         hint="Your personal email address"
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            type="email"
-                            placeholder="personal@email.com"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             type="email"
+                             placeholder="personal@email.com"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
                     </div>
 
@@ -497,14 +636,14 @@ const AccountSettings: React.FC = () => {
                         control={form.control}
                         error={errors.phone?.message}
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            type="tel"
-                            placeholder="+1 (555) 123-4567"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             type="tel"
+                             placeholder="+1 (555) 123-4567"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
 
                       <FormField
@@ -514,14 +653,14 @@ const AccountSettings: React.FC = () => {
                         error={errors.website?.message}
                         hint="Your personal website or LinkedIn profile"
                       >
-                        {({ field }) => (
-                          <Input
-                            {...field}
-                            type="url"
-                            placeholder="https://linkedin.com/in/yourprofile"
-                            disabled={!isEditing}
-                          />
-                        )}
+                         {(field) => (
+                           <Input
+                             {...field}
+                             type="url"
+                             placeholder="https://linkedin.com/in/yourprofile"
+                             disabled={!isEditing}
+                           />
+                         )}
                       </FormField>
                     </div>
                   </FormSection>
@@ -536,7 +675,7 @@ const AccountSettings: React.FC = () => {
                       control={form.control}
                       error={errors.location?.message}
                     >
-                      {({ field }) => (
+                      {(field) => (
                         <Input
                           {...field}
                           placeholder="City, Country"
@@ -552,7 +691,7 @@ const AccountSettings: React.FC = () => {
                       error={errors.bio?.message}
                       hint="A brief description about yourself (max 500 characters)"
                     >
-                      {({ field }) => (
+                      {(field) => (
                         <Textarea
                           {...field}
                           placeholder="Tell us about yourself..."
@@ -563,96 +702,55 @@ const AccountSettings: React.FC = () => {
                     </FormField>
                   </FormSection>
 
-                  <div className="flex justify-end space-x-2 pt-6">
-                    {isEditing ? (
-                      <>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleCancelEdit}
-                          disabled={isSubmitting}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="submit"
-                          disabled={isSubmitting || !isValid}
-                        >
-                          {isSubmitting ? 'Saving...' : 'Save Changes'}
-                        </Button>
-                      </>
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={handleEditToggle}
-                        className="flex items-center space-x-2"
-                      >
-                        <Edit className="h-4 w-4" />
-                        <span>Edit Profile</span>
-                      </Button>
-                    )}
-                  </div>
+                                     <div className="flex justify-end space-x-2 pt-6">
+                     {isEditing ? (
+                       <>
+                         {/* Debug info */}
+                         <div className="flex-1 text-sm text-muted-foreground">
+                           Form valid: {isValid ? 'Yes' : 'No'} | 
+                           Errors: {Object.keys(errors).length} | 
+                           Submitting: {isSubmitting ? 'Yes' : 'No'}
+                         </div>
+                         <Button
+                           type="button"
+                           variant="outline"
+                           onClick={handleCancelEdit}
+                           disabled={isSubmitting}
+                         >
+                           Cancel
+                         </Button>
+                         <Button
+                           type="submit"
+                           disabled={isSubmitting || !isValid}
+                           onClick={() => {
+                             logger.info('Save button clicked', { 
+                               isSubmitting, 
+                               isValid, 
+                               errors: Object.keys(errors),
+                               formValues: form.getValues()
+                             });
+                           }}
+                         >
+                           {isSubmitting ? 'Saving...' : `Save Changes ${!isValid ? '(Invalid)' : ''}`}
+                         </Button>
+                       </>
+                     ) : (
+                       <Button
+                         type="button"
+                         onClick={handleEditToggle}
+                         className="flex items-center space-x-2"
+                       >
+                         <Edit className="h-4 w-4" />
+                         <span>Edit Profile</span>
+                       </Button>
+                     )}
+                   </div>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="integrations" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Connected Integrations</CardTitle>
-                <CardDescription>
-                  Manage your third-party integrations and connections
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingIntegrations ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : integrationDetails.length > 0 ? (
-                  <div className="space-y-4">
-                    {integrationDetails.map((integration) => (
-                      <div
-                        key={integration.id}
-                        className="flex items-center justify-between p-4 border rounded-lg"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <Zap className="h-5 w-5 text-primary" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{integration.integration_type}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {integration.description || 'No description available'}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          {getTokenStatusIcon(integration.tokenStatus)}
-                          <Badge className={getTokenStatusColor(integration.tokenStatus)}>
-                            {getTokenStatusText(integration.tokenStatus)}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <Database className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No Integrations</h3>
-                    <p className="text-muted-foreground mb-4">
-                      You haven't connected any integrations yet.
-                    </p>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Integration
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+
 
           <TabsContent value="preferences" className="space-y-6">
             <Card>
@@ -663,67 +761,199 @@ const AccountSettings: React.FC = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
+                <form onSubmit={handlePreferencesSubmit} className="space-y-6">
+                  <FormSection
+                    title="Interface Settings"
+                    description="Customize your user interface"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        name="theme"
+                        label="Theme"
+                        control={preferencesForm.control}
+                        error={preferencesErrors.theme?.message}
+                      >
+                        {(field) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select theme" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="light">Light</SelectItem>
+                              <SelectItem value="dark">Dark</SelectItem>
+                              <SelectItem value="system">System</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </FormField>
+
+                      <FormField
+                        name="language"
+                        label="Language"
+                        control={preferencesForm.control}
+                        error={preferencesErrors.language?.message}
+                      >
+                        {(field) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select language" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="en">English</SelectItem>
+                              <SelectItem value="es">Español</SelectItem>
+                              <SelectItem value="fr">Français</SelectItem>
+                              <SelectItem value="de">Deutsch</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </FormField>
+                    </div>
+
+                    <FormField
+                      name="timezone"
+                      label="Timezone"
+                      control={preferencesForm.control}
+                      error={preferencesErrors.timezone?.message}
+                    >
+                      {(field) => (
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UTC">UTC</SelectItem>
+                            <SelectItem value="America/New_York">Eastern Time</SelectItem>
+                            <SelectItem value="America/Chicago">Central Time</SelectItem>
+                            <SelectItem value="America/Denver">Mountain Time</SelectItem>
+                            <SelectItem value="America/Los_Angeles">Pacific Time</SelectItem>
+                            <SelectItem value="Europe/London">London</SelectItem>
+                            <SelectItem value="Europe/Paris">Paris</SelectItem>
+                            <SelectItem value="Asia/Tokyo">Tokyo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </FormField>
+                  </FormSection>
+
+                  <FormSection
+                    title="Notification Settings"
+                    description="Manage your notification preferences"
+                  >
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Email Notifications</h4>
+                        <div className="space-y-0.5">
+                          <Label htmlFor="notifications_enabled">Enable Notifications</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Receive notifications about important updates
+                          </p>
+                        </div>
+                        <FormField
+                          name="notifications_enabled"
+                          control={preferencesForm.control}
+                          error={preferencesErrors.notifications_enabled?.message}
+                        >
+                          {(field) => (
+                            <Switch
+                              id="notifications_enabled"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        </FormField>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="email_notifications">Email Notifications</Label>
                           <p className="text-sm text-muted-foreground">
                             Receive email updates about your account
                           </p>
                         </div>
-                        <Button variant="outline" size="sm">
-                          Configure
-                        </Button>
+                        <FormField
+                          name="email_notifications"
+                          control={preferencesForm.control}
+                          error={preferencesErrors.email_notifications?.message}
+                        >
+                          {(field) => (
+                            <Switch
+                              id="email_notifications"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        </FormField>
                       </div>
-                      <Separator />
+
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Push Notifications</h4>
+                        <div className="space-y-0.5">
+                          <Label htmlFor="push_notifications">Push Notifications</Label>
                           <p className="text-sm text-muted-foreground">
                             Get real-time notifications in your browser
                           </p>
                         </div>
-                        <Button variant="outline" size="sm">
-                          Configure
-                        </Button>
+                        <FormField
+                          name="push_notifications"
+                          control={preferencesForm.control}
+                          error={preferencesErrors.push_notifications?.message}
+                        >
+                          {(field) => (
+                            <Switch
+                              id="push_notifications"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        </FormField>
                       </div>
                     </div>
-                  </div>
+                  </FormSection>
 
-                  <Separator />
-
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Privacy Settings</h3>
+                  <FormSection
+                    title="Interface Preferences"
+                    description="Customize your dashboard layout"
+                  >
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Profile Visibility</h4>
+                        <div className="space-y-0.5">
+                          <Label htmlFor="sidebar_collapsed">Collapsed Sidebar</Label>
                           <p className="text-sm text-muted-foreground">
-                            Control who can see your profile information
+                            Start with the sidebar collapsed by default
                           </p>
                         </div>
-                        <Button variant="outline" size="sm">
-                          Configure
-                        </Button>
-                      </div>
-                      <Separator />
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">Data Sharing</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Manage how your data is shared with third parties
-                          </p>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          Configure
-                        </Button>
+                        <FormField
+                          name="sidebar_collapsed"
+                          control={preferencesForm.control}
+                          error={preferencesErrors.sidebar_collapsed?.message}
+                        >
+                          {(field) => (
+                            <Switch
+                              id="sidebar_collapsed"
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
+                        </FormField>
                       </div>
                     </div>
+                  </FormSection>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button
+                      type="submit"
+                      disabled={!isPreferencesValid || isPreferencesSubmitting}
+                      className="flex items-center space-x-2"
+                    >
+                      {isPreferencesSubmitting ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <span>Save Preferences</span>
+                      )}
+                    </Button>
                   </div>
-                </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>

@@ -2,8 +2,8 @@ import { z } from 'zod';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
-import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { logger } from '@/shared/utils/logger';
 import { userLicensesService } from '@/core/services/UserLicensesService';
 import { chatUsageTrackingService } from '@/core/services/ChatUsageTrackingService';
 
@@ -813,11 +813,10 @@ export class BillingService extends BaseService implements CrudServiceInterface<
       }
 
       logger.info({ userId }, 'Creating customer portal session');
-      const { data, error } = await supabase.functions.invoke('stripe-customer-portal', {
-        body: {
-          userId,
-          returnUrl: returnUrl || `${window.location.origin}/settings/billing`
-        }
+      const { data, error } = await callEdgeFunction('stripe-customer-portal', {
+        userId: userId,
+        action: 'create-portal',
+        timestamp: new Date().toISOString()
       });
 
       if (error) {
@@ -850,8 +849,10 @@ export class BillingService extends BaseService implements CrudServiceInterface<
 
   private async callStripeEdgeFunction(action: string, data: any): Promise<any> {
     try {
-      const { data: result, error } = await supabase.functions.invoke('stripe-billing', {
-        body: { action, ...data }
+      const { data: result, error } = await callEdgeFunction('stripe-billing', {
+        userId: data.userId, // Assuming userId is passed as a parameter
+        action,
+        timestamp: new Date().toISOString()
       });
 
       if (error) {

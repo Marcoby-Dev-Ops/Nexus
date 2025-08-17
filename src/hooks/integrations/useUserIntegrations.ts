@@ -1,24 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks';
 import { useToast } from '@/shared/components/Toast';
-
-interface UserIntegration {
-  id: string;
-  user_id: string;
-  integration_id: string;
-  integration_name: string;
-  integration_type: string;
-  status: 'active' | 'inactive' | 'error' | 'setup' | 'connected' | 'disconnected' | 'pending';
-  config?: Record<string, any>;
-  credentials?: Record<string, any>;
-  settings?: Record<string, any>;
-  last_sync_at?: string;
-  error_message?: string;
-  metadata?: Record<string, any>;
-  created_at: string;
-  updated_at: string;
-}
+import { integrationService, type UserIntegration } from '@/services/integrations/IntegrationService';
 
 interface UseUserIntegrationsReturn {
   userIntegrations: UserIntegration[];
@@ -34,8 +17,22 @@ export const useUserIntegrations = (): UseUserIntegrationsReturn => {
   const { user } = useAuth();
   const { showToast } = useToast();
 
+  // Subscribe to integration service updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const unsubscribe = integrationService.subscribe((data, loading) => {
+      if (data) {
+        setUserIntegrations(data);
+      }
+      setIsLoading(loading);
+    });
+
+    return unsubscribe;
+  }, [user?.id]);
+
   const refreshIntegrations = useCallback(async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     try {
       setIsLoading(true);
@@ -43,19 +40,15 @@ export const useUserIntegrations = (): UseUserIntegrationsReturn => {
       
       console.log('🔄 Starting user integrations refresh for user: ', user.id);
       
-      const { data, error: fetchError } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('updated_at', { ascending: false });
-
-      if (fetchError) {
-        console.error('❌ Failed to fetch user integrations: ', fetchError);
-        throw fetchError;
+      const result = await integrationService.getUserIntegrations(user.id);
+      
+      if (!result.success) {
+        console.error('❌ Failed to fetch user integrations: ', result.error);
+        throw new Error(result.error || 'Failed to fetch user integrations');
       }
 
-      console.log('✅ Successfully fetched user integrations: ', data?.length || 0);
-      setUserIntegrations(data || []);
+      console.log('✅ Successfully fetched user integrations: ', result.data?.length || 0);
+      setUserIntegrations(result.data || []);
     } catch (err) {
       console.error('❌ Error refreshing user integrations: ', err);
       setError(err instanceof Error ? err : new Error('An error occurred'));
@@ -67,14 +60,14 @@ export const useUserIntegrations = (): UseUserIntegrationsReturn => {
     } finally {
       setIsLoading(false);
     }
-  }, [user, showToast]);
+  }, [user?.id, showToast]);
 
-  // Initial load
+  // Initial load - only if no cached data exists
   useEffect(() => {
-    if (user) {
+    if (user?.id) {
       refreshIntegrations();
     }
-  }, [user, refreshIntegrations]);
+  }, [user?.id]); // Removed refreshIntegrations from dependencies to prevent infinite loops
 
   return {
     userIntegrations,

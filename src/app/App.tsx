@@ -1,15 +1,17 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '@/shared/contexts/AuthContext';
+import { AuthentikAuthProvider, useAuthentikAuth } from '@/shared/contexts/AuthentikAuthContext';
 import { UserProvider } from '@/shared/contexts/UserContext';
 import { CompanyProvider } from '@/shared/contexts/CompanyContext';
-import { supabase } from '@/lib/supabase';
-import { supabaseService } from '@/core/services/SupabaseService';
-import { authService } from '@/core/auth/AuthService';
+import { UserPreferencesProvider } from '@/shared/contexts/UserPreferencesContext';
+import { postgres } from '@/lib/postgres';
+import { callRPC } from '@/lib/api-client';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 import { logger } from '@/shared/utils/logger';
 
 import { UnifiedLayout } from '@/shared/components/layout/UnifiedLayout';
 import { AppWithOnboarding } from '@/shared/components/layout/AppWithOnboarding';
+import { PerformanceMonitor } from '@/components/dev/PerformanceMonitor';
 
 // Import pages from the new structure
 import { Dashboard } from '@/pages';
@@ -19,14 +21,20 @@ import { LandingPage } from '@/shared/pages/LandingPage';
 import SignupPage from '@/pages/admin/SignupPage';
 import { PrivacyPolicyPage } from '@/pages/help-center/PrivacyPolicyPage';
 import { TermsOfServicePage } from '@/pages/help-center/TermsOfServicePage';
+import { CookiePolicyPage } from '@/pages/help-center/CookiePolicyPage';
+import { SecurityPage } from '@/pages/help-center/SecurityPage';
 import Login from '@/pages/auth/Login';
+import AuthTestPage from '@/pages/auth/AuthTestPage';
+import Signup from '@/pages/auth/Signup';
+import NexusOperatingSystemDemo from '@/pages/demo/NexusOperatingSystemDemo';
+import PricingPage from '@/pages/PricingPage';
+import WorkspacePage from '@/pages/workspace/WorkspacePage';
 
 // Import AI pages
 import { 
   AICapabilities, 
   AIPerformancePage, 
   AIHubPage,
-  ChatV2Page,
   ChatPage,
   AISettingsPage,
   AIModelPage,
@@ -50,11 +58,17 @@ import {
   ClientIntelligencePage,
   HubSpotTest,
   Microsoft365CallbackPage,
+  GoogleCallbackPage,
   HubSpotCallbackPage,
   IntegrationSettingsPage,
   IntegrationSetupPage,
   ApiLearning
 } from '@/pages/integrations';
+import DataPointMappingDashboard from '@/pages/integrations/DataPointMappingDashboard';
+import GoogleAnalyticsCallbackPage from '@/pages/integrations/GoogleAnalyticsCallbackPage';
+
+// Import Unified Client components
+import UnifiedClientProfilesView from '@/components/integrations/UnifiedClientProfilesView';
 
 // Import Admin pages
 import { TenantManagementPage } from '@/pages/admin/TenantManagementPage';
@@ -64,7 +78,7 @@ import ResetPassword from '@/pages/admin/ResetPassword';
 import AccountSettings from '@/pages/admin/AccountSettings';
 import BillingSettings from '@/pages/admin/BillingSettings';
 import IntegrationsSettings from '@/pages/admin/IntegrationsSettings';
-import AuthCallback from '@/pages/admin/AuthCallback';
+import AuthentikAuthCallback from '@/pages/admin/AuthentikAuthCallback';
 import SecuritySettings from '@/pages/admin/SecuritySettings';
 import { UserManagementPage } from '@/pages/admin/UserManagementPage';
 import WaitlistLanding from '@/pages/admin/WaitlistLanding';
@@ -75,7 +89,7 @@ import LoginPage from '@/pages/admin/LoginPage';
 import NotificationsSettings from '@/pages/admin/NotificationsSettings';
 import { OnboardingChecklist } from '@/pages/admin/OnboardingChecklist';
 import PasswordResetPage from '@/pages/admin/PasswordResetPage';
-import { PricingPage } from '@/pages/admin/PricingPage';
+import { PricingPage as AdminPricingPage } from '@/pages/admin/PricingPage';
 import EmailNotVerified from '@/pages/admin/EmailNotVerified';
 import { AuthStatus } from '@/pages/admin/AuthStatus';
 import { BillingDashboard } from '@/pages/admin/BillingDashboard';
@@ -84,12 +98,18 @@ import AppearanceSettings from '@/pages/admin/AppearanceSettings';
 import AssessmentPage from '@/pages/admin/AssessmentPage';
 import { AdminPage } from '@/pages/admin/AdminPage';
 import ProfileSettings from '@/pages/admin/ProfileSettings';
+import MaturityPage from '@/pages/maturity/MaturityPage';
 import DataPrivacySettings from '@/pages/admin/DataPrivacySettings';
 import AdvancedSettings from '@/pages/admin/AdvancedSettings';
 import { ContinuousImprovementDashboard } from '@/pages/admin/ContinuousImprovementDashboard';
 
 import { FeatureExplorer } from '@/pages/admin/FeatureExplorer';
 import AIModelSettings from '@/pages/admin/AIModelSettings';
+import { PolicyManagementPage } from '@/pages/admin/PolicyManagementPage';
+
+// Import Task/Workspace components
+import UnifiedInbox from '@/components/tasks/UnifiedInbox';
+import UnifiedCalendar from '@/components/tasks/UnifiedCalendar';
 
 // Lazy imports for code splitting
 const CompanyProfilePage = React.lazy(() => import('@/pages/admin/CompanyProfilePage').then(m => ({ default: m.CompanyProfilePage })));
@@ -102,6 +122,9 @@ import { ActPage } from '@/pages/automation/ActPage';
 import { UserGuidePage } from '@/pages/help-center/UserGuidePage';
 import { DataUsagePage } from '@/pages/help-center/DataUsagePage';
 import { SecurityCompliancePage } from '@/pages/help-center/SecurityCompliancePage';
+import { ContactPage } from '@/pages/help-center/ContactPage';
+import { FAQPage } from '@/pages/help-center/FAQPage';
+import { DocumentationPage } from '@/pages/help-center/DocumentationPage';
 
 // Import Organization pages
 import { OrganizationsPage } from '@/pages/organizations/OrganizationsPage';
@@ -114,8 +137,11 @@ import { AboutPage } from '@/pages/help-center/AboutPage';
 import EmailIntelligencePage from '@/pages/email/EmailIntelligencePage';
 
 // Import FIRE Cycle components
-import { FireCycleDashboard } from '@/components/fire-cycle';
+import { FireCycleDashboard, FireCycleBusinessGoalsDashboard } from '@/components/fire-cycle';
 // Demo pages removed during cleanup
+
+// Import Purposeful Experience Page
+import PurposefulExperiencePage from '@/pages/experience/PurposefulExperiencePage';
 
 // Loading component
 const LoadingSpinner = () => (
@@ -126,13 +152,13 @@ const LoadingSpinner = () => (
 
 // Wrapper component for ContinuousImprovementDashboard
 const ContinuousImprovementWrapper = () => {
-  const { user } = useAuth();
+  const { user } = useAuthentikAuth();
   return <ContinuousImprovementDashboard userId={user?.id || ''} timeframe="week" />;
 };
 
 // Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthentikAuth();
   const [profileEnsured, setProfileEnsured] = React.useState(false);
 
   // Ensure user profile exists
@@ -140,7 +166,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     if (user?.id && !profileEnsured) {
       try {
         // Call RPC to ensure user profile exists
-        const { error } = await supabaseService.callRPC('ensure_user_profile', { user_id: user.id });
+        const { error } = await callRPC('ensure_user_profile', { user_id: user.id });
         if (error) {
           logger.error('Failed to ensure user profile exists', { error });
         } else {
@@ -169,7 +195,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Public route component (only for non-authenticated users)
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthentikAuth();
 
   if (loading) {
     return <LoadingSpinner />;
@@ -184,7 +210,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 // Root route component (shows landing page for non-authenticated, redirects authenticated to dashboard)
 const RootRoute = () => {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthentikAuth();
 
   if (loading) {
     return <LoadingSpinner />;
@@ -199,10 +225,10 @@ const RootRoute = () => {
 
 function App() {
   return (
-    <AuthProvider>
+    <AuthentikAuthProvider>
       <UserProvider>
         <CompanyProvider>
-          <AppWithOnboarding>
+          <UserPreferencesProvider>
           <div className="App">
           <Routes>
           {/* Public routes */}
@@ -233,28 +259,62 @@ function App() {
             path="/terms-of-service" 
             element={<TermsOfServicePage />} 
           />
+
+          {/* Legal Routes */}
+          <Route 
+            path="/legal/privacy" 
+            element={<PrivacyPolicyPage />} 
+          />
+          
+          <Route 
+            path="/legal/terms" 
+            element={<TermsOfServicePage />} 
+          />
+          
+          <Route 
+            path="/legal/cookies" 
+            element={<CookiePolicyPage />} 
+          />
+          
+          <Route 
+            path="/legal/security" 
+            element={<SecurityPage />} 
+          />
+          
+          <Route 
+            path="/demo/nexus-operating-system" 
+            element={<NexusOperatingSystemDemo />} 
+          />
+          
+          <Route 
+            path="/pricing" 
+            element={<PricingPage />} 
+          />
           
           {/* Protected routes */}
           <Route 
             path="/dashboard" 
+            element={<Navigate to="/home" replace />} 
+          />
+          
+          <Route 
+            path="/home" 
             element={
               <ProtectedRoute>
-                <UnifiedLayout>
-                  <Dashboard />
-                </UnifiedLayout>
+                {/* <UserMappingGuard> */}
+                  <AppWithOnboarding>
+                    <UnifiedLayout>
+                      <Dashboard />
+                    </UnifiedLayout>
+                  </AppWithOnboarding>
+                {/* </UserMappingGuard> */}
               </ProtectedRoute>
             } 
           />
           
           <Route 
             path="/dashboard/home" 
-            element={
-              <ProtectedRoute>
-                <UnifiedLayout>
-                  <Dashboard />
-                </UnifiedLayout>
-              </ProtectedRoute>
-            } 
+            element={<Navigate to="/home" replace />} 
           />
           
 
@@ -267,12 +327,11 @@ function App() {
             path="/tasks/workspace" 
             element={
               <ProtectedRoute>
-                <UnifiedLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">My Workspace</h1>
-                    <p className="text-muted-foreground">Your personalized productivity hub</p>
-                  </div>
-                </UnifiedLayout>
+                {/* <UserMappingGuard> */}
+                  <UnifiedLayout>
+                    <WorkspacePage />
+                  </UnifiedLayout>
+                {/* </UserMappingGuard> */}
               </ProtectedRoute>
             } 
           />
@@ -296,10 +355,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <UnifiedLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Unified Inbox</h1>
-                    <p className="text-muted-foreground">All communications in one place</p>
-                  </div>
+                  <UnifiedInbox />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -310,24 +366,18 @@ function App() {
             element={
               <ProtectedRoute>
                 <UnifiedLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Calendar</h1>
-                    <p className="text-muted-foreground">Schedule and time management</p>
-                  </div>
+                  <UnifiedCalendar />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
           />
           
           <Route 
-            path="/tasks/workspace/today" 
+            path="/tasks/workspace/clients" 
             element={
               <ProtectedRoute>
                 <UnifiedLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Today Dashboard</h1>
-                    <p className="text-muted-foreground">Focus on what matters today</p>
-                  </div>
+                  <ClientIntelligencePage />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -338,9 +388,11 @@ function App() {
             path="/business/fire-cycle" 
             element={
               <ProtectedRoute>
-                <UnifiedLayout>
-                  <FireCycleDashboard />
-                </UnifiedLayout>
+                {/* <UserMappingGuard> */}
+                  <UnifiedLayout>
+                    <FireCycleDashboard />
+                  </UnifiedLayout>
+                {/* </UserMappingGuard> */}
               </ProtectedRoute>
             } 
           />
@@ -410,6 +462,35 @@ function App() {
                       <FireCycleDashboard selectedPhase="execute" />
                     </div>
                   </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/business/fire-cycle/goals" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Business Goals & FIRE Framework</h1>
+                    <p className="text-muted-foreground">Plan and execute business goals using the FIRE methodology</p>
+                    <div className="mt-4">
+                      <FireCycleBusinessGoalsDashboard />
+                    </div>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Purposeful Experience Page */}
+          <Route 
+            path="/experience/purposeful" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <PurposefulExperiencePage />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -539,16 +620,7 @@ function App() {
             } 
           />
           
-          <Route 
-            path="/chat/v2" 
-            element={
-              <ProtectedRoute>
-                <UnifiedLayout>
-                  <ChatV2Page />
-                </UnifiedLayout>
-              </ProtectedRoute>
-            } 
-          />
+
           
           <Route 
             path="/ai-chat" 
@@ -836,6 +908,28 @@ function App() {
               </ProtectedRoute>
             } 
           />
+
+          <Route 
+            path="/integrations/google/callback" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <GoogleCallbackPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            }
+          />
+          
+          <Route 
+            path="/integrations/google-analytics/callback" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <GoogleAnalyticsCallbackPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            }
+          />
           
           <Route 
             path="/integrations/client-intelligence" 
@@ -843,6 +937,51 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <ClientIntelligencePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/client-profiles" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <UnifiedClientProfilesView />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/client-interactions" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Client Interactions</h1>
+                    <p className="text-muted-foreground">Track client interactions across platforms</p>
+                    <div className="mt-6">
+                      <UnifiedClientProfilesView />
+                    </div>
+                  </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/client-alerts" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-4">Intelligence Alerts</h1>
+                    <p className="text-muted-foreground">AI-generated client intelligence alerts</p>
+                    <div className="mt-6">
+                      <UnifiedClientProfilesView />
+                    </div>
+                  </div>
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -898,6 +1037,17 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <IntegrationSetupPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/integrations/data-point-mapping" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <DataPointMappingDashboard />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -1054,7 +1204,7 @@ function App() {
             element={
               <ProtectedRoute>
                 <UnifiedLayout>
-                  <PricingPage />
+                  <AdminPricingPage />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -1183,6 +1333,17 @@ function App() {
             } 
           />
           
+          <Route 
+            path="/admin/policy-management" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <PolicyManagementPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
           {/* Auth routes */}
           <Route 
             path="/admin/login" 
@@ -1221,10 +1382,37 @@ function App() {
           />
           
           <Route 
+            path="/auth/callback" 
+            element={
+              <PublicRoute>
+                <AuthentikAuthCallback />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/auth/test" 
+            element={
+              <PublicRoute>
+                <AuthTestPage />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
+            path="/auth/signup" 
+            element={
+              <PublicRoute>
+                <Signup />
+              </PublicRoute>
+            } 
+          />
+          
+          <Route 
             path="/admin/auth-callback" 
             element={
               <PublicRoute>
-                <AuthCallback />
+                <AuthentikAuthCallback />
               </PublicRoute>
             } 
           />
@@ -1277,6 +1465,39 @@ function App() {
                     <h1 className="text-2xl font-bold mb-4">Help Center</h1>
                     <p className="text-muted-foreground">Support and troubleshooting</p>
                   </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help/contact" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <ContactPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help/faq" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <FAQPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/help/documentation" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <DocumentationPage />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -1509,6 +1730,17 @@ function App() {
             } 
           />
           
+          <Route 
+            path="/maturity" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <MaturityPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
           {/* Root route - landing page for non-authenticated users, dashboard for authenticated */}
           <Route 
             path="/" 
@@ -1517,12 +1749,13 @@ function App() {
           
           {/* Catch all route */}
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </div>
-          </AppWithOnboarding>
+          </Routes>
+          </div>
+          </UserPreferencesProvider>
         </CompanyProvider>
       </UserProvider>
-    </AuthProvider>
+      <PerformanceMonitor />
+    </AuthentikAuthProvider>
   );
 }
 

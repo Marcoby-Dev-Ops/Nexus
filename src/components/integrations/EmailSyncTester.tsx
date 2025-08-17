@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { supabase } from "@/lib/supabase";
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Badge } from '@/shared/components/ui/Badge';
+import { postgres } from "@/lib/postgres";
 import { Mail, RefreshCw, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { callEdgeFunction } from '@/lib/api-client';
 
 interface EmailSyncTesterProps {
   onSyncComplete?: () => void;
@@ -23,13 +24,13 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await postgres.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
       }
 
       // Check for stored Microsoft Graph tokens
-      const { data: tokenData, error: tokenError } = await supabase
+      const { data: tokenData, error: tokenError } = await postgres
         .from('ai_integrations_oauth')
         .select('access_token, refresh_token, expires_at, created_at')
         .eq('user_id', user.id)
@@ -45,7 +46,7 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
       }
 
       // Check for email accounts
-      const { data: accounts, error: accountsError } = await supabase
+      const { data: accounts, error: accountsError } = await postgres
         .from('ai_email_accounts')
         .select('*')
         .eq('user_id', user.id);
@@ -71,7 +72,7 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
     setSyncResult(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await postgres.auth.getUser();
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -83,12 +84,10 @@ const EmailSyncTester: React.FC<EmailSyncTesterProps> = ({ onSyncComplete }) => 
       }
 
       // Call the email sync edge function
-      const { data, error } = await supabase.functions.invoke('ai_email_sync', {
-        body: {
-          accountid: outlookAccount.id,
-          jobtype: 'incremental_sync',
-          syncfrom: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // Last 7 days
-        }
+      const { data, error } = await callEdgeFunction('ai_email_sync', {
+        userId: user.id,
+        action: 'sync',
+        timestamp: new Date().toISOString()
       });
 
       if (error) {

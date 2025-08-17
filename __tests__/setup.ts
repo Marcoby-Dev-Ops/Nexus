@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { mockSupabaseClient } from './utils/ragTestUtils';
+
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -9,9 +9,13 @@ Object.defineProperty(global, 'import', {
   value: {
     meta: {
       env: {
-        // Supabase Configuration
-        VITE_SUPABASE_URL: 'https://test.supabase.co',
-        VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+        // PostgreSQL Configuration
+        VITE_POSTGRES_URL: 'postgresql://postgres:postgres@localhost:5433/vector_db',
+        VITE_POSTGRES_HOST: 'localhost',
+        VITE_POSTGRES_PORT: '5433',
+        VITE_POSTGRES_DB: 'vector_db',
+        VITE_POSTGRES_USER: 'postgres',
+        VITE_POSTGRES_PASSWORD: 'postgres',
         
         // OpenAI Configuration
         VITE_OPENAI_API_KEY: 'test-openai-key',
@@ -47,7 +51,7 @@ Object.defineProperty(global, 'import', {
         VITE_N8N_URL: 'https://test.n8n.io',
         
         // Application Features
-        VITE_CHAT_V2: '1',
+    
         
         // Vite Built-in Environment Variables
         DEV: true,
@@ -60,10 +64,7 @@ Object.defineProperty(global, 'import', {
   }
 });
 
-// Mock Supabase client
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient)
-}));
+
 
 // Mock OpenAI
 jest.mock('openai', () => ({
@@ -91,8 +92,12 @@ beforeEach(() => {
 
 // Mock environment variables for Node.js compatibility
 process.env.NODE_ENV = 'test';
-process.env.SUPABASE_URL = 'https://test.supabase.co';
-process.env.SUPABASE_ANON_KEY = 'test-anon-key';
+process.env.POSTGRES_URL = 'postgresql://postgres:postgres@localhost:5433/vector_db';
+process.env.POSTGRES_HOST = 'localhost';
+process.env.POSTGRES_PORT = '5433';
+process.env.POSTGRES_DB = 'vector_db';
+process.env.POSTGRES_USER = 'postgres';
+process.env.POSTGRES_PASSWORD = 'postgres';
 process.env.OPENAI_API_KEY = 'test-openai-key';
 
 // Mock performance.now for consistent testing

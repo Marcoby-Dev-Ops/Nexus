@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { select, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { selectData, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface Thought {
@@ -22,7 +22,7 @@ export const useThoughts = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await select('thoughts', '*', { user_id: userId });
+      const { data, error } = await selectData('thoughts', { filters: { user_id: userId } });
       if (error) {
         logger.error({ error }, 'Failed to fetch thoughts');
         setError('Failed to fetch thoughts');

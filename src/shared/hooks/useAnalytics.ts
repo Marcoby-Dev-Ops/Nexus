@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { select, insertOne } from '@/lib/supabase';
+import { selectData, insertOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface AnalyticsEvent {
@@ -20,7 +20,7 @@ export const useAnalytics = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await select('analytics_events', '*', { user_id: userId });
+      const { data, error } = await selectData('analytics_events', '*', { user_id: userId });
       if (error) {
         logger.error({ error }, 'Failed to fetch analytics events');
         setError('Failed to fetch events');

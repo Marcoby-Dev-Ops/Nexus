@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { select, insertOne } from '@/lib/supabase';
+import { selectData, insertOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface RealtimeMessage {

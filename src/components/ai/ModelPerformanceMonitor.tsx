@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { TrendingUp, TrendingDown, DollarSign, Clock, CheckCircle, AlertTriangle, BarChart3, RefreshCw } from 'lucide-react';
 import { AIService } from '@/services/ai';
 
@@ -49,7 +49,9 @@ export function ModelPerformanceMonitor({ className = '' }: ModelPerformanceMoni
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 30000); // Refresh every 30 seconds
+    // Use longer intervals in development to reduce resource usage
+    const refreshInterval = process.env.NODE_ENV === 'development' ? 120000 : 30000; // 2min dev, 30s prod
+    const interval = setInterval(loadData, refreshInterval);
     return () => clearInterval(interval);
   }, [timeframe]);
 

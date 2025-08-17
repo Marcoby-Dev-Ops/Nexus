@@ -3,7 +3,7 @@
  * Handles multi-tenant company management
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 

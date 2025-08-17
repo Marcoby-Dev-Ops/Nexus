@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Loader2, CheckCircle, XCircle, RefreshCw, Database, Users, Building2, TrendingUp } from 'lucide-react';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 interface TestResult {
   success: boolean;
@@ -110,29 +111,32 @@ export default function HubSpotTest() {
       // Test 3: Test HubSpot API connection
       if (tokenData?.access_token) {
         try {
+          const result = await authentikAuthService.getSession();
+          const session = result.data;
+
           const response = await fetch('/api/hubspot-test', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+              'Authorization': `Bearer ${session?.access_token}`
             },
             body: JSON.stringify({ userId: user.id })
           });
 
-          const result = await response.json();
+          const responseData = await response.json();
 
-          if (response.ok && result.success) {
+          if (response.ok && responseData.success) {
             newResults.push({
               success: true,
               message: 'HubSpot API connection successful',
-              details: result,
+              details: responseData,
               timestamp: new Date().toISOString()
             });
           } else {
             newResults.push({
               success: false,
               message: 'HubSpot API connection failed',
-              details: result.error || 'Unknown error',
+              details: responseData.error || 'Unknown error',
               timestamp: new Date().toISOString()
             });
           }

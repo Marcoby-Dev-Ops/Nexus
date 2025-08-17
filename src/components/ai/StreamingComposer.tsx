@@ -1,16 +1,39 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { supabase } from "@/lib/supabase";
+import { postgres } from "@/lib/postgres";
 import { env } from "@/core/environment";
-import { Card, CardContent } from '@/shared/components/ui/Card.tsx';
+import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import SourceDrawer from '@/components/ai/SourceDrawer';
 import type { SourceMeta } from '@/components/ai/SourceDrawer';
 import { AIService } from '@/services/ai';
 import type { SlashCommand } from '@/services/ai';
 import SlashCommandMenu from '@/components/ai/SlashCommandMenu';
 import { useToast } from '@/shared/ui/components/Toast';
-import { securityManager as adminSecurityManager } from '@/services/admin/index.ts';
+import { securityManager as adminSecurityManager } from '@/services/admin/index';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
+import { callEdgeFunction } from '@/lib/api-client';
+import { contextualRAG } from '@/lib/ai/contextualRAG';
+import { useAuth } from '@/hooks/index';
+import { useSimpleDashboard } from '@/hooks/dashboard/useSimpleDashboard';
+import { useNextBestActions } from '@/hooks/useNextBestActions';
+import { 
+  Upload, 
+  Mic, 
+  MicOff, 
+  Send, 
+  Paperclip, 
+  X, 
+  Edit3, 
+  Copy, 
+  Trash2, 
+  MoreVertical,
+  FileText,
+  Image,
+  File,
+  Download
+} from 'lucide-react';
 
 // Chat is always enabled; previous VITE_CHAT_V2 gate removed
 const isChatEnabled = true;
@@ -18,7 +41,7 @@ const isChatEnabled = true;
 // Backend Edge Function URL (configure in .env)
 // When VITE_EA_CHAT_URL is not explicitly provided, fall back to the Supabase project URL so that
 // the path resolves correctly both in local (supabase start → http: //localhost:54321) and production.
-const AI_CHAT_FUNC_URL = `${env.supabase.url}/functions/v1/ai_chat`;
+const AI_CHAT_FUNC_URL = '/api/edge/ai_chat';
 
 interface StreamingComposerProps {
   conversationId?: string | null;
@@ -28,6 +51,7 @@ interface StreamingComposerProps {
 }
 
 interface ChatMessage {
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
   sources?: SourceMeta[];
@@ -43,6 +67,17 @@ interface ChatMessage {
     insights: string[];
   };
   modelInfo?: StreamingResponse['modelInfo'];
+  attachments?: FileAttachment[];
+  timestamp?: Date;
+}
+
+interface FileAttachment {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url?: string;
+  file?: File;
 }
 
 // Add model info to the streaming response interface
@@ -79,8 +114,20 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [activeSource, setActiveSource] = useState<SourceMeta | null>(null);
+  const [ragContext, setRagContext] = useState<any>(null);
+  const [attachments, setAttachments] = useState<FileAttachment[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+  const [showMessageActions, setShowMessageActions] = useState<string | null>(null);
+  
   const chatRef = useRef<HTMLDivElement | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { data: dashboardData } = useSimpleDashboard();
+  const { data: nextBestActions } = useNextBestActions();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   // Determine enabled flag via constant for future gating if needed
   const enabled = isChatEnabled;
@@ -98,18 +145,48 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
     const loadHistory = async () => {
       if (!initialId) return;
       try {
-        const { data, error } = await (supabase as any)
+        const { data, error } = await (postgres as any)
           .from('ai_messages')
-          .select('role, content')
+          .select('role, content, created_at')
           .eq('conversation_id', initialId)
           .order('created_at', { ascending: true });
         if (!error && data) {
-          setMessages(data as any);
+          const formattedMessages: ChatMessage[] = data.map((msg: any) => ({
+            ...msg,
+            timestamp: new Date(msg.created_at)
+          }));
+          setMessages(formattedMessages);
         }
       } catch (_) {/* ignore */}
     };
     loadHistory();
   }, [initialId]);
+
+  // Build RAG context from dashboard data
+  useEffect(() => {
+    const buildRagContext = async () => {
+      if (!user?.id) return;
+
+      try {
+        // Build comprehensive context from dashboard and integrations
+        const context = {
+          userId: user.id,
+          companyId: user.user_metadata?.organization_id,
+          dashboardMetrics: dashboardData?.metrics || {},
+          nextBestActions: nextBestActions?.actions || [],
+          businessHealth: dashboardData?.health_score || 0,
+          recentInteractions: messages.slice(-5).map(m => m.content),
+          currentTopic: 'business_optimization'
+        };
+
+        setRagContext(context);
+      } catch (error) {
+        console.error('Error building RAG context:', error);
+      }
+    };
+
+    buildRagContext();
+  }, [user?.id, dashboardData, nextBestActions, messages]);
 
   // Slash-command state -------------------------------------------------------
   const [showCommandMenu, setShowCommandMenu] = useState(false);
@@ -127,10 +204,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         const commands = await getSlashCommands();
         setAvailableCommands(commands);
       } catch (error) {
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('[StreamingComposer] Failed to load slash commands: ', error);
+        console.error('[StreamingComposer] Failed to load slash commands: ', error);
         // Fallback to empty array - the service handles fallbacks internally
         setAvailableCommands([]);
       } finally {
@@ -153,24 +227,215 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
 
   const securityManager = adminSecurityManager;
 
+  // File upload handlers
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    Array.from(files).forEach(file => {
+      const attachment: FileAttachment = {
+        id: crypto.randomUUID(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        file: file
+      };
+      setAttachments(prev => [...prev, attachment]);
+    });
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeAttachment = (attachmentId: string) => {
+    setAttachments(prev => prev.filter(att => att.id !== attachmentId));
+  };
+
+  // Voice recording handlers
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      
+      const audioChunks: Blob[] = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        await processVoiceInput(audioBlob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error('Error starting recording:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start recording. Please check microphone permissions.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const processVoiceInput = async (audioBlob: Blob) => {
+    try {
+      // Mock voice-to-text processing (replace with real Speech-to-Text API)
+      const mockTranscription = "This is a transcribed voice input about implementing a new feature";
+      setInput(mockTranscription);
+      
+      toast({
+        title: "Voice input processed",
+        description: "Your voice message has been transcribed.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error processing voice input:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process voice input. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Message action handlers
+  const handleEditMessage = (messageId: string, content: string) => {
+    setEditingMessageId(messageId);
+    setEditingContent(content);
+  };
+
+  const saveEdit = () => {
+    if (!editingMessageId || !editingContent.trim()) return;
+    
+    setMessages(prev => prev.map(msg => 
+      msg.id === editingMessageId 
+        ? { ...msg, content: editingContent }
+        : msg
+    ));
+    
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const cancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+    setShowMessageActions(null);
+  };
+
+  const handleCopyMessage = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      toast({
+        title: "Copied",
+        description: "Message copied to clipboard.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error('Error copying message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy message.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && attachments.length === 0) return;
     setError(null);
     setIsStreaming(true);
 
-    const userMessage: ChatMessage = { role: 'user', content: input.trim() };
-    const newMessages: ChatMessage[] = [...messages, userMessage, { role: 'assistant', content: '' }];
+    const userMessage: ChatMessage = { 
+      id: crypto.randomUUID(),
+      role: 'user', 
+      content: input.trim(),
+      attachments: attachments.length > 0 ? [...attachments] : undefined,
+      timestamp: new Date()
+    };
+    const newMessages: ChatMessage[] = [...messages, userMessage, { 
+      id: crypto.randomUUID(),
+      role: 'assistant', 
+      content: '' 
+    }];
     setMessages(newMessages);
 
     const assistantMessageIndex = newMessages.length - 1;
     const currentInput = input;
+    const currentAttachments = [...attachments];
     setInput('');
+    setAttachments([]);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const sessionResult = await authentikAuthService.getSession();
+      const session = sessionResult.data;
       if (!session) throw new Error("Not authenticated");
 
-      const res = await fetch(AI_CHAT_FUNC_URL, {
+      // Get RAG results for enhanced context
+      let ragResults = null;
+      let ragSources: SourceMeta[] = [];
+      
+      if (ragContext && user?.id) {
+        try {
+          const ragQuery = {
+            query: currentInput,
+            context: {
+              userId: user.id,
+              companyId: ragContext.companyId,
+              currentTopic: ragContext.currentTopic,
+              recentInteractions: ragContext.recentInteractions
+            },
+            maxResults: 5,
+            threshold: 0.7
+          };
+
+          ragResults = await contextualRAG.searchRelevantDocuments(ragQuery);
+          
+          // Convert RAG documents to source metadata
+          ragSources = ragResults.documents.map(doc => ({
+            id: doc.id,
+            title: doc.metadata.source,
+            content: doc.content,
+            type: doc.metadata.type,
+            timestamp: doc.metadata.timestamp,
+            relevance: doc.metadata.relevance_score || 0
+          }));
+        } catch (ragError) {
+          console.error('RAG search failed:', ragError);
+          // Continue without RAG results
+        }
+      }
+
+      // Enhanced context with RAG results and dashboard data
+      const enhancedContext = {
+        ...context,
+        ragResults: ragResults?.documents || [],
+        dashboardMetrics: ragContext?.dashboardMetrics || {},
+        nextBestActions: ragContext?.nextBestActions || [],
+        businessHealth: ragContext?.businessHealth || 0,
+        sources: ragSources,
+        attachments: currentAttachments
+      };
+
+      const res = await callEdgeFunction(AI_CHAT_FUNC_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,8 +443,10 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         },
         body: JSON.stringify({
           query: currentInput,
-          context,
+          context: enhancedContext,
           agentId: agentId === 'auto' ? undefined : agentId, // Let supervisor route if 'auto'
+          ragSources: ragSources.length > 0 ? ragSources : undefined,
+          attachments: currentAttachments
         }),
       });
 
@@ -219,6 +486,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
                 content: updated[assistantMessageIndex].content + content,
                 routing: routing || updated[assistantMessageIndex].routing,
                 agentId: agentId || updated[assistantMessageIndex].agentId,
+                sources: ragSources.length > 0 ? ragSources : updated[assistantMessageIndex].sources,
               };
               return updated;
             });
@@ -226,10 +494,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         }
       }
     } catch (err: any) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Streaming error', err);
+      console.error('Streaming error', err);
       const errorMessage = `Error: ${err.message}`;
       setMessages(prev => {
         const updated = [...prev];
@@ -256,7 +521,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
 
   // Enhanced handleSend with billing integration
   const handleSendWithBilling = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && attachments.length === 0) return;
     
     const currentInput = input;
     handleSend(); // Use existing handleSend logic
@@ -264,7 +529,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
     // Add billing tracking in background
     setTimeout(async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const sessionData = await authentikAuthService.getSession();
+        const session = sessionData.data;
         if (!session) return;
 
         // Simple billing record for demonstration
@@ -283,10 +549,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         //   }
         // );
       } catch (error) {
-         
-     
-    // eslint-disable-next-line no-console
-    console.error('Error recording billing: ', error);
+        console.error('Error recording billing: ', error);
       }
     }, 1000);
   };
@@ -297,7 +560,8 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       const message = messages[messageIndex];
       if (!message) return;
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const authResult = await authentikAuthService.getSession();
+      const session = authResult.data;
       if (!session) return;
 
       // await continuousImprovementService.trackUserFeedback({
@@ -311,23 +575,17 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       //   provider: 'unknown'
       // });
 
-      // Update message with feedback (extend ChatMessage type if needed)
-       
-     
-    // eslint-disable-next-line no-console
-    console.log(`Feedback recorded: ${rating} stars for message ${messageIndex}`);
+      console.log(`Feedback recorded: ${rating} stars for message ${messageIndex}`);
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error submitting feedback: ', error);
+      console.error('Error submitting feedback: ', error);
     }
   };
 
   // Add this function after the existing functions
   const handleFeedback = async (messageId: string, rating: number, feedback?: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const authResult = await authentikAuthService.getSession();
+      const session = authResult.data;
       if (!session) return;
 
       // await continuousImprovementService.trackUserFeedback({
@@ -347,10 +605,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         variant: "default",
       });
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error submitting feedback: ', error);
+      console.error('Error submitting feedback: ', error);
       toast({
         title: "Error",
         description: "Failed to submit feedback. Please try again.",
@@ -439,16 +694,88 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
       <Card className="flex-1 overflow-hidden">
         <CardContent ref={chatRef} className="overflow-y-auto space-y-2 p-4 h-full">
           {messages.map((message, index) => (
-            <div key={index} className="mb-4">
+            <div key={message.id || index} className="mb-4 group">
               <div className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-3xl rounded-lg px-4 py-2 ${
+                <div className={`max-w-3xl rounded-lg px-4 py-2 relative ${
                   message.role === 'user' 
                     ? 'bg-primary text-primary-foreground' 
                     : 'bg-muted text-foreground'
                 }`}>
-                  <div className="prose prose-sm max-w-none">
-                    {message.content}
+                  {/* Message Actions */}
+                  <div className={`absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity ${
+                    message.role === 'user' ? 'text-primary-foreground' : 'text-muted-foreground'
+                  }`}>
+                    <div className="flex items-center gap-1">
+                      {message.role === 'user' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditMessage(message.id || index.toString(), message.content)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleCopyMessage(message.content)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                      {message.role === 'user' && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleDeleteMessage(message.id || index.toString())}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Message Content */}
+                  <div className="prose prose-sm max-w-none">
+                    {editingMessageId === (message.id || index.toString()) ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={editingContent}
+                          onChange={(e) => setEditingContent(e.target.value)}
+                          className="min-h-[100px]"
+                        />
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={saveEdit}>Save</Button>
+                          <Button size="sm" variant="outline" onClick={cancelEdit}>Cancel</Button>
+                        </div>
+                      </div>
+                    ) : (
+                      message.content
+                    )}
+                  </div>
+
+                  {/* Attachments */}
+                  {message.attachments && message.attachments.length > 0 && (
+                    <div className="mt-2 space-y-2">
+                      {message.attachments.map(attachment => (
+                        <div key={attachment.id} className="flex items-center gap-2 p-2 bg-background/50 rounded">
+                          {attachment.type.startsWith('image/') ? (
+                            <Image className="w-4 h-4" />
+                          ) : attachment.type.includes('pdf') ? (
+                            <FileText className="w-4 h-4" />
+                          ) : (
+                            <File className="w-4 h-4" />
+                          )}
+                          <span className="text-sm flex-1 truncate">{attachment.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {(attachment.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   
                   {message.role === 'assistant' && message.modelInfo && (
                     <div className="mt-2 pt-2 border-t border-border text-xs text-muted-foreground">
@@ -502,77 +829,149 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
         </CardContent>
       </Card>
 
-      {/* input area */}
-      <Textarea
-        ref={textareaRef}
-        value={input}
-        onChange={e => {
-          const value = e.target.value;
-          const cursorPos = e.target.selectionStart ?? value.length;
+      {/* Attachments Preview */}
+      {attachments.length > 0 && (
+        <div className="p-2 bg-muted rounded-lg">
+          <div className="flex flex-wrap gap-2">
+            {attachments.map(attachment => (
+              <div key={attachment.id} className="flex items-center gap-2 p-2 bg-background rounded border">
+                {attachment.type.startsWith('image/') ? (
+                  <Image className="w-4 h-4" />
+                ) : attachment.type.includes('pdf') ? (
+                  <FileText className="w-4 h-4" />
+                ) : (
+                  <File className="w-4 h-4" />
+                )}
+                <span className="text-sm truncate max-w-[150px]">{attachment.name}</span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => removeAttachment(attachment.id)}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
-          // Detect the most recent '/'
-          const slashIdx = value.lastIndexOf('/', cursorPos - 1);
-          if (slashIdx >= 0) {
-            const charBefore = slashIdx === 0 ? ' ' : value[slashIdx - 1];
-            // Only trigger if slash is at start of line or preceded by whitespace
-            if (charBefore === ' ' || charBefore === '\n') {
-              const query = value.slice(slashIdx + 1, cursorPos);
-              if (/^[\w-]*$/.test(query)) {
-                setShowCommandMenu(true);
-                setCommandQuery(query);
-                setCommandStartIdx(slashIdx);
+      {/* Input Area */}
+      <div className="flex items-end gap-2 p-4 border-t border-border">
+        <div className="flex-1 relative">
+          <Textarea
+            ref={textareaRef}
+            value={input}
+            onChange={e => {
+              const value = e.target.value;
+              const cursorPos = e.target.selectionStart ?? value.length;
+
+              // Detect the most recent '/'
+              const slashIdx = value.lastIndexOf('/', cursorPos - 1);
+              if (slashIdx >= 0) {
+                const charBefore = slashIdx === 0 ? ' ' : value[slashIdx - 1];
+                // Only trigger if slash is at start of line or preceded by whitespace
+                if (charBefore === ' ' || charBefore === '\n') {
+                  const query = value.slice(slashIdx + 1, cursorPos);
+                  if (/^[\w-]*$/.test(query)) {
+                    setShowCommandMenu(true);
+                    setCommandQuery(query);
+                    setCommandStartIdx(slashIdx);
+                  } else {
+                    setShowCommandMenu(false);
+                  }
+                } else {
+                  setShowCommandMenu(false);
+                }
               } else {
                 setShowCommandMenu(false);
               }
-            } else {
-              setShowCommandMenu(false);
-            }
-          } else {
-            setShowCommandMenu(false);
-          }
 
-          setInput(value);
-        }}
-        onKeyDown={(e) => {
-          // When command menu is open, intercept nav keys
-          if (showCommandMenu) {
-            if (e.key === 'ArrowDown') {
-              e.preventDefault();
-              setSelectedCmdIdx((prev) => Math.min(prev + 1, filteredCommands.length - 1));
-              return;
-            }
-            if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              setSelectedCmdIdx((prev) => Math.max(prev - 1, 0));
-              return;
-            }
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              if (filteredCommands.length > 0) {
-                const cmd = filteredCommands[selectedCmdIdx] ?? filteredCommands[0];
-                insertCommand(cmd);
+              setInput(value);
+            }}
+            onKeyDown={(e) => {
+              // When command menu is open, intercept nav keys
+              if (showCommandMenu) {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setSelectedCmdIdx((prev) => Math.min(prev + 1, filteredCommands.length - 1));
+                  return;
+                }
+                if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setSelectedCmdIdx((prev) => Math.max(prev - 1, 0));
+                  return;
+                }
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (filteredCommands.length > 0) {
+                    const cmd = filteredCommands[selectedCmdIdx] ?? filteredCommands[0];
+                    insertCommand(cmd);
+                  }
+                  return;
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  setShowCommandMenu(false);
+                  return;
+                }
               }
-              return;
-            }
-            if (e.key === 'Escape') {
-              e.preventDefault();
-              setShowCommandMenu(false);
-              return;
-            }
-          }
 
-          if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-              if (!isStreaming && input.trim()) {
-                handleSendWithBilling();
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!isStreaming && (input.trim() || attachments.length > 0)) {
+                  handleSendWithBilling();
+                }
               }
-          }
-        }}
-        placeholder="Type your message..."
-        rows={2}
-        disabled={isStreaming}
-      />
-      {/* Slash command menu ---------------------------------------------------*/}
+            }}
+            placeholder="Type your message..."
+            rows={2}
+            disabled={isStreaming}
+            className="pr-20"
+          />
+          
+          {/* Input Actions */}
+          <div className="absolute bottom-2 right-2 flex items-center gap-1">
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={handleFileUpload}
+              accept="*/*"
+            />
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isStreaming}
+              className="h-8 w-8 p-0"
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isStreaming}
+              className={`h-8 w-8 p-0 ${isRecording ? 'text-destructive' : ''}`}
+            >
+              {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+            </Button>
+          </div>
+        </div>
+        
+        <Button 
+          onClick={handleSendWithBilling} 
+          disabled={(!input.trim() && attachments.length === 0) || isStreaming} 
+          className="self-end"
+        >
+          {isStreaming ? 'Streaming…' : <Send className="w-4 h-4" />}
+        </Button>
+      </div>
+
+      {/* Slash command menu */}
       {showCommandMenu && (
         <SlashCommandMenu
           commands={filteredCommands}
@@ -583,9 +982,7 @@ export const StreamingComposer: React.FC<StreamingComposerProps> = ({
           query={commandQuery}
         />
       )}
-              <Button onClick={handleSendWithBilling} disabled={!input || isStreaming} className="self-end">
-        {isStreaming ? 'Streaming…' : 'Send'}
-      </Button>
+      
       {error && <p className="text-destructive text-sm mb-2">{error}</p>}
 
       {/* Source Drawer */}

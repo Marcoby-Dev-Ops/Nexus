@@ -1,4 +1,4 @@
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase-compatibility';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
 interface Task {

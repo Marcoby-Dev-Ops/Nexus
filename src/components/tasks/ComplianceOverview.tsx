@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Shield, AlertTriangle, CheckCircle, Clock, Database, Zap, Lock, Eye } from 'lucide-react';
 import { DataPrincipleService } from '@/core/services';
 import { useQuery } from '@tanstack/react-query';

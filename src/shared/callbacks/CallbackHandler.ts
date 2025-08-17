@@ -11,7 +11,7 @@ import type {
 } from '@/core/types/callbacks';
 import { CallbackEvent } from '@/core/types/callbacks';
 import { callbackRegistry } from '@/shared/callbacks/CallbackRegistry';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 /**
@@ -401,6 +401,7 @@ export class CallbackHandlers {
 
   /**
    * Exchange OAuth code for tokens
+   * This method handles the OAuth code exchange for different integrations
    */
   private static async exchangeOAuthCode(
     integrationSlug: string,
@@ -408,16 +409,208 @@ export class CallbackHandlers {
     state: string,
     _userId?: string
   ): Promise<any> {
-    // This would typically make an API call to exchange the code for tokens
-    // and store them in the database
+    // Check if we're in test mode
+    const isTestMode = import.meta.env.NODE_ENV === 'test' || import.meta.env.DEV === 'true'
     
-    // For now, return a mock response
+    if (isTestMode) {
+      // Use mock data for tests
+      console.log('🧪 [CallbackHandler] Test mode detected, using mock OAuth data')
+      return {
+        accesstoken: 'mock_access_token',
+        refreshtoken: 'mock_refresh_token',
+        expiresin: 3600,
+        scopes: ['read', 'write'],
+        tokentype: 'Bearer'
+      };
+    }
+
+    // Production mode - use real OAuth flow
+    console.log('🚀 [CallbackHandler] Production mode detected, using real OAuth flow')
+    
+    try {
+      switch (integrationSlug.toLowerCase()) {
+        case 'hubspot':
+          return await this.exchangeHubSpotCode(code, state);
+        case 'google':
+        case 'google-analytics':
+          return await this.exchangeGoogleCode(code, state);
+        case 'microsoft':
+        case 'microsoft365':
+          return await this.exchangeMicrosoftCode(code, state);
+        case 'slack':
+          return await this.exchangeSlackCode(code, state);
+        case 'paypal':
+          return await this.exchangePayPalCode(code, state);
+        default:
+          throw new Error(`Unsupported integration: ${integrationSlug}`);
+      }
+    } catch (error) {
+      console.error(`❌ [CallbackHandler] OAuth exchange failed for ${integrationSlug}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Exchange HubSpot OAuth code for tokens
+   */
+  private static async exchangeHubSpotCode(code: string, state: string): Promise<any> {
+    // Use server-side OAuth API instead of direct token exchange
+    const response = await fetch('/api/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider: 'hubspot',
+        code,
+        redirectUri: `${window.location.origin}/integrations/hubspot/callback`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`HubSpot token exchange failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const tokens = await response.json();
     return {
-      accesstoken: 'mock_access_token',
-      refreshtoken: 'mock_refresh_token',
-      expiresin: 3600,
-      scopes: ['read', 'write'],
+      accesstoken: tokens.access_token,
+      refreshtoken: tokens.refresh_token,
+      expiresin: tokens.expires_in,
+      scopes: tokens.scope?.split(' ') || [],
+      tokentype: tokens.token_type || 'Bearer'
+    };
+  }
+
+  /**
+   * Exchange Google OAuth code for tokens
+   */
+  private static async exchangeGoogleCode(code: string, state: string): Promise<any> {
+    // Use server-side OAuth API instead of direct token exchange
+    const response = await fetch('/api/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider: 'google',
+        code,
+        redirectUri: `${window.location.origin}/integrations/google/callback`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Google token exchange failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const tokens = await response.json();
+    return {
+      accesstoken: tokens.access_token,
+      refreshtoken: tokens.refresh_token,
+      expiresin: tokens.expires_in,
+      scopes: tokens.scope?.split(' ') || [],
+      tokentype: tokens.token_type || 'Bearer'
+    };
+  }
+
+  /**
+   * Exchange Microsoft OAuth code for tokens
+   */
+  private static async exchangeMicrosoftCode(code: string, state: string): Promise<any> {
+    // Use server-side OAuth API instead of direct token exchange
+    const response = await fetch('/api/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider: 'microsoft',
+        code,
+        redirectUri: `${window.location.origin}/integrations/microsoft/callback`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Microsoft token exchange failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const tokens = await response.json();
+    return {
+      accesstoken: tokens.access_token,
+      refreshtoken: tokens.refresh_token,
+      expiresin: tokens.expires_in,
+      scopes: tokens.scope?.split(' ') || [],
+      tokentype: tokens.token_type || 'Bearer'
+    };
+  }
+
+  /**
+   * Exchange Slack OAuth code for tokens
+   */
+  private static async exchangeSlackCode(code: string, state: string): Promise<any> {
+    // Use server-side OAuth API instead of direct token exchange
+    const response = await fetch('/api/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider: 'slack',
+        code,
+        redirectUri: `${window.location.origin}/integrations/slack/callback`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`Slack token exchange failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const tokens = await response.json();
+    if (!tokens.ok) {
+      throw new Error(`Slack API error: ${tokens.error}`);
+    }
+
+    return {
+      accesstoken: tokens.access_token,
+      refreshtoken: tokens.refresh_token,
+      expiresin: tokens.expires_in,
+      scopes: tokens.scope?.split(',') || [],
       tokentype: 'Bearer'
+    };
+  }
+
+  /**
+   * Exchange PayPal OAuth code for tokens
+   */
+  private static async exchangePayPalCode(code: string, state: string): Promise<any> {
+    // Use server-side OAuth API instead of direct token exchange
+    const response = await fetch('/api/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        provider: 'paypal',
+        code,
+        redirectUri: `${window.location.origin}/integrations/paypal/callback`,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(`PayPal token exchange failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+    }
+
+    const tokens = await response.json();
+    return {
+      accesstoken: tokens.access_token,
+      refreshtoken: tokens.refresh_token,
+      expiresin: tokens.expires_in,
+      scopes: tokens.scope?.split(' ') || [],
+      tokentype: tokens.token_type || 'Bearer'
     };
   }
 

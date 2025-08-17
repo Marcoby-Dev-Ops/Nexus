@@ -1,15 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/Dialog';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Loader2, Crown, Users, AlertTriangle } from 'lucide-react';
 import { useCompanyOwnership } from '@/shared/hooks/useCompanyOwnership';
 import { useAuth } from '@/hooks/index';
-import { select } from '@/lib/supabase';
+import { selectData as select } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface CompanyOwnershipPanelProps {

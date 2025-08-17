@@ -5,13 +5,13 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import { Card, CardContent } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-// import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Badge } from '@/shared/components/ui/Badge';
+// import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Checkbox } from '@/shared/components/ui/Checkbox';
 import { 
   MessageSquare, 
@@ -217,8 +217,14 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
         .map(p => p.scope)
         .join(',');
 
-      const clientId = import.meta.env.VITE_SLACK_CLIENT_ID;
-      const redirectUri = `${window.location.origin}/integrations/slack/callback`;
+      // Get Slack OAuth configuration from server-side API
+      const configResponse = await fetch('/api/oauth/config/slack');
+      if (!configResponse.ok) {
+        throw new Error('Failed to get Slack configuration from server.');
+      }
+      
+      const config = await configResponse.json();
+      const { clientId, redirectUri } = config;
       
       const authUrl = `https: //slack.com/oauth/v2/authorize?` +
         `client_id=${clientId}&` +

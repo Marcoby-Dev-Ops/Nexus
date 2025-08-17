@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/supabase';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface CompanyOwnership {
@@ -20,7 +20,7 @@ export const useCompanyOwnership = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await select('company_ownership', '*', { company_id: companyId });
+      const { data, error } = await selectData('company_ownership', '*', { company_id: companyId });
       if (error) {
         logger.error({ error }, 'Failed to fetch company ownerships');
         setError('Failed to fetch ownerships');

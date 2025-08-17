@@ -1,16 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
-import { owaInboxService } from '@/services/email/owaInboxService';
-import type { OWAInboxFilters, OWAEmailItem } from '@/services/email/owaInboxService';
+import { emailService, type EmailFilters, type EmailItem } from '@/services/email/EmailService';
 import { logger } from '@/shared/utils/logger';
 
 export interface UseUnifiedInboxOptions {
-  filters?: OWAInboxFilters;
+  filters?: EmailFilters;
   limit?: number;
   offset?: number;
+  folder?: 'inbox' | 'sent' | 'trash' | 'archive' | 'starred';
 }
 
 export interface UseUnifiedInboxResult {
-  items: OWAEmailItem[];
+  items: EmailItem[];
   total: number;
   isLoading: boolean;
   isError: boolean;
@@ -18,8 +18,8 @@ export interface UseUnifiedInboxResult {
   refetch: () => void;
 }
 
-export function useUnifiedInbox({ filters = {}, limit = 50, offset = 0 }: UseUnifiedInboxOptions = {}): UseUnifiedInboxResult {
-  const queryKey = ['unifiedInbox', filters, limit, offset];
+export function useUnifiedInbox({ filters = {}, limit = 50, offset = 0, folder = 'inbox' }: UseUnifiedInboxOptions = {}): UseUnifiedInboxResult {
+  const queryKey = ['unifiedInbox', filters, limit, offset, folder];
 
   const {
     data,
@@ -32,11 +32,16 @@ export function useUnifiedInbox({ filters = {}, limit = 50, offset = 0 }: UseUni
     queryFn: async () => {
       try {
         logger.info('useUnifiedInbox: Starting email fetch with filters:', filters);
-        const result = await owaInboxService.getEmails(filters, limit, offset);
-        logger.info('useUnifiedInbox: Successfully fetched emails:', result);
-        return result;
+        const result = await emailService.getEmails(filters, limit, offset, folder);
+        logger.info('useUnifiedInbox: Successfully fetched emails', { 
+          count: result.data?.items?.length || 0, 
+          total: result.data?.total || 0
+        });
+        console.log('Email fetch result: Object'); // Debug log - only show object reference
+        return result.data ? result.data : { items: [], total: 0 };
       } catch (error) {
         logger.error('useUnifiedInbox: Error fetching emails:', error);
+        console.error('Email fetch error:', error); // Debug log
         throw error;
       }
     },

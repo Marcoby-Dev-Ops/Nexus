@@ -51,7 +51,7 @@ const SERVICE_MIGRATION_DATA = {
     'IntegrationService',
     'IntegrationDataService',
     'DataPointMappingService',
-    'DataPointDictionaryService',
+  
     'UniversalIntegrationService',
     'SalesforceStyleDataService',
     'RealTimeCrossDepartmentalSync',
@@ -79,11 +79,11 @@ const SERVICE_MIGRATION_DATA = {
     'DomainAnalysisService',
     'ThoughtsService',
     'OnboardingValidationService',
+    'AnalyticsService',
   ],
   
   // Services that need migration
   pending: [
-    'AnalyticsService',
     'AIService',
     'NotificationService',
     'IntegrationService',
@@ -152,14 +152,21 @@ function findServicesNotExtendingBaseService() {
         const content = fs.readFileSync(filePath, 'utf8');
         
         // Check if it's a service class
-        if (content.includes('class') && content.includes('Service') && !content.includes('extends BaseService')) {
+        if (content.includes('class') && content.includes('Service')) {
           const className = content.match(/class\s+(\w+Service)/)?.[1];
           if (className) {
-            services.push({
-              file: filePath.replace(__dirname + '/../', ''),
-              className,
-              hasDirectSupabase: content.includes('supabase.from'),
-            });
+            // Check if it extends BaseService or any service that extends BaseService
+            const extendsBaseService = content.includes('extends BaseService') || 
+                                      content.includes('extends IntegrationBaseService') ||
+                                      content.includes('extends UnifiedService');
+            
+            if (!extendsBaseService) {
+              services.push({
+                file: filePath.replace(__dirname + '/../', ''),
+                className,
+                hasDirectSupabase: content.includes('supabase.from'),
+              });
+            }
           }
         }
       }

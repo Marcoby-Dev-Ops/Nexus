@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-import { cn } from '@/shared/utils/styles.ts';
+import { cn } from '@/shared/utils/styles';
 
 export interface SelectProps {
   value?: string;

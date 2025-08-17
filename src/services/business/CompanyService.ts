@@ -2,55 +2,55 @@ import { z } from 'zod';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
-import { supabase } from '@/lib/supabase';
-import { logger } from '@/shared/utils/logger.ts';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
+import { logger } from '@/shared/utils/logger';
 
 // Company Schema
 export const CompanySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(200),
-  domain: z.string().optional(),
-  industry: z.string().optional(),
-  size: z.string().optional(),
-  logo_url: z.string().url().optional(),
-  website: z.string().url().optional(),
-  description: z.string().max(1000).optional(),
-  owner_id: z.string().uuid().optional(),
+  domain: z.string().nullish(),
+  industry: z.string().nullish(),
+  size: z.string().nullish(),
+  logo_url: z.string().url().nullish(),
+  website: z.string().url().nullish(),
+  description: z.string().max(1000).nullish(),
+  owner_id: z.string().uuid().nullish(),
   
   // Business Information
-  business_phone: z.string().optional(),
-  duns_number: z.string().optional(),
-  employee_count: z.number().positive().optional(),
-  founded: z.string().optional(),
-  headquarters: z.string().optional(),
-  fiscal_year_end: z.string().optional(),
-  growth_stage: z.string().optional(),
+  business_phone: z.string().nullish(),
+  duns_number: z.string().nullish(),
+  employee_count: z.number().positive().nullish(),
+  founded: z.string().nullish(),
+  headquarters: z.string().nullish(),
+  fiscal_year_end: z.string().nullish(),
+  growth_stage: z.string().nullish(),
   
   // Social and Marketing
-  social_profiles: z.array(z.string()).optional(),
-  specialties: z.array(z.string()).optional(),
-  followers_count: z.number().nonnegative().optional(),
-  client_base_description: z.string().optional(),
+  social_profiles: z.array(z.string()).nullish(),
+  specialties: z.array(z.string()).nullish(),
+  followers_count: z.number().nonnegative().nullish(),
+  client_base_description: z.string().nullish(),
   
   // Business Metrics
-  mrr: z.number().nonnegative().optional(),
-  burn_rate: z.number().optional(),
-  cac: z.number().nonnegative().optional(),
-  gross_margin: z.number().min(0).max(100).optional(),
-  csat: z.number().min(0).max(100).optional(),
-  avg_deal_cycle_days: z.number().positive().optional(),
-  avg_first_response_mins: z.number().positive().optional(),
-  on_time_delivery_pct: z.number().min(0).max(100).optional(),
-  website_visitors_month: z.number().nonnegative().optional(),
+  mrr: z.number().nonnegative().nullish(),
+  burn_rate: z.number().nullish(),
+  cac: z.number().nonnegative().nullish(),
+  gross_margin: z.number().min(0).max(100).nullish(),
+  csat: z.number().min(0).max(100).nullish(),
+  avg_deal_cycle_days: z.number().positive().nullish(),
+  avg_first_response_mins: z.number().positive().nullish(),
+  on_time_delivery_pct: z.number().min(0).max(100).nullish(),
+  website_visitors_month: z.number().nonnegative().nullish(),
   
   // Integrations and Systems
-  inventory_management_system: z.string().optional(),
-  hubspotid: z.string().optional(),
+  inventory_management_system: z.string().nullish(),
+  hubspotid: z.string().nullish(),
   
   // Settings and Configuration
-  settings: z.record(z.any()).optional(),
-  address: z.record(z.any()).optional(),
-  key_metrics: z.record(z.any()).optional(),
+  settings: z.record(z.any()).nullish(),
+  address: z.record(z.any()).nullish(),
+  key_metrics: z.record(z.any()).nullish(),
   
   // Metadata
   created_at: z.string(),
@@ -176,11 +176,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
   async get(id: string): Promise<ServiceResponse<Company>> {
     this.logMethodCall('get', { id });
     return this.executeDbOperation(async () => {
-      const { data, error } = await (supabase as any)
-        .from('companies')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await selectOne('companies', id);
       if (error) throw error;
       const validatedData = this.config.schema.parse(data);
       return { data: validatedData, error: null };
@@ -190,15 +186,11 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
   async create(data: Partial<Company>): Promise<ServiceResponse<Company>> {
     this.logMethodCall('create', { data });
     return this.executeDbOperation(async () => {
-      const { data: result, error } = await (supabase as any)
-        .from('companies')
-        .insert({
-          ...data,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data: result, error } = await insertOne('companies', {
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
       if (error) throw error;
       const validatedData = this.config.schema.parse(result);
       return { data: validatedData, error: null };
@@ -208,15 +200,10 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
   async update(id: string, data: Partial<Company>): Promise<ServiceResponse<Company>> {
     this.logMethodCall('update', { id, data });
     return this.executeDbOperation(async () => {
-      const { data: result, error } = await (supabase as any)
-        .from('companies')
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
+      const { data: result, error } = await updateOne('companies', id, {
+        ...data,
+        updated_at: new Date().toISOString()
+      });
       if (error) throw error;
       const validatedData = this.config.schema.parse(result);
       return { data: validatedData, error: null };
@@ -226,10 +213,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
   async delete(id: string): Promise<ServiceResponse<boolean>> {
     this.logMethodCall('delete', { id });
     return this.executeDbOperation(async () => {
-      const { error } = await (supabase as any)
-        .from('companies')
-        .delete()
-        .eq('id', id);
+      const { error } = await deleteOne('companies', id);
       if (error) throw error;
       return { data: true, error: null };
     }, `delete ${this.config.tableName} ${id}`);
@@ -238,17 +222,9 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
   async list(filters?: Record<string, any>): Promise<ServiceResponse<Company[]>> {
     this.logMethodCall('list', { filters });
     return this.executeDbOperation(async () => {
-      let query = (supabase as any)
-        .from('companies')
-        .select('*');
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            query = query.eq(key, value);
-          }
-        });
-      }
-      const { data, error } = await query;
+      const { data, error } = await selectData('companies', {
+        filters: filters || undefined
+      });
       if (error) throw error;
       const validatedData = data.map((item: any) => this.config.schema.parse(item));
       return { data: validatedData, error: null };
@@ -263,22 +239,14 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     
     return this.executeDbOperation(async () => {
       // Get company
-      const { data: company, error: companyError } = await (supabase as any)
-        .from('companies')
-        .select('*')
-        .eq('id', companyId)
-        .single();
+      const { data: company, error: companyError } = await selectOne('companies', companyId);
       
       if (companyError) throw companyError;
       
       // Get owner
       let owner = null;
       if (company.owner_id) {
-        const { data: ownerData } = await (supabase as any)
-          .from('user_profiles')
-          .select('id, email, first_name, last_name, role')
-          .eq('id', company.owner_id)
-          .single();
+        const { data: ownerData } = await selectOne('user_profiles', company.owner_id);
         
         if (ownerData) {
           owner = ownerData;
@@ -286,25 +254,20 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
       }
       
       // Get departments
-      const { data: departments } = await (supabase as any)
-        .from('departments')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('name');
+      const { data: departments } = await selectData('departments', {
+        filters: { company_id: companyId },
+        orderBy: { column: 'name', ascending: true }
+      });
       
       // Get analytics
-      const { data: analytics } = await (supabase as any)
-        .from('company_analytics')
-        .select('*')
-        .eq('company_id', companyId)
-        .single();
+      const { data: analytics } = await selectOne('company_analytics', undefined, {
+        filters: { company_id: companyId }
+      });
       
       // Get health
-      const { data: health } = await (supabase as any)
-        .from('company_health')
-        .select('*')
-        .eq('company_id', companyId)
-        .single();
+      const { data: health } = await selectOne('company_health', undefined, {
+        filters: { company_id: companyId }
+      });
       
       const companyDetails = {
         company: CompanySchema.parse(company),
@@ -325,11 +288,9 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('getCompanyByDomain', { domain });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await (supabase as any)
-        .from('companies')
-        .select('*')
-        .eq('domain', domain)
-        .single();
+      const { data, error } = await selectOne('companies', undefined, {
+        filters: { domain }
+      });
       
       if (error) throw error;
       
@@ -372,11 +333,10 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('getCompanyDepartments', { companyId });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await supabase
-        .from('departments')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('name');
+      const { data, error } = await selectData('departments', {
+        filters: { company_id: companyId },
+        orderBy: { column: 'name', ascending: true }
+      });
       
       if (error) throw error;
       
@@ -392,15 +352,11 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('createDepartment', { department });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await supabase
-        .from('departments')
-        .insert({
-          ...department,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data, error } = await insertOne('departments', {
+        ...department,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
       
       if (error) throw error;
       
@@ -416,15 +372,10 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('updateDepartment', { departmentId, updates });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await supabase
-        .from('departments')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', departmentId)
-        .select()
-        .single();
+      const { data, error } = await updateOne('departments', departmentId, {
+        ...updates,
+        updated_at: new Date().toISOString()
+      });
       
       if (error) throw error;
       
@@ -440,10 +391,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('deleteDepartment', { departmentId });
     
     return this.executeDbOperation(async () => {
-      const { error } = await supabase
-        .from('departments')
-        .delete()
-        .eq('id', departmentId);
+      const { error } = await deleteOne('departments', departmentId);
       
       if (error) throw error;
       
@@ -458,11 +406,10 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('getCompanyRoles', { companyId });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await supabase
-        .from('company_roles')
-        .select('*')
-        .eq('company_id', companyId)
-        .order('name');
+      const { data, error } = await selectData('company_roles', {
+        filters: { company_id: companyId },
+        orderBy: { column: 'name', ascending: true }
+      });
       
       if (error) throw error;
       
@@ -478,15 +425,11 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('createCompanyRole', { role });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await supabase
-        .from('company_roles')
-        .insert({
-          ...role,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data, error } = await insertOne('company_roles', {
+        ...role,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
       
       if (error) throw error;
       
@@ -502,14 +445,14 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('getCompanyAnalytics', { companyId });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await supabase
-        .from('company_analytics')
-        .select('*')
-        .eq('company_id', companyId)
-        .single();
+      const { data, error } = await selectOne('company_analytics', undefined, {
+        filters: { company_id: companyId }
+      });
       
       if (error) throw error;
-      
+      if (!data) {
+        return { data: null as any, error: null };
+      }
       const validatedData = CompanyAnalyticsSchema.parse(data);
       return { data: validatedData, error: null };
     }, 'getCompanyAnalytics');
@@ -522,14 +465,14 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     this.logMethodCall('getCompanyHealth', { companyId });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await supabase
-        .from('company_health')
-        .select('*')
-        .eq('company_id', companyId)
-        .single();
+      const { data, error } = await selectOne('company_health', undefined, {
+        filters: { company_id: companyId }
+      });
       
       if (error) throw error;
-      
+      if (!data) {
+        return { data: null as any, error: null };
+      }
       const validatedData = CompanyHealthSchema.parse(data);
       return { data: validatedData, error: null };
     }, 'getCompanyHealth');
@@ -543,23 +486,16 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     
     return this.executeDbOperation(async () => {
       // Verify current user is the owner
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('owner_id')
-        .eq('id', companyId)
-        .eq('owner_id', currentUserId)
-        .single();
+      const { data: company, error: companyError } = await selectOne('companies', companyId, {
+        filters: { owner_id: currentUserId }
+      });
       
       if (companyError || !company) {
         throw new Error('Only the current owner can transfer ownership');
       }
       
       // Verify new owner exists and belongs to the company
-      const { data: newOwner, error: newOwnerError } = await supabase
-        .from('user_profiles')
-        .select('id, company_id')
-        .eq('id', newOwnerId)
-        .single();
+      const { data: newOwner, error: newOwnerError } = await selectOne('user_profiles', newOwnerId);
       
       if (newOwnerError || !newOwner) {
         throw new Error('New owner not found');
@@ -570,15 +506,10 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
       }
       
       // Transfer ownership
-      const { data: updatedCompany, error: updateError } = await supabase
-        .from('companies')
-        .update({
-          owner_id: newOwnerId,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', companyId)
-        .select()
-        .single();
+      const { data: updatedCompany, error: updateError } = await updateOne('companies', companyId, {
+        owner_id: newOwnerId,
+        updated_at: new Date().toISOString()
+      });
       
       if (updateError) throw updateError;
       
@@ -604,29 +535,28 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     
     return this.executeDbOperation(async () => {
       // Get user count
-      const { count: userCount } = await supabase
-        .from('user_profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId);
+      const { data: users } = await selectData('user_profiles', {
+        filters: { company_id: companyId }
+      });
+      const userCount = users?.length || 0;
       
       // Get department count
-      const { count: departmentCount } = await supabase
-        .from('departments')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId);
+      const { data: departments } = await selectData('departments', {
+        filters: { company_id: companyId }
+      });
+      const departmentCount = departments?.length || 0;
       
       // Get role count
-      const { count: roleCount } = await supabase
-        .from('company_roles')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId);
+      const { data: roles } = await selectData('company_roles', {
+        filters: { company_id: companyId }
+      });
+      const roleCount = roles?.length || 0;
       
-      // Get active integrations
-      const { count: integrationCount } = await supabase
-        .from('user_integrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', companyId)
-        .eq('status', 'active');
+      // Get connected integrations
+      const { data: integrations } = await selectData('user_integrations', {
+        filters: { company_id: companyId, status: 'connected' }
+      });
+      const integrationCount = integrations?.length || 0;
       
       const stats = {
         userCount: userCount || 0,

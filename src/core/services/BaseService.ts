@@ -11,7 +11,6 @@
  * @template T - The type of data this service handles
  */
 
-import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
 
 /**
@@ -35,18 +34,25 @@ export interface ServiceResponse<T> {
  * 
  * @template T - The type of data being returned
  */
-interface DatabaseOperationResult<T> {
+export interface DatabaseOperationResult<T> {
+  /** The actual data payload */
   data: T | null;
-  error: any;
+  /** Error message if operation failed */
+  error: string | null;
 }
 
 /**
- * Parameter validation result
+ * Validation result interface
  */
-type ValidationResult = string | null;
+export interface ValidationResult {
+  /** Whether the validation passed */
+  isValid: boolean;
+  /** Error message if validation failed */
+  error?: string;
+}
 
 /**
- * Retry configuration for operations
+ * Retry configuration interface
  */
 interface RetryConfig {
   maxAttempts: number;
@@ -89,149 +95,175 @@ export abstract class BaseService {
   
   /** Logger instance for service operations */
   protected readonly logger = logger;
-  
-  /** Supabase client instance */
-  protected readonly supabase = supabase;
+
+  /** Database instance for service operations */
+  private _database: any = null;
+
+  /** Supabase instance for service operations (backward compatibility) */
+  private _supabase: any = null;
+
+  /** Get database instance (lazy loaded) */
+  protected async getDatabase() {
+    if (typeof window !== 'undefined') {
+      return null;
+    }
+    if (!this._database) {
+      try {
+        const dbModule = await import('@/lib/database');
+        this._database = dbModule.database;
+      } catch (error) {
+        this.logger.error('Failed to load database', error);
+        return null;
+      }
+    }
+    return this._database;
+  }
+
+  /** Get Supabase instance (lazy loaded) */
+  protected async getSupabase() {
+    if (typeof window !== 'undefined') {
+      return null;
+    }
+    if (!this._supabase) {
+      try {
+        const dbModule = await import('@/lib/database');
+        this._supabase = dbModule.supabase;
+      } catch (error) {
+        this.logger.error('Failed to load Supabase', error);
+        return null;
+      }
+    }
+    return this._supabase;
+  }
+
+  /** Get database instance (synchronous, returns null in browser) */
+  protected get database() {
+    if (typeof window !== 'undefined') {
+      return null;
+    }
+    return this._database;
+  }
+
+  /** Get Supabase instance (synchronous, returns null in browser) */
+  protected get supabase() {
+    if (typeof window !== 'undefined') {
+      return null;
+    }
+    return this._supabase;
+  }
 
   // ========================================================================
-  // RESPONSE CREATION METHODS
+  // CORE METHODS
   // ========================================================================
 
   /**
-   * Creates a standardized service response
+   * Execute a database operation with error handling and retry logic
    * 
-   * @param data - The data payload
-   * @param error - Error message if operation failed
-   * @param metadata - Additional metadata
-   * @returns Standardized ServiceResponse
-   * 
-   * @example
-   * ```typescript
-   * return this.createResponse(userData, null, { timestamp: Date.now() });
-   * ```
+   * @param operation - The database operation to execute
+   * @param operationName - Name of the operation for logging
+   * @param retryConfig - Optional retry configuration
+   * @returns Promise<ServiceResponse<T>>
    */
-  protected createResponse<T>(
-    data: T | null,
-    error: string | null = null,
-    metadata?: Record<string, any>
-  ): ServiceResponse<T> {
-    return {
-      data,
-      error,
-      success: error === null,
-      metadata: {
-        timestamp: new Date().toISOString(),
-        service: this.constructor.name,
-        environment: process.env.NODE_ENV,
-        ...metadata
+  protected async executeDbOperation<T>(
+    operation: () => Promise<ServiceResponse<T>>,
+    operationName: string,
+    retryConfig?: Partial<RetryConfig>
+  ): Promise<ServiceResponse<T>> {
+    const config = { ...BaseService.RETRY_CONFIG, ...retryConfig };
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= config.maxAttempts; attempt++) {
+      try {
+        this.logMethodCall(operationName, { attempt });
+
+        const result = await operation();
+
+        if (result.error) {
+          throw new Error(result.error);
+        }
+
+        this.logSuccess(operationName, `Operation completed successfully on attempt ${attempt}`);
+        return result;
+
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        this.logFailure(operationName, lastError.message, { attempt, maxAttempts: config.maxAttempts });
+
+        // Don't retry on the last attempt
+        if (attempt === config.maxAttempts) {
+          break;
+        }
+
+        // Calculate delay with exponential backoff
+        const delay = Math.min(
+          config.baseDelay * Math.pow(2, attempt - 1),
+          config.maxDelay
+        );
+
+        this.logInfo(operationName, `Retrying in ${delay}ms...`, { attempt, delay });
+        await this.sleep(delay);
       }
+    }
+
+    // All attempts failed
+    this.logError(operationName, `Operation failed after ${config.maxAttempts} attempts`, { 
+      lastError: lastError?.message 
+    });
+
+    return {
+      data: null,
+      error: lastError?.message || 'Operation failed after multiple attempts',
+      success: false
     };
   }
 
   /**
-   * Creates a success response
+   * Execute multiple database operations in a transaction-like manner
    * 
-   * @param data - The successful data payload
-   * @param metadata - Additional metadata
-   * @returns Success ServiceResponse
+   * @param operations - Array of operations to execute
+   * @param transactionName - Name of the transaction for logging
+   * @returns Promise<ServiceResponse<T[]>>
    */
-  protected createSuccessResponse<T>(
-    data: T,
-    metadata?: Record<string, any>
-  ): ServiceResponse<T> {
-    return this.createResponse(data, null, metadata);
-  }
+  protected async executeTransaction<T>(
+    operations: (() => Promise<ServiceResponse<T>>)[],
+    transactionName: string
+  ): Promise<ServiceResponse<T[]>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall(transactionName, { operationCount: operations.length });
 
-  /**
-   * Creates an error response with enhanced metadata
-   * 
-   * @param error - Error message
-   * @param metadata - Additional error metadata
-   * @returns Error ServiceResponse
-   */
-  protected createErrorResponse<T>(
-    error: string,
-    metadata?: Record<string, any>
-  ): ServiceResponse<T> {
-    return this.createResponse<T>(null, error, {
-      service: this.constructor.name,
-      environment: process.env.NODE_ENV,
-      timestamp: new Date().toISOString(),
-      ...metadata
-    });
-  }
+      const results: T[] = [];
+      const errors: string[] = [];
 
-  // ========================================================================
-  // ERROR HANDLING METHODS
-  // ========================================================================
-
-  /**
-   * Handles errors consistently across services
-   * 
-   * @param error - The error that occurred
-   * @param context - Context where the error occurred
-   * @returns Standardized error response
-   */
-  protected handleError(error: unknown, context: string): ServiceResponse<never> {
-    const errorMessage = this.extractErrorMessage(error);
-    
-    this.logger.error(
-      `Service error in ${context}: ${errorMessage}`,
-      { error, context, timestamp: new Date().toISOString() }
-    );
-    
-    return this.createErrorResponse<never>(
-      errorMessage,
-      { 
-        context, 
-        timestamp: new Date().toISOString(),
-        errorType: this.getErrorType(error)
+      for (let i = 0; i < operations.length; i++) {
+        try {
+          const result = await operations[i]();
+          
+          if (result.error) {
+            errors.push(`Operation ${i + 1} failed: ${result.error}`);
+          } else if (result.data !== null) {
+            results.push(result.data);
+          }
+        } catch (error) {
+          errors.push(`Operation ${i + 1} failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
       }
-    );
-  }
 
-  /**
-   * Extracts error message from various error types
-   * 
-   * @param error - The error to extract message from
-   * @returns Human-readable error message
-   */
-  private extractErrorMessage(error: unknown): string {
-    if (error instanceof Error) {
-      return error.message;
-    }
-    
-    if (typeof error === 'string') {
-      return error;
-    }
-    
-    if (error && typeof error === 'object' && 'message' in error) {
-      return String(error.message);
-    }
-    
-    return 'Unknown error occurred';
-  }
+      if (errors.length > 0) {
+        this.logFailure(transactionName, `Transaction failed: ${errors.join('; ')}`);
+        return {
+          data: null,
+          error: `Transaction failed: ${errors.join('; ')}`,
+          success: false
+        };
+      }
 
-  /**
-   * Determines the type of error for logging
-   * 
-   * @param error - The error to classify
-   * @returns Error type string
-   */
-  private getErrorType(error: unknown): string {
-    if (error instanceof Error) {
-      return error.constructor.name;
-    }
-    
-    if (typeof error === 'string') {
-      return 'StringError';
-    }
-    
-    if (error && typeof error === 'object') {
-      return 'ObjectError';
-    }
-    
-    return 'UnknownError';
+      this.logSuccess(transactionName, `Transaction completed successfully with ${results.length} operations`);
+      return {
+        data: results,
+        error: null,
+        success: true
+      };
+    }, transactionName);
   }
 
   // ========================================================================
@@ -239,228 +271,72 @@ export abstract class BaseService {
   // ========================================================================
 
   /**
-   * Validates required parameters
+   * Validate required parameters
    * 
    * @param params - Object containing parameters to validate
-   * @param required - Array of required parameter names
-   * @returns Validation result (error message or null)
-   * 
-   * @example
-   * ```typescript
-   * const validation = this.validateParams(data, ['email', 'password']);
-   * if (validation) {
-   *   return this.createErrorResponse(validation);
-   * }
-   * ```
+   * @param requiredFields - Array of required field names
+   * @returns ValidationResult
    */
-  protected validateParams(
-    params: Record<string, any>, 
-    required: string[]
+  protected validateRequiredParams(
+    params: Record<string, any>,
+    requiredFields: string[]
   ): ValidationResult {
-    for (const field of required) {
-      if (!params[field]) {
-        return `Missing required field: ${field}`;
+    for (const field of requiredFields) {
+      if (params[field] === undefined || params[field] === null || params[field] === '') {
+        return {
+          isValid: false,
+          error: `Missing required parameter: ${field}`
+        };
       }
     }
-    return null;
+
+    return { isValid: true };
   }
 
   /**
-   * Validates a string parameter
+   * Validate string parameters
    * 
-   * @param value - The value to validate
-   * @param fieldName - Name of the field for error messages
-   * @returns Validation result
+   * @param params - Object containing parameters to validate
+   * @param stringFields - Array of field names that should be strings
+   * @returns ValidationResult
    */
-  protected validateStringParam(
-    value: string | undefined | null,
-    fieldName: string
+  protected validateStringParams(
+    params: Record<string, any>,
+    stringFields: string[]
   ): ValidationResult {
-    if (!value || typeof value !== 'string' || value.trim() === '') {
-      return `${fieldName} is required and must be a non-empty string`;
-    }
-    return null;
-  }
-
-  /**
-   * Validates an ID parameter
-   * 
-   * @param id - The ID to validate
-   * @param fieldName - Name of the field for error messages
-   * @returns Validation result
-   */
-  protected validateIdParam(
-    id: string | undefined | null,
-    fieldName: string = 'id'
-  ): ValidationResult {
-    if (!id || typeof id !== 'string' || id.trim() === '') {
-      return `${fieldName} is required and must be a valid ID`;
-    }
-    return null;
-  }
-
-  /**
-   * Validates that a required parameter is provided
-   * 
-   * @param value - The value to validate
-   * @param fieldName - The name of the field for error messages
-   * @returns ValidationResult - null if valid, error message if invalid
-   */
-  protected validateRequiredParam(
-    value: any,
-    fieldName: string
-  ): ValidationResult {
-    if (value === undefined || value === null) {
-      return `${fieldName} is required`;
-    }
-    
-    if (typeof value === 'string' && value.trim() === '') {
-      return `${fieldName} is required and cannot be empty`;
-    }
-    
-    return null;
-  }
-
-  // ========================================================================
-  // DATABASE OPERATION WRAPPERS
-  // ========================================================================
-
-  /**
-   * Executes a database operation with consistent error handling
-   * 
-   * @param operation - The database operation to execute
-   * @param context - Context for error messages
-   * @returns Standardized service response
-   */
-  protected async executeDbOperation<T>(
-    operation: () => Promise<DatabaseOperationResult<T>>,
-    context: string
-  ): Promise<ServiceResponse<T>> {
-    try {
-      this.logMethodCall(context, {});
-      
-      const result = await operation();
-      
-      if (result.error) {
-        this.logFailure(context, result.error);
-        return this.createErrorResponse(
-          `Database operation failed: ${this.extractErrorMessage(result.error)}`,
-          { error: result.error, context }
-        );
-      }
-      
-      this.logSuccess(context);
-      return this.createSuccessResponse(result.data as T);
-    } catch (error) {
-      return this.handleError(error, context);
-    }
-  }
-
-  /**
-   * Executes a database operation with retry logic and exponential backoff
-   * 
-   * @param operation - The database operation to execute
-   * @param context - Context for error messages
-   * @param config - Retry configuration (optional, uses defaults if not provided)
-   * @returns Standardized service response
-   * 
-   * @example
-   * ```typescript
-   * return this.executeDbOperationWithRetry(
-   *   () => supabase.from('users').select('*').eq('id', userId),
-   *   'get-user-profile',
-   *   { maxAttempts: 5, baseDelay: 500 }
-   * );
-   * ```
-   */
-  protected async executeDbOperationWithRetry<T>(
-    operation: () => Promise<DatabaseOperationResult<T>>,
-    context: string,
-    config?: Partial<RetryConfig>
-  ): Promise<ServiceResponse<T>> {
-    const retryConfig = { ...BaseService.RETRY_CONFIG, ...config };
-    
-    for (let attempt = 0; attempt < retryConfig.maxAttempts; attempt++) {
-      try {
-        if (attempt > 0) {
-          const delay = Math.min(
-            retryConfig.baseDelay * Math.pow(2, attempt - 1), 
-            retryConfig.maxDelay
-          );
-          this.logger.warn(
-            `Retrying operation "${context}" in ${delay}ms (attempt ${attempt + 1}/${retryConfig.maxAttempts})`
-          );
-          await new Promise(resolve => setTimeout(resolve, delay));
-        }
-        
-        this.logMethodCall(context, { attempt: attempt + 1 });
-        const result = await operation();
-        
-        if (!result.error) {
-          this.logSuccess(context);
-          return this.createSuccessResponse(result.data as T);
-        }
-        
-        this.logFailure(context, result.error);
-        
-        // If last attempt, throw the error to be handled by catch block
-        if (attempt === retryConfig.maxAttempts - 1) {
-          throw result.error;
-        }
-      } catch (error) {
-        if (attempt === retryConfig.maxAttempts - 1) {
-          return this.handleError(error, context);
-        }
+    for (const field of stringFields) {
+      if (params[field] !== undefined && typeof params[field] !== 'string') {
+        return {
+          isValid: false,
+          error: `Parameter ${field} must be a string`
+        };
       }
     }
-    
-    return this.createErrorResponse<T>('Unknown error in executeDbOperationWithRetry');
+
+    return { isValid: true };
   }
 
   /**
-   * Executes a series of database operations as a transaction-like workflow
+   * Validate numeric parameters
    * 
-   * Note: This is client-side only and does not provide rollback functionality.
-   * All steps must be idempotent for safety.
-   * 
-   * @param steps - Array of database operations to execute in sequence
-   * @param context - Context for error messages
-   * @returns Standardized service response with the result of the last step
-   * 
-   * @example
-   * ```typescript
-   * return this.executeTransaction([
-   *   () => this.createUser(userData),
-   *   () => this.createUserProfile(profileData),
-   *   () => this.assignUserToCompany(userId, companyId)
-   * ], 'user-onboarding');
-   * ```
+   * @param params - Object containing parameters to validate
+   * @param numericFields - Array of field names that should be numbers
+   * @returns ValidationResult
    */
-  protected async executeTransaction<T>(
-    steps: (() => Promise<DatabaseOperationResult<T>>)[],
-    context: string
-  ): Promise<ServiceResponse<T>> {
-    let lastResult: T | null = null;
-    
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      const stepContext = `${context}-step-${i + 1}`;
-      
-      const result = await this.executeDbOperation(step, stepContext);
-      
-      if (!result.success) {
-        this.logger.error(
-          `Transaction failed at step ${i + 1} in ${context}`,
-          { step: i + 1, totalSteps: steps.length, error: result.error }
-        );
-        return result as ServiceResponse<T>;
+  protected validateNumericParams(
+    params: Record<string, any>,
+    numericFields: string[]
+  ): ValidationResult {
+    for (const field of numericFields) {
+      if (params[field] !== undefined && (typeof params[field] !== 'number' || isNaN(params[field]))) {
+        return {
+          isValid: false,
+          error: `Parameter ${field} must be a valid number`
+        };
       }
-      
-      lastResult = result.data;
     }
-    
-    this.logSuccess(context);
-    return this.createSuccessResponse(lastResult as T);
+
+    return { isValid: true };
   }
 
   // ========================================================================
@@ -468,44 +344,45 @@ export abstract class BaseService {
   // ========================================================================
 
   /**
-   * Calculates exponential backoff delay
+   * Sleep for a specified number of milliseconds
    * 
-   * @param attempt - Current attempt number (0-based)
-   * @param baseDelay - Base delay in milliseconds
-   * @param maxDelay - Maximum delay in milliseconds
-   * @returns Delay in milliseconds
+   * @param ms - Milliseconds to sleep
+   * @returns Promise<void>
    */
-  protected calculateBackoffDelay(
-    attempt: number,
-    baseDelay: number = BaseService.RETRY_CONFIG.baseDelay,
-    maxDelay: number = BaseService.RETRY_CONFIG.maxDelay
-  ): number {
-    return Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+  protected sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
-   * Checks if an error is retryable
+   * Generate a unique ID
    * 
-   * @param error - The error to check
-   * @returns True if the error should trigger a retry
+   * @returns string
    */
-  protected isRetryableError(error: unknown): boolean {
-    if (error instanceof Error) {
-      const retryableMessages = [
-        'network',
-        'timeout',
-        'connection',
-        'temporary',
-        'rate limit',
-        'too many requests',
-        'service unavailable'
-      ];
-      
-      return retryableMessages.some(msg => 
-        error.message.toLowerCase().includes(msg)
-      );
-    }
-    
+  protected generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Deep clone an object
+   * 
+   * @param obj - Object to clone
+   * @returns T
+   */
+  protected deepClone<T>(obj: T): T {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  /**
+   * Check if a value is empty (null, undefined, empty string, empty array, empty object)
+   * 
+   * @param value - Value to check
+   * @returns boolean
+   */
+  protected isEmpty(value: any): boolean {
+    if (value === null || value === undefined) return true;
+    if (typeof value === 'string') return value.trim() === '';
+    if (Array.isArray(value)) return value.length === 0;
+    if (typeof value === 'object') return Object.keys(value).length === 0;
     return false;
   }
 
@@ -514,68 +391,129 @@ export abstract class BaseService {
   // ========================================================================
 
   /**
-   * Logs method calls for debugging
+   * Log method call
    * 
-   * @param method - Method name being called
+   * @param methodName - Name of the method being called
    * @param params - Parameters passed to the method
    */
-  protected logMethodCall(
-    method: string, 
-    params: Record<string, any>
-  ): void {
-    this.logger.info(
-      `Service method called: ${method}`,
-      {
-        method,
-        params,
-        service: this.constructor.name,
-        timestamp: new Date().toISOString()
-      }
-    );
+  protected logMethodCall(methodName: string, params?: Record<string, any>): void {
+    this.logger.info(`[${this.constructor.name}] ${methodName} called`, params);
   }
 
   /**
-   * Logs successful operations
+   * Log successful operation
    * 
-   * @param operation - Operation that succeeded
-   * @param metadata - Additional metadata
+   * @param operationName - Name of the operation
+   * @param message - Success message
+   * @param data - Additional data to log
    */
-  protected logSuccess(
-    operation: string,
-    metadata?: Record<string, any>
-  ): void {
-    this.logger.info(
-      `Service operation successful: ${operation}`,
-      {
-        operation,
-        service: this.constructor.name,
-        timestamp: new Date().toISOString(),
-        ...metadata
-      }
-    );
+  protected logSuccess(operationName: string, message: string, data?: Record<string, any>): void {
+    this.logger.info(`[${this.constructor.name}] ${operationName} success: ${message}`, data);
   }
 
   /**
-   * Logs failed operations
+   * Log failed operation
    * 
-   * @param operation - Operation that failed
+   * @param operationName - Name of the operation
+   * @param error - Error message
+   * @param data - Additional data to log
+   */
+  protected logFailure(operationName: string, error: string, data?: Record<string, any>): void {
+    this.logger.error(`[${this.constructor.name}] ${operationName} failed: ${error}`, data);
+  }
+
+  /**
+   * Log informational message
+   * 
+   * @param operationName - Name of the operation
+   * @param message - Informational message
+   * @param data - Additional data to log
+   */
+  protected logInfo(operationName: string, message: string, data?: Record<string, any>): void {
+    this.logger.info(`[${this.constructor.name}] ${operationName}: ${message}`, data);
+  }
+
+  /**
+   * Log error message
+   * 
+   * @param operationName - Name of the operation
+   * @param message - Error message
+   * @param data - Additional data to log
+   */
+  protected logError(operationName: string, message: string, data?: Record<string, any>): void {
+    this.logger.error(`[${this.constructor.name}] ${operationName} error: ${message}`, data);
+  }
+
+  /**
+   * Log debug message
+   * 
+   * @param operationName - Name of the operation
+   * @param message - Debug message
+   * @param data - Additional data to log
+   */
+  protected logDebug(operationName: string, message: string, data?: Record<string, any>): void {
+    this.logger.debug(`[${this.constructor.name}] ${operationName} debug: ${message}`, data);
+  }
+
+  // ========================================================================
+  // RESPONSE CREATION METHODS
+  // ========================================================================
+
+  /**
+   * Create a successful response
+   * 
+   * @param data - The data to return
+   * @param metadata - Optional metadata
+   * @returns ServiceResponse<T>
+   */
+  protected createSuccessResponse<T>(data: T, metadata?: Record<string, any>): ServiceResponse<T> {
+    return {
+      data,
+      error: null,
+      success: true,
+      metadata
+    };
+  }
+
+  /**
+   * Create an error response
+   * 
+   * @param error - The error message
+   * @param metadata - Optional metadata
+   * @returns ServiceResponse<T>
+   */
+  protected createErrorResponse<T>(error: string, metadata?: Record<string, any>): ServiceResponse<T> {
+    return {
+      data: null,
+      error,
+      success: false,
+      metadata
+    };
+  }
+
+  /**
+   * Create a response (alias for createSuccessResponse for backward compatibility)
+   * 
+   * @param data - The data to return
+   * @param metadata - Optional metadata
+   * @returns ServiceResponse<T>
+   */
+  protected createResponse<T>(data: T, metadata?: Record<string, any>): ServiceResponse<T> {
+    return this.createSuccessResponse(data, metadata);
+  }
+
+  /**
+   * Handle errors and create appropriate error response
+   * 
    * @param error - The error that occurred
-   * @param metadata - Additional metadata
+   * @param defaultMessage - Default error message if error is not an Error instance
+   * @param metadata - Optional metadata
+   * @returns ServiceResponse<T>
    */
-  protected logFailure(
-    operation: string,
-    error: unknown,
-    metadata?: Record<string, any>
-  ): void {
-    this.logger.error(
-      `Service operation failed: ${operation}`,
-      {
-        operation,
-        error,
-        service: this.constructor.name,
-        timestamp: new Date().toISOString(),
-        ...metadata
-      }
-    );
+  protected handleError<T>(error: unknown, defaultMessage: string, metadata?: Record<string, any>): ServiceResponse<T> {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    this.logError('handleError', `${defaultMessage}: ${errorMessage}`, metadata);
+    
+    return this.createErrorResponse<T>(errorMessage, metadata);
   }
 } 

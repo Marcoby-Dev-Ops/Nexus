@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { 
   DollarSign, 
   TrendingUp, 
@@ -15,8 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { PayPalIntegrationService, type PayPalAnalytics } from '@/services/integrations/paypal/PayPalIntegrationService';
-import { supabase } from '@/lib/supabase';
-
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 interface PayPalAnalyticsSimpleProps {
   className?: string;
 }

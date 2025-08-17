@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Skeleton } from '@/shared/components/ui/Skeleton.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -19,14 +19,16 @@ import {
   Settings,
   Zap
 } from 'lucide-react';
-import { companyStatusService, type CompanyStatusOverview, type DimensionStatus } from '@/services/business/index.ts';
-import { logger } from '@/shared/utils/logger.ts';
+import { companyStatusService, type CompanyStatusOverview, type DimensionStatus } from '@/services/business/index';
+import { logger } from '@/shared/utils/logger';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CompanyStatusDashboardProps {
   className?: string;
 }
 
 export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ className = '' }) => {
+  const { user } = useAuth();
   const [status, setStatus] = useState<CompanyStatusOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,7 +37,16 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
   const fetchStatus = async () => {
     try {
       setRefreshing(true);
-      const response = await companyStatusService.getCompanyStatusOverview();
+      const userId = user?.id;
+      
+      if (!userId) {
+        setError('User ID not available');
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      
+      const response = await companyStatusService.getCompanyStatusOverview(userId);
       
       if (response.success && response.data) {
         setStatus(response.data);
@@ -57,8 +68,10 @@ export const CompanyStatusDashboard: React.FC<CompanyStatusDashboardProps> = ({ 
   };
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
+    if (user?.id) {
+      fetchStatus();
+    }
+  }, [user?.id]);
 
   const getTrendIcon = (trend: string, size = 'h-4 w-4') => {
     switch (trend) {

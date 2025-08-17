@@ -22,6 +22,7 @@ export type { CompanyProvisioningOptions, ProvisioningResult } from './CompanyPr
 export { companyStatusService } from './companyStatusService';
 export { businessBenchmarkingService } from './businessBenchmarkingService';
 export { dataConnectivityHealthService } from './dataConnectivityHealthService';
+export { financialDataService } from './financialDataService';
 
 // Business types
 export interface CompanyStatusOverview {

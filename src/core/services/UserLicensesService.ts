@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from './BaseService';
-import { supabase } from '@/lib/supabase';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
@@ -57,11 +57,7 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Getting user license', { id });
 
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await selectOne(this.config.tableName, id);
 
       if (error) {
         return this.handleError(error, 'Failed to get user license');
@@ -83,14 +79,10 @@ export class UserLicensesService extends BaseService {
 
       const validated = this.config.createSchema.parse(data);
       
-      const { data: created, error } = await this.supabase
-        .from(this.config.tableName)
-        .insert({
-          ...validated,
-          issued_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
+      const { data: created, error } = await insertOne(this.config.tableName, {
+        ...validated,
+        issued_at: new Date().toISOString(),
+      });
 
       if (error) {
         return this.handleError(error, 'Failed to create user license');
@@ -110,12 +102,7 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Updating user license', { id });
 
-      const { data: updated, error } = await this.supabase
-        .from(this.config.tableName)
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
+      const { data: updated, error } = await updateOne(this.config.tableName, id, data);
 
       if (error) {
         return this.handleError(error, 'Failed to update user license');
@@ -135,10 +122,7 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Deleting user license', { id });
 
-      const { error } = await this.supabase
-        .from(this.config.tableName)
-        .delete()
-        .eq('id', id);
+      const { error } = await deleteOne(this.config.tableName, id);
 
       if (error) {
         return this.handleError(error, 'Failed to delete user license');
@@ -162,31 +146,11 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Listing user licenses', { filters });
 
-      let query = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .order('issued_at', { ascending: false });
+      const filterParams: Record<string, any> = {};
+      if (filters?.user_id) filterParams.user_id = filters.user_id;
+      if (filters?.license_type) filterParams.license_type = filters.license_type;
 
-      // Apply filters
-      if (filters?.user_id) {
-        query = query.eq('user_id', filters.user_id);
-      }
-
-      if (filters?.license_type) {
-        query = query.eq('license_type', filters.license_type);
-      }
-
-      if (filters?.limit) {
-        query = query.limit(filters.limit);
-      } else {
-        query = query.limit(this.config.defaultLimit);
-      }
-
-      if (filters?.offset) {
-        query = query.range(filters.offset, filters.offset + (filters.limit || this.config.defaultLimit) - 1);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await selectData(this.config.tableName, '*', filterParams);
 
       if (error) {
         return this.handleError(error, 'Failed to list user licenses');

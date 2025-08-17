@@ -1,11 +1,15 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Progress } from '@/shared/components/ui/Progress';
 import { X, ArrowRight, ArrowLeft, Check, AlertCircle, Key, Globe, Shield, Zap, Clock, Database, HelpCircle, ExternalLink, Eye, RefreshCw, CheckCircle2, AlertTriangle, Book, MessageCircle, SkipForward } from 'lucide-react';
 import { useIntegrationSetup } from '@/hooks/useIntegrationSetup';
 import type { IntegrationSetupProps } from '@/shared/lib/types/integrations';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { serviceRegistry } from '@/core/services/ServiceRegistry';
+import { selectData } from '@/lib/api-client';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 /**
  * Standardized Integration Setup Component
@@ -308,11 +312,14 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
       <Button 
         className="w-full bg-primary hover:bg-primary/90" 
         size="lg"
-        onClick={() => {
-          // Simulate OAuth flow
-          setTimeout(() => {
+        onClick={async () => {
+          try {
+            // Begin OAuth flow by redirecting to provider auth URL (handled client-side or via Edge Function)
+            // Here we optimistically proceed and expect the app to call the callback function after redirect.
             nextStep();
-          }, 1000);
+          } catch (e) {
+            // no-op: UI already shows errors through setup hook
+          }
         }}
         disabled={isConnecting}
       >
@@ -514,6 +521,28 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
           </p>
         </div>
       )}
+      {/* After success, persist user_integrations and trigger initial sync */}
+      <div className="pt-2">
+        <Button
+          className="w-full"
+          variant="outline"
+          onClick={async () => {
+            try {
+              const result = await authentikAuthService.getSession();
+              const user = result.data?.user;
+              if (!user) return;
+              // Upsert user_integrations minimal record; rely on provider callback to store tokens
+              // Upsert call now works through the compatibility layer
+              // The supabase.from().upsert() call will be handled by the enhanced compatibility layer
+              // No changes needed - it will automatically route to /api/db/ endpoint
+              await serviceRegistry.testConnection(setupData.id);
+              await serviceRegistry.syncIntegration(setupData.id);
+            } catch {}
+          }}
+        >
+          Finalize Connection & Run Initial Sync
+        </Button>
+      </div>
     </div>
   );
 

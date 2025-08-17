@@ -3,7 +3,7 @@
  * Handles user quota management and limits
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
@@ -56,10 +56,7 @@ export class QuotaService extends BaseService {
       this.logMethodCall('getUserQuotaUsage', { userId });
 
       try {
-        const { data, error } = await this.supabase
-          .from('user_quotas')
-          .select('*')
-          .eq('user_id', userId);
+        const { data, error } = await selectData('user_quotas', '*', { user_id: userId });
 
         if (error) {
           this.logFailure('getUserQuotaUsage', error.message);
@@ -92,12 +89,9 @@ export class QuotaService extends BaseService {
       this.logMethodCall('getQuotaUsage', { userId, quotaType });
 
       try {
-        const { data, error } = await this.supabase
-          .from('user_quotas')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('quota_type', quotaType)
-          .single();
+        const { data, error } = await selectOne('user_quotas', undefined, {
+          filters: { user_id: userId, quota_type: quotaType }
+        });
 
         if (error) {
           this.logFailure('getQuotaUsage', error.message);
@@ -164,12 +158,9 @@ export class QuotaService extends BaseService {
 
       try {
         // Get current quota
-        const { data: currentQuota, error: fetchError } = await this.supabase
-          .from('user_quotas')
-          .select('*')
-          .eq('user_id', userId)
-          .eq('quota_type', quotaType)
-          .single();
+        const { data: currentQuota, error: fetchError } = await selectOne('user_quotas', undefined, {
+          filters: { user_id: userId, quota_type: quotaType }
+        });
 
         if (fetchError && fetchError.code !== 'PGRST116') {
           this.logFailure('incrementQuotaUsage', fetchError.message);
@@ -184,14 +175,10 @@ export class QuotaService extends BaseService {
           newUsage = (currentQuota.current_usage || 0) + amount;
           isExceeded = newUsage > (currentQuota.max_limit || 0);
 
-          const { error: updateError } = await this.supabase
-            .from('user_quotas')
-            .update({ 
-              current_usage: newUsage,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', userId)
-            .eq('quota_type', quotaType);
+          const { error: updateError } = await updateOne('user_quotas', currentQuota.id, { 
+            current_usage: newUsage,
+            updated_at: new Date().toISOString()
+          });
 
           if (updateError) {
             this.logFailure('incrementQuotaUsage', updateError.message);

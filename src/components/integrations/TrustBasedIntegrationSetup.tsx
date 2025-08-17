@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import {
   Shield,
   Lock,
@@ -205,16 +205,20 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
             </AlertDescription>
           </Alert>
 
-          <div className="space-y-4">
-            {integration.features.map((feature, index) => (
-              <div key={index} className="flex items-center space-x-4">
-                <input type="checkbox" className="rounded" />
-                <div>
-                  <div className="font-medium">{feature}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+                     <div className="space-y-4">
+             {integration.features.map((feature, index) => (
+               <div key={index} className="flex items-start space-x-4 p-4 border border-border dark:border-border rounded-lg hover:bg-background dark:hover:bg-background/50">
+                 <input 
+                   type="checkbox" 
+                   id={`feature-${index}`}
+                   className="w-4 h-4 text-primary border-border rounded focus:ring-blue-500 mt-0.5 flex-shrink-0" 
+                 />
+                 <label htmlFor={`feature-${index}`} className="text-sm font-medium leading-relaxed cursor-pointer flex-1 min-w-0">
+                   <div className="break-words">{feature}</div>
+                 </label>
+               </div>
+             ))}
+           </div>
         </div>
       )
     },

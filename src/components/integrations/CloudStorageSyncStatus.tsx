@@ -13,11 +13,12 @@ import {
   Calendar,
   Database
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
 import { useToast } from '@/shared/ui/components/Toast';
 import { cloudStorageRAGService } from '@/services/cloudStorageRAG';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 interface CloudStorageSyncStatusProps {
   className?: string;
@@ -49,7 +50,8 @@ export function CloudStorageSyncStatus({ className }: CloudStorageSyncStatusProp
     
     try {
       // Get document count from Supabase
-      const { data: { user } } = await import('@/shared/lib/core/supabase').then(m => m.supabase.auth.getUser());
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
       if (!user) {
         setSyncStats(prev => ({ ...prev, isLoading: false }));
         return;

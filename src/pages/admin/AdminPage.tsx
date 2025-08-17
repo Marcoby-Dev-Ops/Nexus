@@ -1,7 +1,7 @@
 import React from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { Users, Building, Shield, Settings, BarChart3, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -54,6 +54,14 @@ export const AdminPage: React.FC = () => {
       path: '/admin/health',
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
+    },
+    {
+      title: 'Policy Management',
+      description: 'Manage RLS policies and database security',
+      icon: <Shield className="w-6 h-6" />,
+      path: '/admin/policy-management',
+      color: 'text-red-600',
+      bgColor: 'bg-red-50',
     },
   ];
 

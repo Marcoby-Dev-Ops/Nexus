@@ -19,7 +19,7 @@ import {
 } from '@/shared/components/ui';
 import { Activity, AlertTriangle, CheckCircle, FileText, Key, Shield, XCircle, Eye } from 'lucide-react';
 import { Download, Settings } from 'lucide-react';
-import { supabase } from "@/lib/supabase";
+import { postgres } from "@/lib/postgres";
 
 interface SecurityEvent {
   id: string;

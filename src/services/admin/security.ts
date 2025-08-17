@@ -3,7 +3,7 @@
  * Handles security operations and compliance
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import type { SecurityEvent, SecurityManager } from './index';
 
 export class SecurityManagerImpl implements SecurityManager {

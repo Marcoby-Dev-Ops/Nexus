@@ -7,12 +7,12 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { Mic, Upload, MessageCircle, Copy, Send, FileText, Image } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Spinner } from '@/shared/components/ui/Spinner.tsx';
-import { Alert } from '@/shared/components/ui/Alert.tsx';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Spinner } from '@/shared/components/ui/Spinner';
+import { Alert } from '@/shared/components/ui/Alert';
 import { thoughtsService } from '@/lib/services/thoughtsService';
 import type { InteractionMethod, ThoughtCategory } from '@/core/types/thoughts';
 import { useAuth } from '@/hooks/index';

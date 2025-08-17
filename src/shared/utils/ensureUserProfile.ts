@@ -1,8 +1,14 @@
-import { selectOne, insertOne } from '@/lib/supabase-compatibility';
+import { selectOne, insertOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 export const ensureUserProfile = async (userId: string, email: string) => {
   try {
+    // Validate userId parameter
+    if (!userId || userId === 'undefined' || userId === 'null') {
+      logger.error('ensureUserProfile called with invalid userId', { userId });
+      return null;
+    }
+
     // Try to fetch the user profile
     const { data, error } = await selectOne('user_profiles', userId);
     if (error) {

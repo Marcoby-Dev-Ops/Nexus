@@ -1,7 +1,9 @@
 import { z } from 'zod';
-import { BaseService } from '@/core/services/BaseService';
-import type { ServiceResponse } from '@/core/services/BaseService';
-import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import type { CrudServiceInterface } from '@/core/services/interfaces';
+import { selectOne, insertOne, updateOne, deleteOne, selectData, callRPC } from '@/lib/api-client';
+import { logger } from '@/shared/utils/logger';
+import { userMappingService } from '@/shared/services/UserMappingService';
 
 // User Profile Schema
 export const UserProfileSchema = z.object({
@@ -9,6 +11,7 @@ export const UserProfileSchema = z.object({
   email: z.string().email().optional().nullable(),
   first_name: z.string().min(1).max(100).optional().nullable(),
   last_name: z.string().min(1).max(100).optional().nullable(),
+  display_name: z.string().optional().nullable(),
   role: z.enum(['user', 'owner', 'admin', 'manager']).optional().nullable(),
   company_id: z.string().uuid().optional().nullable(),
   created_at: z.string().optional().nullable(),
@@ -17,6 +20,35 @@ export const UserProfileSchema = z.object({
   phone: z.string().optional().nullable(),
   bio: z.string().max(500).optional().nullable(),
   preferences: z.record(z.any()).optional().nullable(),
+  
+  // Additional fields that AccountSettings expects
+  job_title: z.string().optional().nullable(),
+  department: z.string().optional().nullable(),
+  business_email: z.string().email().optional().nullable(),
+  personal_email: z.string().email().optional().nullable(),
+  location: z.string().optional().nullable(),
+  linkedin_url: z.string().url().optional().nullable(),
+  company: z.string().optional().nullable(),
+  mobile: z.string().optional().nullable(),
+  work_phone: z.string().optional().nullable(),
+  timezone: z.string().optional().nullable(),
+  work_location: z.enum(['office', 'remote', 'hybrid']).optional().nullable(),
+  address: z.record(z.any()).optional().nullable(),
+  github_url: z.string().url().optional().nullable(),
+  twitter_url: z.string().url().optional().nullable(),
+  skills: z.array(z.string()).optional().nullable(),
+  certifications: z.array(z.string()).optional().nullable(),
+  languages: z.array(z.record(z.any())).optional().nullable(),
+  emergency_contact: z.record(z.any()).optional().nullable(),
+  status: z.enum(['active', 'inactive', 'pending', 'suspended']).optional().nullable(),
+  last_login: z.string().optional().nullable(),
+  onboarding_completed: z.boolean().optional().nullable(),
+  profile_completion_percentage: z.number().optional().nullable(),
+  employee_id: z.string().optional().nullable(),
+  hire_date: z.string().optional().nullable(),
+  manager_id: z.string().optional().nullable(),
+  direct_reports: z.array(z.string()).optional().nullable(),
+  date_of_birth: z.string().optional().nullable(),
 });
 
 export type UserProfile = z.infer<typeof UserProfileSchema>;
@@ -48,7 +80,7 @@ export type UserBusinessData = z.infer<typeof UserBusinessDataSchema>;
 /**
  * User Service Configuration
  */
-const userServiceConfig: ServiceConfig = {
+const userServiceConfig = {
   tableName: 'user_profiles',
   schema: UserProfileSchema,
   cacheEnabled: true,
@@ -64,6 +96,24 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   protected config = userServiceConfig;
 
   /**
+   * Get user profile by external user ID (handles mapping internally)
+   */
+  async getByExternalId(externalUserId: string): Promise<ServiceResponse<UserProfile>> {
+    this.logMethodCall('getByExternalId', { externalUserId });
+    
+    return this.executeDbOperation(async () => {
+      // Use the ensure_user_profile RPC function to get or create the profile
+      const { data, error } = await callRPC('ensure_user_profile', { user_id: externalUserId });
+      
+      if (error) throw new Error(error);
+      if (!data || !data[0]) throw new Error('User profile not found');
+      
+      const validatedData = this.config.schema.parse(data[0]);
+      return { data: validatedData, error: null };
+    }, `get user by external ID ${externalUserId}`);
+  }
+
+  /**
    * Get user by ID with additional business data
    */
   async getUserWithBusinessData(userId: string) {
@@ -71,22 +121,15 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     
     return this.executeDbOperation(async () => {
       // Get user profile
-      const { data: user, error: userError } = await this.supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const { data: user, error: userError } = await selectOne<UserProfile>('user_profiles', userId);
       
-      if (userError) throw userError;
+      if (userError) throw new Error(userError);
+      if (!user) throw new Error('User not found');
       
       // Get company data if user has company_id
-      let company = null;
+      let company: Company | undefined = undefined;
       if (user.company_id) {
-        const { data: companyData, error: companyError } = await this.supabase
-          .from('companies')
-          .select('*')
-          .eq('id', user.company_id)
-          .single();
+        const { data: companyData, error: companyError } = await selectOne<Company>('companies', user.company_id);
         
         if (!companyError && companyData) {
           company = CompanySchema.parse(companyData);
@@ -94,17 +137,10 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       }
       
       // Get integrations data
-      const { data: integrations } = await this.supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', userId);
+      const { data: integrations } = await selectData<any>('user_integrations', '*', { user_id: userId });
       
       // Get analytics data
-      const { data: analytics } = await this.supabase
-        .from('user_analytics')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
+      const { data: analytics } = await selectOne<any>('user_analytics', userId);
       
       const businessData: UserBusinessData = {
         user: UserProfileSchema.parse(user),
@@ -127,6 +163,61 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     const validatedUpdates = UserProfileSchema.partial().parse(updates);
     
     return this.update(userId, validatedUpdates);
+  }
+
+    /**
+   * Update user profile by external user ID (handles mapping internally)
+   */
+  async updateByExternalId(externalUserId: string, updates: Partial<UserProfile>): Promise<ServiceResponse<UserProfile>> {
+    this.logMethodCall('updateByExternalId', { externalUserId, updates });
+    
+    return this.executeDbOperation(async () => {
+      // Validate updates against schema
+      const validatedUpdates = UserProfileSchema.partial().parse(updates);
+      
+      // Get internal user ID from external user ID
+      const internalUserIdResponse = await userMappingService.getInternalUserId(externalUserId);
+      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
+        logger.error('Failed to get internal user ID for user profile update', { 
+          externalUserId, 
+          error: internalUserIdResponse.error 
+        });
+        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
+      }
+
+      const internalUserId = internalUserIdResponse.data;
+      
+      // First, try to get the existing profile to see if it exists
+      const { data: existingProfile, error: getError } = await selectOne<UserProfile>(this.config.tableName, internalUserId, 'user_id');
+      
+      let result;
+      if (getError || !existingProfile) {
+        // Profile doesn't exist, create it
+        logger.info('User profile does not exist, creating new profile', { externalUserId, internalUserId });
+        const { data: newProfile, error: createError } = await insertOne<UserProfile>(this.config.tableName, {
+          user_id: internalUserId,
+          ...validatedUpdates,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+        
+        if (createError) throw new Error(createError);
+        result = newProfile;
+      } else {
+        // Profile exists, update it
+        // Use the internal user ID for the update
+        const { data: updatedProfile, error: updateError } = await updateOne<UserProfile>(this.config.tableName, internalUserId, {
+          ...validatedUpdates,
+          updated_at: new Date().toISOString()
+        }, 'user_id');
+        
+        if (updateError) throw new Error(updateError);
+        result = updatedProfile;
+      }
+      
+      const validatedData = this.config.schema.parse(result);
+      return { data: validatedData, error: null };
+    }, `update user by external ID ${externalUserId}`);
   }
 
   /**
@@ -154,23 +245,19 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     this.logMethodCall('getUserByEmail', { email });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('email', email)
-        .single();
+      const { data, error } = await selectOne<UserProfile>(this.config.tableName, email, 'email');
       
-      if (error) throw error;
+      if (error) throw new Error(error);
       
       const validatedData = this.config.schema.parse(data);
       return { data: validatedData, error: null };
-    }, 'getUserByEmail');
+    }, `get user by email`);
   }
 
   /**
    * Bulk update user roles
    */
-  async bulkUpdateRoles(updates: { userId: string; role: string }[]) {
+  async bulkUpdateRoles(updates: { userId: string; role: 'user' | 'owner' | 'admin' | 'manager' }[]) {
     this.logMethodCall('bulkUpdateRoles', { count: updates.length });
     
     const roleUpdates = updates.map(({ userId, role }) => ({
@@ -189,29 +276,19 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     
     return this.executeDbOperation(async () => {
       // Get user activity count
-      const { count: activityCount } = await this.supabase
-        .from('user_activities')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
+      const { data: activities } = await selectData<any>('user_activities', '*', { user_id: userId });
+      const activityCount = activities?.length || 0;
       
       // Get integration count
-      const { count: integrationCount } = await this.supabase
-        .from('user_integrations')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
+      const { data: integrations } = await selectData<any>('user_integrations', '*', { user_id: userId });
+      const integrationCount = integrations?.length || 0;
       
       // Get last login
-      const { data: lastLogin } = await this.supabase
-        .from('auth_logs')
-        .select('created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+      const { data: lastLogin } = await selectOne<any>('auth_logs', userId, 'user_id');
       
       const stats = {
-        activityCount: activityCount || 0,
-        integrationCount: integrationCount || 0,
+        activityCount,
+        integrationCount,
         lastLogin: lastLogin?.created_at || null,
       };
       
@@ -224,13 +301,9 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     this.logMethodCall('get', { id });
     
     return this.executeDbOperation(async () => {
-      const { data, error } = await this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } = await selectOne<UserProfile>(this.config.tableName, id);
       
-      if (error) throw error;
+      if (error) throw new Error(error);
       
       const validatedData = this.config.schema.parse(data);
       return { data: validatedData, error: null };
@@ -241,17 +314,13 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     this.logMethodCall('create', { data });
     
     return this.executeDbOperation(async () => {
-      const { data: result, error } = await this.supabase
-        .from(this.config.tableName)
-        .insert({
-          ...data,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data: result, error } = await insertOne<UserProfile>(this.config.tableName, {
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
       
-      if (error) throw error;
+      if (error) throw new Error(error);
       
       const validatedData = this.config.schema.parse(result);
       return { data: validatedData, error: null };
@@ -262,17 +331,12 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     this.logMethodCall('update', { id, data });
     
     return this.executeDbOperation(async () => {
-      const { data: result, error } = await this.supabase
-        .from(this.config.tableName)
-        .update({
-          ...data,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
+      const { data: result, error } = await updateOne<UserProfile>(this.config.tableName, id, {
+        ...data,
+        updated_at: new Date().toISOString()
+      });
       
-      if (error) throw error;
+      if (error) throw new Error(error);
       
       const validatedData = this.config.schema.parse(result);
       return { data: validatedData, error: null };
@@ -283,12 +347,9 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     this.logMethodCall('delete', { id });
     
     return this.executeDbOperation(async () => {
-      const { error } = await this.supabase
-        .from(this.config.tableName)
-        .delete()
-        .eq('id', id);
+      const { error } = await deleteOne(this.config.tableName, id);
       
-      if (error) throw error;
+      if (error) throw new Error(error);
       
       return { data: true, error: null };
     }, `delete user ${id}`);
@@ -298,23 +359,11 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     this.logMethodCall('list', { filters });
     
     return this.executeDbOperation(async () => {
-      let query = this.supabase
-        .from(this.config.tableName)
-        .select('*');
+      const { data, error } = await selectData<UserProfile>(this.config.tableName, '*', filters);
       
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            query = query.eq(key, value);
-          }
-        });
-      }
+      if (error) throw new Error(error);
       
-      const { data, error } = await query;
-      
-      if (error) throw error;
-      
-      const validatedData = data.map(item => this.config.schema.parse(item));
+      const validatedData = (data || []).map(item => this.config.schema.parse(item));
       return { data: validatedData, error: null };
     }, `list users`);
   }
@@ -323,53 +372,52 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     this.logMethodCall('search', { query, filters });
     
     return this.executeDbOperation(async () => {
-      let supabaseQuery = this.supabase
-        .from(this.config.tableName)
-        .select('*')
-        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`);
+      // For search, we'll use selectData with filters and implement text search
+      const searchFilters = {
+        ...filters,
+        // Add text search filters if needed
+      };
       
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            supabaseQuery = supabaseQuery.eq(key, value);
-          }
-        });
-      }
+      const { data, error } = await selectData<UserProfile>(this.config.tableName, '*', searchFilters);
       
-      const { data, error } = await supabaseQuery;
+      if (error) throw new Error(error);
       
-      if (error) throw error;
+      // Filter results by query if needed
+      const filteredData = (data || []).filter(item => 
+        item.first_name?.toLowerCase().includes(query.toLowerCase()) ||
+        item.last_name?.toLowerCase().includes(query.toLowerCase()) ||
+        item.email?.toLowerCase().includes(query.toLowerCase())
+      );
       
-      const validatedData = data.map(item => this.config.schema.parse(item));
+      const validatedData = filteredData.map(item => this.config.schema.parse(item));
       return { data: validatedData, error: null };
     }, `search users`);
   }
 
-  async bulkUpdate(updates: { id: string; data: Partial<UserProfile> }[]): Promise<ServiceResponse<UserProfile[]>> {
-    this.logMethodCall('bulkUpdate', { count: updates.length });
+  /**
+   * Bulk update users
+   */
+  async bulkUpdate(updates: Array<{ id: string; data: Partial<UserProfile> }>) {
+    this.logMethodCall('bulkUpdate', { updateCount: updates.length });
     
     return this.executeDbOperation(async () => {
       const results: UserProfile[] = [];
       
       for (const { id, data: updateData } of updates) {
-        const { data: result, error } = await this.supabase
-          .from(this.config.tableName)
-          .update({
-            ...updateData,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', id)
-          .select()
-          .single();
+        const { data: result, error } = await updateOne<UserProfile>(this.config.tableName, id, {
+          ...updateData,
+          updated_at: new Date().toISOString()
+        });
         
-        if (error) throw error;
-        
-        const validatedData = this.config.schema.parse(result);
-        results.push(validatedData);
+        if (error) throw new Error(error);
+        if (result) {
+          const validatedData = this.config.schema.parse(result);
+          results.push(validatedData);
+        }
       }
       
       return { data: results, error: null };
-    }, `bulkUpdate users`);
+    }, `bulk update users`);
   }
 }
 

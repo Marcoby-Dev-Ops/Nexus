@@ -1,6 +1,6 @@
 import React from 'react';
-import { Spinner } from '@/shared/components/ui/Spinner.tsx';
-import Skeleton from '@/shared/components/ui/Skeleton.tsx';
+import { Spinner } from '@/shared/components/ui/Spinner';
+import Skeleton from '@/shared/components/ui/Skeleton';
 
 /**
  * Standardized Loading States

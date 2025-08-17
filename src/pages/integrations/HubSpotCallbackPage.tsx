@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert.tsx';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -10,9 +10,10 @@ import {
   ArrowRight,
   XCircle
 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { logger } from '@/shared/utils/logger.ts';
+import { logger } from '@/shared/utils/logger';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 const HubSpotCallbackPage: React.FC = () => {
   const navigate = useNavigate();
@@ -109,7 +110,8 @@ const HubSpotCallbackPage: React.FC = () => {
       }
 
       // Exchange code for tokens via backend to avoid CORS issues
-      const { data: { session: userSession } } = await supabase.auth.getSession();
+      const result = await authentikAuthService.getSession();
+      const userSession = result.data;
       if (!userSession?.access_token) {
         throw new Error('No valid session found');
       }
@@ -119,13 +121,14 @@ const HubSpotCallbackPage: React.FC = () => {
     // eslint-disable-next-line no-console
     console.log('🔧 [HubSpot Callback] Exchanging code for tokens via backend');
 
-      const exchangeResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hubspot-exchange-tokens`, {
+      const exchangeResponse = await fetch('/api/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${userSession.access_token}`
         },
         body: JSON.stringify({
+          provider: 'hubspot',
           code,
           redirectUri: `${window.location.origin}/integrations/hubspot/callback`
         })
@@ -136,46 +139,83 @@ const HubSpotCallbackPage: React.FC = () => {
         throw new Error(errorData.error || `Token exchange failed: ${exchangeResponse.status}`);
       }
 
-      const { tokens, portalInfo: exchangePortalInfo } = await exchangeResponse.json();
+      const { data: tokenData } = await exchangeResponse.json();
        
      
     // eslint-disable-next-line no-console
-    console.log('🔧 [HubSpot Callback] Token exchange successful');
+    console.log('🔧 [HubSpot Callback] Token exchange successful:', {
+      hasTokenData: !!tokenData,
+      tokenKeys: tokenData ? Object.keys(tokenData) : []
+    });
 
-      // Store tokens and integration data via authenticated Supabase function
-      const { data: { session: storeSession } } = await supabase.auth.getSession();
+      // Store tokens and integration data directly in the frontend (like Microsoft)
+      const sessionResult = await authentikAuthService.getSession();
+      const storeSession = sessionResult.data;
       if (!storeSession?.access_token) {
         throw new Error('No valid session found');
       }
 
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('🔧 [HubSpot Callback] Storing integration data...');
+      console.log('🔧 [HubSpot Callback] Storing integration data...');
 
-      // Call the authenticated Supabase function to store the integration
-                   const storeResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hubspot-store-integration-v2`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${storeSession.access_token}`
+      // Store the integration in user_integrations table with tokens in config (like Microsoft)
+      const integrationData = {
+        user_id: userId,
+        integration_id: 'f71bb76b-3e42-44dc-aa80-1a6b8cdb74a4', // HubSpot CRM integration UUID
+        integration_name: 'HubSpot',
+        status: 'connected',
+        config: {
+          // Store tokens directly in config like Microsoft
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null,
+          scope: tokenData.scope,
+          token_type: tokenData.token_type || 'Bearer',
+          // Additional HubSpot-specific config
+          enabled: true,
+          auto_sync: true,
+          sync_frequency: 'hourly',
+          portal_id: tokenData.portal_info?.portalId || 'unknown',
+          portal_timezone: tokenData.portal_info?.timeZone || 'UTC',
+          redirect_uri: `${window.location.origin}/integrations/hubspot/callback`,
+          scopes: tokenData.scope?.split(' ') || [],
+          connected_at: new Date().toISOString(),
+          oauth_connected: true,
+          last_sync: new Date().toISOString(),
+          portal_info: tokenData.portal_info || {}
         },
-        body: JSON.stringify({
-          userId,
-          tokens,
-          portalInfo: exchangePortalInfo
-        })
-      });
+        last_sync_at: new Date().toISOString()
+      };
 
-      if (!storeResponse.ok) {
-        const errorData = await storeResponse.json();
-        throw new Error(errorData.error || 'Failed to store integration');
+      // Check if integration already exists
+      const { data: existingIntegration } = await supabase
+        .from('user_integrations')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('integration_id', 'f71bb76b-3e42-44dc-aa80-1a6b8cdb74a4')
+        .maybeSingle();
+
+      let integrationError;
+      if (existingIntegration) {
+        console.log('🔧 [HubSpot Callback] Updating existing integration');
+        const { error } = await supabase
+          .from('user_integrations')
+          .update(integrationData)
+          .eq('id', existingIntegration.id);
+        integrationError = error;
+      } else {
+        console.log('🔧 [HubSpot Callback] Creating new integration');
+        const { error } = await supabase
+          .from('user_integrations')
+          .insert(integrationData);
+        integrationError = error;
       }
 
-       
-     
-    // eslint-disable-next-line no-console
-    console.log('🔧 [HubSpot Callback] Integration stored successfully');
+      if (integrationError) {
+        console.error('Failed to store integration:', integrationError);
+        throw new Error(`Failed to store integration: ${integrationError.message}`);
+      }
+
+      console.log('🔧 [HubSpot Callback] Integration stored successfully');
       setStatus('success');
 
       // Show success toast

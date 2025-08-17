@@ -5,9 +5,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { 
   CheckCircle2, 
@@ -19,7 +19,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useToast } from '@/shared/ui/components/Toast';
-import { supabase, insertOne, updateOne, selectOne } from '@/lib/supabase';
+import { selectData as select, insertOne, updateOne, selectOne } from '@/lib/api-client';
 import { useAuth } from '@/hooks/index';
 
 interface SuccessOutcome {

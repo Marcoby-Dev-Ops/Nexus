@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Card, CardHeader, CardTitle, CardContent } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
 import { CheckCircle, XCircle, Info, X, Loader2 } from "lucide-react";
-import { Progress } from '@/shared/components/ui/Progress.tsx';
+import { Progress } from '@/shared/components/ui/Progress';
 import Confetti from "react-confetti";
 import { Tooltip, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/Tooltip';
 import { useAuth } from '@/hooks/index';

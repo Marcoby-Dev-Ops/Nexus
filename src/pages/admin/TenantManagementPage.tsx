@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
 import { useTenants } from '@/hooks/business/useTenants';
-import { Skeleton } from '@/shared/components/ui/Skeleton.tsx';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/Table';
-import Modal from '@/shared/components/ui/Modal.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import Modal from '@/shared/components/ui/Modal';
+import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Building, Users, Calendar, Mail, Phone, Globe, Edit, Trash2, Plus, CreditCard, BarChart3, Eye, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import type { Tenant } from '@/services/business/TenantService';
 

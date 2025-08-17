@@ -1,7 +1,7 @@
 import React from 'react';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Skeleton } from '@/shared/components/ui/Skeleton.tsx';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Button } from '@/shared/components/ui/Button';
+import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { Target, Zap, DollarSign, Cpu, Briefcase, Heart, CheckCircle, CalendarCheck, Lightbulb } from 'lucide-react';
 // --- Hero Section ---
 const businessTips = [

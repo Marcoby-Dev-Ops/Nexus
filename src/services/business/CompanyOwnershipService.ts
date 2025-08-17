@@ -3,7 +3,7 @@
  * Handles company ownership management and transfers
  */
 
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
@@ -162,7 +162,7 @@ export class CompanyOwnershipService extends BaseService {
         }
 
         // Use the database function to transfer ownership
-        const { data, error } = await this.supabase.rpc('transfer_company_ownership', {
+        const { data, error } = await await this.database.rpc("transfer_company_ownership", {
           p_company_id: request.companyId,
           p_new_owner_id: request.newOwnerId,
           p_current_user_id: request.currentUserId

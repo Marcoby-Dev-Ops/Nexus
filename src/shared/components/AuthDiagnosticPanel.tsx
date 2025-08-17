@@ -3,7 +3,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { sessionUtils, diagnoseAuthIssues, testAndFixSession } from '@/lib/supabase';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 import { logger } from '@/shared/utils/logger';
 
 interface DiagnosticResult {
@@ -29,7 +29,7 @@ export const AuthDiagnosticPanel: React.FC<AuthDiagnosticPanelProps> = ({ classN
     try {
       // Test 1: Basic session retrieval
       logger.info('Running basic session test...');
-      const sessionResult = await sessionUtils.getSession();
+      const sessionResult = await authentikAuthService.getSession();
       
       if (sessionResult.error) {
         newResults.push({
@@ -50,10 +50,10 @@ export const AuthDiagnosticPanel: React.FC<AuthDiagnosticPanelProps> = ({ classN
 
       // Test 2: Auth diagnostics
       logger.info('Running auth diagnostics...');
-      const authDiagnostics = await diagnoseAuthIssues();
+      const authDiagnostics = await authentikAuthService.getAuthStatus();
       
       newResults.push({
-        success: authDiagnostics.errors.length === 0,
+        success: authDiagnostics.isAuthenticated,
         message: 'Auth configuration check',
         details: authDiagnostics,
         timestamp: new Date().toISOString()
@@ -61,10 +61,10 @@ export const AuthDiagnosticPanel: React.FC<AuthDiagnosticPanelProps> = ({ classN
 
       // Test 3: Session fix attempt
       logger.info('Testing session fix...');
-      const fixResult = await testAndFixSession();
+      const fixResult = await authentikAuthService.refreshSession();
       
       newResults.push({
-        success: fixResult.success,
+        success: !fixResult.error,
         message: 'Session fix attempt',
         details: fixResult,
         timestamp: new Date().toISOString()

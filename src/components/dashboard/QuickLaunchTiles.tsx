@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card } from '@/shared/components/ui/Card.tsx';
+import { Card } from '@/shared/components/ui/Card';
 import PropTypes from 'prop-types';
 
 export interface QuickLaunchAction {

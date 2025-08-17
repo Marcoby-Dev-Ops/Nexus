@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Progress } from '@/shared/components/ui/Progress.tsx';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Target, Zap, Play, CheckCircle, Brain, Users, Calendar, BarChart3, RefreshCw, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { supabase } from '@/lib/supabase';
-
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 interface ActionItem {
   id: string;
   title: string;
@@ -137,7 +136,7 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
         .from('user_integrations')
         .select('*')
         .eq('user_id', user?.id)
-        .eq('status', 'active');
+        .eq('status', 'connected');
 
       if (integrations) {
         // Check for manual processes that could be automated
@@ -188,47 +187,34 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
     const actions: ActionItem[] = [];
 
     try {
-      // Get pending decisions from business insights
-      const { data: businessData } = await supabase
-        .from('business_profiles')
-        .select('*')
-        .eq('user_id', user?.id)
-        .single();
+      // Removed business_profiles dependency - using default decision actions
+      actions.push({
+        id: 'revenue-strategy-decision',
+        title: 'Decide on Revenue Strategy',
+        description: 'Choose between pricing optimization, new markets, or product expansion',
+        type: 'decision',
+        priority: 'critical',
+        effort: 'intensive',
+        impact: 'high',
+        status: 'pending',
+        estimatedTime: 180,
+        source: 'Business Analytics',
+        aiAssisted: true
+      });
 
-      if (businessData) {
-        // Generate decision actions based on business context
-        if (businessData.revenue_trend === 'declining') {
-          actions.push({
-            id: 'revenue-strategy-decision',
-            title: 'Decide on Revenue Strategy',
-            description: 'Choose between pricing optimization, new markets, or product expansion',
-            type: 'decision',
-            priority: 'critical',
-            effort: 'intensive',
-            impact: 'high',
-            status: 'pending',
-            estimatedTime: 180,
-            source: 'Business Analytics',
-            aiAssisted: true
-          });
-        }
-
-        if (businessData.customer_satisfaction_score && businessData.customer_satisfaction_score < 7) {
-          actions.push({
-            id: 'customer-experience-decision',
-            title: 'Improve Customer Experience',
-            description: 'Decide on customer service improvements or product enhancements',
-            type: 'decision',
-            priority: 'high',
-            effort: 'moderate',
-            impact: 'high',
-            status: 'pending',
-            estimatedTime: 120,
-            source: 'Customer Analytics',
-            aiAssisted: true
-          });
-        }
-      }
+      actions.push({
+        id: 'customer-experience-decision',
+        title: 'Improve Customer Experience',
+        description: 'Decide on customer service improvements or product enhancements',
+        type: 'decision',
+        priority: 'high',
+        effort: 'moderate',
+        impact: 'high',
+        status: 'pending',
+        estimatedTime: 120,
+        source: 'Customer Analytics',
+        aiAssisted: true
+      });
     } catch (error) {
        
      

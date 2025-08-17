@@ -1,8 +1,10 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
-import { supabase } from '@/lib/supabase';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { z } from 'zod';
+import { getUserTimezone, toUserTimezone } from '@/shared/utils/timezone';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 // Zod schemas for validation
 export const CalendarEventSchema = z.object({
@@ -97,8 +99,9 @@ export class CalendarService extends BaseService implements CrudServiceInterface
       this.validateIdParam(id);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const result = await authentikAuthService.getSession();
+      const user = result.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -184,31 +187,55 @@ export class CalendarService extends BaseService implements CrudServiceInterface
       const validatedFilters = CalendarFiltersSchema.parse(filters);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const userResult = await authentikAuthService.getSession();
+      const user = userResult.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
-      // Get user's connected calendar integrations
-      const { data: integrations, error: integrationError } = await supabase
-        .from('user_integrations')
-        .select('integration_type, status')
-        .eq('user_id', user.id)
-        .in('integration_type', ['microsoft', 'google', 'outlook']);
+              // Get user's connected calendar integrations - fetch individually to avoid .in() issues
+        const integrationNames = ['Microsoft 365', 'Google Workspace', 'Outlook', 'Gmail'];
+        const integrationPromises = integrationNames.map(name => 
+          supabase
+            .from('user_integrations')
+            .select('integration_name, status')
+            .eq('user_id', user.id)
+            .eq('integration_name', name)
+        );
 
-      if (integrationError) {
-        return this.createErrorResponse('Failed to fetch user integrations', integrationError.message);
-      }
+        const integrationResults = await Promise.all(integrationPromises);
+        const integrationErrors = integrationResults.filter(result => result.error);
+        
+        if (integrationErrors.length > 0) {
+          return this.createErrorResponse('Failed to fetch user integrations', integrationErrors[0].error?.message || 'Unknown error');
+        }
+
+        const integrations = integrationResults.flatMap(result => result.data || []);
 
       const events: CalendarEvent[] = [];
 
       // Fetch events from each connected calendar source
       for (const integration of integrations || []) {
         if (integration.status === 'connected') {
-          const sourceEvents = await this.fetchEventsFromSource(
-            integration.integration_type as 'microsoft' | 'google' | 'outlook',
-            validatedFilters
-          );
+          // Map integration names to source types
+          let source: 'microsoft' | 'google' | 'outlook';
+          switch (integration.integration_name) {
+            case 'Microsoft 365':
+              source = 'microsoft';
+              break;
+            case 'Google Workspace':
+            case 'Gmail':
+              source = 'google';
+              break;
+            case 'Outlook':
+              source = 'outlook';
+              break;
+            default:
+              this.logger.warn(`Unknown calendar integration: ${integration.integration_name}`);
+              continue;
+          }
+          
+          const sourceEvents = await this.fetchEventsFromSource(source, validatedFilters);
           events.push(...sourceEvents);
         }
       }
@@ -218,7 +245,7 @@ export class CalendarService extends BaseService implements CrudServiceInterface
 
       this.logSuccess('Calendar events fetched successfully', { 
         totalEvents: filteredEvents.length,
-        sources: integrations?.map(i => i.integration_type)
+        sources: integrations?.map(i => i.integration_name)
       });
 
       return this.createSuccessResponse(filteredEvents);
@@ -236,8 +263,9 @@ export class CalendarService extends BaseService implements CrudServiceInterface
       const validatedData = CalendarEventSchema.parse(data);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const authResult = await authentikAuthService.getSession();
+      const user = authResult.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -278,8 +306,9 @@ export class CalendarService extends BaseService implements CrudServiceInterface
       this.validateIdParam(id);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const userData = await authentikAuthService.getSession();
+      const user = userData.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -321,8 +350,9 @@ export class CalendarService extends BaseService implements CrudServiceInterface
       this.validateIdParam(id);
       
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const userSession = await authentikAuthService.getSession();
+      const user = userSession.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -350,8 +380,9 @@ export class CalendarService extends BaseService implements CrudServiceInterface
   async getStats(): Promise<ServiceResponse<CalendarStats>> {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
+      const userInfo = await authentikAuthService.getSession();
+      const user = userInfo.data?.user;
+      if (!user) {
         return this.createErrorResponse('User not authenticated');
       }
 
@@ -391,15 +422,116 @@ export class CalendarService extends BaseService implements CrudServiceInterface
 
   /**
    * Fetch events from a specific calendar source
-   * This is a placeholder for actual integration logic
    */
   private async fetchEventsFromSource(
     source: 'microsoft' | 'google' | 'outlook',
     filters: CalendarFilters
   ): Promise<CalendarEvent[]> {
-    // This would contain the actual integration logic
-    // For now, return empty array as placeholder
-    return [];
+    try {
+      // Get current user
+      const userSession = await authentikAuthService.getSession();
+      const user = userSession.data?.user;
+      if (!user) {
+        this.logError('User not authenticated for calendar source fetch');
+        return [];
+      }
+
+      if (source === 'microsoft' || source === 'microsoft365') {
+        return await this.getMicrosoftCalendarEvents(user.id, filters);
+      }
+
+      // TODO: Implement other calendar sources (Google, Outlook)
+      this.logInfo(`Calendar source ${source} not yet implemented`);
+      return [];
+    } catch (error) {
+      this.logError(`Failed to fetch events from ${source}`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch calendar events from Microsoft 365 via Edge Function
+   */
+  private async getMicrosoftCalendarEvents(
+    userId: string, 
+    filters: CalendarFilters
+  ): Promise<CalendarEvent[]> {
+    try {
+      // Get user's timezone
+      const userTimezone = await getUserTimezone();
+      
+      const params = new URLSearchParams({
+        userId: userId,
+        top: '100',
+      });
+
+      // Add date filters if provided, converting to user's timezone
+      if (filters.startDate) {
+        const userStartDate = toUserTimezone(filters.startDate, userTimezone);
+        params.append('startDate', userStartDate.toISO());
+      }
+      if (filters.endDate) {
+        const userEndDate = toUserTimezone(filters.endDate, userTimezone);
+        params.append('endDate', userEndDate.toISO());
+      }
+
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/microsoft_calendar_list?${params.toString()}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        this.logError(`Microsoft calendar API failed: ${response.status} ${errorText}`);
+        return [];
+      }
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        this.logError(`Microsoft calendar API error: ${result.error}`);
+        return [];
+      }
+
+      // Transform the response to match our CalendarEvent interface
+      // Convert dates to user's timezone for display
+      const events: CalendarEvent[] = (result.data.items || []).map((item: any) => {
+        const startDate = new Date(item.startDate);
+        const endDate = new Date(item.endDate);
+        
+        return {
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          startDate: startDate,
+          endDate: endDate,
+          allDay: item.allDay,
+          location: item.location,
+          attendees: item.attendees,
+          organizer: item.organizer,
+          category: item.category,
+          priority: item.priority,
+          source: item.source,
+          isRecurring: item.isRecurring,
+          recurrencePattern: item.recurrencePattern,
+          color: item.color,
+          isPrivate: item.isPrivate,
+          hasAttachments: item.hasAttachments,
+          meetingUrl: item.meetingUrl,
+        };
+      });
+
+      this.logSuccess(`Fetched ${events.length} Microsoft calendar events`);
+      return events;
+    } catch (error) {
+      this.logError('Failed to fetch Microsoft calendar events', error);
+      return [];
+    }
   }
 
   /**

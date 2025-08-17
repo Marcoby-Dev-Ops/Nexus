@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@/hooks/index';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Button } from '@/shared/components/ui/Button';
 import { CheckCircle, XCircle, Clock, AlertCircle, User } from 'lucide-react';
 
 interface AuthStatusProps {

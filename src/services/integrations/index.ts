@@ -18,6 +18,8 @@ export {
   type DataPoint,
 } from './consolidatedIntegrationService';
 
+
+
 // ============================================================================
 // LEGACY SERVICES (DEPRECATED - Use consolidatedIntegrationService instead)
 // ============================================================================
@@ -30,6 +32,8 @@ export { DataMappingService } from './core/DataMappingService';
 // Specific Integration Services
 export { HubSpotIntegrationService } from './hubspot/HubSpotIntegrationService';
 export { PayPalIntegrationService } from './paypal/PayPalIntegrationService';
+export { GoogleWorkspaceService } from './google-workspace';
+export { GoogleAnalyticsService } from './google-analytics';
 
 // Legacy Services (for backward compatibility)
 export { UniversalIntegrationService } from './universalIntegrationService';
@@ -39,8 +43,7 @@ export { DataPointMappingService } from './dataPointMappingService';
 // DEPRECATED: Legacy Salesforce Service (will be replaced with SalesforceIntegrationService)
 export { SalesforceStyleDataService } from './SalesforceStyleDataService';
 
-// NEW: Migrated Data Point Dictionary Service
-export { DataPointDictionaryService } from './DataPointDictionaryService';
+
 
 // NEW: Real-Time Cross-Departmental Sync Service
 export { RealTimeCrossDepartmentalSync } from './realTimeCrossDepartmentalSync';

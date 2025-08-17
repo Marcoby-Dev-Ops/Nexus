@@ -7,7 +7,7 @@ describe('StreamingComposer – streaming flow', () => {
         // Enable the v2 chat feature flag and set a predictable endpoint path
         (win as any).importMeta = {
           env: {
-            VITE_CHAT_V2: '1',
+    
             VITE_AI_CHAT_URL: '/functions/v1/ai_chat',
           },
         };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card.tsx';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
-import { Input } from '@/shared/components/ui/Input.tsx';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Input } from '@/shared/components/ui/Input';
 import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 import { 
   ArrowLeft,
@@ -35,8 +35,12 @@ import {
 import { useAuth } from '@/hooks/index';
 import { adapterRegistry, type AdapterMetadata } from '@/core/adapters/adapterRegistry';
 import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
-import { supabase } from '@/lib/supabase';
+import { msalInstance, msalReady } from '@/shared/auth/msal';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { database } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
+import { HUBSPOT_REQUIRED_SCOPES } from '@/services/integrations/hubspot/constants';
+import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 
 interface MarketplaceIntegration {
   id: string;
@@ -69,6 +73,7 @@ const IntegrationMarketplacePage: React.FC = () => {
   const [connectedIntegrations, setConnectedIntegrations] = useState<string[]>([]);
   const [selectedIntegration, setSelectedIntegration] = useState<MarketplaceIntegration | null>(null);
   const [showSetup, setShowSetup] = useState(false);
+  const [authInProgress, setAuthInProgress] = useState(false);
 
   // Categories for filtering
   const categories = [
@@ -79,7 +84,8 @@ const IntegrationMarketplacePage: React.FC = () => {
     'Accounting',
     'Communication',
     'Analytics',
-    'Productivity'
+    'Productivity',
+    'Storage'
   ];
 
   // Get available adapters and convert to marketplace format
@@ -107,6 +113,8 @@ const IntegrationMarketplacePage: React.FC = () => {
               return <MessageSquare className="h-8 w-8 text-purple-500" />;
             case 'asana':
               return <Grid3X3 className="h-8 w-8 text-red-500" />;
+            case 'google_analytics':
+              return <BarChart3 className="h-8 w-8 text-blue-600" />;
             case 'googleanalytics':
               return <TrendingUp className="h-8 w-8 text-blue-500" />;
             default:
@@ -135,27 +143,65 @@ const IntegrationMarketplacePage: React.FC = () => {
         };
 
         // Determine difficulty based on auth type and capabilities
-        const getDifficulty = (authType: string, capabilities: string[]): 'Easy' | 'Medium' | 'Advanced' => {
+        const getDifficulty = (authType: string, capabilities: string[], adapterName: string): 'Easy' | 'Medium' | 'Advanced' => {
+          // Specific difficulty overrides for known integrations
+          const difficultyOverrides: Record<string, 'Easy' | 'Medium' | 'Advanced'> = {
+            'hubspot': 'Easy',
+            'google_workspace': 'Easy',
+            'microsoft365': 'Easy',
+            'google_analytics': 'Easy',
+            'slack': 'Easy',
+            'paypal': 'Medium',
+            'stripe': 'Medium',
+            'quickbooks': 'Medium',
+            'salesforce': 'Advanced',
+            'mailchimp': 'Easy'
+          };
+
+          if (difficultyOverrides[adapterName.toLowerCase()]) {
+            return difficultyOverrides[adapterName.toLowerCase()];
+          }
+
+          // Default logic based on auth type and capabilities
           if (authType === 'api_key' && capabilities.length <= 2) return 'Easy';
-          if (authType === 'oauth2' && capabilities.length <= 3) return 'Medium';
+          if (authType === 'oauth' && capabilities.length <= 3) return 'Medium';
           return 'Advanced';
         };
 
-        // Estimate setup time
-        const getSetupTime = (difficulty: string): string => {
+        // Estimate setup time based on difficulty and specific integrations
+        const getSetupTime = (difficulty: string, adapterName: string): string => {
+          // Specific setup time overrides for known integrations
+          const setupTimeOverrides: Record<string, string> = {
+            'hubspot': '5 minutes',
+            'google_workspace': '3 minutes',
+            'microsoft365': '5 minutes',
+            'google_analytics': '5 minutes',
+            'slack': '3 minutes',
+            'paypal': '8 minutes',
+            'stripe': '10 minutes',
+            'quickbooks': '10 minutes',
+            'salesforce': '15 minutes',
+            'mailchimp': '5 minutes'
+          };
+
+          if (setupTimeOverrides[adapterName.toLowerCase()]) {
+            return setupTimeOverrides[adapterName.toLowerCase()];
+          }
+
+          // Default logic based on difficulty
           switch (difficulty) {
-            case 'Easy': return '2-3 minutes';
+            case 'Easy': return '3-5 minutes';
             case 'Medium': return '5-10 minutes';
-            case 'Advanced': return '15-30 minutes';
+            case 'Advanced': return '10-15 minutes';
             default: return '5-10 minutes';
           }
         };
 
-        const difficulty = getDifficulty(adapter.metadata.authType, adapter.metadata.capabilities);
-        const setupTime = getSetupTime(difficulty);
+        const difficulty = getDifficulty(adapter.metadata.authType, adapter.metadata.capabilities, adapter.metadata.name);
+        const setupTime = getSetupTime(difficulty, adapter.metadata.name);
 
         return {
-          id: adapter.metadata.name,
+          id: adapter.id,
           name: adapter.metadata.displayName,
           provider: adapter.metadata.displayName,
           description: adapter.metadata.description,
@@ -176,10 +222,11 @@ const IntegrationMarketplacePage: React.FC = () => {
 
   const marketplaceIntegrations = getMarketplaceIntegrations();
 
-  // Fetch connected integrations
+
+
+    // Fetch connected integrations
   const fetchConnectedIntegrations = async () => {
     if (!user?.id) {
-      logger.info('No user ID available, skipping integration fetch');
       setConnectedIntegrations([]);
       return;
     }
@@ -187,18 +234,18 @@ const IntegrationMarketplacePage: React.FC = () => {
     try {
       setLoading(true);
       
-      const { data, error } = await supabase
-        .from('user_integrations')
-        .select('integration_name, status')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
+      const { data, error } = await select(
+        'user_integrations',
+        'integration_slug, status',
+        { user_id: user.id, status: 'active' }
+      );
 
       if (error) {
         logger.error('Error fetching connected integrations:', error);
         setConnectedIntegrations([]);
       } else {
         const connectedNames = (data || []).map(integration => 
-          integration.integration_name.toLowerCase()
+          integration.integration_slug.toLowerCase()
         );
         setConnectedIntegrations(connectedNames);
       }
@@ -213,7 +260,10 @@ const IntegrationMarketplacePage: React.FC = () => {
   // Update marketplace integrations with connection status
   const marketplaceIntegrationsWithStatus: MarketplaceIntegration[] = marketplaceIntegrations.map(integration => {
     try {
-      const isConnected = connectedIntegrations.includes(integration.id.toLowerCase());
+      const isConnected =
+        connectedIntegrations.includes(integration.name.toLowerCase()) ||
+        connectedIntegrations.includes(integration.provider.toLowerCase()) ||
+        connectedIntegrations.includes(integration.id.toLowerCase());
       
       return {
         ...integration,
@@ -221,7 +271,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         connectionStatus: isConnected ? 'connected' : 'disconnected'
       };
     } catch (error) {
-      logger.error('Error processing integration:', integration.id, error);
+      logger.error('Error processing integration', { integrationId: integration.id, error });
       return {
         ...integration,
         isConnected: false,
@@ -232,29 +282,210 @@ const IntegrationMarketplacePage: React.FC = () => {
 
   // Filter integrations based on search and category
   const filteredIntegrations = marketplaceIntegrationsWithStatus.filter(integration => {
-    try {
-      const matchesSearch = integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           integration.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           integration.provider.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || integration.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    } catch (error) {
-      logger.error('Error filtering integration:', integration.id, error);
-      return false;
-    }
+    const matchesSearch = integration.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         integration.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         integration.provider.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || integration.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
   const handleIntegrationSelect = async (integration: MarketplaceIntegration) => {
     if (integration.isConnected) {
-      // If already connected, navigate to settings or dashboard
-      navigate('/integrations');
+      // If already connected, show disconnect confirmation
+      const confirmed = window.confirm(`Are you sure you want to disconnect ${integration.name}? This will remove all associated data and you'll need to reconnect if you want to use it again.`);
+      if (confirmed) {
+        await handleDisconnectIntegration(integration);
+      }
+      return;
+    }
+
+    // Start provider OAuth for known adapters, else fallback to modal
+    const state = { returnTo: window.location.href, provider: integration.id, ts: Date.now() };
+
+    if (integration.id === 'microsoft365') {
+      if (authInProgress) return;
+      try {
+        setAuthInProgress(true);
+        await msalReady;
+        // Use MSAL's built-in flow with proper scopes for refresh tokens
+        await msalInstance.loginRedirect({
+          scopes: [
+            'User.Read',
+            'Mail.Read',
+            'Mail.ReadWrite', 
+            'Calendars.Read',
+            'Files.Read.All',
+            'Contacts.Read',
+            'offline_access'
+          ],
+          redirectStartPage: `${window.location.origin}/integrations/microsoft365/callback`
+        });
+      } catch (error) {
+        logger.error('Microsoft auth redirect failed', { 
+          error: error instanceof Error ? error.message : error,
+          errorStack: error instanceof Error ? error.stack : undefined,
+          errorType: typeof error,
+          clientId: '***', // Retrieved from server-side API
+          redirectUri: '***' // Retrieved from server-side API
+        });
+        setAuthInProgress(false);
+      }
+      return;
+    }
+
+    if (integration.id === 'google_workspace') {
+      if (authInProgress) return;
+      setAuthInProgress(true);
+      // Get Google OAuth configuration from server-side API
+      const configResponse = await fetch('/api/oauth/config/google');
+      if (!configResponse.ok) {
+        throw new Error('Failed to get Google configuration from server.');
+      }
+      
+      const config = await configResponse.json();
+      const { clientId, redirectUri } = config;
+      const oauth = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      oauth.search = new URLSearchParams({
+        client_id: clientId,
+        response_type: 'code',
+        redirect_uri: redirectUri,
+        scope: 'https://www.googleapis.com/auth/gmail.readonly',
+        access_type: 'offline',
+        include_granted_scopes: 'true',
+        prompt: 'consent',
+        state: btoa(JSON.stringify(state)),
+      }).toString();
+      window.location.href = oauth.toString();
+      return;
+    }
+
+    if (integration.id === 'hubspot') {
+      if (authInProgress) return;
+      setAuthInProgress(true);
+      
+      try {
+        // Get current session
+        const sessionResult = await authentikAuthService.getSession();
+        const session = sessionResult.data;
+        
+        if (!session) {
+          throw new Error('No valid session found. Please log in again.');
+        }
+
+        // Get HubSpot OAuth configuration from server-side API
+        const configResponse = await fetch('/api/oauth/config/hubspot');
+        if (!configResponse.ok) {
+          throw new Error('Failed to get HubSpot configuration from server.');
+        }
+        
+        const config = await configResponse.json();
+        const { clientId, redirectUri } = config;
+        
+        if (!clientId) {
+          throw new Error('HubSpot credentials not configured.');
+        }
+        
+        // Create state parameter with user ID and timestamp for security
+        const hubspotState = btoa(JSON.stringify({ 
+          timestamp: Date.now(),
+          service: 'hubspot',
+          userId: session.user.id,
+          returnTo: window.location.href
+        }));
+        
+        // Create HubSpot OAuth URL
+        const authUrl = new URL('https://app.hubspot.com/oauth/authorize');
+        authUrl.search = new URLSearchParams({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          scope: HUBSPOT_REQUIRED_SCOPES.join(' '),
+          state: hubspotState
+        }).toString();
+
+        logger.info('Initiating HubSpot OAuth flow', { 
+          clientId: clientId ? '***' : 'missing',
+          redirectUri,
+          hasState: !!hubspotState
+        });
+
+        // Redirect to HubSpot OAuth
+        window.location.href = authUrl.toString();
+        
+      } catch (error) {
+        logger.error('HubSpot OAuth initiation failed', { error });
+        setAuthInProgress(false);
+        alert(`Failed to initiate HubSpot connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+      return;
+    }
+
+    if (integration.id === 'google_analytics') {
+      if (authInProgress) return;
+      setAuthInProgress(true);
+      
+      try {
+        // Get current session
+        const sessionResult = await authentikAuthService.getSession();
+        const session = sessionResult.data;
+        
+        if (!session) {
+          throw new Error('No valid session found. Please log in again.');
+        }
+
+        // Use the Google client ID from environment
+        // Get Google Analytics OAuth configuration from server-side API
+        const configResponse = await fetch('/api/oauth/config/google-analytics');
+        if (!configResponse.ok) {
+          throw new Error('Failed to get Google Analytics configuration from server.');
+        }
+        
+        const config = await configResponse.json();
+        const { clientId } = config;
+        
+        if (!clientId) {
+          throw new Error('Google client ID not configured.');
+        }
+
+        // Configure OAuth settings - redirect to frontend callback page
+        const redirectUri = `${window.location.origin}/integrations/google-analytics/callback`;
+        
+        // Create state parameter with user ID and timestamp for security
+        const googleState = btoa(JSON.stringify({ 
+          timestamp: Date.now(),
+          service: 'google_analytics',
+          userId: session.user.id
+        }));
+        
+        // Create Google Analytics OAuth URL
+        const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+        authUrl.search = new URLSearchParams({
+          client_id: clientId,
+          redirect_uri: redirectUri,
+          response_type: 'code',
+          scope: 'https://www.googleapis.com/auth/analytics.readonly',
+          access_type: 'offline',
+          prompt: 'consent',
+          state: googleState
+        }).toString();
+
+        logger.info('Initiating Google Analytics OAuth flow', { 
+          clientId: clientId ? '***' : 'missing',
+          redirectUri,
+          hasState: !!googleState
+        });
+
+        // Redirect to Google Analytics OAuth
+        window.location.href = authUrl.toString();
+        
+      } catch (error) {
+        logger.error('Google Analytics OAuth initiation failed', { error });
+        setAuthInProgress(false);
+        alert(`Failed to initiate Google Analytics connection: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
       return;
     }
 
     setSelectedIntegration(integration);
-    
-    // For now, show a connection dialog
-    // In the future, this could open a setup wizard
     setShowSetup(true);
   };
 
@@ -303,6 +534,96 @@ const IntegrationMarketplacePage: React.FC = () => {
     setSelectedIntegration(null);
   };
 
+  const handleDisconnectIntegration = async (integration: MarketplaceIntegration) => {
+    if (!user?.id) {
+      logger.error('No user ID available for integration disconnection');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      logger.info(`Attempting to disconnect ${integration.name} (ID: ${integration.id})`);
+      
+      // Check what integrations exist for this user
+      logger.info(`Checking database for integration: ${integration.id} for user: ${user.id}`);
+      
+      // Check what's in the integrations table (master list)
+      const { data: allIntegrations, error: integrationsError } = await select('integrations', '*');
+      logger.info(`All available integrations:`, { allIntegrations, integrationsError });
+      
+      // Check what's in user_integrations table (now consolidated with OAuth data)
+      const { data: allUserIntegrations, error: allIntegrationsError } = await select('user_integrations', '*', { 
+        user_id: user.id 
+      });
+      
+      logger.info(`All user integrations:`, { allUserIntegrations, allIntegrationsError });
+      
+      // Search for the specific integration in user_integrations using integration_slug
+      let { data: integrationRecords, error: findError } = await select('user_integrations', '*', { 
+        user_id: user.id, 
+        integration_slug: integration.id 
+      });
+
+      logger.info(`Integration search result:`, { integrationRecords, findError });
+
+      if (findError) {
+        throw new Error(`Failed to find integration: ${JSON.stringify(findError)}`);
+      }
+
+      if (!integrationRecords || integrationRecords.length === 0) {
+        logger.info(`Integration ${integration.name} not found in user_integrations table`);
+        logger.info(`This integration was never properly connected.`);
+        throw new Error(`Integration ${integration.name} not found for user. Check the console for database contents.`);
+      }
+
+      // Delete the integration using its ID
+      const integrationId = integrationRecords[0].id;
+      logger.info(`Attempting to delete integration with ID: ${integrationId}`);
+      
+      const { data: deleteData, error: deleteError } = await deleteOne('user_integrations', integrationId);
+
+      logger.info(`Delete result:`, { deleteData, deleteError });
+
+      if (deleteError) {
+        throw new Error(`Delete failed: ${JSON.stringify(deleteError)}`);
+      }
+
+      logger.info(`Successfully deleted integration:`, deleteData);
+
+      // OAuth tokens are now stored directly in user_integrations table
+      // No separate cleanup needed since we're deleting the entire integration record
+      logger.info(`OAuth tokens will be cleaned up automatically with the integration record`);
+
+      // Refresh connected integrations
+      await fetchConnectedIntegrations();
+      
+      logger.info(`Successfully disconnected ${integration.name}`);
+      // Show success message
+      alert(`Successfully disconnected ${integration.name}`);
+      
+    } catch (error) {
+      // Enhanced error logging to capture more details
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      const errorDetails = {
+        message: errorMessage,
+        stack: errorStack,
+        error: error,
+        integrationName: integration.name,
+        integrationId: integration.id,
+        userId: user?.id
+      };
+      
+      logger.error(`Failed to disconnect ${integration.name}:`, errorDetails);
+      console.error('Disconnect error details:', errorDetails);
+      
+      alert(`Failed to disconnect ${integration.name}: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getConnectionBadge = (integration: MarketplaceIntegration) => {
     if (integration.isConnected) {
       return (
@@ -318,9 +639,14 @@ const IntegrationMarketplacePage: React.FC = () => {
   const getActionButton = (integration: MarketplaceIntegration) => {
     if (integration.isConnected) {
       return (
-        <Button variant="outline" size="sm" className="w-full">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full"
+          onClick={() => handleIntegrationSelect(integration)}
+        >
           <Settings className="h-4 w-4 mr-2" />
-          Manage
+          Disconnect
         </Button>
       );
     }
@@ -329,6 +655,7 @@ const IntegrationMarketplacePage: React.FC = () => {
         variant="default" 
         size="sm" 
         className="w-full"
+        disabled={authInProgress}
         onClick={() => handleIntegrationSelect(integration)}
       >
         <Plug className="h-4 w-4 mr-2" />
@@ -371,16 +698,10 @@ const IntegrationMarketplacePage: React.FC = () => {
 
   useEffect(() => {
     if (!user?.id) {
-      logger.info('No user ID, skipping integration fetch');
       return;
     }
     
-    try {
-      fetchConnectedIntegrations();
-    } catch (error) {
-      logger.error('Error in useEffect for fetchConnectedIntegrations:', error);
-      setConnectedIntegrations([]);
-    }
+    fetchConnectedIntegrations();
   }, [user?.id]);
 
   // Early return if user is not authenticated
@@ -610,10 +931,10 @@ const IntegrationMarketplacePage: React.FC = () => {
                 </Button>
                 <Button
                   onClick={() => handleConnectIntegration(selectedIntegration)}
-                  disabled={loading}
+                  disabled={loading || authInProgress}
                   className="flex-1"
                 >
-                  {loading ? 'Connecting...' : 'Connect Now'}
+                  {loading ? 'Connecting...' : 'Connect'}
                 </Button>
               </div>
             </div>

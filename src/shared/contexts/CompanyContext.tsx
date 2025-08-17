@@ -137,7 +137,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     } finally {
       setLoadingCompany(false);
     }
-  }, [companyId, company, isFresh, lastCompanyFetch]);
+  }, [companyId, isFresh, lastCompanyFetch]);
 
   const loadDepartments = useCallback(async (force = false) => {
     if (!companyId) {
@@ -167,7 +167,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     } finally {
       setLoadingDepartments(false);
     }
-  }, [companyId, departments.length, isFresh, lastDepartmentsFetch]);
+  }, [companyId, isFresh, lastDepartmentsFetch]);
 
   const loadRoles = useCallback(async (force = false) => {
     if (!companyId) {
@@ -196,7 +196,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     } finally {
       setLoadingRoles(false);
     }
-  }, [companyId, roles.length, isFresh, lastRolesFetch]);
+  }, [companyId, isFresh, lastRolesFetch]);
 
   const loadAnalytics = useCallback(async (force = false) => {
     if (!companyId) {
@@ -225,7 +225,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     } finally {
       setLoadingAnalytics(false);
     }
-  }, [companyId, analytics, isFresh, lastAnalyticsFetch]);
+  }, [companyId, isFresh, lastAnalyticsFetch]);
 
   const loadHealth = useCallback(async (force = false) => {
     if (!companyId) {
@@ -254,7 +254,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     } finally {
       setLoadingHealth(false);
     }
-  }, [companyId, health, isFresh, lastHealthFetch]);
+  }, [companyId, isFresh, lastHealthFetch]);
 
   const refreshCompany = useCallback(async (force = false) => {
     await loadCompany(force);
@@ -321,8 +321,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       setHealth(null);
       clearErrors();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companyId]);
+  }, [companyId, loadCompany, loadDepartments, loadRoles, loadAnalytics, loadHealth, clearErrors]);
 
   const value: CompanyContextType = useMemo(() => ({
     company,

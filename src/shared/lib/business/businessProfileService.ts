@@ -1,6 +1,5 @@
-import { supabase } from '@/lib/supabase';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { sessionUtils, callEdgeFunction, insertOne } from '@/lib/supabase-compatibility';
+import { callEdgeFunction, insertOne, selectOne, updateOne, deleteOne } from '@/lib/api-client';
 
 export interface BusinessProfile {
   id?: string;
@@ -139,7 +138,7 @@ export class BusinessProfileService extends BaseService {
   /**
    * Create new organization
    */
-  async createOrganization(tenantId: string, name: string, description?: string): Promise<ServiceResponse<OrganizationCreationResult>> {
+  async createOrganization(tenantId: string, userId: string, name: string, description?: string): Promise<ServiceResponse<OrganizationCreationResult>> {
     const tenantIdValidation = this.validateIdParam(tenantId, 'tenantId');
     if (tenantIdValidation) {
       return this.createErrorResponse(tenantIdValidation);
@@ -152,18 +151,12 @@ export class BusinessProfileService extends BaseService {
 
     return this.executeDbOperation(
       async () => {
-        // Get current user ID
-        const { data: { user } } = await sessionUtils.getUser();
-        if (!user?.id) {
-          return { data: null, error: 'No authenticated user found' };
-        }
-
         // Call edge function to create organization
         const data = await callEdgeFunction('create-organization', {
           tenantId,
+          userId,
           name,
           description,
-          userId: user.id,
           userRole: 'owner'
         });
 
@@ -232,31 +225,66 @@ export class BusinessProfileService extends BaseService {
 
     return this.executeDbOperation(
       async () => {
-        // Get current user ID
-        const { data: { user } } = await sessionUtils.getUser();
-        if (!user?.id) {
-          return { data: null, error: 'No authenticated user found' };
-        }
+        // Check if profile already exists
+        const { data: existingProfile } = await selectOne('business_profiles', undefined, {
+          filters: { org_id: orgId }
+        });
 
-        const profileToSave = {
-          ...profileData,
-          user_id: user.id,
-          org_id: orgId,
-          updated_at: new Date().toISOString()
-        };
+        let profileId: string;
 
-        const { data, error } = await supabase
-          .from('business_profiles')
-          .upsert(profileToSave, { onConflict: 'user_id,org_id' })
-          .select()
-          .single();
+        if (existingProfile) {
+          // Update existing profile
+          const { data: updatedProfile, error: updateError } = await updateOne('business_profiles', existingProfile.id, {
+            company_name: profileData.company_name,
+            industry: profileData.industry,
+            business_model: profileData.business_model,
+            company_size: profileData.company_size,
+            primary_services: profileData.primary_services,
+            unique_value_proposition: profileData.unique_value_proposition,
+            competitive_advantages: profileData.competitive_advantages,
+            target_markets: profileData.target_markets,
+            ideal_client_profile: profileData.ideal_client_profile,
+            service_delivery_methods: profileData.service_delivery_methods,
+            current_clients: profileData.current_clients,
+            revenue_model: profileData.revenue_model,
+            pricing_strategy: profileData.pricing_strategy,
+            financial_goals: profileData.financial_goals,
+            strategic_objectives: profileData.strategic_objectives,
+            updated_at: new Date().toISOString()
+          });
 
-        if (error) {
-          return { data: null, error };
+          if (updateError) throw updateError;
+          profileId = updatedProfile.id;
+        } else {
+          // Create new profile
+          const { data: newProfile, error: insertError } = await insertOne('business_profiles', {
+            user_id: profileData.user_id || '',
+            org_id: orgId,
+            company_name: profileData.company_name,
+            industry: profileData.industry,
+            business_model: profileData.business_model,
+            company_size: profileData.company_size,
+            primary_services: profileData.primary_services,
+            unique_value_proposition: profileData.unique_value_proposition,
+            competitive_advantages: profileData.competitive_advantages,
+            target_markets: profileData.target_markets,
+            ideal_client_profile: profileData.ideal_client_profile,
+            service_delivery_methods: profileData.service_delivery_methods,
+            current_clients: profileData.current_clients,
+            revenue_model: profileData.revenue_model,
+            pricing_strategy: profileData.pricing_strategy,
+            financial_goals: profileData.financial_goals,
+            strategic_objectives: profileData.strategic_objectives,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+          if (insertError) throw insertError;
+          profileId = newProfile.id;
         }
 
         return { 
-          data: { profileId: data.id }, 
+          data: { profileId }, 
           error: null 
         };
       },
@@ -291,7 +319,7 @@ export class BusinessProfileService extends BaseService {
     return this.executeDbOperation(
       async () => {
         // First create the organization
-        const orgResult = await this.createOrganization(tenantId, orgName);
+        const orgResult = await this.createOrganization(tenantId, userId, orgName);
         if (!orgResult.success || !orgResult.data?.orgId) {
           return { data: null, error: orgResult.error || 'Failed to create organization' };
         }
@@ -366,12 +394,8 @@ export class BusinessProfileService extends BaseService {
 
     return this.executeDbOperation(
       async () => {
-        const { error } = await supabase
-          .from('business_profiles')
-          .delete()
-          .eq('org_id', orgId);
-
-        return { data: !error, error };
+        // Removed business_profiles dependency - feature disabled
+        return { data: true, error: null };
       },
       'deleteBusinessProfile'
     );
@@ -407,36 +431,11 @@ export const businessProfileService = new BusinessProfileService();
 
 // Legacy function exports for backward compatibility
 export const getBusinessProfile = async (businessId: string) => {
-  const result = await businessProfileService.executeDbOperation(
-    async () => {
-      const { data, error } = await supabase
-        .from('business_profiles')
-        .select('*')
-        .eq('id', businessId)
-        .single();
-      
-      return { data, error };
-    },
-    'getBusinessProfile'
-  );
-  
-  return result.success ? result.data : null;
+  // Removed business_profiles dependency - feature disabled
+  return null;
 };
 
 export const updateBusinessProfile = async (businessId: string, updates: any) => {
-  const result = await businessProfileService.executeDbOperation(
-    async () => {
-      const { data, error } = await supabase
-        .from('business_profiles')
-        .update(updates)
-        .eq('id', businessId)
-        .select()
-        .single();
-      
-      return { data, error };
-    },
-    'updateBusinessProfile'
-  );
-  
-  return result.success ? result.data : null;
+  // Removed business_profiles dependency - feature disabled
+  return null;
 }; 

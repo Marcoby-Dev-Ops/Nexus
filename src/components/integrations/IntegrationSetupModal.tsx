@@ -323,11 +323,11 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
 
             <div className="space-y-4">
               {integration.features.map((feature, index) => (
-                <label key={index} className="flex items-center space-x-4 p-4 border border-border dark: border-border rounded-lg hover:bg-background dark:hover:bg-background/50 cursor-pointer">
+                 <div key={index} className="flex items-start space-x-4 p-4 border border-border dark:border-border rounded-lg hover:bg-background dark:hover:bg-background/50">
                   <input
                     type="checkbox"
                     id={feature}
-                    className="w-4 h-4 text-primary border-border rounded focus:ring-blue-500"
+                     className="w-4 h-4 text-primary border-border rounded focus:ring-blue-500 mt-0.5 flex-shrink-0"
                     onChange={(e) => {
                       setSetupData(prev => ({
                         ...prev,
@@ -338,10 +338,10 @@ const IntegrationSetupModal: React.FC<IntegrationSetupModalProps> = ({
                       }));
                     }}
                   />
-                  <label htmlFor={feature} className="text-sm font-medium leading-none peer-disabled: cursor-not-allowed peer-disabled:opacity-70">
-                    {feature}
+                   <label htmlFor={feature} className="text-sm font-medium leading-relaxed cursor-pointer flex-1 min-w-0">
+                     <div className="break-words">{feature}</div>
                   </label>
-                </label>
+                 </div>
               ))}
             </div>
 

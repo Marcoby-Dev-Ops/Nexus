@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Check, Star, Zap, Shield, BarChart3, Bolt, Brain, Workflow } from 'lucide-react';
-import { Button } from '@/shared/components/ui/Button.tsx';
-import { Card, CardContent } from '@/shared/components/ui/Card.tsx';
-import { Badge } from '@/shared/components/ui/Badge.tsx';
+import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
 
 const MarketingLanding: React.FC = () => {
   const [showDemo, setShowDemo] = useState(false);
 
   const handleGetStarted = () => {
-    window.location.href = '/login';
+    // This will be handled by the Link component
   };
 
   const features = [
@@ -70,14 +71,20 @@ const MarketingLanding: React.FC = () => {
             <span className="text-2xl font-bold tracking-tighter">Nexus</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => window.location.href = '/pricing'}>
-              Pricing
+            <Button variant="ghost">
+              <Link to="/pricing" className="flex items-center justify-center w-full">
+                Pricing
+              </Link>
             </Button>
-            <Button variant="ghost" onClick={() => window.location.href = '/login'}>
-              Log In
+            <Button variant="ghost">
+              <Link to="/login" className="flex items-center justify-center w-full">
+                Log In
+              </Link>
             </Button>
-            <Button onClick={handleGetStarted}>
-              Get Started <ArrowRight className="w-4 h-4 ml-2" />
+            <Button>
+              <Link to="/signup" className="flex items-center justify-center w-full">
+                Get Started <ArrowRight className="w-4 h-4 ml-2" />
+              </Link>
             </Button>
           </div>
         </header>
@@ -245,11 +252,15 @@ const MarketingLanding: React.FC = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button size="lg" onClick={handleGetStarted} className="text-lg px-8 py-4">
-                Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
+              <Button size="lg" className="text-lg px-8 py-4">
+                <Link to="/signup" className="flex items-center justify-center w-full">
+                  Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
+                </Link>
               </Button>
-              <Button size="lg" variant="outline" onClick={() => window.location.href = '/pricing'} className="text-lg px-8 py-4">
-                View Pricing
+              <Button size="lg" variant="outline" className="text-lg px-8 py-4">
+                <Link to="/pricing" className="flex items-center justify-center w-full">
+                  View Pricing
+                </Link>
               </Button>
             </div>
 
@@ -299,8 +310,10 @@ const MarketingLanding: React.FC = () => {
               We're preparing an interactive demo. In the meantime, start your free trial!
             </p>
             <div className="flex gap-4">
-              <Button onClick={handleGetStarted} className="flex-1">
-                Start Free Trial
+              <Button className="flex-1">
+                <Link to="/signup" className="flex items-center justify-center w-full">
+                  Start Free Trial
+                </Link>
               </Button>
               <Button variant="outline" onClick={() => setShowDemo(false)}>
                 Close

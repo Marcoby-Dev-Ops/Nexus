@@ -10,7 +10,8 @@ import {
   Users,
   HelpCircle,
   Database,
-  Building2
+  Building2,
+  UserCheck
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -41,11 +42,6 @@ export const navItems: NavItem[] = [
     category: 'core',
     children: [
       {
-        name: 'My Workspace',
-        path: '/tasks/workspace',
-        description: 'Your personalized productivity hub'
-      },
-      {
         name: 'Action Center',
         path: '/tasks/workspace/actions',
         description: 'Manage tasks and priorities'
@@ -61,9 +57,9 @@ export const navItems: NavItem[] = [
         description: 'Schedule and time management'
       },
       {
-        name: 'Today Dashboard',
-        path: '/tasks/workspace/today',
-        description: 'Focus on what matters today'
+        name: 'Clients',
+        path: '/tasks/workspace/clients',
+        description: 'Unified client intelligence and profiles'
       }
     ]
   },
@@ -135,13 +131,42 @@ export const navItems: NavItem[] = [
       }
     ]
   },
+  {
+    name: 'Unified Clients',
+    path: '/integrations/client-intelligence',
+    icon: <UserCheck className="h-5 w-5" />,
+    description: 'AI-powered unified client profiles from all integrations',
+    category: 'core',
+    children: [
+      {
+        name: 'Client Intelligence',
+        path: '/integrations/client-intelligence',
+        description: 'Unified client profiles and intelligence dashboard'
+      },
+      {
+        name: 'Client Profiles',
+        path: '/integrations/client-profiles',
+        description: 'View and manage unified client profiles'
+      },
+      {
+        name: 'Client Interactions',
+        path: '/integrations/client-interactions',
+        description: 'Track client interactions across platforms'
+      },
+      {
+        name: 'Intelligence Alerts',
+        path: '/integrations/client-alerts',
+        description: 'AI-generated client intelligence alerts'
+      }
+    ]
+  },
 
   // === ADVANCED FEATURES (Intermediate to Advanced) ===
   {
-    name: 'AI Hub',
+    name: 'AI & Automation',
     path: '/ai-hub',
     icon: <Brain className="h-5 w-5" />,
-    description: 'AI-powered business intelligence',
+    description: 'AI-powered business intelligence and automation',
     category: 'advanced',
     children: [
       {
@@ -154,20 +179,61 @@ export const navItems: NavItem[] = [
         path: '/chat',
         description: 'Conversational AI assistant'
       },
+
+      {
+        name: 'AI Agents Demo',
+        path: '/ai-agents-demo',
+        description: 'Interactive AI agents with department data integration',
+        badge: 'New'
+      },
+      {
+        name: 'AI Agent',
+        path: '/ai-agent',
+        description: 'Specialized AI agents for different tasks'
+      },
+      {
+        name: 'Email Intelligence',
+        path: '/email-intelligence',
+        description: 'AI-powered email analysis and reply drafting'
+      },
       {
         name: 'AI Performance',
         path: '/ai-performance',
         description: 'Monitor and optimize AI systems'
       },
       {
-        name: 'Model Management',
+        name: 'AI Model Settings',
         path: '/ai-performance/models',
         description: 'Manage AI models and configurations'
+      }
+    ]
+  },
+  {
+    name: 'Automation Hub',
+    path: '/automation',
+    icon: <Workflow className="h-5 w-5" />,
+    description: 'Workflow automation and process optimization',
+    category: 'advanced',
+    children: [
+      {
+        name: 'Automation Dashboard',
+        path: '/automation',
+        description: 'Overview of all automation workflows'
       },
       {
-        name: 'Email Intelligence',
-        path: '/email-intelligence',
-        description: 'AI-powered email analysis and reply drafting'
+        name: 'Automation Recipes',
+        path: '/automation/recipes',
+        description: 'Pre-built automation templates'
+      },
+      {
+        name: 'Workflow Builder',
+        path: '/automation/act',
+        description: 'Create custom automation workflows'
+      },
+      {
+        name: 'n8n Integration',
+        path: '/automation/n8n',
+        description: 'Manage n8n workflows and connections'
       }
     ]
   },
@@ -197,6 +263,11 @@ export const navItems: NavItem[] = [
         name: 'Digestible Metrics',
         path: '/analytics/digestible-metrics',
         description: 'Simplified business metrics'
+      },
+      {
+        name: 'Data Warehouse',
+        path: '/analytics/data-warehouse',
+        description: 'Advanced data analysis and reporting'
       }
     ]
   },
@@ -230,7 +301,7 @@ export const navItems: NavItem[] = [
   {
     name: 'Business Departments',
     path: '/business',
-    icon: <Workflow className="h-5 w-5" />,
+    icon: <Building2 className="h-5 w-5" />,
     description: 'Department-specific tools and insights',
     category: 'expert',
     children: [
@@ -284,7 +355,7 @@ export const navItems: NavItem[] = [
   },
   {
     name: 'Settings',
-    path: '/settings',
+    path: '/admin/account-settings',
     icon: <Settings className="h-5 w-5" />,
     description: 'Account and system configuration',
     category: 'core',
@@ -292,17 +363,32 @@ export const navItems: NavItem[] = [
       {
         name: 'Account Settings',
         path: '/admin/account-settings',
-        description: 'Update your profile and personal information'
+        description: 'Personal account configuration'
       },
       {
-        name: 'Preferences',
-        path: '/settings/preferences',
-        description: 'Customize your experience'
+        name: 'Company Settings',
+        path: '/admin/company-settings',
+        description: 'Business profile and settings'
+      },
+      {
+        name: 'Team Settings',
+        path: '/admin/team-settings',
+        description: 'Team management and permissions'
+      },
+      {
+        name: 'Integrations',
+        path: '/admin/integrations-settings',
+        description: 'Manage connected services'
       },
       {
         name: 'Security',
-        path: '/settings/security',
-        description: 'Manage security settings and authentication'
+        path: '/admin/security-settings',
+        description: 'Security and privacy settings'
+      },
+      {
+        name: 'Billing',
+        path: '/admin/billing-settings',
+        description: 'Billing and subscription management'
       }
     ]
   }

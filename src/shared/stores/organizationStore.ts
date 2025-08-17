@@ -1,9 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
-import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
-import { select, selectOne } from '@/lib/supabase-compatibility';
 
 export interface Organization {
   id: string;
@@ -50,97 +48,192 @@ interface OrgStoreState {
 
 export const getOrganizations = async (userId: string): Promise<Organization[]> => {
   try {
-    // Get organizations through user_organizations join
-    const { data, error } = await select('user_organizations', `
-      org_id,
-      role,
-      permissions,
-      is_primary,
-      joined_at,
-      organizations (
-        id,
-        name,
-        description,
-        slug,
-        tenant_id,
-        org_group_id,
-        settings,
-        created_at,
-        updated_at
-      )
-    `, { user_id: userId });
+    // Get Marcoby IAM session from localStorage
+    const sessionData = localStorage.getItem('authentik_session');
     
-    if (error) {
-      logger.error({ error }, 'Failed to fetch organizations');
+    if (!sessionData) {
+      logger.warn('No Marcoby IAM session available; returning empty organization list');
       return [];
     }
+
+    let session;
+    try {
+      session = JSON.parse(sessionData);
+    } catch (parseError) {
+      logger.error('Failed to parse Marcoby IAM session', { error: parseError });
+      return [];
+    }
+
+    const token = session?.accessToken;
     
-    // Transform the data to match our Organization interface
-    return (data || []).map((item: any) => ({
-      ...item.organizations,
-      role: item.role,
-      member_count: undefined // Will be populated separately if needed
-    }));
+    if (!token) {
+      logger.warn('No access token in Marcoby IAM session; returning empty organization list');
+      return [];
+    }
+
+    // Call the API endpoint
+    const response = await fetch('/api/organizations', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        logger.warn('User not authenticated; returning empty organization list');
+        return [];
+      }
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    if (!result.success) {
+      logger.error('API returned error', { error: result.error });
+      return [];
+    }
+
+    logger.info('Successfully fetched organizations from API', { 
+      userId, 
+      count: result.data?.length || 0 
+    });
+
+    return result.data || [];
   } catch (err) {
-    logger.error({ err }, 'Error fetching organizations');
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error('Error fetching organizations from API', { error: errorMessage, stack: err instanceof Error ? err.stack : undefined });
     return [];
   }
 };
 
 export const getOrganization = async (orgId: string): Promise<Organization | null> => {
   try {
-    const { data, error } = await selectOne('organizations', orgId);
+    // Get Marcoby IAM session from localStorage
+    const sessionData = localStorage.getItem('authentik_session');
     
-    if (error) {
-      logger.error({ error }, 'Failed to fetch organization');
+    if (!sessionData) {
+      logger.warn('No Marcoby IAM session available; returning null for organization');
       return null;
     }
-    return data;
+
+    let session;
+    try {
+      session = JSON.parse(sessionData);
+    } catch (parseError) {
+      logger.error('Failed to parse Marcoby IAM session', { error: parseError });
+      return null;
+    }
+
+    const token = session?.accessToken;
+    
+    if (!token) {
+      logger.warn('No access token in Marcoby IAM session; returning null for organization');
+      return null;
+    }
+
+    // Call the API endpoint
+    const response = await fetch(`/api/organizations/${orgId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        logger.warn('User not authenticated; returning null for organization');
+        return null;
+      }
+      if (response.status === 403) {
+        logger.warn('Access denied to organization');
+        return null;
+      }
+      if (response.status === 404) {
+        logger.warn('Organization not found');
+        return null;
+      }
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    if (!result.success) {
+      logger.error('API returned error', { error: result.error });
+      return null;
+    }
+
+    logger.info('Successfully fetched organization from API', { orgId });
+
+    return result.data || null;
   } catch (err) {
-    logger.error({ err }, 'Error fetching organization');
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error('Error fetching organization from API', { error: errorMessage, stack: err instanceof Error ? err.stack : undefined });
     return null;
   }
 };
 
 export const getOrganizationMembers = async (orgId: string): Promise<OrganizationMember[]> => {
   try {
-    const { data, error } = await select('user_organizations', `
-      id,
-      user_id,
-      org_id,
-      role,
-      permissions,
-      is_primary,
-      joined_at,
-      user_profiles (
-        id,
-        name,
-        email
-      )
-    `, { org_id: orgId });
+    // Get Marcoby IAM session from localStorage
+    const sessionData = localStorage.getItem('authentik_session');
     
-    if (error) {
-      logger.error({ error }, 'Failed to fetch organization members');
+    if (!sessionData) {
+      logger.warn('No Marcoby IAM session available; returning empty organization members list');
       return [];
     }
+
+    let session;
+    try {
+      session = JSON.parse(sessionData);
+    } catch (parseError) {
+      logger.error('Failed to parse Marcoby IAM session', { error: parseError });
+      return [];
+    }
+
+    const token = session?.accessToken;
     
-    // Transform the data to match our OrganizationMember interface
-    return (data || []).map((item: any) => ({
-      id: item.id,
-      user_id: item.user_id,
-      org_id: item.org_id,
-      role: item.role,
-      permissions: item.permissions || [],
-      is_primary: item.is_primary,
-      joined_at: item.joined_at,
-      user: item.user_profiles ? {
-        id: item.user_profiles.id,
-        name: item.user_profiles.name,
-        email: item.user_profiles.email
-      } : undefined
-    }));
+    if (!token) {
+      logger.warn('No access token in Marcoby IAM session; returning empty organization members list');
+      return [];
+    }
+
+    // Call the API endpoint
+    const response = await fetch(`/api/organizations/${orgId}/members`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        logger.warn('User not authenticated; returning empty organization members list');
+        return [];
+      }
+      if (response.status === 403) {
+        logger.warn('Access denied to organization members');
+        return [];
+      }
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    if (!result.success) {
+      logger.error('API returned error', { error: result.error });
+      return [];
+    }
+
+    logger.info('Successfully fetched organization members from API', { orgId, count: result.data?.length || 0 });
+
+    return result.data || [];
   } catch (err) {
-    logger.error({ err }, 'Error fetching organization members');
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    logger.error('Error fetching organization members from API', { error: errorMessage, stack: err instanceof Error ? err.stack : undefined });
     return [];
   }
 };
@@ -160,7 +253,8 @@ export const useOrganizationStore = create<OrgStoreState>()(
         set(
           produce((state: OrgStoreState) => {
             state.orgs = orgs;
-            if (!state.activeOrgId && orgs.length) {
+            // Ensure an active org is selected when any are available
+            if (orgs.length && !state.activeOrgId) {
               state.activeOrgId = orgs[0].id;
               localStorage.setItem('active_org_id', orgs[0].id);
             }
@@ -180,6 +274,11 @@ export const useOrganizationStore = create<OrgStoreState>()(
         set(
           produce((state: OrgStoreState) => {
             state.currentOrg = org;
+            // Keep activeOrgId in sync when details are fetched
+            if (org?.id) {
+              state.activeOrgId = org.id;
+              localStorage.setItem('active_org_id', org.id);
+            }
             state.loading = false;
           })
         );
@@ -213,7 +312,7 @@ export const useOrganizationStore = create<OrgStoreState>()(
 
     getActiveOrg() {
       const { orgs, activeOrgId } = get();
-      return orgs.find((o) => o.id === activeOrgId) || null;
+      return orgs.find((o) => o.id === activeOrgId) || orgs[0] || null;
     },
 
     clearCurrentOrg() {

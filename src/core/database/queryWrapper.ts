@@ -6,8 +6,15 @@
  * Updated to use SupabaseService for all database operations.
  */
 
-import { supabaseService } from '@/core/services/SupabaseService';
-import { BaseService } from '@/core/services/BaseService';
+import { 
+  callEdgeFunction, 
+  callRPC, 
+  selectData, 
+  selectWithOptions, 
+  insertOne, 
+  updateOne, 
+  deleteOne 
+} from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 export interface QueryContext {
@@ -21,10 +28,7 @@ export interface UserQueryContext extends QueryContext {
   operation: string;
 }
 
-export class DatabaseQueryWrapper extends BaseService {
-  constructor() {
-    super();
-  }
+export class DatabaseQueryWrapper {
 
   /**
    * Execute a query with user authentication and enhanced logging
@@ -130,7 +134,7 @@ export class DatabaseQueryWrapper extends BaseService {
    */
   private async logQueryToEdgeFunction(type: string, data: any): Promise<void> {
     try {
-      await supabaseService.callEdgeFunction('log_query_analytics', {
+      await callEdgeFunction('log_query_analytics', {
         type,
         data,
         timestamp: new Date().toISOString(),
@@ -143,15 +147,12 @@ export class DatabaseQueryWrapper extends BaseService {
   }
 
   /**
-   * Get user integrations with proper authentication using SupabaseService
+   * Get user integrations with proper authentication using UnifiedDatabaseService
    */
   async getUserIntegrations(userId: string): Promise<{ data: any[] | null; error: any }> {
     return this.userQuery(
       async () => {
-        const result = await supabaseService.selectWithOptions('user_integrations', {
-          filter: { user_id: userId },
-          orderBy: { column: 'created_at', ascending: false }
-        });
+        const result = await selectData('user_integrations', '*', { user_id: userId });
         
         return {
           data: result.data,
@@ -164,12 +165,12 @@ export class DatabaseQueryWrapper extends BaseService {
   }
 
   /**
-   * Get integration by platform for a user using SupabaseService
+   * Get integration by platform for a user using UnifiedDatabaseService
    */
   async getUserIntegrationByPlatform(userId: string, platform: string): Promise<{ data: any | null; error: any }> {
     return this.userQuery(
       async () => {
-        const result = await supabaseService.selectWithOptions('user_integrations', {
+        const result = await selectWithOptions('user_integrations', {
           filter: { user_id: userId, platform },
           limit: 1
         });
@@ -191,14 +192,14 @@ export class DatabaseQueryWrapper extends BaseService {
     return this.userQuery(
       async () => {
         // First try to find existing integration
-        const existingResult = await supabaseService.selectWithOptions('user_integrations', {
+        const existingResult = await selectWithOptions('user_integrations', {
           filter: { user_id: userId, platform },
           limit: 1
         });
 
         if (existingResult.data && existingResult.data.length > 0) {
           // Update existing
-          const updateResult = await supabaseService.updateOne('user_integrations', existingResult.data[0].id, {
+          const updateResult = await updateOne('user_integrations', existingResult.data[0].id, {
             ...data,
             updated_at: new Date().toISOString()
           });
@@ -209,7 +210,7 @@ export class DatabaseQueryWrapper extends BaseService {
           };
         } else {
           // Create new
-          const insertResult = await supabaseService.insertOne('user_integrations', {
+          const insertResult = await insertOne('user_integrations', {
             user_id: userId,
             platform,
             ...data,
@@ -235,7 +236,7 @@ export class DatabaseQueryWrapper extends BaseService {
     return this.userQuery(
       async () => {
         // First find the integration to get its ID
-        const findResult = await supabaseService.selectWithOptions('user_integrations', {
+        const findResult = await selectWithOptions('user_integrations', {
           filter: { user_id: userId, platform },
           limit: 1
         });
@@ -247,7 +248,7 @@ export class DatabaseQueryWrapper extends BaseService {
           };
         }
 
-        const updateResult = await supabaseService.updateOne('user_integrations', findResult.data[0].id, {
+        const updateResult = await updateOne('user_integrations', findResult.data[0].id, {
           ...data,
           updated_at: new Date().toISOString()
         });
@@ -269,7 +270,7 @@ export class DatabaseQueryWrapper extends BaseService {
     return this.userQuery(
       async () => {
         // First find the integration to get its ID
-        const findResult = await supabaseService.selectWithOptions('user_integrations', {
+        const findResult = await selectWithOptions('user_integrations', {
           filter: { user_id: userId, platform },
           limit: 1
         });
@@ -281,7 +282,7 @@ export class DatabaseQueryWrapper extends BaseService {
           };
         }
 
-        const deleteResult = await supabaseService.deleteOne('user_integrations', findResult.data[0].id);
+        const deleteResult = await deleteOne('user_integrations', findResult.data[0].id);
         
         return {
           data: deleteResult.data ? { deleted: true } : null,
@@ -299,7 +300,7 @@ export class DatabaseQueryWrapper extends BaseService {
   async getAvailablePlatforms(): Promise<{ data: any[] | null; error: any }> {
     return this.query(
       async () => {
-        const result = await supabaseService.selectWithOptions('integration_platforms', {
+                 const result = await selectWithOptions('integration_platforms', {
           filter: { is_active: true },
           orderBy: { column: 'display_name', ascending: true }
         });
@@ -324,7 +325,7 @@ export class DatabaseQueryWrapper extends BaseService {
     return this.query(
       async () => {
         try {
-          const result = await supabaseService.callRPC(functionName, params);
+                     const result = await callRPC(functionName, params);
           
           return {
             data: result.data,
@@ -353,7 +354,7 @@ export class DatabaseQueryWrapper extends BaseService {
     return this.query(
       async () => {
         try {
-          const result = await supabaseService.callEdgeFunction('execute_sql', {
+                     const result = await callEdgeFunction('execute_sql', {
             sql,
             params,
             context: context.context
@@ -382,7 +383,7 @@ export class DatabaseQueryWrapper extends BaseService {
     return this.query(
       async () => {
         try {
-          const result = await supabaseService.callEdgeFunction('get_query_metrics', {
+                     const result = await callEdgeFunction('get_query_metrics', {
             userId,
             timestamp: new Date().toISOString()
           });

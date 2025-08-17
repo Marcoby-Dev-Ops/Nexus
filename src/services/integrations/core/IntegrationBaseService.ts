@@ -2,7 +2,7 @@ import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import { z } from 'zod';
-
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 // Base Integration Schema
 export const IntegrationSchema = z.object({
   id: z.string(),
