@@ -38,8 +38,12 @@ await dbUtils.safeDelete('tasks', taskId);
 ### **Environment Variables**
 ```bash
 # Required
-VITE_SUPABASE_URL=https://kqclbpimkraenvbffnpk.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
+VITE_POSTGRES_URL=postgresql://postgres:postgres@localhost:5433/vector_db
+VITE_POSTGRES_HOST=localhost
+VITE_POSTGRES_PORT=5433
+VITE_POSTGRES_DB=vector_db
+VITE_POSTGRES_USER=postgres
+VITE_POSTGRES_PASSWORD=postgres
 
 # Optional (for development)
 VITE_DEV=true
@@ -330,7 +334,7 @@ const newTask: TaskInsert = {
 ```typescript
 // Development logging
 if (import.meta.env.DEV) {
-  console.log('🔍 Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+  console.log('🔍 PostgreSQL URL:', import.meta.env.VITE_POSTGRES_URL);
 }
 
 // Production error handling

@@ -20,7 +20,7 @@ This document tracks the migration of all integration services to the new standa
 - ✅ **`IntegrationDataService`** - Analytics service, now extends `BaseService`
 - ✅ **`DataPointMappingService`** - Mapping service, now extends `BaseService`
 - ✅ **`SalesforceStyleDataService`** - Salesforce-style permissions service, now extends `BaseService`
-- ✅ **`DataPointDictionaryService`** - Data point discovery and management, now extends `BaseService`
+- ❌ **`DataPointDictionaryService`** - **REMOVED** (not implemented as intended)
 - ✅ **`RealTimeCrossDepartmentalSync`** - Real-time cross-departmental sync service, now extends `BaseService`
 
 ## ❌ **Legacy Services Remaining**
@@ -97,7 +97,7 @@ export class MigratedService extends BaseService {
 
 ### **Phase 1: Complete High Priority Migrations** ✅ **COMPLETED**
 1. ✅ **`SalesforceStyleDataService`** → Migrated to extend `BaseService`
-2. ✅ **`DataPointDictionaryService`** → Migrated to extend `BaseService`
+2. ❌ **`DataPointDictionaryService`** → **REMOVED** (not implemented as intended)
 3. ✅ **`RealTimeCrossDepartmentalSync`** → Migrated to extend `BaseService`
 
 ### **Phase 2: Clean Up Deprecated Services** ✅ **COMPLETED**

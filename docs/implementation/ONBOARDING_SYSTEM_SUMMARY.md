@@ -1,5 +1,7 @@
 # Nexus OS - User n8n Onboarding System
 
+> See also: [Onboarding Journeys — Q&A Guide](../current/guides/Onboarding_Journeys_QA.md)
+
 ## Overview
 
 We've successfully built a comprehensive **multi-tenant onboarding system** that allows each user to connect their own n8n instance to Nexus OS, transforming it from a single-instance tool into a scalable, user-specific automation platform.

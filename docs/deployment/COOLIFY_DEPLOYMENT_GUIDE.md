@@ -12,8 +12,12 @@ Add these environment variables in your Coolify deployment configuration:
 
 ### Core Configuration (Required)
 ```bash
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_POSTGRES_URL=postgresql://postgres:postgres@localhost:5433/vector_db
+VITE_POSTGRES_HOST=localhost
+VITE_POSTGRES_PORT=5433
+VITE_POSTGRES_DB=vector_db
+VITE_POSTGRES_USER=postgres
+VITE_POSTGRES_PASSWORD=postgres
 ```
 
 ### Stripe Configuration (Required for billing features)

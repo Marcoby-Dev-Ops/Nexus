@@ -124,10 +124,14 @@ console.log('System Health:', health);
 Key environment variables in `.env`:
 
 ```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=https://kqclbpimkraenvbffnpk.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key
-DATABASE_URL=postgresql://postgres.kqclbpimkraenvbffnpk:password@aws-0-us-west-1.pooler.supabase.com:6543/postgres
+# PostgreSQL Configuration
+VITE_POSTGRES_URL=postgresql://postgres:postgres@localhost:5433/vector_db
+VITE_POSTGRES_HOST=localhost
+VITE_POSTGRES_PORT=5433
+VITE_POSTGRES_DB=vector_db
+VITE_POSTGRES_USER=postgres
+VITE_POSTGRES_PASSWORD=postgres
+DATABASE_URL=postgresql://postgres:postgres@localhost:5433/vector_db
 
 # External APIs
 VITE_OPENROUTER_API_KEY=your_openrouter_key
@@ -157,8 +161,8 @@ VITE_STRIPE_PUBLISHABLE_KEY=your_stripe_key
 # Database operations
 pnpm db:reset          # Reset database completely
 pnpm db:setup          # Setup schema
-pnpm supabase:db:pull  # Pull remote schema
-pnpm supabase:db:push  # Push local changes
+pnpm db:sync:from-remote  # Pull remote schema
+pnpm db:sync:to-remote    # Push local changes
 
 # Development
 pnpm dev               # Start dev server

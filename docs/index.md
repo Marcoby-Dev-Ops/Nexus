@@ -40,8 +40,9 @@ docs/
 ### **🏗️ Architecture & Design**
 - [🏗️ Complete Operating System](architecture/NEXUS_COMPLETE_OPERATING_SYSTEM.md)
 - [🎨 Design Guidelines](design/COLOR_GUIDELINES.md)
-- [🔐 Security Standards](RLS_POLICY_STANDARDS.md)
-- [🔄 Service Architecture](SERVICE_LAYER_ARCHITECTURE.md)
+- [🔐 Security Standards](compliance/RLS_POLICY_STANDARDS.md)
+- [🔄 Service Architecture](architecture/SERVICE_LAYER_ARCHITECTURE.md)
+- [🔗 User ↔ Company Integration Bridge](architecture/USER_TO_COMPANY_INTEGRATION_BRIDGE.md)
 
 ### **🎯 Vision & Strategy**
 - [🎯 Core Customer Journeys](vision/CORE_CUSTOMER_JOURNEYS_FOR_NEXUS.md)
@@ -52,13 +53,20 @@ docs/
 - [🤖 AI Capabilities](implementation/AI_CAPABILITIES_SUMMARY.md)
 - [🔗 Integration Guide](INTEGRATION_AUTHENTICATION_PATTERNS.md)
 - [🔄 Migration Strategy](MIGRATION_STRATEGY.md)
-- [📊 Business Health](LIVE_BUSINESS_HEALTH_IMPLEMENTATION.md)
+- [📊 Business Health](implementation/LIVE_BUSINESS_HEALTH_IMPLEMENTATION.md)
+- [🧭 Onboarding Journeys — Q&A Guide](current/guides/Onboarding_Journeys_QA.md)
+- [🔧 n8n Integration Guide](implementation/n8n-integration-guide.md)
 
 ### **🛠️ Development & Operations**
 - [🧪 Testing Checklist](testing/TESTING_CHECKLIST.md)
 - [🚀 Deployment Guide](deployment/DEPLOYMENT.md)
 - [🔧 Troubleshooting](WSL_TROUBLESHOOTING.md)
-- [📋 PR Template](PR_TEMPLATE.md)
+- [📋 PR Template](development/PR_TEMPLATE.md)
+- [🔐 OAuth Guide](development/OAUTH_GUIDE.md)
+- [🧹 Lint Config Status](development/LINT_CONFIG_STATUS.md)
+- [🗄️ Quick Start: Migrations](development/QUICK_START_MIGRATIONS.md)
+- [📚 Services README](development/README_lib_services.md)
+- [🔁 Remote Sync Workflow](automation/REMOTE_SYNC_WORKFLOW.md)
 
 ### **✅ Completed Work**
 - [✅ Forms & Validation](completed/FORMS_VALIDATION_IMPLEMENTATION_COMPLETE.md)
@@ -67,7 +75,8 @@ docs/
 ### **📊 Analysis & Reports**
 - [🔬 Code Analysis](analysis/ARCHITECTURE_ANALYSIS.md)
 - [📈 Performance Reports](analysis/CONSISTENCY_REPORT_FULL_20250612.md)
-- [🔄 Migration Status](INTEGRATION_MIGRATION_STATUS.md)
+- [🔄 Migration Status](current/SERVICE_MIGRATION_STATUS.md)
+- [🧪 Supabase Implementation Assessment](analysis/SUPABASE_IMPLEMENTATION_ASSESSMENT.md)
 
 ## 🎯 Essential Reading Path
 
@@ -84,7 +93,7 @@ docs/
 
 ### **For Deployment & Operations:**
 1. [🚀 Deployment Guide](deployment/DEPLOYMENT.md) - Production setup
-2. [🔐 Security Standards](RLS_POLICY_STANDARDS.md) - Security guidelines
+2. [🔐 Security Standards](compliance/RLS_POLICY_STANDARDS.md) - Security guidelines
 3. [🧪 Testing Checklist](testing/TESTING_CHECKLIST.md) - Quality assurance
 
 ## 📝 Documentation Status

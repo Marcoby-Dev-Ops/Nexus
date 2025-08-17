@@ -34,7 +34,7 @@
 - ✅ `IntegrationService` - Integration management
 - ✅ `IntegrationDataService` - Integration data
 - ✅ `DataPointMappingService` - Data point mapping
-- ✅ `DataPointDictionaryService` - Data point dictionary
+- ❌ `DataPointDictionaryService` - **REMOVED** (not implemented as intended)
 - ✅ `UniversalIntegrationService` - Universal integration
 - ✅ `SalesforceStyleDataService` - Salesforce style data
 - ✅ `RealTimeCrossDepartmentalSync` - Real-time sync

@@ -6,10 +6,14 @@
 
   ```dotenv
   DATABASE_URL="postgresql://postgres:[YOUR-PASSWORD]@db.kqclbpimkraenvbffnpk.supabase.co:5432/postgres"
-  VITE_SUPABASE_URL="https://kqclbpimkraenvbffnpk.supabase.co"
-  VITE_SUPABASE_ANON_KEY="[YOUR-ANON-KEY]"
+  VITE_POSTGRES_URL="postgresql://postgres:postgres@localhost:5433/vector_db"
+VITE_POSTGRES_HOST="localhost"
+VITE_POSTGRES_PORT="5433"
+VITE_POSTGRES_DB="vector_db"
+VITE_POSTGRES_USER="postgres"
+VITE_POSTGRES_PASSWORD="postgres"
   ```
-* Confirm these values match your Supabase project.
+* Confirm these values match your PostgreSQL database configuration.
 
 ---
 
