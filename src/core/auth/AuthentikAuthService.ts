@@ -74,7 +74,7 @@ export class AuthentikAuthService extends BaseService {
   /**
    * Initialize OAuth2 flow and redirect to Authentik
    */
-  async initiateOAuthFlow(redirectUri?: string): Promise<ServiceResponse<string>> {
+  async initiateOAuthFlow(redirectUri?: string, additionalParams?: Record<string, string>): Promise<ServiceResponse<string>> {
     return this.executeDbOperation(async () => {
       try {
         // Generate OAuth state and PKCE
@@ -91,8 +91,8 @@ export class AuthentikAuthService extends BaseService {
 
         localStorage.setItem(this.stateStorageKey, JSON.stringify(oauthState));
 
-        // Build authorization URL
-        const authUrl = buildAuthorizationUrl(state, codeChallenge);
+        // Build authorization URL with additional parameters
+        const authUrl = buildAuthorizationUrl(state, codeChallenge, additionalParams);
 
         this.logger.info('OAuth flow initiated', { state, redirectUri });
         return { data: authUrl, error: null, success: true };

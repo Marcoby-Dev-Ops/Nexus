@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks';
 import { logger } from '@/shared/utils/logger';
 import { businessBenchmarkingService, type LivingAssessment } from '@/services/business/businessBenchmarkingService';
-import { userMappingService } from '@/shared/services/UserMappingService';
+
 
 interface UseLivingBusinessAssessmentResult {
   assessment: LivingAssessment | null;
@@ -36,27 +36,9 @@ export function useLivingBusinessAssessment(): UseLivingBusinessAssessmentResult
       setLoading(true);
       setError(null);
 
-      // Get the internal user ID from the mapping
-      let internalUserId: string | null = null;
-      try {
-        const userId = typeof user.id === 'string' ? user.id : String(user.id);
-        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-        
-        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-          logger.error('Failed to get internal user ID for business assessment', {
-            externalUserId: userId,
-            error: internalUserIdResponse.error
-          });
-          setLoading(false);
-          return;
-        }
-        
-        internalUserId = internalUserIdResponse.data;
-      } catch (error) {
-        logger.error('Failed to get internal user ID for business assessment', error);
-        setLoading(false);
-        return;
-      }
+      // Use external user ID directly
+      const userId = typeof user.id === 'string' ? user.id : String(user.id);
+      const internalUserId = userId;
 
       // Get business profile for the service
       const businessProfile = {

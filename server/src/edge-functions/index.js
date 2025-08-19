@@ -11,6 +11,9 @@ const getFinancePerformanceHandler = require('./get-finance-performance');
 const getSalesPerformanceHandler = require('./get-sales-performance');
 const businessHealthHandler = require('./business_health');
 const completeOnboardingHandler = require('./complete-onboarding');
+const microsoftServicesDiscoveryHandler = require('./microsoft_services_discovery');
+const aiInsightsOnboardingHandler = require('./ai-insights-onboarding');
+const aiInsightsHealthHandler = require('./ai-insights-health');
 
 // Map function names to their handlers
 const functionHandlers = {
@@ -23,6 +26,9 @@ const functionHandlers = {
   'get_sales_performance': getSalesPerformanceHandler,
   'business_health': businessHealthHandler,
   'complete-onboarding': completeOnboardingHandler,
+  'microsoft_services_discovery': microsoftServicesDiscoveryHandler,
+  'ai-insights-onboarding': aiInsightsOnboardingHandler,
+  'ai-insights-health': aiInsightsHealthHandler,
 };
 
 /**

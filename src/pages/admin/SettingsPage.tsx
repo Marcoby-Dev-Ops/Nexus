@@ -31,7 +31,7 @@ const AIPerformanceSettings = () => {
 // Placeholder components for new sections
 const TeamSettings = () => <div>Team & access management coming soon.</div>;
 
-const CompanyProfilePage = lazy(() => import('./CompanyProfilePage').then(m => ({ default: m.CompanyProfilePage })));
+const CompanyProfilePage = lazy(() => import('../quantum/QuantumIdentityPage').then(m => ({ default: m.default })));
 
 const settingsConfig = {
   title: 'Settings',

@@ -11,7 +11,6 @@ import { Label } from '@/shared/components/ui/Label';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { useUnifiedInbox } from '@/shared/hooks/useUnifiedInbox';
 import type { EmailFilters, EmailItem } from '@/services/email/EmailService';
-import type { EmailIntegrationService } from '@/services/email';
 import { EmailService } from '@/services/email';
 import { serviceRegistry } from '@/core/services/ServiceRegistry';
 import { postgres } from '@/lib/postgres';
@@ -80,8 +79,7 @@ const FIRE_PHASES = [
   { id: 'execute', label: 'Execute', description: 'Taking action and implementing', icon: Play }
 ];
 
-// Use the registry-managed singleton instance
-const emailIntegrationService = serviceRegistry.getService<EmailIntegrationService>('email-integration');
+// Use the imported email service
 
 const UnifiedInbox: React.FC = () => {
   const { toast } = useToast();

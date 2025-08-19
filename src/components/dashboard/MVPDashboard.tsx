@@ -44,6 +44,9 @@ import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { useSimpleDashboard } from '@/hooks/dashboard/useSimpleDashboard';
 import { useNextBestActions } from '@/hooks/useNextBestActions';
+import { useFinancialData } from '@/hooks/dashboard/useFinancialData';
+import { useKPICalculation } from '@/hooks/dashboard/useKPICalculation';
+import { useLiveBusinessHealth } from '@/hooks/dashboard/useLiveBusinessHealth';
 
 // Import existing components
 import { DigestibleMetricsDashboard } from '@/components/analytics';
@@ -103,28 +106,44 @@ const MVPDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
+  // Real data hooks
+  const { 
+    financialData, 
+    financialMetrics, 
+    totalRevenue, 
+    totalExpenses, 
+    profitMargin, 
+    cashFlow,
+    hasFinancialData,
+    loading: financialLoading 
+  } = useFinancialData();
+  
+  const { kpis, loading: kpiLoading } = useKPICalculation();
+  const { healthScore, loading: healthLoading } = useLiveBusinessHealth();
+
   // Set header content
   useEffect(() => {
     const displayName = profile?.display_name || profile?.first_name || 'Entrepreneur';
     setHeaderContent('Business Command Center', `Ready to execute, ${displayName}`);
     
     return () => setHeaderContent(null, null);
-  }, [setHeaderContent, profile]);
+  }, [profile]);
 
   // Use real Next Best Actions hook
   const { actions: nextBestActions, loading: actionsLoading, executeAction, delegateAction } = useNextBestActions();
 
+  // Generate real role command centers based on actual data
   const roleCommandCenters: RoleCommandCenter[] = [
     {
       id: 'sales',
       name: 'Sales Command Center',
       description: 'Revenue generation and pipeline management',
       icon: <TrendingUp className="w-6 h-6" />,
-      status: 'attention',
+      status: hasFinancialData && totalRevenue > 0 ? 'active' : 'attention',
       metrics: {
-        primary: '$127K',
-        secondary: 'Pipeline Value',
-        trend: 'up'
+        primary: hasFinancialData ? `$${(totalRevenue / 1000).toFixed(0)}K` : '$0',
+        secondary: 'Monthly Revenue',
+        trend: hasFinancialData && totalRevenue > 0 ? 'up' : 'stable'
       },
       quickActions: [
         {
@@ -146,11 +165,11 @@ const MVPDashboard: React.FC = () => {
       name: 'Marketing Command Center',
       description: 'Lead generation and brand awareness',
       icon: <Globe className="w-6 h-6" />,
-      status: 'active',
+      status: dashboardData?.integrations?.some((i: any) => i.type === 'marketing') ? 'active' : 'attention',
       metrics: {
-        primary: '247',
-        secondary: 'New Leads',
-        trend: 'up'
+        primary: dashboardData?.integrations?.filter((i: any) => i.type === 'marketing').length?.toString() || '0',
+        secondary: 'Active Marketing Tools',
+        trend: dashboardData?.integrations?.some((i: any) => i.type === 'marketing') ? 'up' : 'stable'
       },
       quickActions: [
         {
@@ -172,11 +191,11 @@ const MVPDashboard: React.FC = () => {
       name: 'Operations Command Center',
       description: 'Process optimization and efficiency',
       icon: <Settings className="w-6 h-6" />,
-      status: 'optimal',
+      status: healthScore?.overall ? (healthScore.overall > 80 ? 'optimal' : healthScore.overall > 60 ? 'active' : 'attention') : 'attention',
       metrics: {
-        primary: '94%',
-        secondary: 'Efficiency Score',
-        trend: 'stable'
+        primary: healthScore?.overall ? `${healthScore.overall}%` : 'N/A',
+        secondary: 'Business Health Score',
+        trend: healthScore?.overall ? (healthScore.overall > 80 ? 'up' : healthScore.overall > 60 ? 'stable' : 'down') : 'stable'
       },
       quickActions: [
         {
@@ -198,11 +217,11 @@ const MVPDashboard: React.FC = () => {
       name: 'Finance Command Center',
       description: 'Financial health and cash flow',
       icon: <DollarSign className="w-6 h-6" />,
-      status: 'attention',
+      status: hasFinancialData ? (profitMargin > 20 ? 'optimal' : profitMargin > 10 ? 'active' : 'attention') : 'attention',
       metrics: {
-        primary: '$89K',
+        primary: hasFinancialData ? `$${(totalRevenue / 1000).toFixed(0)}K` : '$0',
         secondary: 'Monthly Revenue',
-        trend: 'up'
+        trend: hasFinancialData && totalRevenue > 0 ? 'up' : 'stable'
       },
       quickActions: [
         {
@@ -258,7 +277,7 @@ const MVPDashboard: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || financialLoading || kpiLoading || healthLoading) {
     return (
       <div className="space-y-6 p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -321,6 +340,67 @@ const MVPDashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-6 space-y-6">
+        
+        {/* Real Business Metrics Summary */}
+        {(hasFinancialData || healthScore?.overall) && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5" />
+                Business Metrics Summary
+              </CardTitle>
+              <CardDescription>
+                Your key business performance indicators
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {hasFinancialData && (
+                  <>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+                          <p className="text-2xl font-bold">${totalRevenue.toLocaleString()}</p>
+                        </div>
+                        <DollarSign className="w-8 h-8 text-green-600" />
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Profit Margin</p>
+                          <p className="text-2xl font-bold">{profitMargin.toFixed(1)}%</p>
+                        </div>
+                        <TrendingUp className="w-8 h-8 text-blue-600" />
+                      </div>
+                    </div>
+                    <div className="p-4 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Cash Flow</p>
+                          <p className="text-2xl font-bold">${cashFlow.toLocaleString()}</p>
+                        </div>
+                        <Activity className="w-8 h-8 text-purple-600" />
+                      </div>
+                    </div>
+                  </>
+                )}
+                {healthScore?.overall && (
+                  <div className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Business Health</p>
+                        <p className="text-2xl font-bold">{healthScore.overall}%</p>
+                      </div>
+                      <Shield className="w-8 h-8 text-orange-600" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
         
         {/* Next Best Actions - Clarity First */}
         <Card>
@@ -581,23 +661,73 @@ const MVPDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Button variant="outline" className="h-20 flex flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col"
+                onClick={() => window.location.href = '/chat'}
+              >
                 <MessageSquare className="w-5 h-5 mb-1" />
                 <span className="text-xs">Chat</span>
+                {dashboardData?.integrations?.some((i: any) => i.type === 'chat') && (
+                  <Badge variant="outline" className="text-xs mt-1">Connected</Badge>
+                )}
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col"
+                onClick={() => window.location.href = '/documents'}
+              >
                 <FileText className="w-5 h-5 mb-1" />
                 <span className="text-xs">Documents</span>
+                {dashboardData?.integrations?.some((i: any) => i.type === 'document') && (
+                  <Badge variant="outline" className="text-xs mt-1">Connected</Badge>
+                )}
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col"
+                onClick={() => window.location.href = '/analytics'}
+              >
                 <PieChart className="w-5 h-5 mb-1" />
                 <span className="text-xs">Analytics</span>
+                {dashboardData?.integrations?.some((i: any) => i.type === 'analytics') && (
+                  <Badge variant="outline" className="text-xs mt-1">Connected</Badge>
+                )}
               </Button>
-              <Button variant="outline" className="h-20 flex flex-col">
+              <Button 
+                variant="outline" 
+                className="h-20 flex flex-col"
+                onClick={() => window.location.href = '/calendar'}
+              >
                 <Calendar className="w-5 h-5 mb-1" />
                 <span className="text-xs">Calendar</span>
+                {dashboardData?.integrations?.some((i: any) => i.type === 'calendar') && (
+                  <Badge variant="outline" className="text-xs mt-1">Connected</Badge>
+                )}
               </Button>
             </div>
+            
+            {/* Integration Status Summary */}
+            {dashboardData?.integrations && dashboardData.integrations.length > 0 && (
+              <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Active Integrations:</span>
+                  <span className="font-medium">{dashboardData.metrics.activeIntegrations} / {dashboardData.metrics.totalIntegrations}</span>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {dashboardData.integrations.slice(0, 5).map((integration: any, index: number) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {integration.name || integration.type}
+                    </Badge>
+                  ))}
+                  {dashboardData.integrations.length > 5 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{dashboardData.integrations.length - 5} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,14 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { logger } from '@/shared/utils/logger';
 import { useUserProfile } from '@/shared/contexts/UserContext';
-import { companyService } from '@/services/business/CompanyService';
+import { companyService } from '@/services/core/CompanyService';
 import type {
   Company,
   Department,
   CompanyRole,
-  CompanyAnalytics,
   CompanyHealth,
-} from '@/services/business/CompanyService';
+} from '@/services/core/CompanyService';
 
 /**
  * CompanyContext provides read-through cached company data and related resources

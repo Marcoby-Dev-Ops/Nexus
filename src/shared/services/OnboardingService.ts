@@ -20,15 +20,17 @@ import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import type { Database } from '@/core/types/supabase';
 import { z } from 'zod';
-import { userMappingService } from './UserMappingService';
+
 
 // Onboarding Data Schema
 export const OnboardingDataSchema = z.object({
   // Basic Info Step
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
+  email: z.string().email('Valid email is required'),
   displayName: z.string().optional(),
   jobTitle: z.string().optional(),
+  phone: z.string().optional(),
   company: z.string().optional(),
   
   // Business Context Step
@@ -136,6 +138,7 @@ export const ONBOARDING_PHASES: OnboardingPhase[] = [
         validationSchema: z.object({
           firstName: z.string().min(1, 'First name is required'),
           lastName: z.string().min(1, 'Last name is required'),
+          email: z.string().email('Valid email is required'),
           company: z.string().min(1, 'Company name is required'),
           industry: z.string().min(1, 'Industry is required'),
           companySize: z.string().min(1, 'Company size is required'),
@@ -143,10 +146,10 @@ export const ONBOARDING_PHASES: OnboardingPhase[] = [
         })
       },
       {
-        id: 'quick-connect-integrations',
-        title: 'Quick Connect',
-        description: 'Connect your top 2-3 business tools',
-        component: 'QuickConnectStep',
+        id: 'tool-identification',
+        title: 'Your Business Tools',
+        description: 'Tell us what tools you\'re already using',
+        component: 'ToolIdentificationStep',
         isRequired: false
       },
       {
@@ -278,17 +281,8 @@ export class OnboardingService extends BaseService {
     }
 
     return this.executeDbOperation(async () => {
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for onboarding step save', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly - no mapping needed
+      const internalUserId = userId;
 
       const stepData: OnboardingStepData = {
         stepId,
@@ -331,11 +325,11 @@ export class OnboardingService extends BaseService {
           logger.error('Direct Supabase test failed:', directError);
         }
         
-        return { data: null, error };
+        return this.createErrorResponse(error);
       }
 
       logger.info('Successfully saved onboarding step', { userId, stepId, savedStep });
-      return { data: stepData, error: null };
+      return this.createSuccessResponse(stepData);
     }, `save onboarding step ${stepId} for user ${userId}`);
   }
 
@@ -404,16 +398,8 @@ export class OnboardingService extends BaseService {
   ): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for user profile update', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly
+      const internalUserId = userId;
 
              const profileUpdates: any = {
          first_name: data.firstName,
@@ -437,11 +423,11 @@ export class OnboardingService extends BaseService {
 
       if (error) {
         logger.error('Failed to update user profile:', error);
-        return { data: null, error };
+        return this.createErrorResponse(error);
       }
 
       logger.info('User profile updated successfully', { userId });
-      return { data: true, error: null };
+      return this.createSuccessResponse(true);
     }, `update user profile for user ${userId}`);
   }
 
@@ -462,17 +448,8 @@ export class OnboardingService extends BaseService {
         logger.error('Failed to refresh session during company creation:', error);
       }
 
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for company creation', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly - no mapping needed
+      const internalUserId = userId;
 
       // Check if user already has a company
       const { data: existingProfile, error: profileError } = await selectOne(
@@ -573,17 +550,8 @@ export class OnboardingService extends BaseService {
   ): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
-        // Get internal user ID from external user ID
-        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-          logger.error('Failed to get internal user ID for onboarding completion save', { 
-            externalUserId: userId, 
-            error: internalUserIdResponse.error 
-          });
-          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-        }
-
-        const internalUserId = internalUserIdResponse.data;
+        // Use external user ID directly
+        const internalUserId = userId;
 
         // Save onboarding completion record
         const { error: completionError } = await insertOne(
@@ -616,17 +584,8 @@ export class OnboardingService extends BaseService {
   ): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
-        // Get internal user ID from external user ID
-        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-          logger.error('Failed to get internal user ID for user preferences update', { 
-            externalUserId: userId, 
-            error: internalUserIdResponse.error 
-          });
-          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-        }
-
-        const internalUserId = internalUserIdResponse.data;
+        // Use external user ID directly
+        const internalUserId = userId;
 
         // Update user preferences based on onboarding selections
         const preferences = {
@@ -667,17 +626,8 @@ export class OnboardingService extends BaseService {
     lastUpdated?: string;
   }>> {
     return this.executeDbOperation(async () => {
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for onboarding status', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly
+      const internalUserId = userId;
 
       // Get completed steps using internal user ID
       const { data: completedStepsData, error: stepsError } = await selectData(
@@ -696,18 +646,15 @@ export class OnboardingService extends BaseService {
       // Reuse canonical completion check
       const completion = await this.checkOnboardingCompletion(userId);
       if (completion.error || !completion.data) {
-        return { data: null, error: completion.error || 'Failed to determine completion' };
+        return this.createErrorResponse(completion.error || 'Failed to determine completion');
       }
 
-      return {
-        data: {
-          isCompleted: completion.data.isCompleted,
-          completedSteps,
-          completionPercentage: completion.data.completionPercentage,
-          lastUpdated: new Date().toISOString()
-        },
-        error: null
-      };
+      return this.createSuccessResponse({
+        isCompleted: completion.data.isCompleted,
+        completedSteps,
+        completionPercentage: completion.data.completionPercentage,
+        lastUpdated: new Date().toISOString()
+      });
     }, `get onboarding status for user ${userId}`);
   }
 
@@ -729,17 +676,8 @@ export class OnboardingService extends BaseService {
     }>;
   }>> {
     return this.executeDbOperation(async () => {
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for onboarding progress', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly
+      const internalUserId = userId;
 
       // Get user profile and onboarding data using internal user ID
       const { data: profile, error: profileError } = await selectOne(
@@ -750,7 +688,7 @@ export class OnboardingService extends BaseService {
 
       if (profileError) {
         logger.error('Failed to get user profile:', profileError);
-        return { data: null, error: profileError };
+        return this.createErrorResponse(profileError);
       }
 
       // Get completed steps
@@ -762,7 +700,7 @@ export class OnboardingService extends BaseService {
 
       if (stepsError) {
         logger.error('Failed to get completed steps:', stepsError);
-        return { data: null, error: stepsError };
+        return this.createErrorResponse(stepsError);
       }
 
       // Get completed phases
@@ -774,7 +712,7 @@ export class OnboardingService extends BaseService {
 
       if (phasesError) {
         logger.error('Failed to get completed phases:', phasesError);
-        return { data: null, error: phasesError };
+        return this.createErrorResponse(phasesError);
       }
 
       const completedSteps = completedStepsData?.map((step: any) => step.step_id) || [];
@@ -894,17 +832,8 @@ export class OnboardingService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       try {
-        // Get internal user ID from external user ID
-        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-          logger.error('Failed to get internal user ID for onboarding phase completion', { 
-            externalUserId: userId, 
-            error: internalUserIdResponse.error 
-          });
-          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-        }
-
-        const internalUserId = internalUserIdResponse.data;
+        // Use external user ID directly
+        const internalUserId = userId;
 
         // Save phase completion with upsert to avoid duplicate key conflicts
         const { error: phaseError } = await upsertOne(
@@ -996,17 +925,8 @@ export class OnboardingService extends BaseService {
   async resetOnboarding(userId: string): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
-        // Get internal user ID from external user ID
-        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-          logger.error('Failed to get internal user ID for onboarding reset', { 
-            externalUserId: userId, 
-            error: internalUserIdResponse.error 
-          });
-          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-        }
-
-        const internalUserId = internalUserIdResponse.data;
+        // Use external user ID directly
+        const internalUserId = userId;
 
         // Delete all onboarding data for the user
         const { error: stepsError } = await deleteOne(
@@ -1056,17 +976,8 @@ export class OnboardingService extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       try {
-        // Get internal user ID from external user ID
-        const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-        if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-          logger.error('Failed to get internal user ID for onboarding completion check', { 
-            externalUserId: userId, 
-            error: internalUserIdResponse.error 
-          });
-          return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-        }
-
-        const internalUserId = internalUserIdResponse.data;
+              // Use external user ID directly
+      const internalUserId = userId;
 
         // Check user profile completion using internal user ID
         const { data: userProfile, error: profileError } = await selectOne(
@@ -1171,17 +1082,8 @@ export class OnboardingService extends BaseService {
    */
   async isFirstTimeUser(userId: string): Promise<ServiceResponse<boolean>> {
     try {
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for first time user check', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return this.createErrorResponse(internalUserIdResponse.error || 'Failed to get internal user ID');
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly
+      const internalUserId = userId;
 
       const { data: userProfile, error } = await selectOne(
         'user_profiles',
@@ -1206,17 +1108,8 @@ export class OnboardingService extends BaseService {
    */
   async markFirstTimeExperienceComplete(userId: string): Promise<ServiceResponse<boolean>> {
     try {
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for first time experience completion', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return this.createErrorResponse(internalUserIdResponse.error || 'Failed to get internal user ID');
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly
+      const internalUserId = userId;
 
       // Only update the timestamp, don't mark as completed
       const { error } = await updateOne(
@@ -1236,6 +1129,40 @@ export class OnboardingService extends BaseService {
       return this.createSuccessResponse(true);
     } catch (error) {
       return this.handleError(error, 'mark first time experience complete');
+    }
+  }
+
+  /**
+   * Save quantum business profile
+   */
+  async saveQuantumProfile(profile: any): Promise<ServiceResponse<any>> {
+    try {
+      logger.info('Saving quantum business profile', { profileId: profile.id });
+
+      // Save to database
+      const { data: savedData, error } = await upsertOne(
+        'quantum_business_profiles',
+        {
+          id: profile.id,
+          company_id: profile.companyId,
+          profile_data: profile,
+          health_score: profile.healthScore,
+          maturity_level: profile.maturityLevel,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      );
+
+      if (error) {
+        logger.error('Error saving quantum profile', { error });
+        return this.createErrorResponse('Failed to save quantum business profile');
+      }
+
+      logger.info('Quantum business profile saved successfully', { profileId: profile.id });
+
+      return this.createSuccessResponse(profile);
+    } catch (error) {
+      return this.handleError(error, 'save quantum business profile');
     }
   }
 }

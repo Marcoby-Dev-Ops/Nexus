@@ -26,7 +26,7 @@ interface AuthentikAuthContextType {
   loading: boolean;
   initialized: boolean;
   error: Error | null;
-  signIn: () => Promise<{ success: boolean; error?: string }>;
+  signIn: (additionalParams?: Record<string, string>) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   refreshAuth: () => Promise<void>;
   isAuthenticated: boolean;
@@ -141,7 +141,7 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
     };
   }, []); // Remove initializeAuth from dependencies
 
-  const signIn = async (): Promise<{ success: boolean; error?: string }> => {
+  const signIn = async (additionalParams?: Record<string, string>): Promise<{ success: boolean; error?: string }> => {
     authLogger.info('Sign in initiated');
     setLoading(true);
     setError(null);
@@ -149,7 +149,7 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
     try {
       // Initiate OAuth flow
       console.log('🔍 [AuthentikAuthContext] Calling initiateOAuthFlow...');
-      const result = await authentikAuthService.initiateOAuthFlow();
+      const result = await authentikAuthService.initiateOAuthFlow(undefined, additionalParams);
       
       console.log('🔍 [AuthentikAuthContext] initiateOAuthFlow result:', {
         success: result.success,

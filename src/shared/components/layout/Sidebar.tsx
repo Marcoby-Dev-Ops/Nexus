@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, ChevronRight, Users, Brain, HelpCircle, Home } from 'lucide-react';
-import { getCoreNavItems, getNavItemsByCategory } from './navConfig';
+import { X, ChevronRight, Users, Brain, HelpCircle, Home, Workflow, PieChart } from 'lucide-react';
+import { getCoreNavItems, getNavItemsByCategory, getFacilitatorItems } from './navConfig';
 import { Badge } from '@/shared/components/ui/Badge';
 import { useAuth } from '@/hooks/index';
 
@@ -9,10 +9,10 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   const location = useLocation();
   const { user } = useAuth();
   const [hovered, setHovered] = useState<string | null>(null);
+  const [showQuantum, setShowQuantum] = useState(false);
+  const [showFacilitators, setShowFacilitators] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showExpert, setShowExpert] = useState(false);
-  const [showCore, setShowCore] = useState(true);
-  const [showHelp, setShowHelp] = useState(false);
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
@@ -28,23 +28,81 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   };
 
   const journeyStage = getUserJourneyStage();
-  const coreItems = getCoreNavItems();
+  const quantumItems = getCoreNavItems();
+  const facilitatorItems = getFacilitatorItems();
   const advancedItems = getNavItemsByCategory('advanced');
   const expertItems = getNavItemsByCategory('expert');
-  const helpItems = getNavItemsByCategory('core').filter(item => 
-    item.name === 'Help & Learning' || item.name === 'Settings'
-  );
-
-
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'core': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'quantum': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'facilitators': return 'text-green-600 bg-green-50 border-green-200';
       case 'advanced': return 'text-purple-600 bg-purple-50 border-purple-200';
-      case 'expert': return 'text-green-600 bg-green-50 border-green-200';
+      case 'expert': return 'text-orange-600 bg-orange-50 border-orange-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
+
+  const renderNavItem = (item: any, level: number = 0) => (
+    <div
+      key={item.name}
+      className="relative group"
+      onMouseEnter={() => setHovered(item.name)}
+      onMouseLeave={() => setHovered(null)}
+    >
+      <Link
+        to={item.path}
+        onClick={onClose}
+        className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+          level === 0 ? 'ml-0' : 'ml-4'
+        } ${
+          isActive(item.path)
+            ? 'bg-primary/10 text-primary'
+            : 'text-foreground hover:bg-muted'
+        }`}
+        title={item.description}
+      >
+        {item.icon}
+        <span className="ml-3">{item.name}</span>
+        {item.children && (
+          <ChevronRight className="ml-auto w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        )}
+      </Link>
+      
+      {/* Tooltip for description */}
+      {hovered === item.name && item.description && (
+        <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
+          <p className="text-xs text-popover-foreground">{item.description}</p>
+        </div>
+      )}
+
+      {/* Submenu */}
+      {item.children && (
+        <div className="ml-4 mt-1 space-y-1">
+          {item.children.map((child: any) => (
+            <Link
+              key={child.path}
+              to={child.path}
+              onClick={onClose}
+              className={`block px-4 py-2 text-xs rounded-md transition-colors ${
+                isActive(child.path)
+                  ? 'bg-primary/5 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
+              title={child.description}
+            >
+              {child.name}
+              {child.badge && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  {child.badge}
+                </Badge>
+              )}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
@@ -70,90 +128,52 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
         <div className="px-4 py-3 border-b border-border bg-muted/30">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground">Your Journey</span>
-            <Badge variant="outline" className={`text-xs ${getCategoryColor(journeyStage === 'novice' ? 'core' : journeyStage === 'intermediate' ? 'advanced' : 'expert')}`}>
+            <Badge variant="outline" className={`text-xs ${getCategoryColor(journeyStage === 'novice' ? 'quantum' : journeyStage === 'intermediate' ? 'facilitators' : 'advanced')}`}>
               {journeyStage === 'novice' ? 'Getting Started' : journeyStage === 'intermediate' ? 'Growing' : 'Expert'}
             </Badge>
           </div>
         </div>
 
         <nav className="mt-2 px-2 space-y-1 overflow-y-auto h-[calc(100vh-8rem)]">
-                  {/* Core Journey Items */}
-        <div className="border-b border-border pb-2">
-          <button
-            onClick={() => setShowCore(!showCore)}
-            className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Home className="h-4 w-4 mr-3" />
-            <span>Core Features</span>
-            <ChevronRight className={`ml-auto w-4 h-4 transition-transform ${showCore ? 'rotate-90' : ''}`} />
-          </button>
           
-          {showCore && (
-            <div className="mt-2 space-y-1">
-              {coreItems.map((item) => (
-              <div
-                key={item.name}
-                className="relative group"
-                onMouseEnter={() => setHovered(item.name)}
-                onMouseLeave={() => setHovered(null)}
-              >
-                <Link
-                  to={item.path}
-                  onClick={onClose}
-                  className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive(item.path)
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground hover:bg-muted'
-                  }`}
-                  title={item.description}
-                >
-                  {item.icon}
-                  <span className="ml-3">{item.name}</span>
-                  {item.children && (
-                    <ChevronRight className="ml-auto w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  )}
-                </Link>
-                
-                {/* Tooltip for description */}
-                {hovered === item.name && item.description && (
-                  <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
-                    <p className="text-xs text-popover-foreground">{item.description}</p>
-                  </div>
-                )}
-
-                {/* Submenu */}
-                {item.children && (
-                  <div className="ml-4 mt-1 space-y-1">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.path}
-                        to={child.path}
-                        onClick={onClose}
-                        className={`block px-4 py-2 text-xs rounded-md transition-colors ${
-                          isActive(child.path)
-                            ? 'bg-primary/5 text-primary'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                        title={child.description}
-                      >
-                        {child.name}
-                        {child.badge && (
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            {child.badge}
-                          </Badge>
-                        )}
-                      </Link>
-                    ))}
-                  </div>
-                )}
+          {/* Quantum Business Ecosystem */}
+          <div className="border-b border-border pb-2">
+            <button
+              onClick={() => setShowQuantum(!showQuantum)}
+              className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <PieChart className="h-4 w-4 mr-3" />
+              <span>Business Ecosystem</span>
+              <ChevronRight className={`ml-auto w-4 h-4 transition-transform ${showQuantum ? 'rotate-90' : ''}`} />
+            </button>
+            
+            {showQuantum && (
+              <div className="mt-2 space-y-1">
+                {quantumItems.map((item) => renderNavItem(item))}
               </div>
-            ))}
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+
+          {/* Facilitator Tools */}
+          <div className="pt-4 border-b border-border pb-2">
+            <button
+              onClick={() => setShowFacilitators(!showFacilitators)}
+              className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Workflow className="h-4 w-4 mr-3" />
+              <span>Facilitator Tools</span>
+              <ChevronRight className={`ml-auto w-4 h-4 transition-transform ${showFacilitators ? 'rotate-90' : ''}`} />
+            </button>
+            
+            {showFacilitators && (
+              <div className="mt-2 space-y-1">
+                {facilitatorItems.map((item) => renderNavItem(item))}
+              </div>
+            )}
+          </div>
 
           {/* Advanced Features Section */}
-          <div className="pt-4 border-t border-border">
+          <div className="pt-4 border-b border-border pb-2">
             <button
               onClick={() => setShowAdvanced(!showAdvanced)}
               className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -165,217 +185,29 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
             
             {showAdvanced && (
               <div className="mt-2 space-y-1">
-                {advancedItems.map((item) => (
-                  <div
-                    key={item.name}
-                    className="relative group"
-                    onMouseEnter={() => setHovered(item.name)}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    <Link
-                      to={item.path}
-                      onClick={onClose}
-                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        isActive(item.path)
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                      title={item.description}
-                    >
-                      {item.icon}
-                      <span className="ml-3">{item.name}</span>
-                      {item.children && (
-                        <ChevronRight className="ml-auto w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      )}
-                    </Link>
-                    
-                    {/* Tooltip for description */}
-                    {hovered === item.name && item.description && (
-                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
-                        <p className="text-xs text-popover-foreground">{item.description}</p>
-                      </div>
-                    )}
-
-                    {/* Submenu */}
-                    {item.children && (
-                      <div className="ml-4 mt-1 space-y-1">
-                        {item.children.map((child) => (
-                          <Link
-                            key={child.path}
-                            to={child.path}
-                            onClick={onClose}
-                            className={`block px-4 py-2 text-xs rounded-md transition-colors ${
-                              isActive(child.path)
-                                ? 'bg-primary/5 text-primary'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                            }`}
-                            title={child.description}
-                          >
-                            {child.name}
-                            {child.badge && (
-                              <Badge variant="secondary" className="ml-2 text-xs">
-                                {child.badge}
-                              </Badge>
-                            )}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Help & Learning Section */}
-          <div className="pt-4 border-t border-border">
-            <button
-              onClick={() => setShowHelp(!showHelp)}
-              className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <HelpCircle className="h-4 w-4 mr-3" />
-              <span>Help & Learning</span>
-              <ChevronRight className={`ml-auto w-4 h-4 transition-transform ${showHelp ? 'rotate-90' : ''}`} />
-            </button>
-            
-            {showHelp && (
-              <div className="mt-2 space-y-1">
-                {helpItems.map((item) => (
-                  <div
-                    key={item.name}
-                    className="relative group"
-                    onMouseEnter={() => setHovered(item.name)}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    <Link
-                      to={item.path}
-                      onClick={onClose}
-                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        isActive(item.path)
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                      title={item.description}
-                    >
-                      {item.icon}
-                      <span className="ml-3">{item.name}</span>
-                      {item.children && (
-                        <ChevronRight className="ml-auto w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      )}
-                    </Link>
-                    
-                    {/* Tooltip for description */}
-                    {hovered === item.name && item.description && (
-                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
-                        <p className="text-xs text-popover-foreground">{item.description}</p>
-                      </div>
-                    )}
-
-                    {/* Submenu */}
-                    {item.children && (
-                      <div className="ml-4 mt-1 space-y-1">
-                        {item.children.map((child) => (
-                          <Link
-                            key={child.path}
-                            to={child.path}
-                            onClick={onClose}
-                            className={`block px-4 py-2 text-xs rounded-md transition-colors ${
-                              isActive(child.path)
-                                ? 'bg-primary/5 text-primary'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                            }`}
-                            title={child.description}
-                          >
-                            {child.name}
-                            {child.badge && (
-                              <Badge variant="secondary" className="ml-2 text-xs">
-                                {child.badge}
-                              </Badge>
-                            )}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {advancedItems.map((item) => renderNavItem(item))}
               </div>
             )}
           </div>
 
           {/* Expert Features Section */}
-          <div className="pt-4 border-t border-border">
+          <div className="pt-4">
             <button
               onClick={() => setShowExpert(!showExpert)}
               className="flex items-center w-full px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <Users className="h-4 w-4 mr-3" />
-              <span>Expert Tools</span>
+              <span>Expert Features</span>
               <ChevronRight className={`ml-auto w-4 h-4 transition-transform ${showExpert ? 'rotate-90' : ''}`} />
             </button>
             
             {showExpert && (
               <div className="mt-2 space-y-1">
-                {expertItems.map((item) => (
-                  <div
-                    key={item.name}
-                    className="relative group"
-                    onMouseEnter={() => setHovered(item.name)}
-                    onMouseLeave={() => setHovered(null)}
-                  >
-                    <Link
-                      to={item.path}
-                      onClick={onClose}
-                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                        isActive(item.path)
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-foreground hover:bg-muted'
-                      }`}
-                      title={item.description}
-                    >
-                      {item.icon}
-                      <span className="ml-3">{item.name}</span>
-                      {item.children && (
-                        <ChevronRight className="ml-auto w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                      )}
-                    </Link>
-                    
-                    {/* Tooltip for description */}
-                    {hovered === item.name && item.description && (
-                      <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
-                        <p className="text-xs text-popover-foreground">{item.description}</p>
-                      </div>
-                    )}
-
-                    {/* Submenu */}
-                    {item.children && (
-                      <div className="ml-4 mt-1 space-y-1">
-                        {item.children.map((child) => (
-                          <Link
-                            key={child.path}
-                            to={child.path}
-                            onClick={onClose}
-                            className={`block px-4 py-2 text-xs rounded-md transition-colors ${
-                              isActive(child.path)
-                                ? 'bg-primary/5 text-primary'
-                                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                            }`}
-                            title={child.description}
-                          >
-                            {child.name}
-                            {child.badge && (
-                              <Badge variant="secondary" className="ml-2 text-xs">
-                                {child.badge}
-                              </Badge>
-                            )}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                {expertItems.map((item) => renderNavItem(item))}
               </div>
             )}
           </div>
+
         </nav>
       </aside>
       {isOpen && (

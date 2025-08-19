@@ -5,6 +5,8 @@
 
 Nexus helps founders and teams **see, act, and think** through real‑time insights, automated workflows, and AI advice — all wrapped in a clean, modular codebase that scales from early startup to enterprise.
 
+> **📖 For complete project vision and development context, see [PROJECT_CONTEXT.md](./PROJECT_CONTEXT.md).**
+
 ---
 
 ## ✨ Key Highlights

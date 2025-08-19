@@ -2,8 +2,7 @@
  * Auth Services Index
  */
 
-export { UserProfileService, userProfileService } from './UserProfileService';
-export type { UserProfile, UpdateProfileRequest } from './UserProfileService';
+// UserProfileService consolidated into UserService
 
 export { AuthSettingsService, authSettingsService } from './AuthSettingsService';
 export type { AuthSettings, UpdateSettingsRequest } from './AuthSettingsService'; 

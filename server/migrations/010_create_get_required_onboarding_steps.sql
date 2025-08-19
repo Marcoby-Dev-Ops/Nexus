@@ -18,9 +18,9 @@ RETURNS TABLE (
 BEGIN
     RETURN QUERY
     SELECT 
-        'profile_setup'::VARCHAR(50) as step_id,
-        'Profile Setup'::VARCHAR(255) as step_name,
-        'Complete your basic profile information'::TEXT as step_description,
+        'welcome-introduction'::VARCHAR(50) as step_id,
+        'Welcome to Nexus'::VARCHAR(255) as step_name,
+        'Your business transformation journey starts here'::TEXT as step_description,
         1::INTEGER as step_order,
         true::BOOLEAN as is_required,
         'form'::VARCHAR(50) as step_type,
@@ -29,46 +29,68 @@ BEGIN
     UNION ALL
     
     SELECT 
-        'company_setup'::VARCHAR(50) as step_id,
-        'Company Setup'::VARCHAR(255) as step_name,
-        'Set up your company information'::TEXT as step_description,
+        'core-identity-priorities'::VARCHAR(50) as step_id,
+        'Core Identity & Priorities'::VARCHAR(255) as step_name,
+        '3-4 fast questions to understand your business'::TEXT as step_description,
         2::INTEGER as step_order,
-        false::BOOLEAN as is_required,
+        true::BOOLEAN as is_required,
         'form'::VARCHAR(50) as step_type,
-        'company'::VARCHAR(50) as step_category
+        'profile'::VARCHAR(50) as step_category
     
     UNION ALL
     
     SELECT 
-        'preferences'::VARCHAR(50) as step_id,
-        'Preferences'::VARCHAR(255) as step_name,
-        'Configure your preferences and settings'::TEXT as step_description,
+        'day-1-insight-preview'::VARCHAR(50) as step_id,
+        'Your First Insights'::VARCHAR(255) as step_name,
+        'See your executive dashboard and opportunities'::TEXT as step_description,
         3::INTEGER as step_order,
-        false::BOOLEAN as is_required,
-        'form'::VARCHAR(50) as step_type,
-        'preferences'::VARCHAR(50) as step_category
+        true::BOOLEAN as is_required,
+        'preview'::VARCHAR(50) as step_type,
+        'insights'::VARCHAR(50) as step_category
     
     UNION ALL
     
     SELECT 
-        'integrations'::VARCHAR(50) as step_id,
-        'Integrations'::VARCHAR(255) as step_name,
-        'Connect your external tools and services'::TEXT as step_description,
+        'ai-goal-generation'::VARCHAR(50) as step_id,
+        'Your AI Goals'::VARCHAR(255) as step_name,
+        'AI generates goals based on your business context'::TEXT as step_description,
         4::INTEGER as step_order,
-        false::BOOLEAN as is_required,
-        'integration'::VARCHAR(50) as step_type,
-        'integrations'::VARCHAR(50) as step_category
+        true::BOOLEAN as is_required,
+        'ai'::VARCHAR(50) as step_type,
+        'goals'::VARCHAR(50) as step_category
     
     UNION ALL
     
     SELECT 
-        'tutorial'::VARCHAR(50) as step_id,
-        'Tutorial'::VARCHAR(255) as step_name,
-        'Learn how to use Nexus effectively'::TEXT as step_description,
+        'action-plan-creation'::VARCHAR(50) as step_id,
+        'Your Action Plan'::VARCHAR(255) as step_name,
+        'AI creates your first actionable thoughts'::TEXT as step_description,
         5::INTEGER as step_order,
-        false::BOOLEAN as is_required,
+        true::BOOLEAN as is_required,
+        'ai'::VARCHAR(50) as step_type,
+        'actions'::VARCHAR(50) as step_category
+    
+    UNION ALL
+    
+    SELECT 
+        'dashboard-introduction'::VARCHAR(50) as step_id,
+        'Your Executive Dashboard'::VARCHAR(255) as step_name,
+        'Tour your personalized business dashboard'::TEXT as step_description,
+        6::INTEGER as step_order,
+        true::BOOLEAN as is_required,
         'tutorial'::VARCHAR(50) as step_type,
-        'learning'::VARCHAR(50) as step_category
+        'dashboard'::VARCHAR(50) as step_category
+    
+    UNION ALL
+    
+    SELECT 
+        'first-action-guidance'::VARCHAR(50) as step_id,
+        'Your First Action'::VARCHAR(255) as step_name,
+        'Take your first AI-assisted business action'::TEXT as step_description,
+        7::INTEGER as step_order,
+        true::BOOLEAN as is_required,
+        'guidance'::VARCHAR(50) as step_type,
+        'actions'::VARCHAR(50) as step_category
     
     ORDER BY step_order;
 END;

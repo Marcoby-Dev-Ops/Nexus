@@ -129,14 +129,15 @@ export const SelectTrigger: React.FC<SelectTriggerProps> = ({ className, childre
       onClick={() => !disabled && setIsOpen(!isOpen)}
       disabled={disabled}
       className={cn(
-        'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-4 py-4 text-sm',
-        'placeholder: text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
-        'disabled: cursor-not-allowed disabled:opacity-50',
+        'flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm',
+        'placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+        'disabled:cursor-not-allowed disabled:opacity-50 transition-colors',
+        'hover:bg-muted/50',
         className
       )}
     >
       {children}
-      <ChevronDown className={cn('h-4 w-4 opacity-50 transition-transform', isOpen && 'rotate-180')} />
+      <ChevronDown className={cn('h-4 w-4 opacity-50 transition-transform duration-200', isOpen && 'rotate-180')} />
     </button>
   );
 };
@@ -165,12 +166,15 @@ export const SelectContent: React.FC<SelectContentProps> = ({ className, childre
   return (
     <div
       className={cn(
-        'absolute top-full z-dropdown mt-1 w-full rounded-md border bg-popover p-4 text-popover-foreground shadow-md',
-        'animate-in fade-in-0 zoom-in-95',
+        'absolute top-full z-dropdown mt-1 w-full rounded-md border border-border bg-popover text-popover-foreground shadow-lg',
+        'animate-in fade-in-0 zoom-in-95 duration-200',
+        'ring-1 ring-black/5 dark:ring-white/10',
         className
       )}
     >
-      {children}
+      <div className="p-1">
+        {children}
+      </div>
     </div>
   );
 };
@@ -196,18 +200,22 @@ export const SelectItem: React.FC<SelectItemProps> = ({ value, children, classNa
         setIsOpen(false);
       }}
       className={cn(
-        'relative flex w-full cursor-default select-none items-center rounded-sm py-4 pl-8 pr-2 text-sm',
-        'outline-none focus: bg-accent focus:text-accent-foreground hover:bg-accent hover:text-accent-foreground',
-        'cursor-pointer',
+        'relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-2 text-sm',
+        'outline-none transition-colors duration-150',
+        'hover:bg-accent hover:text-accent-foreground',
+        'focus:bg-accent focus:text-accent-foreground',
+        isSelected && 'bg-accent text-accent-foreground',
         className
       )}
     >
       {isSelected && (
         <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-          <Check className="h-4 w-4" />
+          <Check className="h-4 w-4 text-primary" />
         </span>
       )}
-      {children}
+      <span className={cn(isSelected && 'ml-6', !isSelected && 'ml-2')}>
+        {children}
+      </span>
     </div>
   );
 };
@@ -220,7 +228,7 @@ export const SelectGroup: React.FC<SelectGroupProps> = ({
   className 
 }) => {
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('space-y-1', className)}>
       {children}
     </div>
   );
@@ -234,7 +242,7 @@ export const SelectLabel: React.FC<SelectLabelProps> = ({
   className 
 }) => {
   return (
-    <div className={cn('px-2 py-2 text-sm font-semibold', className)}>
+    <div className={cn('px-2 py-1.5 text-xs font-semibold text-muted-foreground', className)}>
       {children}
     </div>
   );

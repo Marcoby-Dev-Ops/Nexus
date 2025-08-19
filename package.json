@@ -73,7 +73,8 @@
     "sync:from-remote": "./scripts/pull-from-remote.sh",
     "cleanup:check": "node scripts/cleanup-dependencies.js",
     "cleanup:remove": "pnpm remove @azure/msal-browser @microsoft/mgt-components @microsoft/mgt-element @microsoft/mgt-msal2-provider @microsoft/mgt-react react-hot-toast",
-    "setup:hubspot": "node scripts/setup-hubspot-env.js"
+    "setup:hubspot": "node scripts/setup-hubspot-env.js",
+    "seed:demo": "node scripts/seed-demo-data.js"
   },
   "pnpm": {
     "allowed-build-scripts": [],

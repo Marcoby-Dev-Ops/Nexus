@@ -4,7 +4,7 @@ import { ContentCard } from '@/shared/components/patterns/ContentCard';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { SimpleBarChart } from '@/components/dashboard/SimpleBarChart';
 import { useAuth } from '@/hooks/index';
-import { analyticsService, type IntegrationAnalytics, type DataSource, type DataUsageByCategory, type RecentSyncActivity } from '@/services/AnalyticsService';
+import { analyticsService, type IntegrationAnalytics, type DataSource, type DataUsageByCategory, type RecentSyncActivity } from '@/services/core/AnalyticsService';
 import AnalyticsOnboardingTrigger from '@/components/analytics/AnalyticsOnboardingTrigger';
 
 /**

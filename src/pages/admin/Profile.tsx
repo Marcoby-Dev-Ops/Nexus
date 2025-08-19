@@ -176,7 +176,7 @@ export const Profile: React.FC = () => {
         last_name: data.lastName,
         display_name: data.displayName,
         job_title: data.jobTitle,
-        role: data.role,
+        role: data.role as 'owner' | 'admin' | 'manager' | 'user',
         department: data.department,
         business_email: data.businessEmail,
         personal_email: data.personalEmail,
@@ -269,7 +269,7 @@ export const Profile: React.FC = () => {
 
   const completionPercentage = calculateCompletionPercentage();
 
-  if (isLoadingProfile) {
+  if (profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>

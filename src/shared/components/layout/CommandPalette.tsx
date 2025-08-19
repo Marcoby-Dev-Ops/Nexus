@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { Button } from '@/shared/components/ui/Button';
@@ -18,6 +19,7 @@ interface CommandItem {
 export const CommandPalette: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const navigate = useNavigate();
   const { signOut } = useAuth();
   const { toast } = useToast();
 
@@ -118,6 +120,7 @@ export const CommandPalette: React.FC = () => {
       description: 'Manage company information',
       icon: Building,
       action: () => {
+        navigate('/quantum/identity/profile');
         toast({ title: 'Company Profile', description: 'Opening company profile...' });
       },
       category: 'Business'

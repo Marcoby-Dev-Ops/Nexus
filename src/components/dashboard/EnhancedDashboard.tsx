@@ -108,7 +108,7 @@ const EnhancedDashboard: React.FC = () => {
     return () => {
       setHeaderContent(null, null);
     };
-  }, [setHeaderContent, user, profile]);
+  }, [user, profile]);
 
   const getCurrentDisplayName = () => {
     return getDisplayName(profile, user);

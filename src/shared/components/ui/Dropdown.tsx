@@ -3,9 +3,8 @@ import { cn } from '@/shared/utils/styles';
 
 export interface DropdownItem {
   label: string;
-  value: string;
-  disabled?: boolean;
   onClick?: () => void;
+  disabled?: boolean;
 }
 
 export interface DropdownProps {
@@ -54,21 +53,25 @@ const Dropdown: React.FC<DropdownProps> = ({
       {isOpen && (
         <div 
           className={cn(
-            'absolute z-10 mt-1 w-56 rounded-md bg-card shadow-lg ring-1 ring-black ring-opacity-5 focus: outline-none',
+            'absolute z-dropdown mt-1 w-56 rounded-md border border-border bg-popover text-popover-foreground shadow-lg',
+            'ring-1 ring-black/5 dark:ring-white/10',
+            'animate-in fade-in-0 zoom-in-95 duration-200',
             align === 'right' ? 'right-0' : 'left-0'
           )}
         >
-          <div className="py-1">
+          <div className="p-1">
             {items.map((item, index) => (
               <button
                 key={index}
                 onClick={() => handleItemClick(item)}
                 disabled={item.disabled}
                 className={cn(
-                  'block w-full px-4 py-2 text-left text-sm',
+                  'block w-full px-2 py-2 text-left text-sm rounded-sm transition-colors duration-150',
+                  'hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                  'outline-none',
                   item.disabled
-                    ? 'text-muted-foreground cursor-not-allowed'
-                    : 'text-foreground/90 hover: bg-muted hover:text-foreground'
+                    ? 'text-muted-foreground cursor-not-allowed opacity-50'
+                    : 'text-popover-foreground cursor-pointer'
                 )}
               >
                 {item.label}

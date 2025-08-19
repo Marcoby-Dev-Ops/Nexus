@@ -14,6 +14,7 @@ const MigrationRunner = require('./src/database/migrate');
 // Import routes
 const dbRoutes = require('./src/routes/db');
 const rpcRoutes = require('./src/routes/rpc');
+const vectorRoutes = require('./src/routes/vector');
 const edgeRoutes = require('./src/routes/edge');
 const organizationRoutes = require('./src/routes/organizations');
 const userPreferencesRoutes = require('./src/routes/user-preferences');
@@ -21,6 +22,16 @@ const varLeadsRoutes = require('./src/routes/var-leads');
 const integrationRoutes = require('./src/routes/integrations');
 const authRoutes = require('./src/routes/auth');
 const oauthRoutes = require('./routes/oauth');
+
+// Import AI Gateway routes
+const aiGatewayRoutes = require('./routes/ai-gateway');
+const aiInsightsRoutes = require('./routes/ai-insights');
+
+// Import thoughts routes
+const thoughtsRoutes = require('./src/routes/thoughts');
+
+// Import analytics routes
+const analyticsRoutes = require('./src/routes/analytics');
 
 // Load environment variables
 config();
@@ -115,6 +126,7 @@ app.get('/health', async (req, res) => {
 // API routes with error handling
 app.use('/api/db', dbRoutes);
 app.use('/api/rpc', rpcRoutes);
+app.use('/api/vector', vectorRoutes);
 app.use('/api/edge', edgeRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
@@ -122,6 +134,13 @@ app.use('/api/var-leads', varLeadsRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/oauth', oauthRoutes);
+app.use('/api/thoughts', thoughtsRoutes);
+
+// AI Gateway routes
+app.use('/api/ai', aiGatewayRoutes);
+app.use('/api/ai-insights', aiInsightsRoutes);
+app.use('/api/analytics', analyticsRoutes);
+logger.info('AI Gateway routes mounted at /api/ai');
 
 // Graceful shutdown handling
 const gracefulShutdown = (signal) => {

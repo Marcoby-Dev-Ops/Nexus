@@ -1,0 +1,5 @@
+{
+  "text": "test embedding",
+  "model": "text-embedding-3-small",
+  "tenantId": "test-tenant"
+}

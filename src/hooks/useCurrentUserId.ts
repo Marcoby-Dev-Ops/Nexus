@@ -3,7 +3,7 @@
  * Handles both external (Authentik) and internal (database) user IDs
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from './index';
 import { callRPC } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
@@ -23,6 +23,9 @@ export function useCurrentUserId() {
     ready: false,
     error: null
   });
+  
+  // Track if we've already resolved the user ID to prevent infinite loops
+  const hasResolvedRef = useRef(false);
 
   // Extract external user ID from auth context
   const externalUserId = useMemo(() => {
@@ -41,6 +44,12 @@ export function useCurrentUserId() {
         ready: !authLoading,
         error: null
       }));
+      hasResolvedRef.current = false; // Reset when user changes
+      return;
+    }
+
+    // Prevent infinite loops by checking if we've already resolved for this user
+    if (hasResolvedRef.current && state.externalUserId === externalUserId) {
       return;
     }
 
@@ -49,7 +58,7 @@ export function useCurrentUserId() {
         setState(prev => ({ ...prev, ready: false, error: null }));
 
         // Use the ensure_user_profile RPC function which handles mapping and profile creation
-        const { data: profile, error } = await callRPC('ensure_user_profile', { user_id: externalUserId });
+        const { data: profile, error } = await callRPC('ensure_user_profile', { external_user_id: externalUserId });
         
         if (error) {
           logger.warn('Failed to ensure user profile, using external ID as fallback', { externalUserId, error });
@@ -59,6 +68,7 @@ export function useCurrentUserId() {
             ready: true,
             error: null
           });
+          hasResolvedRef.current = true;
           return;
         }
 
@@ -71,6 +81,7 @@ export function useCurrentUserId() {
             ready: true,
             error: null
           });
+          hasResolvedRef.current = true;
         } else {
           logger.warn('No profile returned from ensure_user_profile, using external ID as fallback', { externalUserId });
           setState({
@@ -79,6 +90,7 @@ export function useCurrentUserId() {
             ready: true,
             error: null
           });
+          hasResolvedRef.current = true;
         }
       } catch (err) {
         logger.error('Error resolving internal user ID', { externalUserId, error: err });
@@ -88,6 +100,7 @@ export function useCurrentUserId() {
           ready: true,
           error: 'Failed to resolve user ID'
         });
+        hasResolvedRef.current = true;
       }
     };
 

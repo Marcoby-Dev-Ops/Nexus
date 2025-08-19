@@ -32,7 +32,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { analyticsService } from '@/services/analytics/analyticsService';
+import { analyticsService } from '@/services/core/AnalyticsService';
 import { businessHealthService } from '@/core/services/BusinessHealthService';
 import { useAuth } from '@/hooks/index';
 import { logger } from '@/shared/utils/logger';

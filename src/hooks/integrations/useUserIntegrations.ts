@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks';
 import { useToast } from '@/shared/components/Toast';
-import { integrationService, type UserIntegration } from '@/services/integrations/IntegrationService';
+import { consolidatedIntegrationService, type UserIntegration } from '@/services/integrations/consolidatedIntegrationService';
 
 interface UseUserIntegrationsReturn {
   userIntegrations: UserIntegration[];
@@ -21,14 +21,10 @@ export const useUserIntegrations = (): UseUserIntegrationsReturn => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const unsubscribe = integrationService.subscribe((data, loading) => {
-      if (data) {
-        setUserIntegrations(data);
-      }
-      setIsLoading(loading);
-    });
+    // Note: consolidatedIntegrationService doesn't have subscribe method
+    // We'll handle updates through refreshIntegrations
 
-    return unsubscribe;
+    // No unsubscribe needed since we removed the subscription
   }, [user?.id]);
 
   const refreshIntegrations = useCallback(async () => {
@@ -40,15 +36,15 @@ export const useUserIntegrations = (): UseUserIntegrationsReturn => {
       
       console.log('🔄 Starting user integrations refresh for user: ', user.id);
       
-      const result = await integrationService.getUserIntegrations(user.id);
+      const { data, error } = await consolidatedIntegrationService.getUserIntegrations(user.id);
       
-      if (!result.success) {
-        console.error('❌ Failed to fetch user integrations: ', result.error);
-        throw new Error(result.error || 'Failed to fetch user integrations');
+      if (error) {
+        console.error('❌ Failed to fetch user integrations: ', error);
+        throw new Error(error || 'Failed to fetch user integrations');
       }
 
-      console.log('✅ Successfully fetched user integrations: ', result.data?.length || 0);
-      setUserIntegrations(result.data || []);
+      console.log('✅ Successfully fetched user integrations: ', data?.length || 0);
+      setUserIntegrations(data || []);
     } catch (err) {
       console.error('❌ Error refreshing user integrations: ', err);
       setError(err instanceof Error ? err : new Error('An error occurred'));

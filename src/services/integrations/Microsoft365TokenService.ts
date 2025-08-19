@@ -1,7 +1,8 @@
 import { msalInstance } from '@/shared/auth/msal';
-import { BaseService } from '@/core/services/BaseService';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
+
 export interface Microsoft365Token {
   access_token: string;
   refresh_token?: string;
@@ -25,34 +26,37 @@ export class Microsoft365TokenService extends BaseService {
    * Get current Microsoft 365 token for user
    */
   async getToken(userId: string): Promise<ServiceResponse<Microsoft365Token>> {
-    try {
-      logger.info('Getting Microsoft 365 token for user', { userId });
+    return this.executeDbOperation(async () => {
+      try {
+        logger.info('Getting Microsoft 365 token for user', { userId });
 
-      const { data, error } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('integration_type', 'microsoft365')
-        .single();
+        const { data, error } = await selectData('user_integrations', '*', {
+          user_id: userId,
+          integration_slug: 'microsoft365'
+        });
 
-      if (error || !data) {
-        return this.handleError(error || 'No Microsoft 365 integration found');
+        if (error) throw error;
+        
+        const integration = data && data.length > 0 ? data[0] : null;
+        if (!integration) {
+          return this.createErrorResponse('No Microsoft 365 integration found');
+        }
+
+        const token: Microsoft365Token = {
+          access_token: integration.access_token || '',
+          refresh_token: integration.refresh_token,
+          expires_at: integration.expires_at || '',
+          scope: integration.scope || '',
+          user_id: userId,
+          integration_id: integration.id,
+        };
+
+        return this.createSuccessResponse(token);
+      } catch (error) {
+        logger.error('Error getting Microsoft 365 token', { error, userId });
+        return this.createErrorResponse('Failed to get Microsoft 365 token');
       }
-
-      const token: Microsoft365Token = {
-        access_token: data.credentials?.access_token || '',
-        refresh_token: data.credentials?.refresh_token,
-        expires_at: data.credentials?.expires_at || '',
-        scope: data.credentials?.scope || '',
-        user_id: userId,
-        integration_id: data.id,
-      };
-
-      return this.createResponse(token);
-    } catch (error) {
-      logger.error('Error getting Microsoft 365 token', { error, userId });
-      return this.handleError(error);
-    }
+    }, 'get Microsoft 365 token');
   }
 
   /**
@@ -68,135 +72,96 @@ export class Microsoft365TokenService extends BaseService {
   }
 
   /**
-   * Refresh Microsoft 365 token using MSAL
+   * Refresh Microsoft 365 token using MSAL's built-in refresh capabilities
    */
   async refreshToken(userId: string): Promise<ServiceResponse<Microsoft365Token>> {
-    try {
-      logger.info('Attempting to refresh Microsoft 365 token', { userId });
-
-      // Get current token
-      const tokenResult = await this.getToken(userId);
-      if (!tokenResult.success || !tokenResult.data) {
-        return this.handleError('No token found to refresh');
-      }
-
-      const currentToken = tokenResult.data;
-
-      // Check if we have a refresh token
-      if (!currentToken.refresh_token) {
-        logger.warn('No refresh token available, user needs to reconnect', { userId });
-        return this.handleError('No refresh token available. Please reconnect your Microsoft 365 account.');
-      }
-
-      // Try to refresh using MSAL
+    return this.executeDbOperation(async () => {
       try {
-        const account = msalInstance.getActiveAccount();
-        if (!account) {
-          return this.handleError('No active MSAL account found');
+        logger.info('Attempting to refresh Microsoft 365 token', { userId });
+
+        // Get current token
+        const tokenResult = await this.getToken(userId);
+        if (!tokenResult.success || !tokenResult.data) {
+          return this.createErrorResponse('No token found to refresh');
         }
 
-        // Attempt silent token acquisition
-        const silentResult = await msalInstance.acquireTokenSilent({
-          scopes: currentToken.scope.split(' '),
-          account: account,
-        });
+        const currentToken = tokenResult.data;
 
-        if (silentResult.accessToken) {
-          // Update token in database
-          const updatedToken = await this.updateToken(userId, {
-            access_token: silentResult.accessToken,
-            expires_at: silentResult.expiresOn?.toISOString() || new Date(Date.now() + 3600000).toISOString(),
-            scope: currentToken.scope,
+        // Try to refresh using MSAL's silent token acquisition
+        try {
+          const account = msalInstance.getActiveAccount();
+          if (!account) {
+            logger.warn('No active MSAL account found, attempting to get from cache');
+            const accounts = msalInstance.getAllAccounts();
+            if (accounts.length === 0) {
+              return this.createErrorResponse('No MSAL account found. Please reconnect your Microsoft 365 account.');
+            }
+            // Use the first available account
+            msalInstance.setActiveAccount(accounts[0]);
+          }
+
+          const activeAccount = msalInstance.getActiveAccount();
+          if (!activeAccount) {
+            return this.createErrorResponse('No active MSAL account found');
+          }
+
+          // Attempt silent token acquisition with offline_access scope
+          const silentResult = await msalInstance.acquireTokenSilent({
+            scopes: currentToken.scope.split(' ').filter(scope => scope !== 'offline_access'),
+            account: activeAccount,
           });
 
-          logger.info('Successfully refreshed Microsoft 365 token', { userId });
-          return this.createResponse(updatedToken);
+          if (silentResult.accessToken) {
+            // Update token in database
+            const updatedToken = await this.updateToken(userId, {
+              access_token: silentResult.accessToken,
+              expires_at: silentResult.expiresOn?.toISOString() || new Date(Date.now() + 3600000).toISOString(),
+              scope: currentToken.scope,
+            });
+
+            logger.info('Successfully refreshed Microsoft 365 token via MSAL', { userId });
+            return this.createSuccessResponse(updatedToken);
+          }
+        } catch (msalError) {
+          logger.warn('MSAL silent token acquisition failed', { error: msalError, userId });
+          
+          // If MSAL refresh fails, the user needs to re-authenticate
+          // This is the proper way to handle token refresh with MSAL
+          return this.createErrorResponse('Token refresh failed. Please reconnect your Microsoft 365 account.');
         }
-      } catch (msalError) {
-        logger.warn('MSAL silent token acquisition failed', { error: msalError, userId });
+
+        return this.createErrorResponse('Failed to refresh token');
+      } catch (error) {
+        logger.error('Error refreshing Microsoft 365 token', { error, userId });
+        return this.createErrorResponse('Failed to refresh Microsoft 365 token');
       }
-
-      // If MSAL refresh fails, try manual refresh
-      return await this.manualRefreshToken(currentToken);
-    } catch (error) {
-      logger.error('Error refreshing Microsoft 365 token', { error, userId });
-      return this.handleError(error);
-    }
-  }
-
-  /**
-   * Manual token refresh using refresh token
-   */
-  private async manualRefreshToken(token: Microsoft365Token): Promise<ServiceResponse<Microsoft365Token>> {
-    try {
-      logger.info('Attempting manual token refresh', { userId: token.user_id });
-
-      const response = await fetch('https://login.microsoftonline.com/common/oauth2/v2.0/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: import.meta.env.VITE_MICROSOFT_CLIENT_ID || '',
-          scope: token.scope,
-          refresh_token: token.refresh_token || '',
-          grant_type: 'refresh_token',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        logger.error('Manual token refresh failed', { error: errorData, userId: token.user_id });
-        return this.handleError(`Token refresh failed: ${errorData.error_description || errorData.error}`);
-      }
-
-      const refreshData = await response.json();
-
-      // Update token in database
-      const updatedToken = await this.updateToken(token.user_id, {
-        access_token: refreshData.access_token,
-        refresh_token: refreshData.refresh_token || token.refresh_token,
-        expires_at: new Date(Date.now() + (refreshData.expires_in * 1000)).toISOString(),
-        scope: token.scope,
-      });
-
-      logger.info('Successfully refreshed token manually', { userId: token.user_id });
-      return this.createResponse(updatedToken);
-    } catch (error) {
-      logger.error('Manual token refresh failed', { error, userId: token.user_id });
-      return this.handleError(error);
-    }
+    }, 'refresh Microsoft 365 token');
   }
 
   /**
    * Update token in database
    */
   private async updateToken(userId: string, tokenData: Partial<Microsoft365Token>): Promise<Microsoft365Token> {
-    const { data, error } = await supabase
-      .from('user_integrations')
-      .update({
-        credentials: {
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token,
-          expires_at: tokenData.expires_at,
-          scope: tokenData.scope,
-        },
+    const { data, error } = await updateOne('user_integrations', 
+      { user_id: userId, integration_slug: 'microsoft365' },
+      {
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token,
+        expires_at: tokenData.expires_at,
+        scope: tokenData.scope,
         updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', userId)
-      .eq('integration_type', 'microsoft365')
-      .select()
-      .single();
+      }
+    );
 
     if (error) {
-      throw new Error(`Failed to update token: ${error.message}`);
+      throw new Error(`Failed to update token: ${error}`);
     }
 
     return {
-      access_token: data.credentials?.access_token || '',
-      refresh_token: data.credentials?.refresh_token,
-      expires_at: data.credentials?.expires_at || '',
-      scope: data.credentials?.scope || '',
+      access_token: data.access_token || '',
+      refresh_token: data.refresh_token,
+      expires_at: data.expires_at || '',
+      scope: data.scope || '',
       user_id: userId,
       integration_id: data.id,
     };
@@ -220,10 +185,10 @@ export class Microsoft365TokenService extends BaseService {
         return await this.refreshToken(userId);
       }
 
-      return this.createResponse(token);
+      return this.createSuccessResponse(token);
     } catch (error) {
       logger.error('Error getting valid token', { error, userId });
-      return this.handleError(error);
+      return this.createErrorResponse('Failed to get valid token');
     }
   }
 
@@ -231,31 +196,35 @@ export class Microsoft365TokenService extends BaseService {
    * Force reauthentication by clearing tokens and redirecting
    */
   async forceReauthentication(userId: string): Promise<ServiceResponse<void>> {
-    try {
-      logger.info('Forcing Microsoft 365 reauthentication', { userId });
+    return this.executeDbOperation(async () => {
+      try {
+        logger.info('Forcing Microsoft 365 reauthentication', { userId });
 
-      // Clear current tokens
-      await supabase
-        .from('user_integrations')
-        .update({
-          credentials: null,
-          status: 'disconnected',
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId)
-        .eq('integration_type', 'microsoft365');
+        // Clear current tokens
+        await updateOne('user_integrations', 
+          { user_id: userId, integration_slug: 'microsoft365' },
+          {
+            access_token: null,
+            refresh_token: null,
+            expires_at: null,
+            scope: null,
+            status: 'disconnected',
+            updated_at: new Date().toISOString(),
+          }
+        );
 
-      // Clear MSAL cache
-      msalInstance.clearCache();
+        // Clear MSAL cache
+        msalInstance.clearCache();
 
-      // Redirect to Microsoft 365 setup
-      window.location.href = '/integrations/microsoft365';
+        // Redirect to Microsoft 365 setup
+        window.location.href = '/integrations/microsoft365';
 
-      return this.createResponse(undefined);
-    } catch (error) {
-      logger.error('Error forcing reauthentication', { error, userId });
-      return this.handleError(error);
-    }
+        return this.createSuccessResponse(undefined);
+      } catch (error) {
+        logger.error('Error forcing reauthentication', { error, userId });
+        return this.createErrorResponse('Failed to force reauthentication');
+      }
+    }, 'force Microsoft 365 reauthentication');
   }
 }
 

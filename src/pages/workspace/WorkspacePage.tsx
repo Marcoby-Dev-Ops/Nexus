@@ -61,7 +61,7 @@ const WorkspacePage: React.FC = () => {
     return () => {
       setHeaderContent(null, null);
     };
-  }, [setHeaderContent]);
+  }, []);
 
   const handleStepComplete = (stepId: string) => {
     updateJourneyStep(stepId, true);

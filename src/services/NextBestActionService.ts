@@ -12,7 +12,6 @@ import { callRPC, callEdgeFunction, selectData, selectOne, insertOne, updateOne 
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
-import type { Database } from '@/core/types/supabase';
 
 export interface NextBestAction {
   id: string;
@@ -49,12 +48,11 @@ export interface ActionExecutionResult {
 
 export interface DelegationTarget {
   id: string;
-  type: 'ai_agent' | 'team_member' | 'external_service';
   name: string;
+  role: string;
   expertise: string[];
   availability: 'available' | 'busy' | 'unavailable';
   estimatedCompletionTime: string;
-  confidence: number;
 }
 
 export class NextBestActionService extends BaseService {
@@ -101,33 +99,17 @@ export class NextBestActionService extends BaseService {
    */
   private async getBusinessContext(userId: string, companyId: string) {
     // Get recent business metrics
-    const metrics = await selectData('business_metrics', {
-      filters: { company_id: companyId },
-      orderBy: { created_at: 'desc' },
-      limit: 10
-    });
-
-    // Get recent activities
-    const activities = await selectData('user_activities', {
-      filters: { user_id: userId },
-      orderBy: { created_at: 'desc' },
-      limit: 20
-    });
-
-    // Get current goals and KPIs
-    const goals = await selectData('business_goals', {
-      filters: { company_id: companyId, status: 'active' }
-    });
-
-    // Get integration status
-    const integrations = await selectData('user_integrations', {
-      filters: { user_id: userId, status: 'connected' }
-    });
-
+    const metrics = await selectData('business_metrics', '*', { company_id: companyId });
+    
+    // Get user's recent activities
+    const activities = await selectData('user_activities', '*', { user_id: userId });
+    
+    // Get integration data
+    const integrations = await selectData('user_integrations', '*', { user_id: userId });
+    
     return {
       metrics: metrics.data || [],
       activities: activities.data || [],
-      goals: goals.data || [],
       integrations: integrations.data || [],
       userId,
       companyId
@@ -135,78 +117,43 @@ export class NextBestActionService extends BaseService {
   }
 
   /**
-   * Analyze business data to identify opportunities and risks
+   * Analyze business data for opportunities and risks
    */
   private async analyzeBusinessData(context: any) {
+    // Use AI to analyze business data and identify opportunities
+    try {
+      const analysisResult = await callEdgeFunction('ai_analyze_business_data', {
+        context,
+        analysisType: 'opportunities_and_risks'
+      });
+      
+      return analysisResult;
+    } catch (error) {
+      logger.error('Error analyzing business data:', error);
+      // Fallback to basic analysis
+      return this.performBasicAnalysis(context);
+    }
+  }
+
+  /**
+   * Perform basic business analysis when AI is unavailable
+   */
+  private performBasicAnalysis(context: any) {
     const analysis = {
-      opportunities: [] as any[],
-      risks: [] as any[],
-      trends: [] as any[],
-      gaps: [] as any[]
+      opportunities: [],
+      risks: [],
+      trends: []
     };
 
-    // Analyze revenue trends
-    if (context.metrics.length > 0) {
-      const revenueMetrics = context.metrics.filter((m: any) => m.metric_type === 'revenue');
-      if (revenueMetrics.length >= 2) {
-        const recent = revenueMetrics[0];
-        const previous = revenueMetrics[1];
-        const growth = ((recent.value - previous.value) / previous.value) * 100;
-        
-        if (growth < 5) {
-          analysis.opportunities.push({
-            type: 'revenue_optimization',
-            description: 'Revenue growth below target',
-            impact: 'high',
-            data: { currentGrowth: growth, targetGrowth: 10 }
-          });
-        }
-      }
-    }
-
-    // Analyze sales pipeline
-    const salesActivities = context.activities.filter((a: any) => a.category === 'sales');
-    if (salesActivities.length > 0) {
-      const recentDeals = salesActivities.filter((a: any) => 
-        new Date(a.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-      );
-      
-      if (recentDeals.length < 3) {
-        analysis.opportunities.push({
-          type: 'lead_generation',
-          description: 'Low recent sales activity',
-          impact: 'medium',
-          data: { recentDeals: recentDeals.length, target: 3 }
-        });
-      }
-    }
-
-    // Analyze marketing performance
-    const marketingActivities = context.activities.filter((a: any) => a.category === 'marketing');
-    if (marketingActivities.length === 0) {
-      analysis.gaps.push({
-        type: 'marketing_activity',
-        description: 'No marketing activities detected',
-        impact: 'high',
-        data: { hasMarketing: false }
-      });
-    }
-
-    // Analyze financial health
-    const financialMetrics = context.metrics.filter((m: any) => 
-      ['cash_flow', 'expenses', 'profit_margin'].includes(m.metric_type)
-    );
-    
-    if (financialMetrics.length > 0) {
-      const cashFlow = financialMetrics.find((m: any) => m.metric_type === 'cash_flow');
-      if (cashFlow && cashFlow.value < 0) {
-        analysis.risks.push({
-          type: 'cash_flow_negative',
-          description: 'Negative cash flow detected',
-          impact: 'critical',
-          data: { cashFlow: cashFlow.value }
-        });
-      }
+    // Analyze metrics for trends
+    if (context.metrics && context.metrics.length > 0) {
+      const recentMetrics = context.metrics.slice(-5);
+      // Basic trend analysis
+      analysis.trends = recentMetrics.map((metric: any) => ({
+        metric: metric.name,
+        trend: metric.value > metric.previous_value ? 'up' : 'down',
+        change: ((metric.value - metric.previous_value) / metric.previous_value) * 100
+      }));
     }
 
     return analysis;
@@ -218,139 +165,65 @@ export class NextBestActionService extends BaseService {
   private async createActionRecommendations(analysis: any, context: any): Promise<NextBestAction[]> {
     const actions: NextBestAction[] = [];
 
-    // Revenue optimization actions
-    analysis.opportunities.forEach((opp: any) => {
-      if (opp.type === 'revenue_optimization') {
+    // Generate actions based on analysis results
+    if (analysis.opportunities && analysis.opportunities.length > 0) {
+      for (const opportunity of analysis.opportunities) {
         actions.push({
-          id: `revenue-${Date.now()}`,
-          title: 'Optimize Revenue Generation',
-          description: `Revenue growth is ${opp.data.currentGrowth}% - below target of 10%. Review pricing strategy and sales pipeline.`,
+          id: `opp_${Date.now()}_${Math.random()}`,
+          title: opportunity.title || 'Capitalize on Opportunity',
+          description: opportunity.description || 'Take advantage of this business opportunity',
           priority: 'high',
-          category: 'sales',
-          estimatedTime: '30 min',
-          impact: 'High revenue impact',
+          category: opportunity.category || 'general',
+          estimatedTime: '2-4 hours',
+          impact: opportunity.impact || 'Medium to High',
           effort: 'medium',
           canDelegate: true,
           aiAssisted: true,
-          requiresExpertise: ['sales', 'pricing', 'analytics'],
-          businessValue: 8,
-          confidence: 0.85,
-          dataSources: ['revenue_metrics', 'sales_pipeline'],
-          suggestedActions: [
-            'Review pricing strategy',
-            'Analyze sales pipeline conversion rates',
-            'Identify high-value customer segments',
-            'Optimize sales process'
-          ],
-          automationPotential: true,
-          context: opp.data,
+          requiresExpertise: opportunity.required_skills || [],
+          businessValue: opportunity.value || 7,
+          confidence: opportunity.confidence || 0.8,
+          dataSources: opportunity.sources || [],
+          suggestedActions: opportunity.actions || [],
+          automationPotential: opportunity.automation || false,
+          context: opportunity.context || {},
           createdAt: new Date().toISOString(),
           status: 'active'
         });
       }
-    });
+    }
 
-    // Lead generation actions
-    analysis.opportunities.forEach((opp: any) => {
-      if (opp.type === 'lead_generation') {
+    // Generate actions for risks
+    if (analysis.risks && analysis.risks.length > 0) {
+      for (const risk of analysis.risks) {
         actions.push({
-          id: `leads-${Date.now()}`,
-          title: 'Boost Lead Generation',
-          description: `Only ${opp.data.recentDeals} deals in the last week. Implement lead generation strategies.`,
-          priority: 'medium',
-          category: 'marketing',
-          estimatedTime: '45 min',
-          impact: 'Increased sales opportunities',
-          effort: 'medium',
-          canDelegate: true,
-          aiAssisted: true,
-          requiresExpertise: ['marketing', 'lead_generation', 'content'],
-          businessValue: 7,
-          confidence: 0.8,
-          dataSources: ['sales_activities', 'marketing_metrics'],
-          suggestedActions: [
-            'Create lead magnet content',
-            'Optimize website conversion',
-            'Launch targeted ad campaign',
-            'Improve email marketing'
-          ],
-          automationPotential: true,
-          context: opp.data,
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        });
-      }
-    });
-
-    // Marketing gap actions
-    analysis.gaps.forEach((gap: any) => {
-      if (gap.type === 'marketing_activity') {
-        actions.push({
-          id: `marketing-${Date.now()}`,
-          title: 'Set Up Marketing Foundation',
-          description: 'No marketing activities detected. Establish basic marketing infrastructure.',
-          priority: 'high',
-          category: 'marketing',
-          estimatedTime: '60 min',
-          impact: 'Brand awareness and lead generation',
-          effort: 'high',
-          canDelegate: true,
-          aiAssisted: true,
-          requiresExpertise: ['marketing', 'branding', 'digital_marketing'],
-          businessValue: 9,
-          confidence: 0.9,
-          dataSources: ['user_activities'],
-          suggestedActions: [
-            'Define target audience',
-            'Create brand guidelines',
-            'Set up social media presence',
-            'Launch first marketing campaign'
-          ],
-          automationPotential: false,
-          context: gap.data,
-          createdAt: new Date().toISOString(),
-          status: 'active'
-        });
-      }
-    });
-
-    // Financial risk actions
-    analysis.risks.forEach((risk: any) => {
-      if (risk.type === 'cash_flow_negative') {
-        actions.push({
-          id: `cashflow-${Date.now()}`,
-          title: 'Address Cash Flow Issues',
-          description: `Negative cash flow of $${Math.abs(risk.data.cashFlow)} detected. Immediate action required.`,
+          id: `risk_${Date.now()}_${Math.random()}`,
+          title: risk.title || 'Mitigate Risk',
+          description: risk.description || 'Address this potential business risk',
           priority: 'critical',
-          category: 'finance',
-          estimatedTime: '90 min',
-          impact: 'Business survival',
+          category: risk.category || 'general',
+          estimatedTime: '1-3 hours',
+          impact: risk.impact || 'High',
           effort: 'high',
           canDelegate: false,
           aiAssisted: true,
-          requiresExpertise: ['finance', 'cash_flow_management'],
-          businessValue: 10,
-          confidence: 0.95,
-          dataSources: ['financial_metrics'],
-          suggestedActions: [
-            'Review all expenses',
-            'Accelerate receivables collection',
-            'Negotiate payment terms',
-            'Create cash flow forecast'
-          ],
-          automationPotential: false,
-          context: risk.data,
+          requiresExpertise: risk.required_skills || [],
+          businessValue: risk.value || 9,
+          confidence: risk.confidence || 0.9,
+          dataSources: risk.sources || [],
+          suggestedActions: risk.mitigation_actions || [],
+          automationPotential: risk.automation || false,
+          context: risk.context || {},
           createdAt: new Date().toISOString(),
           status: 'active'
         });
       }
-    });
+    }
 
     return actions;
   }
 
   /**
-   * Prioritize actions based on impact, effort, and business value
+   * Prioritize actions based on impact and effort
    */
   private prioritizeActions(actions: NextBestAction[]): NextBestAction[] {
     return actions.sort((a, b) => {
@@ -360,12 +233,8 @@ export class NextBestActionService extends BaseService {
       
       if (priorityDiff !== 0) return priorityDiff;
       
-      // Then by business value
-      const valueDiff = b.businessValue - a.businessValue;
-      if (valueDiff !== 0) return valueDiff;
-      
-      // Then by confidence
-      return b.confidence - a.confidence;
+      // If same priority, sort by business value
+      return b.businessValue - a.businessValue;
     });
   }
 
@@ -388,7 +257,7 @@ export class NextBestActionService extends BaseService {
   async executeAction(actionId: string, userId: string, executionData?: any): Promise<ServiceResponse<ActionExecutionResult>> {
     try {
       // Get action details
-      const actionResult = await selectOne(this.tableName, { id: actionId });
+      const actionResult = await selectOne(this.tableName, actionId);
       if (!actionResult.success || !actionResult.data) {
         return {
           success: false,
@@ -463,161 +332,29 @@ export class NextBestActionService extends BaseService {
     }
   }
 
-  /**
-   * Delegate action to team member or AI agent
-   */
-  async delegateAction(actionId: string, targetId: string, userId: string): Promise<ServiceResponse<any>> {
-    try {
-      // Get action details
-      const actionResult = await selectOne(this.tableName, { id: actionId });
-      if (!actionResult.success || !actionResult.data) {
-        return {
-          success: false,
-          error: 'Action not found'
-        };
-      }
-
-      const action = actionResult.data as NextBestAction;
-
-      // Create delegation record
-      const delegationResult = await insertOne('action_delegations', {
-        action_id: actionId,
-        delegated_by: userId,
-        delegated_to: targetId,
-        status: 'pending',
-        created_at: new Date().toISOString()
-      });
-
-      // Update action status
-      await updateOne(this.tableName, actionId, { status: 'delegated' });
-
-      return {
-        success: true,
-        data: delegationResult.data,
-        message: 'Action delegated successfully'
-      };
-    } catch (error) {
-      logger.error('Error delegating action:', error);
-      return {
-        success: false,
-        error: 'Failed to delegate action',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  /**
-   * Get available delegation targets
-   */
-  async getDelegationTargets(userId: string, actionId: string): Promise<ServiceResponse<DelegationTarget[]>> {
-    try {
-      // Get AI agents
-      const aiAgents = [
-        {
-          id: 'ai-sales-expert',
-          type: 'ai_agent' as const,
-          name: 'AI Sales Expert',
-          expertise: ['sales', 'pipeline_management', 'deal_analysis'],
-          availability: 'available' as const,
-          estimatedCompletionTime: '2 hours',
-          confidence: 0.85
-        },
-        {
-          id: 'ai-marketing-expert',
-          type: 'ai_agent' as const,
-          name: 'AI Marketing Expert',
-          expertise: ['marketing', 'campaign_optimization', 'lead_generation'],
-          availability: 'available' as const,
-          estimatedCompletionTime: '3 hours',
-          confidence: 0.8
-        },
-        {
-          id: 'ai-finance-expert',
-          type: 'ai_agent' as const,
-          name: 'AI Finance Expert',
-          expertise: ['finance', 'cash_flow', 'financial_analysis'],
-          availability: 'available' as const,
-          estimatedCompletionTime: '1 hour',
-          confidence: 0.9
-        }
-      ];
-
-      // Get team members (placeholder - would come from actual team data)
-      const teamMembers = [
-        {
-          id: 'team-member-1',
-          type: 'team_member' as const,
-          name: 'Sarah (Sales Manager)',
-          expertise: ['sales', 'team_management'],
-          availability: 'available' as const,
-          estimatedCompletionTime: '4 hours',
-          confidence: 0.9
-        }
-      ];
-
-      return {
-        success: true,
-        data: [...aiAgents, ...teamMembers]
-      };
-    } catch (error) {
-      logger.error('Error getting delegation targets:', error);
-      return {
-        success: false,
-        error: 'Failed to get delegation targets',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      };
-    }
-  }
-
-  // Private execution methods
   private async executeSalesAction(action: NextBestAction, executionData?: any) {
-    // Implement sales action execution logic
-    return {
-      type: 'sales_optimization',
-      recommendations: action.suggestedActions,
-      estimatedImpact: '15-25% revenue increase',
-      timeline: '2-4 weeks'
-    };
+    // Implement sales action execution
+    return { success: true, message: 'Sales action executed' };
   }
 
   private async executeMarketingAction(action: NextBestAction, executionData?: any) {
-    // Implement marketing action execution logic
-    return {
-      type: 'marketing_campaign',
-      recommendations: action.suggestedActions,
-      estimatedImpact: '30-50% lead increase',
-      timeline: '1-2 weeks'
-    };
+    // Implement marketing action execution
+    return { success: true, message: 'Marketing action executed' };
   }
 
   private async executeFinanceAction(action: NextBestAction, executionData?: any) {
-    // Implement finance action execution logic
-    return {
-      type: 'cash_flow_optimization',
-      recommendations: action.suggestedActions,
-      estimatedImpact: 'Immediate cash flow improvement',
-      timeline: '1 week'
-    };
+    // Implement finance action execution
+    return { success: true, message: 'Finance action executed' };
   }
 
   private async executeOpsAction(action: NextBestAction, executionData?: any) {
-    // Implement operations action execution logic
-    return {
-      type: 'process_optimization',
-      recommendations: action.suggestedActions,
-      estimatedImpact: '20-30% efficiency improvement',
-      timeline: '2-3 weeks'
-    };
+    // Implement operations action execution
+    return { success: true, message: 'Operations action executed' };
   }
 
   private async executeGeneralAction(action: NextBestAction, executionData?: any) {
-    // Implement general action execution logic
-    return {
-      type: 'general_optimization',
-      recommendations: action.suggestedActions,
-      estimatedImpact: 'Varies by action',
-      timeline: '1-4 weeks'
-    };
+    // Implement general action execution
+    return { success: true, message: 'General action executed' };
   }
 
   private calculateValueGenerated(action: NextBestAction, result: any, timeSpent: number): number {
@@ -625,6 +362,72 @@ export class NextBestActionService extends BaseService {
     const baseValue = action.businessValue * 100; // Convert 1-10 scale to monetary value
     const timeEfficiency = Math.max(0.5, 1 - (timeSpent / (parseInt(action.estimatedTime) * 60 * 1000)));
     return Math.round(baseValue * timeEfficiency);
+  }
+
+  /**
+   * Delegate action to team member or AI agent
+   */
+  async delegateAction(actionId: string, targetId: string, userId: string): Promise<ServiceResponse<any>> {
+    try {
+      // Update action status to delegated
+      await updateOne(this.tableName, actionId, { 
+        status: 'delegated',
+        delegated_to: targetId,
+        delegated_at: new Date().toISOString()
+      });
+
+      return {
+        success: true,
+        data: { message: 'Action delegated successfully' }
+      };
+    } catch (error) {
+      logger.error('Error delegating action:', error);
+      return {
+        success: false,
+        error: 'Failed to delegate action'
+      };
+    }
+  }
+
+  /**
+   * Get available delegation targets
+   */
+  async getDelegationTargets(actionId: string): Promise<ServiceResponse<DelegationTarget[]>> {
+    try {
+      // Get team members and AI agents
+      const teamMembers = await selectData('team_members', '*');
+      const aiAgents = await selectData('ai_agents', '*');
+
+      const targets: DelegationTarget[] = [
+        ...(teamMembers.data || []).map((member: any) => ({
+          id: member.id,
+          name: member.name,
+          role: member.role,
+          expertise: member.expertise || [],
+          availability: member.availability || 'available',
+          estimatedCompletionTime: '2-4 hours'
+        })),
+        ...(aiAgents.data || []).map((agent: any) => ({
+          id: agent.id,
+          name: agent.name,
+          role: agent.role,
+          expertise: agent.capabilities || [],
+          availability: 'available',
+          estimatedCompletionTime: '5-15 minutes'
+        }))
+      ];
+
+      return {
+        success: true,
+        data: targets
+      };
+    } catch (error) {
+      logger.error('Error getting delegation targets:', error);
+      return {
+        success: false,
+        error: 'Failed to get delegation targets'
+      };
+    }
   }
 }
 

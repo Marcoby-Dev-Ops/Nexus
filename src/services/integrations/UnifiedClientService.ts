@@ -1,6 +1,7 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 
 export interface UnifiedClientProfile {
   id: string;
@@ -117,15 +118,14 @@ export class UnifiedClientService extends BaseService {
         throw new Error('Authentication required - no valid session found');
       }
 
-      const { data, error } = await this.supabase
-        .from('unified_client_profiles')
-        .select('*')
-        .eq('user_id', userId)
-        .order('updatedat', { ascending: false });
+      const result2 = await select('unified_client_profiles', ['*'], {
+        user_id: userId,
+        order_by: 'updated_at.desc'
+      });
 
-      if (error) throw error;
+      if (!result2.success) throw new Error(result2.error);
 
-      return { data: data || [], error: null };
+      return { data: result2.data || [], error: null };
     }, `get unified client profiles for user ${userId}`);
   }
 
@@ -141,15 +141,14 @@ export class UnifiedClientService extends BaseService {
         throw new Error('Authentication required - no valid session found');
       }
 
-      const { data, error } = await this.supabase
-        .from('ai_client_interactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('occurred_at', { ascending: false });
+      const result = await select('ai_client_interactions', ['*'], {
+        user_id: userId,
+        order_by: 'occurred_at.desc'
+      });
 
-      if (error) throw error;
+      if (!result.success) throw new Error(result.error);
 
-      return { data: data || [], error: null };
+      return { data: result.data || [], error: null };
     }, `get client interactions for user ${userId}`);
   }
 
@@ -165,16 +164,15 @@ export class UnifiedClientService extends BaseService {
         throw new Error('Authentication required - no valid session found');
       }
 
-      const { data, error } = await this.supabase
-        .from('ai_client_intelligence_alerts')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_resolved', false)
-        .order('created_at', { ascending: false });
+      const result = await select('ai_client_intelligence_alerts', ['*'], {
+        user_id: userId,
+        is_resolved: false,
+        order_by: 'created_at.desc'
+      });
 
-      if (error) throw error;
+      if (!result.success) throw new Error(result.error);
 
-      return { data: data || [], error: null };
+      return { data: result.data || [], error: null };
     }, `get client intelligence alerts for user ${userId}`);
   }
 
@@ -186,31 +184,32 @@ export class UnifiedClientService extends BaseService {
 
     try {
       // Get HubSpot contacts
-      const { data: contacts, error: contactsError } = await this.supabase
-        .from('contacts')
-        .select('*')
-        .eq('user_id', userId)
-        .not('hubspotid', 'is', null);
+      const contactsResult = await select('contacts', ['*'], {
+        user_id: userId,
+        hubspotid_not: null
+      });
 
-      if (contactsError) throw contactsError;
+      if (!contactsResult.success) throw new Error(contactsResult.error);
 
       // Get HubSpot companies
-      const { data: companies, error: companiesError } = await this.supabase
-        .from('companies')
-        .select('*')
-        .eq('user_id', userId)
-        .not('hubspotid', 'is', null);
+      const companiesResult = await select('companies', ['*'], {
+        user_id: userId,
+        hubspotid_not: null
+      });
 
-      if (companiesError) throw companiesError;
+      if (!companiesResult.success) throw new Error(companiesResult.error);
 
       // Get HubSpot deals
-      const { data: deals, error: dealsError } = await this.supabase
-        .from('deals')
-        .select('*')
-        .eq('user_id', userId)
-        .not('hubspotid', 'is', null);
+      const dealsResult = await select('deals', ['*'], {
+        user_id: userId,
+        hubspotid_not: null
+      });
 
-      if (dealsError) throw dealsError;
+      if (!dealsResult.success) throw new Error(dealsResult.error);
+
+      const contacts = contactsResult.data || [];
+      const companies = companiesResult.data || [];
+      const deals = dealsResult.data || [];
 
       // Create unified profiles from contacts
       for (const contact of contacts || []) {
@@ -236,30 +235,26 @@ export class UnifiedClientService extends BaseService {
         const estimatedValue = this.calculateEstimatedValue(contact, company, deals);
 
         // Check if profile already exists
-        const { data: existingProfile } = await this.supabase
-          .from('ai_unified_client_profiles')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('client_id', `hubspot_contact_${contact.hubspotid}`)
-          .single();
+        const existingProfileResult = await selectOne('ai_unified_client_profiles', ['id'], {
+          user_id: userId,
+          client_id: `hubspot_contact_${contact.hubspotid}`
+        });
 
-        if (!existingProfile) {
-          const { error: insertError } = await this.supabase
-            .from('ai_unified_client_profiles')
-            .insert({
-              user_id: userId,
-              client_id: `hubspot_contact_${contact.hubspotid}`,
-              profile_data: profileData,
-              source_integrations: ['hubspot'],
-              primary_source: 'hubspot',
-              completeness_score: completenessScore,
-              engagement_score: engagementScore,
-              estimated_value: estimatedValue,
-              last_interaction: contact.updated_at,
-              insights: []
-            });
+        if (!existingProfileResult.success || !existingProfileResult.data) {
+          const insertResult = await insertOne('ai_unified_client_profiles', {
+            user_id: userId,
+            client_id: `hubspot_contact_${contact.hubspotid}`,
+            profile_data: profileData,
+            source_integrations: ['hubspot'],
+            primary_source: 'hubspot',
+            completeness_score: completenessScore,
+            engagement_score: engagementScore,
+            estimated_value: estimatedValue,
+            last_interaction: contact.updated_at,
+            insights: []
+          });
 
-          if (!insertError) {
+          if (insertResult.success) {
             profilesCreated++;
             
             // Create interactions from deals
@@ -311,30 +306,26 @@ export class UnifiedClientService extends BaseService {
         const estimatedValue = this.calculateEstimatedValue(null, company, deals);
 
         // Check if profile already exists
-        const { data: existingProfile } = await this.supabase
-          .from('ai_unified_client_profiles')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('client_id', `hubspot_company_${company.hubspotid}`)
-          .single();
+        const existingProfileResult = await selectOne('ai_unified_client_profiles', ['id'], {
+          user_id: userId,
+          client_id: `hubspot_company_${company.hubspotid}`
+        });
 
-        if (!existingProfile) {
-          const { error: insertError } = await this.supabase
-            .from('ai_unified_client_profiles')
-            .insert({
-              user_id: userId,
-              client_id: `hubspot_company_${company.hubspotid}`,
-              profile_data: profileData,
-              source_integrations: ['hubspot'],
-              primary_source: 'hubspot',
-              completeness_score: completenessScore,
-              engagement_score: engagementScore,
-              estimated_value: estimatedValue,
-              last_interaction: company.updated_at,
-              insights: []
-            });
+        if (!existingProfileResult.success || !existingProfileResult.data) {
+          const insertResult = await insertOne('ai_unified_client_profiles', {
+            user_id: userId,
+            client_id: `hubspot_company_${company.hubspotid}`,
+            profile_data: profileData,
+            source_integrations: ['hubspot'],
+            primary_source: 'hubspot',
+            completeness_score: completenessScore,
+            engagement_score: engagementScore,
+            estimated_value: estimatedValue,
+            last_interaction: company.updated_at,
+            insights: []
+          });
 
-          if (!insertError) {
+          if (insertResult.success) {
             profilesCreated++;
           }
         }
@@ -366,18 +357,17 @@ export class UnifiedClientService extends BaseService {
   private async generateCrossPlatformCorrelations(userId: string): Promise<void> {
     try {
       // Get all unified profiles
-      const { data: profiles, error } = await this.supabase
-        .from('ai_unified_client_profiles')
-        .select('*')
-        .eq('user_id', userId);
+      const result = await select('ai_unified_client_profiles', ['*'], {
+        user_id: userId
+      });
 
-      if (error) throw error;
+      if (!result.success) throw new Error(result.error);
 
       // Find potential matches across platforms
-      for (let i = 0; i < profiles.length; i++) {
-        for (let j = i + 1; j < profiles.length; j++) {
-          const profile1 = profiles[i];
-          const profile2 = profiles[j];
+      for (let i = 0; i < result.data.length; i++) {
+        for (let j = i + 1; j < result.data.length; j++) {
+          const profile1 = result.data[i];
+          const profile2 = result.data[j];
 
           const matchScore = this.calculateMatchScore(profile1.profile_data, profile2.profile_data);
           
@@ -515,19 +505,17 @@ export class UnifiedClientService extends BaseService {
    */
   private async createInteractionFromDeal(userId: string, clientProfileId: string, deal: any): Promise<void> {
     try {
-      await this.supabase
-        .from('ai_client_interactions')
-        .insert({
-          user_id: userId,
-          client_profile_id: clientProfileId,
-          interaction_type: 'transaction',
-          channel: 'hubspot',
-          summary: `Deal: ${deal.name} - ${deal.stage}`,
-          sentiment: deal.stage === 'closedwon' ? 'positive' : 'neutral',
-          value: parseFloat(deal.amount || 0),
-          metadata: { deal_id: deal.id, deal_stage: deal.stage },
-          occurred_at: deal.updated_at
-        });
+      await insertOne('ai_client_interactions', {
+        user_id: userId,
+        client_profile_id: clientProfileId,
+        interaction_type: 'transaction',
+        channel: 'hubspot',
+        summary: `Deal: ${deal.name} - ${deal.stage}`,
+        sentiment: deal.stage === 'closedwon' ? 'positive' : 'neutral',
+        value: parseFloat(deal.amount || 0),
+        metadata: { deal_id: deal.id, deal_stage: deal.stage },
+        occurred_at: deal.updated_at
+      });
     } catch (error) {
       this.logger.error('Error creating interaction from deal:', error);
     }
@@ -543,17 +531,15 @@ export class UnifiedClientService extends BaseService {
     priority: string;
   }): Promise<void> {
     try {
-      await this.supabase
-        .from('ai_client_intelligence_alerts')
-        .insert({
-          user_id: userId,
-          client_profile_id: clientProfileId,
-          alert_type: alertData.type as any,
-          title: alertData.title,
-          description: alertData.description,
-          priority: alertData.priority as any,
-          is_resolved: false
-        });
+      await insertOne('ai_client_intelligence_alerts', {
+        user_id: userId,
+        client_profile_id: clientProfileId,
+        alert_type: alertData.type as any,
+        title: alertData.title,
+        description: alertData.description,
+        priority: alertData.priority as any,
+        is_resolved: false
+      });
     } catch (error) {
       this.logger.error('Error creating alert:', error);
     }
@@ -564,22 +550,20 @@ export class UnifiedClientService extends BaseService {
    */
   private async createCrossPlatformCorrelation(userId: string, profile1: any, profile2: any, matchScore: number): Promise<void> {
     try {
-      await this.supabase
-        .from('cross_platform_correlations')
-        .insert({
-          user_id: userId,
-          correlation_type: 'client_match',
-          platform_a: profile1.primary_source,
-          platform_b: profile2.primary_source,
-          entity_id_a: profile1.client_id,
-          entity_id_b: profile2.client_id,
-          confidence_score: matchScore,
-          correlation_data: {
-            profile1_data: profile1.profile_data,
-            profile2_data: profile2.profile_data,
-            match_score: matchScore
-          }
-        });
+      await insertOne('cross_platform_correlations', {
+        user_id: userId,
+        correlation_type: 'client_match',
+        platform_a: profile1.primary_source,
+        platform_b: profile2.primary_source,
+        entity_id_a: profile1.client_id,
+        entity_id_b: profile2.client_id,
+        confidence_score: matchScore,
+        correlation_data: {
+          profile1_data: profile1.profile_data,
+          profile2_data: profile2.profile_data,
+          match_score: matchScore
+        }
+      });
     } catch (error) {
       this.logger.error('Error creating cross-platform correlation:', error);
     }

@@ -3,7 +3,7 @@
  * Exports all admin domain services
  */
 
-export { BillingService } from '@/services/business';
+export { FinancialService } from '@/services/core';
 export { securityManager } from './security';
 
 // Security types

@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/index';
-import { userService } from '@/services/business/UserService';
-import { companyService } from '@/services/business/CompanyService';
+import { userService } from '@/services/core/UserService';
+import { companyService } from '@/services/core/CompanyService';
 import { logger } from '@/shared/utils/logger';
-import { userMappingService } from '@/shared/services/UserMappingService';
+
 import type { UserProfile as ComprehensiveUserProfile } from '@/core/types/userProfile';
 
 
@@ -88,47 +88,65 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [mappingReady, setMappingReady] = useState(false);
   const [internalUserId, setInternalUserId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  
+  // Track if we've already loaded profile for current user to prevent infinite loops
+  const loadedUserIdRef = useRef<string | null>(null);
 
   // Load user profile with proper error handling
   const loadProfile = useCallback(async (userId: string) => {
+    // Prevent loading the same user profile multiple times
+    if (loadedUserIdRef.current === userId && profileLoaded) {
+      return;
+    }
+    
     try {
       setLoading(true);
       setError(null);
 
-      // First, ensure we have the internal user ID
-      const mappingResult = await userMappingService.getInternalUserId(userId);
-      
-      if (!mappingResult.success || !mappingResult.data) {
-        logger.warn('No user mapping found, user may be new', { userId });
-        setProfile(null);
-        setInternalUserId(null);
-        setMappingReady(false);
+      // Check if user is authenticated before making API call
+      if (!isAuthenticated) {
+        logger.warn('User not authenticated, skipping profile load', { userId });
+        setLoading(false);
+        setProfileLoaded(true);
         return;
       }
 
-      const resolvedInternalUserId = mappingResult.data;
-      setInternalUserId(resolvedInternalUserId);
+      // Use external user ID directly - no mapping needed
+      setInternalUserId(userId);
       setMappingReady(true);
 
       // Now try to get the user profile using the service
-      const result = await userService.getByExternalId(userId);
+      const result = await userService.getAuthProfile(userId);
+
+      console.log('🔍 UserContext received:', {
+        success: result.success,
+        hasData: !!result.data,
+        error: result.error,
+        data: result.data
+      });
 
       if (!result.success) {
         // Don't log this as an error since it's expected for new users
         logger.info('No user profile found, will create one on first interaction', { userId });
         setProfile(null);
+        setProfileLoaded(true);
+        loadedUserIdRef.current = userId;
         return;
       }
 
-      setProfile(result.data as UserProfile);
-      logger.info('User profile loaded successfully', { userId, internalUserId: resolvedInternalUserId });
+      setProfile(result.data as any);
+      setProfileLoaded(true);
+      loadedUserIdRef.current = userId;
+      logger.info('User profile loaded successfully', { userId });
     } catch (error) {
       logger.error('Failed to load user profile', { userId, error });
       setError('Failed to load user profile');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [userService, isAuthenticated, profileLoaded]);
 
   // Load company data
   const loadCompany = useCallback(async () => {
@@ -147,12 +165,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } catch (err) {
       logger.error('Error loading company profile', { error: err, companyId: profile.company_id });
     }
-  }, [profile?.company_id]);
+  }, [profile?.company_id, companyService]);
 
   // Refresh profile
   const refreshProfile = useCallback(async () => {
     if (user?.id) {
       const userId = typeof user.id === 'string' ? user.id : String(user.id);
+      // Reset the loaded user ID to force reload
+      loadedUserIdRef.current = null;
+      setProfileLoaded(false);
       await loadProfile(userId);
     }
   }, [user?.id, loadProfile]);
@@ -170,7 +191,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
 
     try {
-      const updateResult = await userService.updateByExternalId(targetUserId, updates);
+      const updateResult = await userService.upsertAuthProfile(targetUserId, updates);
       if (updateResult.success && updateResult.data) {
         setProfile(updateResult.data as UserProfile);
         logger.info('User profile updated successfully', { userId: targetUserId });
@@ -190,7 +211,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
   // Load data when user changes
   useEffect(() => {
-    if (user?.id && isAuthenticated) {
+    if (user?.id && isAuthenticated && !loading && !profileLoaded) {
       const userId = typeof user.id === 'string' ? user.id : String(user.id);
       // Validate userId before loading profile
       if (userId && userId !== 'undefined' && userId !== 'null') {
@@ -203,23 +224,37 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         setMappingReady(false);
         setInternalUserId(null);
       }
-    } else {
+    } else if (!user?.id || !isAuthenticated) {
       setProfile(null);
       setCompany(null);
       setError(null);
       setMappingReady(false);
       setInternalUserId(null);
+      setProfileLoaded(false); // Reset when user logs out
+      loadedUserIdRef.current = null; // Reset loaded user ID
     }
-  }, [user?.id, isAuthenticated, loadProfile]);
+  }, [user?.id, isAuthenticated, loading, profileLoaded]); // Remove loadProfile from dependencies
 
   // Load company when profile changes
   useEffect(() => {
     if (profile?.company_id) {
-      loadCompany();
+      const loadCompanyData = async () => {
+        try {
+          const result = await companyService.get(profile.company_id!);
+          
+          if (result.success && result.data) {
+            setCompany(result.data as CompanyProfile);
+            logger.info('Company profile loaded successfully', { companyId: profile.company_id });
+          }
+        } catch (err) {
+          logger.error('Error loading company profile', { error: err, companyId: profile.company_id });
+        }
+      };
+      loadCompanyData();
     } else {
       setCompany(null);
     }
-  }, [profile?.company_id, loadCompany]);
+  }, [profile?.company_id]);
 
   const value: UserContextType = {
     profile,

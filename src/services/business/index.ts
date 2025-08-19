@@ -3,26 +3,25 @@
  */
 
 // Core business services
-export { CompanyService } from './CompanyService';
-export { UserService } from './UserService';
+export { CompanyService } from '../core/CompanyService';
+export { UserService } from '../core/UserService';
 export { ContactService } from './ContactService';
 export { DealService } from './DealService';
-export { BillingService, billingService } from './BillingService';
-export { NotificationService } from './NotificationService';
+export { NotificationService } from '../core/NotificationService';
 export { CalendarService } from './CalendarService';
-export { CompanyProvisioningService, companyProvisioningService } from './CompanyProvisioningService';
+// CompanyProvisioningService consolidated into CompanyService
 export { CompanyOwnershipService } from './CompanyOwnershipService';
-export { userProfileService } from './userProfileService';
+// userProfileService consolidated into UserService
 export { TenantService } from './TenantService';
 
-// Export types from CompanyProvisioningService
-export type { CompanyProvisioningOptions, ProvisioningResult } from './CompanyProvisioningService';
+// Export types from consolidated CompanyService
+export type { CompanyProvisioningOptions, ProvisioningResult } from '../core/CompanyService';
 
 // Additional business services
 export { companyStatusService } from './companyStatusService';
 export { businessBenchmarkingService } from './businessBenchmarkingService';
 export { dataConnectivityHealthService } from './dataConnectivityHealthService';
-export { financialDataService } from './financialDataService';
+// financialDataService consolidated into FinancialService
 
 // Business types
 export interface CompanyStatusOverview {

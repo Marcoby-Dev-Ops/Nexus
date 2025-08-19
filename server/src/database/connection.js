@@ -55,6 +55,30 @@ function getPool() {
 }
 
 /**
+ * Set JWT claims on database connection for RLS policies
+ */
+async function setJWTClaims(client, jwtPayload) {
+  if (!jwtPayload) {
+    // Clear JWT claims if no payload provided
+    await client.query("SELECT set_config('request.jwt.claims', '', true)");
+    return;
+  }
+
+  try {
+    // Set JWT claims as a JSON string that PostgreSQL can parse
+    const claimsJson = JSON.stringify(jwtPayload);
+    await client.query("SELECT set_config('request.jwt.claims', $1, true)", [claimsJson]);
+    logger.debug('JWT claims set on database connection', { 
+      sub: jwtPayload.sub,
+      hasAdmin: !!jwtPayload.is_superuser 
+    });
+  } catch (error) {
+    logger.warn('Failed to set JWT claims on database connection', { error: error.message });
+    // Continue without JWT claims - this will cause RLS policies to fail
+  }
+}
+
+/**
  * Test database connection with retry logic
  */
 async function testConnection() {
@@ -80,7 +104,7 @@ async function testConnection() {
 /**
  * Execute a query with automatic connection management and retry logic
  */
-async function query(text, params, retryCount = 0) {
+async function query(text, params, jwtPayload = null, retryCount = 0) {
   const maxRetries = 3;
   const baseDelay = 1000; // 1 second
 
@@ -88,6 +112,9 @@ async function query(text, params, retryCount = 0) {
     const client = await getPool().connect();
     
     try {
+      // Set JWT claims for RLS policies
+      await setJWTClaims(client, jwtPayload);
+      
       const result = await client.query(text, params);
       return {
         data: result.rows,
@@ -115,7 +142,7 @@ async function query(text, params, retryCount = 0) {
         const delay = baseDelay * Math.pow(2, retryCount);
         await new Promise(resolve => setTimeout(resolve, delay));
         
-        return query(text, params, retryCount + 1);
+        return query(text, params, jwtPayload, retryCount + 1);
       }
 
       return {
@@ -146,7 +173,7 @@ async function query(text, params, retryCount = 0) {
       const delay = baseDelay * Math.pow(2, retryCount);
       await new Promise(resolve => setTimeout(resolve, delay));
       
-      return query(text, params, retryCount + 1);
+      return query(text, params, jwtPayload, retryCount + 1);
     }
 
     return {
@@ -160,11 +187,15 @@ async function query(text, params, retryCount = 0) {
 /**
  * Execute a transaction with automatic rollback on error
  */
-async function transaction(callback) {
+async function transaction(callback, jwtPayload = null) {
   const client = await getPool().connect();
   
   try {
     await client.query('BEGIN');
+    
+    // Set JWT claims for RLS policies
+    await setJWTClaims(client, jwtPayload);
+    
     const result = await callback(client);
     await client.query('COMMIT');
     return { data: result, error: null };

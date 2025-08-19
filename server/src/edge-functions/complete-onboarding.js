@@ -11,8 +11,10 @@ async function completeOnboardingHandler(payload, user) {
       userId,
       firstName,
       lastName,
+      email,
       displayName,
       jobTitle,
+      phone,
       company,
       industry,
       companySize,
@@ -54,22 +56,26 @@ async function completeOnboardingHandler(payload, user) {
       const profileUpdates = {
         first_name: firstName,
         last_name: lastName,
+        email: email,
         display_name: displayName || `${firstName} ${lastName}`,
         job_title: jobTitle,
+        phone: phone,
         onboarding_completed: true,
         updated_at: new Date().toISOString()
       };
 
       await query(
         `UPDATE user_profiles 
-         SET first_name = $1, last_name = $2, display_name = $3, job_title = $4, 
-             onboarding_completed = $5, updated_at = $6
-         WHERE id = $7`,
+         SET first_name = $1, last_name = $2, email = $3, display_name = $4, job_title = $5, 
+             phone = $6, onboarding_completed = $7, updated_at = $8
+         WHERE id = $9`,
         [
           profileUpdates.first_name,
           profileUpdates.last_name,
+          profileUpdates.email,
           profileUpdates.display_name,
           profileUpdates.job_title,
+          profileUpdates.phone,
           profileUpdates.onboarding_completed,
           profileUpdates.updated_at,
           internalUserId
@@ -102,13 +108,14 @@ async function completeOnboardingHandler(payload, user) {
         };
 
         const newCompanyResult = await query(
-          `INSERT INTO companies (name, industry, size, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO companies (name, industry, size, owner_id, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING id`,
           [
             companyData.name,
             companyData.industry,
             companyData.size,
+            internalUserId,
             companyData.created_at,
             companyData.updated_at
           ]

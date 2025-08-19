@@ -9,17 +9,17 @@ import { serviceFactory, registerService } from './ServiceFactory';
 import type { BaseService } from './BaseService';
 
 // Import all services
-import { UserService } from '@/services/business/UserService';
-import { CompanyService } from '@/services/business/CompanyService';
+import { UserService } from '@/services/core/UserService';
+import { CompanyService } from '@/services/core/CompanyService';
 import { DealService } from '@/services/business/DealService';
 import { ContactService } from '@/services/business/ContactService';
-import { NotificationService } from '@/services/business/NotificationService';
-import { BillingService } from '@/services/business/BillingService';
+import { NotificationService } from '@/services/core/NotificationService';
+import { FinancialService } from '@/services/core/FinancialService';
 import { CalendarService } from '@/services/business/CalendarService';
 import { TenantService } from '@/services/business/TenantService';
 import { CompanyOwnershipService } from '@/services/business/CompanyOwnershipService';
-import { CompanyProvisioningService } from '@/services/business/CompanyProvisioningService';
-import { UserProfileService } from '@/services/business/userProfileService';
+// CompanyProvisioningService consolidated into CompanyService
+// UserProfileService consolidated into UserService
 
 // Core services
 import { WorkflowService } from './workflowService';
@@ -32,21 +32,12 @@ import { UserLicensesService } from './UserLicensesService';
 import { CentralizedRLSService } from './CentralizedRLSService';
 
 // Integration services
-import { IntegrationService } from '@/services/integrations/integrationService';
-import { IntegrationDataService } from '@/services/integrations/integrationDataService';
-import { DataPointMappingService } from '@/services/integrations/dataPointMappingService';
-
-import { UniversalIntegrationService } from '@/services/integrations/universalIntegrationService';
+import { ConsolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
 import { SalesforceStyleDataService } from '@/services/integrations/SalesforceStyleDataService';
 import { RealTimeCrossDepartmentalSync } from '@/services/integrations/realTimeCrossDepartmentalSync';
-import { ConsolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
-import { IntegrationRegistryService } from '@/services/integrations/core/IntegrationRegistryService';
-import { DataMappingService } from '@/services/integrations/core/DataMappingService';
 
 // Email services
 import { EmailService } from '@/services/email/EmailService';
-import { EmailIntegrationService } from '@/services/email/emailIntegrationService';
-import { OWAInboxService } from '@/services/email/owaInboxService';
 
 // Dashboard services
 import { DashboardService } from '@/services/dashboard/dashboardService';
@@ -125,12 +116,12 @@ export class ServiceRegistry {
     this.registerService('deal', new DealService(), 'Deal management', 'business');
     this.registerService('contact', new ContactService(), 'Contact management', 'business');
     this.registerService('notification', new NotificationService(), 'Notification management', 'business');
-    this.registerService('billing', new BillingService(), 'Billing management', 'business');
+    this.registerService('financial', new FinancialService(), 'Financial management', 'business');
     this.registerService('calendar', new CalendarService(), 'Calendar management', 'business');
     this.registerService('tenant', new TenantService(), 'Tenant management', 'business');
     this.registerService('company-ownership', new CompanyOwnershipService(), 'Company ownership', 'business');
-    this.registerService('company-provisioning', new CompanyProvisioningService(), 'Company provisioning', 'business');
-    this.registerService('user-profile', new UserProfileService(), 'User profile management', 'business');
+    // CompanyProvisioningService consolidated into CompanyService
+    // UserProfileService consolidated into UserService
 
     // Core Services
     this.registerService('workflow', WorkflowService.getInstance(), 'Workflow management', 'core');
@@ -146,21 +137,12 @@ export class ServiceRegistry {
     this.registerService('centralized-rls', new CentralizedRLSService(), 'Centralized RLS management', 'core');
 
     // Integration Services
-    this.registerService('integration', new IntegrationService(), 'Integration management', 'integration');
-    this.registerService('integration-data', new IntegrationDataService(), 'Integration data', 'integration');
-    this.registerService('data-point-mapping', new DataPointMappingService(), 'Data point mapping', 'integration');
-
-    this.registerService('universal-integration', new UniversalIntegrationService(), 'Universal integration', 'integration');
+    this.registerService('consolidated-integration', new ConsolidatedIntegrationService(), 'Consolidated integration', 'integration');
     this.registerService('salesforce-style-data', new SalesforceStyleDataService(), 'Salesforce style data', 'integration');
     this.registerService('real-time-sync', new RealTimeCrossDepartmentalSync(), 'Real-time sync', 'integration');
-    this.registerService('consolidated-integration', new ConsolidatedIntegrationService(), 'Consolidated integration', 'integration');
-    this.registerService('integration-registry', new IntegrationRegistryService(), 'Integration registry', 'integration');
-    this.registerService('data-mapping', new DataMappingService(), 'Data mapping', 'integration');
 
     // Email Services
     this.registerService('email', new EmailService(), 'Email management', 'email');
-    this.registerService('email-integration', new EmailIntegrationService(), 'Email integration', 'email');
-    this.registerService('owa-inbox', new OWAInboxService(), 'OWA inbox', 'email');
 
     // Dashboard Services
     this.registerService('dashboard', new DashboardService(), 'Dashboard management', 'dashboard');

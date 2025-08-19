@@ -6,6 +6,7 @@ export { useDataConnectivityHealth } from './dashboard/useDataConnectivityHealth
 export { useKPICalculation } from './dashboard/useKPICalculation';
 export { useFinancialData } from './dashboard/useFinancialData';
 export { useAuthenticatedApi } from './useAuthenticatedApi';
+export { useMicrosoft365Token } from './useMicrosoft365Token';
 
 // Database hooks
 export {

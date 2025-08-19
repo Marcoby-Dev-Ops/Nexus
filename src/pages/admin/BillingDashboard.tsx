@@ -13,7 +13,7 @@ import {
   ExternalLink,
   AlertTriangle
 } from 'lucide-react';
-import { BillingService } from '@/services/business';
+import { financialService } from '@/services/core';
 import { quotaService } from '@/shared/services/quotaService';
 import { useAuth } from '@/hooks/index';
 import type { BillingStatus } from '@/core/types/billing';
@@ -41,7 +41,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
       setError(null);
 
       const [billing, usageStats] = await Promise.all([
-        billingService.getBillingStatus(user.id),
+        financialService.getBillingStatus(user.id),
         quotaService.getUserUsageStats(user.id)
       ]);
 
@@ -62,7 +62,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
   }, [user, loadBillingData]);
 
   const handleUpgrade = (plan: 'pro' | 'enterprise') => {
-    const paymentLinks = billingService.getPaymentLinks();
+    const paymentLinks = financialService.getPaymentLinks();
     const url = plan === 'pro' ? paymentLinks.pro: paymentLinks.enterprise;
     window.open(url, '_blank');
   };
@@ -71,7 +71,7 @@ export const BillingDashboard: React.FC<BillingDashboardProps> = ({ className })
     if (!user) return;
     
     try {
-      const { portalUrl } = await billingService.createCustomerPortalSession(user.id);
+      const { portalUrl } = await financialService.createCustomerPortalSession(user.id);
       window.open(portalUrl, '_blank');
     } catch {
       setError('Failed to open customer portal. Please try again.');

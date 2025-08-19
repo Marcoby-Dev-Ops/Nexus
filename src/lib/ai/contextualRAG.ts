@@ -1,4 +1,7 @@
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { vectorSearch } from '@/lib/database';
+import { logger } from '@/shared/utils/logger';
+
 export interface RAGContext {
   userId: string;
   companyId?: string;
@@ -59,7 +62,7 @@ class ContextualRAG {
         processingTime: Date.now() - startTime,
       };
     } catch (error) {
-      console.error('Error in contextual RAG search:', error);
+      logger.error('Error in contextual RAG search:', error);
       return {
         documents: [],
         query: query.query,
@@ -72,144 +75,70 @@ class ContextualRAG {
 
   async retrieveDocuments(query: RAGQuery): Promise<RAGDocument[]> {
     try {
-      // Search across multiple data sources
-      const [thoughts, interactions, conversations] = await Promise.all([
-        this.searchThoughts(query),
-        this.searchInteractions(query),
-        this.searchConversations(query),
-      ]);
+      // Use vector search to find relevant documents
+      const searchResults = await vectorSearch.searchVectorsByText(
+        query.context.userId,
+        query.query,
+        query.maxResults || 20,
+        {
+          company_id: query.context.companyId,
+          type: 'document'
+        }
+      );
 
-      return [...thoughts, ...interactions, ...conversations];
-    } catch (error) {
-      console.error('Error retrieving documents:', error);
-      return [];
-    }
-  }
-
-  private async searchThoughts(query: RAGQuery): Promise<RAGDocument[]> {
-    try {
-      const { data, error } = await supabase
-        .from('thoughts')
-        .select('*')
-        .eq('userid', query.context.userId)
-        .ilike('content', `%${query.query}%`)
-        .order('createdat', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error searching thoughts:', error);
-        return [];
-      }
-
-      return (data || []).map(thought => ({
-        id: thought.id,
-        content: thought.content || '',
+      // Convert search results to RAGDocument format
+      const documents: RAGDocument[] = searchResults.map((result: any) => ({
+        id: result.id,
+        content: result.content,
         metadata: {
-          source: 'thoughts',
-          timestamp: thought.createdat || new Date().toISOString(),
+          source: result.title || 'Unknown',
+          timestamp: new Date().toISOString(),
+          type: result.type || 'document',
+          tags: result.tags || [],
+          relevance_score: result.similarity || 0
+        }
+      }));
+
+      // Also search thoughts for additional context
+      const thoughtResults = await vectorSearch.searchVectorsByText(
+        query.context.userId,
+        query.query,
+        Math.floor((query.maxResults || 20) / 2),
+        {
+          company_id: query.context.companyId,
+          type: 'thought'
+        }
+      );
+
+      const thoughtDocuments: RAGDocument[] = thoughtResults.map((result: any) => ({
+        id: result.id,
+        content: result.content,
+        metadata: {
+          source: result.title || 'Thought',
+          timestamp: new Date().toISOString(),
           type: 'thought',
-          tags: thought.tags || [],
-        },
+          tags: result.tags || [],
+          relevance_score: result.similarity || 0
+        }
       }));
+
+      return [...documents, ...thoughtDocuments];
     } catch (error) {
-      console.error('Error in searchThoughts:', error);
-      return [];
-    }
-  }
-
-  private async searchInteractions(query: RAGQuery): Promise<RAGDocument[]> {
-    try {
-      const { data, error } = await supabase
-        .from('interactions')
-        .select('*')
-        .eq('userid', query.context.userId)
-        .or(`prompt_text.ilike.%${query.query}%,ai_response.ilike.%${query.query}%`)
-        .order('createdat', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error searching interactions:', error);
-        return [];
-      }
-
-      return (data || []).map(interaction => ({
-        id: interaction.id,
-        content: `${interaction.prompt_text || ''}\n${interaction.ai_response || ''}`,
-        metadata: {
-          source: 'interactions',
-          timestamp: interaction.createdat || new Date().toISOString(),
-          type: 'interaction',
-          tags: interaction.metadata?.topic_tags || [],
-        },
-      }));
-    } catch (error) {
-      console.error('Error in searchInteractions:', error);
-      return [];
-    }
-  }
-
-  private async searchConversations(query: RAGQuery): Promise<RAGDocument[]> {
-    try {
-      const { data, error } = await supabase
-        .from('conversations')
-        .select('*')
-        .eq('userid', query.context.userId)
-        .ilike('content', `%${query.query}%`)
-        .order('createdat', { ascending: false })
-        .limit(20);
-
-      if (error) {
-        console.error('Error searching conversations:', error);
-        return [];
-      }
-
-      return (data || []).map(conversation => ({
-        id: conversation.id,
-        content: conversation.content || '',
-        metadata: {
-          source: 'conversations',
-          timestamp: conversation.createdat || new Date().toISOString(),
-          type: 'conversation',
-          tags: conversation.metadata?.topic_tags || [],
-        },
-      }));
-    } catch (error) {
-      console.error('Error in searchConversations:', error);
+      logger.error('Error retrieving documents:', error);
       return [];
     }
   }
 
   private async rankDocuments(documents: RAGDocument[], query: RAGQuery): Promise<RAGDocument[]> {
-    // Simple ranking based on content similarity and recency
-    return documents.map(doc => ({
-      ...doc,
-      metadata: {
-        ...doc.metadata,
-        relevance_score: this.calculateRelevanceScore(doc, query),
-      },
-    })).sort((a, b) => (b.metadata.relevance_score || 0) - (a.metadata.relevance_score || 0));
-  }
-
-  private calculateRelevanceScore(document: RAGDocument, query: RAGQuery): number {
-    let score = 0;
-    
-    // Content similarity (simple keyword matching)
-    const queryWords = query.query.toLowerCase().split(' ');
-    const contentWords = document.content.toLowerCase().split(' ');
-    const matchingWords = queryWords.filter(word => contentWords.includes(word));
-    score += (matchingWords.length / queryWords.length) * 0.5;
-    
-    // Recency bonus
-    const docDate = new Date(document.metadata.timestamp);
-    const daysSince = (Date.now() - docDate.getTime()) / (1000 * 60 * 60 * 24);
-    score += Math.max(0, 1 - daysSince / 30) * 0.3;
-    
-    // Context relevance
-    if (query.context.currentTopic && document.metadata.tags?.includes(query.context.currentTopic)) {
-      score += 0.2;
+    try {
+      // Sort by relevance score (already done by vector search)
+      return documents.sort((a, b) => 
+        (b.metadata.relevance_score || 0) - (a.metadata.relevance_score || 0)
+      );
+    } catch (error) {
+      logger.error('Error ranking documents:', error);
+      return documents;
     }
-    
-    return Math.min(1, score);
   }
 
   private applyThreshold(documents: RAGDocument[], threshold: number): RAGDocument[] {
@@ -240,27 +169,82 @@ class ContextualRAG {
       // For now, return a simple response based on the context
       return `Based on your previous interactions and thoughts, here's what I found:\n\n${contextText.substring(0, 500)}...`;
     } catch (error) {
-      console.error('Error generating contextual response:', error);
+      logger.error('Error generating contextual response:', error);
       return "I'm having trouble accessing your contextual information right now. Please try again.";
     }
   }
 
   async updateUserContext(userId: string, context: Partial<RAGContext>): Promise<void> {
     try {
-      // Store user context for future queries
-      const { error } = await supabase
-        .from('user_contexts')
-        .upsert({
-          userid: userId,
-          context_data: context,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        console.error('Error updating user context:', error);
-      }
+      // Store user context in database
+      await insertOne('user_context', {
+        user_id: userId,
+        context_data: context,
+        updated_at: new Date().toISOString()
+      });
     } catch (error) {
-      console.error('Error in updateUserContext:', error);
+      logger.error('Error updating user context:', error);
+    }
+  }
+
+  async storeDocument(
+    userId: string,
+    content: string,
+    metadata: {
+      title?: string;
+      source?: string;
+      type?: string;
+      tags?: string[];
+      companyId?: string;
+    }
+  ): Promise<void> {
+    try {
+      // Store document with embedding
+      await vectorSearch.insertDocumentWithEmbedding({
+        title: metadata.title || 'Document',
+        content,
+        embedding: [], // Will be generated by the database trigger
+        user_id: userId,
+        company_id: metadata.companyId,
+        tags: metadata.tags,
+        metadata: {
+          source: metadata.source || 'user_input',
+          type: metadata.type || 'document',
+          ...metadata
+        }
+      });
+    } catch (error) {
+      logger.error('Error storing document:', error);
+    }
+  }
+
+  async storeThought(
+    userId: string,
+    content: string,
+    metadata: {
+      title?: string;
+      category?: string;
+      tags?: string[];
+      companyId?: string;
+    }
+  ): Promise<void> {
+    try {
+      // Store thought with embedding
+      await vectorSearch.insertThoughtWithEmbedding({
+        title: metadata.title || 'Thought',
+        content,
+        embedding: [], // Will be generated by the database trigger
+        user_id: userId,
+        company_id: metadata.companyId,
+        category: metadata.category,
+        tags: metadata.tags,
+        metadata: {
+          type: 'thought',
+          ...metadata
+        }
+      });
+    } catch (error) {
+      logger.error('Error storing thought:', error);
     }
   }
 }

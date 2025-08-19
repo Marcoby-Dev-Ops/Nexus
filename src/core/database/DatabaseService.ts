@@ -8,7 +8,7 @@ import { UnifiedDatabaseService } from '@/core/services/UnifiedDatabaseService';
 import { BaseService } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { userMappingService } from '@/shared/services/UserMappingService';
+
 
 export interface DatabaseProfile {
   id?: string;
@@ -63,27 +63,21 @@ export class DatabaseService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logger.info('Getting user profile', { userId });
       
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        this.logger.error('Failed to get internal user ID for user profile', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return { data: null, error: internalUserIdResponse.error || 'Failed to get internal user ID' };
-      }
-
-      const internalUserId = internalUserIdResponse.data;
-      
-      const result = await this.unifiedDatabaseService.selectOne<DatabaseProfile>('user_profiles', internalUserId);
+      // Use the ensure_user_profile RPC function which handles mapping and profile creation
+      const result = await this.unifiedDatabaseService.callRPC('ensure_user_profile', { user_id: userId });
       
       if (result.error) {
-        this.logger.error('Failed to get user profile', { userId, internalUserId, error: result.error });
+        this.logger.error('Failed to get user profile', { userId, error: result.error });
         return { data: null, error: result.error || 'Failed to fetch user profile' };
       }
 
-      this.logger.info('Successfully retrieved user profile', { userId, internalUserId });
-      return { data: result.data, error: null };
+      // RPC returns an array, but we want a single record
+      if (!result.data || result.data.length === 0) {
+        return { data: null, error: 'User profile not found' };
+      }
+
+      this.logger.info('Successfully retrieved user profile', { userId });
+      return { data: result.data[0], error: null };
     }, 'get user profile');
   }
 
@@ -94,21 +88,8 @@ export class DatabaseService extends BaseService {
     try {
       logger.info('Updating user profile', { userId, fields: Object.keys(profileData) });
       
-      // Get internal user ID from external user ID
-      const internalUserIdResponse = await userMappingService.getInternalUserId(userId);
-      if (!internalUserIdResponse.success || !internalUserIdResponse.data) {
-        logger.error('Failed to get internal user ID for user profile update', { 
-          externalUserId: userId, 
-          error: internalUserIdResponse.error 
-        });
-        return {
-          success: false,
-          error: internalUserIdResponse.error || 'Failed to get internal user ID',
-          data: null,
-        };
-      }
-
-      const internalUserId = internalUserIdResponse.data;
+      // Use external user ID directly
+      const internalUserId = userId;
       
       const updateData = {
         ...profileData,

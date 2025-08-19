@@ -7,7 +7,7 @@ import { Progress } from '@/shared/components/ui/Progress';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { TrendingUp, TrendingDown, Star, DollarSign, Activity, AlertTriangle, CheckCircle, Clock, Target, BarChart3, PieChart, LineChart } from 'lucide-react';
 import { AIService } from '@/services/ai';
-import { BillingService } from '@/services/business';
+import { financialService } from '@/services/core';
 
 interface ImprovementDashboardProps {
   userId: string;
@@ -38,7 +38,7 @@ export const ContinuousImprovementDashboard: React.FC<ImprovementDashboardProps>
         recommendationData
       ] = await Promise.all([
         continuousImprovementService.getImprovementDashboard(timeframe),
-        billingService.getBillingStatus(userId),
+        financialService.getBillingStatus(userId),
         continuousImprovementService.generateImprovementRecommendations()
       ]);
 

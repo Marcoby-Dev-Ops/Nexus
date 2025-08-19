@@ -32,6 +32,8 @@ export const useBackendConnector = () => {
 
   const heartbeatIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastCheckTimeRef = useRef<number>(0);
+  const minCheckInterval = 30000; // Minimum 30 seconds between checks
 
   const checkConnection = useCallback(async () => {
     if (!user?.id) {
@@ -44,6 +46,16 @@ export const useBackendConnector = () => {
       logger.warn('useBackendConnector: Invalid user ID for connection check', { userId: user.id });
       return false;
     }
+
+    // Debounce: prevent too frequent checks
+    const now = Date.now();
+    if (now - lastCheckTimeRef.current < minCheckInterval) {
+      logger.debug('useBackendConnector: Skipping check due to debounce', { 
+        timeSinceLastCheck: now - lastCheckTimeRef.current 
+      });
+      return state.status.connected; // Return current status
+    }
+    lastCheckTimeRef.current = now;
 
     try {
       const startTime = Date.now();
@@ -91,7 +103,7 @@ export const useBackendConnector = () => {
       }));
       return false;
     }
-  }, [user?.id, user?.email]);
+  }, [user?.id, user?.email, state.status.connected]);
 
   const startHeartbeat = useCallback(() => {
     if (heartbeatIntervalRef.current) {
@@ -99,7 +111,7 @@ export const useBackendConnector = () => {
     }
 
     // Use longer intervals in development to reduce resource usage
-    const heartbeatInterval = process.env.NODE_ENV === 'development' ? 60000 : 30000; // 1min dev, 30s prod
+    const heartbeatInterval = process.env.NODE_ENV === 'development' ? 120000 : 60000; // 2min dev, 1min prod
     heartbeatIntervalRef.current = setInterval(async () => {
       const isConnected = await checkConnection();
       

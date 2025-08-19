@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
 import { businessHealthService } from '@/core/services/BusinessHealthService';
-import { analyticsService } from '@/services/analytics/analyticsService';
+import { analyticsService } from '@/services/core/AnalyticsService';
 import { logger } from '@/shared/utils/logger';
 
 export interface AssessmentData {

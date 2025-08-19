@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/shared/contexts/AuthContext';
-import { integrationService } from '@/services/integrations/IntegrationService';
-import type { UserIntegration, IntegrationPlatform, ConnectionResult } from '@/services/integrations/IntegrationService';
+import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
+import type { UserIntegration, IntegrationPlatform, ConnectionResult } from '@/services/integrations/consolidatedIntegrationService';
 import { logger } from '@/shared/utils/logger';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -31,7 +31,7 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
       setLoading(true);
       setError(null);
 
-      const { data: userIntegrations, error: integrationsError } = await integrationService.getUserIntegrations(user.id);
+      const { data: userIntegrations, error: integrationsError } = await consolidatedIntegrationService.getUserIntegrations(user.id);
       
       if (integrationsError) {
         throw new Error(integrationsError);
@@ -53,7 +53,7 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
   // Load available platforms
   const loadAvailablePlatforms = useCallback(async () => {
     try {
-      const { data: platforms, error: platformsError } = await integrationService.getAvailablePlatforms();
+      const { data: platforms, error: platformsError } = await consolidatedIntegrationService.getAvailablePlatforms();
       
       if (platformsError) {
         throw new Error(platformsError);
@@ -88,7 +88,7 @@ export const IntegrationManager: React.FC<IntegrationManagerProps> = ({
         expires_at: new Date(Date.now() + 3600000).toISOString()
       };
 
-      const { data: result, error } = await integrationService.connectIntegration(user.id, platform, credentials);
+      const { data: result, error } = await consolidatedIntegrationService.connectIntegration(user.id, platform, credentials);
       
       if (error) {
         throw new Error(error);

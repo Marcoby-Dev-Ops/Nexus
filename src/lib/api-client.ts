@@ -66,6 +66,7 @@ export interface ApiResponse<T = any> {
 export interface RPCResult<T = any> {
   data: T | null;
   error: any;
+  success: boolean;
 }
 
 /**
@@ -87,9 +88,9 @@ export async function callRPC<T>(
     }
     
     const result = await response.json();
-    return { data: result.data, error: result.error };
+    return { data: result.data, error: result.error, success: result.success };
   } catch (error) {
-    return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
+    return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
   }
 }
 
@@ -104,6 +105,33 @@ export async function callEdgeFunction<T>(
     const response = await fetch(`http://localhost:3001/api/edge/${functionName}`, {
       method: 'POST',
       headers: await getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    return result.data;
+  } catch (error) {
+    throw new Error(error instanceof Error ? error.message : 'Unknown error');
+  }
+}
+
+/**
+ * Call edge function via Express server API without authentication
+ */
+export async function callPublicEdgeFunction<T>(
+  functionName: string,
+  payload?: Record<string, unknown>
+): Promise<T> {
+  try {
+    const response = await fetch(`http://localhost:3001/api/edge/${functionName}/public`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(payload),
     });
     

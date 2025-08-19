@@ -1,7 +1,7 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { AIGateway, type GatewayConfig } from '../lib/AIGateway';
-import type { LLMRequest, LLMResponse, ModelRole, Sensitivity, Provider } from '../types';
+import type { GatewayConfig } from '../lib/AIGateway';
+import type { ModelRole, Sensitivity, Provider } from '../types';
 import { logger } from '@/shared/utils/logger';
 
 export interface ChatMessage {
@@ -63,42 +63,56 @@ export interface RerankResponse {
 }
 
 export class NexusAIGatewayService extends BaseService {
-  private gateway: AIGateway;
+  private config: GatewayConfig;
+  private apiBaseUrl: string;
 
   constructor(config: GatewayConfig = {}) {
     super();
-    this.gateway = new AIGateway(config);
+    this.config = config;
+    // Use the server API endpoint for AI operations
+    this.apiBaseUrl = import.meta.env.VITE_AI_CHAT_URL?.replace('/api/ai/chat', '') || 'http://localhost:3001';
   }
 
   /**
-   * Chat with AI using intelligent model routing
+   * Chat with AI using server API
    */
   public async chat(request: ChatRequest): Promise<ServiceResponse<ChatResponse>> {
     try {
-      const llmRequest: LLMRequest = {
-        task: 'chat',
-        role: request.role || 'chat',
-        input: this.formatChatInput(request.messages),
-        system: request.system,
-        tools: request.tools,
-        json: request.json,
-        tenantId: request.tenantId,
-        sensitivity: request.sensitivity || 'internal',
-        budgetCents: request.budgetCents,
-        latencyTargetMs: request.latencyTargetMs,
-      };
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: request.messages,
+          system: request.system,
+          role: request.role || 'chat',
+          sensitivity: request.sensitivity || 'internal',
+          budgetCents: request.budgetCents,
+          latencyTargetMs: request.latencyTargetMs,
+          json: request.json,
+          tools: request.tools,
+          tenantId: request.tenantId,
+          userId: request.userId,
+        }),
+      });
 
-      const response = await this.gateway.call<string>(llmRequest);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
+      const data = await response.json();
+      
       return {
         success: true,
         data: {
-          message: response.output,
-          model: response.model,
-          provider: response.provider,
-          costCents: response.costCents,
-          tokens: response.tokens,
-          latencyMs: response.latencyMs,
+          message: data.message,
+          model: data.model,
+          provider: data.provider,
+          costCents: data.costCents,
+          tokens: data.tokens,
+          latencyMs: data.latencyMs,
         },
       };
     } catch (error) {
@@ -111,29 +125,37 @@ export class NexusAIGatewayService extends BaseService {
   }
 
   /**
-   * Generate embeddings for text
+   * Generate embeddings for text using server API
    */
   public async generateEmbeddings(request: EmbeddingRequest): Promise<ServiceResponse<EmbeddingResponse>> {
     try {
-      const llmRequest: LLMRequest = {
-        task: 'embed',
-        role: 'embed',
-        input: request.text,
-        tenantId: request.tenantId,
-        sensitivity: 'internal',
-        model: request.model,
-      };
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/embeddings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: request.text,
+          model: request.model,
+          tenantId: request.tenantId,
+        }),
+      });
 
-      const response = await this.gateway.call<number[]>(llmRequest);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
+      const data = await response.json();
+      
       return {
         success: true,
         data: {
-          embedding: response.output,
-          model: response.model,
-          provider: response.provider,
-          tokens: response.tokens,
-          latencyMs: response.latencyMs,
+          embedding: data.embedding,
+          model: data.model,
+          provider: data.provider,
+          tokens: data.tokens,
+          latencyMs: data.latencyMs,
         },
       };
     } catch (error) {
@@ -180,7 +202,7 @@ export class NexusAIGatewayService extends BaseService {
   }
 
   /**
-   * Analyze business data with AI
+   * Analyze business data with AI using server API
    */
   public async analyzeBusinessData(
     data: any,
@@ -191,21 +213,31 @@ export class NexusAIGatewayService extends BaseService {
     try {
       const systemPrompt = this.getAnalysisSystemPrompt(analysisType);
       
-      const llmRequest: LLMRequest = {
-        task: `business.analysis.${analysisType}`,
-        role: 'reasoning',
-        input: JSON.stringify(data),
-        system: systemPrompt,
-        json: true,
-        tenantId,
-        sensitivity: 'internal',
-      };
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: JSON.stringify(data) }],
+          system: systemPrompt,
+          role: 'reasoning',
+          json: true,
+          tenantId,
+          userId,
+        }),
+      });
 
-      const response = await this.gateway.call<any>(llmRequest);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
+      const responseData = await response.json();
+      
       return {
         success: true,
-        data: response.output,
+        data: responseData.message,
       };
     } catch (error) {
       logger.error('Business analysis failed:', error);
@@ -217,7 +249,7 @@ export class NexusAIGatewayService extends BaseService {
   }
 
   /**
-   * Generate business recommendations
+   * Generate business recommendations using server API
    */
   public async generateRecommendations(
     context: string,
@@ -228,21 +260,31 @@ export class NexusAIGatewayService extends BaseService {
     try {
       const systemPrompt = this.getRecommendationSystemPrompt(recommendationType);
       
-      const llmRequest: LLMRequest = {
-        task: `business.recommendations.${recommendationType}`,
-        role: 'reasoning',
-        input: context,
-        system: systemPrompt,
-        json: true,
-        tenantId,
-        sensitivity: 'internal',
-      };
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: context }],
+          system: systemPrompt,
+          role: 'reasoning',
+          json: true,
+          tenantId,
+          userId,
+        }),
+      });
 
-      const response = await this.gateway.call<any>(llmRequest);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
+      const responseData = await response.json();
+      
       return {
         success: true,
-        data: response.output,
+        data: responseData.message,
       };
     } catch (error) {
       logger.error('Recommendation generation failed:', error);
@@ -254,7 +296,7 @@ export class NexusAIGatewayService extends BaseService {
   }
 
   /**
-   * Draft business documents
+   * Draft business documents using server API
    */
   public async draftDocument(
     content: string,
@@ -266,20 +308,30 @@ export class NexusAIGatewayService extends BaseService {
     try {
       const systemPrompt = this.getDocumentSystemPrompt(documentType, tone);
       
-      const llmRequest: LLMRequest = {
-        task: `document.draft.${documentType}`,
-        role: 'draft',
-        input: content,
-        system: systemPrompt,
-        tenantId,
-        sensitivity: 'internal',
-      };
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content }],
+          system: systemPrompt,
+          role: 'draft',
+          tenantId,
+          userId,
+        }),
+      });
 
-      const response = await this.gateway.call<string>(llmRequest);
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
+      const responseData = await response.json();
+      
       return {
         success: true,
-        data: response.output,
+        data: responseData.message,
       };
     } catch (error) {
       logger.error('Document drafting failed:', error);
@@ -291,41 +343,110 @@ export class NexusAIGatewayService extends BaseService {
   }
 
   /**
-   * Get usage statistics
+   * Get usage statistics using server API
    */
-  public getUsageStats(tenantId?: string, timeRange?: { start: Date; end: Date }) {
-    return this.gateway.getUsageStats(tenantId, timeRange);
+  public async getUsageStats(tenantId?: string, timeRange?: { start: Date; end: Date }) {
+    try {
+      const params = new URLSearchParams();
+      if (tenantId) params.append('tenantId', tenantId);
+      if (timeRange) {
+        params.append('start', timeRange.start.toISOString());
+        params.append('end', timeRange.end.toISOString());
+      }
+
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/usage?${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      logger.error('Usage stats failed:', error);
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   }
 
   /**
-   * Get available models
+   * Get available models using server API
    */
-  public getAvailableModels(role?: string) {
-    return this.gateway.getAvailableModels(role);
+  public async getAvailableModels(role?: string) {
+    try {
+      const params = role ? `?role=${role}` : '';
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/models${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      logger.error('Models fetch failed:', error);
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   }
 
   /**
-   * Test provider connections
+   * Test provider connections using server API
    */
   public async testConnections() {
-    return this.gateway.testConnections();
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      logger.error('Connection test failed:', error);
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   }
 
   /**
-   * Get provider health status
+   * Get provider health status using server API
    */
   public async getProviderHealth() {
-    return this.gateway.getProviderHealth();
+    try {
+      const response = await fetch(`${this.apiBaseUrl}/api/ai/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      logger.error('Health check failed:', error);
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
   }
 
-  /**
-   * Format chat messages for LLM input
-   */
-  private formatChatInput(messages: ChatMessage[]): string {
-    return messages
-      .map(msg => `${msg.role}: ${msg.content}`)
-      .join('\n');
-  }
+
 
   /**
    * Get system prompt for business analysis
@@ -460,4 +581,6 @@ Keep it concise, clear, and actionable. Include:
 
     return documentPrompts[documentType as keyof typeof documentPrompts] || documentPrompts.email;
   }
+
+
 }

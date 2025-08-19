@@ -5,7 +5,7 @@
 
 import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectOne, selectData } from '@/lib/api-client';
+import { selectOne, selectData, callRPC } from '@/lib/api-client';
 
 // ============================================================================
 // INTERFACES
@@ -73,8 +73,15 @@ export class CompanyStatusService extends BaseService {
   async getCompanyStatusOverview(userId: string): Promise<ServiceResponse<CompanyStatusOverview>> {
     return this.executeDbOperation(async () => {
       try {
-        // Get user's company ID
-        const userProfile = await selectOne('user_profiles', userId);
+        // Get user's company ID using the ensure_user_profile RPC function
+        const { data: profileData, error: profileError } = await callRPC('ensure_user_profile', { user_id: userId });
+        
+        if (profileError || !profileData || profileData.length === 0) {
+          this.logger.error('Failed to get user profile', { userId, error: profileError });
+          return this.createErrorResponse<CompanyStatusOverview>('Failed to get user profile');
+        }
+        
+        const userProfile = profileData[0];
         
         if (!userProfile || !(userProfile as any).company_id) {
           this.logger.info('No company found for user, returning default status', { userId });

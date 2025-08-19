@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui
 import { Target, Zap, Play, CheckCircle, Brain, Users, Calendar, BarChart3, RefreshCw, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+
 interface ActionItem {
   id: string;
   title: string;
@@ -74,10 +75,7 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
 
       setActions(allActions);
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching actions: ', error);
+      console.error('Error fetching actions: ', error);
     } finally {
       setLoading(false);
     }
@@ -87,16 +85,22 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
     const actions: ActionItem[] = [];
 
     try {
-      // Get tasks from thoughts system
-      const { data: tasks } = await supabase
-        .from('thoughts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('category', 'task')
-        .in('status', ['pending', 'in_progress', 'due'])
-        .order('created_at', { ascending: false });
+      // Get tasks from thoughts system using API client
+      const { data: tasks, error } = await select('thoughts', {
+        filters: {
+          user_id: user?.id,
+          category: 'task',
+          status: ['pending', 'in_progress', 'due']
+        },
+        orderBy: { created_at: 'desc' }
+      });
 
-      if (tasks) {
+      if (error) {
+        console.error('Error fetching tasks:', error);
+        return actions;
+      }
+
+      if (tasks && Array.isArray(tasks)) {
         tasks.forEach(task => {
           actions.push({
             id: task.id,
@@ -118,10 +122,7 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
         });
       }
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching task actions: ', error);
+      console.error('Error fetching task actions: ', error);
     }
 
     return actions;
@@ -131,53 +132,54 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
     const actions: ActionItem[] = [];
 
     try {
-      // Get automation opportunities
-      const { data: integrations } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('status', 'connected');
+      // Get automation opportunities from integrations
+      const { data: integrations, error } = await select('user_integrations', {
+        filters: {
+          user_id: user?.id,
+          status: 'connected'
+        }
+      });
 
-      if (integrations) {
-        // Check for manual processes that could be automated
-        const manualProcesses = [
-          {
-            id: 'email-followup-automation',
-            title: 'Automate Email Follow-ups',
-            description: 'Set up automated follow-up sequences for leads and customers',
-            type: 'automation' as const,
-            priority: 'high' as const,
-            effort: 'moderate' as const,
-            impact: 'high' as const,
-            status: 'pending' as const,
-            estimatedTime: 120,
-            source: 'Email Integration',
-            automationPossible: true,
-            aiAssisted: true
-          },
-          {
-            id: 'data-sync-automation',
-            title: 'Automate Data Synchronization',
-            description: 'Set up automatic data sync between your connected platforms',
-            type: 'automation' as const,
-            priority: 'medium' as const,
-            effort: 'moderate' as const,
-            impact: 'medium' as const,
-            status: 'pending' as const,
-            estimatedTime: 90,
-            source: 'Integration Management',
-            automationPossible: true,
-            aiAssisted: true
-          }
-        ];
-
-        actions.push(...manualProcesses);
+      if (error) {
+        console.error('Error fetching integrations:', error);
+        return actions;
       }
+
+      // Check for manual processes that could be automated
+      const manualProcesses = [
+        {
+          id: 'email-followup-automation',
+          title: 'Automate Email Follow-ups',
+          description: 'Set up automated follow-up sequences for leads and customers',
+          type: 'automation' as const,
+          priority: 'high' as const,
+          effort: 'moderate' as const,
+          impact: 'high' as const,
+          status: 'pending' as const,
+          estimatedTime: 120,
+          source: 'Email Integration',
+          automationPossible: true,
+          aiAssisted: true
+        },
+        {
+          id: 'data-sync-automation',
+          title: 'Automate Data Synchronization',
+          description: 'Set up automatic data sync between your connected platforms',
+          type: 'automation' as const,
+          priority: 'medium' as const,
+          effort: 'moderate' as const,
+          impact: 'medium' as const,
+          status: 'pending' as const,
+          estimatedTime: 90,
+          source: 'Integration Management',
+          automationPossible: true,
+          aiAssisted: true
+        }
+      ];
+
+      actions.push(...manualProcesses);
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching automation actions: ', error);
+      console.error('Error fetching automation actions: ', error);
     }
 
     return actions;
@@ -187,39 +189,41 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
     const actions: ActionItem[] = [];
 
     try {
-      // Removed business_profiles dependency - using default decision actions
-      actions.push({
-        id: 'revenue-strategy-decision',
-        title: 'Decide on Revenue Strategy',
-        description: 'Choose between pricing optimization, new markets, or product expansion',
-        type: 'decision',
-        priority: 'critical',
-        effort: 'intensive',
-        impact: 'high',
-        status: 'pending',
-        estimatedTime: 180,
-        source: 'Business Analytics',
-        aiAssisted: true
+      // Get pending decisions from thoughts system
+      const { data: decisions, error } = await select('thoughts', {
+        filters: {
+          user_id: user?.id,
+          category: 'decision',
+          status: 'pending'
+        },
+        orderBy: { created_at: 'desc' }
       });
 
-      actions.push({
-        id: 'customer-experience-decision',
-        title: 'Improve Customer Experience',
-        description: 'Decide on customer service improvements or product enhancements',
-        type: 'decision',
-        priority: 'high',
-        effort: 'moderate',
-        impact: 'high',
-        status: 'pending',
-        estimatedTime: 120,
-        source: 'Customer Analytics',
-        aiAssisted: true
-      });
+      if (error) {
+        console.error('Error fetching decisions:', error);
+        return actions;
+      }
+
+      if (decisions && Array.isArray(decisions)) {
+        decisions.forEach(decision => {
+          actions.push({
+            id: decision.id,
+            title: decision.content,
+            description: `Decision needed: ${decision.context || 'business decision'}`,
+            type: 'decision',
+            priority: decision.priority || 'medium',
+            effort: 'quick',
+            impact: 'high',
+            status: decision.status as any,
+            estimatedTime: 30,
+            source: 'Decision Management',
+            context: decision.department,
+            aiAssisted: true
+          });
+        });
+      }
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching decision actions: ', error);
+      console.error('Error fetching decision actions: ', error);
     }
 
     return actions;
@@ -229,126 +233,108 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
     const actions: ActionItem[] = [];
 
     try {
-      // Get upcoming meetings and required preparations
-      const { data: meetings } = await supabase
-        .from('calendar_events')
-        .select('*')
-        .eq('user_id', user?.id)
-        .gte('start_time', new Date().toISOString())
-        .lte('start_time', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
-        .order('start_time', { ascending: true });
+      // Get scheduled meetings and follow-ups
+      const { data: meetings, error } = await select('thoughts', {
+        filters: {
+          user_id: user?.id,
+          category: 'meeting',
+          status: ['pending', 'scheduled']
+        },
+        orderBy: { created_at: 'desc' }
+      });
 
-      if (meetings) {
+      if (error) {
+        console.error('Error fetching meetings:', error);
+        return actions;
+      }
+
+      if (meetings && Array.isArray(meetings)) {
         meetings.forEach(meeting => {
           actions.push({
-            id: `meeting-prep-${meeting.id}`,
-            title: `Prepare for: ${meeting.title}`,
-            description: `Meeting scheduled for ${new Date(meeting.start_time).toLocaleDateString()}`,
+            id: meeting.id,
+            title: meeting.content,
+            description: `Meeting: ${meeting.context || 'team meeting'}`,
             type: 'meeting',
             priority: meeting.priority || 'medium',
-            effort: 'quick',
+            effort: 'moderate',
             impact: 'medium',
-            status: 'pending',
-            dueDate: new Date(meeting.start_time),
-            estimatedTime: 30,
+            status: meeting.status as any,
+            dueDate: meeting.due_date ? new Date(meeting.due_date) : undefined,
+            estimatedTime: 60,
             source: 'Calendar',
+            context: meeting.department,
             aiAssisted: true
           });
         });
       }
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching meeting actions: ', error);
+      console.error('Error fetching meeting actions: ', error);
     }
 
     return actions;
   };
 
-  const getActionIcon = (type: ActionItem['type']) => {
+  const handleStartAction = async (action: ActionItem) => {
+    try {
+      // Update action status to in_progress
+      if (action.id.startsWith('email-followup-automation') || action.id.startsWith('data-sync-automation')) {
+        // Handle automation actions
+        console.log('Starting automation:', action.title);
+        // You can add automation logic here
+      } else {
+        // Update task/decision/meeting status
+        const { error } = await updateOne('thoughts', action.id, {
+          status: 'in_progress',
+          updated_at: new Date().toISOString()
+        });
+
+        if (error) {
+          console.error('Error updating action status:', error);
+        } else {
+          // Refresh actions
+          fetchActions();
+        }
+      }
+    } catch (error) {
+      console.error('Error starting action:', error);
+    }
+  };
+
+  const getActionIcon = (type: string) => {
     switch (type) {
-      case 'task': return <CheckCircle className="w-4 h-4" />;
+      case 'task': return <Target className="w-4 h-4" />;
       case 'automation': return <Zap className="w-4 h-4" />;
       case 'decision': return <Brain className="w-4 h-4" />;
       case 'meeting': return <Users className="w-4 h-4" />;
       case 'analysis': return <BarChart3 className="w-4 h-4" />;
-      case 'optimization': return <TrendingUp className="w-4 h-4" />;
       default: return <Target className="w-4 h-4" />;
     }
   };
 
-  const getPriorityColor = (priority: ActionItem['priority']) => {
+  const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'critical': return 'text-red-600 bg-red-50 border-red-200';
+      case 'high': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'medium': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'low': return 'text-green-600 bg-green-50 border-green-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
-  const getEffortColor = (effort: ActionItem['effort']) => {
+  const getEffortColor = (effort: string) => {
     switch (effort) {
-      case 'quick': return 'text-green-600';
-      case 'moderate': return 'text-yellow-600';
-      case 'intensive': return 'text-red-600';
-      default: return 'text-gray-600';
-    }
-  };
-
-  const handleStartAction = async (action: ActionItem) => {
-    try {
-      // Update action status to in_progress
-      if (action.type === 'task') {
-        await supabase
-          .from('thoughts')
-          .update({ status: 'in_progress' })
-          .eq('id', action.id);
-      }
-
-      // Navigate to appropriate workspace
-      switch (action.type) {
-        case 'task':
-          window.location.href = '/knowledge/thoughts';
-          break;
-        case 'automation':
-          window.location.href = '/workspace/automation';
-          break;
-        case 'decision':
-          window.location.href = '/workspace/decision-support';
-          break;
-        case 'meeting':
-          window.location.href = '/workspace/calendar';
-          break;
-        default: window.location.href = '/workspace';
-      }
-    } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error starting action: ', error);
+      case 'quick': return 'text-green-600 bg-green-50 border-green-200';
+      case 'moderate': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'intensive': return 'text-red-600 bg-red-50 border-red-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
   const filteredActions = actions.filter(action => {
-    if (selectedTab !== 'all' && action.type !== selectedTab) return false;
-    if (filterPriority !== 'all' && action.priority !== filterPriority) return false;
-    return true;
+    const matchesTab = selectedTab === 'all' || action.type === selectedTab;
+    const matchesPriority = filterPriority === 'all' || action.priority === filterPriority;
+    return matchesTab && matchesPriority;
   });
-
-  const getTabLabel = (type: string) => {
-    switch (type) {
-      case 'all': return 'All Actions';
-      case 'task': return 'Tasks';
-      case 'automation': return 'Automation';
-      case 'decision': return 'Decisions';
-      case 'meeting': return 'Meetings';
-      case 'analysis': return 'Analysis';
-      case 'optimization': return 'Optimization';
-      default: return type;
-    }
-  };
 
   if (loading) {
     return (
@@ -420,7 +406,7 @@ export const ActionCenter: React.FC<ActionCenterProps> = ({ className = '' }) =>
                 </div>
               ) : (
                 filteredActions.map((action) => (
-                  <div key={action.id} className="border rounded-lg p-4 hover: bg-muted/50 transition-colors">
+                  <div key={action.id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-full bg-primary/10 text-primary">

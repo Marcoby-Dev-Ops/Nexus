@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authentikAuthService } from '@/core/auth/AuthentikAuthService';
 import { useAuthentikAuth } from '@/shared/contexts/AuthentikAuthContext';
 import { logger } from '@/shared/utils/logger';
+import SignupCompletion from '@/components/auth/SignupCompletion';
 
 /**
  * AuthentikAuthCallback - Handles OAuth2 redirects from Authentik
@@ -13,6 +14,8 @@ export default function AuthentikAuthCallback() {
   const [searchParams] = useSearchParams();
   const [processing, setProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [showCompletion, setShowCompletion] = useState(false);
   const hasProcessed = useRef(false);
   const { refreshAuth } = useAuthentikAuth();
 
@@ -86,16 +89,26 @@ export default function AuthentikAuthCallback() {
          await refreshAuth();
          logger.info('🔍 [AuthentikAuthCallback] refreshAuth completed');
          
-         // Get the next parameter from URL or default to home
-         const next = searchParams.get('next') || '/home';
-         logger.info('🔍 [AuthentikAuthCallback] Redirecting to:', next);
+         // Check if this is a new user (you can implement your own logic here)
+         // For now, we'll check if the user came from the signup flow
+         const isFromSignup = searchParams.get('signup') === 'true';
          
-         // Add a small delay to ensure authentication state is properly updated
-         // but reduce it to minimize user wait time
-         setTimeout(() => {
-           logger.info('🔍 [AuthentikAuthCallback] Executing navigation to:', next);
-           navigate(next, { replace: true });
-         }, 500);
+         if (isFromSignup) {
+           logger.info('🔍 [AuthentikAuthCallback] New user detected, showing completion flow');
+           setIsNewUser(true);
+           setShowCompletion(true);
+           setProcessing(false);
+         } else {
+           // Get the next parameter from URL or default to home
+           const next = searchParams.get('next') || '/home';
+           logger.info('🔍 [AuthentikAuthCallback] Redirecting to:', next);
+           
+           // Add a small delay to ensure authentication state is properly updated
+           setTimeout(() => {
+             logger.info('🔍 [AuthentikAuthCallback] Executing navigation to:', next);
+             navigate(next, { replace: true });
+           }, 500);
+         }
         
       } catch (error) {
         logger.error('Unexpected error during OAuth callback:', error);
@@ -138,6 +151,18 @@ export default function AuthentikAuthCallback() {
           </button>
         </div>
       </div>
+    );
+  }
+
+  // Show signup completion flow for new users
+  if (showCompletion && isNewUser) {
+    return (
+      <SignupCompletion 
+        onComplete={() => {
+          setShowCompletion(false);
+          navigate('/dashboard', { replace: true });
+        }}
+      />
     );
   }
 

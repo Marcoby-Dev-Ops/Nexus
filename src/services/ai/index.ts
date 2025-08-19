@@ -14,4 +14,14 @@ export { MultiModalIntelligence } from './multiModalIntelligence';
 export { NexusAIGatewayService } from '@/ai/services/NexusAIGatewayService';
 export { CrossDepartmentalContext } from './crossDepartmentalContext';
 export { ContextualDataCompletionService } from './contextualDataCompletionService';
+export { aiFormAssistanceService } from './AIFormAssistanceService';
 export { AIAgentWithTools } from './aiAgentWithTools';
+
+// Export types for AI Form Assistance
+export type {
+  FormAssistanceSession,
+  FormSuggestion,
+  FormAssistanceContext,
+  FieldSuggestionRequest,
+  FormCompletionResult
+} from './AIFormAssistanceService';

@@ -1,253 +1,413 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { createError } = require('../middleware/errorHandler');
-const { logger } = require('../utils/logger');
 const { query } = require('../database/connection');
+const { logger } = require('../utils/logger');
 
 const router = express.Router();
 
-// POST /api/rpc/test/:functionName - Test RPC function without authentication
-router.post('/test/:functionName', async (req, res) => {
+/**
+ * POST /api/rpc/:function - Execute RPC function
+ */
+router.post('/:function', authenticateToken, async (req, res) => {
   try {
-    const { functionName } = req.params;
+    const { function: functionName } = req.params;
     const params = req.body;
+    const userId = req.user.id;
 
-    logger.info('Calling test RPC function', { functionName, params });
+    // Validate function name
+    const allowedFunctions = [
+      'match_documents',
+      'match_thoughts',
+      'get_user_profile',
+      'ensure_user_profile',
+      'get_company_data',
+      'get_business_metrics',
+      'get_next_best_actions',
+      'get_user_integrations',
+      'get_required_onboarding_steps'
+    ];
 
-    // Build the function call based on the function name and parameters
-    let queryText;
-    let queryParams = [];
+    if (!allowedFunctions.includes(functionName)) {
+      throw createError(`Function '${functionName}' not allowed`, 400);
+    }
+
+    let result;
 
     switch (functionName) {
-      case 'ensure_user_profile':
-        if (!params.user_id) {
-          throw createError('user_id parameter is required', 400);
-        }
-        
-        // Step 1: Get internal user ID from user_mappings (Authentik → Nexus mapping)
-        const userMappingQuery = 'SELECT internal_user_id FROM user_mappings WHERE external_user_id = $1';
-        const { data: userMappings, error: userMappingError } = await query(userMappingQuery, [params.user_id]);
-        
-        if (userMappingError) {
-          logger.error('Failed to get user mapping from user_mappings', { 
-            error: userMappingError, 
-            externalUserId: params.user_id 
-          });
-          throw createError(`Failed to get user mapping: ${userMappingError}`, 500);
-        }
-        
-        if (!userMappings || userMappings.length === 0) {
-          throw createError('User mapping not found in user_mappings table', 404);
-        }
-        
-        const internalUserId = userMappings[0].internal_user_id;
-        logger.info('Found user mapping in user_mappings table', { externalUserId: params.user_id, internalUserId });
-        
-        // Step 2: Check if profile exists
-        const profileCheckQuery = 'SELECT * FROM user_profiles WHERE user_id = $1';
-        const { data: existingProfiles, error: profileCheckError } = await query(profileCheckQuery, [internalUserId]);
-        
-        if (profileCheckError) {
-          logger.error('Failed to check user profile', { error: profileCheckError, internalUserId });
-          throw createError(`Failed to check user profile: ${profileCheckError}`, 500);
-        }
-        
-        let profileData;
-        
-        if (existingProfiles && existingProfiles.length > 0) {
-          // Profile exists, return it
-          profileData = existingProfiles[0];
-        } else {
-          // Profile doesn't exist, create it
-          const createProfileQuery = `
-            INSERT INTO user_profiles (user_id, created_at, updated_at)
-            VALUES ($1, NOW(), NOW())
-            RETURNING *
-          `;
-          const { data: newProfiles, error: createError } = await query(createProfileQuery, [internalUserId]);
-          
-          if (createError) {
-            logger.error('Failed to create user profile', { error: createError, internalUserId });
-            throw createError(`Failed to create user profile: ${createError}`, 500);
-          }
-          
-          if (!newProfiles || newProfiles.length === 0) {
-            throw createError('Failed to create user profile', 500);
-          }
-          
-          profileData = newProfiles[0];
-        }
-        
-        logger.info('User profile ensured successfully', { externalUserId: params.user_id, internalUserId, profileId: profileData.id });
-        
-        res.json({
-          success: true,
-          data: [profileData]
-        });
-        return;
+      case 'match_documents':
+        result = await matchDocuments(params, userId);
+        break;
+      
+      case 'match_thoughts':
+        result = await matchThoughts(params, userId);
+        break;
       
       case 'get_user_profile':
-        if (!params.user_id) {
-          throw createError('user_id parameter is required', 400);
+        result = await getUserProfile(userId);
+        break;
+      
+      case 'ensure_user_profile':
+        // Handle both parameter names: user_id (from App.tsx) and external_user_id (from UserService)
+        const externalUserId = params.external_user_id || params.user_id || req.user.id;
+        
+        // Security check: only allow if the target ID matches the authenticated user's ID
+        if (externalUserId !== req.user.id) {
+          throw createError('Unauthorized: Can only ensure profile for authenticated user', 403);
         }
-        queryText = 'SELECT get_user_profile($1)';
-        queryParams = [params.user_id];
+        
+        result = await ensureUserProfile(externalUserId);
+        break;
+      
+      case 'get_company_data':
+        result = await getCompanyData(userId);
+        break;
+      
+      case 'get_business_metrics':
+        result = await getBusinessMetrics(userId, params);
+        break;
+      
+      case 'get_next_best_actions':
+        result = await getNextBestActions(userId, params);
+        break;
+      
+            case 'get_user_integrations':
+        result = await getUserIntegrations(userId);
         break;
       
       case 'get_required_onboarding_steps':
-        queryText = 'SELECT get_required_onboarding_steps()';
-        queryParams = [];
+        result = await getRequiredOnboardingSteps();
         break;
       
       default:
-        throw createError(`Unsupported RPC function: ${functionName}`, 400);
+        throw createError(`Function '${functionName}' not implemented`, 501);
     }
 
-    // Only execute query for non-ensure_user_profile functions
-    if (functionName !== 'ensure_user_profile') {
-      const { data, error } = await query(queryText, queryParams);
+    res.json({
+      success: true,
+      data: result
+    });
 
-      if (error) {
-        logger.error('RPC function error', { functionName, error, params });
-        throw createError(`RPC error: ${error}`, 400);
-      }
-
-      logger.info('RPC function completed successfully', { functionName, params });
-
-      res.json({
-        success: true,
-        data
-      });
-    }
   } catch (error) {
-    logger.error('Error in test RPC route', { error: error.message, functionName: req.params.functionName });
-    res.status(500).json({
+    logger.error('RPC function error:', error);
+    res.status(error.status || 500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error.message || 'RPC function failed'
     });
   }
 });
 
-// POST /api/rpc/:functionName - Call RPC function
-router.post('/:functionName', authenticateToken, async (req, res) => {
-  try {
-    const { functionName } = req.params;
-    const params = req.body;
+/**
+ * Match documents by vector similarity
+ */
+async function matchDocuments(params, userId) {
+  const { query_embedding, match_count = 5, filter = {} } = params;
 
-    logger.info('Calling RPC function', { functionName, params });
+  if (!query_embedding || !Array.isArray(query_embedding)) {
+    throw createError('query_embedding must be an array of numbers', 400);
+  }
 
-    // Build the function call based on the function name and parameters
-    let queryText;
-    let queryParams = [];
+  if (match_count < 1 || match_count > 100) {
+    throw createError('match_count must be between 1 and 100', 400);
+  }
 
-    switch (functionName) {
-      case 'ensure_user_profile':
-        if (!params.user_id) {
-          throw createError('user_id parameter is required', 400);
-        }
-        
-        // Step 1: Get internal user ID from user_mappings (Authentik → Nexus mapping)
-        const userMappingQuery = 'SELECT internal_user_id FROM user_mappings WHERE external_user_id = $1';
-        const { data: userMappings, error: userMappingError } = await query(userMappingQuery, [params.user_id]);
-        
-        if (userMappingError) {
-          logger.error('Failed to get user mapping from user_mappings', { 
-            error: userMappingError, 
-            externalUserId: params.user_id 
-          });
-          throw createError(`Failed to get user mapping: ${userMappingError}`, 500);
-        }
-        
-        if (!userMappings || userMappings.length === 0) {
-          throw createError('User mapping not found in user_mappings table', 404);
-        }
-        
-        const internalUserId = userMappings[0].internal_user_id;
-        logger.info('Found user mapping in user_mappings table', { externalUserId: params.user_id, internalUserId });
-        
-        // Step 2: Check if profile exists
-        const profileCheckQuery = 'SELECT * FROM user_profiles WHERE user_id = $1';
-        const { data: existingProfiles, error: profileCheckError } = await query(profileCheckQuery, [internalUserId]);
-        
-        if (profileCheckError) {
-          logger.error('Failed to check user profile', { error: profileCheckError, internalUserId });
-          throw createError(`Failed to check user profile: ${profileCheckError}`, 500);
-        }
-        
-        let profileData;
-        
-        if (existingProfiles && existingProfiles.length > 0) {
-          // Profile exists, return it
-          profileData = existingProfiles[0];
-        } else {
-          // Profile doesn't exist, create it
-          const createProfileQuery = `
-            INSERT INTO user_profiles (user_id, created_at, updated_at)
-            VALUES ($1, NOW(), NOW())
-            RETURNING *
-          `;
-          const { data: newProfiles, error: createError } = await query(createProfileQuery, [internalUserId]);
-          
-          if (createError) {
-            logger.error('Failed to create user profile', { error: createError, internalUserId });
-            throw createError(`Failed to create user profile: ${createError}`, 500);
-          }
-          
-          if (!newProfiles || newProfiles.length === 0) {
-            throw createError('Failed to create user profile', 500);
-          }
-          
-          profileData = newProfiles[0];
-        }
-        
-        logger.info('User profile ensured successfully', { externalUserId: params.user_id, internalUserId, profileId: profileData.id });
-        
-        res.json({
-          success: true,
-          data: [profileData]
-        });
-        return;
-      
-      case 'get_user_profile':
-        if (!params.user_id) {
-          throw createError('user_id parameter is required', 400);
-        }
-        queryText = 'SELECT get_user_profile($1)';
-        queryParams = [params.user_id];
-        break;
-      
-      case 'get_required_onboarding_steps':
-        queryText = 'SELECT get_required_onboarding_steps()';
-        queryParams = [];
-        break;
-      
-      default:
-        throw createError(`Unsupported RPC function: ${functionName}`, 400);
-    }
+  let sql = `
+    SELECT 
+      id,
+      content,
+      metadata,
+      1 - (embedding <=> $1) as similarity
+    FROM documents 
+    WHERE user_id = $2
+  `;
+  
+  let sqlParams = [query_embedding, userId];
+  let paramIndex = 3;
 
-    // Only execute query for non-ensure_user_profile functions
-    if (functionName !== 'ensure_user_profile') {
-      const { data, error } = await query(queryText, queryParams);
-
-      if (error) {
-        logger.error('RPC function error', { functionName, error, params });
-        throw createError(`RPC error: ${error}`, 400);
+  // Add additional filters
+  if (filter && Object.keys(filter).length > 0) {
+    Object.entries(filter).forEach(([key, value]) => {
+      if (key === 'metadata') {
+        sql += ` AND metadata @> $${paramIndex}`;
+        sqlParams.push(JSON.stringify(value));
+      } else {
+        sql += ` AND ${key} = $${paramIndex}`;
+        sqlParams.push(value);
       }
-
-      logger.info('RPC function completed successfully', { functionName, params });
-
-      res.json({
-        success: true,
-        data
-      });
-    }
-  } catch (error) {
-    logger.error('Error in RPC route', { error: error.message, functionName: req.params.functionName });
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      paramIndex++;
     });
   }
-});
+
+  sql += `
+    ORDER BY embedding <=> $1
+    LIMIT $${paramIndex}
+  `;
+  sqlParams.push(match_count);
+
+  const result = await query(sql, sqlParams);
+
+  if (result.error) {
+    throw createError(`match_documents failed: ${result.error}`, 500);
+  }
+
+  return result.data || [];
+}
+
+/**
+ * Match thoughts by vector similarity
+ */
+async function matchThoughts(params, userId) {
+  const { query_embedding, match_count = 5, filter = {} } = params;
+
+  if (!query_embedding || !Array.isArray(query_embedding)) {
+    throw createError('query_embedding must be an array of numbers', 400);
+  }
+
+  if (match_count < 1 || match_count > 100) {
+    throw createError('match_count must be between 1 and 100', 400);
+  }
+
+  let sql = `
+    SELECT 
+      id,
+      content,
+      metadata,
+      1 - (embedding <=> $1) as similarity
+    FROM thoughts 
+    WHERE user_id = $2
+  `;
+  
+  let sqlParams = [query_embedding, userId];
+  let paramIndex = 3;
+
+  // Add additional filters
+  if (filter && Object.keys(filter).length > 0) {
+    Object.entries(filter).forEach(([key, value]) => {
+      if (key === 'metadata') {
+        sql += ` AND metadata @> $${paramIndex}`;
+        sqlParams.push(JSON.stringify(value));
+      } else {
+        sql += ` AND ${key} = $${paramIndex}`;
+        sqlParams.push(value);
+      }
+      paramIndex++;
+    });
+  }
+
+  sql += `
+    ORDER BY embedding <=> $1
+    LIMIT $${paramIndex}
+  `;
+  sqlParams.push(match_count);
+
+  const result = await query(sql, sqlParams);
+
+  if (result.error) {
+    throw createError(`match_thoughts failed: ${result.error}`, 500);
+  }
+
+  return result.data || [];
+}
+
+/**
+ * Get user profile
+ */
+async function getUserProfile(userId) {
+  const sql = `
+    SELECT 
+      up.*,
+      c.name as company_name,
+      c.industry as company_industry
+    FROM user_profiles up
+    LEFT JOIN companies c ON up.company_id = c.id
+    WHERE up.user_id = $1
+  `;
+
+  const result = await query(sql, [userId]);
+
+  if (result.error) {
+    throw createError(`get_user_profile failed: ${result.error}`, 500);
+  }
+
+  return result.data?.[0] || null;
+}
+
+/**
+ * Ensure user profile exists (creates if not exists)
+ */
+async function ensureUserProfile(userId) {
+  const sql = `SELECT * FROM ensure_user_profile($1)`;
+
+  const result = await query(sql, [userId]);
+
+  if (result.error) {
+    throw createError(`ensure_user_profile failed: ${result.error}`, 500);
+  }
+
+  return result.data || [];
+}
+
+/**
+ * Get company data
+ */
+async function getCompanyData(userId) {
+  const sql = `
+    SELECT 
+      c.*,
+      COUNT(up.id) as employee_count
+    FROM companies c
+    LEFT JOIN user_profiles up ON c.id = up.company_id
+    WHERE c.id IN (SELECT company_id FROM user_profiles WHERE user_id = $1)
+    GROUP BY c.id
+  `;
+
+  const result = await query(sql, [userId]);
+
+  if (result.error) {
+    throw createError(`get_company_data failed: ${result.error}`, 500);
+  }
+
+  return result.data?.[0] || null;
+}
+
+/**
+ * Get business metrics
+ */
+async function getBusinessMetrics(userId, params = {}) {
+  const { timeRange = '30d', metricType } = params;
+
+  let sql = `
+    SELECT 
+      metric_type,
+      value,
+      created_at
+    FROM business_metrics bm
+    WHERE bm.company_id IN (SELECT company_id FROM user_profiles WHERE user_id = $1)
+  `;
+
+  const sqlParams = [userId];
+  let paramIndex = 2;
+
+  if (metricType) {
+    sql += ` AND metric_type = $${paramIndex}`;
+    sqlParams.push(metricType);
+    paramIndex++;
+  }
+
+  if (timeRange === '7d') {
+    sql += ` AND created_at >= NOW() - INTERVAL '7 days'`;
+  } else if (timeRange === '30d') {
+    sql += ` AND created_at >= NOW() - INTERVAL '30 days'`;
+  } else if (timeRange === '90d') {
+    sql += ` AND created_at >= NOW() - INTERVAL '90 days'`;
+  }
+
+  sql += ` ORDER BY created_at DESC`;
+
+  const result = await query(sql, sqlParams);
+
+  if (result.error) {
+    throw createError(`get_business_metrics failed: ${result.error}`, 500);
+  }
+
+  return result.data || [];
+}
+
+/**
+ * Get next best actions
+ */
+async function getNextBestActions(userId, params = {}) {
+  const { status, priority, limit = 10 } = params;
+
+  let sql = `
+    SELECT 
+      id,
+      title,
+      description,
+      priority,
+      category,
+      status,
+      created_at
+    FROM next_best_actions
+    WHERE user_id = $1
+  `;
+
+  const sqlParams = [userId];
+  let paramIndex = 2;
+
+  if (status) {
+    sql += ` AND status = $${paramIndex}`;
+    sqlParams.push(status);
+    paramIndex++;
+  }
+
+  if (priority) {
+    sql += ` AND priority = $${paramIndex}`;
+    sqlParams.push(priority);
+    paramIndex++;
+  }
+
+  sql += ` ORDER BY 
+    CASE priority 
+      WHEN 'critical' THEN 1 
+      WHEN 'high' THEN 2 
+      WHEN 'medium' THEN 3 
+      WHEN 'low' THEN 4 
+    END,
+    created_at DESC
+    LIMIT $${paramIndex}
+  `;
+  sqlParams.push(limit);
+
+  const result = await query(sql, sqlParams);
+
+  if (result.error) {
+    throw createError(`get_next_best_actions failed: ${result.error}`, 500);
+  }
+
+  return result.data || [];
+}
+
+/**
+ * Get user integrations
+ */
+async function getUserIntegrations(userId) {
+  const sql = `
+    SELECT 
+      ui.*,
+      i.name as integration_name,
+      i.description as integration_description,
+      i.icon_url as integration_icon
+    FROM user_integrations ui
+    LEFT JOIN integrations i ON ui.integration_id = i.id
+    WHERE ui.user_id = $1
+    ORDER BY ui.created_at DESC
+  `;
+
+  const result = await query(sql, [userId]);
+
+  if (result.error) {
+    throw createError(`get_user_integrations failed: ${result.error}`, 500);
+  }
+
+  return result.data || [];
+}
+
+/**
+ * Get required onboarding steps
+ */
+async function getRequiredOnboardingSteps() {
+  const sql = `SELECT step_id FROM get_required_onboarding_steps() WHERE is_required = true ORDER BY step_order`;
+
+  const result = await query(sql);
+
+  if (result.error) {
+    throw createError(`get_required_onboarding_steps failed: ${result.error}`, 500);
+  }
+
+  // Extract just the step_id values from the result
+  const stepIds = result.data ? result.data.map(row => row.step_id) : [];
+  return stepIds;
+}
 
 module.exports = router;

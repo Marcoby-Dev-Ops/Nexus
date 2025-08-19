@@ -48,6 +48,7 @@ docs/
 - [🎯 Core Customer Journeys](vision/CORE_CUSTOMER_JOURNEYS_FOR_NEXUS.md)
 - [📈 Hybrid Vision Roadmap](vision/HYBRID_VISION_ROADMAP.md)
 - [🚀 Next Generation Vision](NEXT_GENERATION_BUSINESS_OS_VISION.md)
+- [🎯 Implementation Philosophy](current/IMPLEMENTATION_PHILOSOPHY.md) - Core philosophy and success patterns
 
 ### **⚡ Implementation & Features**
 - [🤖 AI Capabilities](implementation/AI_CAPABILITIES_SUMMARY.md)
@@ -77,6 +78,9 @@ docs/
 - [📈 Performance Reports](analysis/CONSISTENCY_REPORT_FULL_20250612.md)
 - [🔄 Migration Status](current/SERVICE_MIGRATION_STATUS.md)
 - [🧪 Supabase Implementation Assessment](analysis/SUPABASE_IMPLEMENTATION_ASSESSMENT.md)
+
+### **📦 Archive & Historical**
+- [🚀 MVP Documentation Archive](archive/mvp/README.md) - Historical MVP planning and implementation docs
 
 ## 🎯 Essential Reading Path
 

@@ -2,4 +2,5 @@
  * components Index
  */
 
-// Export components here when they are created
+export { SimpleBarChart } from './SimpleBarChart';
+export { SimpleLineChart } from './SimpleLineChart';

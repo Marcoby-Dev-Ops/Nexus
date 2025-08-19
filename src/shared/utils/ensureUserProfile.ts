@@ -1,4 +1,4 @@
-import { selectOne, insertOne } from '@/lib/api-client';
+import { callRPC } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 export const ensureUserProfile = async (userId: string, email: string) => {
@@ -9,25 +9,20 @@ export const ensureUserProfile = async (userId: string, email: string) => {
       return null;
     }
 
-    // Try to fetch the user profile
-    const { data, error } = await selectOne('user_profiles', userId);
+    // Use the ensure_user_profile RPC function which handles mapping and profile creation
+    const { data, error } = await callRPC('ensure_user_profile', { user_id: userId });
     if (error) {
-      logger.error({ error }, 'Failed to fetch user profile');
+      logger.error({ error }, 'Failed to ensure user profile');
       return null;
     }
-    if (data) {
-      return data;
-    }
-    // If not found, create a new profile
-    const { data: newProfile, error: insertError } = await insertOne('user_profiles', {
-      id: userId,
-      email,
-    });
-    if (insertError) {
-      logger.error({ error: insertError }, 'Failed to create user profile');
+    
+    // RPC returns an array, but we want a single record
+    if (!data || data.length === 0) {
+      logger.error('No user profile returned from ensure_user_profile RPC');
       return null;
     }
-    return newProfile;
+    
+    return data[0];
   } catch (err) {
     logger.error({ err }, 'Error ensuring user profile');
     return null;

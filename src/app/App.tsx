@@ -42,6 +42,15 @@ import {
   AIChatPage
 } from '@/pages/ai';
 
+// Import Quantum pages
+import QuantumOnboardingFlow from '@/components/onboarding/QuantumOnboardingFlow';
+import QuantumBlockDetailPage from '@/pages/quantum/QuantumBlockDetailPage';
+import QuantumBlockStrengthenPage from '@/pages/quantum/QuantumBlockStrengthenPage';
+import QuantumIdentityPage from '@/pages/quantum/QuantumIdentityPage';
+import { QuantumLayout } from '@/shared/components/layout/QuantumLayout';
+import { RequireAuth, RequireProfile, RequireQuantumAccess } from '@/shared/routes/guards';
+
+
 // Import Analytics pages
 import IntegrationsPage from '@/pages/analytics/IntegrationsPage';
 import UnifiedAnalyticsPage from '@/pages/analytics/UnifiedAnalyticsPage';
@@ -106,13 +115,29 @@ import { ContinuousImprovementDashboard } from '@/pages/admin/ContinuousImprovem
 import { FeatureExplorer } from '@/pages/admin/FeatureExplorer';
 import AIModelSettings from '@/pages/admin/AIModelSettings';
 import { PolicyManagementPage } from '@/pages/admin/PolicyManagementPage';
+import { AIUsageMonitoringPage } from '@/pages/admin/AIUsageMonitoringPage';
 
 // Import Task/Workspace components
 import UnifiedInbox from '@/components/tasks/UnifiedInbox';
 import UnifiedCalendar from '@/components/tasks/UnifiedCalendar';
+import { ActionCenter } from '@/components/tasks/ActionCenter';
+
+// Import Analytics components
+import DigestibleMetricsDashboard from '@/components/analytics/DigestibleMetricsDashboard';
+import CrossPlatformInsightsEngine from '@/components/analytics/CrossPlatformInsightsEngine';
+import BusinessHealthPage from '@/components/analytics/BusinessHealthPage';
+
+// Import Department pages
+import SalesPage from '@/pages/departments/SalesPage';
+import FinancePage from '@/pages/departments/FinancePage';
+import OperationsPage from '@/pages/departments/OperationsPage';
+import MarketingPage from '@/pages/departments/MarketingPage';
+
+// Import Automation components
+import ProcessAutomationPage from '@/components/automation/ProcessAutomationPage';
 
 // Lazy imports for code splitting
-const CompanyProfilePage = React.lazy(() => import('@/pages/admin/CompanyProfilePage').then(m => ({ default: m.CompanyProfilePage })));
+const CompanyProfilePage = React.lazy(() => import('@/pages/quantum/QuantumIdentityPage').then(m => ({ default: m.default })));
 
 // Import Automation pages
 import AutomationRecipesPage from '@/pages/automation/AutomationRecipesPage';
@@ -180,7 +205,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   React.useEffect(() => {
     ensureProfile();
-  }, [user?.id, profileEnsured]);
+  }, [user?.id]); // Remove profileEnsured from dependencies to prevent infinite loop
 
   if (loading) {
     return <LoadingSpinner />;
@@ -342,8 +367,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Action Center</h1>
-                    <p className="text-muted-foreground">Manage tasks and priorities</p>
+                    <ActionCenter />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -512,13 +536,20 @@ function App() {
           />
           
           <Route 
-            path="/help-center/knowledge/center" 
+            path="/ai-agents-demo" 
             element={
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Knowledge Center</h1>
-                    <p className="text-muted-foreground">Review truths and insights we're uncovering</p>
+                    <h1 className="text-2xl font-bold mb-4">AI Agents Demo</h1>
+                    <p className="text-muted-foreground">Explore AI agent capabilities</p>
+                    <div className="mt-6">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">
+                          AI Agents Demo component needs to be created.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -526,13 +557,20 @@ function App() {
           />
           
           <Route 
-            path="/help-center/knowledge/thoughts" 
+            path="/automation/n8n" 
             element={
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Thoughts & Ideas</h1>
-                    <p className="text-muted-foreground">Capture and organize your thoughts</p>
+                    <h1 className="text-2xl font-bold mb-4">n8n Integration</h1>
+                    <p className="text-muted-foreground">Advanced workflow automation with n8n</p>
+                    <div className="mt-6">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">
+                          n8n Integration component needs to be created.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -805,8 +843,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Business Health</h1>
-                    <p className="text-muted-foreground">Monitor business performance</p>
+                    <BusinessHealthPage />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -819,8 +856,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Cross-Platform Insights</h1>
-                    <p className="text-muted-foreground">Unified data insights</p>
+                    <CrossPlatformInsightsEngine />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -833,8 +869,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Digestible Metrics</h1>
-                    <p className="text-muted-foreground">Simplified business metrics</p>
+                    <DigestibleMetricsDashboard />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1216,7 +1251,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <React.Suspense fallback={<LoadingSpinner />}>
-                    <CompanyProfilePage />
+                    <QuantumIdentityPage />
                   </React.Suspense>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1328,6 +1363,17 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <AIModelSettings />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin/ai-usage" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <AIUsageMonitoringPage />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 
@@ -1464,6 +1510,13 @@ function App() {
                   <div className="p-6">
                     <h1 className="text-2xl font-bold mb-4">Help Center</h1>
                     <p className="text-muted-foreground">Support and troubleshooting</p>
+                    <div className="mt-6">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">
+                          Help Center component exists but needs to be imported and used.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1537,48 +1590,6 @@ function App() {
           />
           
           <Route 
-            path="/help-center/knowledge/center" 
-            element={
-              <ProtectedRoute>
-                <UnifiedLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Knowledge Center</h1>
-                    <p className="text-muted-foreground">Review truths and insights we're uncovering</p>
-                  </div>
-                </UnifiedLayout>
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/help-center/knowledge/thoughts" 
-            element={
-              <ProtectedRoute>
-                <UnifiedLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Thoughts & Ideas</h1>
-                    <p className="text-muted-foreground">Capture and organize your thoughts</p>
-                  </div>
-                </UnifiedLayout>
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/integrations/knowledge" 
-            element={
-              <ProtectedRoute>
-                <UnifiedLayout>
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Knowledge Enhancer</h1>
-                    <p className="text-muted-foreground">AI-powered knowledge management</p>
-                  </div>
-                </UnifiedLayout>
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
             path="/features" 
             element={
               <ProtectedRoute>
@@ -1586,6 +1597,13 @@ function App() {
                   <div className="p-6">
                     <h1 className="text-2xl font-bold mb-4">Features</h1>
                     <p className="text-muted-foreground">Explore platform capabilities</p>
+                    <div className="mt-6">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">
+                          Features component needs to be created.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1611,6 +1629,13 @@ function App() {
                   <div className="p-6">
                     <h1 className="text-2xl font-bold mb-4">Preferences</h1>
                     <p className="text-muted-foreground">Customize your experience</p>
+                    <div className="mt-6">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">
+                          Preferences component needs to be created.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1639,6 +1664,13 @@ function App() {
                   <div className="p-6">
                     <h1 className="text-2xl font-bold mb-4">Team Management</h1>
                     <p className="text-muted-foreground">Manage team performance and collaboration</p>
+                    <div className="mt-6">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">
+                          Team Management component needs to be created.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1653,6 +1685,13 @@ function App() {
                   <div className="p-6">
                     <h1 className="text-2xl font-bold mb-4">Customer Insights</h1>
                     <p className="text-muted-foreground">Analyze customer behavior and satisfaction</p>
+                    <div className="mt-6">
+                      <div className="p-4 border rounded-lg bg-muted/30">
+                        <p className="text-sm text-muted-foreground">
+                          Customer Insights component needs to be created.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1665,8 +1704,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Process Automation</h1>
-                    <p className="text-muted-foreground">Automate repetitive tasks and workflows</p>
+                    <ProcessAutomationPage />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1680,8 +1718,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Sales</h1>
-                    <p className="text-muted-foreground">Sales performance and pipeline management</p>
+                    <SalesPage />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1694,8 +1731,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Finance</h1>
-                    <p className="text-muted-foreground">Financial operations and reporting</p>
+                    <FinancePage />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1708,8 +1744,7 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Operations</h1>
-                    <p className="text-muted-foreground">Operational efficiency and processes</p>
+                    <OperationsPage />
                   </div>
                 </UnifiedLayout>
               </ProtectedRoute>
@@ -1722,9 +1757,107 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-4">Marketing</h1>
-                    <p className="text-muted-foreground">Marketing analytics and campaigns</p>
+                    <MarketingPage />
                   </div>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Quantum Business Model routes */}
+          <Route 
+            path="/onboarding/quantum" 
+            element={
+              <RequireAuth>
+                <RequireProfile>
+                  <UnifiedLayout>
+                    <div className="p-6">
+                      <QuantumOnboardingFlow onComplete={(data) => console.log('Quantum onboarding complete:', data)} />
+                    </div>
+                  </UnifiedLayout>
+                </RequireProfile>
+              </RequireAuth>
+            } 
+          />
+          
+          <Route 
+            path="/quantum/blocks/:blockId" 
+            element={
+              <RequireAuth>
+                <RequireProfile>
+                  <RequireQuantumAccess>
+                    <QuantumLayout>
+                      <QuantumBlockDetailPage />
+                    </QuantumLayout>
+                  </RequireQuantumAccess>
+                </RequireProfile>
+              </RequireAuth>
+            } 
+          />
+          
+          <Route 
+            path="/quantum/blocks/:blockId/strengthen" 
+            element={
+              <RequireAuth>
+                <RequireProfile>
+                  <RequireQuantumAccess>
+                    <QuantumLayout>
+                      <QuantumBlockStrengthenPage />
+                    </QuantumLayout>
+                  </RequireQuantumAccess>
+                </RequireProfile>
+              </RequireAuth>
+            } 
+          />
+          
+          {/* Quantum Identity routes */}
+          <Route 
+            path="/quantum/identity" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <React.Suspense fallback={<LoadingSpinner />}>
+                    <QuantumIdentityPage />
+                  </React.Suspense>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/quantum/identity/profile" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <React.Suspense fallback={<LoadingSpinner />}>
+                    <QuantumIdentityPage />
+                  </React.Suspense>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/quantum/identity/team" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <React.Suspense fallback={<LoadingSpinner />}>
+                    <QuantumIdentityPage />
+                  </React.Suspense>
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/quantum/identity/brand" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <React.Suspense fallback={<LoadingSpinner />}>
+                    <QuantumIdentityPage />
+                  </React.Suspense>
                 </UnifiedLayout>
               </ProtectedRoute>
             } 

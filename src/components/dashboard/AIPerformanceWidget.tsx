@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
 import { useNavigate } from 'react-router-dom';
-import { billingService } from '@/services/business';
+import { financialService } from '@/services/core';
 import { LoadingSpinner } from '@/shared/components/patterns/LoadingStates';
 
 interface AIPerformanceWidgetProps {
@@ -59,8 +59,8 @@ export const AIPerformanceWidget: React.FC<AIPerformanceWidgetProps> = ({ classN
       
       // Get billing status and usage data
       const [billingStatus, usageBilling] = await Promise.all([
-        billingService.getBillingStatus(user?.id || ''),
-        billingService.getUsageBilling(user?.id || '', 'current')
+        financialService.getBillingStatus(user?.id || ''),
+        financialService.getUsageBilling(user?.id || '', 'current')
       ]);
 
       // Calculate health score based on usage and billing

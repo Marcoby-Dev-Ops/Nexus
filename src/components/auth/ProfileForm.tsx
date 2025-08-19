@@ -21,6 +21,7 @@ import {
   X,
   Upload
 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 
 interface ProfileFormProps {
   onSave?: (data: UserProfileFormData) => void;
@@ -280,16 +281,48 @@ export function ProfileForm({
                 control={form.control}
                 name="role"
                 label="Role"
-                placeholder="admin, user, etc."
                 error={errors.role}
-              />
+              >
+                {(field) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger disabled={!isEditing}>
+                      <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="owner">Owner</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="user">User</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
               <FormField
                 control={form.control}
                 name="department"
                 label="Department"
-                placeholder="Engineering, Sales, etc."
                 error={errors.department}
-              />
+              >
+                {(field) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger disabled={!isEditing}>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="engineering">Engineering</SelectItem>
+                      <SelectItem value="marketing">Marketing</SelectItem>
+                      <SelectItem value="sales">Sales</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="hr">Human Resources</SelectItem>
+                      <SelectItem value="operations">Operations</SelectItem>
+                      <SelectItem value="product">Product</SelectItem>
+                      <SelectItem value="design">Design</SelectItem>
+                      <SelectItem value="support">Customer Support</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

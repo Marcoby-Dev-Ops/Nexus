@@ -1,6 +1,6 @@
 import React from 'react';
-import MVPDashboard from '@/components/dashboard/MVPDashboard';
+import QuantumHomeDashboard from '@/components/dashboard/QuantumHomeDashboard';
 
 export default function Dashboard() {
-  return <MVPDashboard />;
+  return <QuantumHomeDashboard />;
 } 

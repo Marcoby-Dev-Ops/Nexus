@@ -30,9 +30,9 @@ export interface CommunicationHealthScore {
 }
 
 // Analytics Services
-import { AnalyticsService, analyticsService } from './AnalyticsService';
+import { AnalyticsService, analyticsService } from '../core/AnalyticsService';
 
-export { AnalyticsService, analyticsService } from './AnalyticsService';
+export { AnalyticsService, analyticsService } from '../core/AnalyticsService';
 
 // Communication Analytics Service - wrapper around core analytics service
 class CommunicationAnalyticsService extends BaseService {

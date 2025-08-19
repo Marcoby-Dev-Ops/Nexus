@@ -4,7 +4,7 @@
  */
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne } from '@/lib/api-client';
+import { selectData, selectOne, callRPC } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // Enhanced Dashboard Types
@@ -199,21 +199,47 @@ export class DashboardService extends BaseService {
       }
 
       // Get comprehensive user data using API client
-      const [userProfileResult, businessProfileResult, integrationsResult] = await Promise.all([
-        selectOne<any>('user_profiles', userId),
-        selectOne<any>('business_profiles', userId),
-        selectData<any>('user_integrations', '*', { user_id: userId })
+      // First try to get the user profile directly
+      let userProfile: any = null;
+      let internalUserId = userId;
+      
+      try {
+        const profileResult = await selectData('user_profiles', '*', { user_id: userId });
+        
+        if (profileResult.success && profileResult.data && profileResult.data.length > 0) {
+          userProfile = profileResult.data[0];
+          internalUserId = userProfile.user_id;
+        } else {
+          // If no profile found, try to create one using the RPC function
+          const rpcResult = await callRPC('ensure_user_profile', { user_id: userId });
+          
+          if (rpcResult.success && rpcResult.data && rpcResult.data.length > 0) {
+            userProfile = rpcResult.data[0];
+            internalUserId = userProfile.user_id;
+          } else {
+            this.logger.error('Failed to get user profile for dashboard', { userId });
+            return { data: null, error: 'Failed to get user profile' };
+          }
+        }
+      } catch (error) {
+        this.logger.error('Failed to get user profile for dashboard', { userId, error });
+        return { data: null, error: 'Failed to get user profile' };
+      }
+      
+      const [businessProfileResult, integrationsResult] = await Promise.all([
+        selectOne<any>('business_profiles', internalUserId),
+        selectData<any>('user_integrations', '*', { user_id: internalUserId })
       ]);
 
       return {
         data: {
-          user: userProfileResult.data,
+          user: userProfile,
           business: businessProfileResult.data,
           integrations: integrationsResult.data || [],
           metrics: {
             profileCompletion: businessProfileResult.data?.assessment_completion_percentage || 0,
             activeIntegrations: integrationsResult.data?.length || 0,
-            lastActivity: userProfileResult.data?.updated_at || new Date().toISOString()
+            lastActivity: userProfile?.updated_at || new Date().toISOString()
           }
         },
         error: null

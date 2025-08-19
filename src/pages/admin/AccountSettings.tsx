@@ -25,7 +25,7 @@ import { userProfileSchema, type UserProfileFormData } from '@/shared/validation
 import type { z } from 'zod';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { logger } from '@/shared/utils/logger';
-import { companyService } from '@/services/business/CompanyService';
+import { companyService } from '@/services/core/CompanyService';
 import { useCompany } from '@/shared/contexts/CompanyContext';
 import { useUserPreferences } from '@/shared/contexts/UserPreferencesContext';
 import { userPreferencesSchema, type UserPreferencesFormData } from '@/shared/validation/schemas';
@@ -563,13 +563,19 @@ const AccountSettings: React.FC = () => {
                         control={form.control}
                         error={errors.role?.message}
                       >
-                         {(field) => (
-                           <Input
-                             {...field}
-                             placeholder="e.g., Developer, Manager"
-                             disabled={!isEditing}
-                           />
-                         )}
+                        {(field) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger disabled={!isEditing}>
+                              <SelectValue placeholder="Select your role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="owner">Owner</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                              <SelectItem value="manager">Manager</SelectItem>
+                              <SelectItem value="user">User</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </FormField>
 
                       <FormField
@@ -578,13 +584,25 @@ const AccountSettings: React.FC = () => {
                         control={form.control}
                         error={errors.department?.message}
                       >
-                         {(field) => (
-                           <Input
-                             {...field}
-                             placeholder="e.g., Engineering, Marketing"
-                             disabled={!isEditing}
-                           />
-                         )}
+                        {(field) => (
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <SelectTrigger disabled={!isEditing}>
+                              <SelectValue placeholder="Select department" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="engineering">Engineering</SelectItem>
+                              <SelectItem value="marketing">Marketing</SelectItem>
+                              <SelectItem value="sales">Sales</SelectItem>
+                              <SelectItem value="finance">Finance</SelectItem>
+                              <SelectItem value="hr">Human Resources</SelectItem>
+                              <SelectItem value="operations">Operations</SelectItem>
+                              <SelectItem value="product">Product</SelectItem>
+                              <SelectItem value="design">Design</SelectItem>
+                              <SelectItem value="support">Customer Support</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       </FormField>
                     </div>
                   </FormSection>

@@ -12,66 +12,49 @@ const pool = new Pool({
 });
 
 /**
- * Get or create user mapping from external ID to internal UUID
+ * Get or create user profile using Authentik user ID directly
  */
-async function getUserMapping(externalUserId) {
+async function getOrCreateUserProfile(authentikUserId) {
   try {
-    // First, try to find existing mapping
+    // First, try to find existing user profile
     const findResult = await pool.query(
-      'SELECT internal_user_id FROM user_mappings WHERE external_user_id = $1',
-      [externalUserId]
+      'SELECT user_id FROM user_profiles WHERE user_id = $1',
+      [authentikUserId]
     );
 
     if (findResult.rows.length > 0) {
-      return findResult.rows[0].internal_user_id;
+      return authentikUserId;
     }
 
-    // If no mapping exists, create a new user and mapping
+    // If no profile exists, create a new user profile
     const client = await pool.connect();
     
     try {
       await client.query('BEGIN');
 
-      // Create new user in auth.users table
-      const createUserResult = await client.query(
-        `INSERT INTO auth.users (
-          id, 
+      // Create new user profile using Authentik user ID directly
+      await client.query(
+        `INSERT INTO user_profiles (
+          user_id, 
           email, 
           created_at, 
-          updated_at, 
-          email_confirmed_at,
-          confirmed_at,
-          raw_user_meta_data
+          updated_at
         ) VALUES (
-          gen_random_uuid(), 
           $1, 
+          $2, 
           NOW(), 
-          NOW(), 
-          NOW(),
-          NOW(),
-          $2
-        ) RETURNING id`,
+          NOW()
+        )`,
         [
-          `${externalUserId}@authentik.local`, // Use external ID as email placeholder
-          JSON.stringify({ 
-            external_user_id: externalUserId,
-            source: 'authentik'
-          })
+          authentikUserId,
+          `${authentikUserId}@authentik.local` // Placeholder email
         ]
-      );
-
-      const internalUserId = createUserResult.rows[0].id;
-
-      // Create mapping
-      await client.query(
-        'INSERT INTO user_mappings (external_user_id, internal_user_id, created_at) VALUES ($1, $2, NOW())',
-        [externalUserId, internalUserId]
       );
 
       await client.query('COMMIT');
       
-      logger.info('Created new user mapping', { externalUserId, internalUserId });
-      return internalUserId;
+      logger.info('Created new user profile', { authentikUserId });
+      return authentikUserId;
 
     } catch (error) {
       await client.query('ROLLBACK');
@@ -81,7 +64,7 @@ async function getUserMapping(externalUserId) {
     }
 
   } catch (error) {
-    logger.error('Failed to get/create user mapping', { externalUserId, error: error.message });
+    logger.error('Failed to get/create user profile', { authentikUserId, error: error.message });
     throw new Error('Failed to authenticate user');
   }
 }
@@ -100,12 +83,26 @@ function validateJWTToken(token) {
     // Decode payload
     const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
     
+    // Log the full payload for debugging
+    logger.info('Token validation - payload:', {
+      sub: payload.sub,
+      iss: payload.iss,
+      aud: payload.aud,
+      exp: payload.exp ? new Date(payload.exp * 1000).toISOString() : null,
+      iat: payload.iat ? new Date(payload.iat * 1000).toISOString() : null,
+      now: new Date().toISOString()
+    });
+    
     // Check expiration
     if (payload.exp && payload.exp * 1000 < Date.now()) {
+      logger.warn('Token expired', {
+        tokenExp: new Date(payload.exp * 1000).toISOString(),
+        now: new Date().toISOString()
+      });
       throw new Error('Token expired');
     }
 
-    // Check issuer - handle Authentik issuer format
+    // Check issuer - be more permissive during debugging
     const expectedIssuer = 'https://identity.marcoby.com';
     if (payload.iss) {
       const isAuthentikIssuer = payload.iss === expectedIssuer || 
@@ -117,16 +114,12 @@ function validateJWTToken(token) {
           actual: payload.iss 
         });
         
-        // During transition, allow non-Authentik tokens but log the issue
-        if (payload.iss && payload.iss.includes('supabase')) {
-          logger.warn('Allowing Supabase token during transition period');
-        } else {
-          logger.warn('Unknown token issuer, but allowing during transition');
-        }
+        // Allow any issuer during debugging - remove this in production
+        logger.warn('Allowing non-Authentik issuer during debugging');
       }
     }
 
-    // Check audience - be more flexible during transition
+    // Check audience - be more permissive during debugging
     const clientId = process.env.VITE_AUTHENTIK_CLIENT_ID;
     if (payload.aud && payload.aud !== clientId) {
       logger.warn('Token audience mismatch', { 
@@ -134,8 +127,8 @@ function validateJWTToken(token) {
         actual: payload.aud 
       });
       
-      // During transition, allow tokens with different audience
-      logger.warn('Allowing token with different audience during transition');
+      // Allow any audience during debugging - remove this in production
+      logger.warn('Allowing different audience during debugging');
     }
 
     const externalUserId = payload.sub;
@@ -143,6 +136,7 @@ function validateJWTToken(token) {
       throw new Error('No user ID found in token');
     }
 
+    logger.info('Token validation successful', { externalUserId });
     return { externalUserId, payload };
 
   } catch (error) {
@@ -159,7 +153,16 @@ const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
+    logger.info('Authentication attempt', {
+      hasAuthHeader: !!authHeader,
+      hasToken: !!token,
+      tokenLength: token?.length,
+      endpoint: req.path,
+      method: req.method
+    });
+
     if (!token) {
+      logger.warn('No token provided', { endpoint: req.path });
       return res.status(401).json({ 
         success: false, 
         error: 'Access token required',
@@ -169,11 +172,18 @@ const authenticateToken = async (req, res, next) => {
 
     // Validate token
     let externalUserId;
+    let jwtPayload;
     try {
+      logger.info('Validating token...');
       const validation = validateJWTToken(token);
       externalUserId = validation.externalUserId;
+      jwtPayload = validation.payload;
+      logger.info('Token validation successful', { externalUserId });
     } catch (validationError) {
-      logger.warn('Token validation failed', { error: validationError.message });
+      logger.warn('Token validation failed', { 
+        error: validationError.message,
+        endpoint: req.path 
+      });
       return res.status(401).json({ 
         success: false, 
         error: validationError.message,
@@ -181,30 +191,35 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    // Get or create user mapping
+    // Get or create user profile
     let userId;
     try {
-      userId = await getUserMapping(externalUserId);
-    } catch (mappingError) {
-      logger.error('User mapping failed', { externalUserId, error: mappingError.message });
+      logger.info('Getting/creating user profile', { externalUserId });
+      userId = await getOrCreateUserProfile(externalUserId);
+      logger.info('User profile ready', { externalUserId, userId });
+    } catch (profileError) {
+      logger.error('User profile creation failed', { 
+        externalUserId, 
+        error: profileError.message 
+      });
       return res.status(500).json({ 
         success: false, 
         error: 'Authentication failed',
-        code: 'MAPPING_ERROR'
+        code: 'PROFILE_ERROR'
       });
     }
 
-    logger.info('Token validation successful', { 
-      externalUserId, 
+    logger.info('Authentication successful', { 
+      authentikUserId: externalUserId,
       internalUserId: userId
     });
 
     // Add user info to request
     req.user = {
-      id: userId,
-      externalId: externalUserId,
+      id: userId, // This is now the Authentik user ID
       email: null, // Tokens may not include email in payload
-      role: 'user'
+      role: 'user',
+      jwtPayload: jwtPayload // Pass JWT payload for database RLS
     };
 
     next();
@@ -229,11 +244,10 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       try {
         const validation = validateJWTToken(token);
-        const userId = await getUserMapping(validation.externalUserId);
+        const userId = await getOrCreateUserProfile(validation.externalUserId);
         
         req.user = {
-          id: userId,
-          externalId: validation.externalUserId,
+          id: userId, // This is now the Authentik user ID
           email: null,
           role: 'user'
         };

@@ -70,14 +70,18 @@ export const useAIChatStore = create<AIChatStoreState>()(
           },
         });
 
-        // Call Edge Function to get AI response
-        const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/ai_chat`, {
+        // Call AI Gateway to get AI response
+        const res = await fetch(`${API_CONFIG.BASE_URL}/api/ai/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ message, conversationId, metadata: { userId } }),
+          body: JSON.stringify({ 
+            messages: [{ role: 'user', content: message }],
+            tenantId: 'default-tenant',
+            userId: userId 
+          }),
         });
 
         if (!res.ok) {
@@ -89,7 +93,14 @@ export const useAIChatStore = create<AIChatStoreState>()(
         if (!data.success) throw new Error(data.error || 'AI error');
 
         // Add AI response from backend
-        const aiMsg: AIMessage = data.message;
+        const aiMsg: AIMessage = {
+          id: crypto.randomUUID(),
+          conversationId,
+          userId,
+          role: 'assistant',
+          content: data.message,
+          createdAt: new Date().toISOString(),
+        };
         set({
           conversations: {
             ...get().conversations,
@@ -147,8 +158,8 @@ export const useAIChatStore = create<AIChatStoreState>()(
           return;
         }
 
-        // Load conversation from Supabase
-        const res = await fetch(`${API_CONFIG.BASE_URL}/functions/v1/ai_chat/${conversationId}`, {
+        // Load conversation from AI Gateway
+        const res = await fetch(`${API_CONFIG.BASE_URL}/api/ai/chat/${conversationId}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

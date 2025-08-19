@@ -36,9 +36,9 @@ export { GoogleWorkspaceService } from './google-workspace';
 export { GoogleAnalyticsService } from './google-analytics';
 
 // Legacy Services (for backward compatibility)
-export { UniversalIntegrationService } from './universalIntegrationService';
-export { IntegrationDataService } from './integrationDataService';
-export { DataPointMappingService } from './dataPointMappingService';
+// UniversalIntegrationService removed - functionality consolidated into consolidatedIntegrationService
+// IntegrationDataService removed - functionality consolidated into consolidatedIntegrationService
+// DataPointMappingService removed - functionality consolidated into consolidatedIntegrationService
 
 // DEPRECATED: Legacy Salesforce Service (will be replaced with SalesforceIntegrationService)
 export { SalesforceStyleDataService } from './SalesforceStyleDataService';

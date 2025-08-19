@@ -486,16 +486,17 @@ export class KPICalculationService extends BaseService {
       const kpiData: Record<string, any> = {};
 
       // Fetch KPI snapshots
-      const { data: kpiSnapshots, error: kpiError } = await supabase
-        .from('ai_kpi_snapshots')
-        .select('kpi_key, value, captured_at')
-        .eq('user_id', userId)
-        .gte('captured_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+      const kpiSnapshotsResult = await select('ai_kpi_snapshots', ['kpi_key', 'value', 'captured_at'], {
+        user_id: userId,
+        captured_at_gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      });
 
-      if (kpiError) {
-        this.logger.error('Error fetching KPI snapshots', { error: kpiError });
-        return this.handleError('Failed to fetch KPI snapshots', kpiError);
+      if (!kpiSnapshotsResult.success) {
+        this.logger.error('Error fetching KPI snapshots', { error: kpiSnapshotsResult.error });
+        return this.handleError('Failed to fetch KPI snapshots', kpiSnapshotsResult.error);
       }
+
+      const kpiSnapshots = kpiSnapshotsResult.data || [];
 
       // Process KPI snapshots - get latest value for each KPI
       const latestKPIs = new Map<string, any>();
@@ -669,14 +670,13 @@ export class KPICalculationService extends BaseService {
   private async calculateTrends(userId: string): Promise<BusinessHealthScore['trends']> {
     try {
       // Fetch historical business health data
-      const { data: history, error } = await supabase
-        .from('business_health')
-        .select('overall_score, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      const historyResult = await select('business_health', ['overall_score', 'created_at'], {
+        user_id: userId,
+        order_by: 'created_at.desc',
+        limit: 10
+      });
 
-      if (error || !history || history.length < 2) {
+      if (!historyResult.success || !historyResult.data || historyResult.data.length < 2) {
         return {
           overall: 'stable',
           monthlyChange: 0,
@@ -684,6 +684,7 @@ export class KPICalculationService extends BaseService {
         };
       }
 
+      const history = historyResult.data;
       const currentScore = history[0].overall_score;
       const previousScore = history[1].overall_score;
       const monthlyChange = currentScore - previousScore;
@@ -756,19 +757,17 @@ export class KPICalculationService extends BaseService {
    */
   private async storeBusinessHealthScore(userId: string, score: BusinessHealthScore): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('business_health')
-        .upsert({
-          user_id: userId,
-          overall_score: score.overallScore,
-          category_scores: score.categoryScores,
-          data_quality_score: score.dataQuality,
-          last_calculated: score.lastCalculated,
-          updated_at: new Date().toISOString()
-        });
+      const result = await insertOne('business_health', {
+        user_id: userId,
+        overall_score: score.overallScore,
+        category_scores: score.categoryScores,
+        data_quality_score: score.dataQuality,
+        last_calculated: score.lastCalculated,
+        updated_at: new Date().toISOString()
+      });
 
-      if (error) {
-        this.logger.error('Error storing business health score', { error });
+      if (!result.success) {
+        this.logger.error('Error storing business health score', { error: result.error });
       }
     } catch (error) {
       this.logger.error('Error storing business health score', { error });

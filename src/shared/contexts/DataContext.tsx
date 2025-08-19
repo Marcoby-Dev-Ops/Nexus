@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
 import { businessHealthService } from '@/core/services/BusinessHealthService';
 import { dataConnectivityHealthService } from '@/services/business/dataConnectivityHealthService';
-import { analyticsService } from '@/services/analytics/analyticsService';
+import { analyticsService } from '@/services/core/AnalyticsService';
 import { logger } from '@/shared/utils/logger';
 
 export interface UserProfile {
@@ -80,7 +80,7 @@ interface DataProviderProps {
 }
 
 export const DataProvider: React.FC<DataProviderProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user } = useEnhancedAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
   const [businessData, setBusinessData] = useState<BusinessData | null>(null);

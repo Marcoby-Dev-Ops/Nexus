@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
+import { microsoft365Service } from '@/services/integrations/Microsoft365Service';
 import { logger } from '@/shared/utils/logger';
 import { msalInstance, msalReady } from '@/shared/auth/msal';
 import Microsoft365ServiceDiscovery from '@/components/integrations/Microsoft365ServiceDiscovery';
@@ -22,121 +22,6 @@ const Microsoft365CallbackPage: React.FC = () => {
   
   // Add a ref to track if the component has been initialized
   const isInitialized = useRef(false);
-
-  // Helper function to extract refresh token from MSAL cache
-  const extractRefreshTokenFromMSAL = async (cache: any, account: any): Promise<string | null> => {
-    // Ensure MSAL is initialized before accessing its methods
-    await msalReady;
-    try {
-      logger.info('Attempting to extract refresh token from MSAL', {
-        hasCache: !!cache,
-        hasAccount: !!account,
-        accountId: account?.homeAccountId,
-        username: account?.username
-      });
-
-      // Method 1: Try to get from MSAL's internal storage using proper API
-      if (msalInstance && msalInstance.getTokenCache) {
-        try {
-          const tokenCache = msalInstance.getTokenCache();
-          // MSAL doesn't expose refresh tokens directly, so we need to look in storage
-          logger.info('MSAL token cache available, searching storage for refresh tokens');
-        } catch (e) {
-          logger.warn('Failed to access MSAL token cache', { error: e });
-        }
-      }
-
-      // Method 2: Try to get from session storage (MSAL stores some data there)
-      const sessionKeys = Object.keys(sessionStorage);
-      const msalKeys = sessionKeys.filter(key => 
-        key.includes('msal') && 
-        (key.includes('refresh') || key.includes('token')) &&
-        key.includes(account.homeAccountId)
-      );
-      
-      logger.info('Searching session storage for MSAL keys', { 
-        totalKeys: sessionKeys.length,
-        msalKeys: msalKeys.length,
-        accountId: account.homeAccountId
-      });
-
-      for (const key of msalKeys) {
-        const value = sessionStorage.getItem(key);
-        if (value) {
-          try {
-            const parsed = JSON.parse(value);
-            if (parsed.secret) {
-              logger.info('Found refresh token in session storage', { key });
-              return parsed.secret;
-            }
-            // Also check for refresh_token field
-            if (parsed.refresh_token) {
-              logger.info('Found refresh_token in session storage', { key });
-              return parsed.refresh_token;
-            }
-          } catch (e) {
-            // Continue searching
-          }
-        }
-      }
-
-      // Method 3: Try to get from MSAL's browser cache
-      const browserCacheKeys = Object.keys(localStorage);
-      const msalBrowserKeys = browserCacheKeys.filter(key => 
-        key.includes('msal') && 
-        key.includes(account.homeAccountId) &&
-        (key.includes('refresh') || key.includes('token'))
-      );
-
-      for (const key of msalBrowserKeys) {
-        const value = localStorage.getItem(key);
-        if (value) {
-          try {
-            const parsed = JSON.parse(value);
-            if (parsed.secret) {
-              logger.info('Found refresh token in browser cache', { key });
-              return parsed.secret;
-            }
-            if (parsed.refresh_token) {
-              logger.info('Found refresh_token in browser cache', { key });
-              return parsed.refresh_token;
-            }
-          } catch (e) {
-            // Continue searching
-          }
-        }
-      }
-
-      // Method 4: Try to get from MSAL's internal cache using different approach
-      if (cache && typeof cache.getAllRefreshTokens === 'function') {
-        try {
-          const allRefreshTokens = await cache.getAllRefreshTokens();
-          logger.info('Found refresh tokens in cache', { count: allRefreshTokens.length });
-          
-          for (const token of allRefreshTokens) {
-            if (token.homeAccountId === account.homeAccountId) {
-              logger.info('Found matching refresh token for account');
-              return token.secret;
-            }
-          }
-        } catch (e) {
-          logger.warn('Failed to get all refresh tokens', { error: e });
-        }
-      }
-
-      logger.warn('No refresh token found in any MSAL storage location', {
-        accountId: account.homeAccountId,
-        username: account.username,
-        sessionKeys: sessionKeys.filter(k => k.includes('msal')).length,
-        browserKeys: browserCacheKeys.filter(k => k.includes('msal')).length
-      });
-      
-      return null;
-    } catch (error) {
-      logger.error('Error extracting refresh token from MSAL', { error });
-      return null;
-    }
-  };
 
   useEffect(() => {
     // Prevent multiple initializations
@@ -250,7 +135,7 @@ const Microsoft365CallbackPage: React.FC = () => {
           homeAccountId: account.homeAccountId
         });
 
-        // Get refresh token from MSAL cache
+        // Get access token with offline_access scope to enable refresh tokens
         const silentRequest = {
           account: account,
           scopes: [
@@ -271,16 +156,10 @@ const Microsoft365CallbackPage: React.FC = () => {
           expiresOn: silentResult.expiresOn
         });
 
-        // Extract refresh token from MSAL cache
-        // MSAL stores refresh tokens in the cache, we need to extract them
-        const cache = msalInstance.getTokenCache();
-        const refreshToken = await extractRefreshTokenFromMSAL(cache, account);
-
-        // If we can't extract refresh token from MSAL, we'll need to handle this differently
-        // For now, we'll store the connection and handle token refresh through our Edge Function
-        if (!refreshToken) {
-          logger.warn('No refresh token extracted from MSAL - will need to reconnect when token expires');
-        }
+        // Note: MSAL handles refresh tokens internally and doesn't expose them
+        // The refresh token is stored securely in MSAL's cache and will be used
+        // automatically when calling acquireTokenSilent() for token refresh
+        logger.info('MSAL will handle token refresh automatically using internal cache');
 
         // Persist connection in our DB via service layer
         if (!user?.id) {
@@ -292,24 +171,22 @@ const Microsoft365CallbackPage: React.FC = () => {
         logger.info('Attempting to save Microsoft connection via MSAL', { 
           userId: user.id, 
           hasAccessToken: !!silentResult.accessToken,
-          hasRefreshToken: !!refreshToken,
           expiresAt: expiresAtIso
         });
 
-        const result = await consolidatedIntegrationService.connectIntegration(
+        const result = await microsoft365Service.connect(
           user.id,
-          'microsoft365',
           {
             access_token: silentResult.accessToken,
-            refresh_token: refreshToken || '', // Store the actual refresh token if available
+            refresh_token: '', // MSAL handles refresh tokens internally
             scope: 'User.Read Mail.Read Mail.ReadWrite Calendars.Read Files.Read.All Contacts.Read offline_access',
             expires_at: expiresAtIso,
           }
         );
 
-        logger.info('MSAL connection result', { success: result.success, error: result.error });
+        logger.info('MSAL connection result', { success: !result.error, error: result.error });
 
-        if (!result.success) {
+        if (result.error) {
           throw new Error(result.error || 'Failed to save Microsoft connection');
         }
 
@@ -321,8 +198,10 @@ const Microsoft365CallbackPage: React.FC = () => {
         return;
       } else {
         // No MSAL response - this might be a direct navigation
-        logger.warn('No MSAL response found - this might be a direct navigation');
-        throw new Error('No OAuth response found. Please try the connection process again.');
+        logger.warn('No MSAL response found - redirecting to Microsoft 365 setup');
+        // Redirect to the integration marketplace instead of showing an error
+        navigate('/integrations/marketplace', { replace: true });
+        return;
       }
     } catch (error) {
       logger.error('Microsoft 365 callback failed', { 
@@ -363,7 +242,7 @@ const Microsoft365CallbackPage: React.FC = () => {
       remainingKeys: Object.keys(sessionStorage)
     });
     
-    navigate('/integrations/microsoft365');
+    navigate('/integrations/marketplace');
   };
 
   // Show loading state while authentication is loading

@@ -56,6 +56,14 @@ export const AdminPage: React.FC = () => {
       bgColor: 'bg-indigo-50',
     },
     {
+      title: 'AI Usage Monitoring',
+      description: 'Monitor OpenAI and OpenRouter API usage and costs',
+      icon: <Zap className="w-6 h-6" />,
+      path: '/admin/ai-usage',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+    },
+    {
       title: 'Policy Management',
       description: 'Manage RLS policies and database security',
       icon: <Shield className="w-6 h-6" />,
