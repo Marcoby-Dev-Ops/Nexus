@@ -45,6 +45,10 @@ import {
 // Import Quantum pages
 import QuantumOnboardingFlow from '@/components/onboarding/QuantumOnboardingFlow';
 import QuantumBlockDetailPage from '@/pages/quantum/QuantumBlockDetailPage';
+
+// Import CKB page
+import CKBPage from '@/pages/ckb';
+import BuildingBlocksPage from '@/pages/building-blocks/index';
 import QuantumBlockStrengthenPage from '@/pages/quantum/QuantumBlockStrengthenPage';
 import QuantumIdentityPage from '@/pages/quantum/QuantumIdentityPage';
 import { QuantumLayout } from '@/shared/components/layout/QuantumLayout';
@@ -167,6 +171,9 @@ import { FireCycleDashboard, FireCycleBusinessGoalsDashboard } from '@/component
 
 // Import Purposeful Experience Page
 import PurposefulExperiencePage from '@/pages/experience/PurposefulExperiencePage';
+
+// Import Mobile App
+import NexusMobileApp from '@/components/mobile/NexusMobileApp';
 
 // Loading component
 const LoadingSpinner = () => (
@@ -322,14 +329,14 @@ function App() {
             element={<Navigate to="/home" replace />} 
           />
           
-          <Route 
-            path="/home" 
+                    <Route 
+            path="/home"
             element={
               <ProtectedRoute>
                 {/* <UserMappingGuard> */}
                   <AppWithOnboarding>
                     <UnifiedLayout>
-                      <Dashboard />
+                      <BuildingBlocksPage />
                     </UnifiedLayout>
                   </AppWithOnboarding>
                 {/* </UserMappingGuard> */}
@@ -340,6 +347,30 @@ function App() {
           <Route 
             path="/dashboard/home" 
             element={<Navigate to="/home" replace />} 
+          />
+          
+          <Route 
+            path="/building-blocks" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <BuildingBlocksPage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Mobile App Route */}
+          <Route 
+            path="/mobile" 
+            element={
+              <ProtectedRoute>
+                <NexusMobileApp 
+                  businessId="demo-business-id"
+                  userId="demo-user-id"
+                />
+              </ProtectedRoute>
+            } 
           />
           
 
@@ -402,6 +433,17 @@ function App() {
               <ProtectedRoute>
                 <UnifiedLayout>
                   <ClientIntelligencePage />
+                </UnifiedLayout>
+              </ProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/ckb" 
+            element={
+              <ProtectedRoute>
+                <UnifiedLayout>
+                  <CKBPage />
                 </UnifiedLayout>
               </ProtectedRoute>
             } 

@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
-import { Target, Lightbulb, Map, Play, ArrowRight, Plus, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { Separator } from '@/shared/components/ui/Separator';
-import type { FireCycleChatResponse } from '@/core/fire-cycle/fireCycleChatIntegration';
+import { Target, Lightbulb, Map, Play, CheckCircle, X, Sparkles, MessageSquare } from 'lucide-react';
+import { InsightFeedbackWidget, type InsightData } from '@/shared/components/insights/InsightFeedbackWidget';
 
 interface FireCycleInsightsProps {
-  response: FireCycleChatResponse;
+  response: {
+    firePhase: 'focus' | 'insight' | 'roadmap' | 'execute';
+    confidence: number;
+    originalMessage: string;
+    suggestedActions: string[];
+    processedInput: {
+      insights?: string[];
+      nextSteps?: string[];
+    };
+  };
   onCreateThought?: (thought: any) => void;
   onDismiss?: () => void;
 }
@@ -16,25 +23,25 @@ interface FireCycleInsightsProps {
 const firePhaseConfig = {
   focus: {
     icon: Target,
-    color: 'bg-blue-500',
+    color: 'bg-primary',
     title: 'Focus Phase',
     description: 'Clarifying the core idea or goal'
   },
   insight: {
     icon: Lightbulb,
-    color: 'bg-yellow-500',
+    color: 'bg-warning',
     title: 'Insight Phase',
     description: 'Gaining deeper understanding and context'
   },
   roadmap: {
     icon: Map,
-    color: 'bg-green-500',
+    color: 'bg-success',
     title: 'Roadmap Phase',
     description: 'Planning the path forward'
   },
   execute: {
     icon: Play,
-    color: 'bg-purple-500',
+    color: 'bg-secondary',
     title: 'Execute Phase',
     description: 'Taking action and implementing'
   }
@@ -43,6 +50,7 @@ const firePhaseConfig = {
 export function FireCycleInsights({ response, onCreateThought, onDismiss }: FireCycleInsightsProps) {
   const [isCreatingThought, setIsCreatingThought] = useState(false);
   const [selectedActions, setSelectedActions] = useState<string[]>([]);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const config = firePhaseConfig[response.firePhase];
   const IconComponent = config.icon;
@@ -72,10 +80,10 @@ export function FireCycleInsights({ response, onCreateThought, onDismiss }: Fire
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto border-l-4 border-l-blue-500">
+    <Card className="w-full max-w-2xl mx-auto border-l-4 border-l-primary">
       <CardHeader className="pb-4">
         <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg ${config.color} text-white`}>
+          <div className={`p-2 rounded-lg ${config.color} text-primary-foreground`}>
             <IconComponent className="w-5 h-5" />
           </div>
           <div className="flex-1">
@@ -108,7 +116,7 @@ export function FireCycleInsights({ response, onCreateThought, onDismiss }: Fire
             <ul className="space-y-1">
               {response.processedInput.insights.map((insight, index) => (
                 <li key={index} className="text-sm flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
                   <span>{insight}</span>
                 </li>
               ))}
@@ -124,20 +132,13 @@ export function FireCycleInsights({ response, onCreateThought, onDismiss }: Fire
               {response.suggestedActions.map((action, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Button
-                    variant="ghost"
+                    variant={selectedActions.includes(action) ? "default" : "outline"}
                     size="sm"
-                    className="flex-1 justify-start h-auto p-2"
                     onClick={() => handleActionToggle(action)}
+                    className="text-left justify-start h-auto py-2 px-3"
                   >
-                    <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="checkbox"
-                        checked={selectedActions.includes(action)}
-                        onChange={() => handleActionToggle(action)}
-                        className="rounded"
-                      />
-                      <span className="text-sm text-left">{action}</span>
-                    </div>
+                    <Sparkles className="w-3 h-3 mr-2" />
+                    {action}
                   </Button>
                 </div>
               ))}
@@ -145,38 +146,86 @@ export function FireCycleInsights({ response, onCreateThought, onDismiss }: Fire
           </div>
         )}
 
-        <Separator />
+        {/* Next Steps */}
+        {response.processedInput.nextSteps && response.processedInput.nextSteps.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium mb-2">Recommended Next Steps:</h4>
+            <ul className="space-y-1">
+              {response.processedInput.nextSteps.map((step, index) => (
+                <li key={index} className="text-sm flex items-start gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
-          <Button
-            onClick={handleCreateThought}
-            disabled={isCreatingThought}
-            className="flex-1"
+        <div className="flex gap-2 pt-4">
+          {onCreateThought && (
+            <Button 
+              onClick={handleCreateThought}
+              disabled={isCreatingThought}
+              className="flex-1"
+            >
+              {isCreatingThought ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
+                  Creating Thought...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Create FIRE Thought
+                </>
+              )}
+            </Button>
+          )}
+          
+          <Button 
+            variant="outline" 
+            onClick={() => setShowFeedback(!showFeedback)}
+            className="flex items-center gap-2"
           >
-            <Plus className="w-4 h-4 mr-2" />
-            {isCreatingThought ? 'Creating...' : 'Create Thought'}
+            <MessageSquare className="w-4 h-4" />
+            {showFeedback ? 'Hide Feedback' : 'Give Feedback'}
           </Button>
           
           {onDismiss && (
-            <Button
-              variant="outline"
-              onClick={onDismiss}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={onDismiss}>
+              <X className="w-4 h-4 mr-2" />
               Dismiss
             </Button>
           )}
         </div>
 
-        {/* Next Steps */}
-        {response.nextSteps && response.nextSteps.length > 0 && (
-          <Alert>
-            <ArrowRight className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Next Steps:</strong> {response.nextSteps.join(', ')}
-            </AlertDescription>
-          </Alert>
+        {/* Feedback Widget */}
+        {showFeedback && (
+          <div className="mt-4">
+            <InsightFeedbackWidget
+              insight={{
+                id: `fire-insight-${response.firePhase}-${Date.now()}`,
+                title: `${config.title} Insight`,
+                content: response.originalMessage,
+                type: 'fire_insight',
+                category: response.firePhase,
+                impact: 'medium',
+                confidence: response.confidence,
+                businessContext: {
+                  firePhase: response.firePhase,
+                  suggestedActions: response.suggestedActions,
+                  processedInput: response.processedInput,
+                },
+              }}
+              compact={true}
+              onFeedbackSubmitted={(feedback) => {
+                console.log('FIRE insight feedback submitted:', feedback);
+                // Optionally hide feedback widget after submission
+                setShowFeedback(false);
+              }}
+            />
+          </div>
         )}
       </CardContent>
     </Card>

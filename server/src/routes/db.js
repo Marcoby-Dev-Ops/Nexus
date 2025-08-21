@@ -26,7 +26,7 @@ router.get('/:table', authenticateToken, async (req, res) => {
       'next_best_actions', 'user_action_executions', 'ai_models',
       'analytics_events', 'callback_events', 'oauth_tokens',
       'organizations', 'user_organizations', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases'
+      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances'
     ];
 
     if (!allowedTables.includes(table)) {
@@ -34,14 +34,14 @@ router.get('/:table', authenticateToken, async (req, res) => {
     }
 
     // Build SELECT query
-    let selectColumns = columns || '*';
+    const selectColumns = columns || '*';
     let sql = `SELECT ${selectColumns} FROM ${table}`;
-    let params = [];
+    const params = [];
     let paramIndex = 1;
 
     // Add user-based filtering for security (only for tables that don't use RLS)
     if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions'].includes(table)) {
+         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances'].includes(table)) {
       sql += ` WHERE user_id = $${paramIndex}`;
       params.push(userId);
       paramIndex++;
@@ -134,7 +134,7 @@ router.get('/:table/:id', authenticateToken, async (req, res) => {
     const allowedTables = [
       'user_profiles', 'companies', 'user_integrations', 'tasks', 
       'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions'
+      'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances'
     ];
 
     if (!allowedTables.includes(table)) {
@@ -143,7 +143,7 @@ router.get('/:table/:id', authenticateToken, async (req, res) => {
 
     // Build query with user-based security
     let sql = `SELECT * FROM ${table} WHERE ${idColumn} = $1`;
-    let params = [id];
+    const params = [id];
 
     // Add user-based filtering for security
     if (table === 'user_profiles') {
@@ -168,6 +168,12 @@ router.get('/:table/:id', authenticateToken, async (req, res) => {
       sql += ` AND user_id = $2`;
       params.push(userId);
     } else if (table === 'user_action_executions') {
+      sql += ` AND user_id = $2`;
+      params.push(userId);
+    } else if (table === 'insight_feedback') {
+      sql += ` AND user_id = $2`;
+      params.push(userId);
+    } else if (table === 'initiative_acceptances') {
       sql += ` AND user_id = $2`;
       params.push(userId);
     }
@@ -211,7 +217,7 @@ router.post('/:table', authenticateToken, async (req, res) => {
       'user_profiles', 'companies', 'user_integrations', 'tasks', 
       'thoughts', 'documents', 'business_metrics', 'user_activities',
       'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases'
+      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances'
     ];
 
     if (!allowedTables.includes(table)) {
@@ -221,7 +227,7 @@ router.post('/:table', authenticateToken, async (req, res) => {
     // Add user_id to data for user-scoped tables
     if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
          'user_activities', 'next_best_actions', 'user_action_executions',
-         'user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
+         'user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances'].includes(table)) {
       data.user_id = userId;
     }
 
@@ -295,7 +301,7 @@ router.put('/:table/:id', authenticateToken, async (req, res) => {
       'user_profiles', 'companies', 'user_integrations', 'tasks', 
       'thoughts', 'documents', 'business_metrics', 'user_activities',
       'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases'
+      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances'
     ];
 
     if (!allowedTables.includes(table)) {
@@ -311,11 +317,11 @@ router.put('/:table/:id', authenticateToken, async (req, res) => {
     const setClause = columns.map((col, index) => `${col} = $${index + 2}`).join(', ');
 
     let sql = `UPDATE ${table} SET ${setClause} WHERE ${idColumn} = $1`;
-    let params = [id, ...values];
+    const params = [id, ...values];
 
     // Add user-based filtering for security
     if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions'].includes(table)) {
+         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances'].includes(table)) {
       sql += ` AND user_id = $${params.length + 1}`;
       params.push(userId);
     }
@@ -368,7 +374,7 @@ router.delete('/:table/:id', authenticateToken, async (req, res) => {
       'user_profiles', 'companies', 'user_integrations', 'tasks', 
       'thoughts', 'documents', 'business_metrics', 'user_activities',
       'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases'
+      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances'
     ];
 
     if (!allowedTables.includes(table)) {
@@ -377,11 +383,11 @@ router.delete('/:table/:id', authenticateToken, async (req, res) => {
 
     // Build DELETE query with user-based security
     let sql = `DELETE FROM ${table} WHERE ${idColumn} = $1`;
-    let params = [id];
+    const params = [id];
 
     // Add user-based filtering for security
     if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions'].includes(table)) {
+         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances'].includes(table)) {
       sql += ` AND user_id = $2`;
       params.push(userId);
     }
@@ -434,7 +440,7 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
       'thoughts', 'documents', 'business_metrics', 'user_activities',
       'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
       'user_onboarding_completions', 'user_onboarding_phases', 'organizations',
-      'user_organizations'
+      'user_organizations', 'insight_feedback', 'initiative_acceptances'
     ];
 
     if (!allowedTables.includes(table)) {
@@ -444,7 +450,7 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
     // Add user_id to data for user-scoped tables
     if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
          'user_activities', 'next_best_actions', 'user_action_executions',
-         'user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
+         'user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances'].includes(table)) {
       data.user_id = userId;
     }
 
@@ -519,7 +525,7 @@ router.post('/:table/query', authenticateToken, async (req, res) => {
       'user_profiles', 'companies', 'user_integrations', 'tasks', 
       'thoughts', 'documents', 'business_metrics', 'user_activities',
       'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases'
+      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances'
     ];
 
     if (!allowedTables.includes(table)) {
@@ -528,12 +534,12 @@ router.post('/:table/query', authenticateToken, async (req, res) => {
 
     // Build SELECT query
     let sql = `SELECT * FROM ${table}`;
-    let params = [];
+    const params = [];
     let paramIndex = 1;
 
     // Add user-based filtering for security
     if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions'].includes(table)) {
+         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances'].includes(table)) {
       sql += ` WHERE user_id = $${paramIndex}`;
       params.push(userId);
       paramIndex++;

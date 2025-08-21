@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import { selectData as select, selectOne, updateOne } from '@/lib/api-client';
+import { selectData, selectOne, updateOne, insertOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 interface OnboardingStep {
   id: string;
   user_id: string;
-  step_name: string;
-  completed: boolean;
+  step_id: string;
+  step_data?: any;
   completed_at?: string;
   created_at: string;
   updated_at: string;
@@ -30,7 +30,7 @@ export const useOnboardingProgress = () => {
     setError(null);
     
     try {
-      const { data, error } = await select('onboarding_steps', '*', { user_id: userId });
+      const { data, error } = await selectData('user_onboarding_steps', '*', { user_id: userId });
       
       if (error) {
         const errorMsg = 'Failed to fetch onboarding progress';
@@ -70,30 +70,62 @@ export const useOnboardingProgress = () => {
     setError(null);
     
     try {
-      const { data, error } = await updateOne('onboarding_steps', 
-        { user_id: userId, step_name: stepName }, 
-        {
-          completed: true,
-          completed_at: new Date().toISOString(),
-        }
+      // First, check if the step already exists
+      const { data: existingStep, error: selectError } = await selectData(
+        'user_onboarding_steps',
+        'id',
+        { user_id: userId, step_id: stepName }
       );
+
+      if (selectError) {
+        const errorMsg = 'Failed to check existing step';
+        setError(errorMsg);
+        logger.error(errorMsg, { error: selectError, userId, stepName });
+        return null;
+      }
+
+      let result;
+      if (existingStep && existingStep.length > 0) {
+        // Update existing step
+        const stepId = existingStep[0].id;
+        result = await updateOne('user_onboarding_steps', stepId, {
+          completed_at: new Date().toISOString(),
+        });
+      } else {
+        // Insert new step
+        const { data: insertData, error: insertError } = await insertOne('user_onboarding_steps', {
+          user_id: userId,
+          step_id: stepName,
+          step_data: {},
+          completed_at: new Date().toISOString(),
+        });
+        
+        if (insertError) {
+          const errorMsg = 'Failed to insert onboarding step';
+          setError(errorMsg);
+          logger.error(errorMsg, { error: insertError, userId, stepName });
+          return null;
+        }
+        
+        result = { data: insertData, error: null };
+      }
       
-      if (error) {
+      if (result.error) {
         const errorMsg = 'Failed to complete onboarding step';
         setError(errorMsg);
-        logger.error(errorMsg, { error, userId, stepName });
+        logger.error(errorMsg, { error: result.error, userId, stepName });
         return null;
       }
       
       // Update local state
       setSteps(prev => prev.map(step => 
-        step.step_name === stepName 
-          ? { ...step, completed: true, completed_at: new Date().toISOString() }
+        step.step_id === stepName 
+          ? { ...step, completed_at: new Date().toISOString() }
           : step
       ));
       
       logger.info('Onboarding step completed successfully', { userId, stepName });
-      return data;
+      return result.data;
     } catch (err) {
       const errorMsg = 'Error completing onboarding step';
       setError(errorMsg);
@@ -106,7 +138,7 @@ export const useOnboardingProgress = () => {
 
   const getProgressPercentage = useCallback(() => {
     if (steps.length === 0) return 0;
-    const completedSteps = steps.filter(step => step.completed).length;
+    const completedSteps = steps.filter(step => step.completed_at).length;
     return Math.round((completedSteps / steps.length) * 100);
   }, [steps]);
 

@@ -114,7 +114,7 @@ class InsightsAnalyticsService {
       } = userContext;
 
       // Build similarity query based on available context
-      let similarityQuery = `
+      const similarityQuery = `
         SELECT 
           ia.*,
           -- Calculate similarity score

@@ -68,7 +68,7 @@ export interface RoadmapStep {
   playbookId?: string;
 }
 
-export interface BusinessPlaybook {
+export interface FireCycleBusinessPlaybook {
   id: string;
   name: string;
   description: string;
@@ -115,7 +115,7 @@ export interface FIREAnalysis {
   phaseProgress: number; // 0-100
   nextActions: Task[];
   insights: Insight[];
-  playbookRecommendations: BusinessPlaybook[];
+  playbookRecommendations: FireCycleBusinessPlaybook[];
   risks: string[];
   opportunities: string[];
   estimatedTimeline: number; // days
@@ -254,7 +254,7 @@ export class FireCycleBusinessGoalsService extends BaseService {
     category?: BusinessGoalCategory,
     maturityLevel?: string,
     phase?: FireCyclePhase
-  ): Promise<ServiceResponse<BusinessPlaybook[]>> {
+  ): Promise<ServiceResponse<FireCycleBusinessPlaybook[]>> {
     try {
       const playbooks = await this.loadPlaybooks();
       
@@ -360,7 +360,7 @@ export class FireCycleBusinessGoalsService extends BaseService {
     category: BusinessGoalCategory,
     maturityLevel: string,
     phase: FireCyclePhase
-  ): Promise<BusinessPlaybook[]> {
+  ): Promise<FireCycleBusinessPlaybook[]> {
     const _playbooks = await this.loadPlaybooks();
     return _playbooks.filter(p => 
       p.category === category && 
@@ -410,7 +410,7 @@ export class FireCycleBusinessGoalsService extends BaseService {
   private async generateNextActions(
     goal: Partial<BusinessGoal>, 
     phase: FireCyclePhase, 
-    _playbooks: BusinessPlaybook[]
+    _playbooks: FireCycleBusinessPlaybook[]
   ): Promise<Task[]> {
     const tasks: Task[] = [];
     
@@ -474,7 +474,7 @@ export class FireCycleBusinessGoalsService extends BaseService {
     return (completed / phaseTasks.length) * 100;
   }
 
-  private estimateTimeline(goal: Partial<BusinessGoal>, playbooks: BusinessPlaybook[]): number {
+  private estimateTimeline(goal: Partial<BusinessGoal>, playbooks: FireCycleBusinessPlaybook[]): number {
     // Estimate timeline based on playbook recommendations
     const totalHours = playbooks.reduce((sum, p) => sum + p.estimatedDuration * 8, 0);
     return Math.ceil(totalHours / 40); // Assuming 40-hour work week
@@ -530,7 +530,7 @@ export class FireCycleBusinessGoalsService extends BaseService {
     return Math.min(confidence, 1.0);
   }
 
-  private async loadPlaybooks(): Promise<BusinessPlaybook[]> {
+  private async loadPlaybooks(): Promise<FireCycleBusinessPlaybook[]> {
     // This would load from database or configuration
     // For now, return sample playbooks
     return [
@@ -619,12 +619,12 @@ export class FireCycleBusinessGoalsService extends BaseService {
     return `goal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private async getRecommendedPlaybook(goalData: Partial<BusinessGoal>, phase: FireCyclePhase): Promise<BusinessPlaybook | null> {
+  private async getRecommendedPlaybook(goalData: Partial<BusinessGoal>, phase: FireCyclePhase): Promise<FireCycleBusinessPlaybook | null> {
     const _playbooks = await this.loadPlaybooks();
     return _playbooks.find(p => p.category === goalData.category && p.firePhase === phase) || null;
   }
 
-  private async createRoadmapFromPlaybook(playbook: BusinessPlaybook | null, _goalData: Partial<BusinessGoal>): Promise<RoadmapStep[]> {
+  private async createRoadmapFromPlaybook(playbook: FireCycleBusinessPlaybook | null, _goalData: Partial<BusinessGoal>): Promise<RoadmapStep[]> {
     if (!playbook) return [];
     
     return playbook.steps.map(step => ({
@@ -639,7 +639,7 @@ export class FireCycleBusinessGoalsService extends BaseService {
     }));
   }
 
-  private async generateInitialTasks(goalData: Partial<BusinessGoal>, phase: FireCyclePhase, playbook: BusinessPlaybook | null): Promise<Task[]> {
+  private async generateInitialTasks(goalData: Partial<BusinessGoal>, phase: FireCyclePhase, playbook: FireCycleBusinessPlaybook | null): Promise<Task[]> {
     return this.generateNextActions(goalData, phase, playbook ? [playbook] : []);
   }
 }

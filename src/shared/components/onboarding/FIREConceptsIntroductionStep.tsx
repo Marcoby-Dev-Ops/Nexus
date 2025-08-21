@@ -1,461 +1,579 @@
-import React, { useState, useEffect } from 'react';
-import { Zap, Brain, ArrowRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Zap, Brain, ArrowRight, Target, TrendingUp, Users, Clock, CheckCircle, Star, Rocket, BookOpen, Play, FileText, Calendar, BarChart3, DollarSign, Sparkles, MessageSquare, Link, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
+import { motion } from 'framer-motion';
+import { playbookService } from '@/services/PlaybookService';
+import type { PlaybookRecommendation, BusinessContext } from '@/services/PlaybookService';
+import { Progress } from '@/shared/components/ui/Progress';
+import { BusinessAdvisorRAG } from '@/lib/ai/businessAdvisorRAG';
+import { InsightFeedbackWidget } from '@/shared/components/insights/InsightFeedbackWidget';
+import { useAuth } from '@/hooks';
+import { useUserContext } from '@/shared/contexts/UserContext';
 
 interface FIREConceptsIntroductionStepProps {
+  data: any;
   onNext: (data: Record<string, unknown>) => void;
-  onSkip: (data?: Record<string, unknown>) => void;
-  data: Record<string, unknown>;
-  currentStep: number;
-  totalSteps: number;
+  onBack?: () => void;
 }
 
-export const FIREConceptsIntroductionStep: React.FC<FIREConceptsIntroductionStepProps> = ({ 
-  onNext, 
-  onSkip, 
-  data 
+interface FIREInitiative {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  difficulty: string;
+  timeframe: string;
+  estimatedCost: string;
+  estimatedValue: string;
+  fireScore: number;
+  executionPlaybook: any;
+  contextualFactors: {
+    relevance: string;
+    readiness: string;
+    impact: string;
+    contextualFit?: any;
+  };
+}
+
+const FIREConceptsIntroductionStep: React.FC<FIREConceptsIntroductionStepProps> = ({
+  data,
+  onNext,
+  onBack
 }) => {
-  const [discoveredOpportunities, setDiscoveredOpportunities] = useState<any[]>([]);
-  const [selectedOpportunities, setSelectedOpportunities] = useState<string[]>([]);
+  const { user } = useAuth();
+  const { profile } = useUserContext();
+  const [discoveredInitiatives, setDiscoveredInitiatives] = useState<FIREInitiative[]>([]);
+  const [selectedInitiatives, setSelectedInitiatives] = useState<string[]>([]);
+  const [currentView, setCurrentView] = useState<'intro' | 'initiatives'>('intro');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [showFeedbackFor, setShowFeedbackFor] = useState<string | null>(null);
+  const [acceptedInitiatives, setAcceptedInitiatives] = useState<Map<string, { status: 'accepted' | 'pending' | 'completed'; playbook: any; implementationDetails: string }>>(new Map());
 
-  // Generate personalized opportunities based on business context
-  const generatePersonalizedOpportunities = (context: any) => {
-    // Use Phase 1 data for personalization
-    const industry = context.industry || 'Technology';
-    const companySize = context.companySize || 'Small to Medium';
-    const tools = context.tools || ['Slack', 'Notion', 'QuickBooks'];
-    const priorities = context.priorities || ['Increase revenue', 'Improve efficiency'];
-    const challenges = context.challenges || ['Time management', 'Manual processes'];
-    
-    const opportunities = [];
+  // Extract real context from previous phase with proper typing
+  const userProfile = (data.userProfile as any) || {};
+  const companyProfile = (data.companyProfile as any) || {};
+  const foundationalKnowledge = (data.foundationalKnowledge as any) || {};
+  
+  // Use real data with fallbacks - memoized to prevent infinite re-renders
+  const businessContext = useMemo(() => ({
+    firstName: userProfile.firstName || 'Business Leader',
+    companyName: companyProfile.name || 'Your Company',
+    industry: data.industry || companyProfile.industry || 'Technology',
+    companySize: data.companySize || companyProfile.size || 'Small to Medium',
+    role: userProfile.role || 'Founder/CEO',
+    experience: userProfile.experience || 'Intermediate',
+    priorities: data.keyPriorities || data.priorities || companyProfile.priorities || ['Increase revenue'],
+    challenges: data.businessChallenges || data.challenges || companyProfile.challenges || ['Time management'],
+    tools: data.tools || companyProfile.tools || ['CRM', 'Email'],
+    businessModel: foundationalKnowledge.businessModel || 'B2B',
+    growthStage: foundationalKnowledge.growthStage || 'Growing',
+    targetMarket: foundationalKnowledge.targetMarket || 'Small Businesses'
+  }), [userProfile, companyProfile, foundationalKnowledge, data.industry, data.companySize, data.keyPriorities, data.priorities, data.businessChallenges, data.challenges, data.tools]);
 
-    // Base opportunities for all businesses
-    opportunities.push({
-      id: 'opp-1',
-      title: 'Implement Data-Driven Decision Framework',
-      description: 'Establish KPIs and analytics dashboards for informed business decisions',
-      impact: 'Critical',
-      timeframe: '4-6 weeks',
-      category: 'Intelligence',
-      confidence: 90,
-      estimatedValue: '$25,000/year in improved decisions',
-      fireScore: 88,
-      reasoning: 'Essential for any business to make informed decisions'
-    });
+  // Convert to BusinessContext format for playbook service
+  const playbookContext: BusinessContext = useMemo(() => ({
+    userProfile: {
+      firstName: userProfile?.firstName || '',
+      lastName: userProfile?.lastName || '',
+      role: businessContext.role?.toLowerCase() || '',
+      experience: userProfile?.experience || 'intermediate',
+      skills: [],
+      userId: user?.id || ''
+    },
+    companyProfile: {
+      name: companyProfile?.name || '',
+      industry: businessContext.industry?.toLowerCase() || '',
+      size: businessContext.companySize || '',
+      stage: businessContext.growthStage?.toLowerCase() || '',
+      location: '',
+      companyId: profile?.company_id || ''
+    },
+    foundationalKnowledge: {
+      priorities: businessContext.priorities || [],
+      challenges: businessContext.challenges || [],
+      goals: [],
+      tools: businessContext.tools || []
+    },
+    currentCapabilities: {
+      existingTools: businessContext.tools || [],
+      teamSize: 1,
+      budget: 'moderate',
+      technicalExpertise: 'intermediate'
+    },
+    marcobyServices: []
+  }), [businessContext, userProfile, companyProfile, user, profile]);
 
-    // Industry-specific opportunities
-    if (industry.toLowerCase().includes('ecommerce') || industry.toLowerCase().includes('retail')) {
-      opportunities.push({
-        id: 'opp-2',
-        title: 'Optimize Conversion Funnel',
-        description: 'Improve checkout process and reduce cart abandonment rates',
-        impact: 'High',
-        timeframe: '3-4 weeks',
-        category: 'Revenue',
-        confidence: 87,
-        estimatedValue: '$20,000/year in additional sales',
-        fireScore: 91,
-        reasoning: 'Based on your ecommerce focus'
-      });
-    }
+  // FIRE's Unique AI-Powered Initiative Generation using Playbook Database
+  const generatePersonalizedInitiatives = async () => {
+    setIsGenerating(true);
+    setGenerationProgress(0);
 
-    if (industry.toLowerCase().includes('technology') || industry.toLowerCase().includes('saas')) {
-      opportunities.push({
-        id: 'opp-3',
-        title: 'Automate Customer Onboarding Process',
-        description: 'Streamline new customer setup with automated workflows and self-service portals',
-        impact: 'High',
-        timeframe: '2-4 weeks',
-        category: 'Efficiency',
-        confidence: 85,
-        estimatedValue: '$15,000/year in time savings',
-        fireScore: 92,
-        reasoning: 'Technology companies benefit from streamlined onboarding'
-      });
-    }
+    try {
+      setGenerationProgress(25);
+      console.log('🔍 Debug: Business Context for Playbook Matching:', playbookContext);
+      
+      setGenerationProgress(50);
+      const recommendations = await playbookService.getIntelligentRecommendations(playbookContext);
+      console.log('🔍 Debug: Raw Playbook Recommendations:', recommendations);
 
-    // Company size specific opportunities
-    if (companySize.toLowerCase().includes('small') || companySize.toLowerCase().includes('startup')) {
-      opportunities.push({
-        id: 'opp-4',
-        title: 'Establish Core Business Processes',
-        description: 'Document and standardize key workflows for scalability',
-        impact: 'High',
-        timeframe: '3-5 weeks',
-        category: 'Operations',
-        confidence: 82,
-        estimatedValue: '$12,000/year in efficiency gains',
-        fireScore: 86,
-        reasoning: 'Small companies need solid foundations to scale'
-      });
-    }
+      setGenerationProgress(75);
+      const initiatives = recommendations.map(rec => ({
+        id: rec.playbook.id,
+        title: rec.playbook.title,
+        description: rec.playbook.description,
+        category: rec.playbook.category,
+        difficulty: rec.playbook.difficulty,
+        timeframe: rec.playbook.timeframe,
+        estimatedCost: rec.playbook.estimatedCost,
+        estimatedValue: rec.estimatedImpact,
+        fireScore: Math.round(rec.confidenceScore || 85),
+        executionPlaybook: rec.playbook.executionPlan,
+        contextualFactors: {
+          relevance: rec.reasoning,
+          readiness: `${rec.playbook.difficulty} difficulty, ${rec.playbook.timeframe} timeframe`,
+          impact: rec.estimatedImpact,
+          contextualFit: rec.contextualFit
+        }
+      }));
 
-    if (companySize.toLowerCase().includes('medium') || companySize.toLowerCase().includes('growing')) {
-      opportunities.push({
-        id: 'opp-5',
-        title: 'Enhance Team Collaboration Tools',
-        description: 'Implement modern communication and project management systems',
-        impact: 'Medium',
-        timeframe: '2-3 weeks',
-        category: 'Productivity',
-        confidence: 82,
-        estimatedValue: '$10,000/year in productivity gains',
-        fireScore: 79,
-        reasoning: 'Growing teams need better collaboration tools'
-      });
-    }
+      console.log('🔍 Debug: Converted Initiatives:', initiatives);
 
-    // Tool-specific opportunities
-    if (tools.some((tool: string) => tool.toLowerCase().includes('slack'))) {
-      opportunities.push({
-        id: 'opp-6',
-        title: 'Optimize Slack Workflows',
-        description: 'Create automated workflows and integrations to reduce manual tasks',
-        impact: 'Medium',
-        timeframe: '1-2 weeks',
-        category: 'Productivity',
-        confidence: 88,
-        estimatedValue: '$8,000/year in time savings',
-        fireScore: 84,
-        reasoning: 'You\'re already using Slack - let\'s make it more powerful'
-      });
-    }
-
-    if (tools.some((tool: string) => tool.toLowerCase().includes('notion'))) {
-      opportunities.push({
-        id: 'opp-7',
-        title: 'Centralize Knowledge Management',
-        description: 'Organize company knowledge and create accessible documentation systems',
-        impact: 'Medium',
-        timeframe: '2-3 weeks',
-        category: 'Knowledge',
-        confidence: 85,
-        estimatedValue: '$6,000/year in reduced onboarding time',
-        fireScore: 81,
-        reasoning: 'Notion is great for knowledge management - let\'s optimize it'
-      });
-    }
-
-    // Priority-specific opportunities
-    if (priorities.some((priority: string) => priority.toLowerCase().includes('revenue') || priority.toLowerCase().includes('growth'))) {
-      opportunities.push({
-        id: 'opp-8',
-        title: 'Optimize Revenue Streams',
-        description: 'Analyze and enhance pricing strategies and revenue models',
-        impact: 'High',
-        timeframe: '3-5 weeks',
-        category: 'Revenue',
-        confidence: 78,
-        estimatedValue: '$30,000/year in revenue growth',
-        fireScore: 85,
-        reasoning: 'Based on your revenue growth priority'
-      });
-    }
-
-    if (priorities.some((priority: string) => priority.toLowerCase().includes('efficiency') || priority.toLowerCase().includes('productivity'))) {
-      opportunities.push({
-        id: 'opp-9',
-        title: 'Streamline Core Operations',
-        description: 'Identify and eliminate bottlenecks in key business processes',
-        impact: 'High',
-        timeframe: '4-6 weeks',
-        category: 'Operations',
-        confidence: 80,
-        estimatedValue: '$18,000/year in operational savings',
-        fireScore: 87,
-        reasoning: 'Based on your efficiency focus'
-      });
-    }
-
-    // Challenge-specific opportunities
-    if (challenges.some((challenge: string) => challenge.toLowerCase().includes('time') || challenge.toLowerCase().includes('manual'))) {
-      opportunities.push({
-        id: 'opp-10',
-        title: 'Automate Repetitive Tasks',
-        description: 'Identify and automate time-consuming manual processes',
-        impact: 'High',
-        timeframe: '2-4 weeks',
-        category: 'Automation',
-        confidence: 83,
-        estimatedValue: '$20,000/year in time savings',
-        fireScore: 89,
-        reasoning: 'Addressing your time management challenges'
-      });
-    }
-
-    // Ensure we have at least 4 opportunities
-    while (opportunities.length < 4) {
-      opportunities.push({
-        id: `opp-fallback-${opportunities.length + 1}`,
-        title: 'Establish Key Performance Indicators',
-        description: 'Define and track the most important metrics for your business success',
-        impact: 'Medium',
-        timeframe: '2-3 weeks',
-        category: 'Analytics',
-        confidence: 75,
-        estimatedValue: '$5,000/year in better decision making',
-        fireScore: 76,
-        reasoning: 'Essential for business growth and optimization'
-      });
-    }
-
-    return opportunities.slice(0, 6); // Return top 6 opportunities
-  };
-
-  const handleOpportunityToggle = (opportunityId: string) => {
-    setSelectedOpportunities(prev => 
-      prev.includes(opportunityId)
-        ? prev.filter(id => id !== opportunityId)
-        : [...prev, opportunityId]
-    );
-  };
-
-  const handleNext = () => {
-    const selectedOpportunitiesData = discoveredOpportunities.filter(opp => 
-      selectedOpportunities.includes(opp.id)
-    );
-
-    onNext({
-      ...data,
-      discoveredOpportunities: selectedOpportunitiesData,
-      selectedOpportunities,
-      fireConceptsData: {
-        totalDiscovered: discoveredOpportunities.length,
-        selected: selectedOpportunitiesData,
-        selectedCount: selectedOpportunities.length,
-        // Additional metadata for home page
-        categories: [...new Set(selectedOpportunitiesData.map(opp => opp.category))],
-        totalEstimatedValue: selectedOpportunitiesData.reduce((sum, opp) => {
-          const value = opp.estimatedValue?.match(/\$([\d,]+)/)?.[1]?.replace(/,/g, '') || '0';
-          return sum + parseInt(value);
-        }, 0),
-        averageFireScore: selectedOpportunitiesData.reduce((sum, opp) => sum + opp.fireScore, 0) / selectedOpportunitiesData.length,
-        impactBreakdown: selectedOpportunitiesData.reduce((acc, opp) => {
-          acc[opp.impact] = (acc[opp.impact] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      },
-      // Business context for personalization
-      businessContext: {
-        industry: data.industry,
-        companySize: data.companySize,
-        tools: data.tools,
-        priorities: data.priorities,
-        challenges: data.challenges
+      setGenerationProgress(100);
+      
+      if (initiatives.length === 0) {
+        console.log('⚠️ No initiatives found, using fallback initiatives');
+        setDiscoveredInitiatives(generateFallbackInitiatives());
+      } else {
+        setDiscoveredInitiatives(initiatives);
+        
+        const cacheData = {
+          initiatives: initiatives,
+          timestamp: Date.now(),
+          context: {
+            industry: businessContext.industry,
+            companySize: businessContext.companySize,
+            priorities: businessContext.priorities,
+            challenges: businessContext.challenges
+          }
+        };
+        
+        localStorage.setItem(`fire-initiatives-${user?.id || 'onboarding'}`, JSON.stringify(cacheData));
+        console.log('📋 Cached FIRE initiatives for future use');
       }
-    });
+    } catch (error) {
+      console.error('Error generating initiatives:', error);
+      setDiscoveredInitiatives(generateFallbackInitiatives());
+    } finally {
+      setIsGenerating(false);
+      setGenerationProgress(0);
+    }
   };
 
-  // Load personalized opportunities when component mounts
+  const generateFallbackInitiatives = (): FIREInitiative[] => {
+    return [
+      {
+        id: 'fallback-1',
+        title: 'Optimize Customer Onboarding Process',
+        description: 'Streamline your customer onboarding to improve conversion rates and reduce churn',
+        category: 'operations',
+        difficulty: 'intermediate',
+        timeframe: '2-3 weeks',
+        estimatedCost: '$500-1500',
+        estimatedValue: 'High impact on customer satisfaction',
+        fireScore: 85,
+        executionPlaybook: {
+          overview: 'Create a streamlined customer onboarding process',
+          steps: [
+            {
+              step: 1,
+              title: 'Map Current Process',
+              description: 'Document your existing onboarding workflow',
+              duration: '2-3 days',
+              resources: ['Process mapping tools', 'Team input'],
+              successCriteria: ['Process documented', 'Bottlenecks identified'],
+              tips: ['Include all touchpoints', 'Note pain points'],
+              agentExecutable: false,
+              validationMethod: 'manual'
+            }
+          ],
+          toolsRequired: [],
+          teamRoles: [],
+          riskAssessment: [],
+          timeline: []
+        },
+        contextualFactors: {
+          relevance: 'Addresses customer experience and operational efficiency',
+          readiness: 'Intermediate difficulty, 2-3 weeks timeframe',
+          impact: 'High impact on customer satisfaction and retention',
+          contextualFit: 'Fits most business types and sizes'
+        }
+      }
+    ];
+  };
+
+  // Load personalized initiatives on component mount
   useEffect(() => {
-    const personalizedOpportunities = generatePersonalizedOpportunities(data);
-    setDiscoveredOpportunities(personalizedOpportunities);
-  }, [data]);
+    if (discoveredInitiatives.length === 0) {
+      const cachedInitiatives = localStorage.getItem(`fire-initiatives-${user?.id || 'onboarding'}`);
+      
+      if (cachedInitiatives) {
+        try {
+          const parsed = JSON.parse(cachedInitiatives);
+          const cacheAge = Date.now() - parsed.timestamp;
+          if (cacheAge < 24 * 60 * 60 * 1000) {
+            console.log('📋 Using cached FIRE initiatives');
+            setDiscoveredInitiatives(parsed.initiatives);
+            return;
+          }
+        } catch (error) {
+          console.log('📋 Cache invalid, regenerating initiatives');
+        }
+      }
+      
+      generatePersonalizedInitiatives();
+    }
+  }, [playbookContext, user?.id]);
+
+  const handleInitiativeToggle = (initiativeId: string) => {
+    const isCurrentlySelected = selectedInitiatives.includes(initiativeId);
+    
+    setSelectedInitiatives(prev => 
+      prev.includes(initiativeId) 
+        ? prev.filter(id => id !== initiativeId)
+        : [...prev, initiativeId]
+    );
+    
+    if (!isCurrentlySelected) {
+      const initiative = discoveredInitiatives.find(i => i.id === initiativeId);
+      if (initiative) {
+        console.log('📋 Added to Nexus Plan:', initiative.title);
+        alert(`"${initiative.title}" has been added to your Nexus Plan. You'll receive a complete implementation playbook to guide you through the process.`);
+      }
+    }
+  };
+
+  const handleAlreadyHaveThis = async (initiative: FIREInitiative) => {
+    console.log('🔗 User already has:', initiative.title);
+    const implementationDetails = prompt('How do you have this implemented?') || '';
+    
+    if (implementationDetails && implementationDetails.trim()) {
+      alert(`Monitoring playbook created! Nexus will now help you monitor and optimize "${initiative.title}" through your ${implementationDetails} integration.`);
+    }
+  };
+
+  const handleNotInterested = (initiative: FIREInitiative) => {
+    console.log('❌ User not interested in:', initiative.title);
+    alert(`Got it! We won't suggest "${initiative.title}" again.`);
+  };
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'beginner': return 'bg-success/20 text-success border-success/30';
+      case 'intermediate': return 'bg-warning/20 text-warning border-warning/30';
+      case 'advanced': return 'bg-destructive/20 text-destructive border-destructive/30';
+      default: return 'bg-muted text-muted-foreground border-border';
+    }
+  };
+
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'setup': return <BookOpen className="w-4 h-4" />;
+      case 'marketing': return <TrendingUp className="w-4 h-4" />;
+      case 'sales': return <Target className="w-4 h-4" />;
+      case 'finance': return <DollarSign className="w-4 h-4" />;
+      case 'operations': return <Users className="w-4 h-4" />;
+      case 'technology': return <Brain className="w-4 h-4" />;
+      default: return <Rocket className="w-4 h-4" />;
+    }
+  };
+
+  if (currentView === 'intro') {
+    return (
+      <div className="max-w-4xl mx-auto p-6 space-y-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center space-y-4"
+        >
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className="bg-primary p-3 rounded-full">
+              <Zap className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h1 className="text-4xl font-bold text-primary">
+              FIRE Transformation Opportunities
+            </h1>
+          </div>
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Discover AI-powered initiatives that deliver <span className="font-semibold text-primary">immediate, measurable results</span> 
+            with <span className="font-semibold text-secondary">AI-powered intelligence and automation</span>
+          </p>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-primary-subtle rounded-xl p-6 border border-primary/20"
+        >
+          <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center">
+            <Brain className="w-5 h-5 mr-2 text-primary" />
+            Your Business Intelligence Profile
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Company:</span> {businessContext.companyName}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Industry:</span> {businessContext.industry}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Size:</span> {businessContext.companySize}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Role:</span> {businessContext.role}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Priorities:</span> {businessContext.priorities.join(', ')}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Challenges:</span> {businessContext.challenges.join(', ')}</p>
+              <p className="text-muted-foreground"><span className="font-medium text-foreground">Growth Stage:</span> {businessContext.growthStage}</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="text-center"
+        >
+          <Button 
+            onClick={() => {
+              localStorage.removeItem(`fire-initiatives-${user?.id || 'onboarding'}`);
+              setCurrentView('initiatives');
+            }}
+            className="bg-primary hover:bg-primary-hover text-primary-foreground px-8 py-4 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            disabled={isGenerating}
+          >
+            {isGenerating ? (
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-foreground"></div>
+                <span>Generating Your FIRE Initiatives...</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Sparkles className="w-5 h-5" />
+                <span>Generate Your FIRE Initiatives</span>
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            )}
+          </Button>
+          
+          {isGenerating && (
+            <div className="mt-4 max-w-md mx-auto">
+              <Progress value={generationProgress} className="w-full" />
+              <p className="text-sm text-muted-foreground mt-2">
+                {generationProgress < 25 && "Analyzing your business context..."}
+                {generationProgress >= 25 && generationProgress < 50 && "Finding matching playbooks..."}
+                {generationProgress >= 50 && generationProgress < 75 && "Scoring and ranking initiatives..."}
+                {generationProgress >= 75 && "Finalizing execution playbooks..."}
+              </p>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-8">
-      {/* FIRE Philosophy Introduction */}
-      <div className="text-center mb-12">
-        <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-gradient-to-br from-orange-500/20 to-red-500/20 mb-6">
-          <Zap className="h-10 w-10 text-orange-600" />
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center space-y-4"
+      >
+        <div className="flex items-center justify-center space-x-2 mb-4">
+          <div className="bg-primary p-3 rounded-full">
+            <Zap className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <h1 className="text-3xl font-bold text-primary">
+            AI-Generated FIRE Initiatives
+          </h1>
         </div>
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-          Welcome to FIRE
-        </h1>
-        <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-          Your business transformation philosophy: <strong>Fast, Impactful, Relevant, Executable</strong>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          Personalized business transformation opportunities with complete execution playbooks
         </p>
-        
-        <p className="text-lg text-primary mb-8 max-w-3xl mx-auto">
-          Based on your AI foundation, we've identified personalized opportunities that match your unique business context.
-        </p>
-                 {/* FIRE Philosophy Cards */}
-         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-           <div className="p-4 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg border border-primary/20">
-             <div className="text-primary font-semibold mb-2">🚀 Fast</div>
-             <p className="text-sm text-foreground">Quick wins and rapid implementation cycles</p>
-           </div>
-           <div className="p-4 bg-gradient-to-br from-secondary/5 to-secondary/10 rounded-lg border border-secondary/20">
-             <div className="text-secondary font-semibold mb-2">💥 Impactful</div>
-             <p className="text-sm text-foreground">Measurable business value and outcomes</p>
-           </div>
-           <div className="p-4 bg-gradient-to-br from-accent/5 to-accent/10 rounded-lg border border-accent/20">
-             <div className="text-accent font-semibold mb-2">🎯 Relevant</div>
-             <p className="text-sm text-foreground">Aligned with your specific business context</p>
-           </div>
-           <div className="p-4 bg-gradient-to-br from-muted/5 to-muted/10 rounded-lg border border-muted/20">
-             <div className="text-muted-foreground font-semibold mb-2">⚡ Executable</div>
-             <p className="text-sm text-foreground">Actionable with clear implementation paths</p>
-           </div>
-         </div>
-      </div>
+      </motion.div>
 
-      {/* Thought Management Introduction */}
-      <div className="mb-12">
-                 <div className="text-center mb-8">
-           <h2 className="text-2xl font-bold text-foreground mb-4">
-             Your Building Blocks Are Ready
-           </h2>
-                       <p className="text-muted-foreground max-w-2xl mx-auto">
-              Nexus has identified personalized opportunities that follow the FIRE philosophy. 
-              These are your building blocks for business transformation.
-            </p>
-            
-            {/* Show Business Context */}
-            <div className="mt-6 p-4 bg-muted/30 rounded-lg max-w-2xl mx-auto">
-              <h3 className="text-sm font-medium text-foreground mb-2">Based on your AI foundation:</h3>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <Badge variant="outline" className="text-xs">
-                  Industry: {data.industry || 'Technology'}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  Size: {data.companySize || 'Small to Medium'}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  Tools: {Array.isArray(data.tools) ? data.tools.slice(0, 3).join(', ') : 'Slack, Notion, QuickBooks'}
-                </Badge>
-                <Badge variant="outline" className="text-xs">
-                  Priority: {Array.isArray(data.priorities) ? data.priorities[0] : 'Increase revenue'}
-                </Badge>
-              </div>
-            </div>
-         </div>
-
-        {/* Discovered Opportunities */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-primary" />
-              Discovered Opportunities
-              <Badge variant="secondary" className="ml-2">
-                {discoveredOpportunities.length} Found
-              </Badge>
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Select the opportunities that resonate with your current priorities
-            </p>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {discoveredOpportunities.map((opportunity) => (
-                <div
-                  key={opportunity.id}
-                  className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                    selectedOpportunities.includes(opportunity.id)
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
-                  }`}
-                  onClick={() => handleOpportunityToggle(opportunity.id)}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-foreground mb-2">{opportunity.title}</h4>
-                      <p className="text-sm text-muted-foreground mb-3">{opportunity.description}</p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={selectedOpportunities.includes(opportunity.id)}
-                      onChange={() => handleOpportunityToggle(opportunity.id)}
-                      className="rounded border-gray-300 text-primary focus:ring-primary"
-                    />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {discoveredInitiatives.map((initiative, index) => (
+          <motion.div
+            key={initiative.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className={`h-full border-2 transition-all duration-300 hover:shadow-lg ${
+              selectedInitiatives.includes(initiative.id) 
+                ? 'border-primary bg-primary-subtle' 
+                : 'border-border hover:border-primary/30'
+            }`}>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    {getCategoryIcon(initiative.category)}
+                    <Badge variant="outline" className="text-xs font-medium">
+                      {initiative.category}
+                    </Badge>
+                    <Badge className={`text-xs font-medium border ${getDifficultyColor(initiative.difficulty)}`}>
+                      {initiative.difficulty}
+                    </Badge>
                   </div>
-                  
-                                     <div className="flex flex-wrap gap-2 mb-3">
-                     <span className={`px-2 py-1 text-xs rounded-full ${
-                       opportunity.impact === 'Critical' ? 'bg-destructive/10 text-destructive' :
-                       opportunity.impact === 'High' ? 'bg-primary/10 text-primary' :
-                       'bg-secondary/10 text-secondary'
-                     }`}>
-                       {opportunity.impact} Impact
-                     </span>
-                     <span className="px-2 py-1 text-xs bg-accent/10 text-accent rounded-full">
-                       {opportunity.category}
-                     </span>
-                     <span className="px-2 py-1 text-xs bg-muted/10 text-muted-foreground rounded-full">
-                       {opportunity.timeframe}
-                     </span>
-                   </div>
-                  
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span><strong>FIRE Score:</strong> {opportunity.fireScore}/100</span>
-                    <span><strong>Confidence:</strong> {opportunity.confidence}%</span>
-                  </div>
-                  
-                                     {opportunity.estimatedValue && (
-                     <div className="mt-2 text-xs text-primary font-medium">
-                       💰 {opportunity.estimatedValue}
-                     </div>
-                   )}
-                   
-                   {opportunity.reasoning && (
-                     <div className="mt-2 text-xs text-muted-foreground italic">
-                       💡 {opportunity.reasoning}
-                     </div>
-                   )}
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                
+                <div className="space-y-1">
+                  <CardTitle className="text-base leading-tight">{initiative.title}</CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground">
+                    {initiative.description}
+                  </CardDescription>
+                </div>
+              </CardHeader>
 
-        {/* Thought Management Explanation */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-primary" />
-              How Thought Management Works
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-               <div className="text-center">
-                 <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                   <Brain className="w-6 h-6 text-primary" />
-                 </div>
-                 <h4 className="font-medium mb-2">1. Discover</h4>
-                 <p className="text-sm text-muted-foreground">
-                   AI analyzes your business context to identify opportunities
-                 </p>
-               </div>
-               <div className="text-center">
-                 <div className="w-12 h-12 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                   <Brain className="w-6 h-6 text-secondary" />
-                 </div>
-                 <h4 className="font-medium mb-2">2. Prioritize</h4>
-                 <p className="text-sm text-muted-foreground">
-                   Select and rank opportunities based on your priorities
-                 </p>
-               </div>
-               <div className="text-center">
-                 <div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                   <Zap className="w-6 h-6 text-accent" />
-                 </div>
-                 <h4 className="font-medium mb-2">3. Execute</h4>
-                 <p className="text-sm text-muted-foreground">
-                   Transform opportunities into actionable initiatives
-                 </p>
-               </div>
-             </div>
-          </CardContent>
-        </Card>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-3 p-3 bg-muted/30 rounded-lg">
+                  <div className="text-center">
+                    <Clock className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground font-medium">TIMEFRAME</p>
+                    <p className="text-sm font-semibold text-foreground">{initiative.timeframe}</p>
+                  </div>
+                  <div className="text-center">
+                    <DollarSign className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground font-medium">COST</p>
+                    <p className="text-sm font-semibold text-foreground">{initiative.estimatedCost}</p>
+                  </div>
+                  <div className="text-center">
+                    <Star className="w-4 h-4 text-warning mx-auto mb-1" />
+                    <p className="text-xs text-muted-foreground font-medium">FIRE SCORE</p>
+                    <p className="text-sm font-semibold text-foreground">{initiative.fireScore}%</p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Target className="w-4 h-4 text-primary" />
+                    <h4 className="text-sm font-semibold text-foreground">Business Fit</h4>
+                    <div className="flex-1" />
+                    <div className="flex items-center gap-1 text-xs text-primary/70">
+                      <Play className="w-3 h-3" />
+                      {initiative.executionPlaybook.steps.length} steps
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {initiative.contextualFactors.relevance}
+                  </p>
+                </div>
+
+                <div className="bg-primary-subtle rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-success" />
+                      <span className="text-sm font-semibold text-success">Expected Value</span>
+                    </div>
+                    <span className="text-lg font-bold text-success">{initiative.estimatedValue}</span>
+                  </div>
+                  <p className="text-xs text-primary/80 leading-relaxed">
+                    {initiative.executionPlaybook.overview}
+                  </p>
+                </div>
+
+                <div className="border-t border-border/50 pt-4">
+                  <div className="space-y-3">
+                    {selectedInitiatives.includes(initiative.id) && (
+                      <div className="flex items-center gap-2 p-3 bg-success/10 border border-success/20 rounded-lg">
+                        <CheckCircle className="w-5 h-5 text-success" />
+                        <span className="text-sm font-medium text-success">Added to Nexus Plan</span>
+                      </div>
+                    )}
+                    
+                    {!selectedInitiatives.includes(initiative.id) && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          variant="default"
+                          onClick={() => handleInitiativeToggle(initiative.id)}
+                          className="flex items-center gap-2 h-auto py-3 px-4"
+                        >
+                          <Play className="w-4 h-4" />
+                          <div className="text-left">
+                            <div className="font-medium">Add to My Nexus Plan</div>
+                            <div className="text-xs opacity-80">Get playbook for implementation</div>
+                          </div>
+                        </Button>
+                        
+                        <Button
+                          variant="outline"
+                          onClick={() => handleAlreadyHaveThis(initiative)}
+                          className="flex items-center gap-2 h-auto py-3 px-4"
+                        >
+                          <Link className="w-4 h-4" />
+                          <div className="text-left">
+                            <div className="font-medium">I Already Have This</div>
+                            <div className="text-xs opacity-80">Monitor this in Nexus</div>
+                          </div>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between items-center">
-        <Button variant="outline" onClick={() => onSkip()}>
-          Skip for Now
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex justify-between items-center pt-6"
+      >
+        <Button variant="outline" onClick={onBack}>
+          Back
         </Button>
-        <Button 
-          onClick={handleNext}
-          disabled={selectedOpportunities.length === 0}
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          Continue with {selectedOpportunities.length} Opportunities
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
-      </div>
+        
+        <div className="flex items-center space-x-4">
+          <Button 
+            variant="ghost"
+            onClick={() => {
+              localStorage.removeItem(`fire-initiatives-${user?.id || 'onboarding'}`);
+              setDiscoveredInitiatives([]);
+              generatePersonalizedInitiatives();
+            }}
+            className="text-muted-foreground hover:text-primary"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Regenerate
+          </Button>
+          
+          <span className="text-sm text-muted-foreground">
+            {selectedInitiatives.length} initiatives selected
+          </span>
+          <Button 
+            onClick={() => onNext({
+              selectedInitiatives,
+              discoveredInitiatives: discoveredInitiatives.filter(initiative => 
+                selectedInitiatives.includes(initiative.id)
+              ),
+              fireInitiativesData: {
+                selected: selectedInitiatives,
+                discovered: discoveredInitiatives,
+                businessContext
+              }
+            })}
+            disabled={selectedInitiatives.length === 0}
+            className="bg-primary hover:bg-primary-hover text-primary-foreground"
+          >
+            Continue with Selected Initiatives
+            <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
+      </motion.div>
     </div>
   );
 };
+
+export default FIREConceptsIntroductionStep;

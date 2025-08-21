@@ -6,7 +6,7 @@
 /**
  * Get authorization headers for API requests
  */
-async function getAuthHeaders(): Promise<Record<string, string>> {
+export async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -15,32 +15,54 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   const sessionData = localStorage.getItem('authentik_session');
   let token: string | null = null;
   
+  console.log('🔍 [getAuthHeaders] Checking localStorage for session...');
+  
   if (sessionData) {
     try {
       const session = JSON.parse(sessionData);
+      console.log('🔍 [getAuthHeaders] Session data found:', {
+        hasAccessToken: !!session?.accessToken,
+        tokenLength: session?.accessToken?.length,
+        sessionKeys: Object.keys(session || {})
+      });
+      
       if (session?.accessToken) {
         token = session.accessToken;
+        console.log('🔍 [getAuthHeaders] Using token from localStorage');
       }
     } catch (error) {
-      // Silent fail - will try alternative methods
+      console.error('🔍 [getAuthHeaders] Error parsing session data:', error);
     }
+  } else {
+    console.log('🔍 [getAuthHeaders] No session data in localStorage');
   }
   
   // Fallback to AuthentikAuthService
   if (!token) {
+    console.log('🔍 [getAuthHeaders] Trying AuthentikAuthService fallback...');
     try {
       const { authentikAuthService } = await import('@/core/auth/AuthentikAuthService');
       const tokenResult = await authentikAuthService.getAccessToken();
+      console.log('🔍 [getAuthHeaders] AuthentikAuthService result:', {
+        success: tokenResult.success,
+        hasData: !!tokenResult.data,
+        error: tokenResult.error
+      });
+      
       if (tokenResult.success && tokenResult.data) {
         token = tokenResult.data;
+        console.log('🔍 [getAuthHeaders] Using token from AuthentikAuthService');
       }
     } catch (error) {
-      // Silent fail
+      console.error('🔍 [getAuthHeaders] Error getting token from AuthentikAuthService:', error);
     }
   }
   
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    console.log('🔍 [getAuthHeaders] Authorization header set, token length:', token.length);
+  } else {
+    console.warn('🔍 [getAuthHeaders] No token available, request will be unauthenticated');
   }
   
   return headers;

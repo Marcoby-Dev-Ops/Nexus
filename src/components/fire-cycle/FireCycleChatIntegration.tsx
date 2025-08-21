@@ -350,10 +350,10 @@ export const FireCycleChatIntegration: React.FC<FireCycleChatIntegrationProps> =
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'focus': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'insight': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'roadmap': return 'bg-green-100 text-green-800 border-green-200';
-      case 'execute': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'focus': return 'bg-primary-subtle text-primary border-primary/20';
+      case 'insight': return 'bg-warning-subtle text-warning border-warning/20';
+      case 'roadmap': return 'bg-success-subtle text-success border-success/20';
+      case 'execute': return 'bg-secondary-subtle text-secondary border-secondary/20';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };

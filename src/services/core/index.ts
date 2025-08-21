@@ -95,7 +95,7 @@ export const getCoreServices = () => ({
 export const initializeCoreServices = async () => {
   // Services are automatically initialized when imported
   // This function can be used for any additional initialization logic
-  console.log('Core services initialized');
+  // Core services initialized
 };
 
 // ============================================================================

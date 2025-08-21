@@ -365,7 +365,7 @@ export const FireCycleDashboard: React.FC<FireCycleDashboardProps> = ({
       case 'focus': return 'bg-primary/10 text-primary border-border';
       case 'insight': return 'bg-warning/10 text-yellow-800 border-yellow-200';
       case 'roadmap': return 'bg-success/10 text-success border-green-200';
-      case 'execute': return 'bg-secondary/10 text-purple-800 border-purple-200';
+      case 'execute': return 'bg-secondary/10 text-secondary border-secondary/20';
       default: return 'bg-muted text-foreground border-border';
     }
   };

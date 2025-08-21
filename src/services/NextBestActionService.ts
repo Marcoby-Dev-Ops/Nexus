@@ -270,8 +270,8 @@ export class NextBestActionService extends BaseService {
 
       // Execute based on action type
       let result: any;
-      let insights: string[] = [];
-      let nextSteps: string[] = [];
+      const insights: string[] = [];
+      const nextSteps: string[] = [];
 
       switch (action.category) {
         case 'sales':

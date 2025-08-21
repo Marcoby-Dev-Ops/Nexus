@@ -78,6 +78,60 @@ export interface CompanyKnowledgeVector {
   updated_at: Date;
 }
 
+// CKB Document Intelligence Interfaces
+export interface CKBDocument {
+  id: string;
+  company_id: string;
+  title: string;
+  content: string;
+  content_type: 'pdf' | 'docx' | 'txt' | 'xlsx' | 'csv' | 'pptx';
+  source: 'onedrive' | 'gdrive' | 'upload';
+  source_id: string;
+  source_url: string;
+  embedding: number[];
+  metadata: {
+    author?: string;
+    created_date?: string;
+    modified_date?: string;
+    file_size?: number;
+    page_count?: number;
+    tags?: string[];
+    department?: string;
+    category?: string;
+  };
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface CKBSearchResult {
+  document: CKBDocument;
+  score: number;
+  highlights: string[];
+  context: string;
+}
+
+export interface CKBSearchQuery {
+  query: string;
+  filters?: {
+    content_type?: string[];
+    department?: string[];
+    tags?: string[];
+    date_range?: {
+      from: string;
+      to: string;
+    };
+  };
+  limit?: number;
+  offset?: number;
+}
+
+export interface CKBQAResponse {
+  answer: string;
+  sources: CKBDocument[];
+  confidence: number;
+  reasoning: string;
+}
+
 class CompanyKnowledgeService {
   private async generateEmbedding(text: string, tenantId: string = 'default-tenant'): Promise<number[]> {
     try {
@@ -414,6 +468,194 @@ class CompanyKnowledgeService {
     } catch (error) {
       logger.error('Error calculating knowledge strength:', error);
       return 0;
+    }
+  }
+
+  // CKB Document Intelligence Methods
+  async addDocument(document: Omit<CKBDocument, 'id' | 'created_at' | 'updated_at'>): Promise<CKBDocument> {
+    try {
+      const result = await postgres.query(
+        `INSERT INTO ckb_documents 
+         (company_id, title, content, content_type, source, source_id, source_url, embedding, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         RETURNING *`,
+        [
+          document.company_id,
+          document.title,
+          document.content,
+          document.content_type,
+          document.source,
+          document.source_id,
+          document.source_url,
+          document.embedding,
+          document.metadata
+        ]
+      );
+
+      return {
+        ...result.rows[0],
+        created_at: new Date(result.rows[0].created_at),
+        updated_at: new Date(result.rows[0].updated_at)
+      };
+    } catch (error) {
+      logger.error('Error adding CKB document:', error);
+      throw new Error('Failed to add document');
+    }
+  }
+
+  async searchDocuments(companyId: string, query: CKBSearchQuery): Promise<CKBSearchResult[]> {
+    try {
+      // Generate embedding for the search query
+      const queryEmbedding = await this.generateEmbedding(query.query);
+
+      // Build the search query with filters
+      let sql = `
+        SELECT id, company_id, title, content, content_type, source, source_id, source_url, metadata,
+               (embedding <=> $1) as similarity
+        FROM ckb_documents 
+        WHERE company_id = $2
+      `;
+      
+      const params = [queryEmbedding, companyId];
+      let paramIndex = 3;
+
+      // Add filters
+      if (query.filters?.content_type?.length) {
+        sql += ` AND content_type = ANY($${paramIndex})`;
+        params.push(query.filters.content_type);
+        paramIndex++;
+      }
+
+      if (query.filters?.department?.length) {
+        sql += ` AND metadata->>'department' = ANY($${paramIndex})`;
+        params.push(query.filters.department);
+        paramIndex++;
+      }
+
+      sql += ` ORDER BY embedding <=> $1 LIMIT $${paramIndex}`;
+      params.push(query.limit || 10);
+
+      const result = await postgres.query(sql, params);
+
+      return result.rows.map(row => ({
+        document: {
+          id: row.id,
+          company_id: row.company_id,
+          title: row.title,
+          content: row.content,
+          content_type: row.content_type,
+          source: row.source,
+          source_id: row.source_id,
+          source_url: row.source_url,
+          embedding: [],
+          metadata: row.metadata,
+          created_at: new Date(row.created_at),
+          updated_at: new Date(row.updated_at)
+        },
+        score: 1 - row.similarity, // Convert distance to similarity score
+        highlights: [], // TODO: Implement text highlighting
+        context: row.content.substring(0, 200) + '...'
+      }));
+    } catch (error) {
+      logger.error('Error searching CKB documents:', error);
+      throw new Error('Failed to search documents');
+    }
+  }
+
+  async askQuestion(companyId: string, question: string): Promise<CKBQAResponse> {
+    try {
+      // Search for relevant documents
+      const searchResults = await this.searchDocuments(companyId, {
+        query: question,
+        limit: 5
+      });
+
+      if (searchResults.length === 0) {
+        return {
+          answer: "I couldn't find any relevant documents to answer your question.",
+          sources: [],
+          confidence: 0,
+          reasoning: "No relevant documents found in your knowledge base."
+        };
+      }
+
+      // Prepare context from top documents
+      const context = searchResults
+        .map(result => `${result.document.title}:\n${result.document.content}`)
+        .join('\n\n');
+
+      // Call AI service for Q&A
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'system',
+              content: `You are a helpful assistant that answers questions based on the provided company documents. Only use information from the documents provided. If you cannot answer the question based on the documents, say so.`
+            },
+            {
+              role: 'user',
+              content: `Based on these company documents:\n\n${context}\n\nQuestion: ${question}`
+            }
+          ],
+          model: 'gpt-4o-mini',
+          temperature: 0.3
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const aiResponse = await response.json();
+      const answer = aiResponse.choices[0].message.content;
+
+      return {
+        answer,
+        sources: searchResults.map(result => result.document),
+        confidence: searchResults[0].score,
+        reasoning: `Based on ${searchResults.length} relevant documents with confidence scores ranging from ${Math.round(searchResults[searchResults.length - 1].score * 100)}% to ${Math.round(searchResults[0].score * 100)}%.`
+      };
+    } catch (error) {
+      logger.error('Error asking question:', error);
+      throw new Error('Failed to get answer');
+    }
+  }
+
+  async getDocuments(companyId: string, limit: number = 50, offset: number = 0): Promise<CKBDocument[]> {
+    try {
+      const result = await postgres.query(
+        `SELECT * FROM ckb_documents 
+         WHERE company_id = $1 
+         ORDER BY created_at DESC 
+         LIMIT $2 OFFSET $3`,
+        [companyId, limit, offset]
+      );
+
+      return result.rows.map(row => ({
+        ...row,
+        embedding: [],
+        created_at: new Date(row.created_at),
+        updated_at: new Date(row.updated_at)
+      }));
+    } catch (error) {
+      logger.error('Error getting CKB documents:', error);
+      throw new Error('Failed to get documents');
+    }
+  }
+
+  async deleteDocument(documentId: string, companyId: string): Promise<void> {
+    try {
+      await postgres.query(
+        'DELETE FROM ckb_documents WHERE id = $1 AND company_id = $2',
+        [documentId, companyId]
+      );
+    } catch (error) {
+      logger.error('Error deleting CKB document:', error);
+      throw new Error('Failed to delete document');
     }
   }
 }

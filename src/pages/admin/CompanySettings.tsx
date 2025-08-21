@@ -196,14 +196,39 @@ const CompanySettings: React.FC = () => {
                   <SelectValue placeholder="Select industry" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="healthcare">Healthcare</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="retail">Retail</SelectItem>
-                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="education">Education</SelectItem>
-                  <SelectItem value="consulting">Consulting</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="Technology">Technology</SelectItem>
+                  <SelectItem value="Healthcare">Healthcare</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
+                  <SelectItem value="Retail">Retail</SelectItem>
+                  <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                  <SelectItem value="Education">Education</SelectItem>
+                  <SelectItem value="Real Estate">Real Estate</SelectItem>
+                  <SelectItem value="Consulting">Consulting</SelectItem>
+                  <SelectItem value="Marketing & Advertising">Marketing & Advertising</SelectItem>
+                  <SelectItem value="Legal Services">Legal Services</SelectItem>
+                  <SelectItem value="Non-profit">Non-profit</SelectItem>
+                  <SelectItem value="Food & Beverage">Food & Beverage</SelectItem>
+                  <SelectItem value="Hospitality & Tourism">Hospitality & Tourism</SelectItem>
+                  <SelectItem value="Transportation & Logistics">Transportation & Logistics</SelectItem>
+                  <SelectItem value="Energy & Utilities">Energy & Utilities</SelectItem>
+                  <SelectItem value="Construction">Construction</SelectItem>
+                  <SelectItem value="Media & Entertainment">Media & Entertainment</SelectItem>
+                  <SelectItem value="Fashion & Apparel">Fashion & Apparel</SelectItem>
+                  <SelectItem value="Automotive">Automotive</SelectItem>
+                  <SelectItem value="Agriculture">Agriculture</SelectItem>
+                  <SelectItem value="Pharmaceuticals">Pharmaceuticals</SelectItem>
+                  <SelectItem value="Telecommunications">Telecommunications</SelectItem>
+                  <SelectItem value="Aerospace & Defense">Aerospace & Defense</SelectItem>
+                  <SelectItem value="Biotechnology">Biotechnology</SelectItem>
+                  <SelectItem value="Environmental Services">Environmental Services</SelectItem>
+                  <SelectItem value="Sports & Fitness">Sports & Fitness</SelectItem>
+                  <SelectItem value="Beauty & Personal Care">Beauty & Personal Care</SelectItem>
+                  <SelectItem value="Home & Garden">Home & Garden</SelectItem>
+                  <SelectItem value="Pet Services">Pet Services</SelectItem>
+                  <SelectItem value="Professional Services">Professional Services</SelectItem>
+                  <SelectItem value="Creative Arts">Creative Arts</SelectItem>
+                  <SelectItem value="Government">Government</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>

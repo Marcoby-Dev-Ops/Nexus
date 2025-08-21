@@ -14,8 +14,8 @@ async function getUsersHandler(payload, user) {
 
     // Get users with optional filtering
     let sql = 'SELECT id, email, created_at, updated_at FROM users';
-    let queryParams = [];
-    let whereConditions = [];
+    const queryParams = [];
+    const whereConditions = [];
 
     // Apply filters if provided
     if (payload && payload.filters) {

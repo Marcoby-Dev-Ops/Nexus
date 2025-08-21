@@ -260,12 +260,14 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
   }, [loadCompany]);
 
   const refreshDepartments = useCallback(async (force = false) => {
-    await loadDepartments(force);
-  }, [loadDepartments]);
+    // Department feature not yet implemented
+    logger.info('Department refresh called but feature not yet implemented');
+  }, []);
 
   const refreshRoles = useCallback(async (force = false) => {
-    await loadRoles(force);
-  }, [loadRoles]);
+    // Roles feature not yet implemented
+    logger.info('Roles refresh called but feature not yet implemented');
+  }, []);
 
   const refreshAnalytics = useCallback(async (force = false) => {
     await loadAnalytics(force);
@@ -278,12 +280,13 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
   const refreshAll = useCallback(async (force = false) => {
     await Promise.all([
       loadCompany(force),
-      loadDepartments(force),
-      loadRoles(force),
+      // Comment out department and role loading until these features are implemented
+      // loadDepartments(force),
+      // loadRoles(force),
       loadAnalytics(force),
-      loadHealth(force),
+      loadHealth(force)
     ]);
-  }, [loadCompany, loadDepartments, loadRoles, loadAnalytics, loadHealth]);
+  }, [loadCompany, loadAnalytics, loadHealth]);
 
   const updateCompany = useCallback(async (updates: Partial<Company>) => {
     if (!company?.id) throw new Error('No company to update');
@@ -303,24 +306,19 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     }
   }, [company?.id]);
 
-  // Auto-load when companyId changes
+  // Load company data when companyId changes
   useEffect(() => {
     if (companyId) {
       loadCompany();
-      // load dependent resources afterward
-      loadDepartments();
-      loadRoles();
+      // Comment out department and role loading until these features are implemented
+      // loadDepartments();
+      // loadRoles();
       loadAnalytics();
       loadHealth();
     } else {
-      setCompany(null);
-      setDepartments([]);
-      setRoles([]);
-      setAnalytics(null);
-      setHealth(null);
       clearErrors();
     }
-  }, [companyId, loadCompany, loadDepartments, loadRoles, loadAnalytics, loadHealth, clearErrors]);
+  }, [companyId, loadCompany, loadAnalytics, loadHealth, clearErrors]);
 
   const value: CompanyContextType = useMemo(() => ({
     company,

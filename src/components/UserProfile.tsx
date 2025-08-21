@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUserProfile } from '@/shared/contexts/UserContext';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 
 export function UserProfile() {
   const { profile, loading: isLoading, error } = useUserProfile();

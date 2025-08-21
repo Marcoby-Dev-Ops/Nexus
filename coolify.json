@@ -11,9 +11,11 @@
   "healthCheckTimeout": 30,
   "environmentVariables": {
     "NODE_ENV": "production",
-    "VITE_POSTGRES_URL": "postgresql://postgres:postgres@localhost:5433/vector_db",
+    "VITE_NODE_ENV": "production",
+    "VITE_POSTGRES_URL": "${POSTGRES_URL}",
     "VITE_NEXT_PUBLIC_APP_URL": "https://nexus.marcoby.net",
-    "VITE_APP_URL": "https://nexus.marcoby.net"
+    "VITE_APP_URL": "https://nexus.marcoby.net",
+    "VITE_API_URL": "https://api.nexus.marcoby.net"
   },
   "deployment": {
     "type": "dockerfile",
@@ -43,5 +45,48 @@
     "enabled": true,
     "schedule": "0 2 * * *",
     "retention": 7
+  },
+  "services": {
+    "postgres": {
+      "type": "postgresql",
+      "version": "15",
+      "environmentVariables": {
+        "POSTGRES_DB": "vector_db",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD}"
+      },
+      "backup": {
+        "enabled": true,
+        "schedule": "0 2 * * *",
+        "retention": 30
+      },
+      "monitoring": {
+        "enabled": true
+      }
+    },
+    "api": {
+      "name": "Nexus API",
+      "type": "dockerfile",
+      "dockerfile": "server/Dockerfile",
+      "port": 3001,
+      "environmentVariables": {
+        "NODE_ENV": "production",
+        "DATABASE_URL": "${POSTGRES_URL}",
+        "DB_HOST": "${POSTGRES_HOST}",
+        "DB_PORT": "${POSTGRES_PORT}",
+        "DB_NAME": "${POSTGRES_DB}",
+        "DB_USER": "${POSTGRES_USER}",
+        "DB_PASSWORD": "${POSTGRES_PASSWORD}",
+        "FRONTEND_URL": "https://nexus.marcoby.net"
+      },
+      "domains": [
+        "api.nexus.marcoby.net"
+      ],
+      "ssl": {
+        "enabled": true,
+        "provider": "letsencrypt",
+        "email": "admin@marcoby.net"
+      }
+    }
   }
 } 

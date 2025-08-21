@@ -38,6 +38,14 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   // === QUANTUM BUSINESS ECOSYSTEM ===
   {
+    name: 'Home',
+    path: '/home',
+    icon: <PieChart className="h-5 w-5" />,
+    description: 'Your success is inevitable with the 7 building blocks',
+    category: 'quantum',
+    badge: 'Core'
+  },
+  {
     name: 'Business Ecosystem',
     path: '/dashboard/home',
     icon: <PieChart className="h-5 w-5" />,
@@ -245,6 +253,17 @@ export const navItems: NavItem[] = [
         name: 'Client Intelligence',
         path: '/tasks/workspace/clients',
         description: 'Unified client profiles and insights'
+      },
+      {
+        name: 'Knowledge Base',
+        path: '/ckb',
+        description: 'Search and analyze your company documents'
+      },
+      {
+        name: 'Mobile App',
+        path: '/mobile',
+        description: 'Business gaming experience on mobile',
+        badge: 'New'
       }
     ]
   },

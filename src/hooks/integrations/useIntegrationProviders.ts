@@ -74,7 +74,7 @@ export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
      
      
     // eslint-disable-next-line no-console
-    console.log("Disconnecting from Google is not yet implemented.");
+    // Disconnecting from Google is not yet implemented
   };
 
   const connectMicrosoft = async () => {

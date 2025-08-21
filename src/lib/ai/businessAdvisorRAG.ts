@@ -176,6 +176,7 @@ export interface Mitigation {
 export class BusinessAdvisorRAG {
   private context: BusinessContext | null = null;
   private conversationHistory: Array<{ role: 'user' | 'advisor'; content: string; timestamp: Date }> = [];
+  private excludedInsights: string[] = [];
 
   constructor(context?: BusinessContext) {
     if (context) {
@@ -189,6 +190,28 @@ export class BusinessAdvisorRAG {
 
   setContext(context: BusinessContext) {
     this.context = context;
+  }
+
+  /**
+   * Set excluded insights to avoid recommending already implemented or low-value insights
+   */
+  setExcludedInsights(excludedInsights: string[]) {
+    this.excludedInsights = excludedInsights;
+  }
+
+  /**
+   * Check if an insight should be excluded based on user feedback
+   */
+  private shouldExcludeInsight(insightTitle: string, insightContent: string): boolean {
+    const insightText = `${insightTitle} ${insightContent}`.toLowerCase();
+    
+    // Check if this insight is similar to any excluded insights
+    return this.excludedInsights.some(excludedId => {
+      // For now, we'll do a simple text similarity check
+      // In a more sophisticated implementation, you could use embeddings
+      const excludedText = excludedId.toLowerCase();
+      return insightText.includes(excludedText) || excludedText.includes(insightText);
+    });
   }
 
   updateContext(updates: Partial<BusinessContext>) {

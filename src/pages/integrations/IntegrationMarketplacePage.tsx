@@ -560,7 +560,7 @@ const IntegrationMarketplacePage: React.FC = () => {
       logger.info(`All user integrations:`, { allUserIntegrations, allIntegrationsError });
       
       // Search for the specific integration in user_integrations using integration_slug
-      let { data: integrationRecords, error: findError } = await select('user_integrations', '*', { 
+      const { data: integrationRecords, error: findError } = await select('user_integrations', '*', { 
         user_id: user.id, 
         integration_slug: integration.id 
       });

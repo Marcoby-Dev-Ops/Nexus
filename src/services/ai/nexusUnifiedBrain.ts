@@ -53,7 +53,7 @@ export class NexusUnifiedBrain {
 
   private initialize(): void {
     // Initialize the unified brain system
-    console.log('Nexus Unified Brain initialized');
+    // Nexus Unified Brain initialized
   }
 
   async processBusinessData(data: CrossDepartmentalData[]): Promise<UnifiedBusinessContext> {

@@ -147,7 +147,28 @@ export const SelectTrigger: React.FC<SelectTriggerProps> = ({ className, childre
  */
 export const SelectValue: React.FC<SelectValueProps> = ({ placeholder }) => {
   const { value, options } = React.useContext(SelectContext);
-  const display = value ? (options[value] ?? value) : undefined;
+  
+  // If we have a value, try to get the display from options
+  // If options[value] exists, use it; otherwise, try to format the value nicely
+  const getDisplayValue = () => {
+    if (!value) return undefined;
+    
+    // First try to get from registered options
+    if (options[value]) {
+      return options[value];
+    }
+    
+    // If no option found, try to format the value nicely
+    // Convert kebab-case or snake_case to Title Case
+    const formattedValue = value
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, l => l.toUpperCase());
+    
+    return formattedValue;
+  };
+  
+  const display = getDisplayValue();
+  
   return (
     <span className={cn(!display && 'text-muted-foreground')}>
       {display || placeholder}

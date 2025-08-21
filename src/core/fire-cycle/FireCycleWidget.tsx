@@ -2,37 +2,56 @@ import React from 'react';
 import { Target, Lightbulb, Map, Play } from 'lucide-react';
 import { useFireCyclePhase } from './FireCycleProvider';
 
+const FIRE_PHASES = {
+  focus: {
+    color: 'text-primary',
+    bg: 'bg-primary-subtle',
+  },
+  insight: {
+    color: 'text-warning',
+    bg: 'bg-warning-subtle',
+  },
+  roadmap: {
+    color: 'text-success',
+    bg: 'bg-success-subtle',
+  },
+  execute: {
+    color: 'text-secondary',
+    bg: 'bg-secondary-subtle',
+  },
+};
+
 const PHASES = [
   {
     id: 'focus',
     label: 'Focus',
     icon: Target,
-    color: 'text-blue-600',
-    bg: 'bg-blue-100',
+    color: 'text-primary',
+    bg: 'bg-primary-subtle',
     description: 'What matters most right now?'
   },
   {
     id: 'insight',
     label: 'Insight',
     icon: Lightbulb,
-    color: 'text-yellow-600',
-    bg: 'bg-yellow-100',
+    color: 'text-warning',
+    bg: 'bg-warning-subtle',
     description: 'What are you learning?'
   },
   {
     id: 'roadmap',
     label: 'Roadmap',
     icon: Map,
-    color: 'text-green-600',
-    bg: 'bg-green-100',
-    description: 'What’s the plan?'
+    color: 'text-success',
+    bg: 'bg-success-subtle',
+    description: 'What\'s the plan?'
   },
   {
     id: 'execute',
     label: 'Execute',
     icon: Play,
-    color: 'text-purple-600',
-    bg: 'bg-purple-100',
+    color: 'text-secondary',
+    bg: 'bg-secondary-subtle',
     description: 'Take action and track progress.'
   }
 ] as const;

@@ -2,6 +2,10 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Set environment variables
+ENV NODE_ENV=production
+ENV VITE_NODE_ENV=production
+
 # Copy package files first for better caching
 COPY package*.json pnpm-lock.yaml ./
 
@@ -12,8 +16,8 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the application with explicit environment and mode
-RUN NODE_ENV=production pnpm run build
+# Build the application
+RUN pnpm run build
 
 # Install curl for health check
 RUN apk add --no-cache curl

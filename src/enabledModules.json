@@ -2,5 +2,6 @@
   "sales": true,
   "finance": true,
   "operations": true,
-  "marketplace": true
+  "marketplace": true,
+  "ckb": true
 } 

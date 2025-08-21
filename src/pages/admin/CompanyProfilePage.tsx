@@ -25,7 +25,41 @@ const companyProfileSchema = z.object({
 
 type CompanyProfileFormData = z.infer<typeof companyProfileSchema>;
 
-const industryOptions = ["Technology", "Healthcare", "Finance", "Retail", "Manufacturing", "Education", "Other"];
+const industryOptions = [
+  "Technology",
+  "Healthcare",
+  "Finance",
+  "Retail",
+  "Manufacturing",
+  "Education",
+  "Real Estate",
+  "Consulting",
+  "Marketing & Advertising",
+  "Legal Services",
+  "Non-profit",
+  "Food & Beverage",
+  "Hospitality & Tourism",
+  "Transportation & Logistics",
+  "Energy & Utilities",
+  "Construction",
+  "Media & Entertainment",
+  "Fashion & Apparel",
+  "Automotive",
+  "Agriculture",
+  "Pharmaceuticals",
+  "Telecommunications",
+  "Aerospace & Defense",
+  "Biotechnology",
+  "Environmental Services",
+  "Sports & Fitness",
+  "Beauty & Personal Care",
+  "Home & Garden",
+  "Pet Services",
+  "Professional Services",
+  "Creative Arts",
+  "Government",
+  "Other"
+];
 const sizeOptions = ["1-10 employees", "11-50 employees", "51-200 employees", "201-500 employees", "501-1000 employees", "1000+ employees"];
 
 export function CompanyProfilePage() {

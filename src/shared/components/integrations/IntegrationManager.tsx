@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/shared/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
 import type { UserIntegration, IntegrationPlatform, ConnectionResult } from '@/services/integrations/consolidatedIntegrationService';
 import { logger } from '@/shared/utils/logger';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Loader2, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface IntegrationManagerProps {
   onIntegrationChange?: (integrations: UserIntegration[]) => void;

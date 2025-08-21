@@ -321,7 +321,16 @@ export class ContextualDataCompletionService extends BaseService {
   }
 
   private extractIndustryFromDescription(description: string): string {
-    const industries = ['technology', 'healthcare', 'finance', 'retail', 'manufacturing'];
+    const industries = [
+      'technology', 'healthcare', 'finance', 'retail', 'manufacturing', 'education',
+      'real estate', 'consulting', 'marketing', 'advertising', 'legal', 'non-profit',
+      'food', 'beverage', 'hospitality', 'tourism', 'transportation', 'logistics',
+      'energy', 'utilities', 'construction', 'media', 'entertainment', 'fashion',
+      'apparel', 'automotive', 'agriculture', 'pharmaceuticals', 'telecommunications',
+      'aerospace', 'defense', 'biotechnology', 'environmental', 'sports', 'fitness',
+      'beauty', 'personal care', 'home', 'garden', 'pet', 'professional services',
+      'creative arts', 'government'
+    ];
     const lowerDesc = description.toLowerCase();
     
     for (const industry of industries) {

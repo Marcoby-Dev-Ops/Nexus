@@ -74,25 +74,25 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
     }
   };
 
-  const getPhaseColor = (phase: FireCyclePhase) => {
+  const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'focus': return 'text-blue-600 bg-blue-100';
-      case 'insight': return 'text-yellow-600 bg-yellow-100';
-      case 'roadmap': return 'text-green-600 bg-green-100';
-      case 'execute': return 'text-purple-600 bg-purple-100';
+      case 'focus': return 'text-primary bg-primary-subtle';
+      case 'insight': return 'text-warning bg-warning-subtle';
+      case 'roadmap': return 'text-success bg-success-subtle';
+      case 'execute': return 'text-secondary bg-secondary-subtle';
+      default: return 'text-muted-foreground bg-muted';
     }
   };
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'sales': return 'text-red-600 bg-red-100';
-      case 'marketing': return 'text-blue-600 bg-blue-100';
-      case 'product': return 'text-green-600 bg-green-100';
-      case 'operations': return 'text-orange-600 bg-orange-100';
-      case 'finance': return 'text-purple-600 bg-purple-100';
-      case 'hr': return 'text-pink-600 bg-pink-100';
-      case 'customer-success': return 'text-indigo-600 bg-indigo-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'setup': return 'text-success bg-success-subtle';
+      case 'marketing': return 'text-primary bg-primary-subtle';
+      case 'sales': return 'text-warning bg-warning-subtle';
+      case 'finance': return 'text-secondary bg-secondary-subtle';
+      case 'operations': return 'text-info bg-info-subtle';
+      case 'technology': return 'text-accent bg-accent-subtle';
+      default: return 'text-muted-foreground bg-muted';
     }
   };
 
@@ -128,9 +128,9 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
         </div>
 
         {detectedProblem && (
-          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <h3 className="font-medium text-blue-900 mb-1">Detected Challenge: </h3>
-            <p className="text-sm text-blue-800">{detectedProblem}</p>
+                  <div className="mb-4 p-3 bg-primary-subtle border border-primary/20 rounded-lg">
+          <h3 className="font-medium text-primary mb-1">Detected Challenge: </h3>
+          <p className="text-sm text-primary/80">{detectedProblem}</p>
           </div>
         )}
 
@@ -231,7 +231,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
           <div className="grid grid-cols-1 md: grid-cols-4 gap-4 mb-6">
             <div className="p-3 border rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
-                <Target className="w-4 h-4 text-blue-600" />
+                <Target className="w-4 h-4 text-primary" />
                 <span className="font-medium text-foreground">Focus</span>
               </div>
               <p className="text-sm text-muted-foreground">{selectedPlaybook.focus}</p>
@@ -255,7 +255,7 @@ export const SolutionsPlaybookUI: React.FC<SolutionsPlaybookUIProps> = ({
             
             <div className="p-3 border rounded-lg">
               <div className="flex items-center space-x-2 mb-2">
-                <Zap className="w-4 h-4 text-purple-600" />
+                <Zap className="w-4 h-4 text-secondary" />
                 <span className="font-medium text-foreground">Execute</span>
               </div>
               <p className="text-sm text-muted-foreground">{selectedPlaybook.execute.length} actions</p>

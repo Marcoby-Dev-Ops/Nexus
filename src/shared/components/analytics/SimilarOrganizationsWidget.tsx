@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { InsightsAnalyticsClient, SimilarOrganizationsSummary, IndustryTrends, MaturityLevelInsights } from '../../../services/analytics/InsightsAnalyticsClient';
+import type { SimilarOrganizationsSummary, IndustryTrends, MaturityLevelInsights } from '../../../services/analytics/InsightsAnalyticsClient';
+import { InsightsAnalyticsClient } from '../../../services/analytics/InsightsAnalyticsClient';
 import { BuildingBlocksService } from '../../../services/BuildingBlocksService';
 
 interface SimilarOrganizationsWidgetProps {

@@ -134,29 +134,11 @@ const AccountSettings: React.FC = () => {
       }
 
       if (companyId && departmentNameInput) {
-        try {
-          // Ensure department exists for the company
-          const departments = await companyService.getCompanyDepartments(companyId);
-          const existingDept = departments.success ? 
-            (departments.data || []).find(d => d.name?.toLowerCase() === departmentNameInput.toLowerCase()) : 
-            undefined;
-          
-          if (!existingDept) {
-            const createdDept = await companyService.createDepartment({ 
-              company_id: companyId, 
-              name: departmentNameInput 
-            } as any);
-            if (createdDept.success) {
-              logger.info('Created new department', { 
-                departmentId: createdDept.data?.id, 
-                departmentName: departmentNameInput,
-                companyId 
-              });
-            }
-          }
-        } catch (err) {
-          logger.error('Error ensuring department linkage', { error: err, departmentNameInput, companyId });
-        }
+        // Department feature not yet implemented - skip for now
+        logger.info('Department feature not yet implemented, skipping department creation', { 
+          departmentNameInput, 
+          companyId 
+        });
       }
 
       const updates = {

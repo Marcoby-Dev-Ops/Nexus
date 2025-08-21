@@ -34,7 +34,7 @@ export const useUserIntegrations = (): UseUserIntegrationsReturn => {
       setIsLoading(true);
       setError(null);
       
-      console.log('🔄 Starting user integrations refresh for user: ', user.id);
+      // Refresh user integrations
       
       const { data, error } = await consolidatedIntegrationService.getUserIntegrations(user.id);
       
@@ -43,7 +43,7 @@ export const useUserIntegrations = (): UseUserIntegrationsReturn => {
         throw new Error(error || 'Failed to fetch user integrations');
       }
 
-      console.log('✅ Successfully fetched user integrations: ', data?.length || 0);
+      // Successfully fetched user integrations
       setUserIntegrations(data || []);
     } catch (err) {
       console.error('❌ Error refreshing user integrations: ', err);

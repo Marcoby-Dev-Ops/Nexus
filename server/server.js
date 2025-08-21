@@ -33,6 +33,9 @@ const thoughtsRoutes = require('./src/routes/thoughts');
 // Import analytics routes
 const analyticsRoutes = require('./src/routes/analytics');
 
+// Import CKB routes
+const ckbRoutes = require('./routes/ckb');
+
 // Load environment variables
 config();
 
@@ -140,7 +143,9 @@ app.use('/api/thoughts', thoughtsRoutes);
 app.use('/api/ai', aiGatewayRoutes);
 app.use('/api/ai-insights', aiInsightsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ckb', ckbRoutes);
 logger.info('AI Gateway routes mounted at /api/ai');
+logger.info('CKB routes mounted at /api/ckb');
 
 // Graceful shutdown handling
 const gracefulShutdown = (signal) => {

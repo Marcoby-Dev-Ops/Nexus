@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
-import { Progress } from '@/shared/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
-import { Alert, AlertDescription } from '@/shared/components/ui/alert';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
+import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { consolidatedIntegrationService } from '@/services/integrations/consolidatedIntegrationService';
 import { HubSpotDataConnector } from '@/services/integrations/hubspot/HubSpotDataConnector';

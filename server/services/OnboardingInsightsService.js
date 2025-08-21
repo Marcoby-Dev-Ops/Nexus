@@ -1192,7 +1192,7 @@ Key Focus Areas for ${user.companySize} Companies:
 
      // Map priorities to relevant building blocks
      let relevantBlocks = new Set();
-     let contextualFocus = [];
+     const contextualFocus = [];
 
      priorities.forEach(priority => {
        const mapping = priorityMappings[priority];

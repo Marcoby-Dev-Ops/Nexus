@@ -121,7 +121,7 @@ async function matchDocuments(params, userId) {
     WHERE user_id = $2
   `;
   
-  let sqlParams = [query_embedding, userId];
+  const sqlParams = [query_embedding, userId];
   let paramIndex = 3;
 
   // Add additional filters
@@ -177,7 +177,7 @@ async function matchThoughts(params, userId) {
     WHERE user_id = $2
   `;
   
-  let sqlParams = [query_embedding, userId];
+  const sqlParams = [query_embedding, userId];
   let paramIndex = 3;
 
   // Add additional filters

@@ -16,11 +16,12 @@ export const CompanySchema = z.object({
   logo_url: z.string().url().nullish(),
   website: z.string().url().nullish(),
   description: z.string().max(1000).nullish(),
-  owner_id: z.string().uuid().nullish(),
+  owner_id: z.string().nullish(), // Accept any string format (UUID or hash)
   
   // Business Information
   business_phone: z.string().nullish(),
   duns_number: z.string().nullish(),
+  ein: z.string().nullish(), // Employer Identification Number
   employee_count: z.number().positive().nullish(),
   founded: z.string().nullish(),
   headquarters: z.string().nullish(),
@@ -94,7 +95,7 @@ export type CompanyRole = z.infer<typeof CompanyRoleSchema>;
 // User Company Role Schema
 export const UserCompanyRoleSchema = z.object({
   id: z.string().uuid(),
-  user_id: z.string().uuid(),
+  user_id: z.string(), // Accept any string format (UUID or hash)
   company_id: z.string().uuid(),
   role_id: z.string().uuid(),
   department_id: z.string().uuid().optional(),
@@ -184,13 +185,67 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
       const { data, error } = await selectOne('companies', id);
       if (error) throw error;
       const validatedData = this.config.schema.parse(data);
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, `get ${this.config.tableName} ${id}`);
   }
 
   async create(data: Partial<Company>): Promise<ServiceResponse<Company>> {
     this.logMethodCall('create', { data });
     return this.executeDbOperation(async () => {
+      // Validate company name uniqueness
+      if (data.name) {
+        const { data: existingCompanies, error: searchError } = await selectData('companies', 'id, name, domain, ein');
+        
+        if (searchError) {
+          return { data: null, error: `Failed to validate company name: ${searchError}`, success: false };
+        }
+        
+        // Filter by name manually since selectData doesn't support filters properly
+        const nameMatches = existingCompanies?.filter((company: any) => 
+          company.name?.toLowerCase() === data.name?.toLowerCase()
+        ) || [];
+        
+        if (nameMatches.length > 0) {
+          return { data: null, error: `Company with name "${data.name}" already exists`, success: false };
+        }
+      }
+
+      // Validate EIN if provided
+      if (data.ein) {
+        const { data: existingEIN, error: einSearchError } = await selectData('companies', 'id, name');
+        
+        if (einSearchError) {
+          return { data: null, error: `Failed to validate EIN: ${einSearchError}`, success: false };
+        }
+        
+        // Filter by EIN manually
+        const einMatches = existingEIN?.filter((company: any) => 
+          company.ein === data.ein
+        ) || [];
+        
+        if (einMatches.length > 0) {
+          return { data: null, error: `Company with EIN "${data.ein}" already exists`, success: false };
+        }
+      }
+
+      // Validate domain if provided
+      if (data.domain) {
+        const { data: existingDomain, error: domainSearchError } = await selectData('companies', 'id, name');
+        
+        if (domainSearchError) {
+          return { data: null, error: `Failed to validate domain: ${domainSearchError}`, success: false };
+        }
+        
+        // Filter by domain manually
+        const domainMatches = existingDomain?.filter((company: any) => 
+          company.domain?.toLowerCase() === data.domain?.toLowerCase()
+        ) || [];
+        
+        if (domainMatches.length > 0) {
+          return { data: null, error: `Company with domain "${data.domain}" already exists`, success: false };
+        }
+      }
+
       const { data: result, error } = await insertOne('companies', {
         ...data,
         created_at: new Date().toISOString(),
@@ -198,7 +253,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
       });
       if (error) throw error;
       const validatedData = this.config.schema.parse(result);
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, `create ${this.config.tableName}`);
   }
 
@@ -211,7 +266,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
       });
       if (error) throw error;
       const validatedData = this.config.schema.parse(result);
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, `update ${this.config.tableName} ${id}`);
   }
 
@@ -220,7 +275,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     return this.executeDbOperation(async () => {
       const { error } = await deleteOne('companies', id);
       if (error) throw error;
-      return { data: true, error: null };
+      return { data: true, error: null, success: true };
     }, `delete ${this.config.tableName} ${id}`);
   }
 
@@ -232,7 +287,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
       });
       if (error) throw error;
       const validatedData = data.map((item: any) => this.config.schema.parse(item));
-      return { data: validatedData, error: null };
+      return { data: validatedData, error: null, success: true };
     }, `list ${this.config.tableName}`);
   }
 
@@ -249,15 +304,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
   ): Promise<ServiceResponse<ProvisioningResult>> {
     return this.executeDbOperation(async () => {
       // Check if user already has a company
-      const { data: profile, error: profileError } = await this.queryWrapper.userQuery(
-        async () => supabase
-          .from('user_profiles')
-          .select('company_id, role, first_name, last_name, email')
-          .eq('id', userId)
-          .single(),
-        userId,
-        'check-company-association'
-      );
+      const { data: profile, error: profileError } = await selectOne('user_profiles', userId, 'company_id, role, first_name, last_name, email');
 
       if (profileError) {
         logger.error('Error checking user profile:', profileError);
@@ -267,7 +314,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           message: 'Failed to check user profile',
           error: profileError.message
         };
-        return { data: ProvisioningResultSchema.parse(result), error: null };
+        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
       }
 
       // If user already has a company, return success
@@ -278,7 +325,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           action: 'found',
           message: 'User already associated with company'
         };
-        return { data: ProvisioningResultSchema.parse(result), error: null };
+        return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
       }
 
       // User doesn't have a company - handle based on options
@@ -292,7 +339,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           action: 'redirected',
           message: 'Redirecting to onboarding'
         };
-        return { data: ProvisioningResultSchema.parse(result), error: null };
+        return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
       }
 
       // Default: create personal workspace
@@ -305,54 +352,213 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
    */
   async getOrCreateCompany(userId: string): Promise<ServiceResponse<{ companyId: string | null; error: string | null }>> {
     return this.executeDbOperation(async () => {
-      const { data: profile, error: profileError } = await supabase
-        .from('user_profiles')
-        .select('company_id')
-        .eq('id', userId)
-        .single();
+      const { data: profile, error: profileError } = await selectOne('user_profiles', userId, 'company_id');
 
       if (profileError) {
-        return { data: { companyId: null, error: profileError.message }, error: null };
+        return { data: { companyId: null, error: profileError.message }, error: null, success: false };
       }
 
       if (profile?.company_id) {
-        return { data: { companyId: profile.company_id, error: null }, error: null };
+        return { data: { companyId: profile.company_id, error: null }, error: null, success: true };
       }
 
       // Create a personal company
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: 'My Business',
-          industry: 'Personal',
-          size: '1',
-          created_by: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data: company, error: companyError } = await insertOne('companies', {
+        name: 'My Business',
+        industry: 'Personal',
+        size: '1',
+        created_by: userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
 
       if (companyError) {
-        return { data: { companyId: null, error: companyError.message }, error: null };
+        return { data: { companyId: null, error: companyError.message }, error: null, success: false };
       }
 
       // Update user profile
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          company_id: company.id,
-          role: 'owner',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
+      const { error: updateError } = await updateOne('user_profiles', userId, {
+        company_id: company.id,
+        role: 'owner',
+        updated_at: new Date().toISOString()
+      });
 
       if (updateError) {
-        return { data: { companyId: null, error: updateError.message }, error: null };
+        return { data: { companyId: null, error: updateError.message }, error: null, success: false };
       }
 
-      return { data: { companyId: company.id, error: null }, error: null };
+      return { data: { companyId: company.id, error: null }, error: null, success: true };
     }, `get or create company for user ${userId}`);
+  }
+
+  // ====================================================================
+  // COMPANY CREATION WITH ADMIN ROLE
+  // ====================================================================
+
+  /**
+   * Create a new company and assign the first user as admin
+   * This is the primary method for creating companies with proper role assignment
+   */
+  async createCompanyWithAdmin(
+    userId: string,
+    companyData: {
+      name: string;
+      industry?: string;
+      size?: string;
+      description?: string;
+      website?: string;
+    }
+  ): Promise<ServiceResponse<{ companyId: string; isAdmin: boolean }>> {
+    return this.executeDbOperation(async () => {
+      // Check if user already has a company
+      const { data: existingProfile, error: profileError } = await selectOne('user_profiles', userId, 'company_id, role');
+      
+      if (profileError) {
+        return { data: null, error: profileError.message, success: false };
+      }
+
+      if (existingProfile?.company_id) {
+        return { 
+          data: { companyId: existingProfile.company_id, isAdmin: existingProfile.role === 'admin' }, 
+          error: null, 
+          success: true 
+        };
+      }
+
+      // Create the company
+      const { data: company, error: companyError } = await insertOne('companies', {
+        name: companyData.name,
+        industry: companyData.industry || 'Technology',
+        size: companyData.size || '1-10',
+        description: companyData.description,
+        website: companyData.website,
+        owner_id: userId, // Set the creator as owner
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+
+      if (companyError) {
+        return { data: null, error: companyError.message, success: false };
+      }
+
+      // Associate user with company as admin
+      const { error: updateError } = await updateOne('user_profiles', userId, {
+        company_id: company.id,
+        role: 'admin', // First user becomes admin
+        updated_at: new Date().toISOString()
+      });
+
+      if (updateError) {
+        // Rollback company creation if user association fails
+        await deleteOne('companies', company.id);
+        return { data: null, error: updateError.message, success: false };
+      }
+
+      return { 
+        data: { companyId: company.id, isAdmin: true }, 
+        error: null, 
+        success: true 
+      };
+    }, `create company with admin for user ${userId}`);
+  }
+
+  /**
+   * Add a user to an existing company with a specific role
+   */
+  async addUserToCompany(
+    userId: string,
+    companyId: string,
+    role: 'admin' | 'owner' | 'manager' | 'member' = 'member'
+  ): Promise<ServiceResponse<{ success: boolean; role: string }>> {
+    return this.executeDbOperation(async () => {
+      // Check if company exists
+      const { data: company, error: companyError } = await selectOne('companies', companyId);
+      
+      if (companyError || !company) {
+        return { data: null, error: 'Company not found', success: false };
+      }
+
+      // Check if user is already associated with a company
+      const { data: userProfile, error: profileError } = await selectOne('user_profiles', userId, 'company_id, role');
+      
+      if (profileError) {
+        return { data: null, error: profileError.message, success: false };
+      }
+
+      if (userProfile?.company_id) {
+        return { data: null, error: 'User is already associated with a company', success: false };
+      }
+
+      // Associate user with company
+      const { error: updateError } = await updateOne('user_profiles', userId, {
+        company_id: companyId,
+        role: role,
+        updated_at: new Date().toISOString()
+      });
+
+      if (updateError) {
+        return { data: null, error: updateError.message, success: false };
+      }
+
+      return { 
+        data: { success: true, role }, 
+        error: null, 
+        success: true 
+      };
+    }, `add user ${userId} to company ${companyId} with role ${role}`);
+  }
+
+  /**
+   * Get company members with their roles
+   */
+  async getCompanyMembers(companyId: string): Promise<ServiceResponse<Array<{
+    userId: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+    isAdmin: boolean;
+  }>>> {
+    return this.executeDbOperation(async () => {
+      const { data: members, error } = await selectData('user_profiles', 'user_id, first_name, last_name, email, role', {
+        company_id: companyId
+      });
+
+      if (error) {
+        return { data: null, error: error.message, success: false };
+      }
+
+      const formattedMembers = (members || []).map((member: any) => ({
+        userId: member.user_id,
+        firstName: member.first_name,
+        lastName: member.last_name,
+        email: member.email,
+        role: member.role,
+        isAdmin: member.role === 'admin' || member.role === 'owner'
+      }));
+
+      return { 
+        data: formattedMembers, 
+        error: null, 
+        success: true 
+      };
+    }, `get company members for company ${companyId}`);
+  }
+
+  /**
+   * Check if user is admin of their company
+   */
+  async isUserCompanyAdmin(userId: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      const { data: profile, error } = await selectOne('user_profiles', userId, 'company_id, role');
+      
+      if (error || !profile) {
+        return { data: false, error: error?.message || 'User profile not found', success: true };
+      }
+
+      const isAdmin = profile.role === 'admin' || profile.role === 'owner';
+      return { data: isAdmin, error: null, success: true };
+    }, `check if user ${userId} is company admin`);
   }
 
   // ====================================================================
@@ -440,8 +646,58 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
         lastUpdated: new Date().toISOString(),
       };
       
-      return { data: CompanyHealthSchema.parse(health), error: null };
+      return { data: CompanyHealthSchema.parse(health), error: null, success: true };
     }, `get company health ${companyId}`);
+  }
+
+  /**
+   * Get company departments
+   */
+  async getCompanyDepartments(companyId: string): Promise<ServiceResponse<Department[]>> {
+    this.logMethodCall('getCompanyDepartments', { companyId });
+    
+    // Return empty array for now - departments feature not yet implemented
+    return { data: [], error: null, success: true };
+  }
+
+  /**
+   * Get company roles
+   */
+  async getCompanyRoles(companyId: string): Promise<ServiceResponse<CompanyRole[]>> {
+    this.logMethodCall('getCompanyRoles', { companyId });
+    
+    // Return empty array for now - roles feature not yet implemented
+    return { data: [], error: null, success: true };
+  }
+
+  /**
+   * Get company analytics
+   */
+  async getCompanyAnalytics(companyId: string): Promise<ServiceResponse<any>> {
+    this.logMethodCall('getCompanyAnalytics', { companyId });
+    
+    return this.executeDbOperation(async () => {
+      // Get company data
+      const { data: company, error: companyError } = await selectOne('companies', companyId);
+      
+      if (companyError) throw companyError;
+      
+      // Calculate basic analytics from company data
+      const analytics = {
+        companyId,
+        employeeCount: company.employee_count || 0,
+        mrr: company.mrr || 0,
+        growthStage: company.growth_stage || 'unknown',
+        industry: company.industry || 'unknown',
+        size: company.size || 'unknown',
+        websiteVisitors: company.website_visitors_month || 0,
+        csat: company.csat || 0,
+        grossMargin: company.gross_margin || 0,
+        lastUpdated: new Date().toISOString(),
+      };
+      
+      return { data: analytics, error: null, success: true };
+    }, `get company analytics ${companyId}`);
   }
 
   // ====================================================================
@@ -459,18 +715,14 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
         ? `${profile.email.split('@')[0]}'s Company`
         : 'My Company');
 
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: companyName,
-          industry: options.industry || 'Technology',
-          size: options.size || '1-10',
-          created_by: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data: company, error: companyError } = await insertOne('companies', {
+        name: companyName,
+        industry: options.industry || 'Technology',
+        size: options.size || '1-10',
+        created_by: userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
 
       if (companyError) {
         logger.error('Error creating default company:', companyError);
@@ -480,19 +732,16 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           message: 'Failed to create default company',
           error: companyError.message
         };
-        return { data: ProvisioningResultSchema.parse(result), error: null };
+        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
       }
 
       // Update user profile with company association
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          company_id: company.id,
-          role: 'owner',
-          updated_at: new Date().toISOString(),
-          ...(options.jobTitle && { job_title: options.jobTitle })
-        })
-        .eq('id', userId);
+      const { error: updateError } = await updateOne('user_profiles', userId, {
+        company_id: company.id,
+        role: 'owner',
+        updated_at: new Date().toISOString(),
+        ...(options.jobTitle && { job_title: options.jobTitle })
+      });
 
       if (updateError) {
         logger.error('Error updating user profile:', updateError);
@@ -502,7 +751,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           message: 'Failed to update user profile',
           error: updateError.message
         };
-        return { data: ProvisioningResultSchema.parse(result), error: null };
+        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
       }
 
       const result: ProvisioningResult = {
@@ -511,7 +760,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
         action: 'created',
         message: 'Default company created successfully'
       };
-      return { data: ProvisioningResultSchema.parse(result), error: null };
+      return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
     }, `create default company for user ${userId}`);
   }
 
@@ -520,18 +769,14 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
    */
   private async createPersonalCompany(userId: string, profile: any): Promise<ServiceResponse<ProvisioningResult>> {
     return this.executeDbOperation(async () => {
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .insert({
-          name: 'My Business',
-          industry: 'Personal',
-          size: '1',
-          created_by: userId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const { data: company, error: companyError } = await insertOne('companies', {
+        name: 'My Business',
+        industry: 'Personal',
+        size: '1',
+        created_by: userId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
 
       if (companyError) {
         logger.error('Error creating personal company:', companyError);
@@ -541,18 +786,15 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           message: 'Failed to create personal company',
           error: companyError.message
         };
-        return { data: ProvisioningResultSchema.parse(result), error: null };
+        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
       }
 
       // Update user profile
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          company_id: company.id,
-          role: 'owner',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
+      const { error: updateError } = await updateOne('user_profiles', userId, {
+        company_id: company.id,
+        role: 'owner',
+        updated_at: new Date().toISOString()
+      });
 
       if (updateError) {
         logger.error('Error updating user profile:', updateError);
@@ -562,7 +804,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           message: 'Failed to update user profile',
           error: updateError.message
         };
-        return { data: ProvisioningResultSchema.parse(result), error: null };
+        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
       }
 
       const result: ProvisioningResult = {
@@ -571,7 +813,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
         action: 'created',
         message: 'Personal company created successfully'
       };
-      return { data: ProvisioningResultSchema.parse(result), error: null };
+      return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
     }, `create personal company for user ${userId}`);
   }
 

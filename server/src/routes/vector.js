@@ -33,7 +33,7 @@ router.post('/search', authenticateToken, async (req, res) => {
       WHERE user_id = $2
     `;
     
-    let params = [query_embedding, userId];
+    const params = [query_embedding, userId];
     let paramIndex = 3;
 
     // Add additional filters
@@ -142,7 +142,7 @@ router.post('/thoughts/search', authenticateToken, async (req, res) => {
       WHERE user_id = $2
     `;
     
-    let params = [query_embedding, userId];
+    const params = [query_embedding, userId];
     let paramIndex = 3;
 
     // Add additional filters

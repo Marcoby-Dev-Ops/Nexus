@@ -24,6 +24,10 @@ export interface DropdownMenuLabelProps {
   className?: string;
 }
 
+export interface DropdownMenuSeparatorProps {
+  className?: string;
+}
+
 export const DropdownMenu: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <div className="relative">{children}</div>;
 };
@@ -113,5 +117,13 @@ export const DropdownMenuLabel: React.FC<DropdownMenuLabelProps> = ({
     <div className={cn('px-2 py-1.5 text-xs font-semibold text-muted-foreground', className)}>
       {children}
     </div>
+  );
+};
+
+export const DropdownMenuSeparator: React.FC<DropdownMenuSeparatorProps> = ({ 
+  className 
+}) => {
+  return (
+    <div className={cn('my-1 h-px bg-border', className)} />
   );
 }; 

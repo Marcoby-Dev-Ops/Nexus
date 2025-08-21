@@ -17,28 +17,28 @@ const FIRE_PHASES: { id: FireCyclePhase; label: string; icon: React.ComponentTyp
     id: 'focus',
     label: 'Focus',
     icon: Target,
-    color: 'text-blue-600',
+    color: 'text-primary',
     description: 'Clarify your business goal and define success metrics'
   },
   {
     id: 'insight',
     label: 'Insight',
     icon: Lightbulb,
-    color: 'text-yellow-600',
+    color: 'text-warning',
     description: 'Gain deeper understanding through research and analysis'
   },
   {
     id: 'roadmap',
     label: 'Roadmap',
     icon: Map,
-    color: 'text-green-600',
+    color: 'text-success',
     description: 'Create a detailed plan with milestones and timelines'
   },
   {
     id: 'execute',
     label: 'Execute',
     icon: Play,
-    color: 'text-purple-600',
+    color: 'text-secondary',
     description: 'Take action and track progress toward your goal'
   }
 ];
@@ -341,7 +341,7 @@ export const FireCycleBusinessGoalsDashboard: React.FC<FireCycleBusinessGoalsDas
                           <span>{goal.tasks?.filter(t => t.status === 'completed').length || 0} completed</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <Clock className="h-4 w-4 text-blue-600" />
+                          <Clock className="h-4 w-4 text-primary" />
                           <span>{goal.tasks?.length || 0} total tasks</span>
                         </div>
                       </div>

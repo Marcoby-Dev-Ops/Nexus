@@ -10,6 +10,7 @@ import { OrganizationMembersPage } from '@/pages/organizations/[orgId]/Organizat
 export const ROUTELABELS: Record<string, string> = {
   '/dashboard': 'Dashboard',
   '/chat': 'Chat',
+  '/mobile': 'Mobile App',
 
   '/ai-chat': 'AI Chat',
   '/ai-hub': 'AI Hub',
@@ -133,6 +134,7 @@ export const ROUTELABELS: Record<string, string> = {
   '/tasks/workspace/inbox': 'Unified Inbox',
   '/tasks/workspace/calendar': 'Calendar',
   '/tasks/workspace/clients': 'Clients',
+  '/ckb': 'Knowledge Base',
   '/workspace/team': 'Team Management',
   '/workspace/customer-insights': 'Customer Insights',
   '/workspace/automation': 'Process Automation',

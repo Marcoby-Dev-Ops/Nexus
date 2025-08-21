@@ -9,6 +9,7 @@ export { Alert, AlertDescription } from './Alert';
 export { Badge } from './Badge';
 export { Textarea } from './Textarea';
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './Tabs';
+export { Collapsible, CollapsibleContent, CollapsibleTrigger } from './Collapsible';
 export { Progress } from './Progress';
 export { Spinner } from './Spinner';
 export { default as Skeleton } from './Skeleton';

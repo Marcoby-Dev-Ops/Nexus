@@ -112,14 +112,14 @@ export interface OnboardingStep {
 export const ONBOARDING_PHASES: OnboardingPhase[] = [
   {
     id: 'fast-wins-context',
-    title: 'Fast Wins & Context',
-    description: 'Get your first insights in 15 minutes',
+    title: 'Tell Us About Your Business',
+    description: 'Help us understand your business in 15 minutes',
     estimatedDuration: '10-15 minutes',
     isRequired: true,
     objectives: [
-      'Core identity & priorities',
-      'Quick integrations',
-      'Day 1 insight preview'
+      'Tell us about your business',
+      'Connect your tools',
+      'See your first insights'
     ],
     steps: [
       {
@@ -131,8 +131,8 @@ export const ONBOARDING_PHASES: OnboardingPhase[] = [
       },
       {
         id: 'core-identity-priorities',
-        title: 'Core Identity & Priorities',
-        description: '3-4 fast questions to understand your business',
+        title: 'About Your Business',
+        description: 'A few simple questions to understand your business better',
         component: 'CoreIdentityStep',
         isRequired: true,
         validationSchema: z.object({
@@ -142,7 +142,7 @@ export const ONBOARDING_PHASES: OnboardingPhase[] = [
           company: z.string().min(1, 'Company name is required'),
           industry: z.string().min(1, 'Industry is required'),
           companySize: z.string().min(1, 'Company size is required'),
-          keyPriorities: z.array(z.string()).min(1, 'Select at least one priority')
+          keyPriorities: z.array(z.string()).min(1, 'Please pick at least one priority')
         })
       },
       {
@@ -155,7 +155,7 @@ export const ONBOARDING_PHASES: OnboardingPhase[] = [
       {
         id: 'day-1-insight-preview',
         title: 'Your First Insights',
-        description: 'See your executive dashboard and opportunities',
+        description: 'See your personalized dashboard and opportunities',
         component: 'DayOneInsightStep',
         isRequired: true
       }
@@ -163,64 +163,64 @@ export const ONBOARDING_PHASES: OnboardingPhase[] = [
   },
   {
     id: 'ai-powered-goals',
-    title: 'AI-Powered Goals',
-    description: 'AI generates your personalized business goals',
+    title: 'Set Your Goals',
+    description: 'Choose what matters most for your business',
     estimatedDuration: '3-5 minutes',
     isRequired: true,
     objectives: [
-      'AI goal generation',
-      'Action plan creation',
-      'Maturity score calculation'
+      'Pick your main goals',
+      'Get a simple action plan',
+      'See your business score'
     ],
     steps: [
       {
         id: 'ai-goal-generation',
-        title: 'Your AI Goals',
-        description: 'AI generates goals based on your business context',
+        title: 'What Do You Want to Achieve?',
+        description: 'Based on your business, here are some common goals that help companies grow',
         component: 'AIPoweredGoalsStep',
         isRequired: true,
         validationSchema: z.object({
-          selectedGoals: z.array(z.string()).min(1, 'Select at least one goal'),
+          selectedGoals: z.array(z.string()).min(1, 'Please pick at least one goal'),
           maturityScore: z.number().min(0).max(100)
         })
       },
       {
         id: 'action-plan-creation',
-        title: 'Your Action Plan',
-        description: 'AI creates your first actionable thoughts',
+        title: 'Your Next Steps',
+        description: 'Here are some simple things you can do to reach your goals',
         component: 'InitialThoughtsGenerationStep',
         isRequired: true,
         validationSchema: z.object({
-          selectedThoughts: z.array(z.string()).min(1, 'Select thoughts to track'),
-          nextSteps: z.array(z.string()).min(1, 'At least one next step required')
+          selectedThoughts: z.array(z.string()).min(1, 'Please pick at least one action to track'),
+          nextSteps: z.array(z.string()).min(1, 'Please pick at least one next step')
         })
       }
     ]
   },
   {
     id: 'launch-and-first-steps',
-    title: 'Launch & First Steps',
-    description: 'Start using Nexus with your first AI-assisted action',
+    title: 'Business Foundations',
+    description: 'Help us understand your current business state',
     estimatedDuration: '2-3 minutes',
     isRequired: true,
     objectives: [
-      'Dashboard introduction',
-      'First action guidance',
-      'Progress tracking setup'
+      'Understand your business model',
+      'Identify your growth stage', 
+      'Establish business context'
     ],
     steps: [
       {
         id: 'dashboard-introduction',
-        title: 'Your Executive Dashboard',
-        description: 'Tour your personalized business dashboard',
+        title: 'Your Business DNA',
+        description: 'Tell us about your current business state to establish context',
         component: 'DashboardIntroStep',
         isRequired: true
       },
       {
         id: 'first-action-guidance',
-        title: 'Your First Action',
-        description: 'Take your first AI-assisted business action',
-        component: 'FirstActionGuidanceStep',
+        title: 'Business Context',
+        description: 'Help us understand your business model and current situation',
+        component: 'FirstActionStep',
         isRequired: true
       }
     ]
