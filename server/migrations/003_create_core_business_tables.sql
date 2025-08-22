@@ -1,18 +1,9 @@
 -- Migration: Create Core Business Tables
 -- Core business entities and relationships
 
--- Ensure the update_updated_at_column function exists
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Companies table
 CREATE TABLE IF NOT EXISTS companies (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     domain VARCHAR(255),
     industry VARCHAR(100),
@@ -28,7 +19,7 @@ CREATE TABLE IF NOT EXISTS companies (
 
 -- Company members (many-to-many relationship)
 CREATE TABLE IF NOT EXISTS company_members (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
     user_id UUID NOT NULL,
     role VARCHAR(50) DEFAULT 'member',
@@ -40,7 +31,7 @@ CREATE TABLE IF NOT EXISTS company_members (
 
 -- Integrations table
 CREATE TABLE IF NOT EXISTS integrations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(100) UNIQUE NOT NULL,
     category VARCHAR(100),
@@ -54,7 +45,7 @@ CREATE TABLE IF NOT EXISTS integrations (
 
 -- User integrations (user's connected services)
 CREATE TABLE IF NOT EXISTS user_integrations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL,
     integration_name VARCHAR(100) NOT NULL,
     integration_id UUID REFERENCES integrations(id),
@@ -69,7 +60,7 @@ CREATE TABLE IF NOT EXISTS user_integrations (
 
 -- OAuth tokens table
 CREATE TABLE IF NOT EXISTS oauth_tokens (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL,
     integration_slug VARCHAR(100) NOT NULL,
     access_token TEXT NOT NULL,
