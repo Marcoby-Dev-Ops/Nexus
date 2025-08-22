@@ -1,42 +1,66 @@
--- Migration: Create quantum business profiles table
--- Description: Stores quantum business model profiles with health scores and maturity levels
+-- Migration: Create Quantum Business Profiles
+-- This migration creates the quantum_business_profiles table for advanced business intelligence
 
 CREATE TABLE IF NOT EXISTS quantum_business_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    profile_data JSONB NOT NULL,
-    health_score INTEGER NOT NULL CHECK (health_score >= 0 AND health_score <= 100),
-    maturity_level TEXT NOT NULL CHECK (maturity_level IN ('startup', 'growing', 'scaling', 'mature')),
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    profile_data JSONB NOT NULL DEFAULT '{}',
+    quantum_score DECIMAL(5,2),
+    last_analyzed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
--- Create indexes for performance
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_quantum_business_profiles_company_id ON quantum_business_profiles(company_id);
-CREATE INDEX IF NOT EXISTS idx_quantum_business_profiles_health_score ON quantum_business_profiles(health_score);
-CREATE INDEX IF NOT EXISTS idx_quantum_business_profiles_maturity_level ON quantum_business_profiles(maturity_level);
-CREATE INDEX IF NOT EXISTS idx_quantum_business_profiles_updated_at ON quantum_business_profiles(updated_at);
+CREATE INDEX IF NOT EXISTS idx_quantum_business_profiles_quantum_score ON quantum_business_profiles(quantum_score);
+CREATE INDEX IF NOT EXISTS idx_quantum_business_profiles_last_analyzed ON quantum_business_profiles(last_analyzed_at);
 
--- Create unique constraint to ensure one profile per company
-CREATE UNIQUE INDEX IF NOT EXISTS idx_quantum_business_profiles_company_unique ON quantum_business_profiles(company_id);
+-- Enable RLS
+ALTER TABLE quantum_business_profiles ENABLE ROW LEVEL SECURITY;
 
--- Note: RLS policies will be added later when the company_id() function is available
--- For now, we'll create the table without RLS to avoid dependency issues
+-- Create RLS policies
+CREATE POLICY "Users can view own company's quantum profiles" ON quantum_business_profiles
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = quantum_business_profiles.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
 
--- Create function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_quantum_business_profiles_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+CREATE POLICY "Users can insert own company's quantum profiles" ON quantum_business_profiles
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = quantum_business_profiles.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
 
--- Create trigger to automatically update updated_at
-CREATE TRIGGER trigger_update_quantum_business_profiles_updated_at
+CREATE POLICY "Users can update own company's quantum profiles" ON quantum_business_profiles
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = quantum_business_profiles.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+CREATE POLICY "Users can delete own company's quantum profiles" ON quantum_business_profiles
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = quantum_business_profiles.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+-- Create trigger for updated_at
+CREATE TRIGGER update_quantum_business_profiles_updated_at
     BEFORE UPDATE ON quantum_business_profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION update_quantum_business_profiles_updated_at();
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comments
 COMMENT ON TABLE quantum_business_profiles IS 'Stores quantum business model profiles with health scores and maturity levels';

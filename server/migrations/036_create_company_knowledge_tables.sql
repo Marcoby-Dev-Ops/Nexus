@@ -1,134 +1,191 @@
--- Migration: Create company knowledge tables with pgvector support
--- This migration sets up tables for storing company knowledge data and vector embeddings
+-- Migration: Create Company Knowledge Tables
+-- This migration creates tables for storing company knowledge and insights
 
--- Enable pgvector extension if not already enabled
-CREATE EXTENSION IF NOT EXISTS vector;
-
--- Create table for storing company knowledge data
-CREATE TABLE IF NOT EXISTS company_knowledge_data (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    data JSONB NOT NULL,
+-- Company knowledge base table
+CREATE TABLE IF NOT EXISTS company_knowledge (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    category VARCHAR(100),
+    tags TEXT[],
+    source_url TEXT,
+    created_by UUID NOT NULL,
+    is_public BOOLEAN DEFAULT false,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(company_id)
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
--- Create table for storing company knowledge vectors
-CREATE TABLE IF NOT EXISTS company_knowledge_vectors (
-    id VARCHAR(255) PRIMARY KEY,
-    company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    content_type VARCHAR(100) NOT NULL,
-    embedding vector(1536), -- OpenAI embedding dimension
-    metadata JSONB DEFAULT '{}',
+-- Company insights table
+CREATE TABLE IF NOT EXISTS company_insights (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    insight_type VARCHAR(100) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    data JSONB NOT NULL DEFAULT '{}',
+    confidence_score DECIMAL(3,2),
+    generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
 );
 
--- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS idx_company_knowledge_data_company_id 
-ON company_knowledge_data(company_id);
+-- Company documents table
+CREATE TABLE IF NOT EXISTS company_documents (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    file_path TEXT NOT NULL,
+    file_type VARCHAR(50),
+    file_size BIGINT,
+    uploaded_by UUID NOT NULL,
+    is_processed BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    FOREIGN KEY (company_id) REFERENCES companies(id) ON DELETE CASCADE
+);
 
-CREATE INDEX IF NOT EXISTS idx_company_knowledge_vectors_company_id 
-ON company_knowledge_vectors(company_id);
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_company_knowledge_company_id ON company_knowledge(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_knowledge_category ON company_knowledge(category);
+CREATE INDEX IF NOT EXISTS idx_company_knowledge_tags ON company_knowledge USING GIN(tags);
+CREATE INDEX IF NOT EXISTS idx_company_knowledge_created_by ON company_knowledge(created_by);
 
-CREATE INDEX IF NOT EXISTS idx_company_knowledge_vectors_content_type 
-ON company_knowledge_vectors(content_type);
+CREATE INDEX IF NOT EXISTS idx_company_insights_company_id ON company_insights(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_insights_type ON company_insights(insight_type);
+CREATE INDEX IF NOT EXISTS idx_company_insights_generated_at ON company_insights(generated_at);
 
--- Create vector index for similarity search
-CREATE INDEX IF NOT EXISTS idx_company_knowledge_vectors_embedding 
-ON company_knowledge_vectors 
-USING ivfflat (embedding vector_cosine_ops)
-WITH (lists = 100);
+CREATE INDEX IF NOT EXISTS idx_company_documents_company_id ON company_documents(company_id);
+CREATE INDEX IF NOT EXISTS idx_company_documents_file_type ON company_documents(file_type);
+CREATE INDEX IF NOT EXISTS idx_company_documents_uploaded_by ON company_documents(uploaded_by);
 
--- Create function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_company_knowledge_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- Enable RLS on all tables
+ALTER TABLE company_knowledge ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_insights ENABLE ROW LEVEL SECURITY;
+ALTER TABLE company_documents ENABLE ROW LEVEL SECURITY;
 
--- Create triggers to automatically update updated_at
-DROP TRIGGER IF EXISTS update_company_knowledge_data_updated_at ON company_knowledge_data;
-CREATE TRIGGER update_company_knowledge_data_updated_at
-    BEFORE UPDATE ON company_knowledge_data
-    FOR EACH ROW
-    EXECUTE FUNCTION update_company_knowledge_updated_at();
+-- Create RLS policies for company_knowledge
+CREATE POLICY "Users can view own company's knowledge" ON company_knowledge
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_knowledge.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
 
-DROP TRIGGER IF EXISTS update_company_knowledge_vectors_updated_at ON company_knowledge_vectors;
-CREATE TRIGGER update_company_knowledge_vectors_updated_at
-    BEFORE UPDATE ON company_knowledge_vectors
-    FOR EACH ROW
-    EXECUTE FUNCTION update_company_knowledge_updated_at();
+CREATE POLICY "Users can insert own company's knowledge" ON company_knowledge
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_knowledge.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
 
--- Create function to calculate knowledge completeness score
-CREATE OR REPLACE FUNCTION calculate_knowledge_strength(company_uuid UUID)
-RETURNS INTEGER AS $$
-DECLARE
-    knowledge_data JSONB;
-    required_fields TEXT[] := ARRAY['companyName', 'mission', 'uniqueValueProposition', 'targetAudience'];
-    important_fields TEXT[] := ARRAY['vision', 'industry', 'revenueModel', 'shortTermGoals', 'longTermGoals'];
-    field TEXT;
-    value TEXT;
-    score NUMERIC := 0;
-    total_weight NUMERIC := 0;
-    field_weight NUMERIC;
-BEGIN
-    -- Get company knowledge data
-    SELECT data INTO knowledge_data
-    FROM company_knowledge_data
-    WHERE company_id = company_uuid;
-    
-    IF knowledge_data IS NULL THEN
-        RETURN 0;
-    END IF;
-    
-    -- Check required fields (weight: 2.0)
-    FOREACH field IN ARRAY required_fields
-    LOOP
-        value := knowledge_data->>field;
-        IF value IS NOT NULL AND length(trim(value)) > 10 THEN
-            score := score + 2.0;
-        END IF;
-        total_weight := total_weight + 2.0;
-    END LOOP;
-    
-    -- Check important fields (weight: 1.0)
-    FOREACH field IN ARRAY important_fields
-    LOOP
-        value := knowledge_data->>field;
-        IF value IS NOT NULL AND length(trim(value)) > 10 THEN
-            score := score + 1.0;
-        END IF;
-        total_weight := total_weight + 1.0;
-    END LOOP;
-    
-    -- Return percentage score
-    IF total_weight > 0 THEN
-        RETURN ROUND((score / total_weight) * 100);
-    ELSE
-        RETURN 0;
-    END IF;
-END;
-$$ LANGUAGE plpgsql;
+CREATE POLICY "Users can update own company's knowledge" ON company_knowledge
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_knowledge.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
 
--- Create view for company knowledge summary
-CREATE OR REPLACE VIEW company_knowledge_summary AS
-SELECT 
-    c.id as company_id,
-    c.name as company_name,
-    ckd.data,
-    ckd.created_at as knowledge_created_at,
-    ckd.updated_at as knowledge_updated_at,
-    calculate_knowledge_strength(c.id) as knowledge_strength,
-    COUNT(ckv.id) as vector_count
-FROM companies c
-LEFT JOIN company_knowledge_data ckd ON c.id = ckd.company_id
-LEFT JOIN company_knowledge_vectors ckv ON c.id = ckv.company_id
-GROUP BY c.id, c.name, ckd.data, ckd.created_at, ckd.updated_at;
+CREATE POLICY "Users can delete own company's knowledge" ON company_knowledge
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_knowledge.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
 
--- Note: RLS policies and permissions will be added later when the auth system is properly configured
--- For now, we'll create the tables without RLS to avoid dependency issues
+-- Create RLS policies for company_insights
+CREATE POLICY "Users can view own company's insights" ON company_insights
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_insights.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+CREATE POLICY "Users can insert own company's insights" ON company_insights
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_insights.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+CREATE POLICY "Users can update own company's insights" ON company_insights
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_insights.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+CREATE POLICY "Users can delete own company's insights" ON company_insights
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_insights.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+-- Create RLS policies for company_documents
+CREATE POLICY "Users can view own company's documents" ON company_documents
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_documents.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+CREATE POLICY "Users can insert own company's documents" ON company_documents
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_documents.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+CREATE POLICY "Users can update own company's documents" ON company_documents
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_documents.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+CREATE POLICY "Users can delete own company's documents" ON company_documents
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM companies c 
+            WHERE c.id = company_documents.company_id 
+            AND c.owner_id::text = auth.uid()::text
+        )
+    );
+
+-- Create triggers for updated_at
+CREATE TRIGGER update_company_knowledge_updated_at
+    BEFORE UPDATE ON company_knowledge
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_company_insights_updated_at
+    BEFORE UPDATE ON company_insights
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_company_documents_updated_at
+    BEFORE UPDATE ON company_documents
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

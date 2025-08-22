@@ -1,66 +1,43 @@
 -- Migration: Consolidate OAuth tables
--- This migration creates a new consolidated user_integrations table structure
--- that includes OAuth data directly in the table
+-- This migration consolidates OAuth-related tables into a single oauth_tokens table
 
--- Step 1: Create the new consolidated user_integrations table
-CREATE TABLE IF NOT EXISTS user_integrations_new (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+-- Create consolidated oauth_tokens table
+CREATE TABLE IF NOT EXISTS oauth_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL,
     integration_slug VARCHAR(100) NOT NULL,
-    integration_id UUID REFERENCES integrations(id),
-    
-    -- OAuth data (consolidated from oauth_tokens)
-    access_token TEXT,
+    access_token TEXT NOT NULL,
     refresh_token TEXT,
     token_type VARCHAR(50) DEFAULT 'Bearer',
     expires_at TIMESTAMP WITH TIME ZONE,
     scope TEXT,
-    
-    -- Additional config
-    settings JSONB DEFAULT '{}',
-    status VARCHAR(50) DEFAULT 'active',
-    last_sync_at TIMESTAMP WITH TIME ZONE,
-    
-    -- Metadata
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    
     UNIQUE(user_id, integration_slug)
 );
 
--- Step 2: Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_user_integrations_new_user_id ON user_integrations_new(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_integrations_new_integration_slug ON user_integrations_new(integration_slug);
-CREATE INDEX IF NOT EXISTS idx_user_integrations_new_status ON user_integrations_new(status);
-CREATE INDEX IF NOT EXISTS idx_user_integrations_new_expires_at ON user_integrations_new(expires_at);
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_oauth_tokens_user_id ON oauth_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_tokens_integration_slug ON oauth_tokens(integration_slug);
+CREATE INDEX IF NOT EXISTS idx_oauth_tokens_expires_at ON oauth_tokens(expires_at);
 
--- Step 3: Create trigger for updated_at
-CREATE OR REPLACE FUNCTION update_user_integrations_new_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- Enable RLS
+ALTER TABLE oauth_tokens ENABLE ROW LEVEL SECURITY;
 
-CREATE TRIGGER trigger_update_user_integrations_new_updated_at
-    BEFORE UPDATE ON user_integrations_new
-    FOR EACH ROW
-    EXECUTE FUNCTION update_user_integrations_new_updated_at();
+-- Create RLS policies
+CREATE POLICY "Users can view own OAuth tokens" ON oauth_tokens
+    FOR SELECT USING (auth.uid()::text = user_id::text);
 
--- Step 4: Drop old tables and rename new table
-DROP TABLE IF EXISTS user_integrations CASCADE;
-DROP TABLE IF EXISTS oauth_tokens CASCADE;
+CREATE POLICY "Users can insert own OAuth tokens" ON oauth_tokens
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id::text);
 
-ALTER TABLE user_integrations_new RENAME TO user_integrations;
+CREATE POLICY "Users can update own OAuth tokens" ON oauth_tokens
+    FOR UPDATE USING (auth.uid()::text = user_id::text);
 
--- Step 5: Recreate triggers with correct names
-DROP TRIGGER IF EXISTS trigger_update_user_integrations_new_updated_at ON user_integrations;
-CREATE TRIGGER trigger_update_user_integrations_updated_at
-    BEFORE UPDATE ON user_integrations
-    FOR EACH ROW
-    EXECUTE FUNCTION update_user_integrations_new_updated_at();
+CREATE POLICY "Users can delete own OAuth tokens" ON oauth_tokens
+    FOR DELETE USING (auth.uid()::text = user_id::text);
 
--- Step 6: Log the migration
-INSERT INTO audit_logs (action, resource_type, details) VALUES 
-('migration', 'database', '{"migration": "027_consolidate_oauth_tables", "tables_consolidated": ["user_integrations", "oauth_tokens"], "status": "completed"}');
+-- Create trigger for updated_at
+CREATE TRIGGER update_oauth_tokens_updated_at
+    BEFORE UPDATE ON oauth_tokens
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
