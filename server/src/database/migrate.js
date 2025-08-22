@@ -112,7 +112,12 @@ class MigrationRunner {
       const files = await fs.readdir(this.migrationsPath);
       return files
         .filter(file => file.endsWith('.sql'))
-        .sort()
+        .sort((a, b) => {
+          // Extract numeric prefix from filenames for proper sorting
+          const aPrefix = parseInt(a.split('_')[0]) || 0;
+          const bPrefix = parseInt(b.split('_')[0]) || 0;
+          return aPrefix - bPrefix;
+        })
         .map(file => ({
           filename: file,
           path: path.join(this.migrationsPath, file),
