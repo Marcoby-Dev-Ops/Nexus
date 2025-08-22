@@ -110,15 +110,6 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Audit logs indexes (already exist, skip)
 -- User quotas indexes (already exist, skip)
 
--- Create updated_at trigger function if not exists
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- Create triggers for updated_at columns (only if they don't exist)
 DO $$
 BEGIN
