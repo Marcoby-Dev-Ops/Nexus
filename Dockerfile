@@ -1,20 +1,20 @@
 FROM node:20-alpine
 
-WORKDIR /app
+WORKDIR /app/client
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV VITE_NODE_ENV=production
 
 # Copy package files first for better caching
-COPY package*.json pnpm-lock.yaml ./
+COPY client/package*.json client/pnpm-lock.yaml ./
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
-COPY . .
+COPY client/ .
 
 # Build the application
 RUN pnpm run build

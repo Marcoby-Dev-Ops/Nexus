@@ -19,10 +19,10 @@
   },
   "deployment": {
     "type": "dockerfile",
-    "dockerfile": "Dockerfile",
-    "port": 3000,
+    "dockerfile": "client/Dockerfile",
+    "port": 80,
     "healthCheck": {
-      "path": "/",
+      "path": "/health",
       "interval": 30,
       "timeout": 3,
       "retries": 3

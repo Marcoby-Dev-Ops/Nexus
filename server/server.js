@@ -36,8 +36,8 @@ const analyticsRoutes = require('./src/routes/analytics');
 // Import CKB routes
 const ckbRoutes = require('./routes/ckb');
 
-// Load environment variables
-config();
+// Load environment variables from root directory
+config({ path: '../.env' });
 
 const app = express();
 const PORT = process.env.API_PORT || 3001;

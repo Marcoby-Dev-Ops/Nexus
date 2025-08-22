@@ -14,11 +14,15 @@ router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user?.id;
     if (!userId) {
       logger.error('No user ID found in request', { user: req.user });
+      console.log('❌ [Organizations API] No user ID found in request');
       return res.status(401).json({
         success: false,
         error: 'User not authenticated'
       });
     }
+
+    console.log('🔍 [Organizations API] Fetching organizations for user ID:', userId);
+    console.log('🔍 [Organizations API] User object:', req.user);
 
     logger.info('Fetching organizations for user', { userId, userIdType: typeof userId, userIdLength: userId?.length });
 
@@ -60,13 +64,17 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (membershipsError) {
       logger.error('Failed to fetch user memberships', { error: membershipsError, userId });
+      console.log('❌ [Organizations API] Failed to fetch memberships:', membershipsError);
       return res.status(500).json({
         success: false,
         error: 'Failed to fetch organization memberships'
       });
     }
 
+    console.log('🔍 [Organizations API] Found memberships:', memberships);
+
     if (!memberships || memberships.length === 0) {
+      console.log('❌ [Organizations API] No memberships found for user:', userId);
       return res.json({
         success: true,
         data: []

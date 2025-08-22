@@ -120,7 +120,7 @@ function validateJWTToken(token) {
     }
 
     // Check audience - be more permissive during debugging
-    const clientId = process.env.VITE_AUTHENTIK_CLIENT_ID;
+    const clientId = process.env.AUTHENTIK_CLIENT_ID;
     if (payload.aud && payload.aud !== clientId) {
       logger.warn('Token audience mismatch', { 
         expected: clientId, 

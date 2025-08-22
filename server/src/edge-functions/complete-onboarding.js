@@ -3,7 +3,7 @@ const { createError } = require('../middleware/errorHandler');
 
 /**
  * Complete onboarding edge function
- * Handles user onboarding completion, company creation, and profile updates
+ * Handles user onboarding completion, organization creation, and profile updates
  */
 async function completeOnboardingHandler(payload, user) {
   try {
@@ -84,55 +84,63 @@ async function completeOnboardingHandler(payload, user) {
 
       console.log('User profile updated successfully');
 
-      // 2. Check if user already has a company
-      const existingCompanyResult = await query(
-        'SELECT company_id FROM user_profiles WHERE id = $1 AND company_id IS NOT NULL',
+      // 2. Check if user already has an organization
+      const existingOrgResult = await query(
+        `SELECT uo.org_id 
+         FROM user_organizations uo 
+         WHERE uo.user_id = $1 AND uo.is_primary = true`,
         [internalUserId]
       );
 
-      let companyId = null;
-      let companyCreated = false;
+      let organizationId = null;
+      let organizationCreated = false;
 
-      if (existingCompanyResult.rows.length > 0) {
-        // User already has a company
-        companyId = existingCompanyResult.rows[0].company_id;
-        console.log('User already has company:', companyId);
+      if (existingOrgResult.rows.length > 0) {
+        // User already has an organization
+        organizationId = existingOrgResult.rows[0].org_id;
+        console.log('User already has organization:', organizationId);
       } else {
-        // Create new company
-        const companyData = {
-          name: company || `${firstName}'s Company`,
+        // Create new organization using the organizations API
+        const organizationData = {
+          name: company || `${firstName}'s Organization`,
+          description: `Organization for ${firstName} ${lastName}`,
           industry: industry || 'Technology',
-          size: companySize || '1-10',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          size: companySize || '1-10'
         };
 
-        const newCompanyResult = await query(
-          `INSERT INTO companies (name, industry, size, owner_id, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6)
+        // Create organization directly in the database
+        const newOrgResult = await query(
+          `INSERT INTO organizations (name, description, industry, size, tenant_id, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
            RETURNING id`,
           [
-            companyData.name,
-            companyData.industry,
-            companyData.size,
-            internalUserId,
-            companyData.created_at,
-            companyData.updated_at
+            organizationData.name,
+            organizationData.description,
+            organizationData.industry,
+            organizationData.size,
+            internalUserId // Use user ID as tenant_id
           ]
         );
 
-        companyId = newCompanyResult.rows[0].id;
-        companyCreated = true;
+        organizationId = newOrgResult.rows[0].id;
+        organizationCreated = true;
 
-        console.log('New company created:', companyId);
+        console.log('New organization created:', organizationId);
 
-        // Associate user with company as owner
+        // Add user as owner of the organization
         await query(
-          'UPDATE user_profiles SET company_id = $1, role = $2 WHERE id = $3',
-          [companyId, 'owner', internalUserId]
+          `INSERT INTO user_organizations (user_id, org_id, role, permissions, is_primary, created_at)
+           VALUES ($1, $2, $3, $4, $5, NOW())`,
+          [
+            internalUserId,
+            organizationId,
+            'owner',
+            JSON.stringify(['*']), // Owner has all permissions
+            true // Set as primary organization
+          ]
         );
 
-        console.log('User associated with company as owner');
+        console.log('User associated with organization as owner');
       }
 
       // 3. Store onboarding preferences and selections
@@ -195,10 +203,10 @@ async function completeOnboardingHandler(payload, user) {
 
       return {
         userId,
-        companyId,
+        organizationId,
         onboardingCompleted: true,
         profileUpdated: true,
-        companyCreated
+        organizationCreated
       };
 
     } catch (error) {

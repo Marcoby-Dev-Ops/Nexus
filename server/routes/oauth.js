@@ -3,73 +3,75 @@ const { z } = require('zod');
 
 const router = express.Router();
 
-// OAuth provider configurations (server-side only)
-const OAUTH_PROVIDERS = {
-  authentik: {
-    clientId: process.env.VITE_AUTHENTIK_CLIENT_ID,
-    clientSecret: process.env.AUTHENTIK_CLIENT_SECRET,
-    authorizationUrl: 'https://identity.marcoby.com/application/o/authorize/',
-    tokenUrl: 'https://identity.marcoby.com/application/o/token/',
-    userInfoUrl: 'https://identity.marcoby.com/application/o/userinfo/',
-    scope: 'openid profile email groups',
-  },
-  google: {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    scope: 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/userinfo.email',
-  },
-  google_analytics: {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    scope: 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/userinfo.email',
-  },
-  hubspot: {
-    clientId: process.env.HUBSPOT_CLIENT_ID,
-    clientSecret: process.env.HUBSPOT_CLIENT_SECRET,
-    authorizationUrl: 'https://app.hubspot.com/oauth/authorize',
-    tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
-    scope: 'contacts crm.objects.contacts.read crm.objects.companies.read',
-  },
-  paypal: {
-    clientId: process.env.PAYPAL_CLIENT_ID,
-    clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-    authorizationUrl: process.env.PAYPAL_ENV === 'live' 
-      ? 'https://www.paypal.com/signin/authorize' 
-      : 'https://www.sandbox.paypal.com/signin/authorize',
-    tokenUrl: process.env.PAYPAL_ENV === 'live'
-      ? 'https://api.paypal.com/v1/oauth2/token'
-      : 'https://api.sandbox.paypal.com/v1/oauth2/token',
-    scope: 'openid profile https://uri.paypal.com/services/paypalattributes',
-    baseUrl: process.env.PAYPAL_ENV === 'live' 
-      ? 'https://www.paypal.com' 
-      : 'https://www.sandbox.paypal.com',
-  },
-  microsoft: {
-    clientId: process.env.MICROSOFT_CLIENT_ID,
-    clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
-    authorizationUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-    tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
-    scope: 'offline_access https://graph.microsoft.com/User.Read https://graph.microsoft.com/Mail.Read',
-  },
-  slack: {
-    clientId: process.env.SLACK_CLIENT_ID,
-    clientSecret: process.env.SLACK_CLIENT_SECRET,
-    authorizationUrl: 'https://slack.com/oauth/v2/authorize',
-    tokenUrl: 'https://slack.com/api/oauth.v2.access',
-    scope: 'channels:read channels:history users:read',
-  },
-  'google-workspace': {
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-    tokenUrl: 'https://oauth2.googleapis.com/token',
-    scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/drive.readonly',
-  },
-};
+// OAuth provider configurations (server-side only) - Dynamic function to read env vars at runtime
+function getOAuthProviders() {
+  return {
+    authentik: {
+      clientId: process.env.AUTHENTIK_CLIENT_ID,
+      clientSecret: process.env.AUTHENTIK_CLIENT_SECRET,
+      authorizationUrl: 'https://identity.marcoby.com/application/o/authorize/',
+      tokenUrl: 'https://identity.marcoby.com/application/o/token/',
+      userInfoUrl: 'https://identity.marcoby.com/application/o/userinfo/',
+      scope: 'openid profile email groups',
+    },
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenUrl: 'https://oauth2.googleapis.com/token',
+      scope: 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/userinfo.email',
+    },
+    google_analytics: {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenUrl: 'https://oauth2.googleapis.com/token',
+      scope: 'https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/userinfo.email',
+    },
+    hubspot: {
+      clientId: process.env.HUBSPOT_CLIENT_ID,
+      clientSecret: process.env.HUBSPOT_CLIENT_SECRET,
+      authorizationUrl: 'https://app.hubspot.com/oauth/authorize',
+      tokenUrl: 'https://api.hubapi.com/oauth/v1/token',
+      scope: 'contacts crm.objects.contacts.read crm.objects.companies.read',
+    },
+    paypal: {
+      clientId: process.env.PAYPAL_CLIENT_ID,
+      clientSecret: process.env.PAYPAL_CLIENT_SECRET,
+      authorizationUrl: process.env.PAYPAL_ENV === 'live' 
+        ? 'https://www.paypal.com/signin/authorize' 
+        : 'https://www.sandbox.paypal.com/signin/authorize',
+      tokenUrl: process.env.PAYPAL_ENV === 'live'
+        ? 'https://api.paypal.com/v1/oauth2/token'
+        : 'https://api.sandbox.paypal.com/v1/oauth2/token',
+      scope: 'openid profile https://uri.paypal.com/services/paypalattributes',
+      baseUrl: process.env.PAYPAL_ENV === 'live' 
+        ? 'https://www.paypal.com' 
+        : 'https://www.sandbox.paypal.com',
+    },
+    microsoft: {
+      clientId: process.env.MICROSOFT_CLIENT_ID,
+      clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+      authorizationUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+      tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+      scope: 'offline_access https://graph.microsoft.com/User.Read https://graph.microsoft.com/Mail.Read',
+    },
+    slack: {
+      clientId: process.env.SLACK_CLIENT_ID,
+      clientSecret: process.env.SLACK_CLIENT_SECRET,
+      authorizationUrl: 'https://slack.com/oauth/v2/authorize',
+      tokenUrl: 'https://slack.com/api/oauth.v2.access',
+      scope: 'channels:read channels:history users:read',
+    },
+    'google-workspace': {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenUrl: 'https://oauth2.googleapis.com/token',
+      scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/drive.readonly',
+    },
+  };
+}
 
 // Validation schemas
 const OAuthStateSchema = z.object({
@@ -88,7 +90,7 @@ const TokenRefreshSchema = z.object({
  */
 router.get('/config/:provider', (req, res) => {
   const { provider } = req.params;
-  const config = OAUTH_PROVIDERS[provider];
+  const config = getOAuthProviders()[provider];
   
   if (!config) {
     return res.status(404).json({ error: 'Provider not found' });
@@ -148,10 +150,18 @@ router.post('/token', async (req, res) => {
   try {
     const { provider, code, redirectUri, codeVerifier } = req.body;
     
-    const config = OAUTH_PROVIDERS[provider];
+    const config = getOAuthProviders()[provider];
     if (!config) {
       return res.status(404).json({ error: 'Provider not found' });
     }
+
+    // Debug logging
+    console.log('🔍 [OAuth Token Exchange] Provider:', provider);
+    console.log('🔍 [OAuth Token Exchange] Client ID:', config.clientId);
+    console.log('🔍 [OAuth Token Exchange] Client Secret:', config.clientSecret ? 'SET' : 'NOT SET');
+    console.log('🔍 [OAuth Token Exchange] Redirect URI:', redirectUri);
+    console.log('🔍 [OAuth Token Exchange] Code Verifier:', codeVerifier ? 'SET' : 'NOT SET');
+    console.log('🔍 [OAuth Token Exchange] Token URL:', config.tokenUrl);
 
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
@@ -164,6 +174,8 @@ router.post('/token', async (req, res) => {
     if (codeVerifier) {
       params.append('code_verifier', codeVerifier);
     }
+
+    console.log('🔍 [OAuth Token Exchange] Request body:', params.toString());
 
     const response = await fetch(config.tokenUrl, {
       method: 'POST',
@@ -215,7 +227,7 @@ router.post('/refresh', async (req, res) => {
   try {
     const { provider, refreshToken } = TokenRefreshSchema.parse(req.body);
     
-    const config = OAUTH_PROVIDERS[provider];
+    const config = getOAuthProviders()[provider];
     if (!config) {
       return res.status(404).json({ error: 'Provider not found' });
     }
