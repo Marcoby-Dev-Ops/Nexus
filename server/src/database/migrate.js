@@ -27,7 +27,8 @@ class MigrationRunner {
       
       const checkResult = await query(checkTableSQL, [this.migrationsTable]);
       
-      if (checkResult.error) {
+      // Check if table exists by looking at the result
+      if (checkResult.error || !checkResult.data || checkResult.data.length === 0) {
         // Table doesn't exist, create it
         const createTableSQL = `
           CREATE TABLE IF NOT EXISTS ${this.migrationsTable} (
