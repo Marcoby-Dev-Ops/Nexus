@@ -13,9 +13,9 @@
     "NODE_ENV": "production",
     "VITE_NODE_ENV": "production",
     "VITE_POSTGRES_URL": "${POSTGRES_URL}",
-    "VITE_NEXT_PUBLIC_APP_URL": "https://nexus.marcoby.net",
-    "VITE_APP_URL": "https://nexus.marcoby.net",
-    "VITE_API_URL": "https://api.nexus.marcoby.net"
+    "VITE_NEXT_PUBLIC_APP_URL": "https://nexus.marcoby.com",
+    "VITE_APP_URL": "https://nexus.marcoby.com",
+    "VITE_API_URL": "https://napi.marcoby.com"
   },
   "deployment": {
     "type": "dockerfile",
@@ -29,7 +29,7 @@
     }
   },
   "domains": [
-    "nexus.marcoby.net"
+    "nexus.marcoby.com"
   ],
   "ssl": {
     "enabled": true,
@@ -77,10 +77,10 @@
         "DB_NAME": "${POSTGRES_DB}",
         "DB_USER": "${POSTGRES_USER}",
         "DB_PASSWORD": "${POSTGRES_PASSWORD}",
-        "FRONTEND_URL": "https://nexus.marcoby.net"
+        "FRONTEND_URL": "https://nexus.marcoby.com"
       },
       "domains": [
-        "api.nexus.marcoby.net"
+        "napi.marcoby.com"
       ],
       "ssl": {
         "enabled": true,
