@@ -1,6 +1,15 @@
 -- Migration: Create User Preferences Function
 -- This creates the get_user_preferences function used by the user-preferences service
 
+-- Function to automatically update the updated_at column
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Function to get user preferences with defaults
 CREATE OR REPLACE FUNCTION get_user_preferences(user_id_param UUID)
 RETURNS TABLE (
