@@ -1,11 +1,18 @@
--- Migration: Enable Required Extensions
--- This migration enables the necessary PostgreSQL extensions
+-- Migration: Enable PostgreSQL Extensions
+-- This migration enables required PostgreSQL extensions
 
--- Enable uuid-ossp extension for UUID generation
+-- Enable UUID extension for generating UUIDs
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Enable pgcrypto extension for cryptographic functions
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Enable pgvector extension for vector operations
+CREATE EXTENSION IF NOT EXISTS "vector";
 
--- Enable vector extension for vector operations (if needed)
-CREATE EXTENSION IF NOT EXISTS "vector" WITH SCHEMA "public" VERSION '0.8.0';
+-- Function to automatically update the updated_at column
+-- This function is used by many tables and should be defined early
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
