@@ -1,0 +1,1 @@
+export { default, TasksWidget } from '@shared/components/widgets/TasksWidget'; 

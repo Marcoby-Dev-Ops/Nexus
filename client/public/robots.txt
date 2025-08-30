@@ -1,0 +1,40 @@
+# Nexus Robots.txt
+# This file tells search engines how to crawl the Nexus website
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_supabase/
+Disallow: /dashboard/
+Disallow: /settings/
+Disallow: /billing/
+Disallow: /integrations/
+Disallow: /help-center/
+Disallow: /analytics/
+Disallow: /automation/
+Disallow: /ai/
+Disallow: /marketplace/
+Disallow: /tasks/
+Disallow: /business/
+Disallow: /departments/
+Disallow: /entrepreneur/
+Disallow: /hype/
+Disallow: /waitlist/
+Disallow: /development/
+
+# Allow public pages
+Allow: /marketing-landing
+Allow: /pricing
+Allow: /login
+Allow: /signup
+Allow: /help/privacy-policy
+Allow: /help/terms-of-service
+
+# Crawl delay (optional)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://nexus.marcoby.net/sitemap.xml

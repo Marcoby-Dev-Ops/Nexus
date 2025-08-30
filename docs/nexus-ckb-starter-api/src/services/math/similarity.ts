@@ -1,0 +1,1 @@
+export function cosine(a:number[], b:number[]): number { let d=0,na=0,nb=0; for(let i=0;i<a.length;i++){ d+=a[i]*b[i]; na+=a[i]*a[i]; nb+=b[i]*b[i]; } const den=Math.sqrt(na)*Math.sqrt(nb); return den? d/den: 0; }

@@ -1,0 +1,1 @@
+export { default, LearningFeedWidget } from '@shared/components/widgets/LearningFeedWidget'; 

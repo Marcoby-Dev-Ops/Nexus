@@ -1,0 +1,11 @@
+{
+  "message": "Hello",
+  "context": {
+    "agentId": "executive-assistant",
+    "previousMessages": [],
+    "userContext": {},
+    "dashboard": {},
+    "nextBestActions": [],
+    "businessHealth": {}
+  }
+}

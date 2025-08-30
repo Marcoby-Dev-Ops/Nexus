@@ -1,0 +1,15 @@
+{
+  "emailWidget": {
+    "title": "Inbox",
+    "description": "Unified unread emails from all connected accounts.",
+    "connect_title": "Connect an Inbox",
+    "connect_description": "See your latest emails from Google and Microsoft 365.",
+    "connect_google": "Connect Google",
+    "connect_microsoft": "Connect Microsoft",
+    "loading_error": "Failed to load inbox.",
+    "all_caught_up_title": "All caught up!",
+    "all_caught_up_description": "Your inbox is empty.",
+    "reply_tooltip": "Reply",
+    "mark_as_read_tooltip": "Mark as Read"
+  }
+} 

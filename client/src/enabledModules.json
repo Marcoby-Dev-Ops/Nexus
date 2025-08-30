@@ -1,0 +1,7 @@
+{
+  "sales": true,
+  "finance": true,
+  "operations": true,
+  "marketplace": false,
+  "ckb": true
+} 
