@@ -36,7 +36,6 @@
       "cypress",
       "esbuild",
       "msw"
-    ],
-    "overrides": {}
+    ]
   }
 }
