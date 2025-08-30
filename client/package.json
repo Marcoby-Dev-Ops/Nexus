@@ -141,9 +141,6 @@
     "zod": "^3.25.76",
     "zustand": "^5.0.7"
   },
-  "overrides": {
-    "cookie": "1.0.2"
-  },
   "devDependencies": {
     "@cdmx/authentik-diag-mcp": "^0.1.1",
     "@cdmx/authentik-mcp": "^0.1.1",
