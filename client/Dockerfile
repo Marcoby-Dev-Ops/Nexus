@@ -7,29 +7,35 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
+# Copy root package files and workspace configuration
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Install dependencies
+# Copy package.json for all workspace packages
+COPY client/package.json ./client/
+COPY server/package.json ./server/
+
+# Install dependencies for the entire workspace
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy source code for the client application
+COPY client/ ./client/
 
 # Build stage
 FROM base AS build
+WORKDIR /app
 
-# Build the application
-RUN pnpm run build
+# Build the client application
+# We need to reference the filter from the WORKDIR
+RUN pnpm --filter client... build
 
 # Production stage
 FROM nginx:alpine AS production
 
 # Copy built assets from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/client/dist /usr/share/nginx/html
 
 # Copy nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY client/nginx.conf /etc/nginx/nginx.conf
 
 # Expose port 80
 EXPOSE 80
