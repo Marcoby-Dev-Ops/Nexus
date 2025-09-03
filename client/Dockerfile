@@ -19,6 +19,8 @@ RUN pnpm install --frozen-lockfile
 
 # Copy source code for the client application
 COPY client/ ./client/
+# Copy source code for the server application as well, for workspace context
+COPY server/ ./server/
 
 # Build stage
 FROM base AS build
