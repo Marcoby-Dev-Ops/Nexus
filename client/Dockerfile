@@ -28,7 +28,7 @@ WORKDIR /app
 
 # Build the client application
 # We need to reference the filter from the WORKDIR
-RUN pnpm --filter client... build
+RUN pnpm --filter nexus-client... build
 
 # Production stage
 FROM nginx:alpine AS production
