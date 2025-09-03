@@ -1,46 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/index';
 import { useUserProfile, useUserCompany } from '@/shared/contexts/UserContext';
-import { Card, CardContent } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
-import { 
-  MessageSquare, 
-  Brain, 
-  Users, 
+import { Button } from '@/shared/components/ui/Button';
+import {
+  MessageSquare,
+  Brain,
+  Users,
   Settings, 
   Sparkles,
   Zap,
   TrendingUp,
   Target,
   Activity,
-  Plus,
-  Upload,
-  Mic,
   Search,
-  MoreVertical,
   Trash2,
-  Edit3,
-  Copy,
-  Download,
-  Bot,
   User,
-  ChevronDown,
   ChevronLeft,
   Pencil,
   FileText,
-  Menu,
-  X,
-  ExternalLink
-} from 'lucide-react';
+  X} from 'lucide-react';
 import { ConsolidatedAIService } from '@/services/ai/ConsolidatedAIService';
 import type { Agent } from '@/services/ai/ConsolidatedAIService';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
 import { useToast } from '@/shared/ui/components/Toast';
-import { cn } from '@/shared/utils/styles';
-import { callEdgeFunction } from '@/lib/api-client';
+import { cn } from '@/shared/lib/utils';
 import { nexusRAGService } from '@/lib/services/NexusRAGService';
+import { useAuth } from '@/hooks/useAuth';
 
 // Service-backed helpers
 const aiService = new ConsolidatedAIService();

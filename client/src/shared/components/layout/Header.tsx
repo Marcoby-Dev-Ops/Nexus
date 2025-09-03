@@ -5,7 +5,7 @@ import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { OrganizationSelector } from '@/shared/components/organization/OrganizationSelector';
-import { User, Settings, LogOut, Menu, Sparkles, Building2, Shield, Brain } from 'lucide-react';
+import { User, Settings, LogOut, Menu, Sparkles, Building2, Shield, Brain, Bell, Palette } from 'lucide-react';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 
 interface HeaderProps {
@@ -54,12 +54,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
   };
 
   // Navigation handlers for dropdown items
-  const handleProfileClick = () => {
-    setIsDropdownOpen(false);
-    navigate('/settings/profile');
-  };
-
-  const handleCompanySettingsClick = () => {
+  const handleSettingsClick = () => {
     setIsDropdownOpen(false);
     navigate('/settings');
   };
@@ -72,11 +67,6 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
   const handleSecurityClick = () => {
     setIsDropdownOpen(false);
     navigate('/settings/security');
-  };
-
-  const handlePreferencesClick = () => {
-    setIsDropdownOpen(false);
-    navigate('/settings');
   };
 
   // Close dropdown when clicking outside
@@ -238,18 +228,10 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                      <div className="p-2">
                        <button 
                          className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                         onClick={handleProfileClick}
+                         onClick={handleSettingsClick}
                        >
-                         <User className="mr-3 h-4 w-4 text-muted-foreground" />
-                         <span className="font-medium">My Profile</span>
-                       </button>
-                       
-                       <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                         onClick={handleCompanySettingsClick}
-                       >
-                         <Building2 className="mr-3 h-4 w-4 text-muted-foreground" />
-                         <span className="font-medium">Company Settings</span>
+                                                   <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
+                         <span className="font-medium">Settings</span>
                        </button>
                        
                        <button 
@@ -270,13 +252,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
                        
                        <div className="h-px bg-border my-2" />
                        
-                       <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                         onClick={handlePreferencesClick}
-                       >
-                         <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
-                         <span className="font-medium">Preferences</span>
-                       </button>
+
                        
                        <div className="h-px bg-border my-2" />
                        

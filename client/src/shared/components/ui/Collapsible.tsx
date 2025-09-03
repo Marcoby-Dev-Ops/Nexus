@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 
 interface CollapsibleContextValue {
   open: boolean;

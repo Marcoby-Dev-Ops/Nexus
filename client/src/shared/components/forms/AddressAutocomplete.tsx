@@ -6,7 +6,7 @@ import { Label } from '@/shared/components/ui/Label';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Loader2, MapPin, Building, Navigation } from 'lucide-react';
 import { googlePlacesService, type PlaceAutocompleteResult, type ParsedAddress } from '@/services/integrations';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 
 interface AddressAutocompleteProps {
   label?: string;

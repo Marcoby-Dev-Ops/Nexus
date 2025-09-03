@@ -3,7 +3,7 @@ import { GoalOrientedChat } from '../components/GoalOrientedChat';
 import { useGoalOrientedAI } from '../hooks/useGoalOrientedAI';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 
 /**

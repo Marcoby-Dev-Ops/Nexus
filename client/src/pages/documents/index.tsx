@@ -3,7 +3,7 @@ import { Search, Upload, FileText, Filter, Plus, Trash2, ExternalLink, Folder, F
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { useAuth } from '@/hooks';
 import { useUserContext } from '@/shared/contexts/UserContext';

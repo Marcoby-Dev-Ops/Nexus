@@ -17,7 +17,7 @@ import {
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Input } from '@/shared/components/ui/input';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { ScrollArea } from '@/shared/components/ui/ScrollArea';
 import { useToast } from '@/shared/components/ui/use-toast';

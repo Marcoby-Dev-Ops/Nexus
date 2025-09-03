@@ -5,6 +5,8 @@
 
 export type IntegrationDifficulty = 'easy' | 'medium' | 'advanced';
 export type IntegrationType = 'oauth' | 'api_key' | 'webhook' | 'credentials';
+export type OAuthProvider = 'hubspot' | 'microsoft' | 'google' | 'slack' | 'zapier';
+export type IntegrationStatus = 'connected' | 'disconnected' | 'error' | 'pending' | 'active';
 export type IntegrationCategory = 'crm' | 'payment' | 'email' | 'automation' | 'communication' | 'productivity' | 'accounting' | 'analytics' | 'marketing';
 export type ConnectionStatus = 'idle' | 'connecting' | 'testing' | 'success' | 'error' | 'retry';
 export type SetupStepType = 'welcome' | 'prerequisites' | 'auth' | 'permissions' | 'configuration' | 'testing' | 'success';
@@ -55,6 +57,95 @@ export interface Integration {
   // Timestamps
   createdat: string;
   updated_at?: string;
+}
+
+/**
+ * OAuth Integration Definition
+ */
+export interface OAuthIntegration {
+  id: string;
+  userId: string;
+  provider: OAuthProvider;
+  integrationName: string;
+  integrationType: 'oauth';
+  status: IntegrationStatus;
+  
+  // OAuth-specific fields
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  scopes?: string;
+  externalAccountId?: string;
+  tenantId?: string;
+  lastError?: string;
+  
+  // Mail sync (for Microsoft 365)
+  mailSyncEnabled?: boolean;
+  mailFolders?: string[];
+  mailSyncFromDate?: string;
+  
+  // Sync information
+  lastSyncAt?: string;
+  
+  // Timestamps
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * OAuth Connection Request
+ */
+export interface OAuthConnectionRequest {
+  provider: OAuthProvider;
+  userId: string;
+  redirectUri: string;
+}
+
+/**
+ * OAuth Callback Request
+ */
+export interface OAuthCallbackRequest {
+  code: string;
+  state: string;
+  userId: string;
+  redirectUri: string;
+}
+
+/**
+ * OAuth Connection Result
+ */
+export interface OAuthConnectionResult {
+  success: boolean;
+  message: string;
+  integrationId?: string;
+  status?: IntegrationStatus;
+  externalAccountId?: string;
+  tenantId?: string;
+  mailSyncEnabled?: boolean;
+}
+
+/**
+ * Manual Sync Request
+ */
+export interface ManualSyncRequest {
+  integrationId: string;
+  userId: string;
+}
+
+/**
+ * Manual Sync Result
+ */
+export interface ManualSyncResult {
+  success: boolean;
+  message: string;
+  integrationId: string;
+  provider: OAuthProvider;
+  syncedAt: string;
+  result: {
+    contacts?: { count: number; data: any[] };
+    companies?: { count: number; data: any[] };
+    emails?: { count: number; data: any[] };
+  };
 }
 
 /**

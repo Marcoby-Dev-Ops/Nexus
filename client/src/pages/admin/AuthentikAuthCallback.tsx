@@ -19,6 +19,11 @@ export default function AuthentikAuthCallback() {
   const hasProcessed = useRef(false);
   const { refreshAuth } = useAuthentikAuth();
 
+  // Immediate logging to confirm component is mounted
+  console.log('🔍 [MarcobyIAMCallback] Component mounted');
+  console.log('🔍 [MarcobyIAMCallback] URL:', window.location.href);
+  console.log('🔍 [MarcobyIAMCallback] Search params:', Object.fromEntries(searchParams.entries()));
+
   useEffect(() => {
     const handleCallback = async () => {
       // Add immediate logging to see if callback is reached
@@ -99,8 +104,8 @@ export default function AuthentikAuthCallback() {
            setShowCompletion(true);
            setProcessing(false);
          } else {
-           // Get the next parameter from URL or default to home
-           const next = searchParams.get('next') || '/home';
+           // Get the next parameter from URL or default to dashboard
+           const next = searchParams.get('next') || '/dashboard';
            logger.info('🔍 [MarcobyIAMCallback] Redirecting to:', next);
            
            // Add a small delay to ensure authentication state is properly updated

@@ -48,6 +48,13 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   return (
     <HeaderProvider>
       <div className="min-h-screen bg-background">
+        {/* Skip link for keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-3 focus:py-2 focus:rounded"
+        >
+          Skip to main content
+        </a>
         <div className="flex h-screen">
           {/* Sidebar */}
           <Sidebar 
@@ -63,7 +70,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
             />
             
             {/* Main content area - Full width responsive */}
-            <main className="flex-1 overflow-y-auto">
+            <main id="main-content" role="main" className="flex-1 overflow-y-auto">
               <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-8 pb-6">
                 {children}
               </div>

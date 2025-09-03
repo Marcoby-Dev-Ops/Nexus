@@ -4,7 +4,7 @@
  */
 
 import React, { forwardRef } from 'react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 
 interface ScrollAreaProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;

@@ -32,11 +32,18 @@ const AIPerformanceSettings = () => {
 const TeamSettings = () => <div>Team & access management coming soon.</div>;
 
 const CompanyProfilePage = lazy(() => import('./CompanyProfilePage').then(m => ({ default: m.CompanyProfilePage })));
+const UserProfilePage = lazy(() => import('./UserProfilePage').then(m => ({ default: m.UserProfilePage })));
 
 const settingsConfig = {
   title: 'Settings',
   description: 'Manage your account and application preferences',
   sections: [
+    {
+      id: 'user-profile',
+      title: 'User Profile',
+      description: 'Manage your personal information',
+      component: UserProfilePage,
+    },
     {
       id: 'company-profile',
       title: 'Company Profile',

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/button';
 import { Copy, ThumbsUp, ThumbsDown, User, Bot } from 'lucide-react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType } from '@/shared/types/chat';
 import TransparencyDisplay from './TransparencyDisplay';
 

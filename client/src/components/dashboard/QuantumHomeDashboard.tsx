@@ -25,8 +25,8 @@ import {
   Zap as ZapIcon
 } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/button';
 import { Progress } from '@/shared/components/ui/progress';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
@@ -49,6 +49,7 @@ import { unifiedPlaybookService as PlaybookService } from '@/services/playbook/U
 import { useFireCyclePlaybooks, type PlaybookRecommendation } from '@/core/fire-cycle/fireCyclePlaybooks';
 import JourneyTicketService, { type JourneyTicket as ServiceBrainTicket } from '@/services/playbook/JourneyTicketService';
 import { nexusUnifiedBrain } from '@/services/ai/nexusUnifiedBrain';
+import { ActionableInsights } from './ActionableInsights';
 
 
 interface BrainTicket {
@@ -1034,6 +1035,7 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          {/* 2. Center Panel - Brain Ticket Feed */}
          <div className="lg:col-span-2 space-y-6">
+            <ActionableInsights />
           <div className="flex items-center justify-between">
             <div>
                                <h2 className="text-xl font-bold text-foreground">Active Journeys</h2>

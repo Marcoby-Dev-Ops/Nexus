@@ -11,6 +11,7 @@
 
 // User Service (consolidates 3 user profile services)
 export { userService, UserService } from './UserService';
+export { userContactsService, UserContactsService } from './UserContactsService';
 export type {
   UserProfile,
   Company,

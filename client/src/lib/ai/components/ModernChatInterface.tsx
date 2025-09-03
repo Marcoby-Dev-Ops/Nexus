@@ -8,7 +8,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { useToast } from '@/shared/ui/components/Toast';
 import { Bot, Brain, Database } from 'lucide-react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';

@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { Separator } from '@/shared/components/ui/Separator';
 import { useToast } from '@/shared/components/ui/use-toast';

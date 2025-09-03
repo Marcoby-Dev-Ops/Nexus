@@ -10,13 +10,14 @@ import { authentikAuthService, type AuthUser, type AuthSession } from '@/core/au
 import { logger } from '@/shared/utils/logger';
 
 
-// Simple logger for auth events
+// Simple logger for auth events (gated by VITE_ENABLE_AUTH_LOGS)
+const AUTH_LOGS_ENABLED = (import.meta as any)?.env?.VITE_ENABLE_AUTH_LOGS === 'true';
 const authLogger = {
   info: (message: string, data?: unknown) => {
-    logger.info(`[MarcobyIAMContext] ${message}`, data);
+    if (AUTH_LOGS_ENABLED) logger.info(`[MarcobyIAMContext] ${message}`, data);
   },
   error: (message: string, error?: unknown) => {
-    logger.error(`[MarcobyIAMContext Error] ${message}`, error);
+    if (AUTH_LOGS_ENABLED) logger.error(`[MarcobyIAMContext Error] ${message}`, error);
   }
 };
 
@@ -56,6 +57,18 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
     initializingRef.current = true;
     setLoading(true);
     setError(null);
+
+    // Add timeout protection
+    const timeoutId = setTimeout(() => {
+      if (mountedRef.current && initializingRef.current) {
+        authLogger.error('Auth initialization timed out');
+        setError(new Error('Authentication initialization timed out'));
+        setLoading(false);
+        setInitialized(true);
+        hasInitializedRef.current = true;
+        initializingRef.current = false;
+      }
+    }, 10000); // 10 second timeout
 
     try {
       authLogger.info('Initializing Marcoby IAM auth...');
@@ -112,6 +125,7 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
         setIsAuthenticated(false);
       }
     } finally {
+      clearTimeout(timeoutId);
       if (mountedRef.current) {
         setLoading(false);
         setInitialized(true);
@@ -126,6 +140,7 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
     
     // Only initialize if not already initialized
     if (!hasInitializedRef.current) {
+      if (AUTH_LOGS_ENABLED) console.log('🔍 [AuthentikAuthContext] Starting auth initialization');
       initializeAuth();
     }
 
@@ -135,20 +150,7 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
     };
   }, []); // Remove initializeAuth from dependencies
 
-  // Add effect to handle unauthenticated users
-  useEffect(() => {
-    if (initialized && !loading && !isAuthenticated) {
-      // Check if we're not already on an auth page
-      const currentPath = window.location.pathname;
-      const authPaths = ['/auth/callback', '/auth/test', '/auth/signup', '/admin/auth-callback', '/admin/auth-status', '/admin/email-not-verified', '/admin/waitlist', '/login', '/signup', '/privacy', '/terms', '/cookies', '/security', '/pricing', '/', '/onboarding'];
-      const isAuthPath = authPaths.some(path => currentPath.startsWith(path));
-      
-      if (!isAuthPath) {
-        authLogger.info('User not authenticated, redirecting to login');
-        window.location.href = '/login';
-      }
-    }
-  }, [initialized, loading, isAuthenticated]);
+  // Remove automatic redirects - let routing handle authentication protection
 
   const signIn = async (additionalParams?: Record<string, string>): Promise<{ success: boolean; error?: string }> => {
     authLogger.info('Sign in initiated');

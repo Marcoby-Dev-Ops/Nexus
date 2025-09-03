@@ -172,37 +172,83 @@ export class OAuthTokenService extends BaseService implements CrudServiceInterfa
    * Get token for a specific provider
    */
   async getTokenForProvider(provider: OAuthProvider): Promise<ServiceResponse<OAuthToken>> {
-    return this.executeDbOperation(async () => {
-      try {
-        // Get current user ID
-        const userResult = await authentikAuthService.getSession();
-        const user = userResult.data?.user;
-        
-        if (!user) {
-          const errorResult = handleSupabaseError(new Error('No user found'), 'get user for token');
-          return { data: null, error: errorResult.error };
-        }
-
-        const { data, error } = await select('oauth_tokens', '*', { 
-          user_id: user.id, 
-          provider: provider,
-          status: 'active'
-        });
-        
-        if (error) {
-          const errorResult = handleSupabaseError(error, `get token for ${provider}`);
-          return { data: null, error: errorResult.error };
-        }
-
-        if (!data || data.length === 0) {
-          return { data: null, error: `No active token found for ${provider}` };
-        }
-
-        return { data: data[0] as OAuthToken, error: null };
-      } catch (error) {
-        return { data: null, error: `Failed to get token for ${provider}` };
+    try {
+      // Get current user ID
+      const authResult = await authentikAuthService.getSession();
+      const user = authResult.data?.user;
+      
+      if (!user) {
+        return { success: false, data: null, error: 'User not authenticated' };
       }
-    }, `get token for ${provider}`);
+
+      // Get token from database
+      const { data, error } = await select<OAuthToken>(
+        'oauth_tokens',
+        { 
+          user_id: user.id, 
+          provider, 
+          status: 'active' 
+        },
+        { 
+          limit: 1, 
+          orderBy: { column: 'created_at', ascending: false } 
+        }
+      );
+
+      if (error || !data || data.length === 0) {
+        return { 
+          success: false, 
+          data: null, 
+          error: `No active token found for ${provider}` 
+        };
+      }
+
+      // Check if token is expired
+      const token = data[0];
+      if (token.expires_at && new Date(token.expires_at * 1000) < new Date()) {
+        // Token is expired, try to refresh it
+        if (token.refresh_token) {
+          const refreshResult = await this.refreshToken({
+            provider,
+            refresh_token: token.refresh_token
+          });
+          
+          if (refreshResult.success) {
+            return { 
+              success: true, 
+              data: refreshResult.data, 
+              error: null 
+            };
+          }
+          
+          // If refresh fails, return the expired token with a warning
+          return { 
+            success: false, 
+            data: token, 
+            error: 'Token expired and could not be refreshed' 
+          };
+        }
+        
+        return { 
+          success: false, 
+          data: token, 
+          error: 'Token has expired' 
+        };
+      }
+
+      return { 
+        success: true, 
+        data: token, 
+        error: null 
+      };
+    } catch (error) {
+      console.error(`Error getting token for ${provider}:`, error);
+      return { 
+        success: false, 
+        data: null, 
+        error: `Failed to get token for ${provider}: ${error.message}` 
+      };
+    }
   }
 
   /**

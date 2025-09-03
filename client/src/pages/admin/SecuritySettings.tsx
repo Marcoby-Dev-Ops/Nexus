@@ -16,23 +16,8 @@ import { useService } from '@/shared/hooks/useService';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { useCompany } from '@/shared/contexts/CompanyContext';
 import { logger } from '@/shared/utils/logger';
-import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
-import { FormField, FormSection } from '@/shared/components/forms/FormField';
-import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { nowIsoUtc, toLocalDisplay } from '@/shared/utils/time';
-
-// Password change schema
-const passwordChangeSchema = z.object({
-  currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  confirmPassword: z.string().min(1, 'Please confirm your password')
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
-type PasswordChangeData = z.infer<typeof passwordChangeSchema>;
 
 interface SecuritySettings {
   twoFactorEnabled: boolean;
@@ -61,7 +46,6 @@ const SecuritySettings: React.FC = () => {
   
   // Use the UserService directly
   const userService = useService('user');
-  const [isUpdating, setIsUpdating] = useState(false);
 
 
 
@@ -76,41 +60,7 @@ const SecuritySettings: React.FC = () => {
     accountLocked: false
   });
   const [activeSessions, setActiveSessions] = useState<ActiveSession[]>([]);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  // Initialize password change form
-  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
-    schema: passwordChangeSchema,
-    defaultValues: {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    },
-    onSubmit: async (data: PasswordChangeData) => {
-      if (!profile?.id) return;
-
-      setIsUpdating(true);
-      try {
-        const result = await userService.update(profile.id, {
-          password: data.newPassword
-        });
-        
-        if (result.success) {
-          setShowPasswordModal(false);
-          toast.success('Password updated successfully');
-        } else {
-          throw new Error(result.error || 'Failed to update password');
-        }
-      } catch (error) {
-        throw new Error('Failed to update password');
-      } finally {
-        setIsUpdating(false);
-      }
-    },
-    successMessage: 'Password updated successfully!',
-  });
 
   useEffect(() => {
     if (user?.id) {
@@ -244,7 +194,7 @@ const SecuritySettings: React.FC = () => {
     return 'Poor';
   };
 
-  if (isLoadingProfile) {
+  if (profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -303,7 +253,7 @@ const SecuritySettings: React.FC = () => {
             Password
           </CardTitle>
           <CardDescription>
-            Change your account password
+            Change your account password through Marcoby IAM (Authentik)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -314,7 +264,18 @@ const SecuritySettings: React.FC = () => {
                 Last changed {toLocalDisplay(securitySettings.passwordLastChanged)}
               </p>
             </div>
-            <Button onClick={() => setShowPasswordModal(true)}>
+            <Button 
+              onClick={() => {
+                console.log('🔍 Button clicked!');
+                alert('Button clicked - opening password change...');
+                
+                const authentikUrl = 'https://identity.marcoby.com';
+                const fullUrl = `${authentikUrl}/if/flow/default-password-change/`;
+                
+                console.log('🔍 Opening URL:', fullUrl);
+                window.open(fullUrl, '_blank');
+              }}
+            >
               Change Password
             </Button>
           </div>
@@ -455,49 +416,7 @@ const SecuritySettings: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Password Change Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background p-6 rounded-lg w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Change Password</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <FormField
-                form={form}
-                name="currentPassword"
-                label="Current Password"
-                type="password"
-                placeholder="Enter your current password"
-              />
-              <FormField
-                form={form}
-                name="newPassword"
-                label="New Password"
-                type="password"
-                placeholder="Enter your new password"
-              />
-              <FormField
-                form={form}
-                name="confirmPassword"
-                label="Confirm New Password"
-                type="password"
-                placeholder="Confirm your new password"
-              />
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isSubmitting || isUpdating}>
-                  {isSubmitting || isUpdating ? 'Updating...' : 'Update Password'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setShowPasswordModal(false)}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

@@ -11,8 +11,8 @@ import { useAuth } from '@/shared/hooks/useAuth';
 import { onboardingBrainIntegrationService, type HomepageState } from '@/shared/services/OnboardingBrainIntegrationService';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
-import { Progress } from '@/shared/components/ui/progress';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
 import { 
   Building2, 
   Target, 

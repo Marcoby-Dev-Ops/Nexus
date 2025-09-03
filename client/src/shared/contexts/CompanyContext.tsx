@@ -9,6 +9,20 @@ import type {
   CompanyHealth,
 } from '@/services/core/CompanyService';
 
+// Temporary type until CompanyAnalytics is properly defined
+interface CompanyAnalytics {
+  companyId: string;
+  employeeCount: number;
+  mrr: number;
+  growthStage: string;
+  industry: string;
+  size: string;
+  websiteVisitors: number;
+  csat: number;
+  grossMargin: number;
+  lastUpdated: string;
+}
+
 /**
  * CompanyContext provides read-through cached company data and related resources
  * that depend on the authenticated user's active company.
@@ -66,6 +80,16 @@ interface CompanyProviderProps {
 export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) => {
   const { profile } = useUserProfile();
   const companyId = profile?.company_id || null;
+  
+  // Debug logging for company ID detection
+  useEffect(() => {
+    logger.info('CompanyContext - Profile/CompanyId changed', {
+      hasProfile: !!profile,
+      profileCompanyId: profile?.company_id,
+      companyId,
+      profileData: profile
+    });
+  }, [profile, companyId]);
 
   // State
   const [company, setCompany] = useState<Company | null>(null);
@@ -111,21 +135,32 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
   }, []);
 
   const loadCompany = useCallback(async (force = false) => {
+    logger.info('CompanyContext - loadCompany called', { companyId, force, hasCompany: !!company });
+    
     if (!companyId) {
+      logger.info('CompanyContext - No companyId, clearing company');
       setCompany(null);
       setCompanyError(null);
       return;
     }
-    if (!force && isFresh(lastCompanyFetch) && company) return;
+    if (!force && isFresh(lastCompanyFetch) && company) {
+      logger.info('CompanyContext - Using cached company data');
+      return;
+    }
 
     setLoadingCompany(true);
     setCompanyError(null);
     try {
+      logger.info('CompanyContext - Fetching company from service', { companyId });
       const result = await companyService.get(companyId);
       if (result.success && result.data) {
         setCompany(result.data);
         setLastCompanyFetch(Date.now());
-        logger.info('Company loaded', { companyId });
+        logger.info('Company loaded successfully', { 
+          companyId, 
+          companyName: result.data.name,
+          companyData: result.data 
+        });
       } else {
         setCompanyError(result.error || 'Failed to load company');
         logger.error('Failed to load company', { companyId, error: result.error });
@@ -136,7 +171,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
     } finally {
       setLoadingCompany(false);
     }
-  }, [companyId, isFresh, lastCompanyFetch]);
+  }, [companyId, isFresh, lastCompanyFetch, company]);
 
   const loadDepartments = useCallback(async (force = false) => {
     if (!companyId) {
@@ -308,7 +343,14 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
 
   // Load company data when companyId changes
   useEffect(() => {
+    logger.info('CompanyContext - useEffect triggered', { 
+      companyId, 
+      hasCompanyId: !!companyId,
+      willLoadCompany: !!companyId 
+    });
+    
     if (companyId) {
+      logger.info('CompanyContext - Starting company data load', { companyId });
       loadCompany();
       // Comment out department and role loading until these features are implemented
       // loadDepartments();
@@ -316,6 +358,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       loadAnalytics();
       loadHealth();
     } else {
+      logger.info('CompanyContext - No companyId, clearing errors');
       clearErrors();
     }
   }, [companyId, loadCompany, loadAnalytics, loadHealth, clearErrors]);

@@ -140,8 +140,8 @@ const FAQ_ITEMS = [
     answer: 'Free tier gets community support and documentation. Professional tier gets priority email support with faster response times. Enterprise gets dedicated account management with phone support and custom training.'
   },
   {
-    question: 'Are you SOC 2 compliant?',
-    answer: 'We\'re building with SOC 2 compliance in mind and have implemented many security controls. We\'re currently working toward formal certification as we scale. Our security practices include encryption, audit logging, and access controls.'
+    question: 'What security measures do you have?',
+    answer: 'We implement enterprise-grade security practices including encryption, audit logging, and access controls. We\'re building with security best practices in mind and will pursue formal certifications as we scale.'
   }
 ];
 

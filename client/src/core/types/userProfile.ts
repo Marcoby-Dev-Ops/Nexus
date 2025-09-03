@@ -53,6 +53,7 @@ export interface UserProfile {
   work_phone?: string;
   personal_email?: string;
   business_email?: string;
+  email?: string; // Add missing email field
   
   // Work Information
   role: 'owner' | 'admin' | 'manager' | 'user';
@@ -82,6 +83,8 @@ export interface UserProfile {
   skills?: string[];
   certifications?: string[];
   languages?: { language: string; proficiency: 'basic' | 'intermediate' | 'advanced' | 'native' }[];
+  experience?: string; // Add missing experience field
+  website?: string; // Add missing website field
   
   // Emergency Contact
   emergency_contact?: {

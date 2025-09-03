@@ -1,7 +1,7 @@
 import React from 'react';
 import { GraduationCap, Target, TrendingUp, AlertTriangle, CheckCircle, Clock, DollarSign } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { cn } from '@/shared/lib/utils';
 
 interface ExpertAdviceProps {

@@ -1,3 +1,5 @@
+/// <reference types="cypress" />
+
 describe('StreamingComposer', () => {
   beforeEach(() => {
     // Set env flag before visiting

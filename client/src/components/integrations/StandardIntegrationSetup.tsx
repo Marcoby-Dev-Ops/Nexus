@@ -199,8 +199,8 @@ const StandardIntegrationSetup: React.FC<IntegrationSetupProps> = ({
                 We use industry-standard encryption and never store your passwords. Your data is processed securely and in compliance with privacy regulations.
               </p>
               <div className="flex items-center space-x-4 mt-3">
-                <Badge variant="secondary">SOC 2 Compliant</Badge>
-                <Badge variant="secondary">GDPR Ready</Badge>
+                <Badge variant="secondary">Secure</Badge>
+                <Badge variant="secondary">Encrypted</Badge>
                 <Badge variant="secondary">256-bit SSL</Badge>
               </div>
             </div>

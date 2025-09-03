@@ -399,7 +399,7 @@ const SlackSetup: React.FC<SlackSetupProps> = ({
                 <li>• OAuth 2.0 authentication with Slack</li>
                 <li>• Read-only access to protect your data</li>
                 <li>• No message content stored - only analytics</li>
-                <li>• GDPR and SOC 2 compliant data handling</li>
+                <li>• Secure data handling with encryption</li>
               </ul>
             </div>
           </div>

@@ -20,7 +20,7 @@ export const SecurityCompliancePage: React.FC = () => {
   const securityMeasures = [
     {
       icon: <Lock className="h-5 w-5" />,
-      title: 'End-to-End Encryption',
+      title: 'Data Encryption',
       description: 'All data encrypted with AES-256 in transit and at rest',
       details: ['TLS 1.3 for data in transit', 'AES-256 encryption at rest', 'Zero-knowledge architecture for sensitive data']
     },

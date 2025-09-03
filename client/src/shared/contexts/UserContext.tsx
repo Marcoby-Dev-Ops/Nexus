@@ -4,18 +4,11 @@ import { userService } from '@/services/core/UserService';
 import { companyService } from '@/services/core/CompanyService';
 import { logger } from '@/shared/utils/logger';
 
-import type { UserProfile as ComprehensiveUserProfile } from '@/core/types/userProfile';
+import type { UserProfile } from '@/services/core/UserService';
 
 
-// Types
-export interface UserProfile extends Omit<ComprehensiveUserProfile, 'company' | 'company_id'> {
-  // Override company field to be compatible with service layer
-  company?: string | null;
-  // Override company_id to be compatible with service layer
-  company_id?: string | null;
-  // Add organization_id field
-  organization_id?: string | null;
-}
+// Types - Use the same UserProfile type as the UserService
+export type { UserProfile } from '@/services/core/UserService';
 
 export interface CompanyProfile {
   id: string;
@@ -190,9 +183,32 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     try {
       const updateResult = await userService.upsertAuthProfile(targetUserId, updates);
       if (updateResult.success && updateResult.data) {
-        setProfile(updateResult.data as UserProfile);
-        logger.info('User profile updated successfully', { userId: targetUserId });
-        return { success: true, data: updateResult.data as UserProfile };
+        // Force refresh the profile to get the latest data from the database
+        const refreshedProfile = await userService.getAuthProfile(targetUserId);
+        
+        // Debug logging
+        logger.info('Profile refresh result:', { 
+          success: refreshedProfile.success, 
+          data: refreshedProfile.data,
+          job_title: refreshedProfile.data?.job_title,
+          company_name: refreshedProfile.data?.company_name,
+          experience: refreshedProfile.data?.experience,
+          location: refreshedProfile.data?.location
+        });
+        
+        if (refreshedProfile.success && refreshedProfile.data) {
+          setProfile(refreshedProfile.data as UserProfile);
+          // Force a profile reload to ensure the context is updated
+          loadedUserIdRef.current = null;
+          setProfileLoaded(false);
+          logger.info('User profile updated and refreshed successfully', { userId: targetUserId });
+          return { success: true, data: refreshedProfile.data as UserProfile };
+        } else {
+          // Fallback to the update result if refresh fails
+          setProfile(updateResult.data as UserProfile);
+          logger.info('User profile updated successfully (fallback)', { userId: targetUserId });
+          return { success: true, data: updateResult.data as UserProfile };
+        }
       }
       throw new Error(updateResult.error || 'Failed to update profile');
     } catch (err) {

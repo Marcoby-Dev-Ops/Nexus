@@ -81,7 +81,7 @@ const TrustBasedIntegrationSetup: React.FC<TrustBasedIntegrationSetupProps> = ({
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-background rounded-lg">
               <Lock className="w-5 h-5 text-primary mb-2" />
-              <div className="text-sm font-medium">End-to-End Encryption</div>
+                              <div className="text-sm font-medium">Data Encryption</div>
               <div className="text-sm text-muted-foreground">Your data is always encrypted</div>
             </div>
             <div className="p-4 bg-background rounded-lg">

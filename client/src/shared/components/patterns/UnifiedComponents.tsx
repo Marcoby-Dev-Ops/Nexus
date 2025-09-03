@@ -10,7 +10,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 import { TrendingUp, TrendingDown, Minus, Sparkles, Brain, Zap, Lightbulb, BookOpen } from 'lucide-react';
 
 // ===== UNIFIED METRIC COMPONENTS =====

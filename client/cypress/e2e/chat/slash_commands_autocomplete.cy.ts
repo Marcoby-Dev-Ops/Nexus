@@ -1,7 +1,7 @@
 describe('Slash Command Autocomplete', () => {
   beforeEach(() => {
     // Mock successful authentication
-    cy.visit('/auth/login');
+    cy.visit('/login');
     cy.get('[data-testid="email-input"]').type('test@example.com');
     cy.get('input[type="password"]').type('password123');
     cy.get('button[type="submit"]').click();

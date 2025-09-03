@@ -3,7 +3,7 @@ import { Controller } from 'react-hook-form';
 import type { Control, FieldPath, FieldValues } from 'react-hook-form';
 import { Label } from '@/shared/components/ui/Label';
 import { Input } from '@/shared/components/ui/Input';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 import { logger } from '@/shared/utils/logger';
 
 export interface FormFieldProps<

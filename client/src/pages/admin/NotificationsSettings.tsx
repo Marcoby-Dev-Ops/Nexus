@@ -9,6 +9,7 @@ import { Label } from '@/shared/components/ui/Label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { useAuth } from '@/hooks/index';
 import { toast } from 'sonner';
+import { pushNotificationService } from '@/services/core/PushNotificationService';
 import { Bell, Mail, Smartphone, MessageSquare, Settings, RefreshCw, Save, XCircle, Zap, Users, BarChart3, Shield, Globe, Calendar, FileText, DollarSign, TrendingUp } from 'lucide-react';
 interface NotificationChannel {
   id: string;
@@ -27,7 +28,7 @@ interface NotificationCategory {
     email: boolean;
     push: boolean;
     sms: boolean;
-    inapp: boolean;
+    in_app: boolean;
   };
   frequency: 'immediate' | 'daily' | 'weekly' | 'never';
 }
@@ -44,7 +45,33 @@ interface NotificationPreferences {
 }
 
 const NotificationsSettings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  
+  // Helper function to get channel icon
+  const getChannelIcon = (channelType: string) => {
+    switch (channelType) {
+      case 'email': return <Mail className="w-4 h-4" />;
+      case 'push': return <Bell className="w-4 h-4" />;
+      case 'sms': return <Smartphone className="w-4 h-4" />;
+      case 'in_app': return <MessageSquare className="w-4 h-4" />;
+      default: return <Bell className="w-4 h-4" />;
+    }
+  };
+  
+  // Helper function to get category icon
+  const getCategoryIcon = (categoryType: string) => {
+    switch (categoryType) {
+      case 'security': return <Shield className="w-4 h-4" />;
+      case 'business': return <BarChart3 className="w-4 h-4" />;
+      case 'integrations': return <Zap className="w-4 h-4" />;
+      case 'team': return <Users className="w-4 h-4" />;
+      case 'calendar': return <Calendar className="w-4 h-4" />;
+      case 'documents': return <FileText className="w-4 h-4" />;
+      case 'billing': return <DollarSign className="w-4 h-4" />;
+      case 'analytics': return <TrendingUp className="w-4 h-4" />;
+      default: return <Bell className="w-4 h-4" />;
+    }
+  };
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     globalEnabled: true,
     quietHours: {
@@ -68,13 +95,6 @@ const NotificationsSettings: React.FC = () => {
         icon: <Bell className="w-4 h-4" />
       },
       {
-        id: 'sms',
-        name: 'SMS',
-        type: 'sms',
-        enabled: false,
-        icon: <Smartphone className="w-4 h-4" />
-      },
-      {
         id: 'in_app',
         name: 'In-App',
         type: 'in_app',
@@ -91,8 +111,8 @@ const NotificationsSettings: React.FC = () => {
         channels: {
           email: true,
           push: true,
-          sms: true,
-          inapp: true
+          sms: false,
+          in_app: true
         },
         frequency: 'immediate'
       },
@@ -105,7 +125,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: false,
           sms: false,
-          inapp: true
+          in_app: true
         },
         frequency: 'daily'
       },
@@ -118,7 +138,7 @@ const NotificationsSettings: React.FC = () => {
           email: false,
           push: true,
           sms: false,
-          inapp: true
+          in_app: true
         },
         frequency: 'immediate'
       },
@@ -131,7 +151,7 @@ const NotificationsSettings: React.FC = () => {
           email: false,
           push: false,
           sms: false,
-          inapp: true
+          in_app: true
         },
         frequency: 'daily'
       },
@@ -144,7 +164,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: true,
           sms: false,
-          inapp: true
+          in_app: true
         },
         frequency: 'immediate'
       },
@@ -157,7 +177,7 @@ const NotificationsSettings: React.FC = () => {
           email: false,
           push: false,
           sms: false,
-          inapp: true
+          in_app: true
         },
         frequency: 'daily'
       },
@@ -170,7 +190,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: false,
           sms: false,
-          inapp: true
+          in_app: true
         },
         frequency: 'immediate'
       },
@@ -183,7 +203,7 @@ const NotificationsSettings: React.FC = () => {
           email: true,
           push: false,
           sms: false,
-          inapp: true
+          in_app: true
         },
         frequency: 'weekly'
       }
@@ -191,26 +211,71 @@ const NotificationsSettings: React.FC = () => {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pushSubscribed, setPushSubscribed] = useState(false);
+  const [pushPermission, setPushPermission] = useState<NotificationPermission>('default');
 
   useEffect(() => {
-    if (user?.id) {
+    if (user?.id && session?.session?.accessToken) {
       fetchNotificationPreferences();
     }
-  }, [user?.id]);
+  }, [user?.id, session?.session?.accessToken]);
 
   const fetchNotificationPreferences = async () => {
     try {
       setLoading(true);
       
-      // Mock data for now - replace with actual API calls
-      // In a real implementation, you would fetch from your backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await fetch('/api/user-preferences/notifications', {
+        headers: {
+          'Authorization': `Bearer ${session?.session?.accessToken}`,
+        },
+      });
       
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          // Transform the data to match our component state
+          const apiData = result.data;
+          
+          // Transform channels from object to array format
+          const channelsArray = Object.entries(apiData.channels || {}).map(([key, value]: [string, any]) => ({
+            id: key,
+            name: value.name || key,
+            type: value.type || key,
+            enabled: value.enabled || false,
+            icon: getChannelIcon(key)
+          }));
+          
+          // Transform categories from object to array format
+          const categoriesArray = Object.entries(apiData.categories || {}).map(([key, value]: [string, any]) => ({
+            id: key,
+            name: value.name || key,
+            description: value.description || '',
+            icon: getCategoryIcon(key),
+            channels: {
+              email: value.channels?.email || false,
+              push: value.channels?.push || false,
+              sms: value.channels?.sms || false,
+              in_app: value.channels?.in_app || false
+            },
+            frequency: value.frequency || 'immediate'
+          }));
+          
+          setPreferences({
+            globalEnabled: apiData.global_enabled || true,
+            quietHours: {
+              enabled: apiData.quiet_hours_enabled || false,
+              start: apiData.quiet_hours_start || '22:00',
+              end: apiData.quiet_hours_end || '08:00'
+            },
+            channels: channelsArray,
+            categories: categoriesArray
+          });
+        }
+      } else {
+        throw new Error('Failed to fetch notification preferences');
+      }
     } catch (error) {
-       
-     
-    // eslint-disable-next-line no-console
-    console.error('Error fetching notification preferences: ', error);
+      console.error('Error fetching notification preferences: ', error);
       toast.error('Failed to load notification preferences');
     } finally {
       setLoading(false);
@@ -221,11 +286,65 @@ const NotificationsSettings: React.FC = () => {
     try {
       setSaving(true);
       
-      // Simulate saving preferences
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Transform the component state back to API format
+      const apiData = {
+        global_enabled: preferences.globalEnabled,
+        quiet_hours_enabled: preferences.quietHours.enabled,
+        quiet_hours_start: preferences.quietHours.start,
+        quiet_hours_end: preferences.quietHours.end,
+        channels: {
+          email: {
+            enabled: preferences.channels.find(c => c.id === 'email')?.enabled ?? true,
+            name: 'Email',
+            type: 'email'
+          },
+          push: {
+            enabled: preferences.channels.find(c => c.id === 'push')?.enabled ?? true,
+            name: 'Push Notifications',
+            type: 'push'
+          },
+          in_app: {
+            enabled: preferences.channels.find(c => c.id === 'in_app')?.enabled ?? true,
+            name: 'In-App',
+            type: 'in_app'
+          }
+        },
+        categories: preferences.categories.reduce((acc, category) => {
+          acc[category.id] = {
+            name: category.name,
+            description: category.description,
+            channels: {
+              email: category.channels.email ?? false,
+              push: category.channels.push ?? false,
+              in_app: category.channels.in_app ?? false
+            },
+            frequency: category.frequency
+          };
+          return acc;
+        }, {} as Record<string, any>)
+      };
       
-      toast.success('Notification preferences saved successfully');
+      const response = await fetch('/api/user-preferences/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.accessToken}`,
+        },
+        body: JSON.stringify(apiData),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          toast.success('Notification preferences saved successfully');
+        } else {
+          throw new Error(result.error || 'Failed to save preferences');
+        }
+      } else {
+        throw new Error('Failed to save notification preferences');
+      }
     } catch (error) {
+      console.error('Error saving notification preferences:', error);
       toast.error('Failed to save notification preferences');
     } finally {
       setSaving(false);
@@ -279,6 +398,57 @@ const NotificationsSettings: React.FC = () => {
       quietHours: { ...prev.quietHours, enabled }
     }));
   };
+
+  // Push notification handlers
+  const handlePushToggle = async (enabled: boolean) => {
+    try {
+      if (enabled) {
+        // Subscribe to push notifications
+        const subscription = await pushNotificationService.subscribeToPush(user?.id || '');
+        if (subscription) {
+          setPushSubscribed(true);
+          toast.success('Push notifications enabled successfully');
+        }
+      } else {
+        // Unsubscribe from push notifications
+        await pushNotificationService.unsubscribeFromPush();
+        setPushSubscribed(false);
+        toast.success('Push notifications disabled successfully');
+      }
+    } catch (error) {
+      console.error('Error toggling push notifications:', error);
+      toast.error('Failed to toggle push notifications');
+    }
+  };
+
+  const handleTestPushNotification = async () => {
+    try {
+      await pushNotificationService.sendTestNotification();
+      toast.success('Test notification sent successfully');
+    } catch (error) {
+      console.error('Error sending test notification:', error);
+      toast.error('Failed to send test notification');
+    }
+  };
+
+  // Check push notification status on mount
+  useEffect(() => {
+    const checkPushStatus = async () => {
+      try {
+        const permission = await pushNotificationService.getPermission();
+        setPushPermission(permission);
+        
+        const isSubscribed = await pushNotificationService.isSubscribed();
+        setPushSubscribed(isSubscribed);
+      } catch (error) {
+        console.error('Error checking push status:', error);
+      }
+    };
+
+    if (user?.id) {
+      checkPushStatus();
+    }
+  }, [user?.id]);
 
   const getFrequencyLabel = (frequency: string) => {
     switch (frequency) {
@@ -383,29 +553,29 @@ const NotificationsSettings: React.FC = () => {
             <div className="grid grid-cols-2 gap-4 p-4 border rounded-lg">
               <div>
                 <Label htmlFor="quiet-start">Start Time</Label>
-                <input
-                  id="quiet-start"
-                  type="time"
-                  value={preferences.quietHours.start}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    quietHours: { ...prev.quietHours, start: e.target.value }
-                  }))}
-                  className="w-full px-3 py-2 border rounded-md mt-1"
-                />
+                                 <input
+                   id="quiet-start"
+                   type="time"
+                   value={preferences.quietHours.start}
+                   onChange={(e) => setPreferences(prev => ({
+                     ...prev,
+                     quietHours: { ...prev.quietHours, start: e.target.value }
+                   }))}
+                   className="w-full px-3 py-2 border rounded-md mt-1 bg-background"
+                 />
               </div>
               <div>
                 <Label htmlFor="quiet-end">End Time</Label>
-                <input
-                  id="quiet-end"
-                  type="time"
-                  value={preferences.quietHours.end}
-                  onChange={(e) => setPreferences(prev => ({
-                    ...prev,
-                    quietHours: { ...prev.quietHours, end: e.target.value }
-                  }))}
-                  className="w-full px-3 py-2 border rounded-md mt-1"
-                />
+                                 <input
+                   id="quiet-end"
+                   type="time"
+                   value={preferences.quietHours.end}
+                   onChange={(e) => setPreferences(prev => ({
+                     ...prev,
+                     quietHours: { ...prev.quietHours, end: e.target.value }
+                   }))}
+                   className="w-full px-3 py-2 border rounded-md mt-1 bg-background"
+                 />
               </div>
             </div>
           )}
@@ -522,57 +692,7 @@ const NotificationsSettings: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Notification Preview */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Bell className="h-5 w-5 mr-2" />
-            Notification Preview
-          </CardTitle>
-          <CardDescription>
-            See how your notifications will appear
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="p-4 border rounded-lg bg-background">
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-success mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium">New login detected</p>
-                  <p className="text-sm text-muted-foreground">
-                    A new login was detected from San Francisco, CA
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date().toLocaleString()}
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm">
-                  <XCircle className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-            
-            <div className="p-4 border rounded-lg bg-background">
-              <div className="flex items-start gap-3">
-                <BarChart3 className="w-5 h-5 text-primary mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-medium">Daily business summary</p>
-                  <p className="text-sm text-muted-foreground">
-                    Your business metrics for today are ready
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {new Date().toLocaleString()}
-                  </p>
-                </div>
-                <Button variant="ghost" size="sm">
-                  <XCircle className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   );
 };

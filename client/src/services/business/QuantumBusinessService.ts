@@ -119,7 +119,43 @@ export class QuantumBusinessService extends BaseService {
 
       if (!data || data.length === 0) {
         console.log('ℹ️ [QuantumBusinessService] No quantum profile found for organizationId:', organizationId);
-        return this.createResponse(null);
+        // Auto-create a default profile on first access
+        const defaultBlocks = getAllQuantumBlocks().map(block => ({
+          blockId: block.id,
+          strength: 50,
+          health: 50,
+          properties: {},
+          healthIndicators: {},
+          aiCapabilities: [],
+          marketplaceIntegrations: []
+        }));
+
+        const defaultProfile: QuantumBusinessProfile = {
+          id: crypto.randomUUID(),
+          organizationId,
+          blocks: defaultBlocks,
+          relationships: [],
+          healthScore: calculateBusinessHealth({
+            id: 'temp',
+            organizationId,
+            blocks: defaultBlocks,
+            relationships: [],
+            healthScore: 0,
+            maturityLevel: 'startup',
+            lastUpdated: new Date().toISOString()
+          }),
+          maturityLevel: 'startup',
+          lastUpdated: new Date().toISOString()
+        };
+
+        const saveResult = await this.saveQuantumProfile(defaultProfile);
+        if (!saveResult.success || !saveResult.data) {
+          return this.handleError('Failed to initialize quantum profile', saveResult.error || new Error('Initialization failed'));
+        }
+
+        const insightsInit = saveResult.insights ?? generateQuantumInsights(saveResult.data);
+        const recommendationsInit = saveResult.recommendations ?? generateQuantumRecommendations(saveResult.data);
+        return this.createResponse(saveResult.data, { insights: insightsInit, recommendations: recommendationsInit });
       }
 
       // Get the most recent profile

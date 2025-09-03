@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, ChevronRight, Home, Workflow, Settings, Grid3X3 } from 'lucide-react';
-import { getOverviewItems, getBuildingBlocksItems, getToolsItems, getSettingsItems } from './navConfig';
-import { Badge } from '@/shared/components/ui/badge';
+import { X, ChevronRight, Home, Workflow, Grid3X3 } from 'lucide-react';
+import { getOverviewItems, getBuildingBlocksItems, getToolsItems } from './navConfig';
+import { Badge } from '@/shared/components/ui/Badge';
 import { useAuth } from '@/hooks/index';
 
 export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -17,7 +17,6 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
   const overviewItems = getOverviewItems();
   const buildingBlocksItems = getBuildingBlocksItems();
   const toolsItems = getToolsItems();
-  const settingsItems = getSettingsItems();
 
   // Close expanded items when clicking outside
   useEffect(() => {
@@ -192,7 +191,6 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           {renderSection('Overview', overviewItems, <Home className="h-3 w-3" />)}
           {renderSection('Building Blocks', buildingBlocksItems, <Grid3X3 className="h-3 w-3" />)}
           {renderSection('Tools & Workflow', toolsItems, <Workflow className="h-3 w-3" />)}
-          {renderSection('Settings', settingsItems, <Settings className="h-3 w-3" />)}
         </nav>
       </aside>
       {isOpen && (

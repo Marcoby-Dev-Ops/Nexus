@@ -6,10 +6,10 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
-import { Progress } from '@/shared/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/Progress';
 import { useToast } from '@/shared/ui/components/Toast';
 import { ConsolidatedAIService } from '@/services/ai/ConsolidatedAIService';
 import { logger } from '@/shared/utils/logger';
@@ -28,22 +28,14 @@ import {
   MessageSquare
 } from 'lucide-react';
 import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
+import type { ChatMessage } from '@/shared/types/chat';
 
 interface IdentitySetupChatProps {
   onComplete: (identity: any) => void;
   onBack: () => void;
 }
 
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  modelInfo?: {
-    model: string;
-    provider: string;
-  };
-}
+
 
 interface IdentityStep {
   id: string;
@@ -117,12 +109,13 @@ export default function IdentitySetupChat({ onComplete, onBack }: IdentitySetupC
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
+      conversation_id: 'identity-setup',
       role: 'assistant',
       content: IDENTITY_PROMPT,
-      timestamp: new Date(),
-      modelInfo: {
-        model: 'Claude 3.5 Sonnet',
-        provider: 'Anthropic'
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      metadata: {
+        model: 'Claude 3.5 Sonnet'
       }
     }
   ]);
@@ -163,9 +156,12 @@ export default function IdentitySetupChat({ onComplete, onBack }: IdentitySetupC
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
+      conversation_id: 'identity-setup',
       role: 'user',
       content: message,
-      timestamp: new Date()
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      metadata: {}
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -181,7 +177,8 @@ export default function IdentitySetupChat({ onComplete, onBack }: IdentitySetupC
           previousMessages: messages.map(msg => ({
             role: msg.role,
             content: msg.content,
-            timestamp: msg.timestamp
+            created_at: msg.created_at,
+            updated_at: msg.updated_at
           })),
           userContext: {
             setupType: 'business-identity',
@@ -202,15 +199,16 @@ export default function IdentitySetupChat({ onComplete, onBack }: IdentitySetupC
       // Add the assistant response
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
+        conversation_id: 'identity-setup',
         role: 'assistant',
         content: assistantResponse,
-        timestamp: new Date(),
-        modelInfo: {
-          model: 'Claude 3.5 Sonnet',
-          provider: 'Anthropic'
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          model: 'Claude 3.5 Sonnet'
         }
       };
-      
+
       setMessages(prev => [...prev, assistantMessage]);
 
       // Check if we have enough information to complete
@@ -263,7 +261,7 @@ export default function IdentitySetupChat({ onComplete, onBack }: IdentitySetupC
       conversation: conversation.map(msg => ({
         role: msg.role,
         content: msg.content,
-        timestamp: msg.timestamp
+        created_at: msg.created_at
       }))
     };
   };

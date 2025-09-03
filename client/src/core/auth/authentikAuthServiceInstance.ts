@@ -57,38 +57,91 @@ class AuthentikAuthService extends BaseService {
     }
   }
 
+  private get authLogsEnabled(): boolean {
+    try {
+      return ((import.meta as any)?.env?.VITE_ENABLE_AUTH_LOGS === 'true');
+    } catch (_e) {
+      return false;
+    }
+  }
+
   async isAuthenticated(): Promise<ServiceResponse<boolean>> {
     try {
       const sessionData = localStorage.getItem('authentik_session');
       if (!sessionData) {
+        if (this.authLogsEnabled) this.logger.info('No session data found in localStorage');
         return { success: true, data: false, error: null };
       }
 
-      const session = JSON.parse(sessionData);
+      let session: AuthSession;
+      try {
+        session = JSON.parse(sessionData);
+      } catch (e) {
+        this.logger.error('Failed to parse session data', e);
+        localStorage.removeItem('authentik_session');
+        return { success: true, data: false, error: null };
+      }
       
       // Check if session has valid user data
-      if (!session.user || !session.user.id) {
+      if (!session?.user?.id) {
+        if (this.authLogsEnabled) this.logger.info('Session found but no valid user data');
+        localStorage.removeItem('authentik_session');
         return { success: true, data: false, error: null };
       }
 
-      // Check if access token is expired
+      // Check if we have a valid access token
+      if (!session.session?.accessToken) {
+        if (this.authLogsEnabled) this.logger.info('No access token in session');
+        localStorage.removeItem('authentik_session');
+        return { success: true, data: false, error: null };
+      }
+
+      // Check if access token is expired or about to expire (within 5 minutes)
       if (session.session?.expiresAt) {
         const expiresAt = new Date(session.session.expiresAt);
-        if (expiresAt <= new Date()) {
-          // Token expired, try to refresh
-          const refreshResult = await this.refreshSession();
-          if (!refreshResult.success) {
-            // Refresh failed, clear session
+        const now = new Date();
+        const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+        
+        if (expiresAt <= fiveMinutesFromNow) {
+          if (this.authLogsEnabled) this.logger.info('Session expired or about to expire, attempting refresh');
+          
+          try {
+            const refreshResult = await this.refreshSession();
+            if (!refreshResult.success) {
+              if (this.authLogsEnabled) this.logger.info('Session refresh failed, clearing session');
+              localStorage.removeItem('authentik_session');
+              return { success: true, data: false, error: null };
+            }
+            // If refresh was successful, return authenticated
+            return { success: true, data: true, error: null };
+          } catch (error) {
+            this.logger.error('Error during session refresh', error);
             localStorage.removeItem('authentik_session');
             return { success: true, data: false, error: null };
           }
         }
+      } else {
+        // No expiration time, treat as expired for security
+        if (this.authLogsEnabled) this.logger.info('No expiration time in session, treating as expired');
+        localStorage.removeItem('authentik_session');
+        return { success: true, data: false, error: null };
       }
 
+      if (this.authLogsEnabled) this.logger.info('User is authenticated', { 
+        userId: session.user.id,
+        expiresAt: session.session?.expiresAt
+      });
+      
       return { success: true, data: true, error: null };
     } catch (error) {
-      this.logger.error('Failed to check authentication status', error);
-      return { success: false, data: false, error: 'Failed to check authentication status' };
+      this.logger.error('Error checking authentication status', error);
+      // On error, clear the session to be safe
+      localStorage.removeItem('authentik_session');
+      return { 
+        success: false, 
+        data: false, 
+        error: error instanceof Error ? error.message : 'Failed to check authentication status' 
+      };
     }
   }
 
@@ -126,7 +179,35 @@ class AuthentikAuthService extends BaseService {
 
   async setSession(sessionData: AuthSession): Promise<ServiceResponse<void>> {
     try {
-      localStorage.setItem('authentik_session', JSON.stringify(sessionData));
+      if (!sessionData || !sessionData.user) {
+        throw new Error('Invalid session data: missing user information');
+      }
+
+      // Ensure we have all required session data
+      if (!sessionData.session?.accessToken) {
+        throw new Error('Invalid session data: missing access token');
+      }
+
+      const session: AuthSession = {
+        ...sessionData,
+        session: {
+          accessToken: sessionData.session.accessToken, // Required field
+          refreshToken: sessionData.session.refreshToken,
+          // Set default expiration if not provided (1 hour from now)
+          expiresAt: sessionData.session.expiresAt || new Date(Date.now() + 3600 * 1000).toISOString(),
+        }
+      };
+
+      if (this.authLogsEnabled) {
+        this.logger.info('Setting session', {
+          userId: session.user.id,
+          expiresAt: session.session?.expiresAt,
+          hasRefreshToken: !!session.session?.refreshToken
+        });
+      }
+
+      // Store the session data in localStorage
+      localStorage.setItem('authentik_session', JSON.stringify(session));
       return { success: true, data: null, error: null };
     } catch (error) {
       this.logger.error('Failed to set session', error);
@@ -148,21 +229,51 @@ class AuthentikAuthService extends BaseService {
         return { success: false, data: null, error: 'No refresh token available' };
       }
 
-      // Use server-side refresh endpoint
-      const refreshApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const response = await fetch(`${refreshApiUrl}/api/oauth/refresh`, {
+      // Use Authentik's token endpoint directly
+      const tokenUrl = `${this.baseUrl}/application/o/token/`;
+      const clientId = this.clientId;
+      
+      const params = new URLSearchParams();
+      params.append('grant_type', 'refresh_token');
+      params.append('refresh_token', refreshToken);
+      params.append('client_id', clientId);
+
+      const response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          provider: 'authentik',
-          refreshToken,
-        }),
+        body: params.toString(),
       });
 
       if (!response.ok) {
-        throw new Error(`Token refresh failed: ${response.status}`);
+        let errorData: any;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: 'Failed to parse error response' };
+        }
+        
+        const errorMessage = errorData?.error_description || 
+                           errorData?.error || 
+                           `HTTP ${response.status} - ${response.statusText}`;
+        
+        this.logger.error('Token refresh failed', { 
+          status: response.status, 
+          statusText: response.statusText,
+          error: errorMessage,
+          errorData
+        });
+        
+        // Clear invalid session if refresh token is invalid/expired
+        if (response.status === 400 || response.status === 401) {
+          if (this.authLogsEnabled) {
+            this.logger.info('Clearing invalid session due to authentication error');
+          }
+          localStorage.removeItem('authentik_session');
+        }
+        
+        throw new Error(`Token refresh failed: ${errorMessage}`);
       }
 
       const tokenData = await response.json();
@@ -171,8 +282,9 @@ class AuthentikAuthService extends BaseService {
       const updatedSession: AuthSession = {
         ...session,
         session: {
+          ...session.session,
           accessToken: tokenData.access_token,
-          refreshToken: tokenData.refresh_token || refreshToken,
+          refreshToken: tokenData.refresh_token || refreshToken, // Use new refresh token if provided
           expiresAt: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString(),
         },
       };
@@ -181,7 +293,11 @@ class AuthentikAuthService extends BaseService {
       return { success: true, data: updatedSession, error: null };
     } catch (error) {
       this.logger.error('Failed to refresh session', error);
-      return { success: false, data: null, error: 'Failed to refresh session' };
+      return { 
+        success: false, 
+        data: null, 
+        error: error instanceof Error ? error.message : 'Failed to refresh session' 
+      };
     }
   }
 
@@ -228,7 +344,7 @@ class AuthentikAuthService extends BaseService {
         throw new Error('No code verifier found');
       }
 
-      this.logger.info('OAuth callback parameters', {
+      if (this.authLogsEnabled) this.logger.info('OAuth callback parameters', {
         code: code.substring(0, 10) + '...',
         state: state.substring(0, 10) + '...',
         codeVerifier: codeVerifier.substring(0, 10) + '...',
@@ -262,7 +378,7 @@ class AuthentikAuthService extends BaseService {
       }
 
       const tokenData = await tokenResponse.json();
-      this.logger.info('Token exchange successful', {
+      if (this.authLogsEnabled) this.logger.info('Token exchange successful', {
         hasAccessToken: !!tokenData.access_token,
         hasRefreshToken: !!tokenData.refresh_token,
         expiresIn: tokenData.expires_in,
@@ -293,45 +409,41 @@ class AuthentikAuthService extends BaseService {
       }
 
       const userData = await userResponse.json();
-      this.logger.info('User info retrieved', {
-        userId: userData.id,
+      if (this.authLogsEnabled) this.logger.info('User info retrieved', {
+        externalId: userData.sub, // The 'sub' claim is the unique external ID
         email: userData.email,
         name: userData.name,
-        firstName: userData.first_name,
-        lastName: userData.last_name,
-        allUserData: userData // Log all user data for debugging
+        allUserData: userData
       });
 
-      // Get the database user ID by email
-      let databaseUserId = userData.id?.toString();
+      // Get the database user ID by external ID
+      let databaseUserId = userData.sub?.toString();
       
-      if (!databaseUserId || databaseUserId === userData.email) {
-        // If no proper ID or ID is the same as email, look up the database user ID
-        try {
-          const dbUserResponse = await fetch(`${userInfoApiUrl}/api/auth/get-db-user-id`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              email: userData.email,
-            }),
-          });
+      try {
+        const dbUserResponse = await fetch(`${userInfoApiUrl}/api/auth/get-db-user-id`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            externalId: databaseUserId,
+          }),
+        });
 
-          if (dbUserResponse.ok) {
-            const dbUserData = await dbUserResponse.json();
-            if (dbUserData.success && dbUserData.userId) {
-              databaseUserId = dbUserData.userId;
-              this.logger.info('Database user ID found', { email: userData.email, databaseUserId });
-            }
+        if (dbUserResponse.ok) {
+          const dbUserData = await dbUserResponse.json();
+          if (dbUserData.success && dbUserData.userId) {
+            databaseUserId = dbUserData.userId;
+            if (this.authLogsEnabled) this.logger.info('Database user ID found', { externalId: databaseUserId });
+          } else if (dbUserData.code === 'PROFILE_NOT_CREATED') {
+            if (this.authLogsEnabled) this.logger.info('User profile not yet created in DB, will be created on first app use.');
           }
-        } catch (error) {
-          this.logger.warn('Failed to get database user ID, using email as fallback', { 
-            email: userData.email, 
-            error: error instanceof Error ? error.message : 'Unknown error' 
-          });
-          databaseUserId = userData.email; // Fallback to email if lookup fails
         }
+      } catch (error) {
+        this.logger.warn('Failed to get database user ID, using external ID as fallback', { 
+          externalId: databaseUserId,
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
       }
 
       // Create session
@@ -351,7 +463,7 @@ class AuthentikAuthService extends BaseService {
       };
 
       // Store session
-      this.logger.info('Storing session', {
+      if (this.authLogsEnabled) this.logger.info('Storing session', {
         sessionId: session.user.id,
         sessionEmail: session.user.email,
         hasAccessToken: !!session.session?.accessToken,
@@ -498,7 +610,7 @@ class AuthentikAuthService extends BaseService {
 
       const authUrl = `${this.baseUrl}/application/o/authorize/?${params.toString()}`;
       
-      this.logger.info('Initiating OAuth flow', { 
+      if (this.authLogsEnabled) this.logger.info('Initiating OAuth flow', { 
         authUrl,
         clientId: this.clientId,
         redirectUri: redirectUri || this.redirectUri,

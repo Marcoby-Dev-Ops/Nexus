@@ -13,17 +13,37 @@ import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/api-client';
+import type { ApiResponse } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
 // SCHEMAS
 // ============================================================================
 
-// Core User Profile Schema
+// Contact detail schemas (for dynamic emails/phones in profile forms)
+export const UserEmailSchema = z.object({
+  id: z.string().uuid().optional(),
+  user_id: z.string().uuid().optional(),
+  email: z.string().email(),
+  label: z.string().optional(),
+  is_primary: z.boolean().optional(),
+  verified: z.boolean().optional(),
+});
+
+export const UserPhoneSchema = z.object({
+  id: z.string().uuid().optional(),
+  user_id: z.string().uuid().optional(),
+  phone: z.string().min(3).max(32),
+  label: z.string().optional(),
+  is_primary: z.boolean().optional(),
+  verified: z.boolean().optional(),
+});
+
+// Core User Profile Schema (reverted and simplified)
 export const UserProfileSchema = z.object({
   id: z.string(),
   external_user_id: z.string(),
-  email: z.string(),
+  email: z.string().email().optional().nullable(), // Signup email
   first_name: z.string().min(1).max(100).optional().nullable(),
   last_name: z.string().min(1).max(100).optional().nullable(),
   full_name: z.string().optional().nullable(),
@@ -38,14 +58,11 @@ export const UserProfileSchema = z.object({
   // Business Profile Fields
   job_title: z.string().optional().nullable(),
   department: z.string().optional().nullable(),
-  business_email: z.string().email().optional().nullable(),
-  personal_email: z.string().email().optional().nullable(),
   location: z.string().optional().nullable(),
   linkedin_url: z.string().url().optional().nullable(),
   company: z.string().optional().nullable(),
-  phone: z.string().optional().nullable(),
-  mobile: z.string().optional().nullable(),
-  work_phone: z.string().optional().nullable(),
+  company_name: z.string().optional().nullable(),
+  work_phone: z.string().optional().nullable(), // The only phone field
   timezone: z.string().optional().nullable(),
   work_location: z.enum(['office', 'remote', 'hybrid']).optional().nullable(),
   address: z.record(z.any()).optional().nullable(),
@@ -55,6 +72,8 @@ export const UserProfileSchema = z.object({
   certifications: z.array(z.string()).optional().nullable(),
   languages: z.array(z.record(z.any())).optional().nullable(),
   emergency_contact: z.record(z.any()).optional().nullable(),
+  experience: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
   status: z.enum(['active', 'inactive', 'pending', 'suspended']).default('active'),
   last_login: z.string().optional().nullable(),
   onboarding_completed: z.boolean().default(false),
@@ -87,7 +106,7 @@ export const UserBusinessDataSchema = z.object({
   analytics: z.record(z.any()).optional(),
 });
 
-// Update Profile Request Schema
+// Update Profile Request Schema (reverted and simplified)
 export const UpdateProfileRequestSchema = z.object({
   first_name: z.string().optional(),
   last_name: z.string().optional(),
@@ -96,14 +115,33 @@ export const UpdateProfileRequestSchema = z.object({
   company: z.string().optional(),
   role: z.enum(['user', 'owner', 'admin', 'manager']).optional(),
   department: z.string().optional(),
-  business_email: z.string().email().optional(),
-  personal_email: z.string().email().optional(),
   bio: z.string().optional(),
   location: z.string().optional(),
   linkedin_url: z.string().url().optional(),
-  phone: z.string().optional(),
   avatar_url: z.string().url().optional(),
   preferences: z.record(z.any()).optional(),
+  work_phone: z.string().optional(),
+  timezone: z.string().optional(),
+  work_location: z.enum(['office', 'remote', 'hybrid']).optional(),
+  address: z.record(z.any()).optional(),
+  github_url: z.string().url().optional(),
+  twitter_url: z.string().url().optional(),
+  skills: z.array(z.string()).optional(),
+  certifications: z.array(z.string()).optional(),
+  languages: z.array(z.record(z.any())).optional(),
+  emergency_contact: z.record(z.any()).optional(),
+  status: z.enum(['active', 'inactive', 'pending', 'suspended']).optional(),
+  last_login: z.string().optional(),
+  onboarding_completed: z.boolean().optional(),
+  profile_completion_percentage: z.number().optional(),
+  employee_id: z.string().optional(),
+  hire_date: z.string().optional(),
+  manager_id: z.string().optional(),
+  direct_reports: z.array(z.string()).optional(),
+  date_of_birth: z.string().optional(),
+  experience: z.string().optional(),
+  company_name: z.string().optional(),
+  website: z.string().optional(),
 });
 
 // ============================================================================
@@ -199,12 +237,142 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   /**
    * Convert ApiResponse to ServiceResponse
    */
-  private convertApiResponse<T>(apiResponse: { data: any; error: string | null }): ServiceResponse<T> {
+  private convertApiResponse<T>(apiResponse: ApiResponse<T>): ServiceResponse<T> {
+    const data = (apiResponse && 'data' in apiResponse ? apiResponse.data : null) as T | null;
+    const error = (apiResponse && 'error' in apiResponse ? apiResponse.error : undefined) ?? null;
     return {
-      data: apiResponse.data as T,
-      error: apiResponse.error,
-      success: !apiResponse.error
+      data,
+      error,
+      success: error === null,
     };
+  }
+
+  /**
+   * Normalize profile data to ensure proper data types
+   */
+  private normalizeProfileData(rawData: any): any {
+    if (!rawData) return rawData;
+    
+    // Debug logging for raw data input
+    this.logger.info('normalizeProfileData - Input:', { 
+      rawData: rawData,
+      company_id: rawData.company_id,
+      hasCompanyId: !!rawData.company_id
+    });
+    
+    // Derive a human-readable location from address JSON when location is missing
+    let derivedLocation = rawData?.location;
+    if ((!derivedLocation || (typeof derivedLocation === 'string' && derivedLocation.trim().length === 0)) && rawData?.address) {
+      try {
+        const addr = rawData.address;
+        const display = addr.display_name || addr.formatted || addr.formatted_address;
+        const parts: string[] = [];
+        if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
+        if (addr.state || addr.region) parts.push(addr.state || addr.region);
+        if (addr.country) parts.push(addr.country);
+        const joined = parts.filter(Boolean).join(', ');
+        derivedLocation = display || joined || undefined;
+      } catch (_e) {
+        // noop: keep location undefined if parsing fails
+      }
+    }
+
+    return {
+      ...rawData,
+      location: derivedLocation ?? rawData.location ?? null,
+      avatar_url: this.sanitizeUrl(rawData.avatar_url, 'avatar_url'),
+      linkedin_url: this.sanitizeUrl(rawData.linkedin_url, 'linkedin_url'),
+      github_url: this.sanitizeUrl(rawData.github_url, 'github_url'),
+      twitter_url: this.sanitizeUrl(rawData.twitter_url, 'twitter_url'),
+      // Ensure skills is properly formatted as array
+      skills: rawData.skills ? (
+        Array.isArray(rawData.skills) 
+          ? rawData.skills 
+          : typeof rawData.skills === 'string'
+            ? rawData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+            : []
+      ) : null,
+      // Ensure other array fields are properly formatted
+      certifications: rawData.certifications ? (
+        Array.isArray(rawData.certifications) 
+          ? rawData.certifications 
+          : typeof rawData.certifications === 'string'
+            ? rawData.certifications.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+            : []
+      ) : null,
+      direct_reports: rawData.direct_reports ? (
+        Array.isArray(rawData.direct_reports) 
+          ? rawData.direct_reports 
+          : typeof rawData.direct_reports === 'string'
+            ? rawData.direct_reports.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+            : []
+      ) : null
+    };
+  }
+
+  /**
+   * Sanitize URL-like fields: empty -> null, add https:// if missing, convert handles to URLs
+   */
+  private sanitizeUrl(value: unknown, fieldName: string): string | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (trimmed.length === 0) return null;
+
+    const coerceHandleToUrl = (handle: string): string => {
+      const withoutScheme = handle.replace(/^https?:\/\//i, '');
+      const withoutAt = withoutScheme.replace(/^@/, '');
+
+      if (fieldName === 'twitter_url') {
+        if (/^(twitter\.com|x\.com)\//i.test(withoutAt)) {
+          return `https://${withoutAt}`;
+        }
+        if (!withoutAt.includes('/')) {
+          return `https://twitter.com/${withoutAt}`;
+        }
+        return `https://${withoutAt}`;
+      }
+
+      if (fieldName === 'github_url') {
+        if (/^github\.com\//i.test(withoutAt)) {
+          return `https://${withoutAt}`;
+        }
+        if (!withoutAt.includes('/')) {
+          return `https://github.com/${withoutAt}`;
+        }
+        return `https://${withoutAt}`;
+      }
+
+      if (/^www\./i.test(withoutAt)) {
+        return `https://${withoutAt}`;
+      }
+
+      return `https://${withoutAt}`;
+    };
+
+    const candidates: string[] = [];
+
+    if (/^https?:\/\//i.test(trimmed)) {
+      candidates.push(trimmed);
+    } else if (/^(www\.|twitter\.com\/|x\.com\/|github\.com\/)/i.test(trimmed) || fieldName === 'twitter_url' || fieldName === 'github_url') {
+      candidates.push(coerceHandleToUrl(trimmed));
+    } else {
+      candidates.push(`https://${trimmed}`);
+    }
+
+    for (const candidate of candidates) {
+      try {
+        const url = new URL(candidate);
+        if (fieldName === 'twitter_url' && url.hostname.toLowerCase() === 'x.com') {
+          return `https://twitter.com${url.pathname}`;
+        }
+        return url.toString();
+      } catch {
+        // try next candidate
+      }
+    }
+
+    return null;
   }
 
   protected config = userServiceConfig;
@@ -220,7 +388,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('get', { id });
       
-      const result = await selectOne(this.config.tableName, id);
+      const result = await selectOne<UserProfile>(this.config.tableName, id);
       const serviceResponse = this.convertApiResponse<UserProfile>(result);
       
       if (!serviceResponse.success) {
@@ -231,7 +399,8 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
         return { data: null, error: 'User profile not found', success: false };
       }
       
-      const validatedData = this.config.schema.parse(serviceResponse.data);
+      const normalizedData = this.normalizeProfileData(serviceResponse.data);
+      const validatedData = this.config.schema.parse(normalizedData);
       return { data: validatedData, error: null, success: true };
     }, `get user profile ${id}`);
   }
@@ -243,7 +412,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('create', { data });
       
-      const result = await insertOne(this.config.tableName, {
+      const result = await insertOne<UserProfile>(this.config.tableName, {
         ...data,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -255,7 +424,8 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
         return serviceResponse;
       }
       
-      const validatedData = this.config.schema.parse(serviceResponse.data);
+      const normalizedData = this.normalizeProfileData(serviceResponse.data);
+      const validatedData = this.config.schema.parse(normalizedData);
       return { data: validatedData, error: null, success: true };
     }, `create user profile`);
   }
@@ -267,7 +437,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('update', { id, data });
       
-      const result = await updateOne(this.config.tableName, id, {
+      const result = await updateOne<UserProfile>(this.config.tableName, id, {
         ...data,
         updated_at: new Date().toISOString()
       });
@@ -278,7 +448,8 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
         return serviceResponse;
       }
       
-      const validatedData = this.config.schema.parse(serviceResponse.data);
+      const normalizedData = this.normalizeProfileData(serviceResponse.data);
+      const validatedData = this.config.schema.parse(normalizedData);
       return { data: validatedData, error: null, success: true };
     }, `update user profile ${id}`);
   }
@@ -290,7 +461,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('delete', { id });
       
-      const result = await deleteOne(this.config.tableName, id);
+      const result = await deleteOne<boolean>(this.config.tableName, id);
       const serviceResponse = this.convertApiResponse<boolean>(result);
       
       if (!serviceResponse.success) {
@@ -308,7 +479,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('list', { filters });
       
-      const result = await selectData(this.config.tableName, '*', filters);
+      const result = await selectData<UserProfile>(this.config.tableName, '*', filters);
       const serviceResponse = this.convertApiResponse<UserProfile[]>(result);
       
       if (!serviceResponse.success) {
@@ -332,31 +503,31 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       this.logMethodCall('getAuthProfile', { userId });
       
       try {
-        // Use cached profile fetching to prevent excessive RPC calls
+        const profileResult = await selectData<UserProfile>(this.config.tableName, '*', { user_id: userId });
+
+        if (profileResult.data && profileResult.data.length > 0) {
+          const rawData = profileResult.data[0];
+          const profileData = {
+            ...this.normalizeProfileData(rawData),
+            id: rawData.id ?? (rawData as any).user_id,
+            external_user_id: userId,
+          };
+          const validatedData = this.config.schema.parse(profileData);
+          return { data: validatedData, error: null, success: true };
+        }
+        
+        // Fall back to RPC method if no profile in DB
+        this.logger.info('No profile in database, using RPC fallback path');
         const rawData = await this.getCachedOrFetchProfile(userId);
-        
-        // Debug logging removed for security
-        
-        // Simple mapping - just return the basic data
+        const normalizedData = this.normalizeProfileData(rawData);
         const profileData = {
-          id: rawData.id ?? rawData.user_id,
+          ...normalizedData,
+          id: normalizedData.id ?? normalizedData.user_id,
           external_user_id: userId,
-          email: rawData.email,
-          first_name: rawData.first_name,
-          last_name: rawData.last_name,
-          created_at: rawData.created_at,
-          updated_at: rawData.updated_at,
-          role: 'user',
-          status: 'active',
-          company_id: rawData.company_id,
-          organization_id: rawData.organization_id, // Added organization_id
-          job_title: rawData.job_title,
-          display_name: rawData.display_name,
-          onboarding_completed: rawData.onboarding_completed,
-          preferences: rawData.preferences
         };
+        const validatedData = this.config.schema.parse(profileData);
+        return { data: validatedData, error: null, success: true };
         
-        return { data: profileData as any, error: null, success: true };
       } catch (error) {
         this.logger.error('Exception in getAuthProfile', { userId, error });
         return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
@@ -372,14 +543,22 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       this.logMethodCall('upsertAuthProfile', { userId, profileData });
       
       try {
-        // First ensure the profile exists using cached fetching
         const existingProfile = await this.getCachedOrFetchProfile(userId);
         
-        // Update the existing profile (use user_id as the key)
-        const result = await updateOne(this.config.tableName, existingProfile.user_id, {
+        const sanitizedProfileData: Partial<UserProfile> = {
           ...profileData,
+          avatar_url: this.sanitizeUrl((profileData as any)?.avatar_url, 'avatar_url'),
+          linkedin_url: this.sanitizeUrl((profileData as any)?.linkedin_url, 'linkedin_url'),
+          github_url: this.sanitizeUrl((profileData as any)?.github_url, 'github_url'),
+          twitter_url: this.sanitizeUrl((profileData as any)?.twitter_url, 'twitter_url')
+        };
+
+        const updateData = {
+          ...sanitizedProfileData,
           updated_at: new Date().toISOString()
-        }, 'user_id');
+        };
+        
+        const result = await updateOne<UserProfile>(this.config.tableName, existingProfile.user_id, updateData, 'user_id');
         
         const serviceResponse = this.convertApiResponse<UserProfile>(result);
         
@@ -387,13 +566,13 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           return serviceResponse;
         }
         
-        // Clear cache to ensure fresh data on next fetch
         this.clearUserCache(userId);
         
-        // Add external_user_id and ensure id is mapped correctly
+        const rawData = serviceResponse.data as any;
+        const normalizedData = this.normalizeProfileData(rawData);
         const updatedProfileData = {
-          ...(serviceResponse.data as any),
-          id: (serviceResponse.data as any).id ?? (serviceResponse.data as any).user_id,
+          ...normalizedData,
+          id: normalizedData.id ?? normalizedData.user_id,
           external_user_id: userId
         };
         
@@ -490,7 +669,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('getCompanyProfile', { companyId });
       
-      const result = await selectOne('companies', companyId);
+      const result = await selectOne<Company>('companies', companyId);
       const serviceResponse = this.convertApiResponse<Company>(result);
       
       if (!serviceResponse.success) {
@@ -513,7 +692,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('updateCompanyProfile', { companyId, data });
       
-      const result = await updateOne('companies', companyId, {
+      const result = await updateOne<Company>('companies', companyId, {
         ...data,
         updated_at: new Date().toISOString()
       });
@@ -536,7 +715,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('createCompanyProfile', { data });
       
-      const result = await insertOne('companies', {
+      const result = await insertOne<Company>('companies', {
         ...data,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -563,7 +742,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   private async getUserIntegrations(userId: string): Promise<ServiceResponse<any[]>> {
     try {
       // First try to get the user profile directly
-      const profileResult = await selectData(this.config.tableName, 'user_id', {
+      const profileResult = await selectData<{ user_id: string }>(this.config.tableName, 'user_id', {
         external_user_id: userId
       });
       
@@ -586,7 +765,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       }
       
       // Now query user_integrations with the internal user ID
-      const result = await selectData('user_integrations', '*', { user_id: internalUserId });
+      const result = await selectData<any>('user_integrations', '*', { user_id: internalUserId });
       const serviceResponse = this.convertApiResponse<any[]>(result);
       
       return { 
@@ -621,7 +800,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   calculateProfileCompletion(profile: UserProfile): number {
     const requiredFields = [
       'first_name', 'last_name', 'email', 'job_title', 
-      'department', 'phone', 'location'
+      'department', 'work_phone', 'location'
     ];
     
     const optionalFields = [

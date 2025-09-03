@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 
 export interface SelectProps {
   value?: string;
@@ -149,7 +149,7 @@ export const SelectValue: React.FC<SelectValueProps> = ({ placeholder }) => {
   const { value, options } = React.useContext(SelectContext);
   
   // If we have a value, try to get the display from options
-  // If options[value] exists, use it; otherwise, try to format the value nicely
+  // If options[value] exists, use it; otherwise, return the value as-is
   const getDisplayValue = () => {
     if (!value) return undefined;
     
@@ -158,13 +158,8 @@ export const SelectValue: React.FC<SelectValueProps> = ({ placeholder }) => {
       return options[value];
     }
     
-    // If no option found, try to format the value nicely
-    // Convert kebab-case or snake_case to Title Case
-    const formattedValue = value
-      .replace(/[-_]/g, ' ')
-      .replace(/\b\w/g, l => l.toUpperCase());
-    
-    return formattedValue;
+    // If no option found, return the value as-is to preserve original formatting
+    return value;
   };
   
   const display = getDisplayValue();

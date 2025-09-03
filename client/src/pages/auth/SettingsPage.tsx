@@ -93,8 +93,9 @@ export default function SettingsPage() {
           </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="security">Security</TabsTrigger>
             <TabsTrigger value="privacy">Privacy</TabsTrigger>
@@ -174,6 +175,91 @@ export default function SettingsPage() {
                       <option value="America/Denver">Mountain Time</option>
                       <option value="America/Los_Angeles">Pacific Time</option>
                     </select>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Profile Settings */}
+          <TabsContent value="profile" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Profile Settings
+                </CardTitle>
+                <CardDescription>
+                  Manage your personal information and profile details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Full Name</label>
+                    <input
+                      type="text"
+                      defaultValue={user?.fullName || ''}
+                      placeholder="Enter your full name"
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Email Address</label>
+                    <input
+                      type="email"
+                      defaultValue={user?.email || ''}
+                      placeholder="Enter your email address"
+                      className="w-full p-2 border rounded-md"
+                      disabled
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Email address cannot be changed from here
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Bio</label>
+                    <textarea
+                      placeholder="Tell us about yourself"
+                      rows={3}
+                      className="w-full p-2 border rounded-md resize-none"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Location</label>
+                    <input
+                      type="text"
+                      placeholder="Enter your location"
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Website</label>
+                    <input
+                      type="url"
+                      placeholder="https://yourwebsite.com"
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
+
+                  <Separator />
+
+                  <div className="flex justify-end">
+                    <Button>
+                      Save Profile Changes
+                    </Button>
                   </div>
                 </div>
               </CardContent>

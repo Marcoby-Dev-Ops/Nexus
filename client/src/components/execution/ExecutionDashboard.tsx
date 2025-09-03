@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useExecutionService } from '@/shared/hooks/useExecutionService';
 import { Button } from '@/shared/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Alert, AlertDescription } from '@/shared/components/ui/alert';
 import { Loader2, Play, Square, RefreshCw } from 'lucide-react';
 

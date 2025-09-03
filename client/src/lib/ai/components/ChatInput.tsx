@@ -2,7 +2,7 @@ import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Button } from '@/shared/components/ui/button';
 import { Paperclip, Mic, MicOff, Send, StopCircle, Plus } from 'lucide-react';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 import type { FileAttachment } from '@/shared/types/chat';
 
 interface ChatInputProps {

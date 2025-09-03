@@ -10,9 +10,9 @@ import JourneyTicketService, { type JourneyTicket } from '@/services/playbook/Jo
 import { useAuth } from '@/hooks/index';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
-import { Badge } from '@/shared/components/ui/badge';
+import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/button';
-import { Progress } from '@/shared/components/ui/progress';
+import { Progress } from '@/shared/components/ui/Progress';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { 
   Building2, Target, Heart, Users, 

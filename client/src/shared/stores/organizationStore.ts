@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { produce } from 'immer';
 import { logger } from '@/shared/utils/logger';
+import { buildApiUrl, API_ENDPOINTS } from '@/lib/api-url';
 
 export interface Organization {
   id: string;
@@ -79,7 +80,7 @@ export const getOrganizations = async (userId: string): Promise<Organization[]> 
     // API call logging removed for production
     
     // Call the API endpoint
-    const response = await fetch('/api/organizations', {
+    const response = await fetch(buildApiUrl(API_ENDPOINTS.ORGANIZATIONS), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -146,7 +147,7 @@ export const getOrganization = async (orgId: string): Promise<Organization | nul
     }
 
     // Call the API endpoint
-    const response = await fetch(`/api/organizations/${orgId}`, {
+    const response = await fetch(buildApiUrl(API_ENDPOINTS.ORGANIZATION(orgId)), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -213,7 +214,7 @@ export const getOrganizationMembers = async (orgId: string): Promise<Organizatio
     }
 
     // Call the API endpoint
-    const response = await fetch(`/api/organizations/${orgId}/members`, {
+    const response = await fetch(buildApiUrl(API_ENDPOINTS.ORGANIZATION_MEMBERS(orgId)), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,

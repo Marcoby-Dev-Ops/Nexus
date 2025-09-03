@@ -1,80 +1,204 @@
 /**
- * Security Configuration Constants
- * @description Centralized security settings and validation rules
+ * Security Configuration
+ * @description Centralized security settings and constants
  */
 
-// Environment validation
-export const REQUIRED_ENV_VARS = [
-  'VITE_API_URL',
-  'VITE_AUTHENTIK_CLIENT_ID',
-] as const;
+export const SECURITY_CONFIG = {
+  // Content Security Policy
+  CSP: {
+    'default-src': ["'self'"],
+    'script-src': [
+      "'self'",
+      "'unsafe-inline'", // Required for Vite dev mode
+      "'unsafe-eval'",   // Required for Vite dev mode
+      'https://identity.marcoby.com',
+      'https://napi.marcoby.com'
+    ],
+    'style-src': [
+      "'self'",
+      "'unsafe-inline'", // Required for Tailwind CSS
+      'https://fonts.googleapis.com'
+    ],
+    'font-src': [
+      "'self'",
+      'https://fonts.gstatic.com'
+    ],
+    'img-src': [
+      "'self'",
+      'data:',
+      'https:',
+      'blob:'
+    ],
+    'connect-src': [
+      "'self'",
+      'https://identity.marcoby.com',
+      'https://napi.marcoby.com',
+      'https://automate.marcoby.net',
+      'wss://identity.marcoby.com',
+      'wss://napi.marcoby.com'
+    ],
+    'frame-src': [
+      "'self'",
+      'https://identity.marcoby.com'
+    ],
+    'object-src': ["'none'"],
+    'base-uri': ["'self'"],
+    'form-action': ["'self'"],
+    'frame-ancestors': ["'none'"],
+    'upgrade-insecure-requests': []
+  },
 
-// Security headers for API requests
-export const SECURITY_HEADERS = {
-  'Content-Type': 'application/json',
-  'X-Content-Type-Options': 'nosniff',
-  'X-Frame-Options': 'DENY',
-  'X-XSS-Protection': '1; mode=block',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-} as const;
+  // HTTP Security Headers
+  HEADERS: {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload'
+  },
 
-// LocalStorage security settings
+  // Rate Limiting
+  RATE_LIMIT: {
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false
+  },
+
+  // Input Validation Patterns
+  VALIDATION: {
+    EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+    USERNAME: /^[a-zA-Z0-9_-]{3,20}$/,
+    API_KEY: /^[a-zA-Z0-9_-]{20,}$/,
+    UUID: /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+  },
+
+  // Session Security
+  SESSION: {
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    secure: true,
+    httpOnly: true,
+    sameSite: 'strict'
+  },
+
+  // Encryption Settings
+  ENCRYPTION: {
+    algorithm: 'AES-GCM',
+    keyLength: 256,
+    iterations: 100000,
+    saltLength: 16,
+    ivLength: 12
+  },
+
+  // Audit Logging
+  AUDIT: {
+    enabled: true,
+    level: 'info',
+    sensitiveFields: [
+      'password',
+      'token',
+      'secret',
+      'key',
+      'credential'
+    ]
+  }
+};
+
 export const STORAGE_CONFIG = {
-  // Keys that should be encrypted
+  // Keys that should be encrypted in localStorage
   SENSITIVEKEYS: [
     'nexus_user_context',
-    'nexus_success_criteria',
     'teams_tokens',
+    'nexus_success_criteria',
     'ga4_config',
+    'auth_tokens',
+    'api_keys',
+    'user_preferences',
+    'session_data'
+  ] as const,
+
+  // Storage prefixes
+  PREFIXES: {
+    SECURE: 'secure_',
+    TEMP: 'temp_',
+    CACHE: 'cache_'
+  },
+
+  // Expiration times (in milliseconds)
+  EXPIRATION: {
+    SESSION: 24 * 60 * 60 * 1000, // 24 hours
+    CACHE: 60 * 60 * 1000,        // 1 hour
+    TEMP: 5 * 60 * 1000           // 5 minutes
+  }
+};
+
+export const API_SECURITY = {
+  // API endpoints that require authentication
+  PROTECTED_ENDPOINTS: [
+    '/api/user',
+    '/api/company',
+    '/api/integrations',
+    '/api/ai',
+    '/api/analytics'
   ],
-  // Maximum age for stored data (in milliseconds)
-  MAXAGE: 24 * 60 * 60 * 1000, // 24 hours
-  // Keys to exclude from cleanup
-  SYSTEMKEYS: [
-    'vite-ui-theme',
-  ],
-} as const;
 
-// API rate limiting
-export const RATE_LIMITS = {
-  DEFAULT: 100, // requests per minute
-  AUTH: 5,      // auth attempts per minute
-  CHAT: 20,     // chat messages per minute
-} as const;
+  // API endpoints that require specific roles
+  ROLE_REQUIRED: {
+    '/api/admin': ['admin'],
+    '/api/company/settings': ['owner', 'admin'],
+    '/api/integrations/manage': ['owner', 'admin', 'manager']
+  },
 
-// Input validation patterns
-export const VALIDATION_PATTERNS = {
-  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-  // eslint-disable-next-line no-useless-escape
-  PHONE: /^\+?[\d\s\-\(\)]+$/,
-   
-  URL: /^https?:\/\/.+/,
-  // Prevent XSS in user inputs
-  // eslint-disable-next-line no-useless-escape
-  SAFETEXT: /^[a-zA-Z0-9\s\-_.,!?@#$%^&*()+={}[\]:";'<>\/\\|`~]*$/,
-} as const;
+  // Rate limiting by endpoint
+  RATE_LIMITS: {
+    '/api/auth/login': { max: 5, windowMs: 15 * 60 * 1000 },
+    '/api/ai/chat': { max: 50, windowMs: 60 * 1000 },
+    '/api/integrations': { max: 20, windowMs: 60 * 1000 }
+  }
+};
 
-// Content Security Policy
-export const CSP_DIRECTIVES = {
-  'default-src': ["'self'"],
-  'script-src': ["'self'", "'unsafe-inline'", 'https: //js.stripe.com'],
-  'style-src': ["'self'", "'unsafe-inline'", 'https: //fonts.googleapis.com'],
-  'font-src': ["'self'", 'https: //fonts.gstatic.com'],
-  'img-src': ["'self'", 'data: ', 'https: '],
-  'connect-src': [
-    "'self'",
-    'https: //api.stripe.com',
-    'https: //identity.marcoby.com',
-  ],
-  'frame-src': ['https: //js.stripe.com'],
-} as const;
+// Security utility functions
+export const SecurityUtils = {
+  /**
+   * Sanitize data for logging (remove sensitive fields)
+   */
+  sanitizeForLogging: (data: any): any => {
+    if (!data || typeof data !== 'object') return data;
+    
+    const sanitized = { ...data };
+    SECURITY_CONFIG.AUDIT.sensitiveFields.forEach(field => {
+      if (sanitized[field]) {
+        sanitized[field] = '[REDACTED]';
+      }
+    });
+    
+    return sanitized;
+  },
 
-// Production security checks
-export const SECURITY_CHECKS = {
-  // Disable console.log in production
-  DISABLECONSOLE_IN_PROD: true,
-  // Enable HTTPS redirect
-  FORCEHTTPS: true,
-  // Enable secure cookies
-  SECURECOOKIES: true,
-} as const; 
+  /**
+   * Validate input against security patterns
+   */
+  validateInput: (input: string, type: keyof typeof SECURITY_CONFIG.VALIDATION): boolean => {
+    const pattern = SECURITY_CONFIG.VALIDATION[type];
+    return pattern.test(input);
+  },
+
+  /**
+   * Generate secure random string
+   */
+  generateSecureToken: (length: number = 32): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const values = new Uint8Array(length);
+    window.crypto.getRandomValues(values);
+    
+    for (let i = 0; i < length; i++) {
+      result += chars[values[i] % chars.length];
+    }
+    
+    return result;
+  }
+}; 

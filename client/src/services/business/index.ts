@@ -12,7 +12,8 @@ export { ContactService } from './ContactService';
 export { DealService } from './DealService';
 export { NotificationService } from '../core/NotificationService';
 export { CalendarService } from './CalendarService';
-// CompanyProvisioningService consolidated into CompanyService
+// Company association and ownership services
+export { CompanyAssociationService } from './CompanyAssociationService';
 export { CompanyOwnershipService } from './CompanyOwnershipService';
 // userProfileService consolidated into UserService
 export { TenantService } from './TenantService';

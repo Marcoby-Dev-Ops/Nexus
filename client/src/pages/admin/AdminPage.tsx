@@ -2,7 +2,7 @@ import React from 'react';
 import { PageLayout } from '@/shared/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
-import { Users, Building, Shield, Settings, BarChart3, Activity } from 'lucide-react';
+import { Users, Building, Shield, Settings, BarChart3, Activity, Zap } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const AdminPage: React.FC = () => {

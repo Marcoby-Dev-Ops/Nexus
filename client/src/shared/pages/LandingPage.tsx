@@ -435,20 +435,28 @@ export const LandingPage: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-4">
-                  Bank-level security with SOC 2 compliance, end-to-end encryption, and role-based access control.
+                  Enterprise-grade security with encryption, audit logging, and role-based access control.
                 </p>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    SOC 2 Type II certified
+                    AES-256 encryption at rest
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    GDPR & CCPA compliant
+                    TLS 1.3 encryption in transit
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Role-based access control
                   </li>
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     SSO & MFA support
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+                    Audit logging
                   </li>
                 </ul>
               </CardContent>

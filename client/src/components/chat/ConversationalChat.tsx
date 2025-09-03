@@ -15,7 +15,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Send, Brain, Lightbulb, Ticket, Building, Target, BookOpen, Bot, User, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { cn } from '@/shared/utils/styles';
+import { cn } from '@/shared/lib/utils';
 import { conversationalAIService, type ConversationContext } from '@/services/ai/ConversationalAIService';
 
 interface ChatMessage {

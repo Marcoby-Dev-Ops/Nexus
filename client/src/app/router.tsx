@@ -62,6 +62,8 @@ export const ROUTELABELS: Record<string, string> = {
   '/integrations/hubspot/test': 'HubSpot Test',
   '/integrations/hubspot/callback': 'HubSpot Callback',
   '/integrations/microsoft365/callback': 'Microsoft 365 Callback',
+  '/integrations/oauth/callback': 'OAuth Callback',
+  '/integrations/test-oauth': 'Test OAuth Integration',
   '/integrations/settings': 'Integration Settings',
   '/integrations/setup': 'Integration Setup',
   '/integrations/data-point-mapping': 'Data Point Mapping',

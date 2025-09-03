@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
@@ -26,9 +27,11 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      'jsx-a11y': jsxA11y,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      ...jsxA11y.configs.recommended.rules,
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
@@ -68,6 +71,9 @@ export default tseslint.config(
   {
     files: ['src/**/*.tsx', 'src/**/*.ts'],
     rules: {
+      'jsx-a11y/anchor-has-content': 'error',
+      'jsx-a11y/aria-role': 'error',
+      'jsx-a11y/no-autofocus': 'warn',
       'no-restricted-imports': [
         'error',
         {
