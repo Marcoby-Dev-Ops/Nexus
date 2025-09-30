@@ -24,8 +24,8 @@ RUN pnpm run build
 # Production stage
 FROM nginx:alpine AS production
 
-# Install envsubst for environment variable substitution
-RUN apk add --no-cache gettext
+# Install envsubst and wget for environment variable substitution and health checks
+RUN apk add --no-cache gettext wget
 
 # Copy built assets from build stage
 COPY --from=build /app/dist /usr/share/nginx/html
