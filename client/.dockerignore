@@ -114,9 +114,3 @@ test/
 
 # TypeScript
 *.tsbuildinfo
-
-# Monorepo workspace files (exclude root workspace config)
-../package.json
-../pnpm-lock.yaml
-../pnpm-workspace.yaml
-../server/
