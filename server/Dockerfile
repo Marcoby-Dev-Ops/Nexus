@@ -6,11 +6,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Copy package files first for better caching
-COPY package*.json pnpm-lock.yaml ./
+COPY package.json ./
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 # Copy source code
 COPY . .

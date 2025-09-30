@@ -563,12 +563,39 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           const validatedData = BusinessIdentitySchema.parse(result.data);
           return { data: validatedData, error: null, success: true };
         } catch (validationError) {
-          // If validation fails due to missing required fields, return a default structure
+          // If validation fails due to missing required fields, ensure proper structure
           if (validationError instanceof z.ZodError) {
             const missingFields = validationError.errors.map(err => err.path.join('.'));
             this.logger.warn('Business identity validation failed, missing fields:', { companyId, missingFields });
             
-            // Return a default business identity structure
+            // If the business identity is empty or missing foundation, initialize it with default structure
+            if (missingFields.includes('foundation') || Object.keys(result.data).length === 0) {
+              this.logger.info('Initializing business identity with default structure', { companyId });
+              
+              // Create a default business identity structure
+              const defaultBusinessIdentity: BusinessIdentity = {
+                foundation: {
+                  name: result.data?.foundation?.name || '',
+                  legalStructure: result.data?.foundation?.legalStructure || 'LLC' as const,
+                  foundedDate: result.data?.foundation?.foundedDate || '',
+                  headquarters: result.data?.foundation?.headquarters || {}
+                },
+                ...result.data // Include any existing data
+              };
+              
+              // Update the database with the default structure
+              try {
+                await this.updateBusinessIdentity(companyId, defaultBusinessIdentity);
+                this.logger.info('Business identity initialized successfully', { companyId });
+                return { data: defaultBusinessIdentity, error: null, success: true };
+              } catch (updateError) {
+                this.logger.error('Failed to initialize business identity', { companyId, error: updateError });
+                // Return the default structure even if update fails
+                return { data: defaultBusinessIdentity, error: null, success: true };
+              }
+            }
+            
+            // Return a default business identity structure for other validation errors
             const defaultBusinessIdentity: BusinessIdentity = {
               foundation: {
                 name: '',

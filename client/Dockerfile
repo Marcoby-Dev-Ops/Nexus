@@ -33,14 +33,23 @@ RUN pnpm --filter nexus-client... build
 # Production stage
 FROM nginx:alpine AS production
 
+# Install envsubst for environment variable substitution
+RUN apk add --no-cache gettext
+
 # Copy built assets from build stage
 COPY --from=build /app/client/dist /usr/share/nginx/html
 
-# Copy nginx configuration
-COPY client/nginx.conf /etc/nginx/nginx.conf
+# Copy nginx configuration template
+COPY client/nginx.conf /etc/nginx/nginx.conf.template
+
+# Create startup script for environment variable substitution
+RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf' >> /docker-entrypoint.sh && \
+    echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
+    chmod +x /docker-entrypoint.sh
 
 # Expose port 80
 EXPOSE 80
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start nginx with environment variable substitution
+CMD ["/docker-entrypoint.sh"]
