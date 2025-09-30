@@ -40,11 +40,8 @@ http {
     include       /etc/nginx/mime.types;
     default_type  application/octet-stream;
     
-    # Define variables for WebSocket support
-    map $http_upgrade $connection_upgrade {
-        default upgrade;
-        '' close;
-    }
+    # WebSocket support (simplified)
+    # map directive removed to avoid envsubst issues
 
     # Logging
     log_format main '$remote_addr - $remote_user [$time_local] "$request" '
@@ -99,7 +96,7 @@ http {
             proxy_pass ${BACKEND_URL}/;
             proxy_http_version 1.1;
             proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection $connection_upgrade;
+            proxy_set_header Connection "upgrade";
             proxy_set_header Host $host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
