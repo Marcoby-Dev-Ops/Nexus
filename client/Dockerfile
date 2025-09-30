@@ -121,8 +121,13 @@ EOF
 
 # Create startup script for environment variable substitution
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'set -e' >> /docker-entrypoint.sh && \
     echo 'export BACKEND_URL=${VITE_API_URL:-https://napi.marcoby.com}' >> /docker-entrypoint.sh && \
+    echo 'echo "BACKEND_URL: $BACKEND_URL"' >> /docker-entrypoint.sh && \
     echo 'envsubst '"'"'$BACKEND_URL'"'"' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf' >> /docker-entrypoint.sh && \
+    echo 'echo "Nginx configuration generated successfully"' >> /docker-entrypoint.sh && \
+    echo 'nginx -t' >> /docker-entrypoint.sh && \
+    echo 'echo "Nginx configuration test passed"' >> /docker-entrypoint.sh && \
     echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 
