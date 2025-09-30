@@ -44,6 +44,7 @@ COPY client/nginx.conf /etc/nginx/nginx.conf.template
 
 # Create startup script for environment variable substitution
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
+    echo 'export BACKEND_URL=${VITE_API_URL:-https://napi.marcoby.com}' >> /docker-entrypoint.sh && \
     echo 'envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf' >> /docker-entrypoint.sh && \
     echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
