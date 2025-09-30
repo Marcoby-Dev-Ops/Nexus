@@ -7,28 +7,19 @@ RUN npm install -g pnpm
 # Set working directory
 WORKDIR /app
 
-# Copy root package files and workspace configuration
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+# Copy package.json and install dependencies
+COPY package.json ./
+RUN pnpm install
 
-# Copy package.json for all workspace packages
-COPY client/package.json ./client/
-COPY server/package.json ./server/
-
-# Install dependencies for the entire workspace
-RUN pnpm install --frozen-lockfile
-
-# Copy source code for the client application
-COPY client/ ./client/
-# Copy source code for the server application as well, for workspace context
-COPY server/ ./server/
+# Copy source code
+COPY . .
 
 # Build stage
 FROM base AS build
 WORKDIR /app
 
 # Build the client application
-# We need to reference the filter from the WORKDIR
-RUN pnpm --filter nexus-client... build
+RUN pnpm run build
 
 # Production stage
 FROM nginx:alpine AS production
@@ -37,10 +28,10 @@ FROM nginx:alpine AS production
 RUN apk add --no-cache gettext
 
 # Copy built assets from build stage
-COPY --from=build /app/client/dist /usr/share/nginx/html
+COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration template
-COPY client/nginx.conf /etc/nginx/nginx.conf.template
+COPY nginx.conf /etc/nginx/nginx.conf.template
 
 # Create startup script for environment variable substitution
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
