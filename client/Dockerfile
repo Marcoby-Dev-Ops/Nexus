@@ -31,7 +31,7 @@ RUN apk add --no-cache gettext
 COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy nginx configuration template
-COPY nginx.conf /etc/nginx/nginx.conf.template
+COPY ./nginx.conf /etc/nginx/nginx.conf.template
 
 # Create startup script for environment variable substitution
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
