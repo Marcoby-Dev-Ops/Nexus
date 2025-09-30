@@ -11,7 +11,7 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { CheckCircle, AlertCircle, Zap, Target } from 'lucide-react';
 import { getQuantumBlock, calculateBusinessHealth, generateQuantumInsights, generateQuantumRecommendations, type QuantumBusinessProfile } from '@/core/config/quantumBusinessModel';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface QuantumSummaryStepProps extends JourneyStepProps {
   onComplete: () => void;

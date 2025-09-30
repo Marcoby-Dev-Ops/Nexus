@@ -7,7 +7,7 @@
  */
 
 const { Pool } = require('pg');
-require('dotenv').config();
+require('../loadEnv');
 
 // Initialize PostgreSQL connection
 const databaseUrl = process.env.DATABASE_URL;

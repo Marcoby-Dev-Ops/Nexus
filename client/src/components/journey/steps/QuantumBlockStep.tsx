@@ -12,7 +12,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Label } from '@/shared/components/ui/Label';
 import { CheckCircle, ArrowRight, Zap } from 'lucide-react';
 import { getQuantumBlock, type QuantumBlock } from '@/core/config/quantumBusinessModel';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface QuantumBlockStepProps extends JourneyStepProps {
   onNext: (data: any) => void;

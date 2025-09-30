@@ -424,7 +424,7 @@ export const registerAllCallbacks = async () => {
   if (callbackRegistry.isCallbacksLoaded()) {
      
      
-    // eslint-disable-next-line no-console
+     
     // console.log('✅ Callbacks already registered, skipping re-registration');
     return;
   }
@@ -436,7 +436,7 @@ export const registerAllCallbacks = async () => {
       if (callbackRegistry.get(config.id)) {
          
          
-        // eslint-disable-next-line no-console
+         
         // console.log(`⏭️  Callback ${config.id} already registered, skipping`);
         return;
       }
@@ -450,7 +450,7 @@ export const registerAllCallbacks = async () => {
     } catch (error) {
        
      
-    // eslint-disable-next-line no-console
+     
       // console.error(`❌ Failed to register callback ${config.id}:`, error);
     }
   });

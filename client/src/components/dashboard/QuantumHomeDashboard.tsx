@@ -27,8 +27,8 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
-import { Button } from '@/shared/components/ui/button';
-import { Progress } from '@/shared/components/ui/progress';
+import { Button } from '@/shared/components/ui/Button';
+import { Progress } from '@/shared/components/ui/Progress';
 import { Skeleton } from '@/shared/components/ui/Skeleton';
 import { useAuth } from '@/hooks/index';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
@@ -47,7 +47,6 @@ import {
 import { quantumBusinessService } from '@/services/business/QuantumBusinessService';
 import { unifiedPlaybookService as PlaybookService } from '@/services/playbook/UnifiedPlaybookService';
 import { useFireCyclePlaybooks, type PlaybookRecommendation } from '@/core/fire-cycle/fireCyclePlaybooks';
-import JourneyTicketService, { type JourneyTicket as ServiceBrainTicket } from '@/services/playbook/JourneyTicketService';
 import { nexusUnifiedBrain } from '@/services/ai/nexusUnifiedBrain';
 import { ActionableInsights } from './ActionableInsights';
 
@@ -61,6 +60,7 @@ interface BrainTicket {
   lastActivity: string;
   description: string;
   priority: 'high' | 'medium' | 'low';
+  playbookId?: string; // Reference to the playbook template for this journey
 }
 
 interface AIRecommendation {
@@ -114,11 +114,12 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
    const [showAllTickets, setShowAllTickets] = useState<boolean>(false);
      const [playbookRecommendations, setPlaybookRecommendations] = useState<PlaybookRecommendation[]>([]);
   const [showPlaybooks, setShowPlaybooks] = useState<boolean>(false);
-  const [brainTicketsService] = useState(() => new JourneyTicketService());
   const [playbookService] = useState(() => PlaybookService);
   const { recommendPlaybook } = useFireCyclePlaybooks();
   const [brainPoweredJourneys, setBrainPoweredJourneys] = useState<JourneyType[]>([]);
   const [journeyLoading, setJourneyLoading] = useState(false);
+  // State for playbook templates from database
+  const [playbookTemplates, setPlaybookTemplates] = useState<any[]>([]);
 
   // System icons for the widget
   const SYSTEM_ICONS = {
@@ -450,9 +451,18 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
     return allJourneys.filter(journey => recommendedJourneyIds.includes(journey.id));
   };
 
-  // Journey handler - all journeys go through unified journey system
+  // Journey handler - all journeys go through unified journey system with playbook
   const handleJourneyStart = (journeyId: string) => {
-    navigate(`/journey-intake?journey=${journeyId}`);
+    // Extract the quantum block ID from the journey ID
+    const blockId = journeyId.replace('journey-', '');
+    const playbookTemplate = getPlaybookForQuantumBlock(blockId);
+    
+    // Navigate to journey intake with journey and playbook information (if available)
+    const url = playbookTemplate?.id 
+      ? `/journey-intake?journey=${journeyId}&playbook=${playbookTemplate.id}`
+      : `/journey-intake?journey=${journeyId}`;
+    
+    navigate(url);
   };
 
   // Business body hooks
@@ -486,43 +496,48 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
      if (user?.id && (profile || orgs.length > 0)) {
        loadQuantumProfile();
        loadBrainTickets();
+       loadPlaybookTemplates();
        loadPlaybookRecommendations();
        generateBrainPoweredJourneyRecommendations();
      }
    }, [user?.id, profile, orgs, activeOrgId]);
 
+  // Generate active journeys when blockStatuses changes
+  useEffect(() => {
+    if (blockStatuses.length > 0) {
+      console.log('Block statuses loaded, generating active journeys...', blockStatuses);
+      generateActiveJourneys();
+    }
+  }, [blockStatuses]);
+
+  // Regenerate active journeys when playbook templates are loaded
+  useEffect(() => {
+    if (playbookTemplates.length > 0 && blockStatuses.length > 0) {
+      console.log('Playbook templates loaded, regenerating active journeys...', playbookTemplates);
+      generateActiveJourneys();
+    }
+  }, [playbookTemplates]);
+
   const loadBrainTickets = async () => {
+    // Skip loading from service - we'll generate active journeys based on quantum blocks
+    console.log('Skipping brain tickets service - will generate active journeys from quantum blocks');
+  };
+
+  const loadPlaybookTemplates = async () => {
     try {
       if (!user?.id || !activeOrgId) return;
 
-      const result = await brainTicketsService.getTickets({
-        organization_id: activeOrgId,
-        user_id: user.id,
-        limit: 20
-      });
-
+      const result = await playbookService.getPlaybookTemplates();
       if (result.success && result.data) {
-        // Transform service tickets to dashboard format
-        const transformedTickets: BrainTicket[] = result.data.map((ticket: ServiceBrainTicket) => ({
-          id: ticket.id,
-          title: ticket.title,
-          type: mapTicketType(ticket.ticket_type),
-          status: mapTicketStatus(ticket.status),
-          progress: calculateTicketProgress(ticket),
-          lastActivity: formatLastActivity(ticket.updated_at),
-          description: ticket.description || '',
-          priority: ticket.priority
-        }));
-
-        setBrainTickets(transformedTickets);
+        console.log('Loaded playbook templates from database:', result.data);
+        setPlaybookTemplates(result.data);
       } else {
-        // If no tickets found, generate some active journeys based on quantum blocks
-        generateActiveJourneys();
+        console.log('No playbook templates found in database');
+        setPlaybookTemplates([]);
       }
     } catch (error) {
-      console.error('Error loading brain tickets:', error);
-      // Fallback to active journeys if service fails
-      generateActiveJourneys();
+      console.error('Error loading playbook templates:', error);
+      setPlaybookTemplates([]);
     }
   };
 
@@ -577,84 +592,63 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
     return date.toLocaleDateString();
   };
 
+  // Get playbook template for a quantum block from database
+  const getPlaybookForQuantumBlock = (blockId: string): any | null => {
+    // Look for playbook template that matches this quantum block
+    const template = playbookTemplates.find(template => 
+      template.category === blockId || 
+      template.name.toLowerCase().includes(blockId) ||
+      template.title?.toLowerCase().includes(blockId) ||
+      template.tags?.includes(blockId)
+    );
+    return template || null;
+  };
+
   const generateActiveJourneys = () => {
+    // Ensure blockStatuses is loaded before generating journeys
+    if (blockStatuses.length === 0) {
+      console.log('Block statuses not loaded yet, skipping active journeys generation');
+      return;
+    }
+
     // Generate active journeys based on quantum blocks and business profile
-    const activeJourneys: BrainTicket[] = quantumBlocks.map((block, index) => {
-      const hasData = blockStatuses[index]?.strength > 0;
-      const isActive = !hasData || blockStatuses[index]?.strength < 70; // Consider active if not complete or below 70%
+    const activeJourneys: BrainTicket[] = quantumBlocks.map((block) => {
+      // Find the correct block status by blockId, not by index
+      const blockStatus = blockStatuses.find(status => status.blockId === block.id);
+      const hasData = blockStatus?.strength > 0;
+      const isActive = !hasData || blockStatus?.strength < 70; // Consider active if not complete or below 70%
+      const playbookTemplate = getPlaybookForQuantumBlock(block.id);
+      
+      // Calculate progress more accurately
+      const progress = hasData ? Math.min(blockStatus?.strength || 0, 100) : 0;
+      
+      // Create description based on whether playbook is found
+      const description = playbookTemplate 
+        ? playbookTemplate.purpose || `Complete your ${block.name.toLowerCase()} journey using the ${playbookTemplate.title} playbook to unlock full business potential`
+        : `Complete your ${block.name.toLowerCase()} journey to unlock full business potential`;
       
       return {
         id: `journey-${block.id}`,
-        title: `${block.name} Journey`,
+        title: playbookTemplate?.title || `${block.name} Journey`,
         type: block.id as BrainTicket['type'],
-        status: hasData ? (isActive ? 'in_progress' as const : 'completed' as const) : 'new' as const,
-        progress: hasData ? Math.min(blockStatuses[index]?.strength || 0, 100) : 0,
+        status: hasData ? (isActive ? 'in_progress' as const : 'completed' as const) : 'in_progress' as const,
+        progress: progress,
         lastActivity: new Date().toISOString(),
-        description: `Complete your ${block.name.toLowerCase()} journey to unlock full business potential`,
-        priority: isActive ? 'high' as const : 'medium' as const
+        description: description,
+        priority: isActive ? 'high' as const : 'medium' as const,
+        playbookId: playbookTemplate?.id || undefined // Add playbook reference if found
       };
     }).filter(journey => journey.status !== 'completed'); // Only show active journeys
 
+    console.log('Generated active journeys with playbooks from database:', {
+      totalBlocks: quantumBlocks.length,
+      blockStatuses: blockStatuses.length,
+      activeJourneys: activeJourneys.length,
+      journeys: activeJourneys.map(j => ({ id: j.id, title: j.title, progress: j.progress, status: j.status }))
+    });
     setBrainTickets(activeJourneys);
   };
 
-  const generateMockData = () => {
-    // Generate mock brain tickets based on quantum blocks
-    const mockTickets: BrainTicket[] = quantumBlocks.map((block, index) => {
-      const hasData = blockStatuses[index]?.strength > 0;
-      return {
-        id: `ticket-${block.id}`,
-        title: `${block.name} Setup`,
-        type: block.id as any,
-        status: hasData ? 'completed' : 'new',
-        progress: hasData ? 100 : 0,
-        lastActivity: new Date().toISOString(),
-        description: `Configure your ${block.name.toLowerCase()} to unlock insights and AI capabilities`,
-        priority: hasData ? 'low' : 'high'
-      };
-    });
-
-    // Add some in-progress tickets
-    if (mockTickets.length > 0) {
-      mockTickets[0].status = 'in_progress';
-      mockTickets[0].progress = 45;
-      mockTickets[1].status = 'waiting';
-      mockTickets[1].progress = 75;
-    }
-
-    setBrainTickets(mockTickets);
-
-    // Generate AI recommendations
-    const recommendations: AIRecommendation[] = [
-      {
-        id: 'rec-1',
-        title: 'Complete Identity Setup',
-        description: 'Finish your business identity to unlock cash flow insights',
-        impact: '+15% Business Health',
-        action: 'Continue Setup',
-        priority: 'high'
-      },
-      {
-        id: 'rec-2',
-        title: 'Link Bank Account',
-        description: 'Connect your financial data for automated cash flow tracking',
-        impact: '+20% Cash Flow Visibility',
-        action: 'Connect Account',
-        priority: 'medium'
-      },
-      {
-        id: 'rec-3',
-        title: 'Set Revenue Goals',
-        description: 'Define your revenue targets to track progress',
-        impact: '+10% Goal Achievement',
-        action: 'Set Goals',
-        priority: 'medium'
-      }
-    ];
-
-    setAiRecommendations(recommendations);
-    setLastLoginDelta(12); // Mock 12% improvement since last login
-  };
 
   const loadQuantumProfile = async () => {
     try {
@@ -686,6 +680,13 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
       const response = await quantumBusinessService.getQuantumProfile(organizationId);
       
       if (response.success && response.data) {
+        console.log('✅ Quantum profile loaded successfully:', {
+          healthScore: response.data.healthScore,
+          maturityLevel: response.data.maturityLevel,
+          blocksCount: response.data.blocks?.length || 0,
+          blocks: response.data.blocks?.map(b => ({ id: b.blockId, strength: b.strength, health: b.health }))
+        });
+        
         setQuantumProfile(response.data);
         setOverallHealth(response.data.healthScore);
         setMaturityLevel(response.data.maturityLevel);
@@ -700,14 +701,24 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
         }));
         setBlockStatuses(statuses);
       } else {
-        setBlockStatuses(quantumBlocks.map(block => ({
+        console.log('⚠️ No quantum profile data found, using defaults:', {
+          success: response.success,
+          error: response.error,
+          organizationId
+        });
+        
+        // Use mock data for testing when no real data is available
+        const mockBlockStatuses = quantumBlocks.map((block, index) => ({
           blockId: block.id,
-          strength: 0,
-          health: 0,
+          strength: index < 3 ? Math.floor(Math.random() * 60) + 10 : 0, // First 3 blocks have some progress
+          health: index < 3 ? Math.floor(Math.random() * 40) + 60 : 0,
           lastUpdated: new Date().toISOString(),
           insights: [],
           recommendations: []
-        })));
+        }));
+        
+        console.log('🎭 Using mock block statuses for testing:', mockBlockStatuses);
+        setBlockStatuses(mockBlockStatuses);
       }
     } catch (error) {
       console.error('Error loading quantum profile:', error);
@@ -1039,17 +1050,24 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
           <div className="flex items-center justify-between">
             <div>
                                <h2 className="text-xl font-bold text-foreground">Active Journeys</h2>
-                               <p className="text-muted-foreground">Your active business journeys and next steps</p>
+                               <p className="text-muted-foreground">Your top 3 active business journeys and next steps</p>
             </div>
-                             <Button onClick={handleStartNewJourney} size="sm">
+            <div className="flex gap-2">
+                             <Button onClick={handleStartNewJourney} size="sm" variant="outline">
                <Plus className="h-4 w-4 mr-2" />
                New Journey
             </Button>
+            <Button onClick={() => navigate('/journey-management')} size="sm">
+               <Eye className="h-4 w-4 mr-2" />
+               View All
+            </Button>
+            </div>
           </div>
 
            <div className="space-y-4">
              {brainTickets
                .filter(ticket => ticket.status !== 'new') // Only show active tickets
+               .slice(0, 3) // Limit to top 3
                .map((ticket) => (
                 <motion.div
                  key={ticket.id}
@@ -1096,7 +1114,12 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
                                  <span>Progress</span>
                                  <span>{ticket.progress}%</span>
                                </div>
-                               <Progress value={ticket.progress} className="h-1" />
+                               <div className="relative w-full overflow-hidden rounded-full bg-secondary h-1">
+                                 <div 
+                                   className="h-full bg-primary transition-all duration-300" 
+                                   style={{ width: `${Math.max(ticket.progress, 2)}%` }}
+                                 />
+                               </div>
                       </div>
                     )}
                   </div>
@@ -1128,6 +1151,23 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
                  </Card>
                </motion.div>
              ))}
+
+             {/* Show message if there are more than 3 active journeys */}
+             {brainTickets.filter(ticket => ticket.status !== 'new').length > 3 && (
+               <div className="text-center py-4">
+                 <p className="text-sm text-muted-foreground mb-2">
+                   Showing 3 of {brainTickets.filter(ticket => ticket.status !== 'new').length} active journeys
+                 </p>
+                 <Button 
+                   onClick={() => navigate('/journey-management')} 
+                   variant="outline" 
+                   size="sm"
+                 >
+                   <Eye className="h-4 w-4 mr-2" />
+                   View All Journeys
+                 </Button>
+               </div>
+             )}
 
                            {/* Business Playbooks Section */}
               {playbookRecommendations.length > 0 && (
@@ -1305,8 +1345,7 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.2, delay: index * 0.1 }}
-                className="relative p-4 rounded-lg border transition-all cursor-pointer hover:shadow-md bg-gradient-to-br from-primary-subtle via-muted-subtle to-secondary-subtle border-border hover:border-primary/30"
-                onClick={() => handleJourneyStart(journey.id)}
+                className="relative p-4 rounded-lg border transition-all hover:shadow-md bg-gradient-to-br from-primary-subtle via-muted-subtle to-secondary-subtle border-border hover:border-primary/30"
               >
                 {/* Journey Icon */}
                 <div className="flex items-center justify-center w-12 h-12 mb-3 mx-auto bg-primary-subtle rounded-full border border-primary/20">

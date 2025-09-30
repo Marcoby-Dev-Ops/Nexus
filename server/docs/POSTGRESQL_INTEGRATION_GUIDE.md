@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide explains how to use the new PostgreSQL integration in the Nexus frontend. The system provides unified interfaces for all database operations.
+This guide explains how to use the new PostgreSQL integration in the Nexus frontend. The system now supports both PostgreSQL (with pgvector) and Supabase, with automatic detection and unified interfaces.
 
 ## Architecture
 
@@ -11,12 +11,13 @@ This guide explains how to use the new PostgreSQL integration in the Nexus front
 The integration is built around a unified `DatabaseService` that automatically detects and uses the appropriate database:
 
 - **PostgreSQL**: Direct connection using `pg` library with connection pooling
+- **Supabase**: Uses Supabase client with RPC functions
 - **Automatic Detection**: Based on environment variables and connection strings
 
 ### Key Components
 
 1. **DatabaseService** (`src/core/services/DatabaseService.ts`)
-   - Unified interface for PostgreSQL operations
+   - Unified interface for both PostgreSQL and Supabase
    - Automatic database type detection
    - Health checking and connection management
 
@@ -28,7 +29,7 @@ The integration is built around a unified `DatabaseService` that automatically d
 3. **UnifiedService** (`src/core/services/UnifiedService.ts`)
    - Standardized CRUD operations
    - Schema validation with Zod
-   - Works with PostgreSQL
+   - Works with both PostgreSQL and Supabase
 
 4. **React Hooks** (`src/hooks/useDatabase.ts`)
    - Database health monitoring
@@ -63,7 +64,8 @@ VITE_POSTGRES_PASSWORD=postgres
 The system automatically detects which database to use:
 
 1. **PostgreSQL Priority**: If `DATABASE_URL` contains localhost, vector_db, or postgresql://
-2. **Default**: Falls back to PostgreSQL with default local settings
+2. **Supabase Fallback**: If Supabase environment variables are configured
+3. **Default**: Falls back to PostgreSQL with default local settings
 
 ## Usage Examples
 
@@ -278,20 +280,20 @@ export const HealthMonitor: React.FC = () => {
 };
 ```
 
-## Migration from Other Databases
+## Migration from Supabase
 
-If you're migrating from other database systems:
+If you're migrating from Supabase to PostgreSQL:
 
 1. **Update Environment Variables**: Set PostgreSQL connection details
 2. **Update Services**: Services will automatically use PostgreSQL
 3. **Test Vector Operations**: Ensure pgvector extension is installed
-4. **Update Queries**: Some database-specific queries may need adjustment
+4. **Update Queries**: Some Supabase-specific queries may need adjustment
 
 ### Example Migration
 
 ```typescript
-// Before (Database-specific)
-const { data, error } = await database
+// Before (Supabase-specific)
+const { data, error } = await supabase
   .from('users')
   .select('*')
   .eq('status', 'active')
@@ -346,7 +348,7 @@ logger.level = 'debug';
 
 // Check database configuration
 console.log('Database Config:', databaseService.getConfig());
-console.log('Database Type:', 'PostgreSQL');
+console.log('Database Type:', databaseService.isUsingSupabase() ? 'Supabase' : 'PostgreSQL');
 ```
 
 ## API Reference
@@ -357,7 +359,7 @@ console.log('Database Type:', 'PostgreSQL');
 - `transaction<T>(callback: (client: any) => Promise<T>): Promise<{ data: T | null; error: string | null }>`
 - `healthCheck(): Promise<DatabaseHealth>`
 - `getConfig(): DatabaseConfig`
-- `isUsingPostgreSQL(): boolean`
+- `isUsingSupabase(): boolean`
 - `isUsingPostgres(): boolean`
 - `getClient(): any`
 
@@ -366,9 +368,9 @@ console.log('Database Type:', 'PostgreSQL');
 - `useDatabaseHealth(): { health, loading, error, refetch }`
 - `useDatabaseQuery<T>(query, params, enabled): { data, loading, error, refetch }`
 - `useDatabaseTransaction<T>(): { executeTransaction, loading, error }`
-- `useDatabaseConfig(): { config, isPostgres, databaseType }`
+- `useDatabaseConfig(): { config, isSupabase, isPostgres, databaseType }`
 - `useDatabaseClient(): any`
 - `useDatabaseConnection(): { connected, testing, error, testConnection }`
 - `useVectorOperations(): { vectorSupport, testing, error, testVectorSupport }`
 
-This integration provides a seamless way to work with PostgreSQL while maintaining consistent APIs and error handling throughout your application.
+This integration provides a seamless way to work with both PostgreSQL and Supabase while maintaining consistent APIs and error handling throughout your application.

@@ -1,5 +1,6 @@
 const fs = require('fs').promises;
 const path = require('path');
+require('../../loadEnv');
 const { query, transaction } = require('./connection');
 const { logger } = require('../utils/logger');
 

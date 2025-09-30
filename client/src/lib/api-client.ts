@@ -4,7 +4,12 @@
  */
 
 import { getEnv } from '@/core/environment';
+
+function getApiBaseUrl(): string {
+  return getEnv().api.baseUrl || 'http://localhost:3001';
+}
 import { loggingUtils } from '@/core/config/logging';
+import { useAuthStore } from '@/core/auth/authStore';
 
 // Import the AuthentikAuthService for token refresh
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
@@ -17,35 +22,121 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
-  
-  // Get token from localStorage
-  const sessionData = localStorage.getItem('authentik_session');
+
+  const storeState = useAuthStore.getState();
+  const session = storeState.session;
   let token: string | null = null;
-  
-  if (sessionData) {
-    try {
-      const session = JSON.parse(sessionData);
-      if (session?.session?.accessToken) {
-        token = session.session.accessToken;
-      } else if (session?.accessToken) {
-        token = session.accessToken;
-      } else if (authLogsEnabled) {
-        loggingUtils.auth('No access token found in session data', {
-          hasSession: !!session.session,
-          hasAccessToken: !!session.accessToken,
-          sessionKeys: Object.keys(session)
-        });
+
+  if (session) {
+    token = session.session?.accessToken || session.accessToken || null;
+    
+    // Check if token is expired before using it
+    if (token) {
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const now = Math.floor(Date.now() / 1000);
+          
+          if (payload.exp && payload.exp < now) {
+            if (authLogsEnabled) {
+              loggingUtils.auth('Token expired, attempting refresh', {
+                exp: new Date(payload.exp * 1000).toISOString(),
+                now: new Date().toISOString()
+              });
+            }
+            
+            // Attempt to refresh the token
+            const refreshSuccess = await attemptTokenRefresh();
+            if (refreshSuccess) {
+              const freshSession = await authentikAuthService.getSession();
+              token = freshSession?.session?.accessToken || freshSession?.accessToken || null;
+              if (authLogsEnabled && token) {
+                loggingUtils.auth('Token refreshed successfully');
+              }
+            } else {
+              if (authLogsEnabled) {
+                loggingUtils.auth('Token refresh failed, clearing session');
+              }
+              token = null;
+            }
+          } else if (authLogsEnabled) {
+            loggingUtils.auth('Using valid access token from auth store');
+          }
+        }
+      } catch (error) {
+        if (authLogsEnabled) {
+          loggingUtils.auth('Error checking token expiration', { error });
+        }
       }
-    } catch (error) {
-      if (authLogsEnabled) console.error('Error parsing session data:', error);
     }
-  } else {
-    if (authLogsEnabled) console.log('No authentik_session found in localStorage');
   }
-  
-  // Fallback to localStorage token (removed AuthentikAuthService dependency)
+
   if (!token) {
-    // Try to get token from other localStorage keys
+    const sessionData = localStorage.getItem('authentik_session');
+    if (sessionData) {
+      try {
+        const storedSession = JSON.parse(sessionData);
+        token = storedSession?.session?.accessToken || storedSession?.accessToken || null;
+        
+        // Check if stored token is expired
+        if (token) {
+          try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const payload = JSON.parse(atob(parts[1]));
+              const now = Math.floor(Date.now() / 1000);
+              
+              if (payload.exp && payload.exp < now) {
+                if (authLogsEnabled) {
+                  loggingUtils.auth('Stored token expired, attempting refresh', {
+                    exp: new Date(payload.exp * 1000).toISOString(),
+                    now: new Date().toISOString()
+                  });
+                }
+                
+                // Attempt to refresh the token
+                const refreshSuccess = await attemptTokenRefresh();
+                if (refreshSuccess) {
+                  const freshSession = await authentikAuthService.getSession();
+                  token = freshSession?.session?.accessToken || freshSession?.accessToken || null;
+                  if (authLogsEnabled && token) {
+                    loggingUtils.auth('Stored token refreshed successfully');
+                  }
+                } else {
+                  if (authLogsEnabled) {
+                    loggingUtils.auth('Stored token refresh failed, clearing session');
+                  }
+                  token = null;
+                }
+              } else if (authLogsEnabled) {
+                loggingUtils.auth('Using valid stored token from localStorage');
+              }
+            }
+          } catch (error) {
+            if (authLogsEnabled) {
+              loggingUtils.auth('Error checking stored token expiration', { error });
+            }
+          }
+        }
+        
+        if (token && !session) {
+          // Hydrate the store asynchronously without blocking callers
+          try {
+            useAuthStore.getState().setAuthState(storedSession);
+          } catch (_error) {
+            /* no-op */
+          }
+        }
+      } catch (error) {
+        if (authLogsEnabled) console.error('Error parsing session data:', error);
+      }
+    } else if (authLogsEnabled) {
+      console.log('No authentik_session found in localStorage');
+    }
+  }
+
+  if (!token) {
     const tokenKeys = ['access_token', 'token', 'auth_token'];
     for (const key of tokenKeys) {
       const storedToken = localStorage.getItem(key);
@@ -56,18 +147,21 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
       }
     }
   }
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
     if (authLogsEnabled) loggingUtils.auth('Authorization header set');
   } else {
     if (authLogsEnabled) loggingUtils.auth('No token found, requests will be unauthenticated');
-    // Show a helpful message to the user
-    if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/') && !window.location.pathname.includes('/login')) {
+    if (
+      typeof window !== 'undefined' &&
+      !window.location.pathname.includes('/auth/') &&
+      !window.location.pathname.includes('/login')
+    ) {
       if (authLogsEnabled) console.warn('User not authenticated. Please sign in to access the application.');
     }
   }
-  
+
   return headers;
 }
 
@@ -76,20 +170,17 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
  */
 async function attemptTokenRefresh(): Promise<boolean> {
   try {
-    // Prevent multiple simultaneous refresh attempts
     if (attemptTokenRefresh.isRefreshing) {
       loggingUtils.auth('Token refresh already in progress, waiting...');
-      // Wait for the current refresh to complete
       while (attemptTokenRefresh.isRefreshing) {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
-      // Check if we have a valid token now
       const headers = await getAuthHeaders();
       return !!headers.Authorization;
     }
-    
+
     attemptTokenRefresh.isRefreshing = true;
-    
+
     const refreshResult = await authentikAuthService.refreshSession();
     if (refreshResult.success && refreshResult.data) {
       loggingUtils.auth('Token refreshed successfully');
@@ -106,60 +197,59 @@ async function attemptTokenRefresh(): Promise<boolean> {
   }
 }
 
-// Add a flag to prevent multiple simultaneous refresh attempts
 attemptTokenRefresh.isRefreshing = false;
 
-/**
- * Make an authenticated request with automatic token refresh
- */
 async function makeAuthenticatedRequest<T>(
   url: string,
   options: RequestInit,
   retryCount: number = 0
 ): Promise<Response> {
-  const maxRetries = 1; // Only retry once after token refresh
-  
+  const maxRetries = 1;
+
   try {
     const response = await fetch(url, options);
-    
-    // If we get a 401 and haven't retried yet, attempt token refresh
+
     if (response.status === 401 && retryCount < maxRetries) {
       loggingUtils.auth('Received 401, attempting token refresh');
-      
+
       const refreshSuccess = await attemptTokenRefresh();
       if (refreshSuccess) {
-        // Get fresh headers with new token
         const freshHeaders = await getAuthHeaders();
         const retryOptions = {
           ...options,
           headers: {
             ...options.headers,
-            ...freshHeaders
-          }
+            ...freshHeaders,
+          },
         };
-        
+
         loggingUtils.auth('Retrying request with refreshed token');
         return makeAuthenticatedRequest(url, retryOptions, retryCount + 1);
-      } else {
-        // Token refresh failed
-        const isDev = typeof import.meta !== 'undefined' && (import.meta as any).env && ((import.meta as any).env.DEV || (import.meta as any).env.VITE_DEV === 'true' || (import.meta as any).env.VITE_DEV === '1');
-        if (isDev) {
-          loggingUtils.auth('Token refresh failed in dev, NOT redirecting. Surfacing 401 for debugging');
-          // Do not redirect in development; let caller handle the 401
-          return response;
-        }
-        // In production, redirect to login if we're not already on an auth page
-        if (typeof window !== 'undefined' && 
-            !window.location.pathname.includes('/auth/') && 
-            !window.location.pathname.includes('/login') &&
-            !window.location.pathname.includes('/callback')) {
-          loggingUtils.auth('Token refresh failed, redirecting to login');
-          localStorage.removeItem('authentik_session');
-          window.location.href = '/login';
-        }
+      }
+
+      const isDev =
+        typeof import.meta !== 'undefined' &&
+        (import.meta as any).env &&
+        (((import.meta as any).env.DEV || (import.meta as any).env.VITE_DEV === 'true') ||
+          (import.meta as any).env.VITE_DEV === '1');
+      if (isDev) {
+        loggingUtils.auth('Token refresh failed in dev, NOT redirecting. Surfacing 401 for debugging');
+        return response;
+      }
+
+      if (
+        typeof window !== 'undefined' &&
+        !window.location.pathname.includes('/auth/') &&
+        !window.location.pathname.includes('/login') &&
+        !window.location.pathname.includes('/callback')
+      ) {
+        loggingUtils.auth('Token refresh failed, redirecting to login');
+        useAuthStore.getState().clearAuthState(true);
+        localStorage.removeItem('authentik_session');
+        window.location.href = '/login';
       }
     }
-    
+
     return response;
   } catch (error) {
     loggingUtils.auth('Request failed', { error, retryCount });
@@ -167,9 +257,6 @@ async function makeAuthenticatedRequest<T>(
   }
 }
 
-/**
- * API Client for making HTTP requests
- */
 export interface ApiClientConfig {
   baseUrl: string;
   apiKey?: string;
@@ -198,530 +285,330 @@ export class ApiClient {
   private baseHeaders: Record<string, string>;
 
   constructor(config: ApiClientConfig) {
-    this.config = {
-      timeout: 30000,
-      ...config,
-    };
-    
+    this.config = config;
     this.baseHeaders = {
       'Content-Type': 'application/json',
+      ...(config.apiKey ? { 'X-API-Key': config.apiKey } : {}),
     };
-
-    // Add API key if provided
-    if (this.config.apiKey) {
-      this.baseHeaders['X-API-Key'] = this.config.apiKey;
-    }
-
-    // Add OAuth token if provided
-    if (this.config.accessToken) {
-      this.baseHeaders['Authorization'] = `Bearer ${this.config.accessToken}`;
-    }
   }
 
-  /**
-   * Make a request with automatic retry and error handling
-   */
-  async request<T = any>(
-    method: 'get' | 'post' | 'put' | 'patch' | 'delete',
-    path: string,
-    options: {
-      body?: any;
-      headers?: Record<string, string>;
-      params?: Record<string, string>;
-    } = {}
-  ): Promise<ApiResponse<T>> {
+  private async buildHeaders(additionalHeaders?: Record<string, string>): Promise<Record<string, string>> {
+    const headers = { ...this.baseHeaders, ...additionalHeaders };
+
+    if (!headers.Authorization) {
+      const authHeaders = await getAuthHeaders();
+      Object.assign(headers, authHeaders);
+    }
+
+    return headers;
+  }
+
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    const url = `${this.config.baseUrl}${endpoint}`;
+    const headers = await this.buildHeaders(options.headers as Record<string, string> | undefined);
+
     try {
-      const url = new URL(path, this.config.baseUrl);
-      
-      // Add query parameters
-      if (options.params) {
-        Object.entries(options.params).forEach(([key, value]) => {
-          url.searchParams.append(key, value);
-        });
-      }
-
-      const headers = {
-        ...this.baseHeaders,
-        ...options.headers,
-      };
-
-      const requestOptions: RequestInit = {
-        method: method.toUpperCase(),
+      const response = await makeAuthenticatedRequest(url, {
+        ...options,
         headers,
-        signal: AbortSignal.timeout(this.config.timeout!),
-      };
+      });
 
-      // Add body for non-GET requests
-      if (method !== 'get' && options.body) {
-        requestOptions.body = JSON.stringify(options.body);
-      }
-
-      const response = await makeAuthenticatedRequest(url.toString(), requestOptions);
+      const contentType = response.headers.get('content-type');
+      const isJson = contentType && contentType.includes('application/json');
+      const data = isJson ? await response.json() : await response.text();
 
       if (!response.ok) {
-        const errorText = await response.text();
         return {
           success: false,
-          error: `HTTP ${response.status}: ${errorText}`,
+          error: typeof data === 'string' ? data : data?.error || response.statusText,
           status: response.status,
         };
       }
 
-      const data = await response.json();
       return {
         success: true,
-        data,
+        data: data as T,
         status: response.status,
       };
-
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Request failed',
       };
     }
   }
 
-  // Convenience methods
-  async get<T = any>(path: string, options?: { headers?: Record<string, string>; params?: Record<string, string> }): Promise<ApiResponse<T>> {
-    return this.request<T>('get', path, options);
+  async get<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  async post<T = any>(path: string, body?: any, options?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
-    return this.request<T>('post', path, { body, ...options });
-  }
-
-  async put<T = any>(path: string, body?: any, options?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
-    return this.request<T>('put', path, { body, ...options });
-  }
-
-  async patch<T = any>(path: string, body?: any, options?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
-    return this.request<T>('patch', path, { body, ...options });
-  }
-
-  async delete<T = any>(path: string, options?: { headers?: Record<string, string> }): Promise<ApiResponse<T>> {
-    return this.request<T>('delete', path, options);
-  }
-
-  /**
-   * Refresh OAuth token if needed
-   */
-  async refreshToken(): Promise<boolean> {
-    if (!this.config.refreshToken || !this.config.clientId || !this.config.clientSecret) {
-      return false;
-    }
-
-    try {
-      const response = await fetch(`${this.config.baseUrl}/oauth/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          grant_type: 'refresh_token',
-          refresh_token: this.config.refreshToken,
-          client_id: this.config.clientId,
-          client_secret: this.config.clientSecret,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        this.config.accessToken = data.access_token;
-        this.config.refreshToken = data.refresh_token;
-        this.baseHeaders['Authorization'] = `Bearer ${data.access_token}`;
-        return true;
-      }
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-    }
-
-    return false;
-  }
-}
-
-/**
- * Call edge function via Express server API
- */
-export async function callEdgeFunction<T>(
-  functionName: string,
-  params: Record<string, unknown> = {}
-): Promise<RPCResult<T>> {
-  try {
-    const headers = await getAuthHeaders();
-    const apiUrl = getEnv().api.url;
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/edge/${functionName}`, {
+  async post<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      ...options,
       method: 'POST',
-      headers,
-      body: JSON.stringify(params),
+      body: body ? JSON.stringify(body) : undefined,
     });
-
-    const result = await response.json();
-    return {
-      data: result.data || null,
-      error: result.error || null,
-      success: response.ok,
-    };
-  } catch (error) {
-    return {
-      data: null,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      success: false,
-    };
   }
-}
 
-/**
- * Call public edge function via Express server API
- */
-export async function callPublicEdgeFunction<T>(
-  functionName: string,
-  params: Record<string, unknown> = {}
-): Promise<RPCResult<T>> {
-  try {
-    const headers = await getAuthHeaders();
-    const apiUrl = getEnv().api.url;
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/edge/${functionName}/public`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(params),
-    });
-
-    const result = await response.json();
-    return {
-      data: result.data || null,
-      error: result.error || null,
-      success: response.ok,
-    };
-  } catch (error) {
-    return {
-      data: null,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      success: false,
-    };
-  }
-}
-
-/**
- * Select data from table
- */
-export async function selectData<T>(
-  table: string,
-  columns?: string,
-  filter?: Record<string, string | number | boolean>
-): Promise<ApiResponse<T[]>> {
-  try {
-    const params = new URLSearchParams();
-    if (columns) params.append('columns', columns);
-    if (filter) {
-      Object.entries(filter).forEach(([key, value]) => {
-        params.append(`filter[${key}]`, String(value));
-      });
-    }
-    
-    const apiUrl = getEnv().api.url;
-    if (!apiUrl) {
-      console.error('No API URL configured');
-      return { 
-        data: null, 
-        error: 'API URL not configured' 
-      };
-    }
-    
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/db/${table}?${params.toString()}`, {
-      method: 'GET',
-      headers: await getAuthHeaders(),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error response body:', errorText);
-      return { 
-        data: null, 
-        error: `HTTP error! status: ${response.status}, body: ${errorText}` 
-      };
-    }
-    
-    const result = await response.json();
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    console.error('Exception caught:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Select one record from table
- */
-export async function selectOne<T>(
-  table: string,
-  id: string,
-  idColumn: string = 'id'
-): Promise<ApiResponse<T>> {
-  try {
-    // Validate ID parameter
-    if (!id || id === 'undefined' || id === 'null') {
-      console.warn(`selectOne called with invalid ID: ${id} for table: ${table}`);
-      return { data: null, error: 'Invalid ID parameter' };
-    }
-
-    const apiUrl = getEnv().api.url;
-    if (!apiUrl) {
-      console.error('No API URL configured');
-      return { data: null, error: 'API URL not configured' };
-    }
-    
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/db/${table}/${id}?idColumn=${idColumn}`, {
-      method: 'GET',
-      headers: await getAuthHeaders(),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error response body:', errorText);
-      return { 
-        data: null, 
-        error: `HTTP error! status: ${response.status}, body: ${errorText}` 
-      };
-    }
-    
-    const result = await response.json();
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    console.error('Exception caught:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Insert one record into table
- */
-export async function insertOne<T>(
-  table: string,
-  data: any
-): Promise<ApiResponse<T>> {
-  try {
-    const apiUrl = getEnv().api.url;
-    if (!apiUrl) {
-      console.error('No API URL configured');
-      return { data: null, error: 'API URL not configured' };
-    }
-    
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/db/${table}`, {
-      method: 'POST',
-      headers: await getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error response body:', errorText);
-      return { 
-        data: null, 
-        error: `HTTP error! status: ${response.status}, body: ${errorText}` 
-      };
-    }
-    
-    const result = await response.json();
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    console.error('Exception caught:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Update one record in table
- */
-export async function updateOne<T>(
-  table: string,
-  id: string,
-  data: any,
-  idColumn: string = 'id'
-): Promise<ApiResponse<T>> {
-  try {
-    const apiUrl = getEnv().api.url;
-    if (!apiUrl) {
-      console.error('No API URL configured');
-      return { data: null, error: 'API URL not configured' };
-    }
-    
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/db/${table}/${id}?idColumn=${idColumn}`, {
+  async put<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      ...options,
       method: 'PUT',
-      headers: await getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: body ? JSON.stringify(body) : undefined,
     });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error response body:', errorText);
-      return { 
-        data: null, 
-        error: `HTTP error! status: ${response.status}, body: ${errorText}` 
-      };
-    }
-    
-    const result = await response.json();
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    console.error('Exception caught:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
+  }
+
+  async patch<T>(endpoint: string, body?: unknown, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, {
+      ...options,
+      method: 'PATCH',
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async delete<T>(endpoint: string, options?: RequestInit): Promise<ApiResponse<T>> {
+    return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 }
 
 /**
- * Delete one record from table
+ * Convenience helpers mirroring legacy API
  */
-export async function deleteOne<T>(
+export interface SelectOptions {
+  table: string;
+  columns?: string;
+  filters?: Record<string, unknown>;
+  orderBy?: { column: string; ascending?: boolean}[];
+  limit?: number;
+  offset?: number;
+}
+
+function buildQueryString(params: Record<string, unknown>): string {
+  const searchParams = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null) {
+      return;
+    }
+
+    if (value instanceof Date) {
+      searchParams.append(key, value.toISOString());
+      return;
+    }
+
+    if (Array.isArray(value)) {
+      searchParams.append(key, JSON.stringify(value));
+      return;
+    }
+
+    if (typeof value === 'object') {
+      searchParams.append(key, JSON.stringify(value));
+      return;
+    }
+
+    searchParams.append(key, String(value));
+  });
+
+  return searchParams.toString();
+}
+
+// Overload signatures
+export async function selectData<T = any>(options: SelectOptions): Promise<ApiResponse<T[]>>;
+export async function selectData<T = any>(table: string, columns?: string, filters?: Record<string, unknown>): Promise<ApiResponse<T[]>>;
+
+// Implementation
+export async function selectData<T = any>(
+  optionsOrTable: SelectOptions | string,
+  columns?: string,
+  filters?: Record<string, unknown>
+): Promise<ApiResponse<T[]>> {
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  
+  // Handle both signatures
+  let table: string;
+  let queryFilters: Record<string, unknown> = {};
+  let queryColumns: string | undefined;
+  
+  if (typeof optionsOrTable === 'string') {
+    // Old signature: selectData(table, columns, filters)
+    table = optionsOrTable;
+    queryColumns = columns;
+    queryFilters = filters || {};
+  } else {
+    // New signature: selectData({ table, columns, filters })
+    table = optionsOrTable.table;
+    queryColumns = optionsOrTable.columns;
+    queryFilters = optionsOrTable.filters || {};
+  }
+
+  const params: Record<string, unknown> = {
+    ...queryFilters,
+  };
+
+  // Add query parameters for columns, limit, offset
+  if (queryColumns) {
+    params.columns = queryColumns;
+  }
+  if (typeof optionsOrTable === 'object' && optionsOrTable.limit) {
+    params.limit = optionsOrTable.limit;
+  }
+  if (typeof optionsOrTable === 'object' && optionsOrTable.offset) {
+    params.offset = optionsOrTable.offset;
+  }
+
+  const queryString = buildQueryString(params);
+  const endpoint = queryString ? `/api/db/${table}?${queryString}` : `/api/db/${table}`;
+
+  return client.get<T[]>(endpoint);
+}
+
+export async function selectOne<T = any>(
   table: string,
-  id: string,
-  idColumn: string = 'id'
+  filters: Record<string, unknown>
 ): Promise<ApiResponse<T>> {
-  try {
-    const apiUrl = getEnv().api.url;
-    if (!apiUrl) {
-      console.error('No API URL configured');
-      return { data: null, error: 'API URL not configured' };
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  // For selectOne, we'll use the same endpoint but expect a single result
+  const queryString = buildQueryString(filters);
+  const endpoint = queryString ? `/api/db/${table}?${queryString}` : `/api/db/${table}`;
+  const result = await client.get<T[]>(endpoint);
+  
+  // Debug logging
+  console.log('selectOne debug:', { table, filters, endpoint, result });
+  console.log('selectOne result.data type:', typeof result.data, 'isArray:', Array.isArray(result.data), 'value:', result.data);
+  
+  if (result.success && result.data) {
+    // Handle nested response structure: { success: true, data: { success: true, data: [...], count: 1 } }
+    if (result.data && typeof result.data === 'object' && 'data' in result.data && Array.isArray(result.data.data)) {
+      if (result.data.data.length > 0) {
+        console.log('selectOne returning nested array item:', result.data.data[0]);
+        return {
+          success: true,
+          data: result.data.data[0],
+          error: null
+        };
+      }
     }
-    
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/db/${table}/${id}?idColumn=${idColumn}`, {
-      method: 'DELETE',
-      headers: await getAuthHeaders(),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error response body:', errorText);
-      return { 
-        data: null, 
-        error: `HTTP error! status: ${response.status}, body: ${errorText}` 
+    // Handle direct array response
+    else if (Array.isArray(result.data) && result.data.length > 0) {
+      console.log('selectOne returning array item:', result.data[0]);
+      return {
+        success: true,
+        data: result.data[0],
+        error: null
       };
     }
-    
-    const result = await response.json();
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    console.error('Exception caught:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
+    // Handle case where API returns single object directly
+    else if (!Array.isArray(result.data) && result.data && typeof result.data === 'object') {
+      console.log('selectOne returning single object:', result.data);
+      return {
+        success: true,
+        data: result.data,
+        error: null
+      };
+    }
   }
+  
+  // If we get here, either result.success is false or result.data is null/undefined
+  console.log('selectOne no data found:', { success: result.success, hasData: !!result.data, error: result.error });
+  return {
+    success: false,
+    data: null,
+    error: result.error || 'No record found'
+  };
 }
 
-/**
- * Upsert one record in table
- */
-export async function upsertOne<T>(
+export async function insertOne<T = any>(
   table: string,
-  data: any,
+  data: Record<string, unknown>
+): Promise<ApiResponse<T>> {
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  return client.post<T>('/api/db/insert', { table, data });
+}
+
+export async function updateOne<T = any>(
+  table: string,
+  filters: Record<string, unknown>,
+  data: Record<string, unknown>
+): Promise<ApiResponse<T>> {
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  return client.post<T>('/api/db/update', { table, filters, data });
+}
+
+export async function upsertOne<T = any>(
+  table: string,
+  data: Record<string, unknown>,
   onConflict: string = 'id'
 ): Promise<ApiResponse<T>> {
-  try {
-    const apiUrl = getEnv().api.url;
-    if (!apiUrl) {
-      console.error('No API URL configured');
-      return { data: null, error: 'API URL not configured' };
-    }
-    
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/db/${table}/upsert`, {
-      method: 'POST',
-      headers: await getAuthHeaders(),
-      body: JSON.stringify({
-        data,
-        onConflict,
-      }),
-    });
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Error response body:', errorText);
-      return { 
-        data: null, 
-        error: `HTTP error! status: ${response.status}, body: ${errorText}` 
-      };
-    }
-    
-    const result = await response.json();
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    console.error('Exception caught:', error);
-    return { 
-      data: null, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  return client.post<T>('/api/db/upsert', { table, data, onConflict });
 }
 
-/**
- * Select data from table with advanced options
- */
-export async function selectWithOptions<T>(
+export async function deleteOne<T = any>(
   table: string,
-  options: {
-    filter?: Record<string, string | number | boolean>;
-    orderBy?: { column: string; ascending: boolean };
-    limit?: number;
-  }
-): Promise<ApiResponse<T[]>> {
-  try {
-    const apiUrl = getEnv().api.url;
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/db/${table}/query`, {
-      method: 'POST',
-      headers: await getAuthHeaders(),
-      body: JSON.stringify(options),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    const result = await response.json();
-    return { data: result.data, error: result.error };
-  } catch (error) {
-    return { data: null, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
+  filters: Record<string, unknown>
+): Promise<ApiResponse<T>> {
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  return client.post<T>('/api/db/delete', { table, filters });
 }
 
-/**
- * Call RPC function via Express server API
- */
-export async function callRPC<T>(
-  functionName: string,
-  params: Record<string, unknown> = {}
-): Promise<RPCResult<T>> {
-  try {
-    const headers = await getAuthHeaders();
-    const apiUrl = getEnv().api.url;
-    const response = await makeAuthenticatedRequest(`${apiUrl}/api/rpc/${functionName}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(params),
-    });
+export interface SelectWithOptionsParams {
+  filter?: Record<string, string | number | boolean>;
+  orderBy?: { column: string; ascending: boolean };
+  limit?: number;
+}
 
-    const result = await response.json();
-    return {
-      data: result.data || null,
-      error: result.error || null,
-      success: response.ok,
-    };
-  } catch (error) {
-    return {
-      data: null,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      success: false,
-    };
+export async function selectWithOptions<T = any>(
+  table: string,
+  options: SelectWithOptionsParams = {}
+): Promise<ApiResponse<T[]>> {
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  return client.post<T[]>(`/api/db/${table}/query`, options);
+}
+
+export async function callRPC<T = any>(
+  functionName: string,
+  params: Record<string, unknown>
+): Promise<RPCResult<T>> {
+  const client = new ApiClient({ baseUrl: getApiBaseUrl() });
+  const response = await client.post<T>(`/api/rpc/${functionName}`, params);
+
+  if (!response.success) {
+    return { success: false, error: response.error };
   }
+
+  // Handle nested RPC response structure
+  let actualData = response.data;
+  if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+    actualData = response.data.data;
+  }
+
+  return { success: true, data: actualData as T };
+}
+
+export async function callEdgeFunction<T = any>(
+  functionName: string,
+  payload: Record<string, unknown> = {}
+): Promise<T> {
+  const baseUrl = getApiBaseUrl();
+  const response = await makeAuthenticatedRequest(`${baseUrl}/api/edge/${functionName}`, {
+    method: 'POST',
+    headers: await getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  const contentType = response.headers.get('content-type');
+  const isJson = contentType && contentType.includes('application/json');
+  const data = isJson ? await response.json() : await response.text();
+
+  if (!response.ok) {
+    if (typeof data === 'string') {
+      return {
+        success: false,
+        error: data || response.statusText,
+      } as T;
+    }
+    return data as T;
+  }
+
+  return data as T;
 }

@@ -18,6 +18,10 @@ const { ai_chat: aiChatHandler } = require('./ai_chat');
 const journeyHandler = require('./journey');
 const journeysHandler = require('./journeys');
 const journeyAnalyticsHandler = require('./journey-analytics');
+const getUserJourneysHandler = require('./get_user_journeys');
+const getJourneyTypesHandler = require('./get_journey_types');
+const getPlaybookItemsHandler = require('./get_playbook_items');
+const businessIdentityHandler = require('./business_identity');
 
 // Map function names to their handlers
 const functionHandlers = {
@@ -29,6 +33,7 @@ const functionHandlers = {
   'get_finance_performance': getFinancePerformanceHandler,
   'get_sales_performance': getSalesPerformanceHandler,
   'business_health': businessHealthHandler,
+  'business-health': businessHealthHandler, // Support both formats
   'complete-onboarding': completeOnboardingHandler,
   'microsoft_services_discovery': microsoftServicesDiscoveryHandler,
   'ai-insights-onboarding': aiInsightsOnboardingHandler,
@@ -37,6 +42,10 @@ const functionHandlers = {
   'journey': journeyHandler,
   'journeys': journeysHandler,
   'journey-analytics': journeyAnalyticsHandler,
+  'get_user_journeys': getUserJourneysHandler,
+  'get_journey_types': getJourneyTypesHandler,
+  'get_playbook_items': getPlaybookItemsHandler,
+  'business_identity': businessIdentityHandler,
 };
 
 /**

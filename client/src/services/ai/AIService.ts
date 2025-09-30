@@ -198,7 +198,7 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
   async get(id: string): Promise<ServiceResponse<AIOperation>> {
     this.logMethodCall('get', { id });
     return this.executeDbOperation(async () => {
-      const result = await selectOne(this.config.tableName, id);
+      const result = await selectOne(this.config.tableName, { id });
       if (!result.success) throw new Error(result.error);
       const validatedData = this.config.schema.parse(result.data);
       return { data: validatedData, error: null };

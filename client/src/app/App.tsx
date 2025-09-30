@@ -1,9 +1,10 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthentikAuthProvider } from '@/shared/contexts/AuthentikAuthContext';
 import { UserProvider } from '@/shared/contexts/UserContext';
 import { CompanyProvider } from '@/shared/contexts/CompanyContext';
 import { UserPreferencesProvider } from '@/shared/contexts/UserPreferencesContext';
+import { clearAuthConflicts, hasAuthConflicts } from '@/shared/auth/clearAuthConflicts';
 
 import { UnifiedLayout } from '@/shared/components/layout/UnifiedLayout';
 import { ProtectedRoute } from '@/shared/components/ProtectedRoute';
@@ -21,6 +22,8 @@ import NotificationsSettings from '@/pages/admin/NotificationsSettings';
 import SettingsPage from '@/pages/admin/SettingsPage';
 import { AdminPage } from '@/pages/admin/AdminPage';
 import AuthDebug from '@/pages/auth/AuthDebug';
+import JourneysPage from '@/pages/journey/JourneysPage';
+import BusinessIdentityJourneyPage from '@/pages/journey/BusinessIdentityJourneyPage';
 
 // Integrations pages
 import { IntegrationsDashboard } from '../integrations/pages/IntegrationsDashboard';
@@ -35,7 +38,6 @@ const LoadingSpinner = () => (
 );
 
 function AppRoutes() {
-  console.log('🔍 [AppRoutes] Rendering routes');
   
   return (
     <Routes>
@@ -111,6 +113,24 @@ function AppRoutes() {
         } 
       />
       
+      {/* Journey routes */}
+        <Route
+          path="/journey-management"
+          element={
+            <ProtectedRoute>
+              <JourneysPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/journey/business-identity/:journeyId?"
+          element={
+            <ProtectedRoute>
+              <BusinessIdentityJourneyPage />
+            </ProtectedRoute>
+          }
+        />
+      
       {/* Integrations routes */}
       <Route 
         path="/integrations" 
@@ -140,17 +160,20 @@ function AppRoutes() {
       {/* Redirect all other routes to dashboard */}
       <Route 
         path="*" 
-        element={
-          <ProtectedRoute>
-            <Navigate to="/dashboard" replace />
-          </ProtectedRoute>
-        } 
+        element={<Navigate to="/dashboard" replace />}
       />
     </Routes>
   );
 }
 
 function App() {
+  // Clear any MSAL conflicts on app initialization
+  useEffect(() => {
+    if (hasAuthConflicts()) {
+      clearAuthConflicts();
+    }
+  }, []);
+
   return (
     <AuthentikAuthProvider>
       <UserProvider>

@@ -1,4 +1,5 @@
-import { contextualRAG, RAGContext } from './contextualRAG';
+import type { RAGContext } from './contextualRAG';
+import { contextualRAG } from './contextualRAG';
 import { selectData, insertOne, updateOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 

@@ -23,7 +23,7 @@ import {
   Award,
   Play
 } from 'lucide-react';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface MVPSummaryStepProps extends JourneyStepProps {
   onComplete: (data: any) => void;

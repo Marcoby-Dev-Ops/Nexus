@@ -6,7 +6,7 @@
 
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks';
-import { companyService } from '@/services/core';
+import { companyApi } from '@/services/api/CompanyApi';
 import type { CompanyProvisioningOptions, ProvisioningResult } from '@/services/core';
 import { logger } from '@/shared/utils/logger';
 
@@ -49,7 +49,7 @@ export const useCompanyProvisioning = (): UseCompanyProvisioningReturn => {
     setError(null);
 
     try {
-      const serviceResponse = await companyService.ensureCompanyAssociation(user.id, options);
+      const serviceResponse = await companyApi.ensureCompany(options);
       
       if (serviceResponse.error) {
         const result: ProvisioningResult = {

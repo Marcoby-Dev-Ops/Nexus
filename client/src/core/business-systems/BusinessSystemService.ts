@@ -126,7 +126,7 @@ export class BusinessSystemService extends BaseService {
       } catch (error) {
         return this.createErrorResponse<BusinessBodyState>(`Failed to get business body state: ${error}`);
       }
-    });
+    }, 'getBusinessBodyState');
   }
 
   /**

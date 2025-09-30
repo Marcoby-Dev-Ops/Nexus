@@ -108,6 +108,8 @@ export const ROUTELABELS: Record<string, string> = {
   '/admin/feature-explorer': 'Feature Explorer',
   '/auth/test': 'Authentication Test',
   '/playbook-test': 'Playbook Test',
+  '/journey-management': 'Journey Management',
+  '/journey/business-identity': 'Business Identity Setup',
   '/auth/signup': 'Sign Up',
   '/admin/ai-model-settings': 'AI Model Settings',
   '/admin/ai-usage': 'AI Usage Monitoring',

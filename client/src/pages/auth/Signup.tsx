@@ -9,6 +9,7 @@ import { SocialProofBanner } from '@/components/auth/SocialProofBanner';
 import { SignupAnalytics } from '@/components/auth/SignupAnalytics';
 import { AuthentikSignupService } from '@/services/auth/AuthentikSignupService';
 import { UsernameSelector } from '@/components/auth/UsernameSelector';
+import { buildApiUrl } from '@/lib/api-url';
 
 type SignupStep = 'business-info' | 'contact-info' | 'username-selection' | 'verification';
 
@@ -62,8 +63,7 @@ export default function Signup() {
     const checkEnrollmentUser = async () => {
       try {
         // Check if user has an authenticated session (coming from enrollment flow)
-        const API_BASE_URL = process.env.VITE_NEXUS_API_URL || 'http://localhost:3001';
-        const sessionResponse = await fetch(`${API_BASE_URL}/api/auth/session-info`, {
+        const sessionResponse = await fetch(buildApiUrl('/api/auth/session-info'), {
           method: 'GET',
           credentials: 'include',
           headers: {
@@ -75,7 +75,7 @@ export default function Signup() {
           const sessionData = await sessionResponse.json();
           if (sessionData.success && sessionData.data?.userId) {
             // User is authenticated, get their details
-            const userResponse = await fetch(`${API_BASE_URL}/api/auth/user-details/${sessionData.data.userId}`, {
+            const userResponse = await fetch(buildApiUrl(`/api/auth/user-details/${sessionData.data.userId}`), {
               method: 'GET',
               credentials: 'include',
               headers: {
@@ -225,33 +225,64 @@ export default function Signup() {
         return;
       }
 
-      // Update business information for existing user (after enrollment)
-      const result = await AuthentikSignupService.updateBusinessInfo({
-        businessName: formData.businessName,
-        businessType: formData.businessType,
-        industry: formData.industry,
-        companySize: formData.companySize,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        fundingStage: formData.fundingStage || undefined,
-        revenueRange: formData.revenueRange || undefined,
-        username: selectedUsername || undefined, // Include selected username
-      });
+      // Check if user already exists first
+      const userExists = await AuthentikSignupService.checkUserExists(formData.email);
+      
+      let result;
+      if (userExists) {
+        // User exists, update their business info instead
+        result = await AuthentikSignupService.updateBusinessInfo({
+          businessName: formData.businessName,
+          businessType: formData.businessType,
+          industry: formData.industry,
+          companySize: formData.companySize,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          fundingStage: formData.fundingStage || undefined,
+          revenueRange: formData.revenueRange || undefined,
+          username: selectedUsername || undefined,
+        });
+      } else {
+        // For new users, create the user first
+        result = await AuthentikSignupService.createUser({
+          businessName: formData.businessName,
+          businessType: formData.businessType,
+          industry: formData.industry,
+          companySize: formData.companySize,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+          fundingStage: formData.fundingStage || undefined,
+          revenueRange: formData.revenueRange || undefined,
+          username: selectedUsername || undefined, // Include selected username
+        });
+      }
 
       if (!result.success) {
-        setError(result.error || 'Failed to update business information');
+        setError(result.error || 'Failed to process your account');
         setLoading(false);
         return;
       }
 
-      // Clear saved data on successful update
+      // Clear saved data on successful processing
       clearSavedData();
       setSignupSuccess(true);
 
-      // Redirect to dashboard since user is already verified
-      navigate('/dashboard');
+      // For new users, redirect to Authentik login flow to complete authentication
+      // This will allow them to set their password and complete verification
+      if (!userExists) {
+        const signInResult = await signIn();
+        if (!signInResult.success) {
+          // If signIn fails, still show success but with a note about manual login
+          console.warn('Auto sign-in failed, user will need to login manually:', signInResult.error);
+        }
+      } else {
+        // For existing users, redirect to dashboard
+        navigate('/dashboard');
+      }
 
     } catch (err) {
       setError('An unexpected error occurred while creating your account');
@@ -594,7 +625,7 @@ export default function Signup() {
             <p className="text-green-300 mb-4">
               {enrollmentData?.email && enrollmentData?.username 
                 ? 'Welcome to Nexus! Your account has been updated with business information and you\'re being redirected to your dashboard.'
-                : 'Welcome to Nexus! Your account has been created and you\'re being redirected to complete email verification.'
+                : 'Welcome to Nexus! Your account has been created successfully. You\'ll now be redirected to complete your authentication setup.'
               }
             </p>
             <div className="bg-green-500/20 rounded-lg p-4">
@@ -609,11 +640,10 @@ export default function Signup() {
                   </>
                 ) : (
                   <>
-                    <li>• You'll be redirected to Marcoby's secure verification system</li>
-                    <li>• Check your email for verification link</li>
-                    <li>• Click the link to verify your account</li>
-                    <li>• Set your password during verification</li>
-                    <li>• Sign in to access your Nexus dashboard</li>
+                    <li>• You'll be redirected to Marcoby's secure authentication system</li>
+                    <li>• Set your password to complete account setup</li>
+                    <li>• Verify your email address if prompted</li>
+                    <li>• Once authenticated, you'll access your Nexus dashboard</li>
                   </>
                 )}
               </ul>
@@ -649,7 +679,7 @@ export default function Signup() {
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-400 mr-3"></div>
               {enrollmentData?.email && enrollmentData?.username 
                 ? 'Redirecting to dashboard...'
-                : 'Redirecting to email verification...'
+                : 'Redirecting to authentication setup...'
               }
             </div>
           </div>

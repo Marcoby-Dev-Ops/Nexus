@@ -5,14 +5,9 @@
   "description": "Nexus Platform - Full Stack Business Management System",
   "scripts": {
     "dev": "pnpm --filter client dev",
-    "dev:api": "pnpm --filter server dev",
-    "dev:full": "concurrently \"pnpm dev\" \"pnpm dev:api\"",
     "build": "pnpm --filter client build",
-    "build:api": "pnpm --filter server build",
     "test": "pnpm --filter client test",
-    "test:api": "pnpm --filter server test",
     "lint": "pnpm --filter client lint",
-    "lint:api": "pnpm --filter server lint",
     "install:all": "pnpm install && cd client && pnpm install && cd ../server && pnpm install"
   },
   "devDependencies": {

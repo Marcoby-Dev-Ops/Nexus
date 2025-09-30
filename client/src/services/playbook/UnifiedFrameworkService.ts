@@ -1,7 +1,7 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { MentalModelsService } from '@/services/ai/MentalModelsService';
-import { FireCycleService } from '@/services/playbook/FireCycleService';
-import { BuildingBlocksService } from '@/services/playbook/BuildingBlocksService';
+import type { MentalModelsService } from '@/services/ai/MentalModelsService';
+import type { FireCycleService } from '@/services/playbook/FireCycleService';
+import type { BuildingBlocksService } from '@/services/playbook/BuildingBlocksService';
 import type { UserContext, FireAnalysis, BuildingBlock, UnifiedResponse } from '@/services/types';
 
 export class UnifiedFrameworkService extends BaseService {

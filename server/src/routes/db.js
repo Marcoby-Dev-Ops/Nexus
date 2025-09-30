@@ -7,6 +7,48 @@ const { logger } = require('../utils/logger');
 
 const router = express.Router();
 
+// Comprehensive list of all allowed database tables
+const getAllowedTables = () => [
+  // AI & Chat Tables
+  'ai_conversations', 'ai_expert_prompts', 'ai_experts', 'ai_memories', 'ai_messages',
+  
+  // Business & Organization Tables
+  'building_blocks', 'business_health_snapshots', 'companies', 'company_members', 
+  'organizations', 'user_organizations',
+  
+  // Knowledge & CKB Tables
+  'ckb_documents', 'ckb_search_logs', 'ckb_storage_connections', 'knowledge_update_triggers',
+  
+  // Journey & Playbook Tables
+  'journey_analytics', 'journey_context_notes', 'journey_items', 'journey_playbook_mapping',
+  'journey_templates', 'playbook_items', 'playbook_knowledge_mappings', 'playbook_templates',
+  'user_journey_progress', 'user_journey_responses', 'user_journeys',
+  'user_playbook_progress', 'user_playbook_responses',
+  
+  // Maturity & Assessment Tables
+  'maturity_assessments', 'maturity_domains', 'maturity_questions',
+  
+  // User & Profile Tables
+  'user_profiles', 'user_preferences', 'user_integrations', 'user_building_block_implementations',
+  
+  // Integration & OAuth Tables
+  'integrations', 'oauth_states', 'oauth_tokens',
+  
+  // AI Expert System Tables
+  'expert_performance', 'expert_switching_rules',
+  
+  // Monitoring & Analytics Tables
+  'monitoring_alerts', 'conversations', 'messages',
+  
+  // Legacy/Compatibility Tables (keeping for backward compatibility)
+  'tasks', 'thoughts', 'documents', 'business_metrics', 'user_activities',
+  'next_best_actions', 'user_action_executions', 'ai_models',
+  'analytics_events', 'callback_events', 'user_onboarding_steps',
+  'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances',
+  'quantum_business_profiles', 'ai_action_card_templates', 'user_contexts',
+  'ai_agents'
+];
+
 /**
  * GET /api/db/:table - Get data from table with optional filtering
  */
@@ -20,17 +62,7 @@ router.get('/:table', authenticateToken, async (req, res) => {
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
     // Validate table name to prevent SQL injection
-    const allowedTables = [
-      'user_profiles', 'companies', 'user_integrations', 'integrations', 'tasks', 
-      'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions', 'ai_models',
-      'analytics_events', 'callback_events', 'oauth_tokens',
-      'organizations', 'user_organizations', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances',
-      'quantum_business_profiles', 'ai_action_card_templates', 'user_contexts',
-      'ai_agents', 'conversations', 'ai_messages', 'ai_conversations',
-      'playbook_templates', 'playbook_items', 'user_playbook_progress', 'user_playbook_responses'
-    ];
+    const allowedTables = getAllowedTables();
 
     if (!allowedTables.includes(table)) {
       throw createError(`Table '${table}' not allowed`, 400);
@@ -161,13 +193,7 @@ router.get('/:table/:id', authenticateToken, async (req, res) => {
     }
 
     // Validate table name
-    const allowedTables = [
-      'user_profiles', 'companies', 'user_integrations', 'tasks', 
-      'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances',
-      'ai_action_card_templates', 'user_contexts',
-      'playbook_templates', 'playbook_items', 'user_playbook_progress', 'user_playbook_responses'
-    ];
+    const allowedTables = getAllowedTables();
 
     if (!allowedTables.includes(table)) {
       throw createError(`Table '${table}' not allowed`, 400);
@@ -248,14 +274,7 @@ router.post('/:table', authenticateToken, async (req, res) => {
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
     // Validate table name
-    const allowedTables = [
-      'user_profiles', 'companies', 'user_integrations', 'tasks', 
-      'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances',
-      'ai_action_card_templates', 'user_contexts',
-      'playbook_templates', 'playbook_items', 'user_playbook_progress', 'user_playbook_responses'
-    ];
+    const allowedTables = getAllowedTables();
 
     if (!allowedTables.includes(table)) {
       throw createError(`Table '${table}' not allowed`, 400);
@@ -334,17 +353,7 @@ router.put('/:table/:id', authenticateToken, async (req, res) => {
     }
 
     // Validate table name
-    const allowedTables = [
-      'user_profiles', 'companies', 'user_integrations', 'integrations', 'tasks', 
-      'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions', 'ai_models',
-      'analytics_events', 'callback_events', 'oauth_tokens',
-      'organizations', 'user_organizations', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances',
-      'quantum_business_profiles', 'ai_action_card_templates', 'user_contexts',
-      'ai_agents', 'conversations', 'ai_messages', 'ai_conversations',
-      'playbook_templates', 'playbook_items', 'user_playbook_progress', 'user_playbook_responses'
-    ];
+    const allowedTables = getAllowedTables();
 
     if (!allowedTables.includes(table)) {
       throw createError(`Table '${table}' not allowed`, 400);
@@ -412,14 +421,7 @@ router.delete('/:table/:id', authenticateToken, async (req, res) => {
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
     // Validate table name
-    const allowedTables = [
-      'user_profiles', 'companies', 'user_integrations', 'tasks', 
-      'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances',
-      'ai_action_card_templates', 'user_contexts',
-      'playbook_templates', 'playbook_items', 'user_playbook_progress', 'user_playbook_responses'
-    ];
+    const allowedTables = getAllowedTables();
 
     if (!allowedTables.includes(table)) {
       throw createError(`Table '${table}' not allowed`, 400);
@@ -479,15 +481,7 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
     // Validate table name
-    const allowedTables = [
-      'user_profiles', 'companies', 'user_integrations', 'tasks', 
-      'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases', 'organizations',
-      'user_organizations', 'insight_feedback', 'initiative_acceptances',
-      'ai_action_card_templates', 'user_contexts',
-      'playbook_templates', 'playbook_items', 'user_playbook_progress', 'user_playbook_responses'
-    ];
+    const allowedTables = getAllowedTables();
 
     if (!allowedTables.includes(table)) {
       throw createError(`Table '${table}' not allowed`, 400);
@@ -567,14 +561,7 @@ router.post('/:table/query', authenticateToken, async (req, res) => {
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
     // Validate table name
-    const allowedTables = [
-      'user_profiles', 'companies', 'user_integrations', 'tasks', 
-      'thoughts', 'documents', 'business_metrics', 'user_activities',
-      'next_best_actions', 'user_action_executions', 'user_onboarding_steps',
-      'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances',
-      'ai_action_card_templates', 'user_contexts',
-      'playbook_templates', 'playbook_items', 'user_playbook_progress', 'user_playbook_responses'
-    ];
+    const allowedTables = getAllowedTables();
 
     if (!allowedTables.includes(table)) {
       throw createError(`Table '${table}' not allowed`, 400);

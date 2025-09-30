@@ -272,7 +272,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     period?: string;
   }): Promise<ServiceResponse<any>> {
     try {
-      let data: any = {};
+      const data: any = {};
 
       if (options.dataType === 'all' || options.dataType === 'dashboard') {
         const dashboard = await this.getDashboardData(companyId);
@@ -337,7 +337,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
 
   private calculateNextRun(frequency: string): string {
     const now = new Date();
-    let nextRun = new Date(now);
+    const nextRun = new Date(now);
 
     switch (frequency) {
       case 'daily':

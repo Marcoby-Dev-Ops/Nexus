@@ -11,7 +11,7 @@ import type { ServiceMetadata } from './shared/types';
 // Core Services
 import { userService, UserService } from './core/UserService';
 import { analyticsService, AnalyticsService } from './core/AnalyticsService';
-import { companyService, CompanyService } from './core/CompanyService';
+// CompanyService removed - using API calls instead
 import { financialService, FinancialService } from './core/FinancialService';
 import { notificationService, NotificationService } from './core/NotificationService';
 
@@ -175,21 +175,14 @@ export class ServiceRegistry {
       isSingleton: true
     });
 
-    // Company Service
-    this.register('companyService', companyService, {
-      name: 'CompanyService',
-      category: 'core',
-      description: 'Manages company data, provisioning, and organization structure',
-      dependencies: ['userService'],
-      isSingleton: true
-    });
+    // Company Service removed - using API calls instead
 
     // Financial Service
     this.register('financialService', financialService, {
       name: 'FinancialService',
       category: 'core',
       description: 'Handles billing, subscriptions, and financial data',
-      dependencies: ['userService', 'companyService'],
+      dependencies: ['userService'],
       isSingleton: true
     });
 
@@ -301,7 +294,7 @@ export class ServiceRegistry {
       name: 'EnhancedChatService',
       category: 'ai',
       description: 'Enhanced chat service with company context, building blocks, and RAG integration',
-      dependencies: ['userService', 'companyService'],
+      dependencies: ['userService'],
       isSingleton: true
     });
 
@@ -372,7 +365,7 @@ export class ServiceRegistry {
       name: 'ConsolidatedIntegrationService',
       category: 'integration',
       description: 'Manages all external integrations and data synchronization',
-      dependencies: ['userService', 'companyService'],
+      dependencies: ['userService'],
       isSingleton: true
     });
   }

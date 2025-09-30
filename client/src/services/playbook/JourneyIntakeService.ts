@@ -485,7 +485,7 @@ export class JourneyIntakeService extends BaseService {
       // Generate contextual response
       let response = '';
       let nextQuestions: string[] = [];
-      let confidenceScore = intentAnalysis.data.confidence;
+      const confidenceScore = intentAnalysis.data.confidence;
 
       if (session.conversation_history.length === 0) {
         // First message - welcome and gather initial information

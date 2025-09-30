@@ -124,7 +124,7 @@ export class CallbackRegistryImpl implements CallbackRegistry {
     if (!config) {
        
      
-    // eslint-disable-next-line no-console
+     
     // console.warn(`Callback ${id} not found for unregistration`);
       return;
     }
@@ -144,7 +144,7 @@ export class CallbackRegistryImpl implements CallbackRegistry {
 
      
      
-    // eslint-disable-next-line no-console
+     
     // console.log(`Unregistered callback: ${id}`);
   }
 

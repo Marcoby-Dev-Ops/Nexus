@@ -9,7 +9,7 @@ import { Card, CardContent } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Checkbox } from '@/shared/components/ui/Checkbox';
 import { CheckCircle, ArrowRight } from 'lucide-react';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface BusinessUnitsStepProps extends JourneyStepProps {
   onNext: (data: any) => void;

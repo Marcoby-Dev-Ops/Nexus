@@ -17,6 +17,12 @@ export const ActionableInsights: React.FC = () => {
   useEffect(() => {
     const socket = getSocket();
 
+    // Only set up socket listeners if socket is available
+    if (!socket) {
+      console.log('WebSocket not available for ActionableInsights');
+      return;
+    }
+
     const handleNewInsight = (deal: AtRiskDeal) => {
       console.log('Received at-risk-deal-detected event:', deal);
       setAtRiskDeal(deal);

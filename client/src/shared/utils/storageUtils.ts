@@ -105,7 +105,7 @@ function cleanupLocalStorage(keysToCheck: string[] = [
           if (value === '[object Object]' || value === 'undefined' || value === 'null') {
              
      
-    // eslint-disable-next-line no-console
+     
           // Warning logging removed for production
             localStorage.removeItem(key);
             cleanedCount++;
@@ -123,7 +123,7 @@ function cleanupLocalStorage(keysToCheck: string[] = [
       } catch {
          
      
-    // eslint-disable-next-line no-console
+     
           // Warning logging removed for production
         localStorage.removeItem(key);
         cleanedCount++;

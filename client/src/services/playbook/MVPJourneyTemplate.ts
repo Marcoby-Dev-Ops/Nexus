@@ -5,7 +5,7 @@
  * This converts the standalone MVPOnboardingFlow into a proper journey.
  */
 
-import { JourneyTemplate, JourneyItem } from './JourneyTypes';
+import type { JourneyTemplate, JourneyItem } from './JourneyTypes';
 
 /**
  * MVP Onboarding Journey Template

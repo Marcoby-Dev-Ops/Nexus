@@ -33,17 +33,8 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     );
   }
 
-  // Check authentication for protected routes
-  if (!user || !session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground">Redirecting to login...</p>
-        </div>
-      </div>
-    );
-  }
+  // Let ProtectedRoute components handle authentication checks
+  // Don't block rendering here - let the routes decide what to show
 
   return (
     <HeaderProvider>

@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
-import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -16,64 +15,55 @@ export function ProtectedRoute({
   redirectTo = '/login'
 }: ProtectedRouteProps) {
   const { loading, initialized, isAuthenticated, error } = useAuth();
-  const { redirectInProgress } = useRedirectManager();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // Add timeout fallback for stuck loading states
+
+  // Add timeout fallback for stuck loading states - increased timeout
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (loading && !initialized) {
         console.log('🔒 [ProtectedRoute] Auth loading timeout, redirecting to login');
-        navigate(redirectTo, { replace: true });
+        navigate(redirectTo, { 
+          state: { from: location },
+          replace: true 
+        });
       }
-    }, 15000); // 15 second timeout
+    }, 30000); // 30 second timeout - increased from 15s
 
     return () => clearTimeout(timeoutId);
-  }, [loading, initialized, navigate, redirectTo]);
-
-  // Redirect unauthenticated users to login
-  useEffect(() => {
-    // If auth failed to initialize or user is not authenticated, redirect to login
-    if ((initialized && !loading && !isAuthenticated && !redirectInProgress) || 
-        (initialized && error && !redirectInProgress)) {
-      console.log('🔒 [ProtectedRoute] Redirecting to login:', {
-        initialized,
-        loading,
-        isAuthenticated,
-        error: error?.message,
-        redirectInProgress,
-        redirectTo
-      });
-      navigate(redirectTo, { replace: true });
-    }
-  }, [initialized, loading, isAuthenticated, error, redirectInProgress, navigate, redirectTo]);
+  }, [loading, initialized, redirectTo, navigate, location]);
 
   // Show loading state while auth is initializing
-  if (!initialized || loading || redirectInProgress) {
-    console.log('🔒 [ProtectedRoute] Showing loading state:', {
-      initialized,
-      loading,
-      redirectInProgress
-    });
+  if (!initialized || loading) {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
-            {redirectInProgress ? 'Redirecting...' : 'Loading...'}
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-xs text-muted-foreground">
+            {!initialized ? 'Initializing authentication...' : 'Checking authentication...'}
           </p>
         </div>
       </div>
     );
   }
 
-  // If not authenticated, don't render children (redirect will happen)
-  if (!isAuthenticated) {
-    console.log('🔒 [ProtectedRoute] User not authenticated, showing redirect state');
-    return fallback || (
+  // If not authenticated or there's an error, redirect to login with current location
+  if (!isAuthenticated || error) {
+    // Navigate immediately
+    useEffect(() => {
+      navigate(redirectTo, { 
+        state: { from: location },
+        replace: true 
+      });
+    }, [navigate, redirectTo, location]);
+    
+    // Show loading state while redirecting
+    return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted-foreground">Redirecting to login...</p>
         </div>
       </div>
@@ -82,4 +72,4 @@ export function ProtectedRoute({
 
   // User is authenticated, render children
   return <>{children}</>;
-} 
+}

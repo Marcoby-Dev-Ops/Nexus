@@ -1,85 +1,183 @@
-# Nexus Documentation
+# Nexus Database Documentation
 
-Welcome to the Nexus documentation. This directory contains comprehensive documentation for the Nexus business operating system.
+This directory contains comprehensive documentation for the Nexus database schema, field mappings, and development guidelines.
 
-## 📚 Documentation Structure
+## 📚 Documentation Files
 
-### Current Documentation
-- **[Architecture](./current/architecture/)** - System architecture and design patterns
-- **[Development](./current/development/)** - Development guides and setup instructions
-- **[Deployment](./current/deployment/)** - Deployment and infrastructure guides
-- **[Features](./current/features/)** - Feature documentation and user guides
-- **[Guides](./current/guides/)** - Quick start guides and tutorials
+### Core Documentation
+- **[DATABASE_FIELD_DICTIONARY.md](./DATABASE_FIELD_DICTIONARY.md)** - Complete field reference with status tracking
+- **[FIELD_MAPPING_QUICK_REFERENCE.md](./FIELD_MAPPING_QUICK_REFERENCE.md)** - Quick lookup for common field mappings
+- **[README.md](./README.md)** - This file, explaining how to use the documentation
 
-### Legacy Documentation
-- **[Legacy Documentation](./legacy/)** - Completed migrations and cleanup documentation
+### TypeScript Interfaces
+- **[../src/core/types/database-field-mappings.ts](../src/core/types/database-field-mappings.ts)** - Type-safe field mappings and validation utilities
 
-### Archive
-- **[Archive](./archive/)** - Historical documentation and analysis
+## 🎯 How to Use This Documentation
 
-## 🚀 Quick Start
+### For New Developers
 
-1. **[Getting Started](./current/guides/GETTING_STARTED_DEV.md)** - Developer setup guide
-2. **[Project Overview](./current/PROJECT_OVERVIEW.md)** - High-level project overview
-3. **[Architecture](./current/architecture/UNIFIED_ARCHITECTURE.md)** - System architecture
-4. **[Development Guide](./current/development/DEVELOPMENT.md)** - Development practices
+1. **Start with the Quick Reference** - Read `FIELD_MAPPING_QUICK_REFERENCE.md` to understand common field mappings
+2. **Check the Full Dictionary** - Use `DATABASE_FIELD_DICTIONARY.md` for detailed field information
+3. **Use TypeScript Interfaces** - Import from `database-field-mappings.ts` for type safety
 
-## 📋 Documentation Status
+### For Database Changes
 
-### ✅ Current & Active
-- Architecture documentation
-- Development guides
-- Deployment instructions
-- Feature documentation
-- User guides
+1. **Check the Dictionary** - Verify field purposes and relationships
+2. **Update Documentation** - Modify the dictionary when adding new fields
+3. **Use TypeScript Interfaces** - Ensure type safety with the provided interfaces
+4. **Follow Mapping Rules** - Adhere to the established field mapping conventions
 
-### 🔄 Legacy (Completed)
-- Service migration documentation
-- Cleanup summaries
-- Migration guides
-- Refactoring documentation
+### For Frontend Development
 
-### 🗂️ Archive
-- Historical analysis
-- Old implementation guides
-- Previous architecture documents
+1. **Use Field Mappings** - Reference the quick reference for form field names
+2. **Import TypeScript Interfaces** - Use the provided interfaces for type safety
+3. **Follow Validation Rules** - Use the validation utilities for data consistency
+4. **Handle Null Values** - Check the dictionary for field default values
 
-## 🎯 Key Documentation
+## 🔧 Quick Start Examples
 
-### For Developers
-- **[Development Guide](./current/development/DEVELOPMENT.md)** - Development setup and practices
-- **[Architecture](./current/architecture/UNIFIED_ARCHITECTURE.md)** - System design and patterns
-- **[Forms Guide](./current/development/FORMS_GUIDE.md)** - Form development patterns
-- **[UI Components](./current/development/UI_COMPONENTS.md)** - Component documentation
+### Creating a User Profile
 
-### For Deployment
-- **[Deployment Guide](./current/deployment/)** - Infrastructure and deployment
-- **[PayPal Setup](./current/deployment/PAYPAL_LIVE_SETUP.md)** - Payment integration
-- **[Microsoft Integration](./current/features/MICROSOFT_365_INTEGRATION.md)** - Microsoft services
+```typescript
+import { UserProfileFields, validateUserIdConsistency, calculateFullName } from '@/core/types/database-field-mappings';
 
-### For Features
-- **[Fire Cycle System](./current/features/FIRE_CYCLE_SYSTEM.md)** - Core business cycle
-- **[User Management](./current/architecture/WORLD_CLASS_USER_MANAGEMENT.md)** - User system
-- **[Integration Patterns](./current/development/INTEGRATION_AUTHENTICATION_PATTERNS.md)** - Integration guides
+const createUserProfile = (userId: string, userData: any): UserProfileFields => {
+  const profile: UserProfileFields = {
+    id: userId,
+    user_id: userId, // Must match id
+    email: userData.email,
+    first_name: userData.firstName,
+    last_name: userData.lastName,
+    full_name: calculateFullName(userData.firstName, userData.lastName),
+    role: 'user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+
+  // Validate consistency
+  if (!validateUserIdConsistency(profile)) {
+    throw new Error('user_id must match id');
+  }
+
+  return profile;
+};
+```
+
+### Updating User Profile
+
+```typescript
+import { mapFormToDatabase } from '@/core/types/database-field-mappings';
+
+const updateUserProfile = (formData: any) => {
+  const updates = {
+    [mapFormToDatabase('firstName')]: formData.firstName,
+    [mapFormToDatabase('lastName')]: formData.lastName,
+    [mapFormToDatabase('businessEmail')]: formData.businessEmail,
+    [mapFormToDatabase('personalEmail')]: formData.personalEmail,
+    updated_at: new Date().toISOString()
+  };
+
+  return updates;
+};
+```
+
+### Validating Data
+
+```typescript
+import { isValidRole, isValidDepartment } from '@/core/types/database-field-mappings';
+
+const validateProfileData = (data: any) => {
+  const errors = [];
+
+  if (!isValidRole(data.role)) {
+    errors.push('Invalid role value');
+  }
+
+  if (data.department && !isValidDepartment(data.department)) {
+    errors.push('Invalid department value');
+  }
+
+  return errors;
+};
+```
+
+## 📊 Current Status
+
+### ✅ Completed
+- User profile field consistency fixed
+- Role and department properly set
+- Full name calculation implemented
+- TypeScript interfaces created
+- Documentation structure established
+
+### ❌ Pending
+- Business email and personal email implementation
+- Company profile completion
+- Organization setup flow completion
+- Data validation constraints
+
+### 🔄 Ongoing
+- Profile completion calculation updates
+- Migration script creation
+- Documentation maintenance
+
+## 🚀 Best Practices
+
+### 1. Always Check the Dictionary
+Before adding new fields or modifying existing ones, consult the dictionary to understand:
+- Field purpose and relationships
+- Where the field should be set
+- Default values and constraints
+- Current implementation status
+
+### 2. Use TypeScript Interfaces
+Import and use the provided TypeScript interfaces for:
+- Type safety
+- IntelliSense support
+- Compile-time error checking
+- Consistent field naming
+
+### 3. Follow Mapping Rules
+Adhere to the established mapping rules:
+- `user_id` must always match `id`
+- `full_name` should be calculated from `first_name + last_name`
+- Use proper enum values for roles and departments
+- Handle null values appropriately
+
+### 4. Update Documentation
+When making changes:
+- Update the dictionary with new fields
+- Modify the quick reference if needed
+- Update TypeScript interfaces
+- Document breaking changes
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **Field Not Found** - Check the dictionary for correct field names
+2. **Type Errors** - Use the TypeScript interfaces for type safety
+3. **Data Inconsistency** - Use validation utilities to check data
+4. **Missing Fields** - Check the status tracking in the dictionary
+
+### Getting Help
+
+1. **Check the Quick Reference** - For common field mappings
+2. **Consult the Dictionary** - For detailed field information
+3. **Use TypeScript Interfaces** - For type safety and IntelliSense
+4. **Review Examples** - For implementation patterns
 
 ## 📝 Contributing
 
-When adding new documentation:
+When contributing to the database schema:
 
-1. **Place in appropriate directory** - Use the current/ subdirectories
-2. **Update this README** - Add links to new documentation
-3. **Follow naming conventions** - Use descriptive, consistent names
-4. **Include examples** - Provide practical usage examples
-
-## 🔍 Finding Documentation
-
-- **Current features** → `docs/current/features/`
-- **Development guides** → `docs/current/development/`
-- **Architecture docs** → `docs/current/architecture/`
-- **Deployment guides** → `docs/current/deployment/`
-- **Legacy docs** → `docs/legacy/`
+1. **Update Documentation** - Modify the dictionary and quick reference
+2. **Add TypeScript Interfaces** - Create interfaces for new fields
+3. **Follow Conventions** - Use established naming and mapping patterns
+4. **Test Changes** - Verify data consistency and type safety
+5. **Document Changes** - Update this README with new information
 
 ---
 
 *Last updated: 2025-01-22*
-*Maintained by: Development Team* 
+*Maintained by: Development Team*

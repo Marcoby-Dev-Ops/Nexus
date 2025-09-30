@@ -27,9 +27,9 @@ export interface LoggingConfig {
  * Get logging configuration based on environment variables
  */
 export function getLoggingConfig(): LoggingConfig {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const debugEnabled = process.env.VITE_ENABLE_DEBUG_LOGS === 'true';
-  const authDebugEnabled = process.env.VITE_DEBUG_AUTH === 'true';
+  const isDevelopment = import.meta.env.MODE === 'development';
+  const debugEnabled = import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true';
+  const authDebugEnabled = import.meta.env.VITE_DEBUG_AUTH === 'true';
   
   return {
     // General logging controls

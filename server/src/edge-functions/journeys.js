@@ -128,10 +128,10 @@ async function startJourney(data, user) {
     throw createError('Missing required fields: user_id, organization_id, template_id', 400);
   }
 
-  // Check if user already has an active journey for this template
+  // Check if user already has an active journey for this playbook
   const existingResult = await query(`
-    SELECT * FROM user_journey_progress 
-    WHERE user_id = $1 AND template_id = $2 AND status != 'completed'
+    SELECT * FROM user_journeys 
+    WHERE user_id = $1 AND playbook_id = $2 AND status != 'completed'
   `, [user_id, template_id]);
 
   if (existingResult.error) {
@@ -139,18 +139,18 @@ async function startJourney(data, user) {
   }
 
   if (existingResult.data && existingResult.data.length > 0) {
-    throw createError('User already has an active journey for this template', 400);
+    throw createError('User already has an active journey for this playbook', 400);
   }
 
-  // Create new journey progress
+  // Create new journey
   const result = await query(`
-    INSERT INTO user_journey_progress (
-      user_id, organization_id, journey_id, template_id, 
-      current_step, total_steps, progress_percentage, status, 
+    INSERT INTO user_journeys (
+      id, user_id, playbook_id, status, 
+      current_step, total_steps, progress_percentage, 
       started_at, metadata, created_at, updated_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
     RETURNING *
-  `, [user_id, organization_id, journey_id, template_id, current_step || 0, total_steps || 0, progress_percentage || 0, status || 'in_progress', started_at || new Date().toISOString(), metadata ? JSON.stringify(metadata) : null]);
+  `, [journey_id, user_id, template_id, status || 'in_progress', current_step || 1, total_steps || 0, progress_percentage || 0, started_at || new Date().toISOString(), metadata ? JSON.stringify(metadata) : '{}']);
 
   if (result.error) {
     throw createError(`Database error: ${result.error}`, 500);

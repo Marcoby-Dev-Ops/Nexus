@@ -21,7 +21,7 @@ import {
   Lightbulb,
   Award
 } from 'lucide-react';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface MaturityAssessmentStepProps extends JourneyStepProps {
   onNext: (data: any) => void;

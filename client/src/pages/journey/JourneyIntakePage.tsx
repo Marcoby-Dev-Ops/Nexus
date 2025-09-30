@@ -7,8 +7,8 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Bot, Sparkles } from 'lucide-react';
-import { Button } from '@/shared/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { JourneyIntakeChat } from '@/components/journey/JourneyIntakeChat';
 
 export const JourneyIntakePage: React.FC = () => {

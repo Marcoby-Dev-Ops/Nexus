@@ -48,7 +48,7 @@ const SERVICE_CONFIG = {
  * following the service layer architecture standards.
  */
 export class UserLicensesService extends BaseService {
-  private readonly config = SERVICE_CONFIG;
+  protected config = SERVICE_CONFIG;
 
   /**
    * Get a user license by ID
@@ -57,7 +57,7 @@ export class UserLicensesService extends BaseService {
     try {
       this.logger.info('Getting user license', { id });
 
-      const { data, error } = await selectOne(this.config.tableName, id);
+      const { data, error } = await selectOne(this.config.tableName, { id });
 
       if (error) {
         return this.handleError(error, 'Failed to get user license');

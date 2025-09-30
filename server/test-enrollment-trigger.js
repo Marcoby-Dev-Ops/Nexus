@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('./loadEnv');
 
 async function testEnrollmentTrigger() {
   console.log('🔍 Testing Enrollment Flow Trigger...\n');

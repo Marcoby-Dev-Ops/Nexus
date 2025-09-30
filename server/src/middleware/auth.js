@@ -1,67 +1,27 @@
-const { config } = require('dotenv');
-const { Pool } = require('pg');
+require('../../loadEnv');
+
 const { createAuthError, createForbiddenError } = require('./errorHandler');
 const { logger } = require('../utils/logger');
-
-// Load environment variables
-config();
-
-// Initialize PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5433/vector_db',
-});
+const userProfileService = require('../services/UserProfileService');
 
 /**
- * Get or create user profile using Authentik user ID directly
+ * Get or create user profile using unified service
  */
-async function getOrCreateUserProfile(authentikUserId) {
+async function getOrCreateUserProfile(authentikUserId, userEmail = null, jwtPayload = null) {
   try {
-    // First, try to find existing user profile
-    const findResult = await pool.query(
-      'SELECT user_id FROM user_profiles WHERE user_id = $1',
-      [authentikUserId]
-    );
-
-    if (findResult.rows.length > 0) {
-      return authentikUserId;
-    }
-
-    // If no profile exists, create a new user profile
-    const client = await pool.connect();
+    const result = await userProfileService.ensureUserProfile(authentikUserId, userEmail, {}, jwtPayload);
     
-    try {
-      await client.query('BEGIN');
-
-      // Create new user profile using Authentik user ID directly
-      await client.query(
-        `INSERT INTO user_profiles (
-          user_id, 
-          email, 
-          created_at, 
-          updated_at
-        ) VALUES (
-          $1, 
-          $2, 
-          NOW(), 
-          NOW()
-        )`,
-        [
-          authentikUserId,
-          `${authentikUserId}@authentik.local` // Placeholder email
-        ]
-      );
-
-      await client.query('COMMIT');
-      
-      logger.info('Created new user profile', { authentikUserId });
-      return authentikUserId;
-
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
+    if (!result.success) {
+      throw new Error(result.error);
     }
+    
+    logger.info('User profile ready', { 
+      authentikUserId, 
+      profileExists: true,
+      wasCreated: result.created 
+    });
+    
+    return authentikUserId;
 
   } catch (error) {
     logger.error('Failed to get/create user profile', { authentikUserId, error: error.message });
@@ -196,8 +156,8 @@ const authenticateToken = async (req, res, next) => {
     // Get or create user profile
     let userId;
     try {
-      logger.info('Getting/creating user profile', { externalUserId });
-      userId = await getOrCreateUserProfile(externalUserId);
+      logger.info('Getting/creating user profile', { externalUserId, email: jwtPayload.email });
+      userId = await getOrCreateUserProfile(externalUserId, jwtPayload.email, jwtPayload);
       logger.info('User profile ready', { externalUserId, userId });
     } catch (profileError) {
       logger.error('User profile creation failed', { 
@@ -254,7 +214,7 @@ const optionalAuth = async (req, res, next) => {
     if (token) {
       try {
         const validation = validateJWTToken(token);
-        const userId = await getOrCreateUserProfile(validation.externalUserId);
+        const userId = await getOrCreateUserProfile(validation.externalUserId, validation.payload?.email, validation.payload);
         
         req.user = {
           id: userId, // This is now the Authentik user ID

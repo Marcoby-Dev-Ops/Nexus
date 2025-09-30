@@ -50,6 +50,7 @@ PAGINATION_TYPE: [REPLACE_WITH_PAGINATION_TYPE] (e.g., cursor, offset, page)
 
 ```typescript
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { supabase } from '@/lib/supabase';
 import { logger } from '@/shared/utils/logger';
 import { retryFetch } from '@/shared/utils/retry';
 {{#if (eq AUTH_TYPE "oauth2")}}
@@ -93,7 +94,7 @@ export class {{INTEGRATION_NAME}}Service extends BaseService {
   async getValidTokens(userId: string): Promise<ServiceResponse<{{INTEGRATION_NAME}}Tokens>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: userIntegration, error: integrationError } = await this.database
+        const { data: userIntegration, error: integrationError } = await this.supabase
           .from('user_integrations')
           .select('config, status')
           .eq('user_id', userId)
@@ -171,7 +172,7 @@ export class {{INTEGRATION_NAME}}Service extends BaseService {
         this.oauthEndpoints.token
       );
       
-              const { error: updateError } = await this.database
+      const { error: updateError } = await this.supabase
         .from('user_integrations')
         .update({
           config: {
@@ -208,7 +209,7 @@ export class {{INTEGRATION_NAME}}Service extends BaseService {
   async hasValidConnection(userId: string): Promise<ServiceResponse<boolean>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: userIntegration, error } = await this.database
+        const { data: userIntegration, error } = await this.supabase
           .from('user_integrations')
           .select('status, config')
           .eq('user_id', userId)
@@ -255,7 +256,7 @@ export class {{INTEGRATION_NAME}}Service extends BaseService {
   }>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: userIntegration, error } = await this.database
+        const { data: userIntegration, error } = await this.supabase
           .from('user_integrations')
           .select('status, config, last_sync')
           .eq('user_id', userId)
@@ -449,7 +450,7 @@ export class {{INTEGRATION_NAME}}Service extends BaseService {
         updated_at: new Date().toISOString(),
       }));
 
-      const { error } = await this.database
+      const { error } = await this.supabase
         .from('integration_data')
         .upsert(dataToStore, { onConflict: 'user_id,integration_name,data_type,external_id' });
 
@@ -470,7 +471,7 @@ export class {{INTEGRATION_NAME}}Service extends BaseService {
    */
   private async updateIntegrationStatus(userId: string, status: any): Promise<void> {
     try {
-      const { error } = await this.database
+      const { error } = await this.supabase
         .from('user_integrations')
         .update({
           status: status.status,
@@ -494,7 +495,7 @@ export class {{INTEGRATION_NAME}}Service extends BaseService {
   async get{{INTEGRATION_NAME}}Data(userId: string): Promise<ServiceResponse<{{INTEGRATION_NAME}}IntegrationData>> {
     return this.executeDbOperation(async () => {
       try {
-        const { data: integrationData, error } = await this.database
+        const { data: integrationData, error } = await this.supabase
           .from('integration_data')
           .select('*')
           .eq('user_id', userId)

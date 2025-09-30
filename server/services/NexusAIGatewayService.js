@@ -1,6 +1,6 @@
 const { logger } = require('../src/utils/logger');
 const { performance } = require('perf_hooks');
-require('dotenv').config();
+require('../loadEnv');
 
 // System user ID for onboarding and system-level operations
 const SYSTEM_USER_ID = '00000000-0000-0000-0000-000000000001';

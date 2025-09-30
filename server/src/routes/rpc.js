@@ -3,8 +3,11 @@ const { authenticateToken } = require('../middleware/auth');
 const { createError } = require('../middleware/errorHandler');
 const { query } = require('../database/connection');
 const { logger } = require('../utils/logger');
+const userProfileService = require('../services/UserProfileService');
+const CompanyService = require('../services/CompanyService');
 
 const router = express.Router();
+const companyService = new CompanyService();
 
 /**
  * POST /api/rpc/:function - Execute RPC function
@@ -25,7 +28,14 @@ router.post('/:function', authenticateToken, async (req, res) => {
       'get_business_metrics',
       'get_next_best_actions',
       'get_user_integrations',
-      'get_required_onboarding_steps'
+      'get_required_onboarding_steps',
+      'get_business_identity',
+      'update_business_identity',
+      'ensure_business_identity',
+      'get_company_health',
+      'monitor_company_health',
+      'get_company_ai_context',
+      'get_company_next_action'
     ];
 
     if (!allowedFunctions.includes(functionName)) {
@@ -75,7 +85,12 @@ router.post('/:function', authenticateToken, async (req, res) => {
           throw createError('Unauthorized: Can only ensure profile for authenticated user', 403);
         }
         
-        result = await ensureUserProfile(externalUserId);
+        result = await userProfileService.ensureUserProfile(
+          externalUserId,
+          req.user.jwtPayload?.email,
+          {},
+          req.user.jwtPayload
+        );
         break;
       
       case 'get_company_data':
@@ -96,6 +111,39 @@ router.post('/:function', authenticateToken, async (req, res) => {
       
       case 'get_required_onboarding_steps':
         result = await getRequiredOnboardingSteps();
+        break;
+      
+      case 'get_business_identity':
+        const businessIdentityResult = await companyService.getBusinessIdentity(params.companyId, req.user.jwtPayload);
+        result = businessIdentityResult.success ? businessIdentityResult.data : null;
+        break;
+      
+      case 'update_business_identity':
+        const updateIdentityResult = await companyService.updateBusinessIdentity(params.companyId, params.updates, req.user.jwtPayload);
+        result = updateIdentityResult.success ? updateIdentityResult.data : null;
+        break;
+      
+      case 'ensure_business_identity':
+        const ensureIdentityResult = await companyService.ensureBusinessIdentity(params.companyId, params.identityData, req.user.jwtPayload);
+        result = ensureIdentityResult.success ? ensureIdentityResult.data : null;
+        break;
+      
+      case 'get_company_health':
+        const companyHealthResult = await companyService.getCompanyHealth(params.companyId, req.user.jwtPayload);
+        result = companyHealthResult.success ? companyHealthResult.data : null;
+        break;
+      
+      case 'monitor_company_health':
+        const monitorHealthResult = await companyService.monitorCompanyHealth(params.companyId, req.user.jwtPayload);
+        result = monitorHealthResult.success ? monitorHealthResult.data : null;
+        break;
+      
+      case 'get_company_ai_context':
+        result = await companyService.getAIContext(params.companyId, req.user.jwtPayload);
+        break;
+      
+      case 'get_company_next_action':
+        result = await companyService.getNextAction(params.companyId, req.user.jwtPayload);
         break;
       
       default:
@@ -251,49 +299,6 @@ async function getUserProfile(userId) {
   return result.data?.[0] || null;
 }
 
-/**
- * Ensure user profile exists (creates if not exists)
- */
-async function ensureUserProfile(userId) {
-  const sql = `SELECT * FROM ensure_user_profile($1)`;
-
-  const result = await query(sql, [userId]);
-
-  if (result.error) {
-    throw createError(`ensure_user_profile failed: ${result.error}`, 500);
-  }
-
-  // If we got a profile but it's missing display_name or first_name, update it
-  if (result.data && result.data.length > 0) {
-    const profile = result.data[0];
-    
-    // If display_name or first_name is missing, try to populate it from the email
-    if ((!profile.display_name || !profile.first_name) && profile.email) {
-      const emailPrefix = profile.email.split('@')[0];
-      const displayName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
-      
-      // Update the profile with the display name
-      const updateSql = `
-        UPDATE user_profiles 
-        SET 
-          display_name = COALESCE(display_name, $1),
-          first_name = COALESCE(first_name, $1),
-          updated_at = NOW()
-        WHERE user_id = $2
-        RETURNING *
-      `;
-      
-      const updateResult = await query(updateSql, [displayName, userId]);
-      
-      if (!updateResult.error && updateResult.data && updateResult.data.length > 0) {
-        // Return the updated profile
-        return updateResult.data;
-      }
-    }
-  }
-
-  return result.data || [];
-}
 
 /**
  * Get company data

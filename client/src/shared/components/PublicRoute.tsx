@@ -1,8 +1,6 @@
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/index';
-import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 
 interface PublicRouteProps {
   children: ReactNode;
@@ -16,39 +14,33 @@ export function PublicRoute({
   redirectTo = '/dashboard'
 }: PublicRouteProps) {
   const { loading, initialized, isAuthenticated } = useAuth();
-  const { redirectInProgress } = useRedirectManager();
-  const navigate = useNavigate();
-
-  // Redirect authenticated users to dashboard
-  useEffect(() => {
-    if (initialized && !loading && isAuthenticated && !redirectInProgress) {
-      navigate(redirectTo, { replace: true });
-    }
-  }, [initialized, loading, isAuthenticated, redirectInProgress, navigate, redirectTo]);
+  const location = useLocation();
 
   // Show loading state while auth is initializing
-  if (!initialized || loading || redirectInProgress) {
+  if (!initialized || loading) {
     return fallback || (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">
-            {redirectInProgress ? 'Redirecting...' : 'Loading...'}
-          </p>
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  // If authenticated, don't render children (redirect will happen)
+  // If authenticated, redirect to dashboard (or intended destination)
   if (isAuthenticated) {
-    return fallback || (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Redirecting to dashboard...</p>
-        </div>
-      </div>
+    console.log('🔓 [PublicRoute] Redirecting authenticated user to dashboard');
+    
+    // Check if there's a redirect destination from login flow
+    const from = location.state?.from?.pathname;
+    const redirectDestination = from && from !== '/login' ? from : redirectTo;
+    
+    return (
+      <Navigate 
+        to={redirectDestination} 
+        replace 
+      />
     );
   }
 

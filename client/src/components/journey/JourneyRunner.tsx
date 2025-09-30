@@ -43,7 +43,7 @@ import MaturityAssessmentStep from './steps/MaturityAssessmentStep';
 import MVPSummaryStep from './steps/MVPSummaryStep';
 
 // Import journey step props type
-import { JourneyStepProps } from './types';
+import type { JourneyStepProps } from './types';
 
 interface JourneyRunnerProps {
   onComplete?: (journeyData: any) => void;

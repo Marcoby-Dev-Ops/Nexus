@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
 import { userPreferencesService, type UserPreferences } from '@/services/user/UserPreferencesService';
+import { type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 
 interface UserPreferencesContextType {

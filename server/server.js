@@ -2,7 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
-const { config } = require('dotenv');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
+require('./loadEnv');
 
 // Import middleware
 const { errorHandler, notFound } = require('./src/middleware/errorHandler');
@@ -31,6 +33,7 @@ const userPreferencesRoutes = require('./src/routes/user-preferences');
 const varLeadsRoutes = require('./src/routes/var-leads');
 const integrationRoutes = require('./src/routes/integrations');
 const authRoutes = require('./src/routes/auth');
+const companyRoutes = require('./src/routes/companies');
 const oauthRoutes = require('./routes/oauth');
 
 // Import AI Gateway routes
@@ -55,11 +58,100 @@ const ckbRoutes = require('./routes/ckb');
 // Import journey intake routes
 const journeyIntakeRoutes = require('./src/routes/journey-intake');
 
-// Load environment variables from root directory
-config({ path: '.env' });
+// Import Socket.IO service
+const socketService = require('./src/services/SocketService');
+
+// Import Socket.IO test routes
+const socketTestRoutes = require('./src/routes/socket-test');
 
 const app = express();
+const server = createServer(app);
 const PORT = process.env.API_PORT || 3001;
+
+// Socket.IO setup
+const io = new Server(server, {
+  cors: {
+    origin: process.env.NODE_ENV === 'production' 
+      ? [process.env.FRONTEND_URL || 'https://nexus.marcoby.net']
+      : ['http://localhost:5173', 'http://localhost:3000'],
+    methods: ['GET', 'POST'],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
+});
+
+// Socket.IO authentication middleware
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
+  
+  if (!token) {
+    return next(new Error('Authentication error: No token provided'));
+  }
+
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.sub || decoded.id;
+    socket.user = decoded;
+    next();
+  } catch (err) {
+    next(new Error('Authentication error: Invalid token'));
+  }
+});
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  logger.info('Socket.IO client connected', { 
+    socketId: socket.id, 
+    userId: socket.userId 
+  });
+
+  // Join user to their personal room
+  socket.join(`user:${socket.userId}`);
+
+  // Handle actionable insights subscription
+  socket.on('subscribe-insights', (data) => {
+    logger.info('Client subscribed to insights', { 
+      socketId: socket.id, 
+      userId: socket.userId,
+      data 
+    });
+    socket.join('insights');
+  });
+
+  // Handle actionable insights unsubscription
+  socket.on('unsubscribe-insights', () => {
+    logger.info('Client unsubscribed from insights', { 
+      socketId: socket.id, 
+      userId: socket.userId 
+    });
+    socket.leave('insights');
+  });
+
+  // Handle disconnection
+  socket.on('disconnect', (reason) => {
+    logger.info('Socket.IO client disconnected', { 
+      socketId: socket.id, 
+      userId: socket.userId,
+      reason 
+    });
+  });
+
+  // Handle errors
+  socket.on('error', (error) => {
+    logger.error('Socket.IO error', { 
+      socketId: socket.id, 
+      userId: socket.userId,
+      error: error.message 
+    });
+  });
+});
+
+// Make io available to other modules
+app.set('io', io);
+
+// Initialize Socket.IO service
+socketService.initialize(io);
 
 // Security middleware
 app.use(helmet({
@@ -163,6 +255,7 @@ app.use('/api/db', dbLimiter, dbRoutes);
 
 // Authentication routes - apply strict auth rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/companies', authLimiter, companyRoutes);
 app.use('/api/oauth', authLimiter, oauthRoutes);
 
 // AI/ML routes - apply AI rate limiting (cost-sensitive)
@@ -187,6 +280,13 @@ app.use('/api/ticket-management', ticketManagementRoutes);
 // Analytics and CKB routes
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ckb', ckbRoutes);
+
+// Socket.IO test routes (development only)
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/socket-test', socketTestRoutes);
+  logger.info('Socket.IO test routes mounted at /api/socket-test');
+}
+
 logger.info('AI Gateway routes mounted at /api/ai');
 logger.info('CKB routes mounted at /api/ckb');
 
@@ -246,11 +346,12 @@ if (process.env.NODE_ENV !== 'test') {
         logger.info(`Migrations completed: ${migrationResult.applied}/${migrationResult.total} applied`);
       }
 
-      const server = app.listen(PORT, '0.0.0.0', () => {
-        logger.info('🚀 API server started', {
+      server.listen(PORT, '0.0.0.0', () => {
+        logger.info('🚀 API server started with Socket.IO', {
           port: PORT,
           environment: process.env.NODE_ENV || 'development',
-          healthCheck: `http://localhost:${PORT}/health`
+          healthCheck: `http://localhost:${PORT}/health`,
+          socketIO: `ws://localhost:${PORT}/socket.io/`
         });
       });
 
@@ -269,11 +370,12 @@ if (process.env.NODE_ENV !== 'test') {
       logger.warn('Migration runner failed, but continuing with server startup', { error: error.message });
       
       // Start server even if migrations fail
-      const server = app.listen(PORT, '0.0.0.0', () => {
-        logger.info('🚀 API server started (migrations skipped)', {
+      server.listen(PORT, '0.0.0.0', () => {
+        logger.info('🚀 API server started with Socket.IO (migrations skipped)', {
           port: PORT,
           environment: process.env.NODE_ENV || 'development',
-          healthCheck: `http://localhost:${PORT}/health`
+          healthCheck: `http://localhost:${PORT}/health`,
+          socketIO: `ws://localhost:${PORT}/socket.io/`
         });
       });
 

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
-import { OrganizationSelector } from '@/shared/components/organization/OrganizationSelector';
+import { CompanySelector } from '@/shared/components/organization/CompanySelector';
 import { User, Settings, LogOut, Menu, Sparkles, Building2, Shield, Brain, Bell, Palette } from 'lucide-react';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 
@@ -189,8 +189,8 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
         </div>
         
         <div className="flex items-center space-x-4">
-          {/* Organization Selector */}
-          <OrganizationSelector />
+          {/* Company Selector */}
+          <CompanySelector />
           
                                 {user ? (
              <div className="relative" ref={dropdownRef}>

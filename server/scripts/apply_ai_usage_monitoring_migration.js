@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
-require('dotenv').config();
+require('../loadEnv');
 
 async function applyMigration() {
   console.log('🚀 Applying AI Usage Monitoring Migration...');

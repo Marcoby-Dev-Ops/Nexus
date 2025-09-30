@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/index';
 import { postgres } from '@/lib/postgres';
-import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 
 interface UseAuthenticatedApiOptions {
   /** Delay in milliseconds to wait after auth is ready before allowing API calls */
@@ -38,7 +37,7 @@ export function useAuthenticatedApi(options: UseAuthenticatedApiOptions = {}): U
     retryDelay = 200
   } = options;
 
-  const { user, loading: authLoading, initialized: authInitialized } = useAuth();
+  const { user, loading: authLoading, initialized: authInitialized, session } = useAuth();
   const [isReady, setIsReady] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -51,9 +50,6 @@ export function useAuthenticatedApi(options: UseAuthenticatedApiOptions = {}): U
       setIsChecking(true);
       setError(null);
 
-      const result = await authentikAuthService.getSession();
-      const session = result.data;
-      
       if (!session) {
         setError('Authentication required - no valid session found');
         setIsReady(false);

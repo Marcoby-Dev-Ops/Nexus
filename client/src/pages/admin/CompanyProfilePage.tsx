@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useCompany } from '@/shared/contexts/CompanyContext';
 import { useUserProfile } from '@/shared/contexts/UserContext';
-import { companyService } from '@/services/core/CompanyService';
+import { companyApi } from '@/services/api/CompanyApi';
 import { userService } from '@/services/core/UserService';
 import { logger } from '@/shared/utils/logger';
 
@@ -215,7 +215,7 @@ export function CompanyProfilePage() {
       let existingCompany = company;
       if (!existingCompany && profile?.id) {
         console.log('CompanyProfilePage - Checking for existing company owned by user');
-        const ownedCompanyResult = await companyService.getCompanyByOwner(profile.id);
+        const ownedCompanyResult = await companyApi.getCompanyByOwner(profile.id);
         if (ownedCompanyResult.success && ownedCompanyResult.data) {
           existingCompany = ownedCompanyResult.data;
           console.log('CompanyProfilePage - Found existing owned company', { 
@@ -245,7 +245,7 @@ export function CompanyProfilePage() {
 
       if (isCreating) {
         console.log('CompanyProfilePage - Creating new company');
-        const createResult = await companyService.create({
+        const createResult = await companyApi.create({
           ...companyData,
           owner_id: profile?.id // Set the current user as owner
         });

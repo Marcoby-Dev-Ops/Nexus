@@ -10,6 +10,120 @@ const AUTHENTIK_API_TOKEN = process.env.AUTHENTIK_API_TOKEN;
 
 const router = Router();
 
+// POST /api/auth/create-user - Create new user in Authentik
+router.post('/create-user', async (req, res) => {
+  try {
+    const {
+      businessName,
+      businessType,
+      industry,
+      companySize,
+      firstName,
+      lastName,
+      email,
+      phone,
+      fundingStage,
+      revenueRange,
+      username
+    } = req.body;
+
+    // Validate required fields
+    if (!email || !firstName || !lastName || !businessName || !username) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: email, firstName, lastName, businessName, username'
+      });
+    }
+
+    // Check if user already exists
+    const existingUserResponse = await fetch(`${AUTHENTIK_BASE_URL}/api/v3/core/users/?search=${encodeURIComponent(email)}`, {
+      headers: {
+        'Authorization': `Bearer ${AUTHENTIK_API_TOKEN}`,
+      },
+    });
+
+    if (existingUserResponse.ok) {
+      const existingUserData = await existingUserResponse.json();
+      const existingUser = existingUserData.results.find(user => user.email === email);
+      
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          error: 'User already exists. Please use the update endpoint instead.'
+        });
+      }
+    }
+
+    // Create new user in Authentik
+    const newUserData = {
+      username: username,
+      email: email,
+      name: `${firstName} ${lastName}`,
+      is_active: true,
+      attributes: {
+        business_name: businessName,
+        business_type: businessType || '',
+        industry: industry || '',
+        company_size: companySize || '',
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone || '',
+        funding_stage: fundingStage || '',
+        revenue_range: revenueRange || '',
+        signup_completed: true,
+        signup_completion_date: new Date().toISOString(),
+        business_profile_completed: true,
+        created_via_signup: true
+      }
+    };
+
+    const createResponse = await fetch(`${AUTHENTIK_BASE_URL}/api/v3/core/users/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${AUTHENTIK_API_TOKEN}`,
+      },
+      body: JSON.stringify(newUserData),
+    });
+
+    if (!createResponse.ok) {
+      const errorData = await createResponse.json();
+      logger.error('Authentik user creation failed:', errorData);
+      return res.status(400).json({
+        success: false,
+        error: `Failed to create user: ${errorData.detail || createResponse.statusText}`
+      });
+    }
+
+    const createdUser = await createResponse.json();
+    
+    // Add user to Nexus Users group
+    await addUserToGroup(createdUser.pk, 'Nexus Users');
+    
+    // Log user creation
+    logger.info('User created successfully:', {
+      userId: createdUser.pk,
+      username: username,
+      email,
+      businessName,
+      note: 'User created via signup flow'
+    });
+
+    res.json({
+      success: true,
+      userId: createdUser.pk.toString(),
+      message: 'User created successfully! Please check your email to set your password and complete verification.'
+    });
+
+  } catch (error) {
+    logger.error('Error creating user in Authentik:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error'
+    });
+  }
+});
+
 // POST /api/auth/update-business-info - Update existing user with business information after enrollment
 router.post('/update-business-info', async (req, res) => {
   try {

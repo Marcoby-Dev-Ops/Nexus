@@ -34,8 +34,47 @@ export interface UpdateUserResult {
   error?: string;
 }
 
+import { buildApiUrl } from '@/lib/api-url';
+
 export class AuthentikSignupService {
-  private static readonly API_BASE_URL = process.env.VITE_NEXUS_API_URL || 'http://localhost:3001';
+  /**
+   * Create new user in Authentik
+   */
+  static async createUser(signupData: BusinessSignupData): Promise<SignupResult> {
+    try {
+      // Create new user via backend endpoint
+      const response = await fetch(buildApiUrl('/api/auth/create-user'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signupData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('User creation failed:', errorData);
+        return {
+          success: false,
+          error: errorData.error || `Failed to create user: ${response.statusText}`
+        };
+      }
+
+      const result = await response.json();
+      
+      return {
+        success: true,
+        userId: result.userId
+      };
+
+    } catch (error) {
+      console.error('Error creating user:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      };
+    }
+  }
 
   /**
    * Update existing user with business information after enrollment
@@ -43,7 +82,7 @@ export class AuthentikSignupService {
   static async updateBusinessInfo(signupData: BusinessSignupData): Promise<SignupResult> {
     try {
       // Update user business information via backend endpoint
-      const response = await fetch(`${this.API_BASE_URL}/api/auth/update-business-info`, {
+      const response = await fetch(buildApiUrl('/api/auth/update-business-info'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +120,7 @@ export class AuthentikSignupService {
    */
   static async checkUserExists(email: string): Promise<boolean> {
     try {
-      const response = await fetch(`${this.API_BASE_URL}/api/auth/check-user/${encodeURIComponent(email)}`, {
+      const response = await fetch(buildApiUrl(`/api/auth/check-user/${encodeURIComponent(email)}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +146,7 @@ export class AuthentikSignupService {
    */
   static async getUserByEmail(email: string): Promise<any | null> {
     try {
-      const response = await fetch(`${this.API_BASE_URL}/api/auth/check-user/${encodeURIComponent(email)}`, {
+      const response = await fetch(buildApiUrl(`/api/auth/check-user/${encodeURIComponent(email)}`), {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -133,7 +172,7 @@ export class AuthentikSignupService {
   static async updateUserFromSignup(signupData: BusinessSignupData): Promise<UpdateUserResult> {
     try {
       // Update user via backend endpoint
-      const response = await fetch(`${this.API_BASE_URL}/api/auth/update-user`, {
+      const response = await fetch(buildApiUrl('/api/auth/update-user'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

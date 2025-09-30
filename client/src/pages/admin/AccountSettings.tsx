@@ -25,7 +25,7 @@ import { userProfileSchema, type UserProfileFormData } from '@/shared/validation
 import type { z } from 'zod';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { logger } from '@/shared/utils/logger';
-import { companyService } from '@/services/core/CompanyService';
+import { companyApi } from '@/services/api/CompanyApi';
 import { useCompany } from '@/shared/contexts/CompanyContext';
 import { useUserPreferences } from '@/shared/contexts/UserPreferencesContext';
 import { userPreferencesSchema, type UserPreferencesFormData } from '@/shared/validation/schemas';
@@ -113,13 +113,14 @@ const AccountSettings: React.FC = () => {
       if (companyNameInput) {
         try {
           // Find existing company or create new one
-          const existing = await companyService.list({ name: companyNameInput });
+          // TODO: Implement list companies API endpoint
+          // const existing = await companyApi.list({ name: companyNameInput });
           if (existing.success && existing.data && existing.data.length > 0) {
             companyId = existing.data[0].id;
             logger.info('Found existing company', { companyId, companyName: companyNameInput });
           } else {
             // Create new company
-            const created = await companyService.create({ 
+            const created = await companyApi.create({ 
               name: companyNameInput, 
               owner_id: user?.id 
             });

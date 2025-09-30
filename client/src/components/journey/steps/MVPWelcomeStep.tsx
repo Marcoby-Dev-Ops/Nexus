@@ -17,7 +17,7 @@ import {
   Play, 
   Rocket 
 } from 'lucide-react';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface MVPWelcomeStepProps extends JourneyStepProps {
   onNext: () => void;

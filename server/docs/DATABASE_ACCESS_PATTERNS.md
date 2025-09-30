@@ -99,7 +99,7 @@ export class AnalyticsService extends BaseService {
 
 ## 🚫 **What NOT to Do**
 
-### **❌ NEVER use direct database calls in components**
+### **❌ NEVER use direct Supabase in components**
 ```typescript
 // ❌ WRONG - Direct Supabase in component
 function UserList() {

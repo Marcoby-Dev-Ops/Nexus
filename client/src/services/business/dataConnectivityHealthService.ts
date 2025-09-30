@@ -62,7 +62,7 @@ export class DataConnectivityHealthService extends BaseService {
 
       // Get user's connected integrations via API - using correct column names
       const { data: userIntegrations, error: userIntegrationsError } = await selectData('user_integrations', 
-        'id, integration_slug, status, last_sync_at, settings, integration_id',
+        'id, integration_name, status, last_sync_at, settings, integration_id',
         { user_id: userId }
       );
 
@@ -82,12 +82,16 @@ export class DataConnectivityHealthService extends BaseService {
         return { data: null, error: availableIntegrationsError };
       }
 
+      // Ensure userIntegrations is an array
+      const userIntegrationsArray = Array.isArray(userIntegrations) ? userIntegrations : [];
+      const availableIntegrationsArray = Array.isArray(availableIntegrations) ? availableIntegrations : [];
+
              // Process connected sources
-       const connectedSources: ConnectedSource[] = (userIntegrations || [])
+       const connectedSources: ConnectedSource[] = userIntegrationsArray
          .filter(integration => integration.status === 'active')
          .map(integration => ({
            id: integration.id,
-           name: integration.integration_slug,
+           name: integration.integration_name,
            type: 'unknown', // We'll get this from the integrations table
            status: this.mapIntegrationStatus(integration.status),
            lastSync: integration.last_sync_at || new Date().toISOString(),
@@ -97,12 +101,12 @@ export class DataConnectivityHealthService extends BaseService {
 
              // Process unconnected sources (available but not connected)
        const connectedIntegrationIds = new Set(
-         (userIntegrations || [])
+         userIntegrationsArray
            .filter(integration => integration.status === 'active')
            .map(integration => integration.integration_id)
        );
 
-       const unconnectedSources: UnconnectedSource[] = (availableIntegrations || [])
+       const unconnectedSources: UnconnectedSource[] = availableIntegrationsArray
          .filter(integration => !connectedIntegrationIds.has(integration.id))
          .map(integration => ({
            id: integration.id,

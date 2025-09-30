@@ -23,7 +23,7 @@ import {
   Clock,
   ArrowLeft
 } from 'lucide-react';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface IntegrationsStepProps extends JourneyStepProps {
   onNext: (data: any) => void;

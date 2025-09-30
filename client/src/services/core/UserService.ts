@@ -181,6 +181,7 @@ const userServiceConfig = {
 export class UserService extends BaseService implements CrudServiceInterface<UserProfile> {
   private profileCache = new Map<string, { data: any; timestamp: number }>();
   private readonly CACHE_TTL = 30000; // 30 seconds cache TTL
+  protected config = userServiceConfig;
   
   constructor() {
     super();
@@ -206,6 +207,14 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       throw new Error(`Failed to ensure user profile: ${rpcResult.error}`);
     }
     
+    // Debug logging to see the actual response structure
+    console.log('getCachedOrFetchProfile debug:', { 
+      userId, 
+      rpcResultData: rpcResult.data, 
+      isArray: Array.isArray(rpcResult.data),
+      type: typeof rpcResult.data 
+    });
+    
     // Handle different response formats from RPC
     let profileData: any;
     if (rpcResult.data && Array.isArray(rpcResult.data)) {
@@ -214,7 +223,12 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       }
       profileData = rpcResult.data[0];
     } else if (rpcResult.data && typeof rpcResult.data === 'object') {
-      profileData = rpcResult.data;
+      // Handle nested response structure: { success: true, profile: {...} }
+      if ('profile' in rpcResult.data) {
+        profileData = rpcResult.data.profile;
+      } else {
+        profileData = rpcResult.data;
+      }
     } else {
       throw new Error('Invalid user profile data returned from ensure_user_profile');
     }
@@ -388,7 +402,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return this.executeDbOperation(async () => {
       this.logMethodCall('get', { id });
       
-      const result = await selectOne<UserProfile>(this.config.tableName, id);
+      const result = await selectOne<UserProfile>(this.config.tableName, { id });
       const serviceResponse = this.convertApiResponse<UserProfile>(result);
       
       if (!serviceResponse.success) {
@@ -519,6 +533,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
         // Fall back to RPC method if no profile in DB
         this.logger.info('No profile in database, using RPC fallback path');
         const rawData = await this.getCachedOrFetchProfile(userId);
+        
         const normalizedData = this.normalizeProfileData(rawData);
         const profileData = {
           ...normalizedData,

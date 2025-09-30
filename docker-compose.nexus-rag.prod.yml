@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with pgvector extension for Nexus RAG database
+  nexus-rag-db:
+    image: pgvector/pgvector:pg17
+    container_name: nexus-rag-postgres
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_DB: ${DB_NAME:-nexus_rag}
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - nexus_rag_data:/var/lib/postgresql/data
+      # Mount init scripts for database setup
+      - ./server/migrations:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-user} -d ${DB_NAME:-nexus_rag}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - nexus-rag-network
+    # Security: Run as non-root user
+    user: "999:999"
+
+  # Redis for caching and session storage
+  nexus-rag-redis:
+    image: redis:7-alpine
+    container_name: nexus-rag-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - nexus_rag_redis_data:/data
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb} 
+      --maxmemory-policy allkeys-lru
+      --requirepass ${REDIS_PASSWORD}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexus-rag-network
+
+  # Database backup service
+  nexus-rag-backup:
+    image: postgres:17-alpine
+    container_name: nexus-rag-backup
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    volumes:
+      - nexus_rag_backup_data:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    command: >
+      sh -c "
+        echo 'Backup service started' &&
+        while true; do
+          sleep 86400 &&
+          pg_dump -h nexus-rag-db -U ${DB_USER:-user} -d ${DB_NAME:-nexus_rag} > /backups/nexus_rag_$$(date +%Y%m%d_%H%M%S).sql
+        done
+      "
+    depends_on:
+      nexus-rag-db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - nexus-rag-network
+    profiles:
+      - backup
+
+volumes:
+  nexus_rag_data:
+    driver: local
+  nexus_rag_redis_data:
+    driver: local
+  nexus_rag_backup_data:
+    driver: local
+
+networks:
+  nexus-rag-network:
+    driver: bridge
+    name: nexus-rag-network

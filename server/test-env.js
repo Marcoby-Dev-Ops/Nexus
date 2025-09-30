@@ -4,11 +4,7 @@
  * Test Environment Variables Loading
  */
 
-const { config } = require('dotenv');
-const path = require('path');
-
-// Load environment variables from root directory
-config({ path: path.join(__dirname, '..', '.env') });
+require('./loadEnv');
 
 console.log('🔍 Testing Server Environment Variables...\n');
 
@@ -31,9 +27,9 @@ if (clientId && clientSecret) {
 } else {
   console.log('\n❌ Environment variables are not loaded!');
   console.log('\n🔧 Troubleshooting:');
-  console.log('1. Check that the .env file exists in the root directory');
+  console.log('1. Check that the .env file exists in the server directory');
   console.log('2. Verify the .env file contains the correct values');
-  console.log('3. Make sure the server is loading the .env file');
+  console.log('3. Make sure the server is loading the server/.env file');
 }
 
 console.log('\n📋 Expected Values:');

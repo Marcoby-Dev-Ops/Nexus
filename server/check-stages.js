@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('./loadEnv');
 
 async function checkStages() {
   console.log('🔍 Checking Authentik Configuration...\n');

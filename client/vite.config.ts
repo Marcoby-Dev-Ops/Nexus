@@ -10,8 +10,8 @@ const __dirname = dirname(__filename)
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
-  // Load env file based on `mode` in the parent directory (root of project).
-  const env = loadEnv(mode, '../', '')
+  // Load env file based on `mode` from the client directory.
+  const env = loadEnv(mode, __dirname, '')
   
      // Only include bundle analyzer for analysis builds
    const plugins: PluginOption[] = [react()];

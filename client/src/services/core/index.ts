@@ -37,17 +37,7 @@ export type {
   GoogleWorkspaceUsage
 } from './AnalyticsService';
 
-// Company Service (consolidates CompanyService and CompanyProvisioningService)
-export { companyService, CompanyService } from './CompanyService';
-export type {
-  Company,
-  Department,
-  CompanyRole,
-  UserCompanyRole,
-  CompanyHealth,
-  CompanyProvisioningOptions,
-  ProvisioningResult
-} from './CompanyService';
+// Company Service removed - using API calls instead
 
 // Financial Service (consolidates BillingService and FinancialDataService)
 export { financialService, FinancialService } from './FinancialService';
@@ -85,7 +75,7 @@ export type {
 export const getCoreServices = () => ({
   userService: userService,
   analyticsService: analyticsService,
-  companyService: companyService,
+  // companyService removed - using API calls instead
   financialService: financialService,
   notificationService: notificationService,
 });

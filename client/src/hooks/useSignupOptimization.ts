@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { buildApiUrl } from '@/lib/api-url';
 import { businessInfoSchema, contactInfoSchema, type MultiStepSignupFormData } from '@/shared/validation/schemas';
 
 type SignupStep = 'business-info' | 'contact-info' | 'username-selection' | 'verification';
@@ -411,7 +412,7 @@ export function useSignupOptimization() {
     setUsernameError('');
     
     try {
-      const response = await fetch(`${process.env.VITE_NEXUS_API_URL || 'http://localhost:3001'}/api/auth/check-username/${encodeURIComponent(username)}`);
+      const response = await fetch(buildApiUrl(`/api/auth/check-username/${encodeURIComponent(username)}`));
       const data = await response.json();
       
       if (data.available) {

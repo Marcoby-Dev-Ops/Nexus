@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 import { useAuthentikAuth } from '@/shared/contexts/AuthentikAuthContext';
 import { logger } from '@/shared/utils/logger';
@@ -11,6 +11,7 @@ import SignupCompletion from '@/components/auth/SignupCompletion';
  */
 export default function AuthentikAuthCallback() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const [processing, setProcessing] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,14 +105,22 @@ export default function AuthentikAuthCallback() {
            setShowCompletion(true);
            setProcessing(false);
          } else {
-           // Get the next parameter from URL or default to dashboard
-           const next = searchParams.get('next') || '/dashboard';
-           logger.info('🔍 [MarcobyIAMCallback] Redirecting to:', next);
+           // Determine redirect destination
+           // Priority: 1) URL next param, 2) location state from, 3) default dashboard
+           const urlNext = searchParams.get('next');
+           const stateFrom = location.state?.from?.pathname;
+           const redirectDestination = urlNext || stateFrom || '/dashboard';
+           
+           logger.info('🔍 [MarcobyIAMCallback] Redirecting to:', {
+             urlNext,
+             stateFrom,
+             finalDestination: redirectDestination
+           });
            
            // Add a small delay to ensure authentication state is properly updated
            setTimeout(() => {
-             logger.info('🔍 [MarcobyIAMCallback] Executing navigation to:', next);
-             navigate(next, { replace: true });
+             logger.info('🔍 [MarcobyIAMCallback] Executing navigation to:', redirectDestination);
+             navigate(redirectDestination, { replace: true });
            }, 500);
          }
         

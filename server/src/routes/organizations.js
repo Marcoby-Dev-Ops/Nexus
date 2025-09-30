@@ -6,6 +6,111 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 
 /**
+ * GET /api/organizations/test
+ * Test endpoint to get organizations without authentication
+ */
+router.get('/test', async (req, res) => {
+  try {
+    const userId = req.query.userId;
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User ID is required'
+      });
+    }
+
+    logger.info('Fetching organizations for user (test)', { userId });
+
+    // Get user's organization memberships
+    const membershipsQuery = `
+      SELECT 
+        uo.organization_id,
+        uo.role,
+        uo.permissions,
+        uo.is_active,
+        uo.joined_at
+      FROM user_organizations uo
+      WHERE uo.user_id = $1
+    `;
+
+    const { data: memberships, error: membershipsError } = await query(membershipsQuery, [userId]);
+
+    if (membershipsError) {
+      logger.error('Failed to fetch user memberships', { error: membershipsError, userId });
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch organization memberships'
+      });
+    }
+
+    if (!memberships || memberships.length === 0) {
+      return res.json({
+        success: true,
+        data: []
+      });
+    }
+
+    // Get organization IDs from memberships
+    const orgIds = memberships.map(m => m.organization_id);
+
+    // Fetch organizations by IDs
+    const orgsQuery = `
+      SELECT 
+        id,
+        name,
+        description,
+        slug,
+        industry,
+        size,
+        settings,
+        created_at,
+        updated_at
+      FROM organizations
+      WHERE id = ANY($1)
+    `;
+
+    const { data: organizations, error: orgsError } = await query(orgsQuery, [orgIds]);
+
+    if (orgsError) {
+      logger.error('Failed to fetch organizations', { error: orgsError, orgIds });
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to fetch organizations'
+      });
+    }
+
+    // Merge role info from memberships
+    const orgIdToMembership = new Map();
+    for (const membership of memberships) {
+      orgIdToMembership.set(membership.organization_id, membership);
+    }
+
+    const result = organizations.map(org => ({
+      ...org,
+      role: orgIdToMembership.get(org.id)?.role,
+      member_count: undefined
+    }));
+
+    logger.info('Successfully fetched organizations (test)', { 
+      userId, 
+      count: result.length 
+    });
+
+    res.json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    logger.error('Error in GET /api/organizations/test', { error: error.message, stack: error.stack });
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
+/**
  * GET /api/organizations
  * Get all organizations for the authenticated user
  */
@@ -29,11 +134,11 @@ router.get('/', authenticateToken, async (req, res) => {
     // First, get user's organization memberships
     const membershipsQuery = `
       SELECT 
-        uo.org_id,
+        uo.organization_id,
         uo.role,
         uo.permissions,
-        uo.is_primary,
-        uo.created_at as joined_at
+        uo.is_active,
+        uo.joined_at
       FROM user_organizations uo
       WHERE uo.user_id = $1
     `;
@@ -82,7 +187,7 @@ router.get('/', authenticateToken, async (req, res) => {
     }
 
     // Get organization IDs from memberships
-    const orgIds = memberships.map(m => m.org_id);
+    const orgIds = memberships.map(m => m.organization_id);
 
     // Fetch organizations by IDs
     const orgsQuery = `
@@ -113,7 +218,7 @@ router.get('/', authenticateToken, async (req, res) => {
     // Merge role info from memberships
     const orgIdToMembership = new Map();
     for (const membership of memberships) {
-      orgIdToMembership.set(membership.org_id, membership);
+      orgIdToMembership.set(membership.organization_id, membership);
     }
 
     const result = organizations.map(org => ({

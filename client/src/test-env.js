@@ -4,8 +4,8 @@ import { getEnv } from './core/environment.js';
 
 try {
   const env = getEnv();
-  .api.url:', env.api.url);
-  .api.baseUrl:', env.api.baseUrl);
+  console.log('API URL:', env.api.url);
+  console.log('API Base URL:', env.api.baseUrl);
 } catch (error) {
   console.error('Error calling getEnv():', error);
 }

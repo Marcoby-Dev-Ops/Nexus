@@ -5,7 +5,7 @@
  * This converts the standalone QuantumOnboardingFlow into a proper journey.
  */
 
-import { JourneyTemplate, JourneyItem } from './JourneyTypes';
+import type { JourneyTemplate, JourneyItem } from './JourneyTypes';
 import { getAllQuantumBlocks } from '@/core/config/quantumBusinessModel';
 
 /**

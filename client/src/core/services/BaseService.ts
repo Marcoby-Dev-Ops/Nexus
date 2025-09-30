@@ -403,7 +403,7 @@ export abstract class BaseService {
    */
   protected logMethodCall(methodName: string, params?: Record<string, any>): void {
     // Only log method calls in development and when debug logging is enabled
-    if (process.env.NODE_ENV === 'development' && process.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
+    if (import.meta.env.MODE === 'development' && import.meta.env.VITE_ENABLE_DEBUG_LOGS === 'true') {
       this.logger.info(`[${this.constructor.name}] ${methodName} called`, params);
     }
   }

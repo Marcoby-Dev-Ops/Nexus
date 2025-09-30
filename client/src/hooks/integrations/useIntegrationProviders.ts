@@ -73,7 +73,7 @@ export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
     // This would need to be implemented to revoke token and clear localStorage.
      
      
-    // eslint-disable-next-line no-console
+     
     // Disconnecting from Google is not yet implemented
   };
 

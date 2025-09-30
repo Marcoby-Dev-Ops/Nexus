@@ -281,7 +281,7 @@ class CKBRAGService {
    * Build comprehensive system prompt for CKB
    */
   private buildCKBSystemPrompt(ckbContext: CKBContext, ragPrompt: string): string {
-    let systemPrompt = `You are an expert business advisor with access to ${ckbContext.companyName}'s comprehensive knowledge base and business intelligence data.
+    const systemPrompt = `You are an expert business advisor with access to ${ckbContext.companyName}'s comprehensive knowledge base and business intelligence data.
 
 COMPANY CONTEXT:
 - Company: ${ckbContext.companyName}

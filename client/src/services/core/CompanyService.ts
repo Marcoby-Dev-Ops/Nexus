@@ -1,914 +1,793 @@
+/**
+ * Company Service - Client-side company management
+ * 
+ * Provides unified company management with:
+ * - Business identity operations
+ * - Company profile operations  
+ * - Company health monitoring
+ * - AI context management
+ * - Real-time updates and caching
+ */
+
 import { z } from 'zod';
-import { BaseService } from '@/core/services/BaseService';
-import type { ServiceResponse } from '@/core/services/BaseService';
-import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
-import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
-import { DatabaseQueryWrapper } from '@/core/database/queryWrapper';
+import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import type { CrudServiceInterface } from '@/core/services/interfaces';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/api-client';
+import type { ApiResponse } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
 
-// Company Schema
-export const CompanySchema = z.object({
-  id: z.string().uuid(),
+// ============================================================================
+// SCHEMAS
+// ============================================================================
+
+// Company Foundation Schema
+export const CompanyFoundationSchema = z.object({
   name: z.string().min(1).max(200),
-  domain: z.string().nullish(),
-  industry: z.string().nullish(),
-  size: z.string().nullish(),
-  logo_url: z.string().url().nullish(),
-  website: z.string().url().nullish(),
-  description: z.string().max(1000).nullish(),
-  owner_id: z.string().nullish(), // Accept any string format (UUID or hash)
-  
-  // Business Information
-  business_phone: z.string().nullish(),
-  duns_number: z.string().nullish(),
-  ein: z.string().nullish(), // Employer Identification Number
-  employee_count: z.number().positive().nullish(),
-  founded: z.string().nullish(),
-  headquarters: z.string().nullish(),
-  fiscal_year_end: z.string().nullish(),
-  growth_stage: z.string().nullish(),
-  
-  // Social and Marketing
-  social_profiles: z.array(z.string()).nullish(),
-  specialties: z.array(z.string()).nullish(),
-  followers_count: z.number().nonnegative().nullish(),
-  client_base_description: z.string().nullish(),
-  
-  // Business Metrics
-  mrr: z.number().nonnegative().nullish(),
-  burn_rate: z.number().nullish(),
-  cac: z.number().nonnegative().nullish(),
-  gross_margin: z.number().min(0).max(100).nullish(),
-  csat: z.number().min(0).max(100).nullish(),
-  avg_deal_cycle_days: z.number().positive().nullish(),
-  avg_first_response_mins: z.number().positive().nullish(),
-  on_time_delivery_pct: z.number().min(0).max(100).nullish(),
-  website_visitors_month: z.number().nonnegative().nullish(),
-  
-  // Integrations and Systems
-  inventory_management_system: z.string().nullish(),
-  hubspotid: z.string().nullish(),
-  
-  // Settings and Configuration
-  settings: z.record(z.any()).nullish(),
-  address: z.record(z.any()).nullish(),
-  key_metrics: z.record(z.any()).nullish(),
-  
-  // Metadata
-  created_at: z.string(),
-  updated_at: z.string(),
+  legalName: z.string().optional(),
+  legalStructure: z.enum(['LLC', 'Corporation', 'Partnership', 'Sole Proprietorship', 'Other']).default('LLC'),
+  foundedDate: z.string().optional(),
+  headquarters: z.object({
+    address: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+    zipCode: z.string().optional(),
+  }).optional(),
+  industry: z.string().optional(),
+  sector: z.string().optional(),
+  businessModel: z.enum(['B2B', 'B2C', 'B2B2C', 'Marketplace', 'SaaS', 'Other']).default('B2B'),
+  companyStage: z.enum(['Startup', 'Growth', 'Mature', 'Enterprise']).default('Startup'),
+  companySize: z.enum(['Small (2-10)', 'Medium (11-50)', 'Large (51-200)', 'Enterprise (200+)']).default('Small (2-10)'),
+  website: z.string().url().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  socialMedia: z.record(z.string()).optional(),
 });
 
-export type Company = z.infer<typeof CompanySchema>;
-
-// Department Schema
-export const DepartmentSchema = z.object({
-  id: z.string().uuid(),
-  company_id: z.string().uuid(),
-  name: z.string().min(1).max(100),
-  description: z.string().optional(),
-  manager_id: z.string().uuid().optional(),
-  parent_department_id: z.string().uuid().optional(),
-  budget: z.number().nonnegative().optional(),
-  headcount: z.number().nonnegative().optional(),
-  goals: z.array(z.string()).optional(),
-  created_at: z.string(),
-  updated_at: z.string(),
+// Mission, Vision, Values Schema
+export const MissionVisionValuesSchema = z.object({
+  missionStatement: z.string().optional(),
+  visionStatement: z.string().optional(),
+  purpose: z.string().optional(),
+  coreValues: z.array(z.string()).optional(),
+  companyCulture: z.object({
+    workStyle: z.array(z.string()).optional(),
+    communicationStyle: z.array(z.string()).optional(),
+    decisionMaking: z.string().optional(),
+    innovationApproach: z.string().optional(),
+  }).optional(),
+  brandPersonality: z.array(z.string()).optional(),
+  brandVoice: z.object({
+    tone: z.string().optional(),
+    style: z.string().optional(),
+    examples: z.array(z.string()).optional(),
+  }).optional(),
 });
 
-export type Department = z.infer<typeof DepartmentSchema>;
-
-// Company Role Schema
-export const CompanyRoleSchema = z.object({
-  id: z.string().uuid(),
-  company_id: z.string().uuid(),
-  name: z.string().min(1).max(100),
-  description: z.string().optional(),
-  permissions: z.array(z.string()),
-  is_system_role: z.boolean(),
-  created_at: z.string(),
-  updated_at: z.string(),
+// Products and Services Schema
+export const ProductsServicesSchema = z.object({
+  offerings: z.array(z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    category: z.string().optional(),
+    pricing: z.string().optional(),
+    targetMarket: z.string().optional(),
+  })).optional(),
+  uniqueValueProposition: z.string().optional(),
+  competitiveAdvantages: z.array(z.string()).optional(),
+  differentiators: z.array(z.string()).optional(),
+  productRoadmap: z.array(z.object({
+    feature: z.string(),
+    timeline: z.string().optional(),
+    priority: z.enum(['High', 'Medium', 'Low']).optional(),
+    status: z.enum(['Planned', 'In Progress', 'Completed']).optional(),
+  })).optional(),
 });
 
-export type CompanyRole = z.infer<typeof CompanyRoleSchema>;
-
-// User Company Role Schema
-export const UserCompanyRoleSchema = z.object({
-  id: z.string().uuid(),
-  user_id: z.string(), // Accept any string format (UUID or hash)
-  company_id: z.string().uuid(),
-  role_id: z.string().uuid(),
-  department_id: z.string().uuid().optional(),
-  is_primary: z.boolean(),
-  created_at: z.string(),
-  updated_at: z.string(),
+// Target Market Schema
+export const TargetMarketSchema = z.object({
+  totalAddressableMarket: z.object({
+    size: z.string().optional(),
+    description: z.string().optional(),
+  }).optional(),
+  serviceableAddressableMarket: z.object({
+    size: z.string().optional(),
+    description: z.string().optional(),
+  }).optional(),
+  serviceableObtainableMarket: z.object({
+    size: z.string().optional(),
+    percentage: z.number().optional(),
+    description: z.string().optional(),
+  }).optional(),
+  customerSegments: z.array(z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    size: z.string().optional(),
+    characteristics: z.array(z.string()).optional(),
+  })).optional(),
+  idealCustomerProfile: z.object({
+    demographics: z.object({
+      industry: z.array(z.string()).optional(),
+      companySize: z.array(z.string()).optional(),
+      location: z.array(z.string()).optional(),
+      revenue: z.array(z.string()).optional(),
+    }).optional(),
+    psychographics: z.object({
+      painPoints: z.array(z.string()).optional(),
+      goals: z.array(z.string()).optional(),
+      challenges: z.array(z.string()).optional(),
+      motivations: z.array(z.string()).optional(),
+    }).optional(),
+    behavior: z.object({
+      buyingProcess: z.string().optional(),
+      decisionFactors: z.array(z.string()).optional(),
+      preferredChannels: z.array(z.string()).optional(),
+    }).optional(),
+  }).optional(),
+  personas: z.array(z.object({
+    name: z.string(),
+    role: z.string().optional(),
+    demographics: z.record(z.any()).optional(),
+    psychographics: z.record(z.any()).optional(),
+    behavior: z.array(z.string()).optional(),
+    preferredChannels: z.array(z.string()).optional(),
+    quotes: z.array(z.string()).optional(),
+  })).optional(),
 });
 
-export type UserCompanyRole = z.infer<typeof UserCompanyRoleSchema>;
+// Competitive Landscape Schema
+export const CompetitiveLandscapeSchema = z.object({
+  directCompetitors: z.array(z.object({
+    name: z.string(),
+    website: z.string().optional(),
+    description: z.string().optional(),
+    strengths: z.array(z.string()).optional(),
+    weaknesses: z.array(z.string()).optional(),
+    marketShare: z.string().optional(),
+    pricing: z.string().optional(),
+    positioning: z.string().optional(),
+  })).optional(),
+  indirectCompetitors: z.array(z.object({
+    name: z.string(),
+    type: z.string().optional(),
+    description: z.string().optional(),
+    whyAlternative: z.string().optional(),
+  })).optional(),
+  competitivePositioning: z.object({
+    position: z.string().optional(),
+    differentiation: z.array(z.string()).optional(),
+    advantages: z.array(z.string()).optional(),
+    threats: z.array(z.string()).optional(),
+  }).optional(),
+  marketTrends: z.array(z.string()).optional(),
+  opportunities: z.array(z.string()).optional(),
+  threats: z.array(z.string()).optional(),
+});
+
+// Business Operations Schema
+export const BusinessOperationsSchema = z.object({
+  team: z.object({
+    size: z.number().optional(),
+    structure: z.array(z.object({
+      department: z.string(),
+      headCount: z.number().optional(),
+      keyRoles: z.array(z.string()).optional(),
+    })).optional(),
+    keyPeople: z.array(z.object({
+      name: z.string(),
+      role: z.string().optional(),
+      department: z.string().optional(),
+      responsibilities: z.array(z.string()).optional(),
+    })).optional(),
+  }).optional(),
+  keyProcesses: z.array(z.object({
+    name: z.string(),
+    description: z.string().optional(),
+    owner: z.string().optional(),
+    status: z.enum(['Optimized', 'Good', 'Needs Improvement', 'Critical']).optional(),
+    tools: z.array(z.string()).optional(),
+  })).optional(),
+  technologyStack: z.object({
+    frontend: z.array(z.string()).optional(),
+    backend: z.array(z.string()).optional(),
+    database: z.array(z.string()).optional(),
+    infrastructure: z.array(z.string()).optional(),
+    tools: z.array(z.string()).optional(),
+    integrations: z.array(z.string()).optional(),
+  }).optional(),
+  operationalMetrics: z.array(z.object({
+    metric: z.string(),
+    value: z.string(),
+    target: z.string().optional(),
+    trend: z.enum(['Up', 'Down', 'Stable']).optional(),
+    frequency: z.enum(['Daily', 'Weekly', 'Monthly', 'Quarterly']).optional(),
+  })).optional(),
+});
+
+// Financial Context Schema
+export const FinancialContextSchema = z.object({
+  revenue: z.object({
+    model: z.string().optional(),
+    currentAnnual: z.string().optional(),
+    growth: z.object({
+      rate: z.number().optional(),
+      period: z.string().optional(),
+    }).optional(),
+  }).optional(),
+  financialHealth: z.object({
+    profitability: z.enum(['Profitable', 'Break-even', 'Loss-making']).optional(),
+    cashFlow: z.enum(['Positive', 'Neutral', 'Negative']).optional(),
+    burnRate: z.string().optional(),
+    runway: z.string().optional(),
+  }).optional(),
+  funding: z.object({
+    stage: z.enum(['Bootstrap', 'Seed', 'Series A', 'Series B', 'Series C+', 'IPO']).optional(),
+    totalRaised: z.string().optional(),
+    lastRound: z.string().optional(),
+    investors: z.array(z.string()).optional(),
+  }).optional(),
+  expenses: z.object({
+    operational: z.string().optional(),
+    marketing: z.string().optional(),
+    development: z.string().optional(),
+    overhead: z.string().optional(),
+  }).optional(),
+});
+
+// Strategic Context Schema
+export const StrategicContextSchema = z.object({
+  goals: z.object({
+    shortTerm: z.array(z.object({
+      goal: z.string(),
+      target: z.string().optional(),
+      timeline: z.string().optional(),
+      status: z.enum(['On Track', 'At Risk', 'Completed', 'Behind']).optional(),
+    })).optional(),
+    longTerm: z.array(z.object({
+      goal: z.string(),
+      target: z.string().optional(),
+      timeline: z.string().optional(),
+      status: z.enum(['On Track', 'At Risk', 'Completed', 'Behind']).optional(),
+    })).optional(),
+  }).optional(),
+  strategicPriorities: z.array(z.object({
+    priority: z.string(),
+    description: z.string().optional(),
+    importance: z.enum(['Critical', 'High', 'Medium', 'Low']).optional(),
+    timeline: z.string().optional(),
+    owner: z.string().optional(),
+  })).optional(),
+  challenges: z.array(z.object({
+    challenge: z.string(),
+    impact: z.enum(['High', 'Medium', 'Low']).optional(),
+    urgency: z.enum(['High', 'Medium', 'Low']).optional(),
+    owner: z.string().optional(),
+    status: z.enum(['Identified', 'In Progress', 'Resolved']).optional(),
+  })).optional(),
+  successMetrics: z.array(z.object({
+    metric: z.string(),
+    currentValue: z.string().optional(),
+    targetValue: z.string().optional(),
+    frequency: z.enum(['Daily', 'Weekly', 'Monthly', 'Quarterly']).optional(),
+    owner: z.string().optional(),
+  })).optional(),
+});
+
+// Business Identity Schema (main schema)
+export const BusinessIdentitySchema = z.object({
+  foundation: CompanyFoundationSchema,
+  missionVisionValues: MissionVisionValuesSchema.optional(),
+  productsServices: ProductsServicesSchema.optional(),
+  targetMarket: TargetMarketSchema.optional(),
+  competitiveLandscape: CompetitiveLandscapeSchema.optional(),
+  businessOperations: BusinessOperationsSchema.optional(),
+  financialContext: FinancialContextSchema.optional(),
+  strategicContext: StrategicContextSchema.optional(),
+});
 
 // Company Health Schema
 export const CompanyHealthSchema = z.object({
-  companyId: z.string(),
-  overallScore: z.number().min(0).max(100),
-  metrics: z.object({
-    financial: z.number().min(0).max(100),
-    operational: z.number().min(0).max(100),
-    customer: z.number().min(0).max(100),
-    growth: z.number().min(0).max(100),
+  overall: z.enum(['excellent', 'good', 'fair', 'poor', 'critical']),
+  sections: z.object({
+    foundation: z.number().min(0).max(100),
+    missionVisionValues: z.number().min(0).max(100),
+    productsServices: z.number().min(0).max(100),
+    targetMarket: z.number().min(0).max(100),
+    competitiveLandscape: z.number().min(0).max(100),
+    businessOperations: z.number().min(0).max(100),
+    financialContext: z.number().min(0).max(100),
+    strategicContext: z.number().min(0).max(100),
   }),
-  recommendations: z.array(z.string()),
+  recommendations: z.array(z.object({
+    section: z.string(),
+    priority: z.enum(['high', 'medium', 'low']),
+    message: z.string(),
+    action: z.string(),
+  })),
   lastUpdated: z.string(),
 });
 
-export type CompanyHealth = z.infer<typeof CompanyHealthSchema>;
-
-// Company Provisioning Schemas
-export const CompanyProvisioningOptionsSchema = z.object({
-  createDefaultCompany: z.boolean().optional(),
-  redirectToOnboarding: z.boolean().optional(),
-  silentMode: z.boolean().optional(),
-  companyName: z.string().optional(),
-  jobTitle: z.string().optional(),
+// Company Profile Schema (simplified for basic operations)
+export const CompanyProfileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  domain: z.string().optional(),
   industry: z.string().optional(),
   size: z.string().optional(),
+  description: z.string().optional(),
+  website: z.string().optional(),
+  owner_id: z.string(),
+  is_active: z.boolean(),
+  settings: z.record(z.any()).optional(),
+  subscription_plan: z.string().optional(),
+  max_users: z.number().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
 });
 
-export const ProvisioningResultSchema = z.object({
-  success: z.boolean(),
-  companyId: z.string().optional(),
-  action: z.enum(['found', 'created', 'redirected', 'failed']),
-  message: z.string(),
-  error: z.string().optional(),
-});
+// ============================================================================
+// TYPES
+// ============================================================================
 
-export type CompanyProvisioningOptions = z.infer<typeof CompanyProvisioningOptionsSchema>;
-export type ProvisioningResult = z.infer<typeof ProvisioningResultSchema>;
+export type CompanyFoundation = z.infer<typeof CompanyFoundationSchema>;
+export type MissionVisionValues = z.infer<typeof MissionVisionValuesSchema>;
+export type ProductsServices = z.infer<typeof ProductsServicesSchema>;
+export type TargetMarket = z.infer<typeof TargetMarketSchema>;
+export type CompetitiveLandscape = z.infer<typeof CompetitiveLandscapeSchema>;
+export type BusinessOperations = z.infer<typeof BusinessOperationsSchema>;
+export type FinancialContext = z.infer<typeof FinancialContextSchema>;
+export type StrategicContext = z.infer<typeof StrategicContextSchema>;
+export type BusinessIdentity = z.infer<typeof BusinessIdentitySchema>;
+export type CompanyHealth = z.infer<typeof CompanyHealthSchema>;
+export type CompanyProfile = z.infer<typeof CompanyProfileSchema>;
 
-// Service Configuration
-const companyServiceConfig: ServiceConfig = {
+// ============================================================================
+// SERVICE CONFIGURATION
+// ============================================================================
+
+const companyServiceConfig = {
   tableName: 'companies',
-  schema: CompanySchema,
+  schema: CompanyProfileSchema,
   cacheEnabled: true,
-  cacheTTL: 300, // 5 minutes
+  cacheTTL: 300000, // 5 minutes
   enableLogging: true,
 };
 
-/**
- * Consolidated CompanyService - Handles company management, operations, and provisioning
- *
- * Features:
- * - Company CRUD operations
- * - Department management
- * - Role management
- * - User-company relationships
- * - Company analytics and health monitoring
- * - Business metrics tracking
- * - Integration management
- * - Company provisioning and association
- * - Graceful fallbacks for users without companies
- */
-export class CompanyService extends BaseService implements CrudServiceInterface<Company> {
-  protected config = companyServiceConfig;
-  private queryWrapper = new DatabaseQueryWrapper();
+// ============================================================================
+// MAIN SERVICE CLASS
+// ============================================================================
 
+/**
+ * Company Service
+ * 
+ * Provides unified company management with:
+ * - Business identity operations
+ * - Company profile operations  
+ * - Company health monitoring
+ * - AI context management
+ * - Real-time updates and caching
+ */
+export class CompanyService extends BaseService implements CrudServiceInterface<CompanyProfile> {
+  private identityCache = new Map<string, { data: any; timestamp: number }>();
+  private healthCache = new Map<string, { data: any; timestamp: number }>();
+  private readonly CACHE_TTL = 30000; // 30 seconds cache TTL
+  
   constructor() {
     super();
   }
 
-  // ====================================================================
-  // CRUD OPERATIONS
-  // ====================================================================
-
-  async get(id: string): Promise<ServiceResponse<Company>> {
-    this.logMethodCall('get', { id });
-    return this.executeDbOperation(async () => {
-      const { data, error } = await selectOne('companies', id);
-      if (error) throw error;
-      const validatedData = this.config.schema.parse(data);
-      return { data: validatedData, error: null, success: true };
-    }, `get ${this.config.tableName} ${id}`);
-  }
-
-  async create(data: Partial<Company>): Promise<ServiceResponse<Company>> {
-    this.logMethodCall('create', { data });
-    return this.executeDbOperation(async () => {
-      // Note: Company name uniqueness validation removed to allow multiple companies with same name
-      // This is common in real-world scenarios where different organizations may have similar names
-
-      // Validate EIN if provided
-      if (data.ein) {
-        const { data: existingEIN, error: einSearchError } = await selectData('companies', 'id, name');
-        
-        if (einSearchError) {
-          return { data: null, error: `Failed to validate EIN: ${einSearchError}`, success: false };
-        }
-        
-        // Filter by EIN manually
-        const einMatches = existingEIN?.filter((company: any) => 
-          company.ein === data.ein
-        ) || [];
-        
-        if (einMatches.length > 0) {
-          return { data: null, error: `Company with EIN "${data.ein}" already exists`, success: false };
-        }
-      }
-
-      // Validate domain if provided
-      if (data.domain) {
-        const { data: existingDomain, error: domainSearchError } = await selectData('companies', 'id, name');
-        
-        if (domainSearchError) {
-          return { data: null, error: `Failed to validate domain: ${domainSearchError}`, success: false };
-        }
-        
-        // Filter by domain manually
-        const domainMatches = existingDomain?.filter((company: any) => 
-          company.domain?.toLowerCase() === data.domain?.toLowerCase()
-        ) || [];
-        
-        if (domainMatches.length > 0) {
-          return { data: null, error: `Company with domain "${data.domain}" already exists`, success: false };
-        }
-      }
-
-      const { data: result, error } = await insertOne('companies', {
-        ...data,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-      if (error) throw error;
-      const validatedData = this.config.schema.parse(result);
-      return { data: validatedData, error: null, success: true };
-    }, `create ${this.config.tableName}`);
-  }
-
-  async update(id: string, data: Partial<Company>): Promise<ServiceResponse<Company>> {
-    this.logMethodCall('update', { id, data });
-    return this.executeDbOperation(async () => {
-      const { data: result, error } = await updateOne('companies', id, {
-        ...data,
-        updated_at: new Date().toISOString()
-      });
-      if (error) throw error;
-      const validatedData = this.config.schema.parse(result);
-      return { data: validatedData, error: null, success: true };
-    }, `update ${this.config.tableName} ${id}`);
-  }
-
-  async delete(id: string): Promise<ServiceResponse<boolean>> {
-    this.logMethodCall('delete', { id });
-    return this.executeDbOperation(async () => {
-      const { error } = await deleteOne('companies', id);
-      if (error) throw error;
-      return { data: true, error: null, success: true };
-    }, `delete ${this.config.tableName} ${id}`);
-  }
-
-  async list(filters?: Record<string, any>): Promise<ServiceResponse<Company[]>> {
-    this.logMethodCall('list', { filters });
-    return this.executeDbOperation(async () => {
-      const { data, error } = await selectData('companies', '*', filters);
-      if (error) throw new Error(error);
-      if (!data) throw new Error('No data returned');
-      const validatedData = data.map((item: any) => this.config.schema.parse(item));
-      return { data: validatedData, error: null, success: true };
-    }, `list ${this.config.tableName}`);
-  }
-
-  // ====================================================================
-  // COMPANY PROVISIONING OPERATIONS
-  // ====================================================================
-
   /**
-   * Ensure user has a company association
+   * Get cached data or fetch from server
    */
-  async ensureCompanyAssociation(
-    userId: string, 
-    options: CompanyProvisioningOptions = {}
-  ): Promise<ServiceResponse<ProvisioningResult>> {
-    return this.executeDbOperation(async () => {
-      // Check if user already has a company
-      const { data: profile, error: profileError } = await selectOne('user_profiles', userId, 'company_id, role, first_name, last_name, email');
-
-      if (profileError) {
-        logger.error('Error checking user profile:', profileError);
-        const result: ProvisioningResult = {
-          success: false,
-          action: 'failed',
-          message: 'Failed to check user profile',
-          error: profileError
-        };
-        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
-      }
-
-      // If user already has a company, return success
-      if ((profile as any)?.company_id) {
-        const result: ProvisioningResult = {
-          success: true,
-          companyId: (profile as any).company_id,
-          action: 'found',
-          message: 'User already associated with company'
-        };
-        return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
-      }
-
-      // User doesn't have a company - handle based on options
-      if (options.createDefaultCompany) {
-        return await this.createDefaultCompany(userId, profile, options);
-      }
-
-      if (options.redirectToOnboarding) {
-        const result: ProvisioningResult = {
-          success: true,
-          action: 'redirected',
-          message: 'Redirecting to onboarding'
-        };
-        return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
-      }
-
-      // Default: create personal workspace
-      return await this.createPersonalCompany(userId, profile as any);
-    }, `ensure company association for user ${userId}`);
-  }
-
-  /**
-   * Get or create company for user
-   */
-  async getOrCreateCompany(userId: string): Promise<ServiceResponse<{ companyId: string | null; error: string | null }>> {
-    return this.executeDbOperation(async () => {
-      const { data: profile, error: profileError } = await selectOne('user_profiles', userId, 'company_id');
-
-      if (profileError) {
-        return { data: { companyId: null, error: profileError }, error: null, success: false };
-      }
-
-      if ((profile as any)?.company_id) {
-        return { data: { companyId: (profile as any).company_id, error: null as string | null }, error: null, success: true };
-      }
-
-      // Create a personal company
-      const { data: company, error: companyError } = await insertOne('companies', {
-        name: 'My Business',
-        industry: 'Personal',
-        size: '1',
-        created_by: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-      if (companyError) {
-        return { data: { companyId: null, error: companyError }, error: null, success: false };
-      }
-
-      // Update user profile
-      const { error: updateError } = await updateOne('user_profiles', userId, {
-        company_id: (company as any).id,
-        role: 'owner',
-        updated_at: new Date().toISOString()
-      });
-
-      if (updateError) {
-        return { data: { companyId: null, error: updateError }, error: null, success: false };
-      }
-
-      return { data: { companyId: (company as any).id, error: null as string | null }, error: null, success: true };
-    }, `get or create company for user ${userId}`);
-  }
-
-  // ====================================================================
-  // COMPANY CREATION WITH ADMIN ROLE
-  // ====================================================================
-
-  /**
-   * Create a new company and assign the first user as admin
-   * This is the primary method for creating companies with proper role assignment
-   */
-  async createCompanyWithAdmin(
-    userId: string,
-    companyData: {
-      name: string;
-      industry?: string;
-      size?: string;
-      description?: string;
-      website?: string;
-    }
-  ): Promise<ServiceResponse<{ companyId: string; isAdmin: boolean }>> {
-    return this.executeDbOperation(async () => {
-      // Check if user already has a company
-      const { data: existingProfile, error: profileError } = await selectOne('user_profiles', userId, 'company_id, role');
-      
-      if (profileError) {
-        return { data: null, error: profileError, success: false };
-      }
-
-      if ((existingProfile as any)?.company_id) {
-        return { 
-          data: { companyId: (existingProfile as any).company_id, isAdmin: (existingProfile as any).role === 'admin' }, 
-          error: null, 
-          success: true 
-        };
-      }
-
-      // Create the company
-      const { data: company, error: companyError } = await insertOne('companies', {
-        name: companyData.name,
-        industry: companyData.industry || 'Technology',
-        size: companyData.size || '1-10',
-        description: companyData.description,
-        website: companyData.website,
-        owner_id: userId, // Set the creator as owner
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-      if (companyError) {
-        return { data: null, error: companyError, success: false };
-      }
-
-      // Associate user with company as admin
-      const { error: updateError } = await updateOne('user_profiles', userId, {
-        company_id: (company as any).id,
-        role: 'admin', // First user becomes admin
-        updated_at: new Date().toISOString()
-      });
-
-      if (updateError) {
-        // Rollback company creation if user association fails
-        await deleteOne('companies', (company as any).id);
-        return { data: null, error: updateError, success: false };
-      }
-
-      return { 
-        data: { companyId: (company as any).id, isAdmin: true }, 
-        error: null, 
-        success: true 
-      };
-    }, `create company with admin for user ${userId}`);
-  }
-
-  /**
-   * Find company owned by a specific user
-   */
-  async getCompanyByOwner(userId: string): Promise<ServiceResponse<Company | null>> {
-    return this.executeDbOperation(async () => {
-      const { data: companies, error } = await selectData('companies', '*', { owner_id: userId });
-      
-      if (error) {
-        return { data: null, error, success: false };
-      }
-
-      if (!companies || companies.length === 0) {
-        return { data: null, error: null, success: true };
-      }
-
-      // Return the first company owned by this user
-      const validatedData = this.config.schema.parse(companies[0]);
-      return { data: validatedData, error: null, success: true };
-    }, `get company by owner ${userId}`);
-  }
-
-  /**
-   * Add a user to an existing company with a specific role
-   */
-  async addUserToCompany(
-    userId: string,
-    companyId: string,
-    role: 'admin' | 'owner' | 'manager' | 'member' = 'member'
-  ): Promise<ServiceResponse<{ success: boolean; role: string }>> {
-    return this.executeDbOperation(async () => {
-      // Check if company exists
-      const { data: company, error: companyError } = await selectOne('companies', companyId);
-      
-      if (companyError || !company) {
-        return { data: null, error: 'Company not found', success: false };
-      }
-
-      // Check if user is already associated with a company
-      const { data: userProfile, error: profileError } = await selectOne('user_profiles', userId, 'company_id, role');
-      
-      if (profileError) {
-        return { data: null, error: profileError, success: false };
-      }
-
-      if ((userProfile as any)?.company_id) {
-        return { data: null, error: 'User is already associated with a company', success: false };
-      }
-
-      // Associate user with company
-      const { error: updateError } = await updateOne('user_profiles', userId, {
-        company_id: companyId,
-        role: role,
-        updated_at: new Date().toISOString()
-      });
-
-      if (updateError) {
-        return { data: null, error: updateError, success: false };
-      }
-
-      return { 
-        data: { success: true, role }, 
-        error: null, 
-        success: true 
-      };
-    }, `add user ${userId} to company ${companyId} with role ${role}`);
-  }
-
-  /**
-   * Get company members with their roles
-   */
-  async getCompanyMembers(companyId: string): Promise<ServiceResponse<Array<{
-    userId: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-    isAdmin: boolean;
-  }>>> {
-    return this.executeDbOperation(async () => {
-      const { data: members, error } = await selectData('user_profiles', 'user_id, first_name, last_name, email, role', {
-        company_id: companyId
-      });
-
-      if (error) {
-        return { data: null, error: error, success: false };
-      }
-
-      const formattedMembers = (members || []).map((member: any) => ({
-        userId: member.user_id,
-        firstName: member.first_name,
-        lastName: member.last_name,
-        email: member.email,
-        role: member.role,
-        isAdmin: member.role === 'admin' || member.role === 'owner'
-      }));
-
-      return { 
-        data: formattedMembers, 
-        error: null, 
-        success: true 
-      };
-    }, `get company members for company ${companyId}`);
-  }
-
-  /**
-   * Check if user is admin of their company
-   */
-  async isUserCompanyAdmin(userId: string): Promise<ServiceResponse<boolean>> {
-    return this.executeDbOperation(async () => {
-      const { data: profile, error } = await selectOne('user_profiles', userId, 'company_id, role');
-      
-      if (error || !profile) {
-        return { data: false, error: error || 'User profile not found', success: true };
-      }
-
-      const isAdmin = (profile as any).role === 'admin' || (profile as any).role === 'owner';
-      return { data: isAdmin, error: null, success: true };
-    }, `check if user ${userId} is company admin`);
-  }
-
-  // ====================================================================
-  // COMPANY MANAGEMENT OPERATIONS
-  // ====================================================================
-
-  /**
-   * Get company with full details including owner, departments, and analytics
-   */
-  async getCompanyWithDetails(companyId: string) {
-    this.logMethodCall('getCompanyWithDetails', { companyId });
+  private async getCachedOrFetch<T>(
+    cache: Map<string, { data: any; timestamp: number }>,
+    key: string,
+    fetchFn: () => Promise<T>
+  ): Promise<T> {
+    const now = Date.now();
+    const cached = cache.get(key);
     
+    // Return cached data if still valid
+    if (cached && (now - cached.timestamp) < this.CACHE_TTL) {
+      this.logger.debug('Returning cached data', { key });
+      return cached.data;
+    }
+    
+    // Fetch fresh data
+    const data = await fetchFn();
+    
+    // Cache the result
+    cache.set(key, { data, timestamp: now });
+    
+    return data;
+  }
+
+  /**
+   * Clear cache for a specific key
+   */
+  private clearCache(cache: Map<string, { data: any; timestamp: number }>, key: string): void {
+    cache.delete(key);
+  }
+
+  /**
+   * Convert ApiResponse to ServiceResponse
+   */
+  private convertApiResponse<T>(apiResponse: ApiResponse<T>): ServiceResponse<T> {
+    const data = (apiResponse && 'data' in apiResponse ? apiResponse.data : null) as T | null;
+    const error = (apiResponse && 'error' in apiResponse ? apiResponse.error : undefined) ?? null;
+    return {
+      data,
+      error,
+      success: error === null,
+    };
+  }
+
+  protected config = companyServiceConfig;
+
+  // ============================================================================
+  // CRUD OPERATIONS (CrudServiceInterface)
+  // ============================================================================
+
+  /**
+   * Get company profile by ID
+   */
+  async get(id: string): Promise<ServiceResponse<CompanyProfile>> {
     return this.executeDbOperation(async () => {
-      // Get company
-      const { data: company, error: companyError } = await selectOne('companies', companyId);
+      this.logMethodCall('get', { id });
       
-      if (companyError) throw new Error(companyError);
+      const result = await selectOne<CompanyProfile>(this.config.tableName, { id });
+      const serviceResponse = this.convertApiResponse<CompanyProfile>(result);
       
-      // Get owner
-      let owner = null;
-      if ((company as any).owner_id) {
-        const { data: ownerData } = await selectOne('user_profiles', (company as any).owner_id);
-        owner = ownerData;
+      if (!serviceResponse.success) {
+        return serviceResponse;
       }
       
-      // Get departments
-      const { data: departments } = await selectData('departments', '*', {
-        company_id: companyId
-      });
+      if (!serviceResponse.data) {
+          return { data: null, error: `Company profile ${id} not found or inaccessible`, success: false };
+      }
       
-      // Get company roles
-      const { data: roles } = await selectData('company_roles', '*', {
-        company_id: companyId
-      });
-      
-      // Get user company roles
-      const { data: userRoles } = await selectData('user_company_roles', '*', {
-        company_id: companyId
-      });
-      
-      return {
-        data: {
-          company,
-          owner,
-          departments: departments || [],
-          roles: roles || [],
-          userRoles: userRoles || []
-        },
-        error: null,
-        success: true
-      };
-    }, `get company details ${companyId}`);
+      const validatedData = this.config.schema.parse(serviceResponse.data);
+      return { data: validatedData, error: null, success: true };
+    }, `get company profile ${id}`);
   }
+
+  /**
+   * Create new company profile
+   */
+  async create(data: Omit<CompanyProfile, 'id' | 'created_at' | 'updated_at'>): Promise<ServiceResponse<CompanyProfile>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('create', { data });
+      
+      const result = await insertOne<CompanyProfile>(this.config.tableName, {
+        ...data,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      
+      const serviceResponse = this.convertApiResponse<CompanyProfile>(result);
+      
+      if (!serviceResponse.success) {
+        return serviceResponse;
+      }
+      
+      const validatedData = this.config.schema.parse(serviceResponse.data);
+      return { data: validatedData, error: null, success: true };
+    }, `create company profile`);
+  }
+
+  /**
+   * Update company profile
+   */
+  async update(id: string, data: Partial<CompanyProfile>): Promise<ServiceResponse<CompanyProfile>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('update', { id, data });
+      
+      const result = await updateOne<CompanyProfile>(this.config.tableName, id, {
+        ...data,
+        updated_at: new Date().toISOString()
+      });
+      
+      const serviceResponse = this.convertApiResponse<CompanyProfile>(result);
+      
+      if (!serviceResponse.success) {
+        return serviceResponse;
+      }
+      
+      const validatedData = this.config.schema.parse(serviceResponse.data);
+      return { data: validatedData, error: null, success: true };
+    }, `update company profile ${id}`);
+  }
+
+  /**
+   * Delete company profile
+   */
+  async delete(id: string): Promise<ServiceResponse<boolean>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('delete', { id });
+      
+      const result = await deleteOne<boolean>(this.config.tableName, id);
+      const serviceResponse = this.convertApiResponse<boolean>(result);
+      
+      if (!serviceResponse.success) {
+        return serviceResponse;
+      }
+      
+      return { data: true, error: null, success: true };
+    }, `delete company profile ${id}`);
+  }
+
+  /**
+   * List company profiles with filters
+   */
+  async list(filters?: Record<string, any>): Promise<ServiceResponse<CompanyProfile[]>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('list', { filters });
+      
+      const result = await selectData<CompanyProfile>(this.config.tableName, '*', filters);
+      const serviceResponse = this.convertApiResponse<CompanyProfile[]>(result);
+      
+      if (!serviceResponse.success) {
+        return serviceResponse;
+      }
+      
+      const validatedData = (serviceResponse.data || []).map((item: any) => this.config.schema.parse(item));
+      return { data: validatedData, error: null, success: true };
+    }, `list company profiles`);
+  }
+
+  // ============================================================================
+  // BUSINESS IDENTITY OPERATIONS
+  // ============================================================================
+
+  /**
+   * Get business identity for a company
+   */
+  async getBusinessIdentity(companyId: string): Promise<ServiceResponse<BusinessIdentity>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('getBusinessIdentity', { companyId });
+      
+      try {
+        const result = await callRPC('get_business_identity', { companyId });
+        
+        if (!result.success) {
+          return { data: null, error: result.error || 'Failed to get business identity', success: false };
+        }
+        
+        // Handle case where business identity doesn't exist yet
+        if (!result.data) {
+          return { data: null, error: 'Business identity not found', success: false };
+        }
+        
+        // Validate the data, but handle missing required fields gracefully
+        try {
+          const validatedData = BusinessIdentitySchema.parse(result.data);
+          return { data: validatedData, error: null, success: true };
+        } catch (validationError) {
+          // If validation fails due to missing required fields, return a default structure
+          if (validationError instanceof z.ZodError) {
+            const missingFields = validationError.errors.map(err => err.path.join('.'));
+            this.logger.warn('Business identity validation failed, missing fields:', { companyId, missingFields });
+            
+            // Return a default business identity structure
+            const defaultBusinessIdentity: BusinessIdentity = {
+              foundation: {
+                name: '',
+                legalStructure: 'LLC' as const,
+                foundedDate: '',
+                headquarters: {}
+              },
+              ...result.data // Include any existing data
+            };
+            
+            return { data: defaultBusinessIdentity, error: null, success: true };
+          }
+          throw validationError;
+        }
+      } catch (error) {
+        this.logger.error('Exception in getBusinessIdentity', { companyId, error });
+        return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
+      }
+    }, `get business identity for company ${companyId}`);
+  }
+
+  /**
+   * Update business identity for a company
+   */
+  async updateBusinessIdentity(companyId: string, updates: Partial<BusinessIdentity>): Promise<ServiceResponse<BusinessIdentity>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('updateBusinessIdentity', { companyId, updates });
+      
+      try {
+        const result = await callRPC('update_business_identity', { companyId, updates });
+        
+        if (!result.success) {
+          return { data: null, error: result.error || 'Failed to update business identity', success: false };
+        }
+        
+        // Clear cache
+        this.clearCache(this.identityCache, companyId);
+        
+        // Handle validation gracefully
+        try {
+          const validatedData = BusinessIdentitySchema.parse(result.data);
+          return { data: validatedData, error: null, success: true };
+        } catch (validationError) {
+          if (validationError instanceof z.ZodError) {
+            this.logger.warn('Business identity validation failed during update:', { companyId, error: validationError.errors });
+            // Return the data as-is if validation fails, let the UI handle it
+            return { data: result.data as BusinessIdentity, error: null, success: true };
+          }
+          throw validationError;
+        }
+      } catch (error) {
+        this.logger.error('Exception in updateBusinessIdentity', { companyId, error });
+        return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
+      }
+    }, `update business identity for company ${companyId}`);
+  }
+
+  /**
+   * Ensure business identity exists for a company
+   */
+  async ensureBusinessIdentity(companyId: string, identityData: Partial<BusinessIdentity> = {}): Promise<ServiceResponse<BusinessIdentity>> {
+    return this.executeDbOperation(async () => {
+      this.logMethodCall('ensureBusinessIdentity', { companyId, identityData });
+      
+      try {
+        const result = await callRPC('ensure_business_identity', { companyId, identityData });
+        
+        if (!result.success) {
+          return { data: null, error: result.error || 'Failed to ensure business identity', success: false };
+        }
+        
+        // Clear cache
+        this.clearCache(this.identityCache, companyId);
+        
+        const validatedData = BusinessIdentitySchema.parse(result.data);
+        return { data: validatedData, error: null, success: true };
+      } catch (error) {
+        this.logger.error('Exception in ensureBusinessIdentity', { companyId, error });
+        return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
+      }
+    }, `ensure business identity for company ${companyId}`);
+  }
+
+  // ============================================================================
+  // COMPANY HEALTH OPERATIONS
+  // ============================================================================
 
   /**
    * Get company health metrics
    */
   async getCompanyHealth(companyId: string): Promise<ServiceResponse<CompanyHealth>> {
-    this.logMethodCall('getCompanyHealth', { companyId });
-    
     return this.executeDbOperation(async () => {
-      // Get company data
-      const { data: company, error: companyError } = await selectOne('companies', companyId);
+      this.logMethodCall('getCompanyHealth', { companyId });
       
-      if (companyError) throw new Error(companyError);
-      
-      // Calculate health metrics based on company data
-      const metrics = {
-        financial: this.calculateFinancialHealth(company as any),
-        operational: this.calculateOperationalHealth(company as any),
-        customer: this.calculateCustomerHealth(company as any),
-        growth: this.calculateGrowthHealth(company as any),
-      };
-      
-      const overallScore = Math.round(
-        (metrics.financial + metrics.operational + metrics.customer + metrics.growth) / 4
-      );
-      
-      const recommendations = this.generateRecommendations(company as any, metrics);
-      
-      const health: CompanyHealth = {
-        companyId,
-        overallScore,
-        metrics,
-        recommendations,
-        lastUpdated: new Date().toISOString(),
-      };
-      
-      return { data: CompanyHealthSchema.parse(health), error: null, success: true };
-    }, `get company health ${companyId}`);
+      try {
+        const result = await callRPC('get_company_health', { companyId });
+        
+        if (!result.success) {
+          return { data: null, error: result.error || 'Failed to get company health', success: false };
+        }
+        
+        const validatedData = CompanyHealthSchema.parse(result.data);
+        return { data: validatedData, error: null, success: true };
+      } catch (error) {
+        this.logger.error('Exception in getCompanyHealth', { companyId, error });
+        return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
+      }
+    }, `get company health for company ${companyId}`);
   }
 
   /**
-   * Get company departments
+   * Monitor company health and get recommendations
    */
-  async getCompanyDepartments(companyId: string): Promise<ServiceResponse<Department[]>> {
-    this.logMethodCall('getCompanyDepartments', { companyId });
-    
-    // Return empty array for now - departments feature not yet implemented
-    return { data: [], error: null, success: true };
-  }
-
-  /**
-   * Get company roles
-   */
-  async getCompanyRoles(companyId: string): Promise<ServiceResponse<CompanyRole[]>> {
-    this.logMethodCall('getCompanyRoles', { companyId });
-    
-    // Return empty array for now - roles feature not yet implemented
-    return { data: [], error: null, success: true };
-  }
-
-  /**
-   * Get company analytics
-   */
-  async getCompanyAnalytics(companyId: string): Promise<ServiceResponse<any>> {
-    this.logMethodCall('getCompanyAnalytics', { companyId });
-    
+  async monitorCompanyHealth(companyId: string): Promise<ServiceResponse<CompanyHealth>> {
     return this.executeDbOperation(async () => {
-      // Get company data
-      const { data: company, error: companyError } = await selectOne('companies', companyId);
+      this.logMethodCall('monitorCompanyHealth', { companyId });
       
-      if (companyError) throw new Error(companyError);
-      
-      const companyData = company as any;
-      // Calculate basic analytics from company data
-      const analytics = {
-        companyId,
-        employeeCount: companyData.employee_count || 0,
-        mrr: companyData.mrr || 0,
-        growthStage: companyData.growth_stage || 'unknown',
-        industry: companyData.industry || 'unknown',
-        size: companyData.size || 'unknown',
-        websiteVisitors: companyData.website_visitors_month || 0,
-        csat: companyData.csat || 0,
-        grossMargin: companyData.gross_margin || 0,
-        lastUpdated: new Date().toISOString(),
-      };
-      
-      return { data: analytics, error: null, success: true };
-    }, `get company analytics ${companyId}`);
+      try {
+        const result = await callRPC('monitor_company_health', { companyId });
+        
+        if (!result.success) {
+          return { data: null, error: result.error || 'Failed to monitor company health', success: false };
+        }
+        
+        // Clear cache
+        this.clearCache(this.healthCache, companyId);
+        
+        const validatedData = CompanyHealthSchema.parse(result.data);
+        return { data: validatedData, error: null, success: true };
+      } catch (error) {
+        this.logger.error('Exception in monitorCompanyHealth', { companyId, error });
+        return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
+      }
+    }, `monitor company health for company ${companyId}`);
   }
 
-  // ====================================================================
-  // PRIVATE HELPER METHODS
-  // ====================================================================
+  // ============================================================================
+  // AI CONTEXT OPERATIONS
+  // ============================================================================
 
   /**
-   * Create a default company for the user
+   * Get AI context for a company
    */
-  private async createDefaultCompany(userId: string, profile: any, options: CompanyProvisioningOptions): Promise<ServiceResponse<ProvisioningResult>> {
+  async getAIContext(companyId: string): Promise<ServiceResponse<any>> {
     return this.executeDbOperation(async () => {
-      const companyName = options.companyName || (profile?.first_name && profile?.last_name
-        ? `${profile.first_name} ${profile.last_name}'s Company`
-        : profile?.email
-        ? `${profile.email.split('@')[0]}'s Company`
-        : 'My Company');
-
-      const { data: company, error: companyError } = await insertOne('companies', {
-        name: companyName,
-        industry: options.industry || 'Technology',
-        size: options.size || '1-10',
-        created_by: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-      if (companyError) {
-        logger.error('Error creating default company:', companyError);
-        const result: ProvisioningResult = {
-          success: false,
-          action: 'failed',
-          message: 'Failed to create default company',
-          error: companyError
-        };
-        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
+      this.logMethodCall('getAIContext', { companyId });
+      
+      try {
+        const result = await callRPC('get_company_ai_context', { companyId });
+        
+        if (!result.success) {
+          return { data: null, error: result.error || 'Failed to get AI context', success: false };
+        }
+        
+        return { data: result.data, error: null, success: true };
+      } catch (error) {
+        this.logger.error('Exception in getAIContext', { companyId, error });
+        return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
       }
+    }, `get AI context for company ${companyId}`);
+  }
 
-      // Update user profile with company association
-      const { error: updateError } = await updateOne('user_profiles', userId, {
-        company_id: (company as any).id,
-        role: 'owner',
-        updated_at: new Date().toISOString(),
-        ...(options.jobTitle && { job_title: options.jobTitle })
-      });
+  // ============================================================================
+  // HELPER METHODS
+  // ============================================================================
 
-      if (updateError) {
-        logger.error('Error updating user profile:', updateError);
-        const result: ProvisioningResult = {
-          success: false,
-          action: 'failed',
-          message: 'Failed to update user profile',
-          error: updateError
-        };
-        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
+  /**
+   * Calculate business identity completion percentage
+   */
+  calculateIdentityCompletion(identity: BusinessIdentity): number {
+    const sections = [
+      'foundation',
+      'missionVisionValues',
+      'productsServices',
+      'targetMarket',
+      'competitiveLandscape',
+      'businessOperations',
+      'financialContext',
+      'strategicContext'
+    ];
+    
+    let completedSections = 0;
+    
+    sections.forEach(section => {
+      const sectionData = (identity as any)[section];
+      if (sectionData && Object.keys(sectionData).length > 0) {
+        completedSections++;
       }
-
-      const result: ProvisioningResult = {
-        success: true,
-        companyId: (company as any).id,
-        action: 'created',
-        message: 'Default company created successfully'
-      };
-      return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
-    }, `create default company for user ${userId}`);
+    });
+    
+    return Math.round((completedSections / sections.length) * 100);
   }
 
   /**
-   * Create personal company for user
+   * Get next recommended action for company
    */
-  private async createPersonalCompany(userId: string, profile: any): Promise<ServiceResponse<ProvisioningResult>> {
+  async getNextAction(companyId: string): Promise<ServiceResponse<{ action: string; priority: string; message: string }>> {
     return this.executeDbOperation(async () => {
-      const { data: company, error: companyError } = await insertOne('companies', {
-        name: 'My Business',
-        industry: 'Personal',
-        size: '1',
-        created_by: userId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
-
-      if (companyError) {
-        logger.error('Error creating personal company:', companyError);
-        const result: ProvisioningResult = {
-          success: false,
-          action: 'failed',
-          message: 'Failed to create personal company',
-          error: companyError
-        };
-        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
+      this.logMethodCall('getNextAction', { companyId });
+      
+      try {
+        const result = await callRPC('get_company_next_action', { companyId });
+        
+        if (!result.success) {
+          return { data: null, error: result.error || 'Failed to get next action', success: false };
+        }
+        
+        return { data: result.data, error: null, success: true };
+      } catch (error) {
+        this.logger.error('Exception in getNextAction', { companyId, error });
+        return { data: null, error: error instanceof Error ? error.message : 'Unknown error', success: false };
       }
-
-      // Update user profile
-      const { error: updateError } = await updateOne('user_profiles', userId, {
-        company_id: (company as any).id,
-        role: 'owner',
-        updated_at: new Date().toISOString()
-      });
-
-      if (updateError) {
-        logger.error('Error updating user profile:', updateError);
-        const result: ProvisioningResult = {
-          success: false,
-          action: 'failed',
-          message: 'Failed to update user profile',
-          error: updateError
-        };
-        return { data: ProvisioningResultSchema.parse(result), error: null, success: false };
-      }
-
-      const result: ProvisioningResult = {
-        success: true,
-        companyId: (company as any).id,
-        action: 'created',
-        message: 'Personal company created successfully'
-      };
-      return { data: ProvisioningResultSchema.parse(result), error: null, success: true };
-    }, `create personal company for user ${userId}`);
-  }
-
-  /**
-   * Calculate financial health score
-   */
-  private calculateFinancialHealth(company: any): number {
-    let score = 50; // Base score
-    
-    if (company.mrr && company.mrr > 0) score += 20;
-    if (company.gross_margin && company.gross_margin > 50) score += 15;
-    if (company.burn_rate && company.burn_rate < 0.1) score += 15;
-    
-    return Math.min(100, Math.max(0, score));
-  }
-
-  /**
-   * Calculate operational health score
-   */
-  private calculateOperationalHealth(company: any): number {
-    let score = 50; // Base score
-    
-    if (company.avg_deal_cycle_days && company.avg_deal_cycle_days < 30) score += 20;
-    if (company.avg_first_response_mins && company.avg_first_response_mins < 60) score += 15;
-    if (company.on_time_delivery_pct && company.on_time_delivery_pct > 90) score += 15;
-    
-    return Math.min(100, Math.max(0, score));
-  }
-
-  /**
-   * Calculate customer health score
-   */
-  private calculateCustomerHealth(company: any): number {
-    let score = 50; // Base score
-    
-    if (company.csat && company.csat > 80) score += 25;
-    if (company.followers_count && company.followers_count > 100) score += 15;
-    if (company.client_base_description) score += 10;
-    
-    return Math.min(100, Math.max(0, score));
-  }
-
-  /**
-   * Calculate growth health score
-   */
-  private calculateGrowthHealth(company: any): number {
-    let score = 50; // Base score
-    
-    if (company.employee_count && company.employee_count > 1) score += 20;
-    if (company.website_visitors_month && company.website_visitors_month > 1000) score += 15;
-    if (company.specialties && company.specialties.length > 0) score += 15;
-    
-    return Math.min(100, Math.max(0, score));
-  }
-
-  /**
-   * Generate recommendations based on company data and metrics
-   */
-  private generateRecommendations(company: any, metrics: any): string[] {
-    const recommendations: string[] = [];
-    
-    if (metrics.financial < 70) {
-      recommendations.push('Consider implementing better financial tracking and metrics');
-    }
-    
-    if (metrics.operational < 70) {
-      recommendations.push('Optimize operational processes to improve efficiency');
-    }
-    
-    if (metrics.customer < 70) {
-      recommendations.push('Focus on improving customer satisfaction and engagement');
-    }
-    
-    if (metrics.growth < 70) {
-      recommendations.push('Develop growth strategies and expand market presence');
-    }
-    
-    if (!company.website) {
-      recommendations.push('Create a professional website to establish online presence');
-    }
-    
-    if (!company.specialties || company.specialties.length === 0) {
-      recommendations.push('Define your company specialties to better target customers');
-    }
-    
-    return recommendations;
+    }, `get next action for company ${companyId}`);
   }
 }
 
-// Create and export service instance
+// ============================================================================
+// EXPORT SINGLETON INSTANCE
+// ============================================================================
+
 export const companyService = new CompanyService();
+

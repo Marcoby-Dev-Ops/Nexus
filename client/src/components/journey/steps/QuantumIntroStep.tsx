@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Button } from '@/shared/components/ui/Button';
 import { Building2, Target, ArrowRight } from 'lucide-react';
 import { getAllQuantumBlocks } from '@/core/config/quantumBusinessModel';
-import { JourneyStepProps } from '../types';
+import type { JourneyStepProps } from '../types';
 
 interface QuantumIntroStepProps extends JourneyStepProps {
   onNext: () => void;

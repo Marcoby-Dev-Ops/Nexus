@@ -1,24 +1,22 @@
 /**
  * Authentik Auth Context
- * 
- * This context provides authentication state and methods using Authentik OAuth2.
- * Replaces the Supabase AuthContext for the migration to Authentik.
+ *
+ * Provides authentication state and helpers backed by Authentik OAuth2.
  */
 
-import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useCallback, useMemo } from 'react';
 import { authentikAuthService, type AuthUser, type AuthSession } from '@/core/auth/authentikAuthServiceInstance';
+import { useAuthStore } from '@/core/auth/authStore';
 import { logger } from '@/shared/utils/logger';
 
-
-// Simple logger for auth events (gated by VITE_ENABLE_AUTH_LOGS)
-const AUTH_LOGS_ENABLED = (import.meta as any)?.env?.VITE_ENABLE_AUTH_LOGS === 'true';
+const AUTH_LOGS_ENABLED = (import.meta as any)?.env?.VITE_ENABLE_AUTH_LOGS === 'true' || import.meta.env.DEV;
 const authLogger = {
   info: (message: string, data?: unknown) => {
     if (AUTH_LOGS_ENABLED) logger.info(`[MarcobyIAMContext] ${message}`, data);
   },
   error: (message: string, error?: unknown) => {
     if (AUTH_LOGS_ENABLED) logger.error(`[MarcobyIAMContext Error] ${message}`, error);
-  }
+  },
 };
 
 interface AuthentikAuthContextType {
@@ -36,19 +34,50 @@ interface AuthentikAuthContextType {
 const AuthentikAuthContext = createContext<AuthentikAuthContextType | undefined>(undefined);
 
 export function AuthentikAuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<AuthSession | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const user = useAuthStore((state) => state.user);
+  const session = useAuthStore((state) => state.session);
+  const loading = useAuthStore((state) => state.loading);
+  const initialized = useAuthStore((state) => state.initialized);
+  const error = useAuthStore((state) => state.error);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  const setAuthState = useAuthStore((state) => state.setAuthState);
+  const clearAuthState = useAuthStore((state) => state.clearAuthState);
+  const setLoading = useAuthStore((state) => state.setLoading);
+  const setError = useAuthStore((state) => state.setError);
+  const setInitialized = useAuthStore((state) => state.setInitialized);
 
   const mountedRef = useRef(true);
   const initializingRef = useRef(false);
   const hasInitializedRef = useRef(false);
 
+  const hydrateSession = useCallback(async () => {
+    try {
+      authLogger.info('Starting session hydration...');
+      const authResult = await authentikAuthService.isAuthenticated();
+
+      if (authResult.success && authResult.data) {
+        authLogger.info('User appears authenticated, getting session...');
+        const sessionResult = await authentikAuthService.getSession();
+        if (sessionResult.success && sessionResult.data) {
+          setAuthState(sessionResult.data);
+          authLogger.info('User authenticated successfully', { userId: sessionResult.data.user.id });
+          return;
+        }
+        authLogger.info('No valid session found during hydration');
+      } else {
+        authLogger.info('User not authenticated during hydration');
+      }
+
+      authLogger.info('Clearing auth state - no valid session');
+      clearAuthState(true);
+    } catch (error) {
+      authLogger.error('Error during session hydration', error);
+      clearAuthState(true);
+    }
+  }, [clearAuthState, setAuthState]);
+
   const initializeAuth = useCallback(async () => {
-    // Prevent multiple initializations in React StrictMode
     if (initializingRef.current || hasInitializedRef.current) {
       authLogger.info('Auth initialization already in progress or completed');
       return;
@@ -58,71 +87,26 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
     setLoading(true);
     setError(null);
 
-    // Add timeout protection
     const timeoutId = setTimeout(() => {
       if (mountedRef.current && initializingRef.current) {
-        authLogger.error('Auth initialization timed out');
+        authLogger.error('Auth initialization timed out - forcing completion');
         setError(new Error('Authentication initialization timed out'));
         setLoading(false);
         setInitialized(true);
         hasInitializedRef.current = true;
         initializingRef.current = false;
       }
-    }, 10000); // 10 second timeout
+    }, 15000); // Increased timeout to 15 seconds
 
     try {
       authLogger.info('Initializing Marcoby IAM auth...');
-
-      // Check if user is authenticated
-      const authResult = await authentikAuthService.isAuthenticated();
-      
-      if (authResult.success && authResult.data) {
-        // User is authenticated, get session
-        const sessionResult = await authentikAuthService.getSession();
-        
-        if (sessionResult.success && sessionResult.data) {
-          setSession(sessionResult.data);
-          setUser(sessionResult.data.user);
-          setIsAuthenticated(true);
-          authLogger.info('User authenticated', { userId: sessionResult.data.user.id });
-          
-
-          
-          // Debug logging removed for security
-          
-          // Manually store session in localStorage if it's not already there
-          if (sessionResult.data.session?.accessToken) {
-            try {
-              const existingSession = localStorage.getItem('authentik_session');
-              if (!existingSession) {
-                localStorage.setItem('authentik_session', JSON.stringify(sessionResult.data.session));
-                // Debug logging removed
-              } else {
-                // Debug logging removed
-              }
-            } catch (error) {
-              // Error logging removed for production
-            }
-          }
-        } else {
-          authLogger.info('No valid session found');
-          setSession(null);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } else {
-        authLogger.info('User not authenticated');
-        setSession(null);
-        setUser(null);
-        setIsAuthenticated(false);
-      }
+      await hydrateSession();
+      authLogger.info('Auth initialization completed successfully');
     } catch (error) {
       if (mountedRef.current) {
         authLogger.error('Unexpected error during auth initialization', error);
         setError(new Error('Unexpected authentication error'));
-        setSession(null);
-        setUser(null);
-        setIsAuthenticated(false);
+        clearAuthState(true);
       }
     } finally {
       clearTimeout(timeoutId);
@@ -130,74 +114,73 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
         setLoading(false);
         setInitialized(true);
         hasInitializedRef.current = true;
+        authLogger.info('Auth initialization finalized', {
+          initialized: true,
+          loading: false,
+          hasUser: !!user,
+          isAuthenticated
+        });
       }
       initializingRef.current = false;
     }
-  }, []);
+  }, [clearAuthState, hydrateSession, setError, setInitialized, setLoading, user, isAuthenticated]);
 
   useEffect(() => {
     mountedRef.current = true;
-    
-    // Only initialize if not already initialized
+
     if (!hasInitializedRef.current) {
-      if (AUTH_LOGS_ENABLED) console.log('🔍 [AuthentikAuthContext] Starting auth initialization');
+      if (AUTH_LOGS_ENABLED) {
+        console.log('🔍 [AuthentikAuthContext] Starting auth initialization');
+      }
       initializeAuth();
     }
 
-    // Return cleanup function
     return () => {
       mountedRef.current = false;
     };
-  }, []); // Remove initializeAuth from dependencies
+  }, [initializeAuth]);
 
-  // Remove automatic redirects - let routing handle authentication protection
+  const signIn = useCallback(
+    async (additionalParams?: Record<string, string>): Promise<{ success: boolean; error?: string }> => {
+      authLogger.info('Sign in initiated');
+      setLoading(true);
+      setError(null);
 
-  const signIn = async (additionalParams?: Record<string, string>): Promise<{ success: boolean; error?: string }> => {
-    authLogger.info('Sign in initiated');
-    setLoading(true);
-    setError(null);
+      try {
+        const result = await authentikAuthService.initiateOAuthFlow(undefined, additionalParams);
 
-    try {
-      // Initiate OAuth flow
-      const result = await authentikAuthService.initiateOAuthFlow(undefined, additionalParams);
-      
-      if (!result.success || !result.data) {
-        const errorMessage = result.error || 'Failed to initiate authentication';
-        // Error logging removed for production
+        if (!result.success || !result.data) {
+          const errorMessage = result.error || 'Failed to initiate authentication';
+          setError(new Error(errorMessage));
+          setLoading(false);
+          return { success: false, error: errorMessage };
+        }
+
+        try {
+          window.location.replace(result.data);
+        } catch (_redirectError) {
+          window.location.href = result.data;
+        }
+
+        return { success: true };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
         setError(new Error(errorMessage));
         setLoading(false);
         return { success: false, error: errorMessage };
       }
+    },
+    [setError, setLoading]
+  );
 
-      // Redirect to Authentik
-      authLogger.info('Redirecting to Marcoby IAM');
-      
-      // Try using replace instead of href for more reliable redirect
-      try {
-        window.location.replace(result.data);
-      } catch (redirectError) {
-        // Error logging removed for production
-        // Fallback to href
-        window.location.href = result.data;
-      }
-      
-      return { success: true };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Sign in failed';
-      setError(new Error(errorMessage));
-      setLoading(false);
-      return { success: false, error: errorMessage };
-    }
-  };
-
-  const signOut = async (): Promise<{ success: boolean; error?: string }> => {
+  const signOut = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     authLogger.info('Sign out initiated');
     setLoading(true);
     setError(null);
 
     try {
       const result = await authentikAuthService.signOut();
-      
+
       if (!result.success) {
         const errorMessage = result.error || 'Sign out failed';
         setError(new Error(errorMessage));
@@ -205,13 +188,8 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
         return { success: false, error: errorMessage };
       }
 
-      // Clear state
-      setSession(null);
-      setUser(null);
-      setIsAuthenticated(false);
-      setError(null);
+      clearAuthState(true);
       setLoading(false);
-      
       authLogger.info('User signed out successfully');
       return { success: true };
     } catch (error) {
@@ -220,7 +198,7 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
       setLoading(false);
       return { success: false, error: errorMessage };
     }
-  };
+  }, [clearAuthState, setError, setLoading]);
 
   const refreshAuth = useCallback(async () => {
     authLogger.info('Refreshing authentication state...');
@@ -228,58 +206,26 @@ export function AuthentikAuthProvider({ children }: { children: React.ReactNode 
     setError(null);
 
     try {
-      const authResult = await authentikAuthService.isAuthenticated();
-      if (authResult.success && authResult.data) {
-        const sessionResult = await authentikAuthService.getSession();
-        if (sessionResult.success && sessionResult.data) {
-          setSession(sessionResult.data);
-          setUser(sessionResult.data.user);
-          setIsAuthenticated(true);
-          authLogger.info('Authentication state refreshed', { userId: sessionResult.data.user.id });
-        } else {
-          authLogger.info('No valid session found after refresh');
-          setSession(null);
-          setUser(null);
-          setIsAuthenticated(false);
-        }
-      } else {
-        authLogger.info('User not authenticated after refresh');
-        setSession(null);
-        setUser(null);
-        setIsAuthenticated(false);
-      }
+      await hydrateSession();
     } catch (error) {
       if (mountedRef.current) {
         authLogger.error('Unexpected error during auth refresh', error);
         setError(new Error('Unexpected authentication error during refresh'));
-        setSession(null);
-        setUser(null);
-        setIsAuthenticated(false);
+        clearAuthState(true);
       }
     } finally {
       if (mountedRef.current) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [clearAuthState, hydrateSession, setError, setLoading]);
 
-  const value: AuthentikAuthContextType = {
-    user,
-    session,
-    loading,
-    initialized,
-    error,
-    signIn,
-    signOut,
-    refreshAuth,
-    isAuthenticated,
-  };
-
-  return (
-    <AuthentikAuthContext.Provider value={value}>
-      {children}
-    </AuthentikAuthContext.Provider>
+  const value = useMemo<AuthentikAuthContextType>(
+    () => ({ user, session, loading, initialized, error, signIn, signOut, refreshAuth, isAuthenticated }),
+    [error, initialized, isAuthenticated, loading, refreshAuth, session, signIn, signOut, user]
   );
+
+  return <AuthentikAuthContext.Provider value={value}>{children}</AuthentikAuthContext.Provider>;
 }
 
 export function useAuthentikAuth(): AuthentikAuthContextType {

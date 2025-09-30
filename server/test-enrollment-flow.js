@@ -1,5 +1,5 @@
 // Load environment variables
-require('dotenv').config();
+require('./loadEnv');
 
 async function testEnrollmentFlow() {
   console.log('🔍 Testing Authentik Enrollment Flow Configuration...\n');

@@ -4,7 +4,7 @@
 -- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create ckb_documents table
+-- Create ckb_documents table - Company Knowledge Base document storage with vector embeddings
 CREATE TABLE IF NOT EXISTS ckb_documents (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS ckb_documents (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create ckb_search_logs table for analytics
+-- Create ckb_search_logs table - Knowledge base search analytics and usage tracking
 CREATE TABLE IF NOT EXISTS ckb_search_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS ckb_search_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create ckb_storage_connections table for OAuth connections
+-- Create ckb_storage_connections table - External storage integration for knowledge base
 CREATE TABLE IF NOT EXISTS ckb_storage_connections (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     company_id UUID NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

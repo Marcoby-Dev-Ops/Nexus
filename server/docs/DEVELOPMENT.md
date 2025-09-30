@@ -3,7 +3,7 @@
 ## 🚀 Quick Start
 
 ### 1. Environment Setup
-Your `.env` file is already configured with the remote PostgreSQL database.
+Your `.env` file is already configured with the remote Supabase project.
 
 ### 2. Database Commands
 
@@ -33,7 +33,7 @@ pnpm supabase:db:dump
 ### 3. Development Workflow
 
 ```bash
-# Start development server (connects to remote PostgreSQL)
+# Start development server (connects to remote Supabase)
 pnpm dev
 
 # Run tests

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
-import { enhancedMemoryService, MemoryItem, ConversationMemory } from '@/lib/ai/enhancedMemoryService';
+import type { MemoryItem, ConversationMemory } from '@/lib/ai/enhancedMemoryService';
+import { enhancedMemoryService } from '@/lib/ai/enhancedMemoryService';
 import { logger } from '@/shared/utils/logger';
 
 interface UseEnhancedMemoryOptions {

@@ -146,8 +146,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
 
     try {
-      const result = await companyService.get(profile.company_id);
-      
+      const result = await companyApi.get(profile.company_id);
       if (result.success && result.data) {
         setCompany(result.data as CompanyProfile);
         logger.info('Company profile loaded successfully', { companyId: profile.company_id });
@@ -155,7 +154,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } catch (err) {
       logger.error('Error loading company profile', { error: err, companyId: profile.company_id });
     }
-  }, [profile?.company_id, companyService]);
+  }, [profile?.company_id]);
 
   // Refresh profile
   const refreshProfile = useCallback(async () => {
@@ -254,7 +253,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       const loadCompanyData = async () => {
         try {
           const result = await companyService.get(profile.company_id!);
-          
           if (result.success && result.data) {
             setCompany(result.data as CompanyProfile);
             logger.info('Company profile loaded successfully', { companyId: profile.company_id });

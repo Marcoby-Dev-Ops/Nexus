@@ -14,10 +14,20 @@ export const msalConfig: Configuration = {
   cache: {
     cacheLocation: 'localStorage',
     storeAuthStateInCookie: false,
+    // Use a different cache key to avoid conflicts with Authentik
+    cacheKey: 'msal_integration_cache',
   },
 };
 
-export const msalInstance = new PublicClientApplication(msalConfig);
+// Lazy initialization to avoid conflicts with Authentik
+let _msalInstance: PublicClientApplication | null = null;
+
+export const getMsalInstance = (): PublicClientApplication => {
+  if (!_msalInstance) {
+    _msalInstance = new PublicClientApplication(msalConfig);
+  }
+  return _msalInstance;
+};
 
 export const msScopes = ['offline_access', 'User.Read', 'Mail.Read', 'Mail.ReadWrite', 'Calendars.Read', 'Files.Read.All', 'Contacts.Read'];
 
@@ -29,14 +39,19 @@ export const buildMsLoginRequest = (state?: Record<string, unknown>): RedirectRe
   redirectUri: `${window.location.origin}/integrations/microsoft365/callback`,
 });
 
-// App-wide MSAL readiness: initialize and handle any pending redirects once
-export const msalReady: Promise<void> = (async () => {
+// Initialize MSAL only when needed for Microsoft integrations
+export const initializeMsal = async (): Promise<PublicClientApplication> => {
+  const instance = getMsalInstance();
   try {
-    await msalInstance.initialize();
-    // Do NOT call handleRedirectPromise() here; the callback page handles it explicitly
-  } catch {
-    // Swallow to avoid unhandled errors at module load
+    await instance.initialize();
+  } catch (error) {
+    throw error;
   }
-})();
+  return instance;
+};
+
+// Legacy exports for backward compatibility - but these should only be used in Microsoft integration components
+export const msalInstance = getMsalInstance();
+export const msalReady = initializeMsal();
 
 
