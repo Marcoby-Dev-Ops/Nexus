@@ -389,8 +389,6 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     return null;
   }
 
-  protected config = userServiceConfig;
-
   // ============================================================================
   // CRUD OPERATIONS (CrudServiceInterface)
   // ============================================================================
