@@ -11,8 +11,18 @@ WORKDIR /app
 COPY package.json ./
 RUN pnpm install
 
-# Copy source code
-COPY . .
+# Copy source code (excluding root workspace files)
+COPY src/ ./src/
+COPY public/ ./public/
+COPY index.html ./
+COPY vite.config.ts ./
+COPY tsconfig.json ./
+COPY tsconfig.app.json ./
+COPY tsconfig.node.json ./
+COPY tailwind.config.ts ./
+COPY postcss.config.cjs ./
+COPY eslint.config.js ./
+COPY vitest.shims.d.ts ./
 
 # Build stage
 FROM base AS build
