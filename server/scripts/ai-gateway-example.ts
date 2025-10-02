@@ -1,7 +1,8 @@
 #!/usr/bin/env tsx
 
-import { NexusAIGatewayService } from '../src/ai/services/NexusAIGatewayService';
-import { logger } from '../src/utils/logger';
+// Use server-side service implementation when running from server
+const { NexusAIGatewayService } = require('../services/NexusAIGatewayService');
+const { logger } = require('../src/utils/logger');
 
 async function main() {
   console.log('🚀 Nexus AI Gateway Example\n');
@@ -155,7 +156,7 @@ async function main() {
     // Example 7: Get available models
     console.log('🤖 Example 7: Available models');
     const models = aiGateway.getAvailableModels('chat');
-    console.log('✅ Available chat models:', models.map(m => ({
+    console.log('✅ Available chat models:', models.map((m: any) => ({
       name: m.name,
       provider: m.provider,
       cost: m.costPerToken + ' per token',
@@ -165,8 +166,9 @@ async function main() {
     console.log('🎉 All examples completed successfully!');
 
   } catch (error) {
-    console.error('❌ Example failed:', error);
-    logger.error('AI Gateway example failed:', error);
+    const err: any = error;
+    console.error('❌ Example failed:', err);
+    (logger as any).error('AI Gateway example failed:', err);
   }
 }
 

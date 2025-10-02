@@ -11,31 +11,28 @@ import { Textarea } from '@/shared/components/ui/Textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { useToast } from '@/shared/components/ui/use-toast';
-import { useCompany } from '@/shared/contexts/CompanyContext';
+import { useCompany, useBusinessIdentity } from '@/shared/contexts/CompanyContext';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { companyApi } from '@/services/api/CompanyApi';
 import { userService } from '@/services/core/UserService';
 import { logger } from '@/shared/utils/logger';
+import { getIndustryValue } from '@/lib/identity/industry-options';
 
-const companyProfileSchema = z.object({
-  // Core Identity
-  name: z.string().min(2, 'Company name must be at least 2 characters'),
-  industry: z.string().min(2, 'Industry is required'),
-  size: z.string().min(1, 'Company size is required'),
-  website: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
-  description: z.string().max(500, 'Description must be 500 characters or less').optional(),
-  
-  // Business Context
-  headquarters: z.string().max(200, 'Headquarters must be 200 characters or less').optional(),
+import { companyProfileSchema as sharedCompanyProfileSchema } from '@/shared/validation/schemas';
+
+// Extend the shared company profile schema with form-specific fields that map to
+// business identity and structured address storage.
+const companyProfileSchema = sharedCompanyProfileSchema.extend({
+  headquarters: z.object({
+    address: z.string().max(200, 'Address must be 200 characters or less').optional().or(z.literal('')),
+    city: z.string().max(100, 'City must be 100 characters or less').optional().or(z.literal('')),
+    state: z.string().max(100, 'State must be 100 characters or less').optional().or(z.literal('')),
+    zipCode: z.string().max(20, 'ZIP Code must be 20 characters or less').optional().or(z.literal('')),
+    country: z.string().max(100, 'Country must be 100 characters or less').optional().or(z.literal('')),
+  }).optional(),
   founded: z.string().regex(/^\d{4}$/, 'Please enter a valid 4-digit year').optional().or(z.literal('')),
-  growth_stage: z.string().optional(),
-  
-  
-  // Contact Information
-  business_phone: z.string()
-    .regex(/^(\+?[1-9]\d{0,3}[-.\s]?)?\(?([0-9]{1,4})\)?[-.\s]?([0-9]{1,4})[-.\s]?([0-9]{1,9})$/, 'Please enter a valid phone number with country code (e.g., +1 555 123-4567)')
-    .optional()
-    .or(z.literal('')),
+  growth_stage: z.string().optional().or(z.literal('')),
+  business_phone: z.string().optional().or(z.literal('')),
 });
 
 type CompanyProfileFormData = z.infer<typeof companyProfileSchema>;
@@ -107,12 +104,10 @@ const industryOptions = [
 const sizeOptions = ["1-10 employees", "11-50 employees", "51-200 employees", "201-500 employees", "501-1000 employees", "1000+ employees"];
 
 const growthStageOptions = [
-  "Startup",
-  "Early Stage",
-  "Growth Stage",
-  "Mature",
-  "Enterprise",
-  "Scale-up"
+  'Startup',
+  'Growth',
+  'Mature',
+  'Enterprise'
 ];
 
 export function CompanyProfilePage() {
@@ -123,6 +118,7 @@ export function CompanyProfilePage() {
 
   // Use CompanyContext for company data
   const { company, loading: isLoadingCompany, refreshCompany, updateCompany } = useCompany();
+  const { businessIdentity, updateBusinessIdentity, refreshBusinessIdentity } = useBusinessIdentity();
   const { profile } = useUserProfile();
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -136,7 +132,7 @@ export function CompanyProfilePage() {
     });
   }, [company, isLoadingCompany]);
 
-  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
+  const { control, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CompanyProfileFormData>({
     resolver: zodResolver(companyProfileSchema),
     defaultValues: {
       name: '',
@@ -144,7 +140,7 @@ export function CompanyProfilePage() {
       size: '',
       website: '',
       description: '',
-      headquarters: '',
+      headquarters: { address: '', city: '', state: '', zipCode: '', country: '' },
       founded: '',
       growth_stage: '',
       business_phone: '',
@@ -155,50 +151,56 @@ export function CompanyProfilePage() {
   useEffect(() => {
     if (company) {
       const companyData = company as any;
-      console.log('CompanyProfilePage - Syncing form with company data:', {
-        companyData,
-        mappedData: {
-          name: companyData.name || '',
-          industry: companyData.industry || '',
-          size: companyData.size || '',
-          website: companyData.website || '',
-          description: companyData.description || '',
-          headquarters: companyData.headquarters || '',
-          founded: companyData.founded || '',
-          growth_stage: companyData.growth_stage || '',
-          business_phone: formatPhoneNumber(companyData.business_phone) || '',
-        }
-      });
-      
-      console.log('Form data being submitted:', {
-        formData: {
-          name: companyData.name || '',
-          industry: companyData.industry || '',
-          size: companyData.size || '',
-          website: companyData.website || '',
-          description: companyData.description || '',
-          headquarters: companyData.headquarters || '',
-          founded: companyData.founded || '',
-          growth_stage: companyData.growth_stage || '',
-          business_phone: formatPhoneNumber(companyData.business_phone) || '',
-        }
-      });
-      
-      reset({
+
+      // Prefer business identity values when available so both pages stay in sync.
+      const identityFoundation = (businessIdentity as any)?.foundation || {};
+
+      // company records use `address` (object) while the form exposes a single `headquarters` string.
+      const existingHeadquarters =
+        // First prefer identity.foundation.headquarters.address
+        (identityFoundation.headquarters && (identityFoundation.headquarters.address || ''))
+        // Next prefer companies.address.address
+        || (companyData.address && (companyData.address.address || companyData.address))
+        // Fallback to legacy top-level field if present
+        || companyData.headquarters
+        || '';
+
+      // For founded, the identity stores a date (YYYY-MM-DD). The profile form uses a 4-digit year.
+      const identityFounded = identityFoundation.foundedDate || '';
+      const foundedYear = identityFounded ? String(identityFounded).slice(0, 4) : (companyData.founded || '');
+
+      const mapped = {
         name: companyData.name || '',
         industry: companyData.industry || '',
         size: companyData.size || '',
         website: companyData.website || '',
         description: companyData.description || '',
-        headquarters: companyData.headquarters || '',
-        founded: companyData.founded || '',
-        growth_stage: companyData.growth_stage || '',
-        business_phone: formatPhoneNumber(companyData.business_phone) || '',
-      });
-    }
-  }, [company, reset]);
+        headquarters: (identityFoundation.headquarters && {
+          address: identityFoundation.headquarters.address || '',
+          city: identityFoundation.headquarters.city || '',
+          state: identityFoundation.headquarters.state || '',
+          zipCode: identityFoundation.headquarters.zipCode || '',
+          country: identityFoundation.headquarters.country || '',
+        }) || (companyData.address && {
+          address: companyData.address.address || '',
+          city: companyData.address.city || '',
+          state: companyData.address.state || '',
+          zipCode: companyData.address.zipCode || '',
+          country: companyData.address.country || '',
+        }) || { address: '', city: '', state: '', zipCode: '', country: '' },
+        founded: foundedYear,
+        // Prefer identity.companyStage if present (maps to companyStage in foundation)
+        growth_stage: identityFoundation.companyStage || companyData.growth_stage || '',
+        business_phone: identityFoundation.phone || formatPhoneNumber(companyData.business_phone) || '',
+      };
 
-  const onSubmit = async (data: any) => {
+      console.log('CompanyProfilePage - Syncing form with company and identity data:', { companyData, identityFoundation, mapped });
+
+      reset(mapped);
+    }
+  }, [company, businessIdentity, reset]);
+
+  const onSubmit = async (data: CompanyProfileFormData) => {
     console.log('CompanyProfilePage - Form submission started', { 
       hasCompany: !!company, 
       companyId: company?.id,
@@ -229,16 +231,23 @@ export function CompanyProfilePage() {
       console.log('CompanyProfilePage - Operation mode', { isCreating, existingCompanyId: existingCompany?.id });
       
       // Transform form data to match API expectations
+      // The API expects an `address` field (JSON) on companies. The form exposes a single
+      // `headquarters` string. Map that to `address.address` so the server updates the
+      // existing JSONB `address` column instead of attempting to write a non-existent
+      // `headquarters` column.
+      // Build the payload for updating the `companies` table — do NOT include
+      // `founded` as a top-level field because the companies table does not
+      // have a `founded` column. Instead, send the founded year to the
+      // business identity store below.
       const companyData = {
         name: data.name,
-        industry: data.industry,
+        industry: getIndustryValue(data.industry),
         size: data.size,
         description: data.description,
         website: data.website,
-        headquarters: data.headquarters,
-        founded: data.founded,
-        growth_stage: data.growth_stage,
-        business_phone: data.business_phone,
+        // companies.address expects a structured object; pass the headquarters object
+        address: data.headquarters,
+        // Do NOT include growth_stage or business_phone as top-level columns - they do not exist on companies.
       };
 
       console.log('CompanyProfilePage - Prepared company data', { companyData });
@@ -246,9 +255,9 @@ export function CompanyProfilePage() {
       if (isCreating) {
         console.log('CompanyProfilePage - Creating new company');
         const createResult = await companyApi.create({
-          ...companyData,
-          owner_id: profile?.id // Set the current user as owner
-        });
+          ...(companyData as any),
+          owner_id: profile?.id // Set the current user as owner (server expects owner_id)
+        } as any);
         if (!createResult.success) {
           throw new Error(createResult.error || 'Failed to create company');
         }
@@ -263,7 +272,62 @@ export function CompanyProfilePage() {
         }
       } else {
         console.log('CompanyProfilePage - Updating existing company', { companyId: existingCompany!.id });
+        // Update core company fields
         await updateCompany(companyData);
+
+        // Keep business identity in sync: update foundation.headquarters and foundation.foundedDate
+        if (updateBusinessIdentity) {
+          const identityUpdates: any = { foundation: {} };
+
+          if (data.headquarters) {
+            identityUpdates.foundation.headquarters = {
+              address: data.headquarters.address,
+              city: data.headquarters.city,
+              state: data.headquarters.state,
+              zipCode: data.headquarters.zipCode,
+              country: data.headquarters.country,
+            };
+          }
+
+          if (data.founded) {
+            // Convert a 4-digit year into YYYY-01-01 format for the identity's foundedDate
+            const year = String(data.founded).slice(0, 4);
+            identityUpdates.foundation.foundedDate = `${year}-01-01`;
+          }
+
+          // Map business phone into the identity (foundation.phone)
+          if (data.business_phone) {
+            identityUpdates.foundation.phone = data.business_phone;
+          }
+
+          // Map growth_stage to foundation.companyStage when present
+          if (data.growth_stage) {
+            identityUpdates.foundation.companyStage = data.growth_stage;
+          }
+
+          // Only call if we have something to update
+          if (Object.keys(identityUpdates.foundation).length > 0) {
+            try {
+              // Ensure industry is canonical when syncing to identity as well
+              if (data.industry) {
+                identityUpdates.foundation.industry = getIndustryValue(data.industry);
+              }
+
+              await updateBusinessIdentity(identityUpdates);
+              // Ensure identity is fresh before we reset the form / refresh company
+              if (refreshBusinessIdentity) {
+                try {
+                  await refreshBusinessIdentity(true);
+                } catch (refreshErr) {
+                  console.warn('Failed to refresh business identity after update', refreshErr);
+                }
+              }
+            } catch (err) {
+              console.warn('Failed to update business identity from profile page', err);
+            }
+          }
+        }
+
         console.log('CompanyProfilePage - Company updated successfully');
       }
 
@@ -275,8 +339,7 @@ export function CompanyProfilePage() {
         description: `Company ${isCreating ? 'created' : 'updated'} successfully`,
       });
 
-      // Navigate to dashboard after successful save
-      navigate('/dashboard');
+  // Stay on the profile page after successful save (no redirect)
     } catch (error) {
       console.error('CompanyProfilePage - Form submission error:', error);
       toast({
@@ -390,7 +453,40 @@ export function CompanyProfilePage() {
                     name="industry"
                     control={control}
                     render={({ field }) => (
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={async (value) => {
+                          // Update the form control
+                          field.onChange(value)
+
+                          // Keep the business identity in sync live when possible
+                          // Use canonical industry value before updating company/identity
+                          try {
+                            const canonical = getIndustryValue(value)
+                            // Update top-level company record if it differs
+                            if (company && company.id) {
+                              // updateCompany is available from context — prefer it when present
+                              try {
+                                await updateCompany({ industry: canonical } as any)
+                              } catch (e) {
+                                // Fall back to the companyService flow handled elsewhere
+                                console.warn('Failed to update company.industry via context', e)
+                              }
+                            }
+
+                            // Also update business identity foundation.industry if available
+                            if (updateBusinessIdentity) {
+                              try {
+                                await updateBusinessIdentity({ foundation: { industry: canonical } } as any)
+                              } catch (e) {
+                                console.warn('Failed to update business identity industry from profile select', e)
+                              }
+                            }
+                          } catch (err) {
+                            console.warn('Error syncing industry selection', err)
+                          }
+                        }}
+                        value={field.value}
+                      >
                         <SelectTrigger><SelectValue placeholder="Select an industry" /></SelectTrigger>
                         <SelectContent>
                           {industryOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
@@ -444,14 +540,50 @@ export function CompanyProfilePage() {
                   />
                   {errors.founded && <p className="text-sm text-destructive mt-1">{errors.founded.message}</p>}
                 </div>
-                <div>
-                  <label htmlFor="headquarters" className="block text-sm font-medium mb-1">Headquarters</label>
-                  <Controller
-                    name="headquarters"
-                    control={control}
-                    render={({ field }) => <Input id="headquarters" {...field} placeholder="San Francisco, CA" />}
-                  />
-                  {errors.headquarters && <p className="text-sm text-destructive mt-1">{errors.headquarters.message}</p>}
+                <div className="col-span-1 md:col-span-2">
+                  <h4 className="text-sm font-medium mb-2">Headquarters</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div>
+                      <label htmlFor="headquarters.address" className="block text-sm font-medium mb-1">Street Address</label>
+                      <Controller
+                        name="headquarters.address"
+                        control={control}
+                        render={({ field }) => <Input id="headquarters.address" {...field} placeholder="123 Main St" />}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="headquarters.city" className="block text-sm font-medium mb-1">City</label>
+                      <Controller
+                        name="headquarters.city"
+                        control={control}
+                        render={({ field }) => <Input id="headquarters.city" {...field} placeholder="San Francisco" />}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="headquarters.state" className="block text-sm font-medium mb-1">State/Province</label>
+                      <Controller
+                        name="headquarters.state"
+                        control={control}
+                        render={({ field }) => <Input id="headquarters.state" {...field} placeholder="CA" />}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="headquarters.zipCode" className="block text-sm font-medium mb-1">ZIP/Postal Code</label>
+                      <Controller
+                        name="headquarters.zipCode"
+                        control={control}
+                        render={({ field }) => <Input id="headquarters.zipCode" {...field} placeholder="94105" />}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label htmlFor="headquarters.country" className="block text-sm font-medium mb-1">Country</label>
+                      <Controller
+                        name="headquarters.country"
+                        control={control}
+                        render={({ field }) => <Input id="headquarters.country" {...field} placeholder="United States" />}
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

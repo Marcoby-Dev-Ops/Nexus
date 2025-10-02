@@ -3,6 +3,7 @@ const { authenticateToken } = require('../middleware/auth');
 const { createError } = require('../middleware/errorHandler');
 const { executeLocalEdgeFunction } = require('../edge-functions');
 
+const AuditService = require('../services/AuditService');
 const router = express.Router();
 
 // POST /api/edge/:functionName - Call local edge function
@@ -17,6 +18,22 @@ router.post('/:functionName', authenticateToken, async (req, res) => {
 
     // Execute the local edge function
     const result = await executeLocalEdgeFunction(functionName, payload, req.user);
+
+    // Record audit for edge function invocation
+    try {
+      await AuditService.recordEvent({
+        eventType: 'edge_invoke',
+        objectType: 'edge_function',
+        objectId: functionName,
+        actorId: req.user && req.user.id ? req.user.id : null,
+        endpoint: `/api/edge/${functionName}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { payload: typeof payload === 'object' ? { keys: Object.keys(payload) } : null }
+      });
+    } catch (auditErr) {
+      console.warn('Failed to record audit for edge invoke', auditErr);
+    }
 
     res.json(result);
   } catch (error) {

@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Switch } from '@/shared/components/ui/Switch';
 import { Building2, Camera, X, AlertCircle, Save, Edit, CheckCircle, Settings, Activity, Users, UserPlus } from 'lucide-react';
 import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { useCompany, useBusinessIdentity } from '@/shared/contexts/CompanyContext';
 interface CompanyData {
   name: string;
   industry: string;
@@ -52,6 +53,8 @@ const CompanySettings: React.FC = () => {
     founded: '',
     description: '',
   });
+  const { company, updateCompany } = useCompany();
+  const { updateBusinessIdentity } = useBusinessIdentity();
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [companySettings, setCompanySettings] = useState<CompanySettings>({
     autoSync: false,
@@ -66,8 +69,50 @@ const CompanySettings: React.FC = () => {
   const handleSave = async () => {
     setIsLoading(true);
     try {
-      // TODO: Implement company save logic
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Map UI fields to server fields:
+      // - location -> address.address (companies.address JSON column)
+      // - founded -> business identity foundation.foundedDate
+      // - companySettings -> companies.settings (JSON)
+
+      const companyPayload: any = {
+        name: companyData.name,
+        industry: companyData.industry,
+        size: companyData.size,
+        website: companyData.website,
+        description: companyData.description,
+        // send address as JSON so server updates `address` JSONB
+        address: { address: companyData.location },
+      };
+
+      // Merge settings with existing company.settings
+      const existingSettings = (company && company.settings) ? company.settings : {};
+      const mergedSettings = {
+        ...existingSettings,
+        autoSync: companySettings.autoSync,
+        teamAnalytics: companySettings.teamAnalytics,
+        aiInsights: companySettings.aiInsights,
+      };
+
+      companyPayload.settings = mergedSettings;
+
+      // Update core company fields
+      if (updateCompany) {
+        await updateCompany(companyPayload);
+      } else {
+        // Fallback: use edge function if context not available
+        await updateOne('companies', company?.id || '', { ...companyPayload, updated_at: new Date().toISOString() });
+      }
+
+      // Update business identity for founded year
+      if (companyData.founded) {
+        if (updateBusinessIdentity) {
+          await updateBusinessIdentity({ foundation: { foundedDate: companyData.founded } } as any);
+        } else {
+          // Fallback: call edge function to update business identity
+          await callEdgeFunction('business_identity', { action: 'update_company_foundation', data: { id: company?.id, foundation: { foundedDate: companyData.founded } } });
+        }
+      }
+
       setIsEditing(false);
       setMessage({ type: 'success', text: 'Company information updated successfully!' });
     } catch {

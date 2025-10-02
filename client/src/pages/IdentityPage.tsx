@@ -43,7 +43,7 @@ export default function IdentityPage() {
 
     setHeaderContent(
       "Business Identity",
-      "Define your business foundation, mission, and strategic context",
+      undefined,
       headerActions
     )
 

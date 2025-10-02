@@ -124,32 +124,33 @@ class NexusRAGService {
 
       // Determine whether the message maps to one of the seven building blocks
       const buildingBlock = this.detectBuildingBlock(trimmedMessage) || this.detectBuildingBlockFromAgent(agentId);
-      const shouldUseKnowledge = !!buildingBlock && !!context.company?.id;
+  const companyId = context.company?.id || null;
+  const shouldUseKnowledge = !!buildingBlock && !!companyId;
 
       // Step 1: Get comprehensive business knowledge limited to the identified building block
       let businessKnowledge: BusinessKnowledge | null = null;
       let ckbResponse: CKBResponse | null = null;
       
-      if (shouldUseKnowledge) {
+      if (shouldUseKnowledge && companyId) {
         try {
           console.log('🔍 Querying Nexus Knowledge Base for building block:', buildingBlock);
           
           // Get CKB RAG context
           ckbResponse = await ckbRAGService.queryCKB({
             query: `${buildingBlock} ${trimmedMessage}`,
-            companyId: context.company.id,
+            companyId,
             department: buildingBlock,
             includeBusinessData: true,
             includeHistoricalContext: true
           });
 
           // Get comprehensive business knowledge
-          businessKnowledge = await this.getBusinessKnowledge(context.company.id, `${buildingBlock} ${trimmedMessage}`);
+          businessKnowledge = await this.getBusinessKnowledge(companyId, `${buildingBlock} ${trimmedMessage}`);
           
           console.log('✅ Knowledge Base Response:', {
             confidence: ckbResponse.confidence,
             sourcesCount: ckbResponse.sources.length,
-            knowledgeTypes: Object.keys(businessKnowledge).filter(key => businessKnowledge[key as keyof BusinessKnowledge]?.length > 0),
+            knowledgeTypes: businessKnowledge ? Object.keys(businessKnowledge).filter(key => businessKnowledge![key as keyof BusinessKnowledge]?.length > 0) : [],
             hasRecommendations: ckbResponse.recommendations.length > 0
           });
         } catch (error) {
@@ -496,6 +497,28 @@ Instructions:
 8. When referencing company knowledge, cite the specific source (process, procedure, policy, etc.)
 
 Current message: "${message}"`;
+
+    // If contact information is provided in context, add a strict PII output template
+    try {
+      if ((context as any)?.contact) {
+        const contactInstructions = `
+
+PII HANDLING INSTRUCTIONS:
+- The context includes the user's contact information. Only reveal personally identifiable information (PII) when explicitly requested by the user.
+- If asked for the user's phone number, respond using THIS EXACT, SINGLE-LINE TEMPLATE and nothing else:
+  "Your phone number on file is: {{phone}}"
+  Replace {{phone}} only with the phone number provided in the context.contact.phone field. Do NOT add any extra commentary, formatting, or additional PII.
+- If the contact.phone field is missing or blank, respond exactly with: "I do not have a phone number on file."
+- Do NOT hallucinate, invent, or guess phone numbers or other contact details. If unsure, say you don't have the information.
+- Never include other contact fields (email, address) unless explicitly asked and present in the context; if asked, follow the same single-line template pattern for that field (e.g., "Your email on file is: {{email}}").
+`;
+
+        prompt += contactInstructions;
+      }
+    } catch (piiErr) {
+      // Non-fatal: don't break prompt generation if context is unexpected
+      console.warn('Failed to append PII instructions to system prompt:', piiErr);
+    }
 
     return prompt;
   }

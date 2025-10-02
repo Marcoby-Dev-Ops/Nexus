@@ -75,9 +75,12 @@ export function IdentitySectionForm({ section, identity, onSave, onCancel }: Ide
   const [newSector, setNewSector] = useState('')
 
   useEffect(() => {
-    // Initialize form data with current identity data only once when section changes
+    // Initialize form data and keep the foundation industry/sectors/name
+    // in sync with the global `identity` when it changes. We intentionally
+    // avoid stomping on other unsaved fields but ensure the industry value
+    // shown to the user reflects the canonical identity value.
     const sectionData = (identity as any)[section] || {}
-    console.log('Form initializing with identity data:', { section, identity, sectionData })
+    console.log('Form initializing/syncing with identity data:', { section, identity, sectionData })
 
     if (section === 'foundation') {
       const normalizedSectors = normalizeTagList(
@@ -86,21 +89,48 @@ export function IdentitySectionForm({ section, identity, onSave, onCancel }: Ide
           : sectionData?.sector
       )
       const normalizedIndustry = getIndustryValue(sectionData?.industry)
-      setFormData({
-        ...sectionData,
-        foundedDate: formatDateForInput(sectionData?.foundedDate),
-        industry: normalizedIndustry,
-        sectors: normalizedSectors,
-        sector: normalizedSectors.length > 0
-          ? normalizedSectors.join(', ')
-          : (typeof sectionData?.sector === 'string' ? sectionData.sector : '')
+
+      // If the form is empty, initialize fully. Otherwise only patch
+      // the industry/name/sectors so we don't overwrite other in-progress edits.
+      setFormData((prev: any) => {
+        const isEmpty = !prev || Object.keys(prev).length === 0
+        if (isEmpty) {
+          setNewSector('')
+          return {
+            ...sectionData,
+            foundedDate: formatDateForInput(sectionData?.foundedDate),
+            industry: normalizedIndustry,
+            sectors: normalizedSectors,
+            sector: normalizedSectors.length > 0
+              ? normalizedSectors.join(', ')
+              : (typeof sectionData?.sector === 'string' ? sectionData.sector : '')
+          }
+        }
+
+        // Patch only industry / sectors / name when they differ
+        const patches: any = {}
+        if (normalizedIndustry && normalizedIndustry !== prev.industry) patches.industry = normalizedIndustry
+        if (sectionData?.name && sectionData.name !== prev.name) patches.name = sectionData.name
+        // Compare sectors as normalized strings
+        const prevSectors = Array.isArray(prev.sectors) ? prev.sectors : normalizeTagList(prev.sector)
+        const sectorsDifferent = JSON.stringify(prevSectors || []) !== JSON.stringify(normalizedSectors || [])
+        if (sectorsDifferent) patches.sectors = normalizedSectors
+
+        if (Object.keys(patches).length === 0) return prev
+
+        return {
+          ...prev,
+          ...patches,
+          sector: (patches.sectors || prev.sectors || []).join(', ')
+        }
       })
-      setNewSector('')
+
       return
     }
 
-    setFormData(sectionData)
-  }, [section]) // Remove identity from dependencies to prevent reset after save
+    // Non-foundation sections: initialize only when empty to avoid overwriting
+    setFormData((prev: any) => (prev && Object.keys(prev).length > 0 ? prev : sectionData))
+  }, [section, identity])
 
   const handleInputChange = (field: string, value: any) => {
     setFormData((prev: any) => {

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getIndustryLabel } from '@/lib/identity/industry-options';
 import { useAuth } from '@/hooks';
 import { useCompanyContext } from '@/shared/contexts/CompanyContext';
 import { Button } from '@/shared/components/ui/Button';
@@ -81,7 +82,7 @@ export const CompanySelector: React.FC = () => {
                 <div className="flex flex-col items-start">
                   <span className="truncate font-medium">{company.name}</span>
                   {company.industry && (
-                    <span className="text-xs text-muted-foreground">{company.industry}</span>
+                    <span className="text-xs text-muted-foreground">{getIndustryLabel(company.industry)}</span>
                   )}
                 </div>
               </div>

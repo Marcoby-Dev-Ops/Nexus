@@ -8,6 +8,7 @@ const { query } = require('../database/connection');
 const AUTHENTIK_BASE_URL = process.env.AUTHENTIK_BASE_URL || 'https://identity.marcoby.com';
 const AUTHENTIK_API_TOKEN = process.env.AUTHENTIK_API_TOKEN;
 
+const AuditService = require('../services/AuditService');
 const router = Router();
 
 // POST /api/auth/create-user - Create new user in Authentik
@@ -108,6 +109,19 @@ router.post('/create-user', async (req, res) => {
       businessName,
       note: 'User created via signup flow'
     });
+
+    try {
+      await AuditService.recordEvent({
+        eventType: 'user_create',
+        objectType: 'auth_user',
+        objectId: createdUser.pk && createdUser.pk.toString ? createdUser.pk.toString() : createdUser.pk,
+        actorId: null,
+        endpoint: '/api/auth/create-user',
+        data: { username, email, businessName }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for user creation', { error: auditErr?.message || auditErr });
+    }
 
     res.json({
       success: true,
@@ -224,6 +238,19 @@ router.post('/update-business-info', async (req, res) => {
       businessName,
       note: 'User completed enrollment flow and business information collection'
     });
+
+    try {
+      await AuditService.recordEvent({
+        eventType: 'user_update',
+        objectType: 'auth_user',
+        objectId: updatedUser.pk && updatedUser.pk.toString ? updatedUser.pk.toString() : updatedUser.pk,
+        actorId: null,
+        endpoint: '/api/auth/update-business-info',
+        data: { username, email, businessName }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for user update', { error: auditErr?.message || auditErr });
+    }
 
     res.json({
       success: true,

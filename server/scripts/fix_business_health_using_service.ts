@@ -5,7 +5,16 @@
  * manually creating SQL policies.
  */
 
-import { serviceRegistry } from '@/core/services/ServiceRegistry';
+// Load ServiceRegistry from client codebase if available; fall back to any for type-checking
+let serviceRegistry: any;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  serviceRegistry = require('../client/src/core/services/ServiceRegistry');
+  serviceRegistry = serviceRegistry.serviceRegistry || serviceRegistry;
+} catch (e) {
+  // fall back to a noop registry for scripts run in isolation
+  serviceRegistry = { getService: () => ({}) } as any;
+}
 
 async function fixBusinessHealthTable() {
   try {
@@ -53,7 +62,7 @@ async function fixMultipleFailingTables() {
       return;
     }
     
-    const failingTables = attentionResult.data?.map(t => t.tableName) || [];
+  const failingTables = attentionResult.data?.map((t: any) => t.tableName) || [];
     
     if (failingTables.length === 0) {
       console.log('✅ No tables need fixing');

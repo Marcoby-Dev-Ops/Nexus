@@ -32,11 +32,13 @@ const chatRoutes = require('./src/routes/chat');
 const organizationRoutes = require('./src/routes/organizations');
 const userPreferencesRoutes = require('./src/routes/user-preferences');
 const userContactsRoutes = require('./src/routes/user-contacts');
+const meRoutes = require('./src/routes/me');
 const varLeadsRoutes = require('./src/routes/var-leads');
 const integrationRoutes = require('./src/routes/integrations');
 const authRoutes = require('./src/routes/auth');
 const companyRoutes = require('./src/routes/companies');
 const oauthRoutes = require('./routes/oauth');
+const applySuggestionRoutes = require('./src/routes/apply-suggestion');
 
 // Import AI Gateway routes
 const aiGatewayRoutes = require('./routes/ai-gateway');
@@ -272,9 +274,13 @@ app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
 app.use('/api/user-contacts', userContactsRoutes);
+app.use('/api/me', meRoutes);
 app.use('/api/var-leads', varLeadsRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/thoughts', thoughtsRoutes);
+
+// Apply suggestion endpoint (audit + apply)
+app.use('/api/apply-suggestion', generalLimiter, applySuggestionRoutes);
 
 // Agent routes - use general rate limiting
 app.use('/api/intake', intakeRoutes);

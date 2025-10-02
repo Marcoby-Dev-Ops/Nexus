@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
@@ -39,6 +39,58 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
         {index < contentLines.length - 1 && <br />}
       </React.Fragment>
     ));
+  };
+
+  // Conservative phone regex: requires at least 7 digits (allowing spaces, dashes, parentheses, plus)
+  const PHONE_REGEX = /\+?[0-9](?:[0-9()\-\.\s]{5,})[0-9]/g;
+
+  function maskPhone(phone: string) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length <= 4) return '••••';
+    const keep = 4;
+    const masked = digits.slice(0, -keep).replace(/./g, '•') + digits.slice(-keep);
+    // Preserve original formatting minimally by showing masked + last 4
+    return masked;
+  }
+
+  function PhoneReveal({ phone }: { phone: string }) {
+    const [revealed, setRevealed] = useState(false);
+
+    return (
+      <span className="inline-flex items-center gap-2">
+        <span className="font-mono text-sm text-gray-200">{revealed ? phone : maskPhone(phone)}</span>
+        {!revealed ? (
+          <Button size="sm" variant="ghost" onClick={() => setRevealed(true)} className="text-xs text-blue-400">Reveal</Button>
+        ) : (
+          <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(phone); }} className="text-xs text-gray-300">Copy</Button>
+        )}
+      </span>
+    );
+  }
+
+  const renderWithPhoneReveal = (content: string) => {
+    // Find phone-like substrings and render interactive reveals
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+    const matches = [...content.matchAll(PHONE_REGEX)];
+    if (matches.length === 0) return formatMessage(content);
+
+    matches.forEach((m, i) => {
+      const match = m[0];
+      const idx = m.index || 0;
+      if (idx > lastIndex) {
+        const pre = content.slice(lastIndex, idx);
+        parts.push(...formatMessage(pre));
+      }
+      parts.push(<PhoneReveal key={`phone-${i}-${idx}`} phone={match} />);
+      lastIndex = idx + match.length;
+    });
+
+    if (lastIndex < content.length) {
+      parts.push(...formatMessage(content.slice(lastIndex)));
+    }
+
+    return parts;
   };
 
   const formatFileSize = (bytes?: number) => {
@@ -99,7 +151,7 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
         )}>
           {!hidePlaceholderContent && (
             <div className="prose prose-invert max-w-none">
-              {formatMessage(String(message.content))}
+              {renderWithPhoneReveal(String(message.content))}
             </div>
           )}
 

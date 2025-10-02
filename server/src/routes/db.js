@@ -5,6 +5,7 @@ const { createError } = require('../middleware/errorHandler');
 const { query, transaction } = require('../database/connection');
 const { logger } = require('../utils/logger');
 
+const AuditService = require('../services/AuditService');
 const router = express.Router();
 
 // Comprehensive list of all allowed database tables
@@ -248,6 +249,7 @@ async function insertRecord(table, payload, userId, jwtPayload) {
 
   return result;
 }
+
 
 /**
  * GET /api/db/:table - Get data from table with optional filtering
@@ -516,6 +518,23 @@ router.post('/insert', authenticateToken, async (req, res) => {
       throw createError(`Database insert failed: ${result.error}`, 500);
     }
 
+    // Record platform audit for insert
+    try {
+      const inserted = result.data && result.data[0] ? result.data[0] : null;
+      await AuditService.recordEvent({
+        eventType: 'db_insert',
+        objectType: table,
+        objectId: inserted && inserted.id ? inserted.id : null,
+        actorId: userId,
+        endpoint: '/api/db/insert',
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { inserted: inserted ? inserted : null }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record db_insert audit', { error: auditErr?.message || auditErr });
+    }
+
     res.json({
       success: true,
       data: result.data[0]
@@ -628,6 +647,23 @@ router.post('/:table', authenticateToken, async (req, res) => {
       throw createError(`Database insert failed: ${result.error}`, 500);
     }
 
+    // Record audit for update
+    try {
+      const updated = result.data && result.data[0] ? result.data[0] : null;
+      await AuditService.recordEvent({
+        eventType: 'db_update',
+        objectType: table,
+        objectId: updated && updated.id ? updated.id : id,
+        actorId: userId,
+        endpoint: `/api/db/${table}/${id}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { updated }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record db_update audit', { error: auditErr?.message || auditErr });
+    }
+
     res.json({
       success: true,
       data: result.data[0]
@@ -700,6 +736,23 @@ router.put('/:table/:id', authenticateToken, async (req, res) => {
 
     if (!result.data || result.data.length === 0) {
       throw createError('Record not found or access denied', 404);
+    }
+
+    // Record audit for delete
+    try {
+      const deleted = result.data && result.data[0] ? result.data[0] : null;
+      await AuditService.recordEvent({
+        eventType: 'db_delete',
+        objectType: table,
+        objectId: deleted && deleted.id ? deleted.id : id,
+        actorId: userId,
+        endpoint: `/api/db/${table}/${id}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { deleted }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record db_delete audit', { error: auditErr?.message || auditErr });
     }
 
     res.json({
@@ -841,6 +894,23 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
 
     if (result.error) {
       throw createError(`Database upsert failed: ${result.error}`, 500);
+    }
+
+    // Record audit for upsert
+    try {
+      const upserted = result.data && result.data[0] ? result.data[0] : null;
+      await AuditService.recordEvent({
+        eventType: 'db_upsert',
+        objectType: table,
+        objectId: upserted && upserted.id ? upserted.id : null,
+        actorId: userId,
+        endpoint: `/api/db/${table}/upsert`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { upserted }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record db_upsert audit', { error: auditErr?.message || auditErr });
     }
 
     res.json({

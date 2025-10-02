@@ -23,6 +23,7 @@ import {
   getExecutiveSummary,
   getDashboardView 
 } from '@/lib/identity/presentation-views'
+import { getIndustryLabel } from '@/lib/identity/industry-options'
 import type { BusinessIdentity } from '@/lib/identity/types'
 
 interface LayeredDataDemoProps {
@@ -111,7 +112,7 @@ export function LayeredDataDemo({ identity }: LayeredDataDemoProps) {
             <div>
               <h4 className="font-semibold mb-2">Company</h4>
               <p className="text-sm text-muted-foreground">
-                {executiveSummary.company.name} • {executiveSummary.company.industry} • {executiveSummary.company.stage}
+                {executiveSummary.company.name} • {getIndustryLabel(executiveSummary.company.industry)} • {executiveSummary.company.stage}
               </p>
             </div>
             <div>

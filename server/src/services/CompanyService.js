@@ -15,6 +15,24 @@ class CompanyService {
       dataQuality: { critical: 30, warning: 60, good: 85 },
       lastActivity: { stale: 30, warning: 7 }
     };
+    // Helper: deep merge plain objects (preserve nested fields)
+    this.deepMerge = function deepMerge(target = {}, source = {}) {
+      if (!source || typeof source !== 'object') return target;
+      const output = Array.isArray(target) ? target.slice() : Object.assign({}, target);
+      Object.keys(source).forEach(key => {
+        const srcVal = source[key];
+        const tgtVal = output[key];
+        if (Array.isArray(srcVal)) {
+          // replace arrays
+          output[key] = srcVal.slice();
+        } else if (srcVal && typeof srcVal === 'object') {
+          output[key] = deepMerge(tgtVal && typeof tgtVal === 'object' ? tgtVal : {}, srcVal);
+        } else {
+          output[key] = srcVal;
+        }
+      });
+      return output;
+    };
   }
 
   /**
@@ -456,9 +474,9 @@ class CompanyService {
         throw new Error('Company not found');
       }
 
-      // Merge updates with existing data
-      const currentIdentity = currentResult.data[0].business_identity || {};
-      const updatedIdentity = { ...currentIdentity, ...updates };
+  // Merge updates with existing data (use deepMerge to preserve nested fields)
+  const currentIdentity = currentResult.data[0].business_identity || {};
+  const updatedIdentity = this.deepMerge(currentIdentity, updates || {});
 
       // Update the company record
       const result = await query(
@@ -516,19 +534,17 @@ class CompanyService {
 
       // If no business identity exists, create a basic one
       if (!businessIdentity.foundation) {
-        businessIdentity = {
+        businessIdentity = this.deepMerge({
           foundation: {
             name: company.name,
             industry: company.industry,
             companySize: company.size,
             website: company.website,
-            ...identityData.foundation
-          },
-          ...identityData
-        };
+          }
+        }, identityData || {});
       } else {
-        // Merge with existing data
-        businessIdentity = { ...businessIdentity, ...identityData };
+        // Merge with existing data using deepMerge to preserve nested fields
+        businessIdentity = this.deepMerge(businessIdentity, identityData || {});
       }
 
       // Update the company record

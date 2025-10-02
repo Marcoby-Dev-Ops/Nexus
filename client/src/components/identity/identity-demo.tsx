@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { IdentityManager } from '@/lib/identity/identity-manager'
+import { getIndustryLabel } from '@/lib/identity/industry-options'
 import type { BusinessIdentity } from '@/lib/identity/types'
 
 export function IdentityDemo() {
@@ -78,7 +79,7 @@ export function IdentityDemo() {
               <strong>Company Name:</strong> {identity.foundation.name || 'Not set'}
             </div>
             <div>
-              <strong>Industry:</strong> {identity.foundation.industry || 'Not set'}
+              <strong>Industry:</strong> {getIndustryLabel(identity.foundation.industry) || 'Not set'}
             </div>
             <div>
               <strong>Business Model:</strong> {identity.foundation.businessModel || 'Not set'}

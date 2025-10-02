@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { logger } from '@/shared/utils/logger';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { companyService } from '@/services/core/CompanyService';
+import { getIndustryValue } from '@/lib/identity/industry-options';
 import type {
   CompanyProfile,
   BusinessIdentity,
@@ -260,6 +261,24 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
         setBusinessIdentity(result.data);
         setLastIdentityFetch(Date.now());
         logger.info('Business identity updated', { companyId: company.id });
+        // If the update included a foundation.industry, ensure the top-level company.industry is kept in sync
+        try {
+          const industryUpdate = (updates as any)?.foundation?.industry;
+          if (industryUpdate) {
+            const canonical = getIndustryValue(industryUpdate as string);
+            // Only update company if canonical differs from current value
+            if (company.industry !== canonical) {
+              const compRes = await companyService.update(company.id, { industry: canonical });
+              if (compRes.success && compRes.data) {
+                setCompany(compRes.data);
+                setLastCompanyFetch(Date.now());
+                logger.info('Synchronized company.industry with identity', { companyId: company.id, industry: canonical });
+              }
+            }
+          }
+        } catch (syncErr) {
+          logger.warn('Failed to synchronize company.industry after identity update', { companyId: company.id, error: syncErr });
+        }
       } else {
         throw new Error(result.error || 'Failed to update business identity');
       }

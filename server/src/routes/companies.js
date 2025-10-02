@@ -38,7 +38,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
 
     // Verify user has access to this company (either owner or member)
-    const company = result.data[0];
+  const company = result.data[0];
     const userCompanyQuery = `
       SELECT company_id FROM user_profiles WHERE user_id = $1
     `;
@@ -181,6 +181,23 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
+    // Audit company creation
+    try {
+      const AuditService = require('../services/AuditService');
+      await AuditService.recordEvent({
+        eventType: 'company_create',
+        objectType: 'company',
+        objectId: company.id,
+        actorId: userId,
+        endpoint: '/api/companies',
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { name: company.name }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for company create', { error: auditErr?.message || auditErr });
+    }
+
     res.status(201).json({
       success: true,
       data: company
@@ -261,10 +278,27 @@ router.put('/:id', authenticateToken, async (req, res) => {
       RETURNING *
     `;
 
-    const result = await query(updateSql, params);
+  const result = await query(updateSql, params);
 
     if (result.error) {
       throw createError(`Failed to update company: ${result.error}`, 500);
+    }
+
+    // Audit company update
+    try {
+      const AuditService = require('../services/AuditService');
+      await AuditService.recordEvent({
+        eventType: 'company_update',
+        objectType: 'company',
+        objectId: id,
+        actorId: userId,
+        endpoint: `/api/companies/${id}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { updatedFields: Object.keys(updateData) }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for company update', { error: auditErr?.message || auditErr });
     }
 
     res.json({

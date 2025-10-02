@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Button } from '@/shared/components/ui/Button';
 import { Badge } from '@/shared/components/ui/Badge';
 import { CheckCircle, Edit, ArrowLeft, Download, Share } from 'lucide-react';
+import { getIndustryLabel } from '@/lib/identity/industry-options';
 
 interface IdentityData {
   companyFoundation: any;
@@ -195,7 +196,7 @@ export function IdentityReviewForm({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Industry:</span>
-                  <p>{identityData.industryBusinessModel.industry}</p>
+                  <p>{getIndustryLabel(identityData.industryBusinessModel.industry)}</p>
                 </div>
                 <div>
                   <span className="font-medium">Business Model:</span>

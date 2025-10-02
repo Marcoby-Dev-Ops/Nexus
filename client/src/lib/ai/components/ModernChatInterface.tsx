@@ -13,6 +13,8 @@ import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/ty
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatWelcome from './ChatWelcome';
+import SuggestionCard from './SuggestionCard';
+import SuggestionPreviewModal from './SuggestionPreviewModal';
 
 interface ModernChatInterfaceProps {
   messages: ChatMessageType[];
@@ -53,6 +55,7 @@ export default function ModernChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<{ focus: () => void }>(null);
   const { toast } = useToast();
+  const [previewSuggestion, setPreviewSuggestion] = useState<any | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -168,11 +171,22 @@ export default function ModernChatInterface({
                 const tsVal = ts ? (typeof ts === 'string' ? new Date(ts).getTime() : (ts instanceof Date ? ts.getTime() : String(ts))) : 'no-ts';
                 const key = message.id || `${message.role}-${tsVal}-${idx}`;
                 return (
-                  <ChatMessage 
-                    key={key}
-                    message={message} 
-                    onCopy={copyMessage}
-                  />
+                  <div key={key} className="space-y-2">
+                    <ChatMessage 
+                      message={message} 
+                      onCopy={copyMessage}
+                    />
+
+                    {/* Render suggestion card when present in message metadata */}
+                    {(message as any)?.metadata?.suggestion && (
+                      <div className="mt-2">
+                        <SuggestionCard
+                          suggestion={(message as any).metadata.suggestion}
+                          onPreview={(s: any) => setPreviewSuggestion(s)}
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
               
@@ -229,6 +243,36 @@ export default function ModernChatInterface({
         placeholder={placeholder}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
+      />
+
+      {/* Suggestion preview modal */}
+      <SuggestionPreviewModal
+        suggestion={previewSuggestion}
+        onClose={() => setPreviewSuggestion(null)}
+        onApply={async (s: any) => {
+          try {
+            // Simple POST to server route. Assumes session cookie auth is already present.
+            const resp = await fetch('/api/apply-suggestion', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(s),
+            });
+            if (!resp.ok) {
+              const text = await resp.text();
+              toast({ title: 'Failed to apply suggestion', description: text || resp.statusText, type: 'error' });
+              return;
+            }
+            const data = await resp.json();
+            toast({ title: 'Suggestion applied', description: 'Changes were saved and audited', type: 'success' });
+
+            // Optionally, append a system message to the chat to reflect the change
+            if (typeof (window as any).__NEXUS_APPEND_SYSTEM_MESSAGE === 'function') {
+              (window as any).__NEXUS_APPEND_SYSTEM_MESSAGE(`Applied suggestion to ${s.targetType} ${s.targetId}`);
+            }
+          } catch (err: any) {
+            toast({ title: 'Error', description: String(err?.message || err), type: 'error' });
+          }
+        }}
       />
     </div>
   );

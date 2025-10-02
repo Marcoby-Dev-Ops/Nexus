@@ -135,11 +135,6 @@ export const UnifiedSettingsPage: React.FC<{ config: SettingsConfig }> = ({ conf
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{config.title}</h1>
-        <p className="text-muted-foreground mt-2">{config.description}</p>
-      </div>
-      
       <Tabs value={activeSection} onValueChange={setActiveSection} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg: grid-cols-4">
           {config.sections.map((section) => (
@@ -188,6 +183,7 @@ export const UnifiedAnalyticsPage: React.FC<{ config: AnalyticsConfig }> = ({ co
   const [activeTab, setActiveTab] = React.useState(config.tabs[0]?.id);
 
   const currentTab = config.tabs.find(t => t.id === activeTab);
+  const CurrentComponent = currentTab?.content || null;
 
   return (
     <DashboardLayout

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
+import { getIndustryLabel } from '@/lib/identity/industry-options';
 
 export function UserProfile() {
   const { profile, loading: isLoading, error } = useUserProfile();
@@ -51,7 +52,7 @@ export function UserProfile() {
         <h3 className="font-medium text-foreground">Company</h3>
         <p className="text-muted-foreground">{profile.company.name}</p>
         <p className="text-sm text-muted-foreground">
-            {profile.company.industry} • {profile.company.size}
+            {getIndustryLabel(profile.company.industry)} • {profile.company.size}
           </p>
         </div>
       </div>

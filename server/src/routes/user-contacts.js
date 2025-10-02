@@ -4,6 +4,7 @@ const { query, transaction } = require('../database/connection');
 const { logger } = require('../utils/logger');
 
 const router = Router();
+const AuditService = require('../services/AuditService');
 
 /**
  * Determine whether the authenticated user can manage the requested profile.
@@ -151,6 +152,23 @@ router.post('/:userId/emails', async (req, res) => {
       return res.status(isUniqueViolation ? 409 : 500).json({ success: false, error: message });
     }
 
+    // Record audit for adding email (avoid storing raw email)
+    try {
+      await AuditService.recordEvent({
+        eventType: 'contact_email_add',
+        objectType: 'user_contact_email',
+        objectId: inserted.data && inserted.data.id ? inserted.data.id : null,
+        actorId: req.user && req.user.id ? req.user.id : null,
+        targetUserId: userId,
+        endpoint: `/api/user-contacts/${userId}/emails`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { is_primary: !!is_primary }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for contact email add', { error: auditErr?.message || auditErr });
+    }
+
     return res.status(201).json({ success: true, data: buildEmailRow(inserted.data) });
   } catch (error) {
     logger.error('Unhandled error creating user contact email', { error });
@@ -249,6 +267,23 @@ router.put('/:userId/emails/:emailId', async (req, res) => {
       return res.status(isUniqueViolation ? 409 : 500).json({ success: false, error: message });
     }
 
+    // Record audit for updating email
+    try {
+      await AuditService.recordEvent({
+        eventType: 'contact_email_update',
+        objectType: 'user_contact_email',
+        objectId: result.data && result.data.id ? result.data.id : null,
+        actorId: req.user && req.user.id ? req.user.id : null,
+        targetUserId: userId,
+        endpoint: `/api/user-contacts/${userId}/emails/${emailId}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { updatedFields: Object.keys(req.body || {}) }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for contact email update', { error: auditErr?.message || auditErr });
+    }
+
     return res.json({ success: true, data: buildEmailRow(result.data) });
   } catch (error) {
     logger.error('Unhandled error updating user contact email', { error });
@@ -279,6 +314,21 @@ router.delete('/:userId/emails/:emailId', async (req, res) => {
 
     if (!result.data || result.data.length === 0) {
       return res.status(404).json({ success: false, error: 'Email not found' });
+    }
+
+    try {
+      await AuditService.recordEvent({
+        eventType: 'contact_email_delete',
+        objectType: 'user_contact_email',
+        objectId: emailId,
+        actorId: req.user && req.user.id ? req.user.id : null,
+        targetUserId: userId,
+        endpoint: `/api/user-contacts/${userId}/emails/${emailId}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for contact email delete', { error: auditErr?.message || auditErr });
     }
 
     return res.json({ success: true });
@@ -358,6 +408,22 @@ router.post('/:userId/phones', async (req, res) => {
       const isUniqueViolation = inserted.error.includes('duplicate key value');
       const message = isUniqueViolation ? 'Phone already exists for this user' : 'Failed to add phone';
       return res.status(isUniqueViolation ? 409 : 500).json({ success: false, error: message });
+    }
+
+    try {
+      await AuditService.recordEvent({
+        eventType: 'contact_phone_add',
+        objectType: 'user_contact_phone',
+        objectId: inserted.data && inserted.data.id ? inserted.data.id : null,
+        actorId: req.user && req.user.id ? req.user.id : null,
+        targetUserId: userId,
+        endpoint: `/api/user-contacts/${userId}/phones`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { is_primary: !!is_primary }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for contact phone add', { error: auditErr?.message || auditErr });
     }
 
     return res.status(201).json({ success: true, data: buildPhoneRow(inserted.data) });
@@ -453,6 +519,22 @@ router.put('/:userId/phones/:phoneId', async (req, res) => {
       return res.status(isUniqueViolation ? 409 : 500).json({ success: false, error: message });
     }
 
+    try {
+      await AuditService.recordEvent({
+        eventType: 'contact_phone_update',
+        objectType: 'user_contact_phone',
+        objectId: result.data && result.data.id ? result.data.id : null,
+        actorId: req.user && req.user.id ? req.user.id : null,
+        targetUserId: userId,
+        endpoint: `/api/user-contacts/${userId}/phones/${phoneId}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { updatedFields: Object.keys(req.body || {}) }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for contact phone update', { error: auditErr?.message || auditErr });
+    }
+
     return res.json({ success: true, data: buildPhoneRow(result.data) });
   } catch (error) {
     logger.error('Unhandled error updating user contact phone', { error });
@@ -483,6 +565,21 @@ router.delete('/:userId/phones/:phoneId', async (req, res) => {
 
     if (!result.data || result.data.length === 0) {
       return res.status(404).json({ success: false, error: 'Phone not found' });
+    }
+
+    try {
+      await AuditService.recordEvent({
+        eventType: 'contact_phone_delete',
+        objectType: 'user_contact_phone',
+        objectId: phoneId,
+        actorId: req.user && req.user.id ? req.user.id : null,
+        targetUserId: userId,
+        endpoint: `/api/user-contacts/${userId}/phones/${phoneId}`,
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for contact phone delete', { error: auditErr?.message || auditErr });
     }
 
     return res.json({ success: true });
