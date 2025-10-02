@@ -1,6 +1,7 @@
-import 'express';
+// Augment express request type for the server
+import 'express-serve-static-core';
 
-declare module 'express' {
+declare module 'express-serve-static-core' {
   interface Request {
     /** Tenant identifier injected by middleware */
     tenantId?: string;
