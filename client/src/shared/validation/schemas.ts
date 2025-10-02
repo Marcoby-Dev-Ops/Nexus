@@ -16,6 +16,11 @@ const optionalStringMin = (min: number, message: string) =>
 const optionalEmail = emptyToUndefined(emailSchema);
 const optionalPhone = emptyToUndefined(phoneSchema);
 
+const optionalRole = z.preprocess(
+  (val) => (val === '' ? undefined : val),
+  z.enum(['user', 'owner', 'admin', 'manager']).optional()
+);
+
 // User Profile Schema
 export const userProfileSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters').or(z.literal('')),
@@ -23,7 +28,7 @@ export const userProfileSchema = z.object({
   displayName: optionalStringMin(2, 'Display name must be at least 2 characters'),
   jobTitle: optionalStringMin(2, 'Job title must be at least 2 characters'),
   company: optionalStringMin(2, 'Company name must be at least 2 characters'),
-  role: z.string().min(1, 'Role is required').optional(),
+  role: optionalRole,
   department: optionalStringMin(2, 'Department must be at least 2 characters'),
   businessEmail: optionalEmail,
   personalEmail: optionalEmail,

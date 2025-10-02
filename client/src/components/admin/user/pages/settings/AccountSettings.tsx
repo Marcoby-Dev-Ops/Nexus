@@ -1,41 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/index';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
-import { Label } from '@/shared/components/ui/Label';
-import { Separator } from '@/shared/components/ui/Separator';
 import { Badge } from '@/shared/components/ui/Badge';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { 
-  User, 
-  Mail, 
-  Shield, 
-  Key, 
-  Trash2, 
-  Save, 
-  AlertTriangle,
-  CheckCircle
+  User,
+  Shield,
+  Key,
+  Trash2
 } from 'lucide-react';
 
 // Import our new service patterns
-import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
-import { FormField, FormSection } from '@/shared/components/forms/FormField';
+import { FormField } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
 import { useUserProfile } from '@/shared/contexts/UserContext';
+import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
+import type { UserProfile } from '@/services/core/UserService';
+
+const allowedRoles = ['user', 'owner', 'admin', 'manager'] as const;
+
+const isValidRole = (value: unknown): value is typeof allowedRoles[number] =>
+  typeof value === 'string' && allowedRoles.includes(value as typeof allowedRoles[number]);
+
+const toOptionalString = (value: string | undefined) => {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+};
 
 const AccountSettings: React.FC = () => {
-  const { user } = useAuth();
-  
   // Use UserContext for profile data
   const { profile, loading: profileLoading, updateProfile } = useUserProfile();
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
+  const { setHeaderContent, clearHeaderContent } = useHeaderContext();
+
+  useEffect(() => {
+    setHeaderContent('Account Settings', 'Manage your account information and preferences');
+
+    return () => {
+      clearHeaderContent();
+    };
+  }, [setHeaderContent, clearHeaderContent]);
 
   // Initialize form with our new pattern
-  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
+  const { form, handleSubmit, isSubmitting, errors } = useFormWithValidation({
     schema: userProfileSchema,
     defaultValues: {
       firstName: '',
@@ -43,7 +54,7 @@ const AccountSettings: React.FC = () => {
       displayName: '',
       jobTitle: '',
       company: '',
-      role: '',
+      role: undefined,
       department: '',
       businessEmail: '',
       personalEmail: '',
@@ -55,19 +66,22 @@ const AccountSettings: React.FC = () => {
     onSubmit: async (data: UserProfileFormData) => {
       if (!profile?.id) return;
 
-      const updates = {
-        first_name: data.firstName,
-        last_name: data.lastName,
-        display_name: data.displayName,
-        job_title: data.jobTitle,
-        role: data.role,
-        department: data.department,
-        business_email: data.businessEmail,
-        personal_email: data.personalEmail,
-        bio: data.bio,
-        location: data.location,
-        linkedin_url: data.website,
-        phone: data.phone,
+      const role = isValidRole(data.role) ? data.role : undefined;
+
+      const updates: Partial<UserProfile> = {
+        first_name: toOptionalString(data.firstName),
+        last_name: toOptionalString(data.lastName),
+        display_name: toOptionalString(data.displayName),
+        job_title: toOptionalString(data.jobTitle),
+        role,
+        department: toOptionalString(data.department),
+        company: toOptionalString(data.company),
+        business_email: toOptionalString(data.businessEmail),
+        personal_email: toOptionalString(data.personalEmail),
+        bio: toOptionalString(data.bio),
+        location: toOptionalString(data.location),
+        linkedin_url: toOptionalString(data.website),
+        phone: toOptionalString(data.phone),
       };
 
       setIsUpdating(true);
@@ -96,7 +110,7 @@ const AccountSettings: React.FC = () => {
         displayName: profile.display_name || '',
         jobTitle: profile.job_title || '',
         company: profile.company || '',
-        role: profile.role || '',
+        role: profile.role || undefined,
         department: profile.department || '',
         businessEmail: profile.business_email || '',
         personalEmail: profile.personal_email || '',
@@ -122,7 +136,7 @@ const AccountSettings: React.FC = () => {
         displayName: profile.display_name || '',
         jobTitle: profile.job_title || '',
         company: profile.company || '',
-        role: profile.role || '',
+        role: profile.role || undefined,
         department: profile.department || '',
         businessEmail: profile.business_email || '',
         personalEmail: profile.personal_email || '',
@@ -172,73 +186,134 @@ const AccountSettings: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                form={form}
+                control={form.control}
                 name="firstName"
                 label="First Name"
-                placeholder="Enter your first name"
+                error={errors.firstName?.message}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    placeholder="Enter your first name"
+                    autoComplete="given-name"
+                  />
+                )}
+              </FormField>
               <FormField
-                form={form}
+                control={form.control}
                 name="lastName"
                 label="Last Name"
-                placeholder="Enter your last name"
+                error={errors.lastName?.message}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    placeholder="Enter your last name"
+                    autoComplete="family-name"
+                  />
+                )}
+              </FormField>
             </div>
             
             <FormField
-              form={form}
               name="displayName"
               label="Display Name"
-              placeholder="Enter your display name"
               disabled={!isEditing}
-            />
+              control={form.control}
+              error={errors.displayName?.message}
+            >
+              {(field) => (
+                <Input
+                  {...field}
+                  placeholder="Enter your display name"
+                />
+              )}
+            </FormField>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                form={form}
                 name="jobTitle"
                 label="Job Title"
-                placeholder="Enter your job title"
                 disabled={!isEditing}
-              />
+                control={form.control}
+                error={errors.jobTitle?.message}
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    placeholder="Enter your job title"
+                  />
+                )}
+              </FormField>
               <FormField
-                form={form}
                 name="department"
                 label="Department"
-                placeholder="Enter your department"
                 disabled={!isEditing}
-              />
+                control={form.control}
+                error={errors.department?.message}
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    placeholder="Enter your department"
+                  />
+                )}
+              </FormField>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                form={form}
                 name="businessEmail"
                 label="Business Email"
-                type="email"
-                placeholder="Enter your business email"
                 disabled={!isEditing}
-              />
+                control={form.control}
+                error={errors.businessEmail?.message}
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="email"
+                    placeholder="Enter your business email"
+                    autoComplete="email"
+                  />
+                )}
+              </FormField>
               <FormField
-                form={form}
                 name="personalEmail"
                 label="Personal Email"
-                type="email"
-                placeholder="Enter your personal email"
                 disabled={!isEditing}
-              />
+                control={form.control}
+                error={errors.personalEmail?.message}
+              >
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="email"
+                    placeholder="Enter your personal email"
+                    autoComplete="email"
+                  />
+                )}
+              </FormField>
             </div>
             
             <FormField
-              form={form}
               name="phone"
               label="Phone Number"
-              type="tel"
-              placeholder="Enter your phone number"
               disabled={!isEditing}
-            />
+              control={form.control}
+              error={errors.phone?.message}
+            >
+              {(field) => (
+                <Input
+                  {...field}
+                  type="tel"
+                  placeholder="Enter your phone number"
+                  autoComplete="tel"
+                />
+              )}
+            </FormField>
 
             <div className="flex gap-2 pt-4">
               {!isEditing ? (
