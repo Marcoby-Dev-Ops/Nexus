@@ -42,9 +42,11 @@ jobs:
       run: cd server && pnpm run type-check || echo "Server type-check completed with warnings"
       
     - name: Run ESLint (Client - allow warnings)
+      continue-on-error: true
       run: cd client && pnpm run lint || echo "Client ESLint completed with warnings"
       
     - name: Run ESLint (Server - allow warnings)
+      continue-on-error: true
       run: cd server && pnpm run lint || echo "Server ESLint completed with warnings"
       
     - name: Test build process (Client)
