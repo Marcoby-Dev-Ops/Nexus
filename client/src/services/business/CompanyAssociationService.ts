@@ -56,10 +56,8 @@ export interface AssociateUserRequest {
 // ============================================================================
 
 export class CompanyAssociationService extends BaseService {
-  constructor() {
-    super('CompanyAssociationService');
-  }
-
+  // No custom constructor needed
+  
   /**
    * Get or create a company for a user
    * Ensures every user has a company association
@@ -76,12 +74,12 @@ export class CompanyAssociationService extends BaseService {
         // First, check if user already has a company association
         const existingProfile = await this.getUserCompanyProfile(userId);
         if (existingProfile.success && existingProfile.data) {
-          this.logSuccess('ensureUserCompanyAssociation', { 
+          this.logSuccess('ensureUserCompanyAssociation', 'existing_association', { 
             userId, 
             result: 'existing_association',
             companyId: existingProfile.data.companyId 
           });
-          return existingProfile;
+          return this.createResponse(existingProfile.data);
         }
 
         // Check if company exists by name
@@ -103,8 +101,12 @@ export class CompanyAssociationService extends BaseService {
 
           const companyResult = await this.createCompany(createCompanyRequest);
           if (!companyResult.success || !companyResult.data) {
-            this.logFailure('ensureUserCompanyAssociation', companyResult.error, { userId, companyName });
-            return this.handleError(companyResult.error || 'Failed to create company');
+            this.logFailure(
+              'ensureUserCompanyAssociation',
+              String(companyResult.error ?? 'Unknown error'),
+              { userId, companyName }
+            );
+            return this.handleError(companyResult.error ?? 'Unknown error', 'Failed to create company');
           }
 
           companyId = companyResult.data.id;
@@ -121,27 +123,35 @@ export class CompanyAssociationService extends BaseService {
         });
 
         if (!associateResult.success) {
-          this.logFailure('ensureUserCompanyAssociation', associateResult.error, { userId, companyId });
-          return this.handleError(associateResult.error || 'Failed to associate user with company');
+          this.logFailure(
+            'ensureUserCompanyAssociation',
+            String(associateResult.error ?? 'Unknown error'),
+            { userId, companyId }
+          );
+          return this.handleError(associateResult.error ?? 'Unknown error', 'Failed to associate user with company');
         }
 
         // Get the complete profile
         const profileResult = await this.getUserCompanyProfile(userId);
-        if (!profileResult.success) {
-          this.logFailure('ensureUserCompanyAssociation', profileResult.error, { userId, companyId });
-          return this.handleError(profileResult.error || 'Failed to get user company profile');
+        if (!profileResult.success || !profileResult.data) {
+          this.logFailure(
+            'ensureUserCompanyAssociation',
+            String(profileResult.error ?? 'Profile not found'),
+            { userId, companyId }
+          );
+          return this.handleError(profileResult.error ?? 'Profile not found', 'Failed to get user company profile');
         }
 
-        this.logSuccess('ensureUserCompanyAssociation', { 
+        this.logSuccess('ensureUserCompanyAssociation', 'new_association_created', { 
           userId, 
           companyId, 
           result: 'new_association_created' 
         });
 
-        return profileResult;
+        return this.createResponse(profileResult.data);
       } catch (error) {
-        this.logFailure('ensureUserCompanyAssociation', error, { userId, companyName });
-        return this.handleError(error);
+        this.logFailure('ensureUserCompanyAssociation', error instanceof Error ? error.message : String(error), { userId, companyName });
+        return this.handleError(error, 'Failed to ensure user company association');
       }
     }, 'ensureUserCompanyAssociation');
   }
@@ -156,30 +166,28 @@ export class CompanyAssociationService extends BaseService {
       try {
         const { data: profile, error: profileError } = await selectOne(
           'user_profiles',
-          '*',
           { user_id: userId }
         );
 
         if (profileError || !profile) {
-          this.logSuccess('getUserCompanyProfile', { userId, result: 'no_profile' });
+          this.logSuccess('getUserCompanyProfile', 'no_profile', { userId });
           return this.createResponse(null);
         }
 
         if (!profile.company_id) {
-          this.logSuccess('getUserCompanyProfile', { userId, result: 'no_company' });
+          this.logSuccess('getUserCompanyProfile', 'no_company', { userId });
           return this.createResponse(null);
         }
 
         // Get company details
         const { data: company, error: companyError } = await selectOne(
           'companies',
-          '*',
-          { id: profile.company_id }
+          { id: profile.company_id as string }
         );
 
         if (companyError || !company) {
-          this.logFailure('getUserCompanyProfile', companyError, { userId, companyId: profile.company_id });
-          return this.handleError(companyError || 'Company not found');
+          this.logFailure('getUserCompanyProfile', String(companyError ?? 'Company not found'), { userId, companyId: profile.company_id as string });
+          return this.handleError(companyError ?? 'Company not found', 'Failed to load company');
         }
 
         const userProfile: UserCompanyProfile = {
@@ -196,11 +204,11 @@ export class CompanyAssociationService extends BaseService {
           isAdmin: profile.role === 'admin' || company.owner_id === userId
         };
 
-        this.logSuccess('getUserCompanyProfile', { userId, companyId: profile.company_id });
+        this.logSuccess('getUserCompanyProfile', 'profile_loaded', { userId, companyId: profile.company_id });
         return this.createResponse(userProfile);
       } catch (error) {
-        this.logFailure('getUserCompanyProfile', error, { userId });
-        return this.handleError(error);
+        this.logFailure('getUserCompanyProfile', error instanceof Error ? error.message : String(error), { userId });
+        return this.handleError(error, 'Failed to get user company profile');
       }
     }, 'getUserCompanyProfile');
   }
@@ -226,15 +234,15 @@ export class CompanyAssociationService extends BaseService {
         const { data: company, error } = await insertOne('companies', companyData);
 
         if (error || !company) {
-          this.logFailure('createCompany', error, { name: request.name });
-          return this.handleError(error || 'Failed to create company');
+          this.logFailure('createCompany', String(error ?? 'Unknown error'), { name: request.name });
+          return this.handleError(error ?? 'Unknown error', 'Failed to create company');
         }
 
-        this.logSuccess('createCompany', { companyId: company.id, name: company.name });
+        this.logSuccess('createCompany', 'company_created', { companyId: company.id, name: company.name });
         return this.createResponse({ id: company.id, name: company.name });
       } catch (error) {
-        this.logFailure('createCompany', error, { name: request.name });
-        return this.handleError(error);
+        this.logFailure('createCompany', error instanceof Error ? error.message : String(error), { name: request.name });
+        return this.handleError(error, 'Failed to create company');
       }
     }, 'createCompany');
   }
@@ -263,20 +271,21 @@ export class CompanyAssociationService extends BaseService {
 
         const { error } = await updateOne(
           'user_profiles',
-          { user_id: request.userId },
-          updateData
+          request.userId,
+          updateData,
+          'user_id'
         );
 
         if (error) {
-          this.logFailure('associateUserWithCompany', error, { userId: request.userId, companyId: request.companyId });
-          return this.handleError(error);
+          this.logFailure('associateUserWithCompany', String(error ?? 'Unknown error'), { userId: request.userId, companyId: request.companyId });
+          return this.handleError(error ?? 'Unknown error', 'Failed to associate user with company');
         }
 
-        this.logSuccess('associateUserWithCompany', { userId: request.userId, companyId: request.companyId });
+        this.logSuccess('associateUserWithCompany', 'association_updated', { userId: request.userId, companyId: request.companyId });
         return this.createResponse(true);
       } catch (error) {
-        this.logFailure('associateUserWithCompany', error, { userId: request.userId, companyId: request.companyId });
-        return this.handleError(error);
+        this.logFailure('associateUserWithCompany', error instanceof Error ? error.message : String(error), { userId: request.userId, companyId: request.companyId });
+        return this.handleError(error, 'Failed to associate user with company');
       }
     }, 'associateUserWithCompany');
   }
@@ -296,25 +305,24 @@ export class CompanyAssociationService extends BaseService {
         );
 
         if (error) {
-          this.logFailure('getCompanyUsers', error, { companyId });
-          return this.handleError(error);
+          this.logFailure('getCompanyUsers', String(error ?? 'Unknown error'), { companyId });
+          return this.handleError(error ?? 'Unknown error', 'Failed to get company users');
         }
 
         if (!profiles || profiles.length === 0) {
-          this.logSuccess('getCompanyUsers', { companyId, result: 'no_users' });
+          this.logSuccess('getCompanyUsers', 'no_users', { companyId, result: 'no_users' });
           return this.createResponse([]);
         }
 
         // Get company details
         const { data: company, error: companyError } = await selectOne(
           'companies',
-          '*',
           { id: companyId }
         );
 
         if (companyError || !company) {
-          this.logFailure('getCompanyUsers', companyError, { companyId });
-          return this.handleError(companyError || 'Company not found');
+          this.logFailure('getCompanyUsers', String(companyError ?? 'Company not found'), { companyId });
+          return this.handleError(companyError ?? 'Company not found', 'Failed to load company');
         }
 
         const userProfiles: UserCompanyProfile[] = profiles.map(profile => ({
@@ -331,11 +339,11 @@ export class CompanyAssociationService extends BaseService {
           isAdmin: profile.role === 'admin' || company.owner_id === profile.user_id
         }));
 
-        this.logSuccess('getCompanyUsers', { companyId, userCount: userProfiles.length });
+        this.logSuccess('getCompanyUsers', 'users_loaded', { companyId, userCount: userProfiles.length });
         return this.createResponse(userProfiles);
       } catch (error) {
-        this.logFailure('getCompanyUsers', error, { companyId });
-        return this.handleError(error);
+        this.logFailure('getCompanyUsers', error instanceof Error ? error.message : String(error), { companyId });
+        return this.handleError(error, 'Failed to get company users');
       }
     }, 'getCompanyUsers');
   }
@@ -350,20 +358,21 @@ export class CompanyAssociationService extends BaseService {
       try {
         const { error } = await updateOne(
           'user_profiles',
-          { user_id: userId },
-          { company_id: null, role: 'user' }
+          userId,
+          { company_id: null, role: 'user' },
+          'user_id'
         );
 
         if (error) {
-          this.logFailure('removeUserFromCompany', error, { userId, companyId });
-          return this.handleError(error);
+          this.logFailure('removeUserFromCompany', String(error ?? 'Unknown error'), { userId, companyId });
+          return this.handleError(error ?? 'Unknown error', 'Failed to remove user from company');
         }
 
-        this.logSuccess('removeUserFromCompany', { userId, companyId });
+        this.logSuccess('removeUserFromCompany', 'user_removed', { userId, companyId });
         return this.createResponse(true);
       } catch (error) {
-        this.logFailure('removeUserFromCompany', error, { userId, companyId });
-        return this.handleError(error);
+        this.logFailure('removeUserFromCompany', error instanceof Error ? error.message : String(error), { userId, companyId });
+        return this.handleError(error, 'Failed to remove user from company');
       }
     }, 'removeUserFromCompany');
   }
@@ -378,20 +387,21 @@ export class CompanyAssociationService extends BaseService {
       try {
         const { error } = await updateOne(
           'user_profiles',
-          { user_id: userId },
-          { role: newRole }
+          userId,
+          { role: newRole },
+          'user_id'
         );
 
         if (error) {
-          this.logFailure('updateUserRole', error, { userId, companyId, newRole });
-          return this.handleError(error);
+          this.logFailure('updateUserRole', String(error ?? 'Unknown error'), { userId, companyId, newRole });
+          return this.handleError(error ?? 'Unknown error', 'Failed to update user role');
         }
 
-        this.logSuccess('updateUserRole', { userId, companyId, newRole });
+        this.logSuccess('updateUserRole', 'role_updated', { userId, companyId, newRole });
         return this.createResponse(true);
       } catch (error) {
-        this.logFailure('updateUserRole', error, { userId, companyId, newRole });
-        return this.handleError(error);
+        this.logFailure('updateUserRole', error instanceof Error ? error.message : String(error), { userId, companyId, newRole });
+        return this.handleError(error, 'Failed to update user role');
       }
     }, 'updateUserRole');
   }
@@ -406,25 +416,24 @@ export class CompanyAssociationService extends BaseService {
       try {
         const { data: company, error } = await selectOne(
           'companies',
-          '*',
           { id: companyId }
         );
 
         if (error) {
-          this.logFailure('getCompanyById', error, { companyId });
-          return this.handleError(error);
+          this.logFailure('getCompanyById', String(error ?? 'Unknown error'), { companyId });
+          return this.handleError(error ?? 'Unknown error', 'Failed to get company by id');
         }
 
         if (!company) {
-          this.logSuccess('getCompanyById', { companyId, result: 'not_found' });
+          this.logSuccess('getCompanyById', 'not_found', { companyId });
           return this.createResponse(null);
         }
 
-        this.logSuccess('getCompanyById', { companyId });
+        this.logSuccess('getCompanyById', 'company_loaded', { companyId });
         return this.createResponse(company);
       } catch (error) {
-        this.logFailure('getCompanyById', error, { companyId });
-        return this.handleError(error);
+        this.logFailure('getCompanyById', error instanceof Error ? error.message : String(error), { companyId });
+        return this.handleError(error, 'Failed to get company by id');
       }
     }, 'getCompanyById');
   }
@@ -445,8 +454,8 @@ export class CompanyAssociationService extends BaseService {
         );
 
         if (error) {
-          this.logFailure('searchCompanies', error, { query });
-          return this.handleError(error);
+          this.logFailure('searchCompanies', String(error ?? 'Unknown error'), { query });
+          return this.handleError(error ?? 'Unknown error', 'Failed to search companies');
         }
 
         // Filter by name containing query
@@ -454,11 +463,11 @@ export class CompanyAssociationService extends BaseService {
           company.name.toLowerCase().includes(query.toLowerCase())
         ) || [];
 
-        this.logSuccess('searchCompanies', { query, count: filteredCompanies.length });
+        this.logSuccess('searchCompanies', 'search_complete', { query, count: filteredCompanies.length });
         return this.createResponse(filteredCompanies);
       } catch (error) {
-        this.logFailure('searchCompanies', error, { query });
-        return this.handleError(error);
+        this.logFailure('searchCompanies', error instanceof Error ? error.message : String(error), { query });
+        return this.handleError(error, 'Failed to search companies');
       }
     }, 'searchCompanies');
   }

@@ -29,21 +29,27 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
   streamingMessage: null,
   typingUsers: [],
 
-  sendMessage: async (content: string, attachments?: FileAttachment[]) => {
+  sendMessage: async (content: string, conversationId: string, attachments: FileAttachment[] = []) => {
     const state = get();
     set({ isLoading: true, error: null });
-    
+
+    if (!conversationId) {
+      logger.error('No conversation ID provided for sendMessage');
+      set({ error: 'No conversation selected', isLoading: false });
+      return;
+    }
+
     try {
       // Create user message
       const userMessage: Omit<ChatMessage, 'id' | 'created_at' | 'updated_at'> = {
-        conversation_id: state.currentConversation?.id || 'default',
+        conversation_id: conversationId,
         role: 'user',
         content,
         metadata: {
           tokens: Math.ceil(content.length / 4),
           model: state.currentConversation?.model || 'gpt-4',
           streaming: false,
-          attachments: attachments || []
+          attachments
         }
       };
 
@@ -60,14 +66,14 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       }
 
       // Add message to state
-      set(state => ({
-        messages: [...state.messages, savedMessage],
+      set(storeState => ({
+        messages: [...storeState.messages, savedMessage],
         isLoading: false
       }));
 
       // Update conversation metadata
-      if (state.currentConversation) {
-        await get().updateConversation(state.currentConversation.id, {
+      if (state.currentConversation?.id === conversationId) {
+        await get().updateConversation(conversationId, {
           updated_at: new Date().toISOString(),
           message_count: state.messages.length + 1,
           context: {
@@ -175,7 +181,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const { data, error } = await selectData('ai_conversations', '*', {});
-      
+
       if (error) {
         logger.error({ error }, 'Failed to fetch conversations');
         set({ error: 'Failed to fetch conversations', isLoading: false });
@@ -183,9 +189,6 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       }
 
       const rows = extractRows<Conversation>(data);
-
-      // Auto-clean empty conversations
-      await get().cleanEmptyConversations(rows);
 
       set({ 
         conversations: rows, 
@@ -195,48 +198,6 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
     } catch (err) {
       logger.error({ err }, 'Error fetching conversations');
       set({ error: 'Error fetching conversations', isLoading: false });
-    }
-  },
-
-  cleanEmptyConversations: async (conversations?: Conversation[]) => {
-    try {
-      const conversationsToCheck = conversations || get().conversations;
-      const emptyConversations = conversationsToCheck.filter(conv => conv.message_count === 0);
-      
-      if (emptyConversations.length === 0) {
-        logger.info('No empty conversations to clean');
-        return;
-      }
-
-      logger.info(`Found ${emptyConversations.length} empty conversations to clean`);
-
-      // Delete empty conversations from database
-      for (const conversation of emptyConversations) {
-        try {
-          const { error } = await deleteOne('ai_conversations', { id: conversation.id });
-
-          if (error) {
-            logger.error({ error, conversationId: conversation.id }, 'Failed to delete empty conversation');
-          } else {
-            logger.info(`Deleted empty conversation: ${conversation.id}`);
-          }
-        } catch (err) {
-          logger.error({ err, conversationId: conversation.id }, 'Error deleting empty conversation');
-        }
-      }
-
-      // Update local state to remove empty conversations
-      set(state => ({
-        conversations: state.conversations.filter(conv => conv.message_count > 0),
-        currentConversation: state.currentConversation?.message_count === 0 
-          ? null 
-          : state.currentConversation
-      }));
-
-      logger.info(`Cleaned ${emptyConversations.length} empty conversations`);
-
-    } catch (err) {
-      logger.error({ err }, 'Error cleaning empty conversations');
     }
   },
 

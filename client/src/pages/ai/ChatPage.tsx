@@ -31,6 +31,7 @@ import { chatAttachmentService } from '@/lib/ai/services/chatAttachmentService';
 import { ATTACHMENT_ONLY_PLACEHOLDER } from '@/shared/constants/chat';
 import type { FileAttachment, Conversation } from '@/shared/types/chat';
 import { useAuth } from '@/hooks/useAuth';
+import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 
 // Service-backed helpers
 const aiService = new ConsolidatedAIService();
@@ -92,7 +93,6 @@ export default function ChatPage() {
     createConversation, 
     updateConversation,
     archiveConversation,
-    cleanEmptyConversations,
     clearMessages,
     isLoading: conversationsLoading 
   } = useAIChatStore();
@@ -118,6 +118,33 @@ export default function ChatPage() {
   const [knowledgeTypes, setKnowledgeTypes] = useState<string[]>([]);
   const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
+
+  // Set main header content for Chat page
+  const { setHeaderContent, setHeaderIcon, clearHeaderContent } = useHeaderContext();
+  useEffect(() => {
+    setHeaderContent('Chat with Nexus');
+    setHeaderIcon(
+      (
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="lucide lucide-message-square h-5 w-5"
+        >
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      )
+    );
+    return () => {
+      clearHeaderContent();
+    };
+  }, []);
 
   // Get selected agent object
   const selectedAgent = agents.find(agent => agent.id === selectedAgentId);
@@ -175,7 +202,7 @@ export default function ChatPage() {
         file: undefined,
         status: 'uploaded' as const,
       }));
-      await sendMessage(messageContent, sanitizedAttachments);
+      await sendMessage(messageContent, currentConversationId!, sanitizedAttachments);
 
       setIsStreaming(true);
 
@@ -459,7 +486,7 @@ export default function ChatPage() {
   };
 
   // Filter out empty and archived conversations for display
-  const nonEmptyConversations = conversations.filter(conv => conv.message_count > 0 && !conv.is_archived);
+  const nonEmptyConversations = conversations.filter(conv => !conv.is_archived);
 
   useEffect(() => {
     if (!conversationId && nonEmptyConversations.length > 0) {
@@ -470,27 +497,9 @@ export default function ChatPage() {
     }
   }, [conversationId, nonEmptyConversations, setCurrentConversationById, fetchMessages]);
 
-  const handleCleanupEmptyConversations = async () => {
-    try {
-      await cleanEmptyConversations();
-      toast({
-        title: "Cleanup Complete",
-        description: "Empty conversations have been cleaned up.",
-        type: "success"
-      });
-    } catch (error) {
-      console.error('Error cleaning empty conversations:', error);
-      toast({
-        title: "Cleanup Failed",
-        description: "Failed to clean empty conversations. Please try again.",
-        type: "error"
-      });
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-8 h-8 text-gray-300 animate-pulse" />
@@ -504,7 +513,7 @@ export default function ChatPage() {
   // Ensure we have a valid user
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-gray-300" />
@@ -518,7 +527,7 @@ export default function ChatPage() {
   // Show error state if there's an error
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-white" />
@@ -539,7 +548,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-full min-h-0 bg-gray-900 text-white">
       {/* Left Sidebar */}
       <div className={cn(
         "bg-gray-900 border-r border-gray-800 flex flex-col transition-all duration-300 ease-in-out h-full",
@@ -677,20 +686,6 @@ export default function ChatPage() {
             </div>
           ) : (
             <div className="space-y-1 pb-4">
-                             {/* Cleanup button for empty conversations */}
-               {conversations.filter(conv => conv.message_count === 0).length > 0 && (
-                 <div className="px-2 py-1">
-                   <Button
-                     variant="ghost"
-                     size="sm"
-                     onClick={handleCleanupEmptyConversations}
-                     className="w-full text-xs text-gray-500 hover:text-white hover:bg-gray-800"
-                   >
-                     Clean up {conversations.filter(conv => conv.message_count === 0).length} empty conversations
-                   </Button>
-                 </div>
-               )}
-              
               {nonEmptyConversations.map((conv) => {
                 const isActive = conversationId === conv.id;
                 const isEditing = editingConversationId === conv.id;

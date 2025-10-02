@@ -3,7 +3,7 @@
  * Handles multi-tenant company management
  */
 
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
 // ============================================================================
@@ -47,9 +47,6 @@ export interface Tenant {
 // ============================================================================
 
 export class TenantService extends BaseService {
-  constructor() {
-    super('TenantService');
-  }
 
   /**
    * Get all tenants
@@ -60,23 +57,20 @@ export class TenantService extends BaseService {
       service.logMethodCall('getTenants', {});
 
       try {
-        const { data, error } = await service.supabase
-          .from('companies')
-          .select('*');
+        const result = await select<Tenant>('companies', '*', {});
 
-        if (error) {
-          service.logFailure('getTenants', error);
-          return { data: null, error };
+        if (!result.success) {
+          service.logFailure('getTenants', String(result.error ?? 'Unknown error'));
+          return service.handleError<Tenant[]>(result.error ?? 'Unknown error', 'Failed to fetch tenants');
         }
 
-        // Transform data to match Tenant interface if needed
-        const tenants = data as Tenant[] || [];
+        const tenants = (result.data as Tenant[] | undefined) ?? [];
 
-        service.logSuccess('getTenants', { count: tenants.length });
-        return { data: tenants, error: null };
+        service.logSuccess('getTenants', 'loaded', { count: tenants.length });
+        return service.createResponse(tenants);
       } catch (error) {
-        service.logFailure('getTenants', error);
-        return { data: null, error };
+        service.logFailure('getTenants', error instanceof Error ? error.message : String(error));
+        return service.handleError<Tenant[]>(error, 'Failed to fetch tenants');
       }
     }, 'getTenants');
   }
@@ -90,25 +84,18 @@ export class TenantService extends BaseService {
       service.logMethodCall('createTenant', { name: tenant.name });
 
       try {
-        const { data, error } = await service.supabase
-          .from('companies')
-          .insert(tenant)
-          .select()
-          .single();
+        const { data, success, error } = await insertOne<Tenant>('companies', tenant as unknown as Record<string, unknown>);
 
-        if (error) {
-          service.logFailure('createTenant', error, { name: tenant.name });
-          return { data: null, error };
+        if (!success || !data) {
+          service.logFailure('createTenant', String(error ?? 'Unknown error'), { name: tenant.name });
+          return service.handleError<Tenant>(error ?? 'Unknown error', 'Failed to create tenant');
         }
 
-        service.logSuccess('createTenant', { 
-          tenantId: data.id, 
-          name: tenant.name 
-        });
-        return { data: data as Tenant, error: null };
+        service.logSuccess('createTenant', 'created', { tenantId: (data as any).id, name: tenant.name });
+        return service.createResponse(data as Tenant);
       } catch (error) {
-        service.logFailure('createTenant', error, { name: tenant.name });
-        return { data: null, error };
+        service.logFailure('createTenant', error instanceof Error ? error.message : String(error), { name: tenant.name });
+        return service.handleError<Tenant>(error, 'Failed to create tenant');
       }
     }, 'createTenant');
   }
@@ -122,23 +109,18 @@ export class TenantService extends BaseService {
       service.logMethodCall('updateTenant', { id, updates });
 
       try {
-        const { data, error } = await service.supabase
-          .from('companies')
-          .update(updates)
-          .eq('id', id)
-          .select()
-          .single();
+        const { data, success, error } = await updateOne<Tenant>('companies', id, updates as Record<string, unknown>, 'id');
 
-        if (error) {
-          service.logFailure('updateTenant', error, { id });
-          return { data: null, error };
+        if (!success || !data) {
+          service.logFailure('updateTenant', String(error ?? 'Unknown error'), { id });
+          return service.handleError<Tenant>(error ?? 'Unknown error', 'Failed to update tenant');
         }
 
-        service.logSuccess('updateTenant', { id });
-        return { data: data as Tenant, error: null };
+        service.logSuccess('updateTenant', 'updated', { id });
+        return service.createResponse(data as Tenant);
       } catch (error) {
-        service.logFailure('updateTenant', error, { id });
-        return { data: null, error };
+        service.logFailure('updateTenant', error instanceof Error ? error.message : String(error), { id });
+        return service.handleError<Tenant>(error, 'Failed to update tenant');
       }
     }, 'updateTenant');
   }
@@ -152,21 +134,18 @@ export class TenantService extends BaseService {
       service.logMethodCall('deleteTenant', { id });
 
       try {
-        const { error } = await service.supabase
-          .from('companies')
-          .delete()
-          .eq('id', id);
+        const { success, error } = await deleteOne('companies', { id });
 
-        if (error) {
-          service.logFailure('deleteTenant', error, { id });
-          return { data: null, error };
+        if (!success) {
+          service.logFailure('deleteTenant', String(error ?? 'Unknown error'), { id });
+          return service.handleError<null>(error ?? 'Unknown error', 'Failed to delete tenant');
         }
 
-        service.logSuccess('deleteTenant', { id });
-        return { data: null, error: null };
+        service.logSuccess('deleteTenant', 'deleted', { id });
+        return service.createResponse<null>(null);
       } catch (error) {
-        service.logFailure('deleteTenant', error, { id });
-        return { data: null, error };
+        service.logFailure('deleteTenant', error instanceof Error ? error.message : String(error), { id });
+        return service.handleError<null>(error, 'Failed to delete tenant');
       }
     }, 'deleteTenant');
   }
@@ -180,22 +159,18 @@ export class TenantService extends BaseService {
       service.logMethodCall('getTenantById', { id });
 
       try {
-        const { data, error } = await service.supabase
-          .from('companies')
-          .select('*')
-          .eq('id', id)
-          .single();
+        const { success, data, error } = await selectOne<Tenant>('companies', { id });
 
-        if (error) {
-          service.logFailure('getTenantById', error, { id });
-          return { data: null, error };
+        if (!success) {
+          service.logFailure('getTenantById', String(error ?? 'Not found'), { id });
+          return service.createResponse<Tenant | null>(null);
         }
 
-        service.logSuccess('getTenantById', { id });
-        return { data: data as Tenant, error: null };
+        service.logSuccess('getTenantById', 'loaded', { id });
+        return service.createResponse(data ?? null);
       } catch (error) {
-        service.logFailure('getTenantById', error, { id });
-        return { data: null, error };
+        service.logFailure('getTenantById', error instanceof Error ? error.message : String(error), { id });
+        return service.handleError<Tenant | null>(error, 'Failed to fetch tenant');
       }
     }, 'getTenantById');
   }
@@ -209,24 +184,19 @@ export class TenantService extends BaseService {
       service.logMethodCall('getTenantsByStatus', { status });
 
       try {
-        const { data, error } = await service.supabase
-          .from('companies')
-          .select('*')
-          .eq('status', status);
+        const result = await select<Tenant>('companies', '*', { status });
 
-        if (error) {
-          service.logFailure('getTenantsByStatus', error, { status });
-          return { data: null, error };
+        if (!result.success) {
+          service.logFailure('getTenantsByStatus', String(result.error ?? 'Unknown error'), { status });
+          return service.handleError<Tenant[]>(result.error ?? 'Unknown error', 'Failed to fetch tenants by status');
         }
 
-        service.logSuccess('getTenantsByStatus', { 
-          status, 
-          count: data?.length || 0 
-        });
-        return { data: data as Tenant[] || [], error: null };
+        const tenants = (result.data as Tenant[] | undefined) ?? [];
+        service.logSuccess('getTenantsByStatus', 'loaded', { status, count: tenants.length });
+        return service.createResponse(tenants);
       } catch (error) {
-        service.logFailure('getTenantsByStatus', error, { status });
-        return { data: null, error };
+        service.logFailure('getTenantsByStatus', error instanceof Error ? error.message : String(error), { status });
+        return service.handleError<Tenant[]>(error, 'Failed to fetch tenants by status');
       }
     }, 'getTenantsByStatus');
   }
@@ -240,24 +210,19 @@ export class TenantService extends BaseService {
       service.logMethodCall('getTenantsByPlan', { plan });
 
       try {
-        const { data, error } = await service.supabase
-          .from('companies')
-          .select('*')
-          .eq('subscription_plan', plan);
+        const result = await select<Tenant>('companies', '*', { subscription_plan: plan });
 
-        if (error) {
-          service.logFailure('getTenantsByPlan', error, { plan });
-          return { data: null, error };
+        if (!result.success) {
+          service.logFailure('getTenantsByPlan', String(result.error ?? 'Unknown error'), { plan });
+          return service.handleError<Tenant[]>(result.error ?? 'Unknown error', 'Failed to fetch tenants by plan');
         }
 
-        service.logSuccess('getTenantsByPlan', { 
-          plan, 
-          count: data?.length || 0 
-        });
-        return { data: data as Tenant[] || [], error: null };
+        const tenants = (result.data as Tenant[] | undefined) ?? [];
+        service.logSuccess('getTenantsByPlan', 'loaded', { plan, count: tenants.length });
+        return service.createResponse(tenants);
       } catch (error) {
-        service.logFailure('getTenantsByPlan', error, { plan });
-        return { data: null, error };
+        service.logFailure('getTenantsByPlan', error instanceof Error ? error.message : String(error), { plan });
+        return service.handleError<Tenant[]>(error, 'Failed to fetch tenants by plan');
       }
     }, 'getTenantsByPlan');
   }
@@ -278,31 +243,28 @@ export class TenantService extends BaseService {
       service.logMethodCall('getTenantStats', {});
 
       try {
-        // Get all tenants
-        const { data: tenants, error } = await service.supabase
-          .from('companies')
-          .select('status, subscription_plan');
+        const result = await select<Pick<Tenant, 'status' | 'subscription_plan'>>('companies', 'status, subscription_plan', {});
 
-        if (error) {
-          service.logFailure('getTenantStats', error);
-          return { data: null, error };
+        if (!result.success) {
+          service.logFailure('getTenantStats', String(result.error ?? 'Unknown error'));
+          return service.handleError(result.error ?? 'Unknown error', 'Failed to fetch tenant stats');
         }
 
+        const tenants = (result.data as Array<Pick<Tenant, 'status' | 'subscription_plan'>> | undefined) ?? [];
+
         // Calculate statistics
-        const totalTenants = tenants?.length || 0;
-        const activeTenants = tenants?.filter(t => t.status === 'active').length || 0;
-        const suspendedTenants = tenants?.filter(t => t.status === 'suspended').length || 0;
-        const pendingTenants = tenants?.filter(t => t.status === 'pending').length || 0;
+        const totalTenants = tenants.length;
+        const activeTenants = tenants.filter(t => t.status === 'active').length;
+        const suspendedTenants = tenants.filter(t => t.status === 'suspended').length;
+        const pendingTenants = tenants.filter(t => t.status === 'pending').length;
 
         const byPlan: Record<string, number> = {};
         const byStatus: Record<string, number> = {};
 
-        tenants?.forEach(tenant => {
-          // Count by plan
+        tenants.forEach((tenant) => {
           const plan = tenant.subscription_plan || 'unknown';
           byPlan[plan] = (byPlan[plan] || 0) + 1;
 
-          // Count by status
           const status = tenant.status || 'unknown';
           byStatus[status] = (byStatus[status] || 0) + 1;
         });
@@ -313,14 +275,14 @@ export class TenantService extends BaseService {
           suspendedTenants,
           pendingTenants,
           byPlan,
-          byStatus
+          byStatus,
         };
 
-        service.logSuccess('getTenantStats', stats);
-        return { data: stats, error: null };
+        service.logSuccess('getTenantStats', 'calculated', stats);
+        return service.createResponse(stats);
       } catch (error) {
-        service.logFailure('getTenantStats', error);
-        return { data: null, error };
+        service.logFailure('getTenantStats', error instanceof Error ? error.message : String(error));
+        return service.handleError(error, 'Failed to fetch tenant stats');
       }
     }, 'getTenantStats');
   }
@@ -334,33 +296,18 @@ export class TenantService extends BaseService {
       service.logMethodCall('suspendTenant', { id, reason });
 
       try {
-        const { error } = await service.supabase
-          .from('companies')
-          .update({ 
-            status: 'suspended',
-            updatedat: new Date().toISOString()
-          })
-          .eq('id', id);
+        const { success, error } = await updateOne('companies', id, { status: 'suspended', updatedat: new Date().toISOString() }, 'id');
 
-        if (error) {
-          service.logFailure('suspendTenant', error, { id });
-          return { 
-            data: { 
-              success: false, 
-              error: error.message 
-            }, 
-            error: null 
-          };
+        if (!success) {
+          service.logFailure('suspendTenant', String(error ?? 'Unknown error'), { id });
+          return service.createResponse<{ success: boolean; error?: string }>({ success: false, error: String(error ?? 'Unknown error') });
         }
 
-        service.logSuccess('suspendTenant', { id, reason });
-        return { 
-          data: { success: true }, 
-          error: null 
-        };
+        service.logSuccess('suspendTenant', 'suspended', { id, reason });
+        return service.createResponse<{ success: boolean }>({ success: true });
       } catch (error) {
-        service.logFailure('suspendTenant', error, { id });
-        return { data: null, error };
+        service.logFailure('suspendTenant', error instanceof Error ? error.message : String(error), { id });
+        return service.handleError<{ success: boolean; error?: string }>(error, 'Failed to suspend tenant');
       }
     }, 'suspendTenant');
   }
@@ -374,33 +321,18 @@ export class TenantService extends BaseService {
       service.logMethodCall('activateTenant', { id });
 
       try {
-        const { error } = await service.supabase
-          .from('companies')
-          .update({ 
-            status: 'active',
-            updatedat: new Date().toISOString()
-          })
-          .eq('id', id);
+        const { success, error } = await updateOne('companies', id, { status: 'active', updatedat: new Date().toISOString() }, 'id');
 
-        if (error) {
-          service.logFailure('activateTenant', error, { id });
-          return { 
-            data: { 
-              success: false, 
-              error: error.message 
-            }, 
-            error: null 
-          };
+        if (!success) {
+          service.logFailure('activateTenant', String(error ?? 'Unknown error'), { id });
+          return service.createResponse<{ success: boolean; error?: string }>({ success: false, error: String(error ?? 'Unknown error') });
         }
 
-        service.logSuccess('activateTenant', { id });
-        return { 
-          data: { success: true }, 
-          error: null 
-        };
+        service.logSuccess('activateTenant', 'activated', { id });
+        return service.createResponse<{ success: boolean }>({ success: true });
       } catch (error) {
-        service.logFailure('activateTenant', error, { id });
-        return { data: null, error };
+        service.logFailure('activateTenant', error instanceof Error ? error.message : String(error), { id });
+        return service.handleError<{ success: boolean; error?: string }>(error, 'Failed to activate tenant');
       }
     }, 'activateTenant');
   }
@@ -424,26 +356,23 @@ export class TenantService extends BaseService {
       service.logMethodCall('updateTenantBilling', { id, billingInfo });
 
       try {
-        const { data, error } = await service.supabase
-          .from('companies')
-          .update({
-            ...billingInfo,
-            updatedat: new Date().toISOString()
-          })
-          .eq('id', id)
-          .select()
-          .single();
+        const { data, success, error } = await updateOne<Tenant>(
+          'companies',
+          id,
+          { ...billingInfo, updatedat: new Date().toISOString() } as Record<string, unknown>,
+          'id'
+        );
 
-        if (error) {
-          service.logFailure('updateTenantBilling', error, { id });
-          return { data: null, error };
+        if (!success || !data) {
+          service.logFailure('updateTenantBilling', String(error ?? 'Unknown error'), { id });
+          return service.handleError<Tenant>(error ?? 'Unknown error', 'Failed to update tenant billing');
         }
 
-        service.logSuccess('updateTenantBilling', { id });
-        return { data: data as Tenant, error: null };
+        service.logSuccess('updateTenantBilling', 'updated', { id });
+        return service.createResponse(data as Tenant);
       } catch (error) {
-        service.logFailure('updateTenantBilling', error, { id });
-        return { data: null, error };
+        service.logFailure('updateTenantBilling', error instanceof Error ? error.message : String(error), { id });
+        return service.handleError<Tenant>(error, 'Failed to update tenant billing');
       }
     }, 'updateTenantBilling');
   }

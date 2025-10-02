@@ -58,11 +58,13 @@ class CKBRAGService {
         where: { id: companyId }
       });
 
-      if (!companyResponse.success || !companyResponse.data?.[0]) {
-        throw new Error('Company not found');
-      }
-
-      const company = companyResponse.data[0];
+      const company = companyResponse.success && companyResponse.data?.[0]
+        ? companyResponse.data[0]
+        : {
+            id: companyId,
+            name: 'Unknown Company',
+            industry: 'Unknown'
+          };
 
       // Get business intelligence data
       const intelligenceResponse = await callEdgeFunction('db_select', {
@@ -79,7 +81,7 @@ class CKBRAGService {
       return {
         companyId,
         companyName: company.name,
-        industry: company.industry,
+        industry: company.industry || 'Unknown',
         businessIntelligence: {
           activeIntegrations: intelligence.active_integrations || [],
           performanceMetrics: intelligence.performance_metrics || {},

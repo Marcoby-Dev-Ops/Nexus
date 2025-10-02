@@ -15,7 +15,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
   const { user, signIn } = useAuth();
   const { profile } = useUserProfile();
-  const { pageTitle, pageSubtitle } = useHeaderContext();
+  const { pageTitle, pageSubtitle, pageIcon } = useHeaderContext();
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -176,6 +176,11 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
           
           {/* Page title (optional) + always-on ticker/subtitle */}
           <div className="flex items-center gap-3 min-w-0">
+            {pageIcon ? (
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                {pageIcon}
+              </div>
+            ) : null}
             {pageTitle ? (
               <h1 className="text-lg font-semibold whitespace-nowrap">{pageTitle}</h1>
             ) : null}

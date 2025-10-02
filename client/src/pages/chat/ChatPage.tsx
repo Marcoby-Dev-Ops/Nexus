@@ -206,88 +206,13 @@ export const ChatPage: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              {getContextIcon()}
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold">{getContextTitle()}</h1>
-              <p className="text-sm text-muted-foreground">{getContextDescription()}</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            {chatContext.type !== 'general' && (
-              <Button variant="outline" size="sm" onClick={handleBackToGeneral}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                General Chat
-              </Button>
-            )}
-            
-            {chatContext.type === 'journey' && chatContext.preloadedContext?.suggestedJourney?.category && (
-              <Badge variant="secondary">
-                {chatContext.preloadedContext.suggestedJourney.category}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full min-h-0">
       {/* Chat Interface - Clean AIChatPage with RAG integration */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <AIChatPage />
       </div>
 
-      {/* Quick Actions */}
-      {chatContext.type === 'general' && (
-        <div className="border-t bg-muted/30 p-4 flex-shrink-0">
-          <div className="max-w-4xl mx-auto">
-            <h3 className="text-sm font-medium mb-3">Quick Start Options:</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/chat?context=brain')}
-                className="justify-start"
-              >
-                <Brain className="h-4 w-4 mr-2" />
-                Brain Chat
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/chat?journey=quantum-building-blocks')}
-                className="justify-start"
-              >
-                <Building className="h-4 w-4 mr-2" />
-                Quantum Profile Setup
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/chat?context=business')}
-                className="justify-start"
-              >
-                <TrendingUp className="h-4 w-4 mr-2" />
-                Business Strategy
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/chat?context=assistant&mode=general')}
-                className="justify-start"
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Get Help
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Quick Actions removed: moved to AI chat sidebar for immersion */}
     </div>
   );
 };

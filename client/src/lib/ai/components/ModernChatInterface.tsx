@@ -159,17 +159,26 @@ export default function ModernChatInterface({
             <ChatWelcome userName={userName} />
           ) : (
             <div className="space-y-6">
-              {messages.map((message) => (
-                <ChatMessage 
-                  key={message.id} 
-                  message={message} 
-                  onCopy={copyMessage}
-                />
-              ))}
+              {messages.map((message, idx) => {
+                // Use a stable, unique key where possible. Prefer message.id,
+                // fall back to a combination of role+timestamp+index to avoid
+                // duplicated or missing key warnings from React.
+                const msgAny = message as any;
+                const ts = msgAny.created_at || msgAny.updated_at || msgAny.timestamp || msgAny.time;
+                const tsVal = ts ? (typeof ts === 'string' ? new Date(ts).getTime() : (ts instanceof Date ? ts.getTime() : String(ts))) : 'no-ts';
+                const key = message.id || `${message.role}-${tsVal}-${idx}`;
+                return (
+                  <ChatMessage 
+                    key={key}
+                    message={message} 
+                    onCopy={copyMessage}
+                  />
+                );
+              })}
               
-              {/* Typing Indicator */}
-              {showTypingIndicator && (
-                <div className="flex gap-4 max-w-4xl mx-auto justify-start">
+              {/* Typing / Streaming Indicator - more visible when assistant is generating */}
+              {(showTypingIndicator || isStreaming) && (
+                <div className="flex gap-4 max-w-4xl mx-auto justify-start items-start">
                   <div className="flex-shrink-0">
                     <Avatar className="w-8 h-8">
                       <AvatarFallback className="bg-gray-700 text-gray-300">
@@ -178,20 +187,24 @@ export default function ModernChatInterface({
                     </Avatar>
                   </div>
                   <div className="flex-1 max-w-3xl">
-                    <div className="bg-gray-800 rounded-2xl px-4 py-3">
-                      <div className="flex items-center space-x-2">
+                    <div className="bg-gray-800 rounded-2xl px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.08s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.16s' }}></div>
                         </div>
-                        {ragEnabled && (
-                          <div className="flex items-center space-x-1 text-xs text-blue-400">
-                            <Brain className="w-3 h-3" />
-                            <span>Querying knowledge base...</span>
-                          </div>
-                        )}
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-200 font-medium">{agentName}</span>
+                          <span className="text-xs text-gray-400">{isStreaming ? 'Assistant is thinking...' : 'Assistant is typing...'}</span>
+                        </div>
                       </div>
+                      {ragEnabled && (
+                        <div className="flex items-center space-x-1 text-xs text-blue-400">
+                          <Brain className="w-3 h-3" />
+                          <span>Querying knowledge base...</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

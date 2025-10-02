@@ -531,6 +531,77 @@ router.post('/insert', authenticateToken, async (req, res) => {
 });
 
 /**
+ * POST /api/db/delete - Delete record by filters (compat with client deleteOne)
+ * Supported: { table, filters: { id, idColumn? } }
+ */
+router.post('/delete', authenticateToken, async (req, res) => {
+  try {
+    const { table, filters } = req.body || {};
+    const userId = req.user.id;
+    const jwtPayload = req.user.jwtPayload || { sub: userId };
+
+    if (!table || typeof table !== 'string') {
+      throw createError('Table name is required', 400);
+    }
+    if (!filters || typeof filters !== 'object') {
+      throw createError('Filters object is required', 400);
+    }
+
+    const allowedTables = getAllowedTables();
+    if (!allowedTables.includes(table)) {
+      throw createError(`Table '${table}' not allowed`, 400);
+    }
+
+    // Support { id } or a single column equality
+    const entries = Object.entries(filters).filter(([, v]) => v !== undefined && v !== null);
+    if (entries.length === 0) {
+      throw createError('At least one filter must be provided', 400);
+    }
+
+    const conditions = [];
+    const params = [];
+    let paramIdx = 1;
+
+    for (const [key, value] of entries) {
+      const column = key === 'idColumn' ? null : key;
+      if (!column) continue;
+      conditions.push(`${column} = $${paramIdx++}`);
+      params.push(value);
+    }
+
+    if (conditions.length === 0 && filters.id) {
+      conditions.push(`id = $${paramIdx++}`);
+      params.push(filters.id);
+    }
+
+    if (conditions.length === 0) {
+      throw createError('Invalid filters for delete', 400);
+    }
+
+    // User scoping (for user-scoped tables)
+    if (USER_SCOPED_TABLES.includes(table)) {
+      conditions.push(`user_id = $${paramIdx++}`);
+      params.push(userId);
+    }
+
+    const sql = `DELETE FROM ${table} WHERE ${conditions.join(' AND ')} RETURNING *`;
+    const result = await query(sql, params, jwtPayload);
+
+    if (result.error) {
+      throw createError(`Database delete failed: ${result.error}`, 500);
+    }
+
+    res.json({ success: true, data: result.data?.[0] || null });
+  } catch (error) {
+    logger.error('Database POST delete error:', error);
+    res.status(error.status || 500).json({
+      success: false,
+      error: error.message || 'Database operation failed'
+    });
+  }
+});
+
+/**
  * POST /api/db/:table - Insert new record (legacy signature)
  */
 router.post('/:table', authenticateToken, async (req, res) => {

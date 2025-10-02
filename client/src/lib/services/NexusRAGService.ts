@@ -77,32 +77,74 @@ export interface BusinessKnowledge {
 }
 
 class NexusRAGService {
+  private readonly buildingBlockKeywords: Record<string, string[]> = {
+    identity: ['identity', 'mission', 'vision', 'brand', 'positioning', 'value proposition'],
+    revenue: ['revenue', 'sales', 'growth', 'pricing', 'pipeline', 'deal', 'customer acquisition'],
+    cash: ['cash', 'finance', 'budget', 'expense', 'profit', 'loss', 'forecast', 'financial'],
+    delivery: ['delivery', 'operations', 'fulfillment', 'service delivery', 'logistics', 'production'],
+    people: ['people', 'team', 'hiring', 'talent', 'culture', 'hr', 'human resources'],
+    knowledge: ['knowledge', 'documentation', 'training', 'learning', 'playbook', 'sop'],
+    systems: ['systems', 'process', 'automation', 'tech stack', 'technology', 'workflow', 'infrastructure']
+  };
+
+  private readonly agentBuildingBlockMap: Record<string, string> = {
+    'business-identity-consultant': 'identity',
+    'sales-expert': 'revenue',
+    'finance-expert': 'cash',
+    'operations-expert': 'delivery',
+    'people-expert': 'people',
+    'knowledge-expert': 'knowledge',
+    'systems-expert': 'systems'
+  };
+
   /**
    * Process a message with comprehensive RAG integration
    */
   async processMessage(request: NexusRAGRequest): Promise<NexusRAGResponse> {
     try {
       const { message, context, agentId } = request;
+      const trimmedMessage = message.trim();
 
-      // Step 1: Get comprehensive business knowledge from Nexus Knowledge domain
+      // Handle greetings/small talk without invoking RAG
+      if (!trimmedMessage || this.isSmallTalk(trimmedMessage)) {
+        const minimalContext = this.buildEnhancedContext(context, null, null, trimmedMessage);
+        const aiResponse = await this.generateAIResponse(trimmedMessage, minimalContext, agentId);
+        return {
+          success: true,
+          data: {
+            content: aiResponse.content,
+            sources: [],
+            confidence: 0,
+            recommendations: [],
+            businessContext: {},
+            knowledgeTypes: []
+          }
+        };
+      }
+
+      // Determine whether the message maps to one of the seven building blocks
+      const buildingBlock = this.detectBuildingBlock(trimmedMessage) || this.detectBuildingBlockFromAgent(agentId);
+      const shouldUseKnowledge = !!buildingBlock && !!context.company?.id;
+
+      // Step 1: Get comprehensive business knowledge limited to the identified building block
       let businessKnowledge: BusinessKnowledge | null = null;
       let ckbResponse: CKBResponse | null = null;
       
-      if (context.company?.id) {
+      if (shouldUseKnowledge) {
         try {
-          console.log('🔍 Querying Nexus Knowledge Base for business documentation...');
+          console.log('🔍 Querying Nexus Knowledge Base for building block:', buildingBlock);
           
           // Get CKB RAG context
           ckbResponse = await ckbRAGService.queryCKB({
-            query: message,
+            query: `${buildingBlock} ${trimmedMessage}`,
             companyId: context.company.id,
-            department: context.user.department,
+            department: buildingBlock,
             includeBusinessData: true,
             includeHistoricalContext: true
           });
 
           // Get comprehensive business knowledge
-          businessKnowledge = await this.getBusinessKnowledge(context.company.id, message);
+          businessKnowledge = await this.getBusinessKnowledge(context.company.id, `${buildingBlock} ${trimmedMessage}`);
           
           console.log('✅ Knowledge Base Response:', {
             confidence: ckbResponse.confidence,
@@ -116,10 +158,10 @@ class NexusRAGService {
       }
 
       // Step 2: Build enhanced context with comprehensive knowledge
-      const enhancedContext = this.buildEnhancedContext(context, ckbResponse, businessKnowledge, message);
+      const enhancedContext = this.buildEnhancedContext(context, ckbResponse, businessKnowledge, trimmedMessage);
 
       // Step 3: Generate AI response with comprehensive business context
-      const aiResponse = await this.generateAIResponse(message, enhancedContext, agentId);
+      const aiResponse = await this.generateAIResponse(trimmedMessage, enhancedContext, agentId);
 
       return {
         success: true,
@@ -139,6 +181,29 @@ class NexusRAGService {
         error: error instanceof Error ? error.message : 'Failed to process message'
       };
     }
+  }
+
+  private detectBuildingBlock(message: string): string | null {
+    const lower = message.toLowerCase();
+    for (const [block, keywords] of Object.entries(this.buildingBlockKeywords)) {
+      if (keywords.some(keyword => lower.includes(keyword))) {
+        return block;
+      }
+    }
+    return null;
+  }
+
+  private detectBuildingBlockFromAgent(agentId: string): string | null {
+    return this.agentBuildingBlockMap[agentId] || null;
+  }
+
+  private isSmallTalk(message: string): boolean {
+    const normalized = message.toLowerCase().trim();
+    const smallTalkPhrases = [
+      'hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening',
+      'thanks', 'thank you', 'bye', 'goodbye', 'how are you'
+    ];
+    return smallTalkPhrases.includes(normalized) || normalized.length <= 15 && /^(hi|hello|hey|thanks|thank you|yo|sup)$/i.test(normalized);
   }
 
   /**

@@ -14,18 +14,29 @@ interface ChatMessageProps {
 }
 
 export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
-  console.log('ChatMessage rendering:', {
-    id: message.id,
-    role: message.role,
-    contentLength: message.content?.length || 0,
-    content: message.content?.substring(0, 50) + '...'
-  });
+  // Defensive checks before accessing properties
+  const hasMessage = !!message;
+  const hasContent = !!message?.content;
+  const hasRole = !!message?.role;
+
+  // Log minimal safe info for debugging
+  if (hasMessage) {
+    try {
+      const safeId = (message as any).id || 'no-id';
+      const safeRole = (message as any).role || 'no-role';
+      const safeContentPreview = hasContent ? `${String(message!.content).substring(0, 50)}...` : 'no-content';
+      console.log('ChatMessage rendering:', { id: safeId, role: safeRole, content: safeContentPreview });
+    } catch (e) {
+      // swallow logging errors
+    }
+  }
 
   const formatMessage = (content: string) => {
-    return content.split('\n').map((line, index) => (
+    const contentLines = content.split('\n');
+    return contentLines.map((line, index) => (
       <React.Fragment key={index}>
         {line}
-        {index < content.split('\n').length - 1 && <br />}
+        {index < contentLines.length - 1 && <br />}
       </React.Fragment>
     ));
   };
@@ -38,12 +49,8 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
   };
 
   // Ensure message has required properties
-  if (!message || !message.content || !message.role) {
-    console.log('ChatMessage returning null due to missing properties:', {
-      hasMessage: !!message,
-      hasContent: !!message?.content,
-      hasRole: !!message?.role
-    });
+  if (!hasMessage || !hasContent || !hasRole) {
+    console.log('ChatMessage returning null due to missing properties:', { hasMessage, hasContent, hasRole });
     return null;
   }
 
@@ -92,7 +99,7 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
         )}>
           {!hidePlaceholderContent && (
             <div className="prose prose-invert max-w-none">
-              {formatMessage(message.content)}
+              {formatMessage(String(message.content))}
             </div>
           )}
 
@@ -155,7 +162,7 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onCopy(message.content)}
+            onClick={() => message.content && onCopy(message.content)}
             className="text-gray-400 hover:text-gray-300"
           >
             <Copy className="w-4 h-4" />

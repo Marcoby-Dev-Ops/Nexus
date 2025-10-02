@@ -22,6 +22,11 @@ const getUserJourneysHandler = require('./get_user_journeys');
 const getJourneyTypesHandler = require('./get_journey_types');
 const getPlaybookItemsHandler = require('./get_playbook_items');
 const businessIdentityHandler = require('./business_identity');
+const dbSelectHandler = require('./db_select');
+const aiEmbeddingsHandler = require('./ai_embeddings');
+const aiVectorSearchHandler = require('./ai_vector_search');
+const aiStoreDocumentHandler = require('./ai_store_document');
+const aiRagStatsHandler = require('./ai_rag_stats');
 
 // Map function names to their handlers
 const functionHandlers = {
@@ -46,6 +51,11 @@ const functionHandlers = {
   'get_journey_types': getJourneyTypesHandler,
   'get_playbook_items': getPlaybookItemsHandler,
   'business_identity': businessIdentityHandler,
+  'db_select': dbSelectHandler,
+  'ai_embeddings': aiEmbeddingsHandler,
+  'ai_vector_search': aiVectorSearchHandler,
+  'ai_store_document': aiStoreDocumentHandler,
+  'ai_rag_stats': aiRagStatsHandler,
 };
 
 /**

@@ -142,7 +142,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={placeholder}
+              placeholder={isStreaming ? 'Assistant is thinking...' : placeholder}
               disabled={disabled || isStreaming}
               className={cn(
                 "min-h-[52px] max-h-[200px] resize-none border-0 bg-transparent text-gray-100 placeholder-gray-400",

@@ -63,24 +63,22 @@ export class CompanyOwnershipService extends BaseService {
       try {
         const { data: company, error: companyError } = await selectOne(
           'companies',
-          '*',
           { id: companyId }
         );
 
         if (companyError || !company?.owner_id) {
-          this.logSuccess('getCompanyOwner', { companyId, result: 'no_owner' });
+          this.logSuccess('getCompanyOwner', 'no_owner', { companyId });
           return this.createResponse(null);
         }
 
         const { data: owner, error: ownerError } = await selectOne(
           'user_profiles',
-          '*',
           { user_id: company.owner_id }
         );
 
         if (ownerError || !owner) {
-          this.logFailure('getCompanyOwner', ownerError, { companyId });
-          return this.handleError(ownerError || 'Owner profile not found');
+          this.logFailure('getCompanyOwner', String(ownerError || ''), { companyId });
+          return this.handleError(ownerError || 'Owner profile not found', 'Failed to get company owner', { companyId });
         }
 
         const companyOwner: CompanyOwner = {
@@ -92,11 +90,11 @@ export class CompanyOwnershipService extends BaseService {
           role: owner.role || 'owner'
         };
 
-        this.logSuccess('getCompanyOwner', { companyId, ownerId: owner.user_id });
+  this.logSuccess('getCompanyOwner', 'owner_found', { companyId, ownerId: owner.user_id });
         return this.createResponse(companyOwner);
       } catch (error) {
-        this.logFailure('getCompanyOwner', error, { companyId });
-        return this.handleError(error);
+  this.logFailure('getCompanyOwner', String(error), { companyId });
+  return this.handleError(error, 'Failed to get company owner', { companyId });
       }
     }, 'getCompanyOwner');
   }
@@ -111,17 +109,16 @@ export class CompanyOwnershipService extends BaseService {
       try {
         const { data: company, error } = await selectOne(
           'companies',
-          '*',
           { id: companyId, owner_id: userId }
         );
 
         if (error) {
-          this.logFailure('isCompanyOwner', error, { companyId, userId });
-          return this.handleError(error);
+          this.logFailure('isCompanyOwner', String(error), { companyId, userId });
+          return this.handleError(error, 'Failed to check company ownership', { companyId, userId });
         }
 
         const isOwner = !!company;
-        this.logSuccess('isCompanyOwner', { companyId, userId, isOwner });
+  this.logSuccess('isCompanyOwner', 'checked_ownership', { companyId, userId, isOwner });
         return this.createResponse(isOwner);
       } catch (error) {
         this.logFailure('isCompanyOwner', error, { companyId, userId });
@@ -142,57 +139,59 @@ export class CompanyOwnershipService extends BaseService {
         const isOwner = await this.isCompanyOwner(request.companyId, request.currentUserId);
         if (!isOwner.success || !isOwner.data) {
           this.logFailure('transferCompanyOwnership', 'User is not company owner', request);
-          return this.handleError('Only company owners can transfer ownership');
+          return this.handleError('Only company owners can transfer ownership', 'Unauthorized transfer attempt', request);
         }
 
         // Verify new owner exists and has a profile
         const { data: newOwner, error: newOwnerError } = await selectOne(
           'user_profiles',
-          '*',
           { user_id: request.newOwnerId }
         );
 
         if (newOwnerError || !newOwner) {
           this.logFailure('transferCompanyOwnership', 'New owner profile not found', request);
-          return this.handleError('New owner profile not found');
+          return this.handleError(newOwnerError || 'New owner profile not found', 'Failed to find new owner', request);
         }
 
         // Update company ownership
         const { error: companyUpdateError } = await updateOne(
           'companies',
-          { id: request.companyId },
-          { owner_id: request.newOwnerId }
+          request.companyId,
+          { owner_id: request.newOwnerId },
+          'id'
         );
 
         if (companyUpdateError) {
-          this.logFailure('transferCompanyOwnership', companyUpdateError, request);
-          return this.handleError(companyUpdateError);
+          this.logFailure('transferCompanyOwnership', String(companyUpdateError), request);
+          return this.handleError(companyUpdateError, 'Failed to update company owner', request);
         }
 
         // Update user roles
         const { error: currentOwnerUpdateError } = await updateOne(
           'user_profiles',
-          { user_id: request.currentUserId },
-          { role: 'admin' }
+          request.currentUserId,
+          { role: 'admin' },
+          'user_id'
         );
 
         if (currentOwnerUpdateError) {
-          this.logFailure('transferCompanyOwnership', currentOwnerUpdateError, request);
-          return this.handleError(currentOwnerUpdateError);
+          this.logFailure('transferCompanyOwnership', String(currentOwnerUpdateError), request);
+          return this.handleError(currentOwnerUpdateError, 'Failed to update current owner role', request);
         }
 
         const { error: newOwnerUpdateError } = await updateOne(
           'user_profiles',
-          { user_id: request.newOwnerId },
-          { role: 'owner' }
+          request.newOwnerId,
+          { role: 'owner' },
+          'user_id'
         );
 
         if (newOwnerUpdateError) {
-          this.logFailure('transferCompanyOwnership', newOwnerUpdateError, request);
-          return this.handleError(newOwnerUpdateError);
+          this.logFailure('transferCompanyOwnership', String(newOwnerUpdateError), request);
+          return this.handleError(newOwnerUpdateError, 'Failed to update new owner role', request);
         }
 
-        this.logSuccess('transferCompanyOwnership', { 
+        this.logSuccess('transferCompanyOwnership', 'transfer_completed', { 
           companyId: request.companyId, 
           fromUserId: request.currentUserId, 
           toUserId: request.newOwnerId 
@@ -200,8 +199,8 @@ export class CompanyOwnershipService extends BaseService {
 
         return this.createResponse(true);
       } catch (error) {
-        this.logFailure('transferCompanyOwnership', error, request);
-        return this.handleError(error);
+        this.logFailure('transferCompanyOwnership', String(error), request);
+        return this.handleError(error, 'Failed to transfer company ownership', request);
       }
     }, 'transferCompanyOwnership');
   }
@@ -276,7 +275,7 @@ export class CompanyOwnershipService extends BaseService {
           return this.handleError(error);
         }
 
-        this.logSuccess('getUserOwnedCompanies', { userId, count: companies?.length || 0 });
+  this.logSuccess('getUserOwnedCompanies', 'owned_companies_loaded', { userId, count: companies?.length || 0 });
         return this.createResponse(companies || []);
       } catch (error) {
         this.logFailure('getUserOwnedCompanies', error, { userId });
@@ -319,7 +318,7 @@ export class CompanyOwnershipService extends BaseService {
             break;
         }
 
-        this.logSuccess('validateCompanyAccess', { companyId, userId, requiredRole, hasAccess });
+  this.logSuccess('validateCompanyAccess', 'access_validated', { companyId, userId, requiredRole, hasAccess });
         return this.createResponse(hasAccess);
       } catch (error) {
         this.logFailure('validateCompanyAccess', error, { companyId, userId, requiredRole });

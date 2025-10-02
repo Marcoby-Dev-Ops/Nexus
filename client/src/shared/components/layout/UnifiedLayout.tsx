@@ -60,9 +60,9 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
               onSidebarToggle={() => setSidebarOpen(true)}
             />
             
-            {/* Main content area - Full width responsive */}
-            <main id="main-content" role="main" className="flex-1 overflow-y-auto">
-              <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-8 pb-6">
+            {/* Main content area - Full height within viewport minus header */}
+            <main id="main-content" role="main" className="flex-1 min-h-0 overflow-hidden">
+              <div className="w-full h-full min-h-0 px-4 sm:px-6 lg:px-8 xl:px-12 pt-6 pb-4 overflow-y-auto">
                 {children}
               </div>
             </main>

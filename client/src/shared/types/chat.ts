@@ -97,7 +97,7 @@ export interface ChatState {
 }
 
 export interface ChatActions {
-  sendMessage: (content: string, attachments?: FileAttachment[]) => Promise<void>;
+  sendMessage: (content: string, conversationId: string, attachments?: FileAttachment[]) => Promise<void>;
   saveAIResponse: (content: string, conversationId: string) => Promise<void>;
   fetchMessages: (conversationId: string) => Promise<void>;
   fetchConversations: () => Promise<void>;
@@ -105,7 +105,6 @@ export interface ChatActions {
   updateConversation: (conversationId: string, updates: Partial<Conversation>) => Promise<void>;
   archiveConversation: (conversationId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
-  cleanEmptyConversations: (conversations?: Conversation[]) => Promise<void>;
   clearMessages: () => void;
   setCurrentConversation: (conversation: Conversation | null) => void;
   setCurrentConversationById: (conversationId: string) => Promise<void>;
