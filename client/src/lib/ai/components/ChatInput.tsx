@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Textarea } from '@/shared/components/ui/Textarea';
-import { Button } from '@/shared/components/ui/button';
+import { Button } from '@/shared/components/ui/Button';
 import { Paperclip, Mic, MicOff, Send, StopCircle, Plus } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { FileAttachment } from '@/shared/types/chat';
@@ -68,13 +68,16 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
     input.onchange = (e) => {
       const files = Array.from((e.target as HTMLInputElement).files || []);
       if (files.length > 0) {
-        setAttachments([...attachments, ...files.map(file => ({
+        const newAttachments = files.map(file => ({
           id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           name: file.name,
           size: file.size,
           type: file.type,
-          url: URL.createObjectURL(file)
-        }))]);
+          url: URL.createObjectURL(file),
+          file,
+          status: 'pending' as const,
+        }));
+        setAttachments([...attachments, ...newAttachments]);
       }
     };
     input.click();

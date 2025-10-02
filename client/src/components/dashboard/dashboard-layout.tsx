@@ -1,4 +1,6 @@
 import { AppSidebar } from "./app-sidebar"
+import { PageHeader } from "./page-header"
+import { HeaderProvider } from "@/shared/hooks/useHeaderContext"
 import {
   SidebarInset,
   SidebarProvider,
@@ -10,18 +12,23 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "16rem",
-          "--header-height": "3rem",
-        } as React.CSSProperties
-      }
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        {children}
-      </SidebarInset>
-    </SidebarProvider>
+    <HeaderProvider>
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "16rem",
+            "--header-height": "3rem",
+          } as React.CSSProperties
+        }
+      >
+        <AppSidebar variant="inset" />
+        <SidebarInset>
+          <PageHeader />
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </HeaderProvider>
   )
 }

@@ -38,11 +38,63 @@ export interface QuantumBusinessServiceResponse<T> extends ServiceResponse<T> {
 export class QuantumBusinessService extends BaseService {
   private static instance: QuantumBusinessService;
 
+  private readonly missingTablePatterns = [
+    /relation "?quantum_business_profiles"? does not exist/i,
+    /undefined table/i,
+    /table "?quantum_business_profiles"? does not exist/i
+  ];
+
   public static getInstance(): QuantumBusinessService {
     if (!QuantumBusinessService.instance) {
       QuantumBusinessService.instance = new QuantumBusinessService();
     }
     return QuantumBusinessService.instance;
+  }
+
+  private extractErrorMessage(error: unknown): string {
+    if (!error) return '';
+    if (typeof error === 'string') return error;
+    if (error instanceof Error && error.message) return error.message;
+    if (typeof error === 'object' && 'message' in (error as Record<string, unknown>)) {
+      const maybeMessage = (error as Record<string, unknown>).message;
+      if (typeof maybeMessage === 'string') return maybeMessage;
+    }
+    return String(error);
+  }
+
+  private isMissingTableError(error: unknown): boolean {
+    const message = this.extractErrorMessage(error);
+    if (!message) return false;
+    return this.missingTablePatterns.some(pattern => pattern.test(message));
+  }
+
+  private buildDefaultProfile(organizationId: string) {
+    const defaultBlocks = getAllQuantumBlocks().map(block => ({
+      blockId: block.id,
+      strength: 50,
+      health: 50,
+      properties: {},
+      healthIndicators: {},
+      aiCapabilities: [],
+      marketplaceIntegrations: []
+    }));
+
+    const defaultProfile: QuantumBusinessProfile = {
+      id: typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `quantum-${Date.now()}`,
+      organizationId,
+      blocks: defaultBlocks,
+      relationships: [],
+      healthScore: 0,
+      maturityLevel: 'startup',
+      lastUpdated: new Date().toISOString()
+    };
+
+    defaultProfile.healthScore = calculateBusinessHealth(defaultProfile);
+
+    const insights = generateQuantumInsights(defaultProfile);
+    const recommendations = generateQuantumRecommendations(defaultProfile);
+
+    return { profile: defaultProfile, insights, recommendations };
   }
 
   /**
@@ -76,6 +128,16 @@ export class QuantumBusinessService extends BaseService {
       );
 
       if (error) {
+        if (this.isMissingTableError(error)) {
+          logger.warn('quantum_business_profiles table missing; returning ephemeral profile', { profileId: profile.id });
+          return this.createResponse(profile, {
+            insights,
+            recommendations,
+            persisted: false,
+            warning: 'quantum_business_profiles table missing; profile not persisted'
+          });
+        }
+
         logger.error('Error saving quantum profile', { error });
         return this.handleError('Failed to save quantum business profile', error);
       }
@@ -84,7 +146,8 @@ export class QuantumBusinessService extends BaseService {
 
       return this.createResponse(profile, {
         insights,
-        recommendations
+        recommendations,
+        persisted: true
       });
     } catch (error) {
       logger.error('Unexpected error saving quantum profile', { error });
@@ -112,6 +175,17 @@ export class QuantumBusinessService extends BaseService {
       console.log('🔍 [QuantumBusinessService] Database query result:', { data, error });
 
       if (error) {
+        if (this.isMissingTableError(error)) {
+          logger.warn('quantum_business_profiles table missing; serving in-memory profile', { organizationId });
+          const { profile: fallbackProfile, insights, recommendations } = this.buildDefaultProfile(organizationId);
+          return this.createResponse(fallbackProfile, {
+            insights,
+            recommendations,
+            persisted: false,
+            warning: 'quantum_business_profiles table missing; using in-memory profile'
+          });
+        }
+
         logger.error('Error fetching quantum profile', { error });
         console.error('❌ [QuantumBusinessService] Database error:', error);
         return this.handleError('Failed to fetch quantum business profile', error);
@@ -120,33 +194,7 @@ export class QuantumBusinessService extends BaseService {
       if (!data || data.length === 0) {
         console.log('ℹ️ [QuantumBusinessService] No quantum profile found for organizationId:', organizationId);
         // Auto-create a default profile on first access
-        const defaultBlocks = getAllQuantumBlocks().map(block => ({
-          blockId: block.id,
-          strength: 50,
-          health: 50,
-          properties: {},
-          healthIndicators: {},
-          aiCapabilities: [],
-          marketplaceIntegrations: []
-        }));
-
-        const defaultProfile: QuantumBusinessProfile = {
-          id: crypto.randomUUID(),
-          organizationId,
-          blocks: defaultBlocks,
-          relationships: [],
-          healthScore: calculateBusinessHealth({
-            id: 'temp',
-            organizationId,
-            blocks: defaultBlocks,
-            relationships: [],
-            healthScore: 0,
-            maturityLevel: 'startup',
-            lastUpdated: new Date().toISOString()
-          }),
-          maturityLevel: 'startup',
-          lastUpdated: new Date().toISOString()
-        };
+        const { profile: defaultProfile } = this.buildDefaultProfile(organizationId);
 
         const saveResult = await this.saveQuantumProfile(defaultProfile);
         if (!saveResult.success || !saveResult.data) {
@@ -174,9 +222,23 @@ export class QuantumBusinessService extends BaseService {
         insights,
         recommendations
       });
-    } catch (error) {
-      logger.error('Unexpected error fetching quantum profile', { error });
+    } catch (error: any) {
+      // If the database table doesn't exist (common in local/dev), return a generated default profile
+      const message = this.extractErrorMessage(error);
+      logger.error('Unexpected error fetching quantum profile', { message, stack: error?.stack });
       console.error('❌ [QuantumBusinessService] Unexpected error:', error);
+
+      if (this.isMissingTableError(error)) {
+        // Build default profile without persisting
+        const { profile: defaultProfile, insights, recommendations } = this.buildDefaultProfile(organizationId);
+        return this.createResponse(defaultProfile, {
+          insights,
+          recommendations,
+          persisted: false,
+          warning: 'quantum_business_profiles table missing; using in-memory profile'
+        });
+      }
+
       return this.handleError('Unexpected error fetching quantum business profile', error);
     }
   }

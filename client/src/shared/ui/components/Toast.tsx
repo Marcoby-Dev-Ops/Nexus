@@ -10,8 +10,9 @@ interface Toast {
 }
 
 interface ToastContextType {
-  showToast: (toast: Omit<Toast, 'id'>) => void;
-  toast: (toast: Omit<Toast, 'id'>) => void; // alias for compatibility
+  showToast: (toast: Omit<Toast, 'id'> & { type?: Toast['type'] }) => void;
+  toast: (toast: Omit<Toast, 'id'> & { type?: Toast['type'] }) => void; // alias for compatibility
+  dismiss: (id?: string) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -27,9 +28,14 @@ export const useToast = () => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const showToast = useCallback((toast: Omit<Toast, 'id'>) => {
+  const showToast = useCallback((toast: Omit<Toast, 'id'> & { type?: Toast['type'] }) => {
     const id = Math.random().toString(36).substring(7);
-    setToasts((prev) => [...prev, { ...toast, id }]);
+    const normalizedToast: Toast = {
+      ...toast,
+      type: toast.type ?? 'info',
+      id,
+    };
+    setToasts((prev) => [...prev, normalizedToast]);
 
     // Auto remove after 5 seconds
     setTimeout(() => {
@@ -37,7 +43,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 5000);
   }, []);
 
-  const removeToast = useCallback((id: string) => {
+  const removeToast = useCallback((id?: string) => {
+    if (!id) {
+      setToasts([]);
+      return;
+    }
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
@@ -57,9 +67,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ToastContext.Provider value={{ showToast, toast: showToast }}>
+    <ToastContext.Provider value={{ showToast, toast: showToast, dismiss: removeToast }}>
       {children}
-      <div className="fixed bottom-0 right-0 p-4 space-y-4 z-50">
+      <div className="fixed bottom-4 right-4 p-4 space-y-4 z-50">
         <AnimatePresence>
           {toasts.map((toast) => (
             <motion.div

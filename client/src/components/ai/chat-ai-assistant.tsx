@@ -16,6 +16,7 @@ import {
   Loader2,
   RotateCcw
 } from "lucide-react"
+import { getIndustryLabel } from '@/lib/identity/industry-options'
 
 interface Message {
   id: string
@@ -72,12 +73,12 @@ export function ChatAIAssistant({
 
   const getWelcomeMessage = (section: string, context?: any) => {
     const companyName = context?.companyName || 'your company'
-    const industry = context?.industry || 'your industry'
+    const industry = getIndustryLabel(context?.industry) || 'your industry'
     
     const welcomeMessages = {
       mission: `Hi! I'm here to help you craft a compelling mission statement for ${companyName}. 
 
-Let's start with the basics: What does your company do? What problem are you solving in the ${industry} industry?`,
+Let's start with: What does your company do? What problem are you solving in the ${industry} industry?`,
       
       vision: `Hello! I'd love to help you create a powerful vision statement for ${companyName}.
 
@@ -182,7 +183,7 @@ Let's explore: How do you want people to perceive your company? What tone do you
 
   const generateFinalContent = (section: string, messageHistory: Message[], context?: any) => {
     const companyName = context?.companyName || 'your company'
-    const industry = context?.industry || 'your industry'
+    const industry = getIndustryLabel(context?.industry) || 'your industry'
     
     const finalContents = {
       mission: `To revolutionize ${industry} by providing innovative solutions that empower businesses to achieve their full potential, while maintaining the highest standards of quality and customer satisfaction.`,

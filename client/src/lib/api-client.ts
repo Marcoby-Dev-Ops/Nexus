@@ -6,7 +6,8 @@
 import { getEnv } from '@/core/environment';
 
 function getApiBaseUrl(): string {
-  return getEnv().api.baseUrl || 'http://localhost:3001';
+  // Use empty string to leverage Vite proxy for relative URLs
+  return '';
 }
 import { loggingUtils } from '@/core/config/logging';
 import { useAuthStore } from '@/core/auth/authStore';
@@ -417,6 +418,28 @@ export async function selectData<T = any>(options: SelectOptions): Promise<ApiRe
 export async function selectData<T = any>(table: string, columns?: string, filters?: Record<string, unknown>): Promise<ApiResponse<T[]>>;
 
 // Implementation
+function normalizeSelectPayload<T>(payload: unknown): { data: T[]; metadata?: Record<string, any> } | null {
+  if (Array.isArray(payload)) {
+    return { data: payload as T[] };
+  }
+
+  if (payload && typeof payload === 'object') {
+    const value = payload as Record<string, unknown>;
+
+    if (Array.isArray(value.data)) {
+      const { data, ...metadata } = value as { data: T[] } & Record<string, any>;
+      return { data, metadata };
+    }
+
+    if (Array.isArray(value.records)) {
+      const { records, ...metadata } = value as { records: T[] } & Record<string, any>;
+      return { data: records, metadata };
+    }
+  }
+
+  return null;
+}
+
 export async function selectData<T = any>(
   optionsOrTable: SelectOptions | string,
   columns?: string,
@@ -459,7 +482,31 @@ export async function selectData<T = any>(
   const queryString = buildQueryString(params);
   const endpoint = queryString ? `/api/db/${table}?${queryString}` : `/api/db/${table}`;
 
-  return client.get<T[]>(endpoint);
+  const result = await client.get<T[] | Record<string, unknown>>(endpoint);
+
+  if (!result.success) {
+    return result as ApiResponse<T[]>;
+  }
+
+  const normalized = normalizeSelectPayload<T>(result.data);
+
+  if (normalized) {
+    const response: ApiResponse<T[]> = {
+      success: true,
+      data: normalized.data,
+    };
+
+    if (normalized.metadata) {
+      (response as any).metadata = normalized.metadata;
+    }
+
+    return response;
+  }
+
+  return {
+    success: true,
+    data: []
+  };
 }
 
 export async function selectOne<T = any>(
@@ -527,11 +574,14 @@ export async function insertOne<T = any>(
 
 export async function updateOne<T = any>(
   table: string,
-  filters: Record<string, unknown>,
-  data: Record<string, unknown>
+  id: string,
+  data: Record<string, unknown>,
+  idColumn: string = 'id'
 ): Promise<ApiResponse<T>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  return client.post<T>('/api/db/update', { table, filters, data });
+  const encodedId = encodeURIComponent(id);
+  const query = idColumn ? `?idColumn=${encodeURIComponent(idColumn)}` : '';
+  return client.put<T>(`/api/db/${table}/${encodedId}${query}`, data);
 }
 
 export async function upsertOne<T = any>(

@@ -16,7 +16,7 @@ import ChatWelcome from './ChatWelcome';
 
 interface ModernChatInterfaceProps {
   messages: ChatMessageType[];
-  onSendMessage: (message: string, attachments?: FileAttachment[]) => void;
+  onSendMessage: (message: string, attachments?: FileAttachment[]) => Promise<void> | void;
   onStopGeneration?: () => void;
   isStreaming?: boolean;
   disabled?: boolean;
@@ -81,10 +81,10 @@ export default function ModernChatInterface({
     console.log('Messages count in interface:', messages.length);
   }, [messages]);
 
-  const handleSendMessage = useCallback(() => {
+  const handleSendMessage = useCallback(async () => {
     if (!input.trim() && attachments.length === 0) return;
     
-    onSendMessage(input.trim(), attachments);
+    await Promise.resolve(onSendMessage(input.trim(), attachments));
     setInput('');
     // Clear attachments and revoke object URLs
     attachments.forEach(attachment => {

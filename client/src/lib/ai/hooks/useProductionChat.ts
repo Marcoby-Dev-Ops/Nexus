@@ -3,13 +3,12 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks';
-import { database } from '@/lib/database';
-import { quotaService } from '../services/quotaService';
-import type { ChatMessage, ChatState, ChatActions } from '../types/chat';
-import type { ChatQuotas } from '../types/licensing';
+import { quotaService, type ChatQuotaLimits } from '../services/quotaService';
+import type { ChatMessage, ChatState, ChatActions, AttachmentData } from '@/core/types/chat';
 import { logger } from '@/shared/utils/logger';
-import { selectData, insertOne, updateOne } from '@/lib/api-client';
+import { selectData, insertOne } from '@/lib/api-client';
 
 interface UseProductionChatOptions {
   conversationId: string;
@@ -20,7 +19,7 @@ interface UseProductionChatOptions {
 }
 
 interface ProductionChatState extends ChatState {
-  quotas?: ChatQuotas;
+  quotas?: ChatQuotaLimits;
   usageStats?: {
     messagesRemaining: number;
     aiRequestsRemaining: number;
@@ -43,19 +42,42 @@ type ChatMessageType = ChatMessage['type'];
 
 type ChatMessageRow = {
   id: string;
+  conversationid: string;
+  userid: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   createdat: string;
-  metadata: { [key: string]: any; type?: ChatMessageType };
+  metadata?: (Record<string, unknown> & { type?: ChatMessageType });
 };
 
+function extractRows<T>(payload: unknown): T[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload as T[];
+  if (typeof payload === 'object') {
+    const data = (payload as any).data;
+    if (Array.isArray(data)) return data as T[];
+  }
+  return [];
+}
+
 export function useProductionChat(options: UseProductionChatOptions): ProductionChatState & ProductionChatActions {
-  const { conversationId,  } = options;
+  const {
+    conversationId,
+    enableReactions = false,
+    autoMarkAsRead = false,
+    pageSize = 50,
+    enableCaching = true,
+  } = options;
+
+  // Capture current route info so we can include it in AI chat context
+  // This hook is used within React components, so react-router hooks are available here.
+  const location = useLocation();
+  const params = useParams();
 
   const { user } = useAuth();
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMoreMessages, setHasMoreMessages] = useState(true);
-  const [quotas, setQuotas] = useState<ChatQuotas>();
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [hasMoreMessages, setHasMoreMessages] = useState<boolean>(true);
+  const [quotas, setQuotas] = useState<ChatQuotaLimits>();
   const [usageStats, setUsageStats] = useState<ProductionChatState['usageStats']>();
 
   const [state, setState] = useState<ProductionChatState>({
@@ -70,39 +92,55 @@ export function useProductionChat(options: UseProductionChatOptions): Production
   });
 
   const lastQuotaCheckRef = useRef<number>(0);
+  // Keep refs for frequently-read values to avoid stale closures in async callbacks
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   const getCachedMessages = useCallback((key: string): ChatMessage[] | null => {
     if (!enableCaching) return null;
-    
+
     const cached = messageCache.get(key);
     if (!cached) return null;
-    
+
     const isExpired = Date.now() - cached.timestamp > CACHE_TTL;
     if (isExpired) {
       messageCache.delete(key);
       return null;
     }
-    
+
     return cached.messages;
   }, [enableCaching]);
 
   const setCachedMessages = useCallback((key: string, messages: ChatMessage[]) => {
     if (!enableCaching) return;
-    messageCache.set(key, { messages, timestamp: Date.now() });
+    try {
+      messageCache.set(key, { messages, timestamp: Date.now() });
+    } catch (err) {
+      // Ignore cache errors (shouldn't happen for in-memory Map)
+      logger.warn('Failed to set message cache', err);
+    }
   }, [enableCaching]);
 
   const checkQuotas = useCallback(async () => {
-    if (!user?.id) return { allowed: false, reason: 'Not authenticated' };
-    
+    const uid = userRef.current?.id;
+    if (!uid) return { allowed: false, reason: 'Not authenticated' };
+
     const now = Date.now();
-    if (now - lastQuotaCheckRef.current < 60000) {
-      return { allowed: !state.isQuotaExceeded };
+    if (now - lastQuotaCheckRef.current < 60_000) {
+      return { allowed: !stateRef.current.isQuotaExceeded };
     }
     lastQuotaCheckRef.current = now;
 
     try {
-      const quotaCheck = await quotaService.canSendMessage(user.id);
-      
+      const quotaCheck = await quotaService.canSendMessage(uid);
+
       setState(prev => ({
         ...prev,
         quotas: quotaCheck.quotas,
@@ -110,22 +148,22 @@ export function useProductionChat(options: UseProductionChatOptions): Production
         retryAfter: quotaCheck.retryAfter,
       }));
 
-      if (quotaCheck.quotas) {
-        setQuotas(quotaCheck.quotas);
-      }
+      if (quotaCheck.quotas) setQuotas(quotaCheck.quotas);
 
       return quotaCheck;
-    } catch (error) {
-      logger.error('Quota check failed: ', error);
+    } catch (err) {
+      logger.error('Quota check failed: ', err);
+      // Fail open for better UX: allow message send if quota service is down
       return { allowed: true };
     }
-  }, [user?.id, state.isQuotaExceeded]);
+  }, []);
 
   const fetchMessages = useCallback(async (page: number = 0, skipCache: boolean = false) => {
-    if (!conversationId || !user?.id) return;
+    const uid = userRef.current?.id;
+    if (!conversationId || !uid) return;
 
     const key = `${conversationId}-${page}`;
-    
+
     if (!skipCache) {
       const cachedMessages = getCachedMessages(key);
       if (cachedMessages) {
@@ -141,22 +179,27 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     try {
       setState(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const { data, error } = await selectData('chat_messages', '*', { conversation_id: conversationId }, {
-        orderBy: { column: 'created_at', ascending: false },
+      const response = await selectData<ChatMessageRow>({
+        table: 'chat_messages',
+        filters: { conversationid: conversationId },
+        orderBy: [{ column: 'createdat', ascending: false }],
         limit: pageSize,
-        offset: page * pageSize
+        offset: page * pageSize,
       });
 
-      if (error) throw error;
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Failed to fetch messages');
+      }
 
-      const formattedMessages: ChatMessage[] = (data || []).map((msg: ChatMessageRow) => ({
+      const rows = extractRows<ChatMessageRow>(response.data);
+      const formattedMessages: ChatMessage[] = rows.map((msg) => ({
         id: msg.id,
         role: msg.role,
         content: msg.content,
-        timestamp: new Date(msg.created_at),
+        timestamp: new Date(msg.createdat),
         status: 'delivered' as const,
-        type: msg.metadata?.type || 'text',
-        metadata: msg.metadata,
+        type: (msg.metadata?.type as ChatMessageType) || 'text',
+        metadata: msg.metadata as ChatMessage['metadata'],
       })).reverse();
 
       setCachedMessages(key, formattedMessages);
@@ -168,17 +211,20 @@ export function useProductionChat(options: UseProductionChatOptions): Production
       }));
 
       setHasMoreMessages(formattedMessages.length === pageSize);
-    } catch (error) {
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       setState(prev => ({
         ...prev,
-        error: error instanceof Error ? error.message : 'Failed to fetch messages',
+        error: message || 'Failed to fetch messages',
         isLoading: false,
       }));
+      logger.error('fetchMessages error', { err, conversationId, page });
     }
-  }, [conversationId, user?.id, pageSize, getCachedMessages, setCachedMessages]);
+  }, [conversationId, pageSize, getCachedMessages, setCachedMessages]);
 
-  const sendMessage = useCallback(async (content: string) => {
-    if (!content.trim() || !conversationId || !user?.id) return;
+  const sendMessage = useCallback(async (content: string, attachments: File[] = []) => {
+    const uid = userRef.current?.id;
+    if (!content?.trim() || !conversationId || !uid) return;
 
     const quotaCheck = await checkQuotas();
     if (!quotaCheck.allowed) {
@@ -192,14 +238,21 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     }
 
     const tempId = `temp-${Date.now()}`;
+    const attachmentMetadata: AttachmentData[] = attachments.map((file, index) => ({
+      id: `temp-attachment-${index}-${Date.now()}`,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      url: '',
+    }));
     const optimisticMessage: ChatMessage = {
       id: tempId,
       role: 'user',
       content: content.trim(),
       timestamp: new Date(),
-      status: 'sending',
+      status: 'sending' as const,
       type: 'text',
-      metadata: { attachments: [] },
+      metadata: { attachments: attachmentMetadata },
     };
 
     setState(prev => ({
@@ -213,62 +266,73 @@ export function useProductionChat(options: UseProductionChatOptions): Production
     try {
       const { data: savedMessage, error: saveError } = await insertOne('chat_messages', {
         conversationid: conversationId,
-        userid: user.id,
+        userid: uid,
         role: 'user',
         content: content.trim(),
-        metadata: {},
+        metadata: { attachments: attachmentMetadata },
       });
 
       if (saveError) throw saveError;
 
-      await quotaService.recordUsage(user.id, 'message');
+      await quotaService.recordUsage(uid, 'message');
 
       setState(prev => ({
         ...prev,
         messages: prev.messages.map(msg =>
           msg.id === tempId
-            ? { ...msg, id: savedMessage?.id || tempId, status: 'sent' }
+            ? { ...msg, id: savedMessage?.id || tempId, status: 'sent' as const }
             : msg
         ),
       }));
 
+      // Invalidate page 0 cache for this conversation
       messageCache.delete(`${conversationId}-0`);
 
-      // Enhanced AI Response with Company Context
-      const { enhancedChatService } = await import('@/lib/ai/core/enhancedChatService');
-      const { getAgent } = await import('@/lib/ai/core/agentRegistry');
-      
-      // Build comprehensive context for the chat
+      // Lazy-load heavy AI modules only when needed
+      const [{ enhancedChatService }, { getAgent }] = await Promise.all([
+        import('@/lib/ai/core/enhancedChatService'),
+        import('@/lib/ai/core/agentRegistry'),
+      ]);
+
+      const recent = stateRef.current.messages.slice(-3).map(m => m.content);
+      const companyId = (userRef.current as any)?.company_id ?? (userRef.current as any)?.companyId ?? null;
+
       const chatContext = {
-        userId: user.id,
-        companyId: user.company_id,
+        userId: uid,
+        companyId: companyId ?? undefined,
         sessionId: conversationId,
         currentTopic: 'business discussion',
-        recentInteractions: state.messages.slice(-3).map(msg => msg.content),
-        userPreferences: {}
+        recentInteractions: recent,
+        userPreferences: {},
+        route: {
+          pathname: location?.pathname,
+          search: location?.search,
+          hash: location?.hash,
+          state: (location as any)?.state,
+          params: params || {},
+          title: typeof document !== 'undefined' ? document.title : undefined,
+        },
       };
 
       const result = await enhancedChatService.sendMessageWithContext({
         message: content.trim(),
         conversationId,
-        agent: getAgent('executive-assistant'),
-        context: chatContext
+        agent: getAgent('concierge-director'),
+        context: chatContext,
       });
 
-      // Add AI response to messages
       const aiMessage: ChatMessage = {
         id: `ai-${Date.now()}`,
-        conversationId,
         role: 'assistant',
         content: result.response,
-        timestamp: new Date().toISOString(),
-        status: 'sent',
+        timestamp: new Date(),
+        status: 'sent' as const,
         type: 'text',
-        metadata: { 
-          agent: result.agent.name,
-          processingTime: result.metadata.processingTime,
-          companyDataUsed: result.metadata.companyDataUsed,
-          buildingBlocksUsed: result.metadata.buildingBlocksUsed
+        metadata: {
+          agent: result.agent?.name,
+          processingTime: result.metadata?.processingTime,
+          companyDataUsed: result.metadata?.companyDataUsed,
+          buildingBlocksUsed: result.metadata?.buildingBlocksUsed,
         },
       };
 
@@ -278,20 +342,16 @@ export function useProductionChat(options: UseProductionChatOptions): Production
         isLoading: false,
       }));
 
-    } catch (error) {
-      logger.error('Failed to send message: ', error);
+    } catch (err) {
+      logger.error('Failed to send message: ', err);
       setState(prev => ({
         ...prev,
-        messages: prev.messages.map(msg =>
-          msg.id === tempId
-            ? { ...msg, status: 'error' }
-            : msg
-        ),
-        error: error instanceof Error ? error.message : 'Failed to send message',
+        messages: prev.messages.map(msg => (msg.id === tempId ? { ...msg, status: 'error' as const } : msg)),
+        error: err instanceof Error ? err.message : String(err),
         isLoading: false,
       }));
     }
-  }, [conversationId, user?.id, checkQuotas, state.messages]);
+  }, [conversationId, checkQuotas, location, params]);
 
   const loadMoreMessages = useCallback(async () => {
     if (!hasMoreMessages || state.isLoading) return;
@@ -306,40 +366,42 @@ export function useProductionChat(options: UseProductionChatOptions): Production
   }, [checkQuotas]);
 
   const getUsageStats = useCallback(async () => {
-    if (!user?.id) return;
+    const uid = userRef.current?.id;
+    if (!uid) return;
     try {
-      const stats = await quotaService.getUserUsageStats(user.id);
+      const stats = await quotaService.getUserUsageStats(uid);
       setUsageStats({
         messagesRemaining: Math.max(0, stats.currentQuotas.max_messages_per_day - (stats.todayUsage.message_count || 0)),
         aiRequestsRemaining: Math.max(0, stats.currentQuotas.max_ai_requests_per_hour - stats.todayUsage.ai_requests_made),
         costToday: stats.todayUsage.estimated_cost_usd,
       });
+      setQuotas(stats.currentQuotas);
     } catch (error) {
       logger.error('Failed to get usage stats: ', error);
     }
-  }, [user?.id]);
+  }, []);
 
   // Stub implementations
   const retryMessage = useCallback(async (messageId: string) => {
-    logger.info('Retry message: ', messageId);
+    logger.info('Retry message', { messageId });
   }, []);
 
   const editMessage = useCallback(async (messageId: string, newContent: string) => {
-    logger.info('Edit message: ', messageId, newContent);
+    logger.info('Edit message', { messageId, newContent });
   }, []);
 
   const deleteMessage = useCallback(async (messageId: string) => {
-    logger.info('Delete message: ', messageId);
+    logger.info('Delete message', { messageId });
   }, []);
 
   const reactToMessage = useCallback(async (messageId: string, emoji: string) => {
     if (!enableReactions) return;
-    logger.info('React to message: ', messageId, emoji);
+    logger.info('React to message', { messageId, emoji });
   }, [enableReactions]);
 
   const markAsRead = useCallback(async (messageId: string) => {
     if (!autoMarkAsRead) return;
-    logger.info('Mark as read: ', messageId);
+    logger.info('Mark as read', { messageId });
   }, [autoMarkAsRead]);
 
   useEffect(() => {
@@ -350,7 +412,7 @@ export function useProductionChat(options: UseProductionChatOptions): Production
 
   useEffect(() => {
     // Use longer intervals in development to reduce resource usage
-    const refreshInterval = process.env.NODE_ENV === 'development' ? 10 * 60 * 1000 : 5 * 60 * 1000; // 10min dev, 5min prod
+    const refreshInterval = import.meta.env.DEV ? 10 * 60 * 1000 : 5 * 60 * 1000; // 10min dev, 5min prod
     const interval = setInterval(() => {
       refreshQuotas();
       getUsageStats();

@@ -37,7 +37,7 @@ export const CompanyFoundationSchema = z.object({
   sector: z.string().optional(),
   businessModel: z.enum(['B2B', 'B2C', 'B2B2C', 'Marketplace', 'SaaS', 'Other']).default('B2B'),
   companyStage: z.enum(['Startup', 'Growth', 'Mature', 'Enterprise']).default('Startup'),
-  companySize: z.enum(['Small (2-10)', 'Medium (11-50)', 'Large (51-200)', 'Enterprise (200+)']).default('Small (2-10)'),
+  companySize: z.enum(['Small (1-5)', 'Medium (6-50)', 'Large (51-200)', 'Enterprise (200+)']).default('Small (1-5)'),
   website: z.string().url().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
@@ -321,6 +321,7 @@ export const CompanyProfileSchema = z.object({
   settings: z.record(z.any()).optional(),
   subscription_plan: z.string().optional(),
   max_users: z.number().optional(),
+  identity_id: z.string().uuid().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -493,8 +494,15 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
         return serviceResponse;
       }
       
-      const validatedData = this.config.schema.parse(serviceResponse.data);
-      return { data: validatedData, error: null, success: true };
+      // For updates, we should refetch the complete record to ensure we have all fields
+      // rather than trying to validate partial response data
+      const fetchResult = await this.get(id);
+      if (fetchResult.success && fetchResult.data) {
+        return fetchResult;
+      }
+      
+      // If refetch fails, return the update response as-is without validation
+      return serviceResponse;
     }, `update company profile ${id}`);
   }
 
@@ -817,4 +825,3 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
 // ============================================================================
 
 export const companyService = new CompanyService();
-

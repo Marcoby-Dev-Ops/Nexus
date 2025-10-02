@@ -5,6 +5,7 @@ import { UserProvider } from '@/shared/contexts/UserContext';
 import { CompanyProvider } from '@/shared/contexts/CompanyContext';
 import { UserPreferencesProvider } from '@/shared/contexts/UserPreferencesContext';
 import { clearAuthConflicts, hasAuthConflicts } from '@/shared/auth/clearAuthConflicts';
+import { ToastProvider } from '@/shared/ui/components/Toast';
 
 import { UnifiedLayout } from '@/shared/components/layout/UnifiedLayout';
 import { ProtectedRoute } from '@/shared/components/ProtectedRoute';
@@ -24,6 +25,8 @@ import { AdminPage } from '@/pages/admin/AdminPage';
 import AuthDebug from '@/pages/auth/AuthDebug';
 import JourneysPage from '@/pages/journey/JourneysPage';
 import BusinessIdentityJourneyPage from '@/pages/journey/BusinessIdentityJourneyPage';
+import IdentityPage from '@/pages/IdentityPage';
+import ChatPage from '@/pages/chat/ChatPage';
 
 // Integrations pages
 import { IntegrationsDashboard } from '../integrations/pages/IntegrationsDashboard';
@@ -113,6 +116,16 @@ function AppRoutes() {
         } 
       />
       
+      {/* Identity route */}
+      <Route 
+        path="/identity" 
+        element={
+          <ProtectedRoute>
+            <IdentityPage />
+          </ProtectedRoute>
+        } 
+      />
+      
       {/* Journey routes */}
         <Route
           path="/journey-management"
@@ -130,6 +143,16 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+      {/* AI Chat route */}
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
+          </ProtectedRoute>
+        }
+      />
       
       {/* Integrations routes */}
       <Route 
@@ -167,36 +190,39 @@ function AppRoutes() {
 }
 
 function App() {
-  // Clear any MSAL conflicts on app initialization
-  useEffect(() => {
+  // Clear any MSAL conflicts on app initialization (removed useEffect to fix hooks issue)
+  // TODO: Move this to a different initialization approach
+  if (typeof window !== 'undefined') {
     if (hasAuthConflicts()) {
       clearAuthConflicts();
     }
-  }, []);
+  }
 
   return (
-    <AuthentikAuthProvider>
-      <UserProvider>
-        <CompanyProvider>
-          <UserPreferencesProvider>
-            <ErrorBoundary fallback={(
-              <div className="min-h-screen flex items-center justify-center bg-background">
-                <div className="text-center space-y-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
-                  <p className="text-muted-foreground">Something went wrong. Please try again.</p>
+    <ToastProvider>
+      <AuthentikAuthProvider>
+        <UserProvider>
+          <CompanyProvider>
+            <UserPreferencesProvider>
+              <ErrorBoundary fallback={(
+                <div className="min-h-screen flex items-center justify-center bg-background">
+                  <div className="text-center space-y-3">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+                    <p className="text-muted-foreground">Something went wrong. Please try again.</p>
+                  </div>
                 </div>
-              </div>
-            )}>
-              <UnifiedLayout>
-                <Suspense fallback={<LoadingSpinner />}>
-                  <AppRoutes />
-                </Suspense>
-              </UnifiedLayout>
-            </ErrorBoundary>
-          </UserPreferencesProvider>
-        </CompanyProvider>
-      </UserProvider>
-    </AuthentikAuthProvider>
+              )}>
+                <UnifiedLayout>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <AppRoutes />
+                  </Suspense>
+                </UnifiedLayout>
+              </ErrorBoundary>
+            </UserPreferencesProvider>
+          </CompanyProvider>
+        </UserProvider>
+      </AuthentikAuthProvider>
+    </ToastProvider>
   );
 }
 

@@ -269,7 +269,7 @@ const SecuritySettings: React.FC = () => {
                 console.log('🔍 Button clicked!');
                 alert('Button clicked - opening password change...');
                 
-                const authentikUrl = 'https://identity.marcoby.com';
+                const authentikUrl = import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com';
                 const fullUrl = `${authentikUrl}/if/flow/default-password-change/`;
                 
                 console.log('🔍 Opening URL:', fullUrl);

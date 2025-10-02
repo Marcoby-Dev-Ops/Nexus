@@ -1,6 +1,5 @@
 import { databaseService } from '@/core/services/DatabaseService';
 import { testConnection, testVectorExtension } from '@/lib/postgres';
-import { logger } from '@/shared/utils/logger';
 
 async function testDatabaseMigration() {
   console.log('🧪 Testing Database Migration...\n');

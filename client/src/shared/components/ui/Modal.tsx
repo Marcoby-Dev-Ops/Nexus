@@ -6,13 +6,15 @@ export interface ModalProps {
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
+  /** preset modal size: sm | md | lg | xl | full */
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   title?: string;
 }
 
 /**
  * Simple modal component for 1.0
  */
-const Modal: React.FC<ModalProps> = ({ open, onClose, children, className, title }) => {
+const Modal: React.FC<ModalProps> = ({ open, onClose, children, className, title, size }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -33,11 +35,29 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, children, className, title
 
   if (!open) return null;
 
+  const sizeClass = (() => {
+    switch (size) {
+      case 'sm':
+        return 'max-w-md';
+      case 'md':
+        return 'max-w-2xl';
+      case 'lg':
+        return 'max-w-4xl';
+      case 'xl':
+        return 'max-w-6xl';
+      case 'full':
+        return 'w-full h-full max-w-full';
+      default:
+        return 'max-w-4xl';
+    }
+  })();
+
   return (
-    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50">
-      <div 
+    <div className="fixed inset-0 z-modal flex items-center justify-center bg-black/50 p-4">
+      <div
         className={cn(
-          'bg-popover text-popover-foreground rounded-lg shadow-lg p-6 w-full max-w-md',
+          'bg-popover text-popover-foreground rounded-lg shadow-lg p-6 w-full',
+          sizeClass,
           className
         )}
         role="dialog"

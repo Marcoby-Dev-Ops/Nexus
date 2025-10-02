@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
         '@/domains': resolve(__dirname, 'src/domains'),
         '@/pages': resolve(__dirname, 'src/pages'),
         '@/services': resolve(__dirname, 'src/services'),
+        '@/stores': resolve(__dirname, 'src/stores'),
         '@/utils': resolve(__dirname, 'src/utils'),
         '@/types': resolve(__dirname, 'src/types'),
         '@/styles': resolve(__dirname, 'src/styles'),
@@ -87,14 +88,14 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: 'http://localhost:3001',
           changeOrigin: true,
-          configure: (proxy, options) => {
-            proxy.on('error', (err, req, res) => {
+          configure: (proxy, _options) => {
+            proxy.on('error', (_err, _req, _res) => {
               // Proxy error logging removed for production
             });
-            proxy.on('proxyReq', (proxyReq, req, res) => {
+            proxy.on('proxyReq', (_proxyReq, _req, _res) => {
               // Request logging removed for production
             });
-            proxy.on('proxyRes', (proxyRes, req, res) => {
+            proxy.on('proxyRes', (_proxyRes, _req, _res) => {
               // Response logging removed for production
             });
           },

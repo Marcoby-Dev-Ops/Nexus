@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useUserProfile, useUserCompany } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
+import { Input } from '@/shared/components/ui/Input';
 import {
   MessageSquare,
   Brain,
@@ -17,7 +18,8 @@ import {
   ChevronLeft,
   Pencil,
   FileText,
-  X} from 'lucide-react';
+  X,
+  Check} from 'lucide-react';
 import { ConsolidatedAIService } from '@/services/ai/ConsolidatedAIService';
 import type { Agent } from '@/services/ai/ConsolidatedAIService';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
@@ -25,6 +27,9 @@ import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
 import { useToast } from '@/shared/ui/components/Toast';
 import { cn } from '@/shared/lib/utils';
 import { nexusRAGService } from '@/lib/services/NexusRAGService';
+import { chatAttachmentService } from '@/lib/ai/services/chatAttachmentService';
+import { ATTACHMENT_ONLY_PLACEHOLDER } from '@/shared/constants/chat';
+import type { FileAttachment, Conversation } from '@/shared/types/chat';
 import { useAuth } from '@/hooks/useAuth';
 
 // Service-backed helpers
@@ -85,6 +90,7 @@ export default function ChatPage() {
     setCurrentConversation,
     messages: storeMessages,
     createConversation, 
+    updateConversation,
     archiveConversation,
     cleanEmptyConversations,
     clearMessages,
@@ -93,7 +99,6 @@ export default function ChatPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('executive-assistant');
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
   const [showConversationSidebar, setShowConversationSidebar] = useState<boolean>(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [stats, setStats] = useState<ChatStats>({
@@ -111,36 +116,81 @@ export default function ChatPage() {
   const [ragEnabled, setRagEnabled] = useState(false);
   const [ragConfidence, setRagConfidence] = useState(0);
   const [knowledgeTypes, setKnowledgeTypes] = useState<string[]>([]);
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState('');
 
   // Get selected agent object
   const selectedAgent = agents.find(agent => agent.id === selectedAgentId);
 
   // Chat handlers
-  const handleSendMessage = async (message: string, attachments?: any[]) => {
-    if (!message.trim() || !user) return;
+  const handleSendMessage = async (message: string, attachments: FileAttachment[] = []) => {
+    const hasMessage = message?.trim().length > 0;
+    const hasAttachments = attachments.length > 0;
+    if ((!hasMessage && !hasAttachments) || !user) return;
+
+    const messageContent = hasMessage ? message : ATTACHMENT_ONLY_PLACEHOLDER;
 
     try {
+      setIsLoading(true);
+
       // Create or get conversation
       let currentConversationId = conversationId;
       if (!currentConversationId) {
-        // Create new conversation if none exists
-        const conversationTitle = message.length > 50 ? message.substring(0, 50) + '...' : message;
+        const baseTitle = hasMessage ? message : attachments[0]?.name || 'New conversation';
+        const conversationTitle = baseTitle.length > 50 ? `${baseTitle.substring(0, 50)}...` : baseTitle;
         currentConversationId = await createConversation(conversationTitle, 'gpt-4', undefined, user.id);
         setConversationId(currentConversationId);
-        // Set the new conversation as current in the store
         await setCurrentConversationById(currentConversationId);
       }
 
-      // IMMEDIATELY save and display the user message
-      await sendMessage(message, attachments);
+      // Upload attachments (if any) before saving message
+      let uploadedAttachments: FileAttachment[] = [];
+      if (hasAttachments) {
+        const filesToUpload = attachments
+          .map(att => att.file)
+          .filter((file): file is File => !!file);
 
-      // Now set loading states for AI response
-      setIsLoading(true);
+        if (filesToUpload.length) {
+          try {
+            uploadedAttachments = await chatAttachmentService.uploadAttachments({
+              conversationId: currentConversationId!,
+              files: filesToUpload,
+            });
+          } catch (uploadError) {
+            console.error('Attachment upload failed:', uploadError);
+            const uploadMessage = uploadError instanceof Error ? uploadError.message : 'Failed to upload attachments';
+            toast({
+              title: 'Upload failed',
+              description: uploadMessage,
+              type: 'error'
+            });
+            return;
+          }
+        }
+      }
+
+      // Save and display the user message
+      const sanitizedAttachments = uploadedAttachments.map(att => ({
+        ...att,
+        file: undefined,
+        status: 'uploaded' as const,
+      }));
+      await sendMessage(messageContent, sanitizedAttachments);
+
       setIsStreaming(true);
 
+      // Build conversation history including the latest message
+      const history = [
+        ...storeMessages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+          timestamp: msg.created_at
+        })),
+        ...((hasMessage || hasAttachments)
+          ? [{ role: 'user', content: messageContent, timestamp: new Date().toISOString() }]
+          : [])
+      ];
 
-
-      // Use Nexus RAG Service for comprehensive context integration
       const nexusContext = {
         user: {
           id: user.id,
@@ -162,18 +212,14 @@ export default function ChatPage() {
         },
         conversation: {
           id: currentConversationId,
-          history: storeMessages.map(msg => ({
-            role: msg.role,
-            content: msg.content,
-            timestamp: msg.created_at
-          }))
+          history
         },
-        attachments: attachments || []
+        attachments: sanitizedAttachments
       };
 
       console.log('🔍 Processing with Nexus RAG Service...');
       const nexusResponse = await nexusRAGService.processMessage({
-        message,
+        message: messageContent,
         context: nexusContext,
         agentId: selectedAgentId
       });
@@ -191,7 +237,7 @@ export default function ChatPage() {
         setKnowledgeTypes(nexusResponse.data.knowledgeTypes || []);
         
         // Save the AI response
-        await saveAIResponse(nexusResponse.data.content, currentConversationId);
+        await saveAIResponse(nexusResponse.data.content, currentConversationId!);
         
         // Refresh conversations to show the updated list
         await fetchConversations();
@@ -364,8 +410,65 @@ export default function ChatPage() {
     }
   };
 
+  const handleStartRenameConversation = (conversation: Conversation) => {
+    setEditingConversationId(conversation.id);
+    setEditingTitle(conversation.title || 'Untitled conversation');
+  };
+
+  const handleRenameChange = (value: string) => {
+    setEditingTitle(value);
+  };
+
+  const handleRenameCancel = () => {
+    setEditingConversationId(null);
+    setEditingTitle('');
+  };
+
+  const handleRenameSubmit = async (convId: string) => {
+    const trimmedTitle = editingTitle.trim() || 'Untitled conversation';
+
+    try {
+      await updateConversation(convId, { title: trimmedTitle });
+      toast({
+        title: 'Conversation renamed',
+        description: 'Title updated successfully.',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Error renaming conversation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to rename conversation. Please try again.',
+        type: 'error'
+      });
+    } finally {
+      handleRenameCancel();
+    }
+  };
+
+  const handleRenameKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>, convId: string) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      await handleRenameSubmit(convId);
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      handleRenameCancel();
+    }
+  };
+
   // Filter out empty and archived conversations for display
   const nonEmptyConversations = conversations.filter(conv => conv.message_count > 0 && !conv.is_archived);
+
+  useEffect(() => {
+    if (!conversationId && nonEmptyConversations.length > 0) {
+      const latestConversation = nonEmptyConversations[0];
+      setConversationId(latestConversation.id);
+      setCurrentConversationById(latestConversation.id);
+      fetchMessages(latestConversation.id);
+    }
+  }, [conversationId, nonEmptyConversations, setCurrentConversationById, fetchMessages]);
 
   const handleCleanupEmptyConversations = async () => {
     try {
@@ -588,26 +691,65 @@ export default function ChatPage() {
                  </div>
                )}
               
-              {nonEmptyConversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={cn(
-                    "w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between cursor-pointer",
-                    conversationId === conv.id
-                      ? "bg-gray-700 text-white"
-                      : "text-gray-400 hover:text-white hover:bg-gray-800",
-                    sidebarCollapsed && "justify-center text-center px-2 py-1"
-                  )}
-                  title={sidebarCollapsed ? (conv.title || "Untitled conversation") : undefined}
-                  onClick={() => handleConversationSelect(conv.id)}
-                >
-                  <div className="flex items-center">
+              {nonEmptyConversations.map((conv) => {
+                const isActive = conversationId === conv.id;
+                const isEditing = editingConversationId === conv.id;
+
+                return (
+                  <div
+                    key={conv.id}
+                    className={cn(
+                      "w-full px-3 py-2 rounded-md text-xs transition-colors cursor-pointer",
+                      isActive ? "bg-gray-700 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800",
+                      sidebarCollapsed && "px-2 py-1"
+                    )}
+                    title={sidebarCollapsed ? (conv.title || "Untitled conversation") : undefined}
+                    onClick={() => {
+                      if (!isEditing) {
+                        handleConversationSelect(conv.id);
+                      }
+                    }}
+                  >
                     {sidebarCollapsed ? (
-                      <div className="w-5 h-5 bg-gray-600 rounded flex items-center justify-center">
-                        <MessageSquare className="w-2 h-2 text-white" />
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-5 h-5 bg-gray-600 rounded flex items-center justify-center">
+                          <MessageSquare className="w-2 h-2 text-white" />
+                        </div>
+                      </div>
+                    ) : isEditing ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={editingTitle}
+                          onChange={(event) => handleRenameChange(event.target.value)}
+                          onKeyDown={(event) => handleRenameKeyDown(event, conv.id)}
+                          autoFocus
+                          className="h-8 text-xs bg-gray-900 border-gray-700 text-gray-100 focus-visible:ring-0 focus:border-gray-500"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleRenameSubmit(conv.id);
+                          }}
+                          className="text-gray-300 hover:text-white"
+                        >
+                          <Check className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleRenameCancel();
+                          }}
+                          className="text-gray-400 hover:text-white"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
                       </div>
                     ) : (
-                      <>
+                      <div className="flex items-center gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="truncate font-medium">{conv.title || "Untitled conversation"}</div>
                           <div className="text-xs text-gray-500 mt-1">
@@ -617,21 +759,32 @@ export default function ChatPage() {
                             {conv.message_count || 0} messages
                           </div>
                         </div>
-                      </>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleStartRenameConversation(conv);
+                            }}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(event) => handleDeleteConversation(conv.id, event)}
+                            className="text-gray-400 hover:text-white"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => handleDeleteConversation(conv.id, e)}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

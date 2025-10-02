@@ -391,7 +391,7 @@ export default function ProfilePage() {
               size="sm"
               onClick={() => {
                 console.log('🔍 Password change button clicked!');
-                const authentikUrl = 'https://identity.marcoby.com';
+                const authentikUrl = import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com';
                 const fullUrl = `${authentikUrl}/if/flow/default-password-change/`;
                 console.log('🔍 Opening URL:', fullUrl);
                 window.open(fullUrl, '_blank');

@@ -2,7 +2,16 @@ import React from 'react';
 import {
   Home,
   User,
-  Settings
+  Settings,
+  Building2,
+  DollarSign,
+  Wallet,
+  Package,
+  Users,
+  FileText,
+  Bell,
+  Map,
+  Plug
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 
@@ -24,6 +33,96 @@ export const navItems: NavItem[] = [
     icon: <Home className="h-5 w-5" />,
     description: 'Your main business dashboard and overview',
     category: 'overview'
+  },
+  
+  // === BUILDING BLOCKS ===
+  {
+    name: 'Identity',
+    path: '/identity',
+    icon: <Building2 className="h-5 w-5" />,
+    description: 'Business identity, mission, vision, and values',
+    category: 'building-blocks'
+  },
+  {
+    name: 'Revenue',
+    path: '/revenue',
+    icon: <DollarSign className="h-5 w-5" />,
+    description: 'Sales, pricing, and revenue management',
+    category: 'building-blocks'
+  },
+  {
+    name: 'Cash',
+    path: '/cash',
+    icon: <Wallet className="h-5 w-5" />,
+    description: 'Cash flow, billing, and financial management',
+    category: 'building-blocks'
+  },
+  {
+    name: 'Delivery',
+    path: '/delivery',
+    icon: <Package className="h-5 w-5" />,
+    description: 'Project delivery and service management',
+    category: 'building-blocks'
+  },
+  {
+    name: 'People',
+    path: '/people',
+    icon: <Users className="h-5 w-5" />,
+    description: 'HR, team management, and performance',
+    category: 'building-blocks'
+  },
+  {
+    name: 'Knowledge',
+    path: '/knowledge',
+    icon: <FileText className="h-5 w-5" />,
+    description: 'Knowledge vault and document management',
+    category: 'building-blocks'
+  },
+  {
+    name: 'Systems',
+    path: '/systems',
+    icon: <Settings className="h-5 w-5" />,
+    description: 'Infrastructure, workflows, and automation',
+    category: 'building-blocks'
+  },
+
+  // === TOOLS & JOURNEYS ===
+  {
+    name: 'Journeys',
+    path: '/journey-management',
+    icon: <Map className="h-5 w-5" />,
+    description: 'Manage business journeys and guided playbooks',
+    category: 'tools'
+  },
+  {
+    name: 'Integrations',
+    path: '/integrations',
+    icon: <Plug className="h-5 w-5" />,
+    description: 'Connect and manage platform integrations',
+    category: 'tools'
+  },
+
+  // === SETTINGS & ACCOUNT ===
+  {
+    name: 'Profile',
+    path: '/profile',
+    icon: <User className="h-5 w-5" />,
+    description: 'Update your personal information and preferences',
+    category: 'settings'
+  },
+  {
+    name: 'Notifications',
+    path: '/notifications',
+    icon: <Bell className="h-5 w-5" />,
+    description: 'Control email, push, and in-app alerts',
+    category: 'settings'
+  },
+  {
+    name: 'Settings',
+    path: '/settings',
+    icon: <Settings className="h-5 w-5" />,
+    description: 'Configure workspace policies and advanced options',
+    category: 'settings'
   }
 ];
 

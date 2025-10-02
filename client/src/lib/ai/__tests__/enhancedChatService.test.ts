@@ -114,7 +114,7 @@ describe('EnhancedChatService', () => {
       const request = {
         message: 'Tell me about my company',
         conversationId: 'test-conversation',
-        agent: getAgent('executive-assistant'),
+  agent: getAgent('concierge-director'),
         context: {
           userId: 'test-user-id',
           companyId: 'test-company-id',
@@ -202,7 +202,7 @@ describe('EnhancedChatService', () => {
       const request = {
         message: 'What should I work on?',
         conversationId: 'test-conversation',
-        agent: getAgent('executive-assistant'),
+  agent: getAgent('concierge-director'),
         context: {
           userId: 'test-user-id',
           sessionId: 'test-session',

@@ -28,7 +28,7 @@ export class ConversationRouter extends BaseService {
    * Get the default agent (Executive Assistant)
    */
   public getDefaultAgent(): Agent {
-    return agentRegistry.getAgent('executive-assistant')!;
+  return agentRegistry.getAgent('concierge-director')!;
   }
 
   /**

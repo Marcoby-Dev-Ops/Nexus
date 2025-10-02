@@ -5,16 +5,18 @@
  * Replaces the Supabase auth client for the migration to Authentik.
  */
 
+import { API_ENDPOINTS } from '@/lib/api-url';
+
 // OAuth2 Configuration
 export const AUTHENTIK_CONFIG = {
   // Authentik instance URL
-  baseUrl: 'https://identity.marcoby.com',
+  baseUrl: import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com',
   
   // OAuth2 endpoints
-  authorizationUrl: 'https://identity.marcoby.com/application/o/authorize/',
-  tokenUrl: 'https://identity.marcoby.com/application/o/token/',
-  userInfoUrl: 'https://identity.marcoby.com/application/o/userinfo/',
-  jwksUrl: 'https://identity.marcoby.com/application/o/jwks/',
+  authorizationUrl: `${import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com'}/application/o/authorize/`,
+  tokenUrl: `${import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com'}/application/o/token/`,
+  userInfoUrl: `${import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com'}/application/o/userinfo/`,
+  jwksUrl: `${import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com'}/application/o/jwks/`,
   
   // Client configuration (will be updated with actual values)
   clientId: import.meta.env.VITE_AUTHENTIK_CLIENT_ID || 'your-client-id',
@@ -23,7 +25,7 @@ export const AUTHENTIK_CONFIG = {
   // Redirect URIs
   redirectUri: import.meta.env.DEV 
     ? 'http://localhost:5173/auth/callback'
-    : 'https://nexus.marcoby.com/auth/callback',
+    : `${import.meta.env.VITE_APP_URL || 'https://nexus.marcoby.com'}/auth/callback`,
   
   // Scopes
   scopes: ['openid', 'profile', 'email', 'groups', 'offline_access'],
@@ -39,7 +41,7 @@ export const AUTHENTIK_CONFIG = {
 
 // JWT Configuration for token validation
 export const JWT_CONFIG = {
-  issuer: 'https://identity.marcoby.com',
+  issuer: import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com',
   audience: AUTHENTIK_CONFIG.clientId,
   algorithms: ['RS256'] as const,
 };
@@ -213,27 +215,29 @@ export async function getUserInfo(accessToken: string): Promise<AuthentikUserInf
  * Refresh access token
  */
 export async function refreshAccessToken(refreshToken: string): Promise<AuthentikTokenResponse> {
-  const body = new URLSearchParams({
-    grant_type: 'refresh_token',
-    client_id: AUTHENTIK_CONFIG.clientId,
-    client_secret: AUTHENTIK_CONFIG.clientSecret,
-    refresh_token: refreshToken,
-  });
-
-  const response = await fetch(AUTHENTIK_CONFIG.tokenUrl, {
+  const response = await fetch(API_ENDPOINTS.OAUTH_REFRESH, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      'Content-Type': 'application/json',
     },
-    body: body.toString(),
+    body: JSON.stringify({
+      provider: 'authentik',
+      refreshToken,
+    }),
   });
 
+  const payload = await response.json().catch(() => null);
+
   if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Token refresh failed: ${response.status} ${error}`);
+    const errorMessage = payload?.details || payload?.error_description || payload?.error || 'Unknown error';
+    throw new Error(`Token refresh failed: ${errorMessage}`);
   }
 
-  return response.json();
+  if (!payload) {
+    throw new Error('Token refresh failed: empty response from server');
+  }
+
+  return payload as AuthentikTokenResponse;
 }
 
 /**

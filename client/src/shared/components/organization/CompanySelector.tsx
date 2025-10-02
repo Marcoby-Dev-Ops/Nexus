@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/hooks';
 import { useCompanyContext } from '@/shared/contexts/CompanyContext';
-import { logger } from '@/shared/utils/logger';
 import { Button } from '@/shared/components/ui/Button';
 import { Building2, ChevronDown, Check } from 'lucide-react';
 

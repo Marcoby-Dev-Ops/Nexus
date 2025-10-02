@@ -75,6 +75,9 @@ export interface FileAttachment {
   size: number;
   type: string;
   url?: string;
+  downloadUrl?: string;
+  file?: File;
+  status?: 'pending' | 'uploaded' | 'failed';
 }
 
 export interface PacingAnalysis {

@@ -5,9 +5,7 @@ import { Input } from '@/shared/components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useToast } from '@/shared/ui/components/Toast';
 import { useAuth } from '@/hooks/index';
-import { useIntegrations } from '@/hooks/useIntegrations';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
-import type { Database } from '@/shared/types/database.types';
+import { useIntegrations } from '@/hooks/integrations/useIntegrations';
 import {
   Clock,
   XCircle,
@@ -300,7 +298,7 @@ export const IntegrationOrganizer: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {integrations.map(integration => (
+                  {integrations.map((integration: any) => (
                     <div
                       key={integration.id}
                       className="p-4 border rounded-lg hover: bg-accent cursor-pointer"

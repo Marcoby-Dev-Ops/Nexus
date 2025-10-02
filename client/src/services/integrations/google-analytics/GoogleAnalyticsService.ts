@@ -5,7 +5,6 @@
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
-import { logger } from '@/shared/utils/logger';
 import { retryFetch } from '@/shared/utils/retry';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 

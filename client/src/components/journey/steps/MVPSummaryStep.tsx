@@ -5,10 +5,10 @@
  */
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
-import { Badge } from '@/shared/components/ui/Badge';
-import { Progress } from '@/shared/components/ui/Progress';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -25,13 +25,7 @@ import {
 } from 'lucide-react';
 import type { JourneyStepProps } from '../types';
 
-interface MVPSummaryStepProps extends JourneyStepProps {
-  onComplete: (data: any) => void;
-  onBack: () => void;
-  journeyData?: Record<string, any>;
-}
-
-export default function MVPSummaryStep({ onComplete, onBack, journeyData }: MVPSummaryStepProps) {
+export default function MVPSummaryStep({ onStepComplete, onStepBack, journeyData }: JourneyStepProps) {
   // Extract data from journey steps
   const businessUnits = journeyData?.['mvp-business-units']?.businessUnits || [];
   const integrations = journeyData?.['mvp-integrations']?.integrations || [];
@@ -41,7 +35,7 @@ export default function MVPSummaryStep({ onComplete, onBack, journeyData }: MVPS
   const nextSteps = generateNextSteps(businessUnits, integrations, maturityAssessment);
 
   const handleComplete = () => {
-    onComplete({
+    onStepComplete({
       setupComplete: true,
       setupScore,
       businessUnits,
@@ -275,7 +269,7 @@ export default function MVPSummaryStep({ onComplete, onBack, journeyData }: MVPS
 
       {/* Action Buttons */}
       <div className="flex items-center justify-between pt-4">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onStepBack}>
           Review Setup
         </Button>
 

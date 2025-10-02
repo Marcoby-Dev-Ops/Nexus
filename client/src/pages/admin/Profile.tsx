@@ -29,7 +29,6 @@ import {
 
 // Import our new service patterns
 import { useService } from '@/shared/hooks/useService';
-import { logger } from '@/shared/utils/logger';
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { FormField, FormSection } from '@/shared/components/forms/FormField';

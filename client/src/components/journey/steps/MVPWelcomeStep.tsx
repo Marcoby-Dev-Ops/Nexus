@@ -5,8 +5,8 @@
  */
 
 import React from 'react';
-import { Card, CardContent } from '@/shared/components/ui/Card';
-import { Button } from '@/shared/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { 
   Brain, 
   Target, 
@@ -19,11 +19,7 @@ import {
 } from 'lucide-react';
 import type { JourneyStepProps } from '../types';
 
-interface MVPWelcomeStepProps extends JourneyStepProps {
-  onNext: () => void;
-}
-
-export default function MVPWelcomeStep({ onNext }: MVPWelcomeStepProps) {
+export default function MVPWelcomeStep({ onStepComplete }: JourneyStepProps) {
   return (
     <div className="text-center space-y-8">
       <div className="space-y-4">
@@ -96,7 +92,7 @@ export default function MVPWelcomeStep({ onNext }: MVPWelcomeStepProps) {
       </div>
 
       <Button 
-        onClick={onNext}
+        onClick={() => onStepComplete({ completed: true, step: 'welcome' })}
         size="lg"
         className="mt-8"
       >

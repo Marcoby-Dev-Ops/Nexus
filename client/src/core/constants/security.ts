@@ -11,8 +11,8 @@ export const SECURITY_CONFIG = {
       "'self'",
       "'unsafe-inline'", // Required for Vite dev mode
       "'unsafe-eval'",   // Required for Vite dev mode
-      'https://identity.marcoby.com',
-      'https://napi.marcoby.com'
+      import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com',
+      import.meta.env.VITE_API_URL || 'https://napi.marcoby.com'
     ],
     'style-src': [
       "'self'",
@@ -31,15 +31,15 @@ export const SECURITY_CONFIG = {
     ],
     'connect-src': [
       "'self'",
-      'https://identity.marcoby.com',
-      'https://napi.marcoby.com',
-      'https://automate.marcoby.net',
-      'wss://identity.marcoby.com',
-      'wss://napi.marcoby.com'
+      import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com',
+      import.meta.env.VITE_API_URL || 'https://napi.marcoby.com',
+      import.meta.env.VITE_N8N_URL || 'https://automate.marcoby.net',
+      `wss://${new URL(import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com').host}`,
+      `wss://${new URL(import.meta.env.VITE_API_URL || 'https://napi.marcoby.com').host}`
     ],
     'frame-src': [
       "'self'",
-      'https://identity.marcoby.com'
+      import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com'
     ],
     'object-src': ["'none'"],
     'base-uri': ["'self'"],

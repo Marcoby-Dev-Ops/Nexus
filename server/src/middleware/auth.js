@@ -110,6 +110,51 @@ function validateJWTToken(token) {
  */
 const authenticateToken = async (req, res, next) => {
   try {
+    // Allow CORS preflight checks to pass through without authentication
+    if (req.method === 'OPTIONS') {
+      const origin = req.headers.origin;
+      const configuredOrigins = process.env.NODE_ENV === 'production'
+        ? [process.env.FRONTEND_URL || 'https://nexus.marcoby.net']
+        : ['http://localhost:5173', 'http://localhost:3000'];
+
+      const devFallbackOrigins = [
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:5173',
+        'http://127.0.0.1:3000'
+      ];
+
+      const allowedOrigins = Array.from(new Set([
+        ...configuredOrigins,
+        ...(process.env.ALLOW_DEV_ORIGINS === 'false' ? [] : devFallbackOrigins)
+      ]));
+
+      const allowOrigin = origin && allowedOrigins.includes(origin)
+        ? origin
+        : allowedOrigins[0] || origin || '*';
+
+      if (allowOrigin) {
+        res.setHeader('Access-Control-Allow-Origin', allowOrigin);
+        res.setHeader('Vary', 'Origin');
+      }
+
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      const requestedMethod = req.headers['access-control-request-method'];
+      res.setHeader(
+        'Access-Control-Allow-Methods',
+        requestedMethod ? requestedMethod.toUpperCase() : 'GET,POST,PUT,DELETE,PATCH,OPTIONS'
+      );
+      const requestedHeaders = req.headers['access-control-request-headers'];
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        requestedHeaders ? requestedHeaders : 'Content-Type, Authorization, X-Requested-With'
+      );
+      res.setHeader('Access-Control-Max-Age', '600');
+
+      logger.debug('Skipping auth for CORS preflight request', { endpoint: req.path, origin });
+      return res.status(204).end();
+    }
+
     const authHeader = req.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 

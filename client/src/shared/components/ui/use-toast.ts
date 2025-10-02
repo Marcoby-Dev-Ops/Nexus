@@ -1,33 +1,52 @@
-import { useState } from 'react';
+import { useCallback } from 'react';
+import { useToast as useToastContext } from '@/shared/ui/components/Toast';
 
-interface Toast {
-  id: string;
+type ToastVariant = 'default' | 'destructive' | 'success' | 'warning' | 'info';
+
+interface ToastInput {
   title?: string;
   description?: string;
-  variant?: 'default' | 'destructive';
+  variant?: ToastVariant;
 }
 
+const mapVariantToType = (variant?: ToastVariant) => {
+  switch (variant) {
+    case 'destructive':
+      return 'error' as const;
+    case 'success':
+      return 'success' as const;
+    case 'warning':
+      return 'warning' as const;
+    case 'info':
+      return 'info' as const;
+    default:
+      return 'info' as const;
+  }
+};
+
 export function useToast() {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const { toast: showToast, showToast: showToastAlias, dismiss } = useToastContext();
 
-  const toast = ({ title, description, variant = 'default' }: Omit<Toast, 'id'>) => {
-    const id = Math.random().toString(36).substr(2, 9);
-    const newToast = { id, title, description, variant };
-    setToasts(prev => [...prev, newToast]);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
-    }, 5000);
-  };
+  const toast = useCallback(({ title, description, variant }: ToastInput) => {
+    showToast({
+      title: title ?? '',
+      description: description ?? '',
+      type: mapVariantToType(variant),
+    });
+  }, [showToast]);
 
-  const dismiss = (id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
-  };
+  const showToastCompat = useCallback(({ title, description, variant }: ToastInput) => {
+    showToastAlias({
+      title: title ?? '',
+      description: description ?? '',
+      type: mapVariantToType(variant),
+    });
+  }, [showToastAlias]);
 
   return {
     toast,
+    showToast: showToastCompat,
     dismiss,
-    toasts
+    toasts: [],
   };
-} 
+}

@@ -51,6 +51,80 @@ try {
 /**
  * Generate system prompt for the selected agent
  */
+function formatUserContextSummary(userContext = {}) {
+  if (!userContext || typeof userContext !== 'object') {
+    return null;
+  }
+
+  const profile = userContext.profile && typeof userContext.profile === 'object'
+    ? userContext.profile
+    : {};
+
+  const company = userContext.company && typeof userContext.company === 'object'
+    ? userContext.company
+    : {};
+
+  const details = [];
+
+  const fallbackCompanyName = profile.companyName || profile.company || profile.profileCompanyName;
+  const resolvedCompanyName = company.name || fallbackCompanyName;
+
+  const fullName = profile.displayName
+    || [profile.firstName, profile.lastName].filter(Boolean).join(' ').trim()
+    || profile.fullName
+    || profile.name;
+
+  if (fullName) {
+    details.push(`Name: ${fullName}`);
+  }
+
+  if (profile.email) {
+    details.push(`Primary Email: ${profile.email}`);
+  } else if (profile.businessEmail) {
+    details.push(`Primary Email: ${profile.businessEmail}`);
+  }
+
+  if (profile.role) {
+    details.push(`Internal Role: ${profile.role}`);
+  }
+
+  if (profile.jobTitle) {
+    details.push(`Job Title: ${profile.jobTitle}`);
+  }
+
+  if (resolvedCompanyName) {
+    details.push(`Company: ${resolvedCompanyName}`);
+  }
+
+  if (company.industry) {
+    details.push(`Industry: ${company.industry}`);
+  }
+
+  if (company.size) {
+    details.push(`Company Size: ${company.size}`);
+  }
+
+  if (profile.location) {
+    details.push(`Location: ${profile.location}`);
+  }
+
+  if (profile.preferences && typeof profile.preferences === 'object') {
+    const { goals, focusAreas } = profile.preferences;
+    if (Array.isArray(goals) && goals.length > 0) {
+      details.push(`Goals: ${goals.join(', ')}`);
+    }
+    if (Array.isArray(focusAreas) && focusAreas.length > 0) {
+      details.push(`Focus Areas: ${focusAreas.join(', ')}`);
+    }
+  }
+
+  if (details.length === 0) {
+    return null;
+  }
+
+  return details.map(detail => `- ${detail}`).join('\n');
+}
+
 function generateAgentSystemPrompt(agentId, userContext = {}, businessHealth = {}) {
   const agentConfigs = {
     'executive-assistant': {
@@ -139,11 +213,138 @@ IMPORTANT: You are helping business owners and entrepreneurs who may not have fo
   }
 
   // Add user context if available
-  if (userContext && Object.keys(userContext).length > 0) {
+  const userContextSummary = formatUserContextSummary(userContext);
+  if (userContextSummary) {
+    systemPrompt += `\n\nUSER CONTEXT:\n${userContextSummary}\nUse these details when responding to questions about the user. If the user asks about their identity or requests personal information, rely on the profile data above.`;
+  } else if (userContext && Object.keys(userContext).length > 0) {
     systemPrompt += `\n\nUSER CONTEXT: Consider the user's business context when providing recommendations.`;
   }
 
   return systemPrompt;
+}
+
+async function buildUserProfileContext(userId, providedContext = {}, fallbackUser = null) {
+  const safeContext = providedContext && typeof providedContext === 'object'
+    ? { ...providedContext }
+    : {};
+
+  const existingProfile = safeContext.profile && typeof safeContext.profile === 'object'
+    ? { ...safeContext.profile }
+    : {};
+
+  if (fallbackUser && typeof fallbackUser === 'object') {
+    if (fallbackUser.email && !existingProfile.email) {
+      existingProfile.email = fallbackUser.email;
+    }
+    const fallbackFirstName = fallbackUser.firstName || fallbackUser.first_name;
+    if (fallbackFirstName && !existingProfile.firstName) {
+      existingProfile.firstName = fallbackFirstName;
+    }
+    const fallbackLastName = fallbackUser.lastName || fallbackUser.last_name;
+    if (fallbackLastName && !existingProfile.lastName) {
+      existingProfile.lastName = fallbackLastName;
+    }
+    const fallbackDisplayName = fallbackUser.displayName || fallbackUser.display_name;
+    if (fallbackDisplayName && !existingProfile.displayName) {
+      existingProfile.displayName = fallbackDisplayName;
+    }
+
+    if (Object.keys(existingProfile).length > 0) {
+      safeContext.profile = existingProfile;
+    }
+  } else if (Object.keys(existingProfile).length > 0) {
+    safeContext.profile = existingProfile;
+  }
+
+  if (!userId) {
+    return safeContext;
+  }
+
+  try {
+    const { data, error } = await query(
+      `SELECT 
+        up.user_id,
+        up.email,
+        up.first_name,
+        up.last_name,
+        up.display_name,
+        up.company_name AS profile_company_name,
+        up.company_id,
+        up.job_title,
+        up.role,
+        up.department,
+        up.location,
+        up.business_email,
+        up.personal_email,
+        up.preferences,
+        c.name AS company_name,
+        c.industry AS company_industry,
+        c.size AS company_size,
+        c.website AS company_website
+      FROM user_profiles up
+      LEFT JOIN companies c ON up.company_id = c.id
+      WHERE up.user_id = $1
+      LIMIT 1`,
+      [userId]
+    );
+
+    if (error) {
+      throw new Error(error);
+    }
+
+    if (!data || data.length === 0) {
+      logger.info('No user profile context found for AI chat', { userId });
+      return safeContext;
+    }
+
+    const profile = data[0];
+
+    const profileContext = {
+      userId: profile.user_id,
+      email: profile.email || profile.business_email || profile.personal_email,
+      businessEmail: profile.business_email,
+      personalEmail: profile.personal_email,
+      firstName: profile.first_name,
+      lastName: profile.last_name,
+      displayName: profile.display_name,
+      fullName: profile.display_name || [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim(),
+      companyName: profile.profile_company_name || profile.company_name,
+      companyId: profile.company_id,
+      jobTitle: profile.job_title,
+      role: profile.role,
+      department: profile.department,
+      location: profile.location,
+      preferences: profile.preferences || existingProfile.preferences
+    };
+
+    safeContext.profile = {
+      ...safeContext.profile,
+      ...profileContext
+    };
+
+    if (profile.company_id || profile.company_name || profile.company_industry) {
+      const companyContext = {
+        id: profile.company_id,
+        name: profile.company_name || profile.profile_company_name,
+        industry: profile.company_industry,
+        size: profile.company_size,
+        website: profile.company_website
+      };
+
+      safeContext.company = {
+        ...(safeContext.company && typeof safeContext.company === 'object' ? safeContext.company : {}),
+        ...companyContext
+      };
+    }
+
+    return safeContext;
+  } catch (error) {
+    logger.warn('Failed to build user profile context for AI chat', {
+      userId,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+    return safeContext;
+  }
 }
 
 /**
@@ -328,7 +529,8 @@ async function ai_chat(payload, user) {
     conversationId,
     agentId: initialAgentId = 'executive-assistant',
     previousMessages = [],
-    userContext = {},
+    userContext: providedUserContext = {},
+    user: contextUser = null,
     dashboard = {},
     nextBestActions = [],
     businessHealth = {}
@@ -348,6 +550,8 @@ async function ai_chat(payload, user) {
     }
 
     // Generate system prompt for the agent
+    const userContext = await buildUserProfileContext(user?.id, providedUserContext, contextUser);
+
     const systemPrompt = generateAgentSystemPrompt(agentId, userContext, businessHealth);
     
     // Prepare conversation history
@@ -370,6 +574,7 @@ async function ai_chat(payload, user) {
         agentId,
         conversationId,
         timestamp: new Date().toISOString(),
+        userContext,
         sources: [],
         routing: {
           agent: agentId,

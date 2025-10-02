@@ -32,7 +32,7 @@ export interface CompanyFoundation {
   // Basic Company Information
   name: string
   legalName?: string
-  legalStructure: 'LLC' | 'Corporation' | 'Partnership' | 'Sole Proprietorship' | 'Other'
+  legalStructure: 'LLC' | 'C-Corp' | 'S-Corp' | 'Partnership' | 'Sole Proprietorship' | 'Non-Profit' | 'Other'
   foundedDate: string
   headquarters: {
     address: string
@@ -47,7 +47,10 @@ export interface CompanyFoundation {
   sector: string
   businessModel: 'B2B' | 'B2C' | 'B2B2C' | 'Marketplace' | 'SaaS' | 'E-commerce' | 'Consulting' | 'Other'
   companyStage: 'Idea' | 'Startup' | 'Growth' | 'Mature' | 'Enterprise'
-  companySize: 'Solo' | 'Small (2-10)' | 'Medium (11-50)' | 'Large (51-200)' | 'Enterprise (200+)'
+  companySize: string // Flexible size descriptor
+  
+  // Description
+  description?: string
   
   // Contact Information
   website: string

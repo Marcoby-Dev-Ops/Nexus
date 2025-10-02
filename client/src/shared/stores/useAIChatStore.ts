@@ -10,6 +10,16 @@ import type {
 } from '../types/chat';
 import { truncateContext, needsTruncation, getConversationStats } from '../utils/contextWindow';
 
+const extractRows = <T,>(payload: unknown): T[] => {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload as T[];
+  if (typeof payload === 'object' && payload !== null) {
+    const data = (payload as any).data;
+    if (Array.isArray(data)) return data as T[];
+  }
+  return [];
+};
+
 export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
   messages: [],
   currentConversation: null,
@@ -130,8 +140,9 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
         return;
       }
 
+      const rows = extractRows<ChatMessage>(data);
       // Apply context window management and sort messages chronologically
-      const messages = data || [];
+      const messages = rows || [];
       
       // Sort messages by created_at in ascending order (oldest first)
       const sortedMessages = messages.sort((a, b) => 
@@ -171,11 +182,13 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
         return;
       }
 
+      const rows = extractRows<Conversation>(data);
+
       // Auto-clean empty conversations
-      await get().cleanEmptyConversations(data || []);
+      await get().cleanEmptyConversations(rows);
 
       set({ 
-        conversations: data || [], 
+        conversations: rows, 
         isLoading: false 
       });
 
@@ -200,7 +213,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       // Delete empty conversations from database
       for (const conversation of emptyConversations) {
         try {
-          const { error } = await deleteOne('ai_conversations', conversation.id);
+          const { error } = await deleteOne('ai_conversations', { id: conversation.id });
 
           if (error) {
             logger.error({ error, conversationId: conversation.id }, 'Failed to delete empty conversation');

@@ -29,7 +29,7 @@ export { default as ModernStreamingComposer } from './components/ModernStreaming
 // AI Interface Components
 export { default as ChatInput } from './components/ChatInput';
 export { default as ConversationList } from './components/ConversationList';
-export { default as SimpleChatInterface } from './components/SimpleChatInterface';
+// SimpleChatInterface removed (unused) — kept out of exports to avoid dead API surface
 export { default as ChatMessage } from './components/ChatMessage';
 export { default as ChatWelcome } from './components/ChatWelcome';
 export { default as TransparencyDisplay } from './components/TransparencyDisplay';

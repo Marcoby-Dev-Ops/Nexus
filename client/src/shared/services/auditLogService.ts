@@ -4,7 +4,6 @@
  */
 
 import { selectData, insertOne, updateOne, deleteOne } from '@/lib/api-client';
-import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
 // ============================================================================

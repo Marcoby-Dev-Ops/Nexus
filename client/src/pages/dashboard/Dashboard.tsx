@@ -1,6 +1,6 @@
 import React from 'react';
-import QuantumHomeDashboard from '@/components/dashboard/QuantumHomeDashboard';
+import { MainDashboard } from '@/components/dashboard/main-dashboard';
 
 export default function Dashboard() {
-  return <QuantumHomeDashboard />;
+  return <MainDashboard />;
 } 

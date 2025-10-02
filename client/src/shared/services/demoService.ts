@@ -4,7 +4,6 @@
  */
 
 import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
-import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 
 // ============================================================================

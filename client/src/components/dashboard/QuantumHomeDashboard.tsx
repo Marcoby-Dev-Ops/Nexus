@@ -1015,31 +1015,6 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
             </div>
           </div>
 
-          {/* Blocks Configured */}
-          <div className="bg-card rounded-lg p-4 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">Blocks Ready</span>
-              <Building2 className="h-4 w-4 text-success" />
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-foreground">{configuredBlocks}/7</span>
-              <span className="text-sm text-muted-foreground">configured</span>
-            </div>
-          </div>
-
-          {/* AI Capabilities */}
-          <div className="bg-card rounded-lg p-4 border border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-muted-foreground">AI Ready</span>
-              <Brain className="h-4 w-4 text-purple" />
-            </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-bold text-foreground">
-                {quantumBlocks.reduce((total, block) => total + (block.aiCapabilities?.length || 0), 0)}
-              </span>
-              <span className="text-sm text-muted-foreground">capabilities</span>
-            </div>
-          </div>
         </div>
       </motion.div>
 

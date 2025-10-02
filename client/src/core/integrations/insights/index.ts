@@ -5,7 +5,6 @@
  * based on integration data to help users maximize their tool usage
  */
 
-import { logger } from '@/shared/utils/logger';
 import type { ConnectorType } from '../registry';
 
 // ============================================================================

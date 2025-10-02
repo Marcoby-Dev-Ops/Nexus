@@ -6,6 +6,7 @@
  */
 
 import { BaseService } from '@/core/services/BaseService';
+import { API_ENDPOINTS } from '@/lib/api-url';
 import { generateCodeVerifier, generateCodeChallenge } from '@/shared/utils/pkce';
 import { useAuthStore, persistSessionToStorage, loadSessionFromStorage, clearStoredSession } from './authStore';
 
@@ -259,30 +260,24 @@ class AuthentikAuthService extends BaseService {
         });
       }
 
-      const tokenUrl = `${this.baseUrl}/application/o/token/`;
-      const params = new URLSearchParams();
-      params.append('grant_type', 'refresh_token');
-      params.append('refresh_token', refreshToken);
-      params.append('client_id', this.clientId);
-
-      const response = await fetch(tokenUrl, {
+      const response = await fetch(API_ENDPOINTS.OAUTH_REFRESH, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: params.toString(),
+        body: JSON.stringify({
+          provider: 'authentik',
+          refreshToken,
+        }),
       });
 
-      if (!response.ok) {
-        let errorData: any;
-        try {
-          errorData = await response.json();
-        } catch (_e) {
-          errorData = { error: 'Failed to parse error response' };
-        }
+      const isJson = response.headers.get('content-type')?.includes('application/json');
+      const payload = isJson ? await response.json() : await response.text();
 
+      if (!response.ok) {
+        const errorData = typeof payload === 'object' && payload !== null ? payload : { error: payload };
         const errorMessage =
-          errorData?.error_description || errorData?.error || `HTTP ${response.status} - ${response.statusText}`;
+          errorData?.details || errorData?.error_description || errorData?.error || `HTTP ${response.status}`;
 
         this.logger.error('Token refresh failed', {
           status: response.status,
@@ -291,7 +286,7 @@ class AuthentikAuthService extends BaseService {
           errorData,
           refreshTokenLength: refreshToken.length,
           clientId: this.clientId,
-          tokenUrl
+          endpoint: API_ENDPOINTS.OAUTH_REFRESH,
         });
 
         if (response.status === 400 || response.status === 401) {
@@ -304,7 +299,14 @@ class AuthentikAuthService extends BaseService {
         return { success: false, data: null, error: `Token refresh failed: ${errorMessage}` };
       }
 
-      const tokenData = await response.json();
+      const tokenData = typeof payload === 'object' && payload !== null ? payload : {};
+
+      if (!tokenData.access_token) {
+        this.logger.error('Token refresh response missing access token', {
+          tokenData,
+        });
+        return { success: false, data: null, error: 'Token refresh failed: missing access token' };
+      }
 
       if (this.authLogsEnabled) {
         this.logger.info('Token refresh successful', {
@@ -386,8 +388,7 @@ class AuthentikAuthService extends BaseService {
           redirectUri: this.redirectUri,
         });
 
-      const tokenApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const tokenResponse = await fetch(`${tokenApiUrl}/api/oauth/token`, {
+      const tokenResponse = await fetch('/api/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -420,8 +421,7 @@ class AuthentikAuthService extends BaseService {
           allTokenData: tokenData,
         });
 
-      const userInfoApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const userResponse = await fetch(`${userInfoApiUrl}/api/oauth/userinfo`, {
+      const userResponse = await fetch('/api/oauth/userinfo', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -582,8 +582,7 @@ class AuthentikAuthService extends BaseService {
       const codeVerifier = generateCodeVerifier(128);
       const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-      const stateApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-      const stateResponse = await fetch(`${stateApiUrl}/api/oauth/state`, {
+      const stateResponse = await fetch('/api/oauth/state', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

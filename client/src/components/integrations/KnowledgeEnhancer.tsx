@@ -6,7 +6,7 @@ import { Progress } from '@/shared/components/ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { Database, Brain, TrendingUp, AlertTriangle, Users, DollarSign, Calendar, MessageSquare, BarChart3, Lightbulb, ArrowRight, RefreshCw, Activity, Shield, Target } from 'lucide-react';
 import { useAuth } from '@/hooks/index';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData } from '@/lib/database';
 interface KnowledgeInsight {
   id: string;
   title: string;
@@ -186,11 +186,9 @@ export const KnowledgeEnhancer: React.FC<KnowledgeEnhancerProps> = ({ className 
 
     try {
       // Get connected integrations
-      const { data: integrations } = await supabase
-        .from('user_integrations')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('status', 'connected');
+      const integrationsResponse = await selectData('user_integrations', '*', { user_id: user?.id, status: 'connected' });
+
+      const integrations = Array.isArray(integrationsResponse?.data) ? integrationsResponse.data : [];
 
       if (integrations) {
         const sourceMap: Record<string, DataSource> = {
@@ -256,7 +254,7 @@ export const KnowledgeEnhancer: React.FC<KnowledgeEnhancerProps> = ({ className 
           }
         };
 
-        integrations.forEach(integration => {
+  integrations.forEach((integration: any) => {
           if (sourceMap[integration.integration_type]) {
             sources.push(sourceMap[integration.integration_type]);
           }

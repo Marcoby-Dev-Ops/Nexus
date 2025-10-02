@@ -7,18 +7,18 @@
  * Get the base API URL from environment variables
  */
 export function getApiUrl(): string {
-  return import.meta.env.VITE_API_URL || 'http://localhost:3001';
+  // Use empty string to leverage Vite proxy for relative URLs
+  return '';
 }
 
 /**
- * Construct a full API URL from a path
+ * Construct a relative API URL from a path
  * @param path - API path (e.g., '/api/organizations')
- * @returns Full URL (e.g., 'http://localhost:3001/api/organizations')
+ * @returns Relative URL (e.g., '/api/organizations')
  */
 export function buildApiUrl(path: string): string {
-  const baseUrl = getApiUrl();
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `${baseUrl}${cleanPath}`;
+  return cleanPath;
 }
 
 /**
