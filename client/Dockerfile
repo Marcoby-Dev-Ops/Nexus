@@ -50,9 +50,10 @@ RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
 EXPOSE 80
 
 # Add health check (use curl for better compatibility with Coolify)
-# Increased start-period to allow Nginx to fully start on slower hosts.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-    CMD curl -fsS --max-time 3 http://127.0.0.1/health || exit 1
+# Increase start-period and timeout to allow the container to fully initialize on slower hosts.
+# Print a diagnostic message when the check fails to make Coolify logs actionable.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD sh -c 'curl -fsS --max-time 8 http://127.0.0.1/health -w "HTTP %{http_code}\n" || (echo "[healthcheck] curl failed with code $?" >&2; exit 1)'
 
 # Start nginx with environment variable substitution
 CMD ["/docker-entrypoint.sh"]
