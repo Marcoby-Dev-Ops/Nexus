@@ -208,7 +208,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     // Get company data. Older code expects a Supabase-like client; we provide
     // a legacy `supabase` shim (backed by the app's `database` wrapper) so
     // these calls remain compatible while the codebase migrates to services.
-    const { supabase } = await import('@/shared/lib/core/supabase');
+  const { database: supabase } = await import('@/lib/database');
     const { data: company } = await supabase
       .from('companies')
       .select('*')
@@ -282,7 +282,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   };
 
   const fetchInteractionsKnowledge = async () => {
-    const { supabase } = await import('@/shared/lib/core/supabase');
+  const { database: supabase } = await import('@/lib/database');
     const { data: interactions } = await supabase
       .from('ai_interactions')
       .select('*')
@@ -298,7 +298,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
   };
 
   const fetchIntegrationsKnowledge = async () => {
-    const { supabase } = await import('@/shared/lib/core/supabase');
+  const { database: supabase } = await import('@/lib/database');
     const { data: userIntegrations } = await supabase
       .from('user_integrations')
       .select(`
@@ -356,7 +356,7 @@ export const UserKnowledgeViewer: React.FC<UserKnowledgeViewerProps> = ({
     if (!user?.id) {
       return { recent: [], totalconversations: 0, totalmessages: 0 };
     }
-    const { supabase } = await import('@/shared/lib/core/supabase');
+  const { database: supabase } = await import('@/lib/database');
     const { data: conversations } = await supabase
       .from('conversations')
       .select('*, chat_messages(*)')

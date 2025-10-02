@@ -101,7 +101,14 @@ const industryOptions = [
   "Government",
   "Other"
 ];
-const sizeOptions = ["1-10 employees", "11-50 employees", "51-200 employees", "201-500 employees", "501-1000 employees", "1000+ employees"];
+// Include both sizing vocabularies used across the app so existing values from
+// identity (e.g., "Small (1-5)") render correctly in the Company Profile select.
+const sizeOptions = Array.from(new Set([
+  // Company Profile style
+  "1-10 employees", "11-50 employees", "51-200 employees", "201-500 employees", "501-1000 employees", "1000+ employees",
+  // Identity foundation style
+  "Small (1-5)", "Medium (6-50)", "Large (51-200)", "Enterprise (200+)"
+]));
 
 const growthStageOptions = [
   'Startup',
