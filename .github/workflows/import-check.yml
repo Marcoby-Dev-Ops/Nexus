@@ -48,7 +48,7 @@ jobs:
       run: cd server && pnpm run lint || echo "Server ESLint completed with warnings"
       
     - name: Test build process (Client)
-      run: cd client && pnpm run build
+      run: pnpm --filter nexus-client -w run build
       
     - name: Test build process (Server)
       run: cd server && pnpm run build || echo "Server build completed with warnings"
