@@ -39,6 +39,7 @@ nexus-db-data/
 *.local
 .env
 server/uploads/
+server/.env
 
 # Security - Additional patterns
 *.key
