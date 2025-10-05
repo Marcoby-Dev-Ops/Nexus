@@ -27,6 +27,8 @@ const MigrationRunner = require('./src/database/migrate');
 const dbRoutes = require('./src/routes/db');
 const rpcRoutes = require('./src/routes/rpc');
 const vectorRoutes = require('./src/routes/vector');
+const factsRoutes = require('./src/routes/facts');
+const telemetryRoutes = require('./src/routes/telemetry');
 const edgeRoutes = require('./src/routes/edge');
 const chatRoutes = require('./src/routes/chat');
 const organizationRoutes = require('./src/routes/organizations');
@@ -71,6 +73,14 @@ const socketTestRoutes = require('./src/routes/socket-test');
 const app = express();
 const server = createServer(app);
 const PORT = process.env.API_PORT || 3001;
+
+// When running behind a reverse proxy (nginx, load balancer), enable trust proxy
+// so Express's req.ip and rate limiting use the originating client IP instead of the proxy's IP.
+// This prevents the auth rate limiter from treating all requests as coming from a single IP.
+if (process.env.TRUST_PROXY === 'true' || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+  logger.info('Express trust proxy enabled (using X-Forwarded-For) for proper client IP detection');
+}
 
 // Socket.IO setup
 const io = new Server(server, {
@@ -269,6 +279,8 @@ app.use('/api/ai-insights', aiLimiter, aiInsightsRoutes);
 // Other API routes - use general rate limiting
 app.use('/api/rpc', rpcRoutes);
 app.use('/api/vector', vectorRoutes);
+app.use('/api/facts', factsRoutes);
+app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/edge', edgeRoutes);
 app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/organizations', organizationRoutes);

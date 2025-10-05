@@ -3,6 +3,7 @@ const { z } = require('zod');
 const crypto = require('crypto');
 
 const router = express.Router();
+const { logger } = require('../src/utils/logger');
 
 // Helper function to generate random strings
 function generateRandomString(length) {
@@ -79,6 +80,12 @@ function getOAuthProviders() {
   };
 }
 
+// Helper to determine the frontend URL used for redirects. Prefer FRONTEND_URL in production,
+// fall back to VITE_DEV_APP_URL for local/dev, then to localhost default.
+function getFrontendUrl() {
+  return process.env.FRONTEND_URL || process.env.VITE_DEV_APP_URL || 'http://localhost:5173';
+}
+
 // Validation schemas
 const OAuthStateSchema = z.object({
   userId: z.string(),
@@ -107,9 +114,12 @@ router.get('/config/:provider', (req, res) => {
     clientId: config.clientId,
     authorizationUrl: config.authorizationUrl,
     scope: config.scope,
-    redirectUri: provider === 'authentik' 
-      ? `${process.env.VITE_DEV_APP_URL || 'http://localhost:5173'}/auth/callback`
-      : `${process.env.VITE_DEV_APP_URL || 'http://localhost:5173'}/integrations/${provider}/callback`,
+    redirectUri: (() => {
+      const front = getFrontendUrl();
+      return provider === 'authentik'
+        ? `${front}/auth/callback`
+        : `${front}/integrations/${provider}/callback`;
+    })(),
   };
 
   // Add provider-specific public config
@@ -128,6 +138,20 @@ const oauthStates = new Map();
  */
 router.post('/state', async (req, res) => {
   try {
+    // Log incoming request info to help diagnose proxy / rate-limit issues
+    try {
+      logger.info('Incoming OAuth state generation request', {
+        ip: req.ip,
+        xForwardedFor: req.get('X-Forwarded-For'),
+        path: req.path,
+        method: req.method,
+        bodyPreview: typeof req.body === 'object' ? { ...(req.body), _len: Object.keys(req.body).length } : String(req.body)
+      });
+    } catch (logErr) {
+      // Non-fatal logging error
+      console.warn('Failed to log OAuth state request details', logErr);
+    }
+
     const { userId, integrationSlug, redirectUri } = OAuthStateSchema.parse(req.body);
     
     // Generate state and code verifier
