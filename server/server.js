@@ -27,7 +27,14 @@ const MigrationRunner = require('./src/database/migrate');
 const dbRoutes = require('./src/routes/db');
 const rpcRoutes = require('./src/routes/rpc');
 const vectorRoutes = require('./src/routes/vector');
-const factsRoutes = require('./src/routes/facts');
+let factsRoutes = null;
+try {
+  // facts route is optional in some production builds/images; require defensively so the
+  // server can still start even if the file wasn't copied into the image by accident.
+  factsRoutes = require('./src/routes/facts');
+} catch (err) {
+  logger.warn('Facts routes not available, skipping /api/facts mounting', { error: err.message });
+}
 const telemetryRoutes = require('./src/routes/telemetry');
 const edgeRoutes = require('./src/routes/edge');
 const chatRoutes = require('./src/routes/chat');
@@ -279,7 +286,12 @@ app.use('/api/ai-insights', aiLimiter, aiInsightsRoutes);
 // Other API routes - use general rate limiting
 app.use('/api/rpc', rpcRoutes);
 app.use('/api/vector', vectorRoutes);
-app.use('/api/facts', factsRoutes);
+if (factsRoutes) {
+  app.use('/api/facts', factsRoutes);
+  logger.info('Facts routes mounted at /api/facts');
+} else {
+  logger.warn('Facts routes not mounted because they are not available');
+}
 app.use('/api/telemetry', telemetryRoutes);
 app.use('/api/edge', edgeRoutes);
 app.use('/api/chat', uploadLimiter, chatRoutes);
