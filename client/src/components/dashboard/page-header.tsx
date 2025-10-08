@@ -1,5 +1,6 @@
 import React from 'react'
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext'
+import { ThemeToggleAdvanced } from '@/components/ui/theme-toggle-advanced'
 
 export function PageHeader() {
   const { pageTitle, pageSubtitle, pageActions } = useHeaderContext()
@@ -20,11 +21,10 @@ export function PageHeader() {
           </div>
         </div>
         
-        {pageActions && (
-          <div className="ml-auto flex items-center gap-2">
-            {pageActions}
-          </div>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          {pageActions}
+          <ThemeToggleAdvanced />
+        </div>
       </div>
     </header>
   )
