@@ -299,7 +299,12 @@ if (factsRoutes) {
 } else {
   logger.warn('Facts routes not mounted because they are not available');
 }
-app.use('/api/telemetry', telemetryRoutes);
+if (telemetryRoutes) {
+  app.use('/api/telemetry', telemetryRoutes);
+  logger.info('Telemetry routes mounted at /api/telemetry');
+} else {
+  logger.warn('Telemetry routes not mounted because they are not available');
+}
 app.use('/api/edge', edgeRoutes);
 app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/organizations', organizationRoutes);

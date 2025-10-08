@@ -10,6 +10,7 @@
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { postgres } from '@/lib/postgres';
+import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
 // INTERFACES

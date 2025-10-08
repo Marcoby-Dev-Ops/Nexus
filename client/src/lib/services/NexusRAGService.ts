@@ -77,80 +77,37 @@ export interface BusinessKnowledge {
 }
 
 class NexusRAGService {
-  private readonly buildingBlockKeywords: Record<string, string[]> = {
-    identity: ['identity', 'mission', 'vision', 'brand', 'positioning', 'value proposition'],
-    revenue: ['revenue', 'sales', 'growth', 'pricing', 'pipeline', 'deal', 'customer acquisition'],
-    cash: ['cash', 'finance', 'budget', 'expense', 'profit', 'loss', 'forecast', 'financial'],
-    delivery: ['delivery', 'operations', 'fulfillment', 'service delivery', 'logistics', 'production'],
-    people: ['people', 'team', 'hiring', 'talent', 'culture', 'hr', 'human resources'],
-    knowledge: ['knowledge', 'documentation', 'training', 'learning', 'playbook', 'sop'],
-    systems: ['systems', 'process', 'automation', 'tech stack', 'technology', 'workflow', 'infrastructure']
-  };
-
-  private readonly agentBuildingBlockMap: Record<string, string> = {
-    'business-identity-consultant': 'identity',
-    'sales-expert': 'revenue',
-    'finance-expert': 'cash',
-    'operations-expert': 'delivery',
-    'people-expert': 'people',
-    'knowledge-expert': 'knowledge',
-    'systems-expert': 'systems'
-  };
-
   /**
    * Process a message with comprehensive RAG integration
    */
   async processMessage(request: NexusRAGRequest): Promise<NexusRAGResponse> {
     try {
       const { message, context, agentId } = request;
-      const trimmedMessage = message.trim();
 
-      // Handle greetings/small talk without invoking RAG
-      if (!trimmedMessage || this.isSmallTalk(trimmedMessage)) {
-        const minimalContext = this.buildEnhancedContext(context, null, null, trimmedMessage);
-        const aiResponse = await this.generateAIResponse(trimmedMessage, minimalContext, agentId);
-        return {
-          success: true,
-          data: {
-            content: aiResponse.content,
-            sources: [],
-            confidence: 0,
-            recommendations: [],
-            businessContext: {},
-            knowledgeTypes: []
-          }
-        };
-      }
-
-      // Determine whether the message maps to one of the seven building blocks
-      const buildingBlock = this.detectBuildingBlock(trimmedMessage) || this.detectBuildingBlockFromAgent(agentId);
-  const companyId = context.company?.id || null;
-  const shouldUseKnowledge = !!buildingBlock && !!companyId;
-
-      // Step 1: Get comprehensive business knowledge limited to the identified building block
+      // Step 1: Get comprehensive business knowledge from Nexus Knowledge domain
       let businessKnowledge: BusinessKnowledge | null = null;
       let ckbResponse: CKBResponse | null = null;
       
-      if (shouldUseKnowledge && companyId) {
+      if (context.company?.id) {
         try {
-          console.log('🔍 Querying Nexus Knowledge Base for building block:', buildingBlock);
+          console.log('🔍 Querying Nexus Knowledge Base for business documentation...');
           
           // Get CKB RAG context
           ckbResponse = await ckbRAGService.queryCKB({
-            query: `${buildingBlock} ${trimmedMessage}`,
-            companyId,
-            department: buildingBlock,
+            query: message,
+            companyId: context.company.id,
+            department: context.user.department,
             includeBusinessData: true,
             includeHistoricalContext: true
           });
 
           // Get comprehensive business knowledge
-          businessKnowledge = await this.getBusinessKnowledge(companyId, `${buildingBlock} ${trimmedMessage}`);
+          businessKnowledge = await this.getBusinessKnowledge(context.company.id, message);
           
           console.log('✅ Knowledge Base Response:', {
             confidence: ckbResponse.confidence,
             sourcesCount: ckbResponse.sources.length,
-            knowledgeTypes: businessKnowledge ? Object.keys(businessKnowledge).filter(key => businessKnowledge![key as keyof BusinessKnowledge]?.length > 0) : [],
+            knowledgeTypes: Object.keys(businessKnowledge).filter(key => businessKnowledge[key as keyof BusinessKnowledge]?.length > 0),
             hasRecommendations: ckbResponse.recommendations.length > 0
           });
         } catch (error) {
@@ -159,10 +116,10 @@ class NexusRAGService {
       }
 
       // Step 2: Build enhanced context with comprehensive knowledge
-      const enhancedContext = this.buildEnhancedContext(context, ckbResponse, businessKnowledge, trimmedMessage);
+      const enhancedContext = this.buildEnhancedContext(context, ckbResponse, businessKnowledge, message);
 
       // Step 3: Generate AI response with comprehensive business context
-      const aiResponse = await this.generateAIResponse(trimmedMessage, enhancedContext, agentId);
+      const aiResponse = await this.generateAIResponse(message, enhancedContext, agentId);
 
       return {
         success: true,
@@ -182,29 +139,6 @@ class NexusRAGService {
         error: error instanceof Error ? error.message : 'Failed to process message'
       };
     }
-  }
-
-  private detectBuildingBlock(message: string): string | null {
-    const lower = message.toLowerCase();
-    for (const [block, keywords] of Object.entries(this.buildingBlockKeywords)) {
-      if (keywords.some(keyword => lower.includes(keyword))) {
-        return block;
-      }
-    }
-    return null;
-  }
-
-  private detectBuildingBlockFromAgent(agentId: string): string | null {
-    return this.agentBuildingBlockMap[agentId] || null;
-  }
-
-  private isSmallTalk(message: string): boolean {
-    const normalized = message.toLowerCase().trim();
-    const smallTalkPhrases = [
-      'hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening',
-      'thanks', 'thank you', 'bye', 'goodbye', 'how are you'
-    ];
-    return smallTalkPhrases.includes(normalized) || normalized.length <= 15 && /^(hi|hello|hey|thanks|thank you|yo|sup)$/i.test(normalized);
   }
 
   /**
@@ -497,28 +431,6 @@ Instructions:
 8. When referencing company knowledge, cite the specific source (process, procedure, policy, etc.)
 
 Current message: "${message}"`;
-
-    // If contact information is provided in context, add a strict PII output template
-    try {
-      if ((context as any)?.contact) {
-        const contactInstructions = `
-
-PII HANDLING INSTRUCTIONS:
-- The context includes the user's contact information. Only reveal personally identifiable information (PII) when explicitly requested by the user.
-- If asked for the user's phone number, respond using THIS EXACT, SINGLE-LINE TEMPLATE and nothing else:
-  "Your phone number on file is: {{phone}}"
-  Replace {{phone}} only with the phone number provided in the context.contact.phone field. Do NOT add any extra commentary, formatting, or additional PII.
-- If the contact.phone field is missing or blank, respond exactly with: "I do not have a phone number on file."
-- Do NOT hallucinate, invent, or guess phone numbers or other contact details. If unsure, say you don't have the information.
-- Never include other contact fields (email, address) unless explicitly asked and present in the context; if asked, follow the same single-line template pattern for that field (e.g., "Your email on file is: {{email}}").
-`;
-
-        prompt += contactInstructions;
-      }
-    } catch (piiErr) {
-      // Non-fatal: don't break prompt generation if context is unexpected
-      console.warn('Failed to append PII instructions to system prompt:', piiErr);
-    }
 
     return prompt;
   }

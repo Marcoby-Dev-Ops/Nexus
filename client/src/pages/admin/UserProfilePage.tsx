@@ -238,9 +238,8 @@ export function UserProfilePage() {
         }
 
         toast({
-          title: "Success",
-          description: "Your profile has been updated successfully.",
-          variant: 'success',
+            title: "Success",
+            description: "Your profile has been updated successfully.",
         });
     } catch (error) {
       logger.error('UserProfilePage - Profile update error:', error instanceof Error ? error.message : String(error));

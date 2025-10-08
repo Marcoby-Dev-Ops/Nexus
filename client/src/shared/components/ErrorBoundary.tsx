@@ -1,5 +1,9 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { logger } from '@/shared/utils/logger';
+import type { ErrorInfo, ReactNode } from 'react';
+import React, { Component } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Button } from '@/shared/components/ui/Button';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { getEnvVar } from '@/lib/env-utils';
 
 interface Props {
   children: ReactNode;
@@ -9,6 +13,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error?: Error;
+  errorInfo?: ErrorInfo;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -22,8 +27,13 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logger.error('ErrorBoundary caught an error:', { error: error.message, errorInfo });
+    // console.error('ErrorBoundary caught an error:', error, errorInfo);
+    this.setState({ error, errorInfo });
   }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: undefined, errorInfo: undefined });
+  };
 
   render() {
     if (this.state.hasError) {
@@ -32,29 +42,47 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-          <div className="max-w-md w-full space-y-4 text-center">
-            <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
-            <p className="text-muted-foreground">
-              An error occurred while loading the application.
+        <Card className="w-full max-w-md mx-auto mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Something went wrong
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              An unexpected error occurred. Please try refreshing the page or contact support if the problem persists.
             </p>
-            <details className="mt-2 p-3 bg-muted rounded-md text-xs">
-              <summary className="cursor-pointer font-medium">Error Details</summary>
-              <pre className="mt-2 overflow-auto max-h-40">
-                {this.state.error?.toString()}
-              </pre>
-            </details>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-            >
-              Reload Application
-            </button>
-          </div>
-        </div>
+            
+            {getEnvVar('NODE_ENV') === 'development' && this.state.error && (
+              <details className="text-xs">
+                <summary className="cursor-pointer text-muted-foreground">
+                  Error details (development only)
+                </summary>
+                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto">
+                  {this.state.error.toString()}
+                  {this.state.errorInfo?.componentStack}
+                </pre>
+              </details>
+            )}
+            
+            <div className="flex gap-2">
+              <Button onClick={this.handleRetry} className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Try Again
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()}
+              >
+                Refresh Page
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       );
     }
 
     return this.props.children;
   }
-}
+} 

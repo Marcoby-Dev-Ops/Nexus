@@ -144,6 +144,7 @@ export default tseslint.config(js.configs.recommended, ...tseslint.configs.recom
     'archive/**',
     'backups/**',
     'public/**',
+  'src/stories/**',
     '__tests__/**',
     '*.test.ts',
     '*.test.tsx',

@@ -1,5 +1,4 @@
 import React from 'react';
-import { getIndustryLabel } from '@/lib/identity/industry-options';
 import { useService } from '@/shared/hooks/useService';
 import type { Company, Department } from '@/services/core';
 import { Button } from '@/shared/components/ui/Button';
@@ -175,7 +174,7 @@ export const CompanyProfileExample: React.FC<CompanyProfileExampleProps> = ({ co
                     {company.industry && (
                       <div>
                         <span className="text-sm text-gray-500">Industry:</span>
-                        <Badge variant="secondary">{getIndustryLabel(company.industry)}</Badge>
+                        <Badge variant="secondary">{company.industry}</Badge>
                       </div>
                     )}
                     {company.size && (

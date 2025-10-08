@@ -61,14 +61,6 @@ export interface DashboardData {
     inProgressBlocks: number;
     notStartedBlocks: number;
   };
-  metrics: {
-    healthTrend: 'improving' | 'stable' | 'declining';
-    needsAttentionBlocks: string[];
-  };
-  insights: {
-    recommendations: string[];
-    nextActions: string[];
-  };
 }
 
 // ============================================================================
@@ -82,7 +74,7 @@ export class DashboardService extends BaseService {
   };
 
   constructor() {
-    super();
+    super('DashboardService');
   }
 
   /**
@@ -121,20 +113,12 @@ export class DashboardService extends BaseService {
       // Calculate stats
       const stats = this.calculateStats(userImplementations);
 
-      // Calculate enhanced metrics
-      const metrics = this.calculateMetrics(userImplementations, recentHealthSnapshots);
-
-      // Generate AI insights
-      const insights = await this.generateInsights(buildingBlocks, userImplementations, recentHealthSnapshots);
-
       const dashboardData: DashboardData = {
         buildingBlocks,
         userImplementations,
         recentHealthSnapshots,
         overallHealth,
         stats,
-        metrics,
-        insights,
       };
 
       logger.info('Dashboard data fetched successfully', { 
@@ -155,7 +139,10 @@ export class DashboardService extends BaseService {
    */
   async getBuildingBlocks(): Promise<ServiceResponse<BuildingBlock[]>> {
     try {
-      const result = await select<BuildingBlock>('building_blocks');
+      const result = await select<BuildingBlock>('building_blocks', {
+        filters: { is_active: true },
+        orderBy: 'name ASC',
+      });
 
       return this.createResponse(result.data || []);
     } catch (error) {
@@ -168,7 +155,10 @@ export class DashboardService extends BaseService {
    */
   async getUserImplementations(userId: string): Promise<ServiceResponse<UserBuildingBlockImplementation[]>> {
     try {
-      const result = await select<UserBuildingBlockImplementation>('user_building_block_implementations');
+      const result = await select<UserBuildingBlockImplementation>('user_building_block_implementations', {
+        filters: { user_id: userId },
+        orderBy: 'updated_at DESC',
+      });
 
       return this.createResponse(result.data || []);
     } catch (error) {
@@ -181,7 +171,11 @@ export class DashboardService extends BaseService {
    */
   async getRecentHealthSnapshots(userId: string, limit: number = 5): Promise<ServiceResponse<BusinessHealthSnapshot[]>> {
     try {
-      const result = await select<BusinessHealthSnapshot>('business_health_snapshots');
+      const result = await select<BusinessHealthSnapshot>('business_health_snapshots', {
+        filters: { user_id: userId },
+        orderBy: 'assessment_date DESC',
+        limit,
+      });
 
       return this.createResponse(result.data || []);
     } catch (error) {
@@ -224,78 +218,6 @@ export class DashboardService extends BaseService {
       completedBlocks,
       inProgressBlocks,
       notStartedBlocks,
-    };
-  }
-
-  /**
-   * Calculate essential metrics for dashboard
-   */
-  private calculateMetrics(
-    implementations: UserBuildingBlockImplementation[],
-    healthSnapshots: BusinessHealthSnapshot[]
-  ) {
-    // Find blocks that need attention (low progress, in progress)
-    const needsAttentionBlocks = implementations
-      .filter(impl => impl.status === 'in_progress' && impl.progress_percentage < 30)
-      .sort((a, b) => a.progress_percentage - b.progress_percentage)
-      .slice(0, 3)
-      .map(impl => impl.building_block_id);
-
-    // Determine health trend
-    let healthTrend: 'improving' | 'stable' | 'declining' = 'stable';
-    if (healthSnapshots.length >= 2) {
-      const latest = healthSnapshots[0].overall_score;
-      const previous = healthSnapshots[1].overall_score;
-      if (latest > previous + 5) healthTrend = 'improving';
-      else if (latest < previous - 5) healthTrend = 'declining';
-    }
-
-    return {
-      needsAttentionBlocks,
-      healthTrend,
-    };
-  }
-
-  /**
-   * Generate actionable insights
-   */
-  private async generateInsights(
-    buildingBlocks: BuildingBlock[],
-    implementations: UserBuildingBlockImplementation[],
-    healthSnapshots: BusinessHealthSnapshot[]
-  ) {
-    const recommendations: string[] = [];
-    const nextActions: string[] = [];
-
-    // Analyze implementations for actionable insights
-    const lowProgressBlocks = implementations.filter(impl => 
-      impl.status === 'in_progress' && impl.progress_percentage < 30
-    );
-
-    if (lowProgressBlocks.length > 0) {
-      recommendations.push(`Focus on ${lowProgressBlocks.length} building blocks that need attention`);
-    }
-
-    const notStartedBlocks = implementations.filter(impl => impl.status === 'not_started');
-    if (notStartedBlocks.length > 0) {
-      nextActions.push(`Start implementation on ${notStartedBlocks.length} building blocks`);
-    }
-
-    // Health trend insights
-    if (healthSnapshots.length >= 2) {
-      const latest = healthSnapshots[0].overall_score;
-      const previous = healthSnapshots[1].overall_score;
-      
-      if (latest > previous) {
-        recommendations.push('Business health is improving - maintain momentum');
-      } else if (latest < previous) {
-        recommendations.push('Business health declining - review strategy');
-      }
-    }
-
-    return {
-      recommendations,
-      nextActions,
     };
   }
 

@@ -4,8 +4,6 @@ import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { HeaderProvider } from '@/shared/hooks/useHeaderContext';
-import { NotificationProvider } from '@/shared/hooks/NotificationContext';
-import { NotificationCenter } from '@/shared/components/notifications/NotificationCenter';
 
 interface UnifiedLayoutProps {
   children: React.ReactNode;
@@ -39,17 +37,15 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   // Don't block rendering here - let the routes decide what to show
 
   return (
-    <NotificationProvider>
-      <HeaderProvider>
-        <div className="min-h-screen bg-background">
-          {/* Skip link for keyboard users */}
-          <a
-            href="#main-content"
-            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-3 focus:py-2 focus:rounded"
-          >
-            Skip to main content
-          </a>
-          <NotificationCenter />
+    <HeaderProvider>
+      <div className="min-h-screen bg-background">
+        {/* Skip link for keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-3 focus:py-2 focus:rounded"
+        >
+          Skip to main content
+        </a>
         <div className="flex h-screen">
           {/* Sidebar */}
           <Sidebar 
@@ -64,16 +60,15 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
               onSidebarToggle={() => setSidebarOpen(true)}
             />
             
-            {/* Main content area - Full height within viewport minus header */}
-            <main id="main-content" role="main" className="flex-1 min-h-0 overflow-hidden">
-              <div className="w-full h-full min-h-0 px-4 sm:px-6 lg:px-8 xl:px-12 pt-6 pb-4 overflow-y-auto">
+            {/* Main content area - Full width responsive */}
+            <main id="main-content" role="main" className="flex-1 overflow-y-auto">
+              <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-8 pb-6">
                 {children}
               </div>
             </main>
           </div>
         </div>
-        </div>
-      </HeaderProvider>
-    </NotificationProvider>
+      </div>
+    </HeaderProvider>
   );
 }; 

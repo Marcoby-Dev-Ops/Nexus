@@ -4,6 +4,7 @@
  */
 
 import { databaseService } from './DatabaseService';
+import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from './BaseService';
 
 // ============================================================================

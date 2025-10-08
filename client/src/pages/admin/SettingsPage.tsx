@@ -1,4 +1,4 @@
-import React, { lazy, useEffect } from 'react';
+import React, { lazy } from 'react';
 import { UnifiedSettingsPage } from '@/shared/components/patterns/UnifiedPages';
 import SecuritySettings from './SecuritySettings';
 import NotificationsSettings from './NotificationsSettings';
@@ -10,7 +10,6 @@ import AIModelSettings from './AIModelSettings';
 import BillingSettings from './BillingSettings';
 import { ContinuousImprovementDashboard } from '@/lib/ai/components/ContinuousImprovementDashboard';
 import { useAuth } from '@/hooks/index';
-import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 
 // AI Performance Settings Component
 const AIPerformanceSettings = () => {
@@ -115,15 +114,6 @@ const settingsConfig = {
 };
 
 const SettingsPage: React.FC = () => {
-  const { setHeaderContent, clearHeaderContent } = useHeaderContext();
-
-  useEffect(() => {
-    // Move the page title to the main header and remove a subtitle/description
-    setHeaderContent(settingsConfig.title, undefined, null);
-
-    return () => clearHeaderContent();
-  }, []);
-
   return <UnifiedSettingsPage config={settingsConfig} />;
 };
 

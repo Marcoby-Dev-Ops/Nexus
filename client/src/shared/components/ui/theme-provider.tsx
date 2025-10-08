@@ -39,10 +39,23 @@ export function ThemeProvider({
   defaultColor = 'green',
   ...props 
 }: ThemeProviderProps) {
+  // Prevent duplicate "initial" logs under React StrictMode double render in dev
+  // Module-level flags ensure we only log the initial load once per window
+  type WindowWithNexusFlags = Window & {
+    __nexus_hasLoggedInitialTheme?: boolean;
+    __nexus_hasLoggedInitialPrimary?: boolean;
+    __nexus_themeApplied?: boolean;
+    __nexus_primaryApplied?: boolean;
+  };
+  const w = window as WindowWithNexusFlags;
+
   const [theme, setTheme] = useState<Theme>(() => {
     try {
       const storedTheme = safeGetLocalStorage<Theme>('theme', defaultTheme);
-      logger.info('[ThemeProvider] Initial theme loaded:', storedTheme);
+      if (!w.__nexus_hasLoggedInitialTheme) {
+        logger.info('[ThemeProvider] Initial theme loaded:', storedTheme, 'defaultTheme:', defaultTheme);
+        w.__nexus_hasLoggedInitialTheme = true;
+      }
       return storedTheme;
     } catch (error) {
       logger.error('[ThemeProvider] Error loading theme from localStorage:', error);
@@ -53,7 +66,10 @@ export function ThemeProvider({
   const [primaryColor, setPrimaryColor] = useState<PrimaryColor>(() => {
     try {
       const storedColor = safeGetLocalStorage<PrimaryColor>('primaryColor', defaultColor);
-      logger.info('[ThemeProvider] Initial primary color loaded:', storedColor);
+      if (!w.__nexus_hasLoggedInitialPrimary) {
+        logger.info('[ThemeProvider] Initial primary color loaded:', storedColor);
+        w.__nexus_hasLoggedInitialPrimary = true;
+      }
       return storedColor;
     } catch (error) {
       logger.error('[ThemeProvider] Error loading primary color from localStorage:', error);
@@ -61,7 +77,7 @@ export function ThemeProvider({
     }
   });
 
-  // Apply theme
+  // Apply theme with better React StrictMode handling
   useEffect(() => {
     try {
       const root = window.document.documentElement;
@@ -70,17 +86,25 @@ export function ThemeProvider({
       if (theme === 'system') {
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         root.classList.add(systemTheme);
-        logger.info('[ThemeProvider] Applied system theme:', systemTheme);
+        // Only log if not already applied to prevent duplicate logs in StrictMode
+        if (!w.__nexus_themeApplied) {
+          logger.info('[ThemeProvider] Applied system theme:', systemTheme);
+          w.__nexus_themeApplied = true;
+        }
       } else {
         root.classList.add(theme);
-        logger.info('[ThemeProvider] Applied theme:', theme);
+        // Only log if not already applied to prevent duplicate logs in StrictMode
+        if (!w.__nexus_themeApplied) {
+          logger.info('[ThemeProvider] Applied theme:', theme);
+          w.__nexus_themeApplied = true;
+        }
       }
     } catch (error) {
       logger.error('[ThemeProvider] Error applying theme:', error);
     }
   }, [theme]);
 
-  // Apply primary color
+  // Apply primary color with better React StrictMode handling
   useEffect(() => {
     try {
       const root = window.document.documentElement;
@@ -88,7 +112,11 @@ export function ThemeProvider({
       if (color) {
         root.style.setProperty('--primary', color.value);
         root.style.setProperty('--primary-foreground', color.foreground);
-        logger.info('[ThemeProvider] Applied primary color:', primaryColor);
+        // Only log if not already applied to prevent duplicate logs in StrictMode
+        if (!w.__nexus_primaryApplied) {
+          logger.info('[ThemeProvider] Applied primary color:', primaryColor);
+          w.__nexus_primaryApplied = true;
+        }
       }
     } catch (error) {
       logger.error('[ThemeProvider] Error applying primary color:', error);

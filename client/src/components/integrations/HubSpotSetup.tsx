@@ -3,20 +3,21 @@
  * Pillar: 1,2 - CRM integration for sales and marketing automation
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
-import { CheckCircle2, AlertTriangle, Loader2, ArrowRight, Zap, Users, TrendingUp, Building2, Shield, Key, AlertCircle, Clock } from 'lucide-react';
-import { Progress } from '@/shared/components/ui/Progress';
-import { useAuth } from '@/hooks/index';
+import { CheckCircle2, AlertTriangle, Loader2, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/hooks/auth/useAuth';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { createHubSpotAuthUrl } from '@/services/integrations/hubspot/utils';
 import { HUBSPOT_REQUIRED_SCOPES } from '@/services/integrations/hubspot/constants';
 import { useToast } from '@/shared/components/ui/use-toast';
+import { logger } from '@/shared/utils/logger';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 
 interface HubSpotSetupProps {
-  onComplete?: (payload?: any) => void;
+  onComplete?: () => void;
   onCancel?: () => void;
 }
 
@@ -25,16 +26,6 @@ export function HubSpotSetup({ onComplete, onCancel }: HubSpotSetupProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // HubSpot client ID (fetched on mount)
-  const [clientId, setClientId] = useState<string>('');
-
-  useEffect(() => {
-    fetch('/api/oauth/config/hubspot')
-      .then(res => res.json())
-      .then(config => setClientId(config.clientId))
-      .catch(err => console.error('Failed to get HubSpot config:', err));
-  }, []);
 
   const totalSteps = 4;
 

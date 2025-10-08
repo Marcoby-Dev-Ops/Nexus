@@ -12,7 +12,6 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Progress } from '@/shared/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/tabs';
 import { Users, Building2, TrendingUp, Target, RefreshCw, Activity } from 'lucide-react';
-import { getIndustryLabel } from '@/lib/identity/industry-options';
 import { useAuth } from '@/hooks/index';
 import { UnifiedDatabaseService } from '@/core/services/UnifiedDatabaseService';
 
@@ -285,7 +284,7 @@ export function HubSpotDashboard({ className }: HubSpotDashboardProps) {
                   {customerInsights.topIndustries.map((industry, index) => (
                     <div key={industry.industry} className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium">{getIndustryLabel(industry.industry)}</span>
+                        <span className="text-sm font-medium">{industry.industry}</span>
                         <Badge variant="outline">{industry.count}</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">

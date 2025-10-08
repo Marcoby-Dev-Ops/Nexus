@@ -6,7 +6,6 @@
  */
 
 import { useUserContext, useUserProfile, useUserCompany, useUserPreferences } from '@/shared/contexts/UserContext';
-import { getIndustryLabel } from '@/lib/identity/industry-options';
 
 // Example 1: Using the full UserContext
 export const ExampleUserComponent = () => {
@@ -61,7 +60,7 @@ export const ExampleCompanyComponent = () => {
     <div>
       <h2>Company</h2>
       <p>Name: {company?.name}</p>
-  <p>Industry: {getIndustryLabel(company?.industry)}</p>
+      <p>Industry: {company?.industry}</p>
       <p>Size: {company?.size}</p>
     </div>
   );

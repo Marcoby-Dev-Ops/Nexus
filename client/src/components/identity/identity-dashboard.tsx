@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { 
   Edit3,
   Plus,
@@ -11,81 +11,42 @@ import {
   ArrowRight,
   Download,
   Upload,
-  Save,
-  Building2,
-  AlertCircle
+  Save
 } from "lucide-react"
+import { IdentityManager } from '@/lib/identity/identity-manager'
 import { IdentitySectionForm } from './identity-section-form'
-import type { IdentitySection, CompletionStatus } from '@/lib/identity/types'
-import { useIdentity } from '@/hooks/useIdentity'
-import { useToast } from '@/shared/ui/components/Toast'
-import { getIndustryLabel } from '@/lib/identity/industry-options'
-
-const SECTION_LABELS: Record<IdentitySection, string> = {
-  foundation: 'Company Foundation',
-  missionVisionValues: 'Mission, Vision, and Values',
-  productsServices: 'Products & Services',
-  targetMarket: 'Target Market',
-  competitiveLandscape: 'Competitive Landscape',
-  businessOperations: 'Business Operations',
-  financialContext: 'Financial Context',
-  strategicContext: 'Strategic Context'
-}
+import type { BusinessIdentity, IdentitySection, CompletionStatus } from '@/lib/identity/types'
 
 interface IdentityDashboardProps {
   className?: string
-  showExportDialog?: boolean
-  setShowExportDialog?: (show: boolean) => void
-  showImportDialog?: boolean
-  setShowImportDialog?: (show: boolean) => void
 }
 
-export function IdentityDashboard({ 
-  className, 
-  showExportDialog = false, 
-  setShowExportDialog, 
-  showImportDialog = false, 
-  setShowImportDialog 
-}: IdentityDashboardProps) {
+export function IdentityDashboard({ className }: IdentityDashboardProps) {
+  const [identityManager] = useState(() => new IdentityManager())
+  const [identity, setIdentity] = useState<BusinessIdentity>(identityManager.getIdentity())
+  const [nextAction, setNextAction] = useState(identityManager.getNextAction())
   const [editingSection, setEditingSection] = useState<IdentitySection | null>(null)
-  const { toast } = useToast()
-  
-  // Use the new identity hook
-  const { 
-    identity, 
-    isLoading, 
-    saveIdentity, 
-    updateSection, 
-    exportIdentity, 
-    importIdentity, 
-    nextAction, 
-    sectionStatus 
-  } = useIdentity()
+  const [showExportDialog, setShowExportDialog] = useState(false)
+  const [showImportDialog, setShowImportDialog] = useState(false)
+
+  useEffect(() => {
+    // Load from database with localStorage fallback on mount
+    const loadIdentity = async () => {
+      const loaded = await identityManager.loadFromDatabase()
+      if (loaded) {
+        setIdentity(identityManager.getIdentity())
+        setNextAction(identityManager.getNextAction())
+      }
+    }
+    loadIdentity()
+  }, [])
 
   const handleSave = async () => {
-    if (!identity?.foundation.name?.trim()) {
-      toast({
-        type: "error",
-        title: "Company name required",
-        description: "Add a company name before saving your identity data.",
-      })
-      return
-    }
-
-    const success = await saveIdentity()
-    
-    if (success) {
-      toast({
-        type: "success",
-        title: "Success",
-        description: "Identity data saved successfully!",
-      })
+    const saved = await identityManager.saveToDatabase()
+    if (saved) {
+      alert('Identity data saved to database successfully!')
     } else {
-      toast({
-        type: "warning",
-        title: "Warning",
-        description: "Identity saved to local storage (database unavailable)",
-      })
+      alert('Identity data saved to local storage (database unavailable)')
     }
   }
 
@@ -94,40 +55,16 @@ export function IdentityDashboard({
   }
 
   const handleSaveSection = async (section: IdentitySection, data: any) => {
-    const label = SECTION_LABELS[section] ?? section
-
-    if (section === 'foundation') {
-      const nextName = (data?.name ?? identity?.foundation.name ?? '').trim()
-      if (!nextName) {
-        toast({
-          type: "error",
-          title: "Company name required",
-          description: "Add a company name before saving your foundation details.",
-        })
-        return
-      }
-    }
-
+    identityManager.updateSection(section, data)
+    const saved = await identityManager.saveToDatabase() // Auto-save after updating
+    setIdentity(identityManager.getIdentity())
+    setNextAction(identityManager.getNextAction())
     setEditingSection(null)
-    
-    // Update the section
-    updateSection(section, data)
-    
-    // Auto-save after updating
-    const success = await saveIdentity()
-    
-    if (success) {
-      toast({
-        type: "success",
-        title: "Success",
-        description: `${label} saved successfully!`,
-      })
+    // Show success feedback
+    if (saved) {
+      alert(`${section} updated and saved to database successfully!`)
     } else {
-      toast({
-        type: "warning",
-        title: "Warning",
-        description: `${label} saved to local storage only (database unavailable)`,
-      })
+      alert(`${section} updated and saved to local storage (database unavailable)`)
     }
   }
 
@@ -136,9 +73,7 @@ export function IdentityDashboard({
   }
 
   const handleExport = () => {
-    const data = exportIdentity()
-    if (!data) return
-    
+    const data = identityManager.exportIdentity()
     const blob = new Blob([data], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -148,7 +83,7 @@ export function IdentityDashboard({
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    setShowExportDialog?.(false)
+    setShowExportDialog(false)
   }
 
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,37 +93,25 @@ export function IdentityDashboard({
       reader.onload = (e) => {
         try {
           const data = e.target?.result as string
-          const success = importIdentity(data)
+          const success = identityManager.importIdentity(data)
           if (success) {
-            toast({
-              type: "success",
-              title: "Success",
-              description: "Identity data imported successfully!",
-            })
+            setIdentity(identityManager.getIdentity())
+            setNextAction(identityManager.getNextAction())
+            alert('Identity data imported successfully!')
           } else {
-            toast({
-              type: "error",
-              title: "Error",
-              description: "Failed to import identity data. Please check the file format.",
-            })
+            alert('Failed to import identity data. Please check the file format.')
           }
         } catch (error) {
-          toast({
-            type: "error",
-            title: "Error",
-            description: "Error importing file. Please check the file format.",
-          })
+          alert('Error importing file. Please check the file format.')
         }
       }
       reader.readAsText(file)
     }
-    setShowImportDialog?.(false)
+    setShowImportDialog(false)
   }
 
   const handleGetStarted = () => {
-    if (nextAction) {
-      handleEditSection(nextAction.section)
-    }
+    handleEditSection(nextAction.section)
   }
 
   const getStatusColor = (status: CompletionStatus) => {
@@ -209,8 +132,6 @@ export function IdentityDashboard({
     }
   }
 
-  const editingSectionLabel = editingSection ? SECTION_LABELS[editingSection] ?? editingSection : ''
-
   const sections = [
     {
       key: 'foundation' as IdentitySection,
@@ -219,7 +140,7 @@ export function IdentityDashboard({
     },
     {
       key: 'missionVisionValues' as IdentitySection,
-      title: SECTION_LABELS.missionVisionValues,
+      title: 'Mission & Values',
       description: 'Purpose, mission, vision, and core values'
     },
     {
@@ -254,149 +175,31 @@ export function IdentityDashboard({
     }
   ]
 
-  // Show loading state if identity is not loaded yet
-  if (isLoading || !identity) {
-    return (
-      <div className={`space-y-6 ${className}`}>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading business identity...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Company Overview - What is {Company Name} */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold flex items-center gap-3">
-            <Building2 className="h-6 w-6 text-primary" />
-            What is {identity.foundation.name || "Your Company"}?
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Mission & Vision */}
-            <div className="space-y-4">
-              {identity.missionVisionValues.missionStatement ? (
-                <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">MISSION</h4>
-                  <p className="text-base leading-relaxed">{identity.missionVisionValues.missionStatement}</p>
-                </div>
-              ) : (
-                <div className="p-4 border-2 border-dashed border-muted rounded-lg">
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">MISSION</h4>
-                  <p className="text-sm text-muted-foreground">Define your company's purpose and reason for existence</p>
-                  <Button size="sm" variant="outline" className="mt-2" onClick={() => handleEditSection('missionVisionValues')}>
-                    <Edit3 className="h-3 w-3 mr-2" />
-                    Add Mission
-                  </Button>
-                </div>
-              )}
-              
-              {identity.missionVisionValues.visionStatement ? (
-                <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">VISION</h4>
-                  <p className="text-base leading-relaxed">{identity.missionVisionValues.visionStatement}</p>
-                </div>
-              ) : (
-                <div className="p-4 border-2 border-dashed border-muted rounded-lg">
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">VISION</h4>
-                  <p className="text-sm text-muted-foreground">Describe your company's future aspirations and goals</p>
-                  <Button size="sm" variant="outline" className="mt-2" onClick={() => handleEditSection('missionVisionValues')}>
-                    <Edit3 className="h-3 w-3 mr-2" />
-                    Add Vision
-                  </Button>
-                </div>
-              )}
-            </div>
-            
-            {/* Company Details */}
-            <div className="space-y-4">
-              {identity.foundation.description ? (
-                <div>
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">ABOUT</h4>
-                  <p className="text-base leading-relaxed">{identity.foundation.description}</p>
-                </div>
-              ) : (
-                <div className="p-4 border-2 border-dashed border-muted rounded-lg">
-                  <h4 className="font-semibold text-sm text-muted-foreground mb-2">ABOUT</h4>
-                  <p className="text-sm text-muted-foreground">Describe what your company does and how it creates value</p>
-                  <Button size="sm" variant="outline" className="mt-2" onClick={() => handleEditSection('foundation')}>
-                    <Edit3 className="h-3 w-3 mr-2" />
-                    Add Description
-                  </Button>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                {identity.foundation.industry && (
-                  <div>
-                    <span className="text-muted-foreground">Industry:</span>
-                    <p className="font-medium">{getIndustryLabel(identity.foundation.industry)}</p>
-                  </div>
-                )}
-                {identity.foundation.companySize && (
-                  <div>
-                    <span className="text-muted-foreground">Size:</span>
-                    <p className="font-medium">{identity.foundation.companySize}</p>
-                  </div>
-                )}
-                {identity.foundation.companyStage && (
-                  <div>
-                    <span className="text-muted-foreground">Stage:</span>
-                    <p className="font-medium">{identity.foundation.companyStage}</p>
-                  </div>
-                )}
-                {identity.foundation.businessModel && (
-                  <div>
-                    <span className="text-muted-foreground">Model:</span>
-                    <p className="font-medium">{identity.foundation.businessModel}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Core Values */}
-          {identity.missionVisionValues.coreValues && identity.missionVisionValues.coreValues.length > 0 && (
-            <div className="mt-6 pt-6 border-t">
-              <h4 className="font-semibold text-sm text-muted-foreground mb-3">CORE VALUES</h4>
-              <div className="flex flex-wrap gap-2">
-                {identity.missionVisionValues.coreValues.map((value, index) => {
-                  const valueText = typeof value === 'string' ? value : value.name || '';
-                  return (
-                    <Badge key={index} variant="secondary" className="text-sm">
-                      {valueText}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-          
-          {/* Call to Action if incomplete */}
-          {identity.completeness.overall < 80 && (
-            <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <span className="font-medium text-amber-800 dark:text-amber-200">Complete Your Identity</span>
-              </div>
-              <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-                Help others understand what {identity.foundation.name || "your company"} is by completing your business identity.
-              </p>
-              <Button size="sm" variant="outline" className="border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-950/30">
-                <Edit3 className="h-3 w-3 mr-2" />
-                Complete Identity
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Business Identity Dashboard</h2>
+          <p className="text-muted-foreground">
+            Comprehensive business context for AI assistance and strategic planning
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowExportDialog(true)}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowImportDialog(true)}>
+            <Upload className="h-4 w-4 mr-2" />
+            Import
+          </Button>
+          <Button size="sm" onClick={handleSave}>
+            <Save className="h-4 w-4 mr-2" />
+            Save
+          </Button>
+        </div>
+      </div>
 
       {/* Overall Progress */}
       <Card>
@@ -418,23 +221,21 @@ export function IdentityDashboard({
             <Progress value={identity.completeness.overall} className="h-2" />
             
             {/* Next Action */}
-            {nextAction && (
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium">Recommended Next Action</h4>
-                  <Badge className={getPriorityColor(nextAction.priority)}>
-                    {nextAction.priority} Priority
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {nextAction.action}
-                </p>
-                <Button size="sm" variant="outline" onClick={handleGetStarted}>
-                  <ArrowRight className="h-3 w-3 mr-1" />
-                  Get Started
-                </Button>
+            <div className="mt-4 p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="font-medium">Recommended Next Action</h4>
+                <Badge className={getPriorityColor(nextAction.priority)}>
+                  {nextAction.priority} Priority
+                </Badge>
               </div>
-            )}
+              <p className="text-sm text-muted-foreground mb-3">
+                {nextAction.action}
+              </p>
+              <Button size="sm" variant="outline" onClick={handleGetStarted}>
+                <ArrowRight className="h-3 w-3 mr-1" />
+                Get Started
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -442,7 +243,7 @@ export function IdentityDashboard({
       {/* Identity Sections */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {sections.map((section) => {
-          const status = sectionStatus(section.key)
+          const status = identityManager.getSectionStatus(section.key)
           const completeness = identity.completeness.sections[section.key]
           
           return (
@@ -499,7 +300,7 @@ export function IdentityDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {sections.filter(s => sectionStatus(s.key) === 'Complete').length}
+              {sections.filter(s => identityManager.getSectionStatus(s.key) === 'Complete').length}
             </div>
             <p className="text-xs text-muted-foreground">
               of {sections.length} total sections
@@ -513,7 +314,7 @@ export function IdentityDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {sections.filter(s => sectionStatus(s.key) === 'In Progress').length}
+              {sections.filter(s => identityManager.getSectionStatus(s.key) === 'In Progress').length}
             </div>
             <p className="text-xs text-muted-foreground">
               sections being worked on
@@ -536,17 +337,9 @@ export function IdentityDashboard({
         </Card>
       </div>
 
-      {/* Edit Section Dialog - Updated */}
+      {/* Edit Section Dialog */}
       <Dialog open={editingSection !== null} onOpenChange={() => setEditingSection(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Edit {editingSectionLabel}
-            </DialogTitle>
-            <DialogDescription>
-              Update your company's {editingSectionLabel || 'section'} information. Click Save to apply changes.
-            </DialogDescription>
-          </DialogHeader>
           {editingSection && (
             <IdentitySectionForm
               section={editingSection}
@@ -559,7 +352,7 @@ export function IdentityDashboard({
       </Dialog>
 
       {/* Export Dialog */}
-      <Dialog open={showExportDialog} onOpenChange={(open) => setShowExportDialog?.(open)}>
+      <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Export Identity Data</DialogTitle>
@@ -569,7 +362,7 @@ export function IdentityDashboard({
               Export your business identity data as a JSON file. This file can be imported later or shared with team members.
             </p>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowExportDialog?.(false)}>
+              <Button variant="outline" onClick={() => setShowExportDialog(false)}>
                 Cancel
               </Button>
               <Button onClick={handleExport}>
@@ -582,7 +375,7 @@ export function IdentityDashboard({
       </Dialog>
 
       {/* Import Dialog */}
-      <Dialog open={showImportDialog} onOpenChange={(open) => setShowImportDialog?.(open)}>
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Import Identity Data</DialogTitle>
@@ -604,7 +397,7 @@ export function IdentityDashboard({
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowImportDialog?.(false)}>
+              <Button variant="outline" onClick={() => setShowImportDialog(false)}>
                 Cancel
               </Button>
             </div>

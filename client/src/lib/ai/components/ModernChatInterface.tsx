@@ -13,12 +13,10 @@ import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/ty
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatWelcome from './ChatWelcome';
-import SuggestionCard from './SuggestionCard';
-import SuggestionPreviewModal from './SuggestionPreviewModal';
 
 interface ModernChatInterfaceProps {
   messages: ChatMessageType[];
-  onSendMessage: (message: string, attachments?: FileAttachment[]) => Promise<void> | void;
+  onSendMessage: (message: string, attachments?: FileAttachment[]) => void;
   onStopGeneration?: () => void;
   isStreaming?: boolean;
   disabled?: boolean;
@@ -55,7 +53,6 @@ export default function ModernChatInterface({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<{ focus: () => void }>(null);
   const { toast } = useToast();
-  const [previewSuggestion, setPreviewSuggestion] = useState<any | null>(null);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -84,10 +81,10 @@ export default function ModernChatInterface({
     console.log('Messages count in interface:', messages.length);
   }, [messages]);
 
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(() => {
     if (!input.trim() && attachments.length === 0) return;
     
-    await Promise.resolve(onSendMessage(input.trim(), attachments));
+    onSendMessage(input.trim(), attachments);
     setInput('');
     // Clear attachments and revoke object URLs
     attachments.forEach(attachment => {
@@ -162,37 +159,17 @@ export default function ModernChatInterface({
             <ChatWelcome userName={userName} />
           ) : (
             <div className="space-y-6">
-              {messages.map((message, idx) => {
-                // Use a stable, unique key where possible. Prefer message.id,
-                // fall back to a combination of role+timestamp+index to avoid
-                // duplicated or missing key warnings from React.
-                const msgAny = message as any;
-                const ts = msgAny.created_at || msgAny.updated_at || msgAny.timestamp || msgAny.time;
-                const tsVal = ts ? (typeof ts === 'string' ? new Date(ts).getTime() : (ts instanceof Date ? ts.getTime() : String(ts))) : 'no-ts';
-                const key = message.id || `${message.role}-${tsVal}-${idx}`;
-                return (
-                  <div key={key} className="space-y-2">
-                    <ChatMessage 
-                      message={message} 
-                      onCopy={copyMessage}
-                    />
-
-                    {/* Render suggestion card when present in message metadata */}
-                    {(message as any)?.metadata?.suggestion && (
-                      <div className="mt-2">
-                        <SuggestionCard
-                          suggestion={(message as any).metadata.suggestion}
-                          onPreview={(s: any) => setPreviewSuggestion(s)}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {messages.map((message) => (
+                <ChatMessage 
+                  key={message.id} 
+                  message={message} 
+                  onCopy={copyMessage}
+                />
+              ))}
               
-              {/* Typing / Streaming Indicator - more visible when assistant is generating */}
-              {(showTypingIndicator || isStreaming) && (
-                <div className="flex gap-4 max-w-4xl mx-auto justify-start items-start">
+              {/* Typing Indicator */}
+              {showTypingIndicator && (
+                <div className="flex gap-4 max-w-4xl mx-auto justify-start">
                   <div className="flex-shrink-0">
                     <Avatar className="w-8 h-8">
                       <AvatarFallback className="bg-gray-700 text-gray-300">
@@ -201,24 +178,20 @@ export default function ModernChatInterface({
                     </Avatar>
                   </div>
                   <div className="flex-1 max-w-3xl">
-                    <div className="bg-gray-800 rounded-2xl px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
+                    <div className="bg-gray-800 rounded-2xl px-4 py-3">
+                      <div className="flex items-center space-x-2">
                         <div className="flex space-x-1">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.08s' }}></div>
-                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.16s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                          <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-sm text-gray-200 font-medium">{agentName}</span>
-                          <span className="text-xs text-gray-400">{isStreaming ? 'Assistant is thinking...' : 'Assistant is typing...'}</span>
-                        </div>
+                        {ragEnabled && (
+                          <div className="flex items-center space-x-1 text-xs text-blue-400">
+                            <Brain className="w-3 h-3" />
+                            <span>Querying knowledge base...</span>
+                          </div>
+                        )}
                       </div>
-                      {ragEnabled && (
-                        <div className="flex items-center space-x-1 text-xs text-blue-400">
-                          <Brain className="w-3 h-3" />
-                          <span>Querying knowledge base...</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -243,36 +216,6 @@ export default function ModernChatInterface({
         placeholder={placeholder}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
-      />
-
-      {/* Suggestion preview modal */}
-      <SuggestionPreviewModal
-        suggestion={previewSuggestion}
-        onClose={() => setPreviewSuggestion(null)}
-        onApply={async (s: any) => {
-          try {
-            // Simple POST to server route. Assumes session cookie auth is already present.
-            const resp = await fetch('/api/apply-suggestion', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(s),
-            });
-            if (!resp.ok) {
-              const text = await resp.text();
-              toast({ title: 'Failed to apply suggestion', description: text || resp.statusText, type: 'error' });
-              return;
-            }
-            const data = await resp.json();
-            toast({ title: 'Suggestion applied', description: 'Changes were saved and audited', type: 'success' });
-
-            // Optionally, append a system message to the chat to reflect the change
-            if (typeof (window as any).__NEXUS_APPEND_SYSTEM_MESSAGE === 'function') {
-              (window as any).__NEXUS_APPEND_SYSTEM_MESSAGE(`Applied suggestion to ${s.targetType} ${s.targetId}`);
-            }
-          } catch (err: any) {
-            toast({ title: 'Error', description: String(err?.message || err), type: 'error' });
-          }
-        }}
       />
     </div>
   );

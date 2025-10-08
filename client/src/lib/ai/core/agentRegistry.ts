@@ -102,39 +102,6 @@ export const executiveAgent: ExecutiveAgent = {
   }
 };
 
-export const conciergeDirectorAgent: ExecutiveAgent = {
-  id: 'concierge-director',
-  name: 'Concierge Director',
-  type: 'executive',
-  systemPrompt: buildPrompt({
-    persona: 'Concierge and Director for Nexus users',
-    bio: 'A user-focused concierge that helps users navigate Nexus, make decisions, and acts as an extension of the user on the platform',
-    role: [
-      'Act as a concierge for users, proactively offering relevant guidance',
-      'Help navigate the application and suggest next steps tied to the current UI',
-      'Coordinate actions across agents and systems on behalf of the user',
-      'Protect user intent and privacy while executing aligned tasks'
-    ],
-    style: 'Helpful, proactive, and user-first. Speak clearly and provide actionable steps while preserving user context and preferences.',
-    dataAccess: 'user-scoped data and session context to tailor responses to the active user and route'
-  }),
-  personality: {
-    communicationStyle: 'concise-helpful',
-    expertise_level: 'senior',
-    tone: 'friendly',
-    background: 'Product concierge and digital assistant focused on UX and user outcomes'
-  },
-  tags: ['concierge', 'navigation', 'user-first', 'assistant', 'director'],
-  async fetchContextData() {
-    // Provide lightweight, user-scoped context for concierge decisions
-    return {
-      recentPages: [],
-      lastInteractions: [],
-      userPreferences: {}
-    };
-  }
-};
-
 export const salesAgent: DepartmentalAgent = {
   id: 'sales-director',
   name: 'Sales Director',
@@ -295,7 +262,6 @@ export class AgentRegistryService extends BaseService {
     super();
     this.agents = {
       'executive-assistant': executiveAgent,
-      'concierge-director': conciergeDirectorAgent,
       'sales-director': salesAgent,
       'marketing-cmo': marketingAgent,
       'finance-cfo': financeAgent,
@@ -488,7 +454,7 @@ export class AgentRegistryService extends BaseService {
     }
 
     // Fallback to executive agent
-    return this.getAgent('concierge-director', tenantId);
+    return this.getAgent('executive-assistant', tenantId);
   }
 }
 
@@ -497,7 +463,7 @@ export const agentRegistry = AgentRegistryService.getInstance();
 
 // Legacy exports for backward compatibility
 export function getAgent(agentId: string): ChatAgent {
-  return agentRegistry.getAgent(agentId) || conciergeDirectorAgent;
+  return agentRegistry.getAgent(agentId) || executiveAgent;
 }
 
 export function getAllAgents(): ChatAgent[] {

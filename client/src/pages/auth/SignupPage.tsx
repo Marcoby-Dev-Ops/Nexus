@@ -71,8 +71,7 @@ export default function SignupPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Redirect to Authentik enrollment flow directly
-      const authentikUrl = import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com';
-      window.location.href = `${authentikUrl}/if/flow/nexus-enrollment-flow/?next=` + encodeURIComponent('/login');
+      window.location.href = 'https://identity.marcoby.com/if/flow/nexus-enrollment-flow/?next=' + encodeURIComponent('/login');
       
       // The user will be redirected to Authentik, so we won't reach the next steps
       // These would be handled after they return from Authentik

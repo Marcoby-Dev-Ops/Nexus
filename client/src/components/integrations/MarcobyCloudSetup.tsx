@@ -7,12 +7,8 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Separator } from '@/shared/components/ui/Separator';
 import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { Cloud, Server, Activity, DollarSign, CheckCircle, AlertCircle, Loader2, ExternalLink, Eye, EyeOff } from 'lucide-react';
-// Provide a lightweight fallback mock for marcobyCloudService during incremental edits
-const marcobyCloudService = (globalThis as any).__marcobyCloudServiceFallback || {
-  async testConnection() { return { success: true }; },
-  async getInfrastructureMetrics() { return {}; },
-  async getHealthSummary() { return {}; }
-};
+import { marcobyCloudService } from '@/services/marcobyCloudService';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import { useAuth } from '@/hooks/index';
 import { useNotifications } from '@/shared/hooks/NotificationContext';
 
@@ -182,17 +178,11 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
 
       
 
-      // If the save flow provides an error variable, throw it; otherwise continue
-      // (keep defensive to avoid referencing an undefined identifier)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const possibleSaveError: any = (globalThis as any).saveError;
-      if (possibleSaveError) throw possibleSaveError;
+      if (saveError) throw saveError;
 
-      // addNotification expects title + message shape; include a title for type-safety
       addNotification({
-        title: 'Marcoby Cloud Connected',
         type: 'success',
-        message: 'Infrastructure monitoring is now active with automated KPI updates.'
+        message: 'Marcoby Cloud Connected! Infrastructure monitoring is now active with automated KPI updates.'
       });
 
       onComplete();
@@ -251,7 +241,7 @@ const MarcobyCloudSetup: React.FC<MarcobyCloudSetupProps> = ({ onComplete, onClo
         </div>
 
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="error">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>

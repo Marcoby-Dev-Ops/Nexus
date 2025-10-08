@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
+import { logger } from '@/shared/utils/logger';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 
 // ============================================================================

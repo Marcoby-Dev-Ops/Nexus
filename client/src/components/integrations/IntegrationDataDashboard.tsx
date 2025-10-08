@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { database as supabase } from '@/lib/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Progress } from '@/shared/components/ui/Progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/components/ui/Tabs';
 import { useAuth } from '@/hooks/index';
-import { selectData, updateOne } from '@/lib/database';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
 import {
   Database,
   RefreshCw,
@@ -23,6 +22,7 @@ import {
   Settings,
   ExternalLink
 } from 'lucide-react';
+import { logger } from '@/shared/utils/logger';
 
 interface IntegrationData {
   id: string;
@@ -90,11 +90,30 @@ const IntegrationDataDashboard: React.FC = () => {
       }
 
       // Get user integrations with their details
-      const userIntegrations = await selectData('user_integrations', '*', { user_id: user.id, status: ['active', 'connected'] });
+      const { data: userIntegrations, error: integrationsError } = await supabase
+        .from('user_integrations')
+        .select(`
+          *,
+          integrations (
+            id,
+            name,
+            slug,
+            category,
+            description,
+            icon,
+            auth_type,
+            capabilities
+          )
+        `)
+        .eq('user_id', user.id)
+        .in('status', ['active', 'connected']);
+
+      if (integrationsError) {
+        throw integrationsError;
+      }
 
       // Transform integrations with real metrics
-  const integrationsArray = Array.isArray(userIntegrations?.data) ? userIntegrations.data : (userIntegrations as any) || [];
-  const transformedIntegrationsPromises = integrationsArray.map(async (integration: any) => {
+      const transformedIntegrationsPromises = (userIntegrations || []).map(async (integration: any) => {
         const integrationInfo = integration.integrations;
         const baseMetrics = await generateRealMetrics(integrationInfo?.slug || 'unknown', integration);
         
@@ -188,9 +207,21 @@ const IntegrationDataDashboard: React.FC = () => {
       try {
         // Get real HubSpot data from the database
         const [contactsData, companiesData, dealsData] = await Promise.all([
-          selectData('contacts', '*', { user_id: user.id, hubspotid_not: null }),
-            selectData('companies', '*', { user_id: user.id, hubspotid_not: null }),
-            selectData('deals', '*', { user_id: user.id, hubspotid_not: null })
+          supabase
+            .from('contacts')
+            .select('*')
+            .eq('user_id', user.id)
+            .not('hubspotid', 'is', null),
+          supabase
+            .from('companies')
+            .select('*')
+            .eq('user_id', user.id)
+            .not('hubspotid', 'is', null),
+          supabase
+            .from('deals')
+            .select('*')
+            .eq('user_id', user.id)
+            .not('hubspotid', 'is', null)
         ]);
 
         const contacts = contactsData.data || [];
@@ -332,8 +363,14 @@ const IntegrationDataDashboard: React.FC = () => {
       // In a real scenario, you'd call a dedicated sync endpoint.
       console.log(`Simulating manual sync for integration: ${integration.slug}`);
       // For demonstration, let's just update the last sync time
-      const { error: updateError } = await updateOne('user_integrations', integration.id, { last_sync_at: new Date().toISOString() });
-      if (updateError) throw updateError;
+      const { error: updateError } = await supabase
+        .from('user_integrations')
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq('id', integration.id);
+
+      if (updateError) {
+        throw updateError;
+      }
 
       // Refresh data
       fetchIntegrationData();
@@ -797,7 +834,7 @@ const IntegrationDataDashboard: React.FC = () => {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         userid: user?.id,
-                        companyid: (user as any)?.company_id || (user as any)?.companyId || undefined,
+                        companyid: user?.company_id,
                         triggertype: 'manual'
                       })
                     });

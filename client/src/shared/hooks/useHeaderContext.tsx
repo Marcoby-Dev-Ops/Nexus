@@ -4,10 +4,7 @@ import React, { createContext, useContext, useState } from 'react';
 interface HeaderContextType {
   pageTitle: string | null;
   pageSubtitle: string | null;
-  pageActions: ReactNode | null;
-  pageIcon: ReactNode | null;
-  setHeaderContent: (title: string | null, subtitle?: string | null, actions?: ReactNode) => void;
-  setHeaderIcon: (icon: ReactNode | null) => void;
+  setHeaderContent: (title: string | null, subtitle?: string | null) => void;
   clearHeaderContent: () => void;
 }
 
@@ -28,30 +25,22 @@ interface HeaderProviderProps {
 export const HeaderProvider: React.FC<HeaderProviderProps> = ({ children }) => {
   const [pageTitle, setPageTitle] = useState<string | null>(null);
   const [pageSubtitle, setPageSubtitle] = useState<string | null>(null);
-  const [pageActions, setPageActions] = useState<ReactNode | null>(null);
-  const [pageIcon, setPageIcon] = useState<ReactNode | null>(null);
 
-  const setHeaderContent = (title: string | null, subtitle?: string | null, actions?: ReactNode) => {
+  const setHeaderContent = (title: string | null, subtitle?: string | null) => {
     setPageTitle(title);
     setPageSubtitle(subtitle || null);
-    setPageActions(actions || null);
   };
 
   const clearHeaderContent = () => {
     setPageTitle(null);
     setPageSubtitle(null);
-    setPageActions(null);
-    setPageIcon(null);
   };
 
   return (
     <HeaderContext.Provider value={{
       pageTitle,
       pageSubtitle,
-      pageActions,
-      pageIcon,
       setHeaderContent,
-      setHeaderIcon: setPageIcon,
       clearHeaderContent,
     }}>
       {children}

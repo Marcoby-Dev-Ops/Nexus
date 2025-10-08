@@ -10,11 +10,10 @@ interface ApiResponse<T> {
   error?: string
 }
 
-  const apiRequest = async <T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
+const apiRequest = async <T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> => {
   try {
     const token = localStorage.getItem('auth_token')
     const apiUrl = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`
-    console.log('API Request:', { endpoint, apiUrl, hasToken: !!token })
     const response = await fetch(buildApiUrl(apiUrl), {
       ...options,
       headers: {
@@ -64,7 +63,7 @@ export class IdentityManager {
         sector: '',
         businessModel: 'B2B',
         companyStage: 'Startup',
-        companySize: 'Small (1-5)',
+        companySize: 'Small (2-10)',
         website: '',
         email: '',
         phone: '',
@@ -211,7 +210,7 @@ export class IdentityManager {
   // Get required fields for each section
   private getRequiredFields(section: IdentitySection): string[] {
     const requiredFields: Record<IdentitySection, string[]> = {
-      foundation: ['name', 'industry', 'businessModel', 'website', 'email', 'legalName', 'legalStructure', 'companyStage', 'companySize', 'phone'],
+      foundation: ['name', 'industry', 'businessModel', 'website', 'email'],
       missionVisionValues: ['missionStatement', 'visionStatement', 'coreValues'],
       productsServices: ['offerings', 'uniqueValueProposition'],
       targetMarket: ['customerSegments', 'idealCustomerProfile'],
@@ -329,79 +328,30 @@ export class IdentityManager {
   }
 
   // Save to database with localStorage fallback
-  async saveToDatabase(companyData?: any): Promise<boolean> {
+  async saveToDatabase(): Promise<boolean> {
     try {
-      let companyId: string
-      
-      if (companyData && companyData.id) {
-        // Use provided company data
-        companyId = companyData.id
-        console.log('IdentityManager: Saving using provided company data, ID:', companyId)
-      } else {
-        // Fallback to API call
-        console.log('IdentityManager: No company data provided, attempting API call...')
-        const companyResponse = await apiRequest('/db/companies')
-        
-        if (!companyResponse.success || !companyResponse.data || companyResponse.data.length === 0) {
-          console.warn('No company found to update')
-          this.saveToStorage()
-          return false
-        }
-
-        companyId = companyResponse.data[0].id
-      }
-      
-      // Transform identity data to match company database schema (single source of truth)
-      const updateData = {
-        // Keep only essential top-level fields for basic queries
-        name: this.identity.foundation.name,
-        industry: this.identity.foundation.industry,
-        website: this.identity.foundation.website,
-        size: this.identity.foundation.companySize,
-        description: this.identity.foundation.description || '',
-        // All detailed data goes into business_identity (single source of truth)
-        business_identity: {
-          foundation: {
-            name: this.identity.foundation.name,
-            legalName: this.identity.foundation.legalName,
-            legalStructure: this.identity.foundation.legalStructure,
-            foundedDate: this.identity.foundation.foundedDate,
-            headquarters: this.identity.foundation.headquarters,
-            industry: this.identity.foundation.industry,
-            businessModel: this.identity.foundation.businessModel,
-            size: this.identity.foundation.companySize,
-            website: this.identity.foundation.website,
-            email: this.identity.foundation.email,
-            phone: this.identity.foundation.phone,
-            description: this.identity.foundation.description,
-            mission: this.identity.missionVisionValues.missionStatement,
-            vision: this.identity.missionVisionValues.visionStatement,
-            values: this.identity.missionVisionValues.coreValues,
-            socialMedia: this.identity.foundation.socialMedia
-          },
-          missionVisionValues: this.identity.missionVisionValues,
-          productsServices: this.identity.productsServices,
-          targetMarket: this.identity.targetMarket,
-          competitiveLandscape: this.identity.competitiveLandscape,
-          businessOperations: this.identity.businessOperations,
-          financialContext: this.identity.financialContext,
-          strategicContext: this.identity.strategicContext
-        },
-        contact_info: {
-          email: this.identity.foundation.email,
-          phone: this.identity.foundation.phone,
-          legalName: this.identity.foundation.legalName,
-          foundedDate: this.identity.foundation.foundedDate,
-          legalStructure: this.identity.foundation.legalStructure
-        },
-        address: this.identity.foundation.headquarters,
-        updated_at: new Date().toISOString()
+      // Transform identity data to match database schema
+      const dbData = {
+        foundation: this.identity.foundation,
+        mission_vision_values: this.identity.missionVisionValues,
+        products_services: this.identity.productsServices,
+        target_market: this.identity.targetMarket,
+        competitive_landscape: this.identity.competitiveLandscape,
+        business_operations: this.identity.businessOperations,
+        financial_context: this.identity.financialContext,
+        strategic_context: this.identity.strategicContext,
+        last_updated: this.identity.lastUpdated,
+        version: this.identity.version,
+        completeness: this.identity.completeness
       }
 
-      // Update the company record
-      const response = await apiRequest(`/db/companies/${companyId}`, {
-        method: 'PUT',
-        body: JSON.stringify(updateData)
+      // Try to save to database using upsert
+      const response = await apiRequest('/db/business_identity/upsert', {
+        method: 'POST',
+        body: JSON.stringify({
+          data: dbData,
+          onConflict: 'user_id'
+        })
       })
 
       if (response.success) {
@@ -422,80 +372,30 @@ export class IdentityManager {
   }
 
   // Load from database with localStorage fallback
-  async loadFromDatabase(companyData?: any): Promise<boolean> {
+  async loadFromDatabase(): Promise<boolean> {
     try {
-      let dataToUse = companyData
+      // Try to load from database first
+      const response = await apiRequest('/db/business_identity')
       
-      if (!dataToUse) {
-        // Try to load company data from database first
-        console.log('IdentityManager: Attempting to load from database...')
-        const response = await apiRequest('/db/companies')
+      if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
+        const dbData = response.data[0]
         
-        if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
-          dataToUse = response.data[0]
-          console.log('IdentityManager: Loaded company data:', dataToUse)
-        } else {
-          console.log('IdentityManager: No company data from API, trying localStorage')
-          return this.loadFromStorage()
-        }
-      } else {
-        console.log('IdentityManager: Using provided company data:', dataToUse)
-      }
-      
-      if (dataToUse) {
-        
-        // Extract business identity from company data
-        const businessIdentity = dataToUse.business_identity || {}
-        const foundation = businessIdentity.foundation || {}
-        
-        console.log('Debug email mapping:', {
-          'dataToUse.contact_info?.email': dataToUse.contact_info?.email,
-          'foundation.email': foundation.email,
-          'dataToUse': dataToUse
-        })
-        
-        // Transform company data to identity format (single source of truth from JSONB)
+        // Transform database data back to identity format
         const identityData: BusinessIdentity = {
-          foundation: {
-            name: foundation.name || dataToUse.name || '',
-            legalName: foundation.legalName || dataToUse.name || '',
-            legalStructure: (foundation.legalStructure || 'LLC') as any,
-            foundedDate: foundation.foundedDate || '',
-            headquarters: foundation.headquarters || {
-              address: dataToUse.address?.address || '',
-              city: dataToUse.address?.city || '',
-              state: dataToUse.address?.state || '',
-              country: dataToUse.address?.country || '',
-              zipCode: dataToUse.address?.zipCode || ''
-            },
-            industry: foundation.industry || dataToUse.industry || '',
-            sector: foundation.sector || '',
-            businessModel: (foundation.businessModel || 'B2B') as any,
-            companyStage: (foundation.companyStage || 'Startup') as any,
-            companySize: foundation.size || foundation.companySize || dataToUse.size || 'Small (1-5)',
-            website: foundation.website || dataToUse.website || '',
-            email: foundation.email || dataToUse.contact_info?.email || '',
-            phone: foundation.phone || dataToUse.contact_info?.phone || '',
-            socialMedia: foundation.socialMedia || {}
-          },
-          missionVisionValues: {
-            missionStatement: foundation.mission || '',
-            visionStatement: foundation.vision || '',
-            coreValues: foundation.values || []
-          },
-          productsServices: businessIdentity.productsServices || {},
-          targetMarket: businessIdentity.targetMarket || {},
-          competitiveLandscape: businessIdentity.competitiveLandscape || {},
-          businessOperations: businessIdentity.businessOperations || {},
-          financialContext: businessIdentity.financialContext || {},
-          strategicContext: businessIdentity.strategicContext || {},
-              lastUpdated: dataToUse.updated_at || new Date().toISOString(),
-          version: '1.0.0',
-          completeness: { overall: 0, sections: {} }
+          foundation: dbData.foundation || {},
+          missionVisionValues: dbData.mission_vision_values || {},
+          productsServices: dbData.products_services || {},
+          targetMarket: dbData.target_market || {},
+          competitiveLandscape: dbData.competitive_landscape || {},
+          businessOperations: dbData.business_operations || {},
+          financialContext: dbData.financial_context || {},
+          strategicContext: dbData.strategic_context || {},
+          lastUpdated: dbData.last_updated || new Date().toISOString(),
+          version: dbData.version || '1.0.0',
+          completeness: dbData.completeness || { overall: 0, sections: {} }
         }
 
         this.identity = identityData
-        this.updateCompleteness()
         // Also save to localStorage for offline access
         this.saveToStorage()
         return true

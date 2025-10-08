@@ -52,11 +52,14 @@ services:
       - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
-    command: >
-      redis-server \
-      --appendonly yes \
-      --maxmemory ${REDIS_MAX_MEMORY:-256mb} \
-      --maxmemory-policy allkeys-lru
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --maxmemory
+      - "${REDIS_MAX_MEMORY:-256mb}"
+      - --maxmemory-policy
+      - allkeys-lru
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]

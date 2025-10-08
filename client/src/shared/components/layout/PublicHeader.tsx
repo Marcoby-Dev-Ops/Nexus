@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
-import { useTheme } from '@/shared/components/ui/theme-provider';
+import { useTheme } from '@/shared/components/ui/theme-context';
 import { Sun, Moon } from 'lucide-react';
 
 export function PublicHeader() {

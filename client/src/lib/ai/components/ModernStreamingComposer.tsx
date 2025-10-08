@@ -162,25 +162,6 @@ export default function ModernStreamingComposer({
         agentId
       };
 
-      // Determine whether this message is asking for contact info (simple heuristic)
-      const isContactRequest = /what(?:'| i?s)?\s*(?:is|\'s)?\s*(?:my|the)\s*(phone|phone number|email|email address|contact)/i.test(message);
-
-      // If contact info is requested, fetch allowed contact fields from server and include in context
-      let fetchedContact: Record<string, any> | null = null;
-      if (isContactRequest) {
-        try {
-          const contactResp = await fetch('/api/me/contact', { method: 'GET', credentials: 'include' });
-          if (contactResp.ok) {
-            const parsed = await contactResp.json();
-            if (parsed && parsed.success) {
-              fetchedContact = parsed.data || null;
-            }
-          }
-        } catch (err) {
-          // Non-fatal: proceed without contact details
-        }
-      }
-
       // Call the AI chat endpoint with conversation history
       
       let response;
@@ -194,9 +175,7 @@ export default function ModernStreamingComposer({
               role: msg.role,
               content: msg.content,
               timestamp: msg.created_at
-            })),
-            // Only attach contact info when explicitly requested and fetched from the server
-            contact: fetchedContact
+            }))
           },
           attachments: attachments.map(att => ({
             name: att.name,

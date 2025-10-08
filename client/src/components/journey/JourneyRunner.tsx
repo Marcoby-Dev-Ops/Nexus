@@ -7,12 +7,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
+import { Button } from '@/shared/components/ui/button';
+import { Badge } from '@/shared/components/ui/Badge';
+import { Progress } from '@/shared/components/ui/progress';
+import { Separator } from '@/shared/components/ui/Separator';
+import { useToast } from '@/shared/components/ui/use-toast';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -28,8 +28,8 @@ import {
 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
-import { journeyService, type UserJourney } from '@/services/playbook/JourneyService';
-import type { JourneyTemplate, JourneyItem } from '@/services/playbook/JourneyTypes';
+import { useOrganizationStore } from '@/shared/stores/organizationStore';
+import { unifiedPlaybookService, type PlaybookTemplate, type UserJourney } from '@/services/playbook/UnifiedPlaybookService';
 
 // Import step components
 import QuantumIntroStep from './steps/QuantumIntroStep';
@@ -55,76 +55,41 @@ export default function JourneyRunner({ onComplete, onBack }: JourneyRunnerProps
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { activeOrgId, getActiveOrg } = useOrganizationStore();
 
   // State
   const [template, setTemplate] = useState<JourneyTemplate | null>(null);
   const [items, setItems] = useState<JourneyItem[]>([]);
   const [currentStep, setCurrentStep] = useState(0);
-  const [progress, setProgress] = useState<UserJourney | null>(null);
+  const [progress, setProgress] = useState<UserJourneyProgress | null>(null);
   const [journeyData, setJourneyData] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
   // Load journey template and items
   useEffect(() => {
-    if (journeyId && user?.id) {
+    if (journeyId && user?.id && activeOrgId) {
       loadJourney();
     }
-  }, [journeyId, user?.id]);
+  }, [journeyId, user?.id, activeOrgId]);
 
   const loadJourney = async () => {
     try {
       setIsLoading(true);
 
-      // For now, create mock data since we need to implement the actual service calls
-      // TODO: Replace with actual service calls when backend is ready
-      const mockTemplate: JourneyTemplate = {
-        id: journeyId!,
-        title: 'Business Identity Setup',
-        description: 'Complete your business identity and foundation',
-        version: '1.0',
-        is_active: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        estimated_duration_minutes: 30,
-        complexity: 'beginner'
-      };
+      // Get journey template
+      const templateResponse = await unifiedPlaybookService.getPlaybookTemplate(journeyId!);
+      if (!templateResponse.success) {
+        throw new Error(templateResponse.error || 'Failed to load journey template');
+      }
+      setTemplate(templateResponse.data);
 
-      const mockItems: JourneyItem[] = [
-        {
-          id: 'step-1',
-          title: 'Welcome & Vision',
-          description: 'Define your business vision and purpose',
-          type: 'step',
-          order: 1,
-          is_required: true,
-          estimated_duration_minutes: 5,
-          component_name: 'MVPWelcomeStep'
-        },
-        {
-          id: 'step-2',
-          title: 'Mission & Values',
-          description: 'Create your mission statement and core values',
-          type: 'step',
-          order: 2,
-          is_required: true,
-          estimated_duration_minutes: 10,
-          component_name: 'IdentitySetupChat'
-        },
-        {
-          id: 'step-3',
-          title: 'Business Summary',
-          description: 'Review and finalize your business identity',
-          type: 'step',
-          order: 3,
-          is_required: true,
-          estimated_duration_minutes: 5,
-          component_name: 'MVPSummaryStep'
-        }
-      ];
-
-      setTemplate(mockTemplate);
-      setItems(mockItems);
+      // Get journey items
+      const itemsResponse = await unifiedPlaybookService.getPlaybookTemplate(journeyId!);
+      if (!itemsResponse.success) {
+        throw new Error(itemsResponse.error || 'Failed to load journey items');
+      }
+      setItems(itemsResponse.data);
 
       // Start or get existing progress
       await startOrGetProgress();
@@ -142,40 +107,47 @@ export default function JourneyRunner({ onComplete, onBack }: JourneyRunnerProps
   };
 
   const startOrGetProgress = async () => {
-    if (!user?.id) return;
+    if (!user?.id || !activeOrgId) return;
 
     try {
       // For now, create a new progress instance
       // In a real implementation, you'd check for existing progress
-      const progressData: UserJourney = {
-        id: `journey_${Date.now()}`,
-        userId: user.id,
-        playbookId: journeyId!,
+      const progressData: Partial<UserJourneyProgress> = {
+        user_id: user.id,
+        organization_id: activeOrgId,
+        journey_id: `journey_${Date.now()}`,
+        template_id: journeyId!,
+        current_step: 0,
+        total_steps: items.length,
+        progress_percentage: 0,
         status: 'in_progress',
-        currentStep: 1,
-        totalSteps: items.length,
-        progressPercentage: 0,
-        stepResponses: {},
+        started_at: new Date().toISOString(),
         metadata: {
           template_title: template?.title,
           template_description: template?.description
-        },
-        startedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        }
       };
 
-      setProgress(progressData);
+      setProgress(progressData as UserJourneyProgress);
     } catch (error) {
       console.error('Error starting journey progress:', error);
     }
   };
 
   const handleStepComplete = async (stepData: any) => {
-    if (!progress || !user?.id) return;
+    if (!progress || !user?.id || !activeOrgId) return;
 
     try {
       setIsSaving(true);
+
+      // Save step response
+      await unifiedPlaybookService.saveStepResponse(
+        user.id,
+        activeOrgId,
+        progress.journey_id,
+        items[currentStep].id,
+        stepData
+      );
 
       // Update journey data
       setJourneyData(prev => ({ ...prev, [items[currentStep].id]: stepData }));
@@ -183,12 +155,8 @@ export default function JourneyRunner({ onComplete, onBack }: JourneyRunnerProps
       // Update progress
       const newProgress = {
         ...progress,
-        currentStep: currentStep + 1,
-        progressPercentage: ((currentStep + 1) / items.length) * 100,
-        stepResponses: {
-          ...progress.stepResponses,
-          [items[currentStep].id]: stepData
-        }
+        current_step: currentStep + 1,
+        progress_percentage: ((currentStep + 1) / items.length) * 100
       };
       setProgress(newProgress);
 
@@ -222,25 +190,36 @@ export default function JourneyRunner({ onComplete, onBack }: JourneyRunnerProps
   };
 
   const completeJourney = async () => {
-    if (!progress || !user?.id) return;
+    if (!progress || !user?.id || !activeOrgId) return;
 
     try {
       setIsSaving(true);
 
-      // Mark journey as completed
-      const completedProgress = {
-        ...progress,
-        status: 'completed' as const,
-        completedAt: new Date().toISOString()
-      };
-      setProgress(completedProgress);
-      
-      toast({
-        title: 'Journey Complete! 🎉',
-        description: 'Congratulations! You\'ve successfully completed this journey.',
-      });
+      // Complete journey with maturity assessment
+      const completionResponse = await unifiedPlaybookService.completeJourney(
+        user.id,
+        activeOrgId,
+        progress.journey_id
+      );
 
-      onComplete?.(journeyData);
+      if (completionResponse.success) {
+        const completedProgress = completionResponse.data;
+        
+        toast({
+          title: 'Journey Complete! 🎉',
+          description: 'Congratulations! You\'ve successfully completed this journey.',
+        });
+
+        // Show maturity assessment if available
+        if (completedProgress.maturity_assessment) {
+          toast({
+            title: 'Maturity Assessment',
+            description: `Your business maturity level: ${completedProgress.maturity_assessment.level}/5`,
+          });
+        }
+
+        onComplete?.(journeyData);
+      }
 
     } catch (error) {
       console.error('Error completing journey:', error);
@@ -387,11 +366,11 @@ export default function JourneyRunner({ onComplete, onBack }: JourneyRunnerProps
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Progress</span>
             <span className="font-medium">
-              {progress?.currentStep || 0} of {items.length} steps
+              {progress?.current_step || 0} of {items.length} steps
             </span>
           </div>
           <Progress 
-            value={progress?.progressPercentage || 0} 
+            value={progress?.progress_percentage || 0} 
             className="h-2" 
           />
         </div>
@@ -410,18 +389,18 @@ export default function JourneyRunner({ onComplete, onBack }: JourneyRunnerProps
                   <button
                     key={step.id}
                     onClick={() => setCurrentStep(index)}
-                    disabled={index > (progress?.currentStep || 0)}
+                    disabled={index > (progress?.current_step || 0)}
                     className={`w-full text-left p-3 rounded-lg border transition-all ${
                       currentStep === index
                         ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                        : index < (progress?.currentStep || 0)
+                        : index < (progress?.current_step || 0)
                         ? 'border-green-200 bg-green-50'
                         : 'border-muted hover:border-muted-foreground'
-                    } ${index > (progress?.currentStep || 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    } ${index > (progress?.current_step || 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0 mt-0.5">
-                        {index < (progress?.currentStep || 0) ? (
+                        {index < (progress?.current_step || 0) ? (
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         ) : (
                           getStepIcon(step)

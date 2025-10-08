@@ -37,7 +37,7 @@ export const CompanyFoundationSchema = z.object({
   sector: z.string().optional(),
   businessModel: z.enum(['B2B', 'B2C', 'B2B2C', 'Marketplace', 'SaaS', 'Other']).default('B2B'),
   companyStage: z.enum(['Startup', 'Growth', 'Mature', 'Enterprise']).default('Startup'),
-  companySize: z.enum(['Small (1-5)', 'Medium (6-50)', 'Large (51-200)', 'Enterprise (200+)']).default('Small (1-5)'),
+  companySize: z.enum(['Small (2-10)', 'Medium (11-50)', 'Large (51-200)', 'Enterprise (200+)']).default('Small (2-10)'),
   website: z.string().url().optional(),
   email: z.string().email().optional(),
   phone: z.string().optional(),
@@ -321,7 +321,6 @@ export const CompanyProfileSchema = z.object({
   settings: z.record(z.any()).optional(),
   subscription_plan: z.string().optional(),
   max_users: z.number().optional(),
-  identity_id: z.string().uuid().nullable().optional(),
   created_at: z.string(),
   updated_at: z.string(),
 });
@@ -494,15 +493,8 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
         return serviceResponse;
       }
       
-      // For updates, we should refetch the complete record to ensure we have all fields
-      // rather than trying to validate partial response data
-      const fetchResult = await this.get(id);
-      if (fetchResult.success && fetchResult.data) {
-        return fetchResult;
-      }
-      
-      // If refetch fails, return the update response as-is without validation
-      return serviceResponse;
+      const validatedData = this.config.schema.parse(serviceResponse.data);
+      return { data: validatedData, error: null, success: true };
     }, `update company profile ${id}`);
   }
 
@@ -571,39 +563,12 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
           const validatedData = BusinessIdentitySchema.parse(result.data);
           return { data: validatedData, error: null, success: true };
         } catch (validationError) {
-          // If validation fails due to missing required fields, ensure proper structure
+          // If validation fails due to missing required fields, return a default structure
           if (validationError instanceof z.ZodError) {
             const missingFields = validationError.errors.map(err => err.path.join('.'));
             this.logger.warn('Business identity validation failed, missing fields:', { companyId, missingFields });
             
-            // If the business identity is empty or missing foundation, initialize it with default structure
-            if (missingFields.includes('foundation') || Object.keys(result.data).length === 0) {
-              this.logger.info('Initializing business identity with default structure', { companyId });
-              
-              // Create a default business identity structure
-              const defaultBusinessIdentity: BusinessIdentity = {
-                foundation: {
-                  name: result.data?.foundation?.name || '',
-                  legalStructure: result.data?.foundation?.legalStructure || 'LLC' as const,
-                  foundedDate: result.data?.foundation?.foundedDate || '',
-                  headquarters: result.data?.foundation?.headquarters || {}
-                },
-                ...result.data // Include any existing data
-              };
-              
-              // Update the database with the default structure
-              try {
-                await this.updateBusinessIdentity(companyId, defaultBusinessIdentity);
-                this.logger.info('Business identity initialized successfully', { companyId });
-                return { data: defaultBusinessIdentity, error: null, success: true };
-              } catch (updateError) {
-                this.logger.error('Failed to initialize business identity', { companyId, error: updateError });
-                // Return the default structure even if update fails
-                return { data: defaultBusinessIdentity, error: null, success: true };
-              }
-            }
-            
-            // Return a default business identity structure for other validation errors
+            // Return a default business identity structure
             const defaultBusinessIdentity: BusinessIdentity = {
               foundation: {
                 name: '',
@@ -825,3 +790,4 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
 // ============================================================================
 
 export const companyService = new CompanyService();
+
