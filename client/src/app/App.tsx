@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect } from 'react';
+import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { AuthentikAuthProvider } from '@/shared/contexts/AuthentikAuthContext';
 import { UserProvider } from '@/shared/contexts/UserContext';
