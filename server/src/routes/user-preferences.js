@@ -208,4 +208,72 @@ router.put('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Notification preferences (uses authenticated user id)
+router.get('/notifications', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    const result = await userPreferencesService.getNotificationSettings(userId);
+
+    if (result.success) {
+      return res.json({
+        success: true,
+        data: result.data
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: result.error || 'Failed to fetch notification preferences'
+    });
+  } catch (error) {
+    logger.error('Error fetching notification preferences:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to fetch notification preferences'
+    });
+  }
+});
+
+router.post('/notifications', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const settings = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Authentication required'
+      });
+    }
+
+    const result = await userPreferencesService.updateNotificationSettings(userId, settings);
+
+    if (result.success) {
+      return res.json({
+        success: true,
+        data: result.data
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      error: result.error || 'Failed to update notification preferences'
+    });
+  } catch (error) {
+    logger.error('Error updating notification preferences:', error);
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to update notification preferences'
+    });
+  }
+});
+
 module.exports = router;

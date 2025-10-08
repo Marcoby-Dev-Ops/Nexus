@@ -33,12 +33,16 @@ class PushNotificationService {
   private subscription: PushSubscription | null = null;
 
   constructor() {
-    this.init();
+    if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+      this.init();
+    } else {
+      logger.info('PushNotificationService initialized in non-browser environment');
+    }
   }
 
   private async init() {
     try {
-      if ('serviceWorker' in navigator && 'PushManager' in window) {
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window) {
         await this.registerServiceWorker();
       } else {
         logger.warn('Push notifications not supported in this browser');
@@ -72,7 +76,7 @@ class PushNotificationService {
   }
 
   async requestPermission(): Promise<NotificationPermission> {
-    if (!('Notification' in window)) {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
       throw new Error('Notifications not supported');
     }
 
@@ -82,7 +86,7 @@ class PushNotificationService {
   }
 
   async getPermission(): Promise<NotificationPermission> {
-    if (!('Notification' in window)) {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
       return 'denied';
     }
     return Notification.permission;
@@ -147,6 +151,9 @@ class PushNotificationService {
       }
 
       const savedSubscription = await saveResponse.json();
+      if (!savedSubscription.success) {
+        throw new Error(savedSubscription.error || 'Failed to save push subscription');
+      }
       this.subscription = savedSubscription.data;
       
       logger.info('Successfully subscribed to push notifications');
@@ -168,7 +175,7 @@ class PushNotificationService {
         await subscription.unsubscribe();
         
         // Remove subscription from server
-        await fetch('/api/push/subscriptions', {
+        const response = await fetch('/api/push/subscriptions', {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -177,6 +184,15 @@ class PushNotificationService {
             endpoint: subscription.endpoint
           })
         });
+
+        if (!response.ok) {
+          throw new Error('Failed to remove push subscription');
+        }
+
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to remove push subscription');
+        }
       }
 
       this.subscription = null;
@@ -202,6 +218,9 @@ class PushNotificationService {
       const response = await fetch(`/api/push/subscriptions?endpoint=${encodeURIComponent(subscription.endpoint)}`);
       if (response.ok) {
         const result = await response.json();
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to load subscription');
+        }
         return result.data;
       }
     } catch (error) {
@@ -264,7 +283,12 @@ class PushNotificationService {
         throw new Error('Failed to send test notification');
       }
 
-      logger.info('Test notification sent successfully');
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to send test notification');
+      }
+
+      logger.info(result.message || 'Test notification request accepted');
     } catch (error) {
       logger.error('Failed to send test notification:', error);
       throw error;

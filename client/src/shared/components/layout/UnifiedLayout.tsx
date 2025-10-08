@@ -4,6 +4,8 @@ import { useRedirectManager } from '@/shared/hooks/useRedirectManager';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { HeaderProvider } from '@/shared/hooks/useHeaderContext';
+import { NotificationProvider } from '@/shared/hooks/NotificationContext';
+import { NotificationCenter } from '@/shared/components/notifications/NotificationCenter';
 
 interface UnifiedLayoutProps {
   children: React.ReactNode;
@@ -37,15 +39,17 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   // Don't block rendering here - let the routes decide what to show
 
   return (
-    <HeaderProvider>
-      <div className="min-h-screen bg-background">
-        {/* Skip link for keyboard users */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-3 focus:py-2 focus:rounded"
-        >
-          Skip to main content
-        </a>
+    <NotificationProvider>
+      <HeaderProvider>
+        <div className="min-h-screen bg-background">
+          {/* Skip link for keyboard users */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-primary focus:text-primary-foreground focus:px-3 focus:py-2 focus:rounded"
+          >
+            Skip to main content
+          </a>
+          <NotificationCenter />
         <div className="flex h-screen">
           {/* Sidebar */}
           <Sidebar 
@@ -68,7 +72,8 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
             </main>
           </div>
         </div>
-      </div>
-    </HeaderProvider>
+        </div>
+      </HeaderProvider>
+    </NotificationProvider>
   );
 }; 

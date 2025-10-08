@@ -1,6 +1,144 @@
 const { query } = require('../database/connection');
 const { logger } = require('../utils/logger');
 
+const DEFAULT_NOTIFICATION_SETTINGS = {
+  global_enabled: true,
+  quiet_hours_enabled: false,
+  quiet_hours_start: '22:00',
+  quiet_hours_end: '08:00',
+  channels: {
+    email: {
+      name: 'Email',
+      type: 'email',
+      enabled: true
+    },
+    push: {
+      name: 'Push Notifications',
+      type: 'push',
+      enabled: true
+    },
+    in_app: {
+      name: 'In-App',
+      type: 'in_app',
+      enabled: true
+    }
+  },
+  categories: {
+    security: {
+      name: 'Security & Privacy',
+      description: 'Login alerts, password changes, and security updates',
+      channels: {
+        email: true,
+        push: true,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'immediate'
+    },
+    business: {
+      name: 'Business Updates',
+      description: 'Important business metrics and performance alerts',
+      channels: {
+        email: true,
+        push: false,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'daily'
+    },
+    integrations: {
+      name: 'Integration Status',
+      description: 'Integration sync status and connection issues',
+      channels: {
+        email: false,
+        push: true,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'immediate'
+    },
+    team: {
+      name: 'Team Activity',
+      description: 'Team member activities and collaboration updates',
+      channels: {
+        email: false,
+        push: false,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'daily'
+    },
+    calendar: {
+      name: 'Calendar & Events',
+      description: 'Meeting reminders and calendar updates',
+      channels: {
+        email: true,
+        push: true,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'immediate'
+    },
+    documents: {
+      name: 'Document Updates',
+      description: 'Document changes and collaboration updates',
+      channels: {
+        email: false,
+        push: false,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'daily'
+    },
+    billing: {
+      name: 'Billing & Payments',
+      description: 'Payment confirmations and billing alerts',
+      channels: {
+        email: true,
+        push: false,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'immediate'
+    },
+    analytics: {
+      name: 'Analytics & Insights',
+      description: 'Performance reports and trend analysis',
+      channels: {
+        email: true,
+        push: false,
+        sms: false,
+        in_app: true
+      },
+      frequency: 'weekly'
+    }
+  }
+};
+
+const cloneJson = (value) => JSON.parse(JSON.stringify(value));
+
+const deepMerge = (target, source) => {
+  if (!source || typeof source !== 'object') {
+    return target;
+  }
+
+  Object.entries(source).forEach(([key, value]) => {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      target[key] = deepMerge(
+        target[key] && typeof target[key] === 'object' ? { ...target[key] } : {},
+        value
+      );
+    } else {
+      target[key] = value;
+    }
+  });
+
+  return target;
+};
+
+const mergeNotificationSettings = (storedSettings) =>
+  deepMerge(cloneJson(DEFAULT_NOTIFICATION_SETTINGS), storedSettings || {});
+
 class UserPreferencesService {
   /**
    * Get user preferences by user ID
@@ -130,7 +268,58 @@ class UserPreferencesService {
       dashboard_layout: {},
       sidebar_collapsed: false,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      preferences: {
+        notification_settings: cloneJson(DEFAULT_NOTIFICATION_SETTINGS)
+      }
+    };
+  }
+
+  getDefaultNotificationSettings() {
+    return cloneJson(DEFAULT_NOTIFICATION_SETTINGS);
+  }
+
+  async getNotificationSettings(userId) {
+    const result = await this.get(userId);
+
+    if (!result.success) {
+      return { data: null, error: result.error, success: false };
+    }
+
+    const storedPreferences =
+      (result.data && result.data.preferences && result.data.preferences.notification_settings) || {};
+
+    return {
+      data: mergeNotificationSettings(storedPreferences),
+      error: null,
+      success: true
+    };
+  }
+
+  async updateNotificationSettings(userId, notificationSettings = {}) {
+    const mergedSettings = mergeNotificationSettings(notificationSettings);
+
+    const updatesPayload = {
+      notifications_enabled: mergedSettings.global_enabled,
+      email_notifications: mergedSettings.channels?.email?.enabled ?? true,
+      push_notifications: mergedSettings.channels?.push?.enabled ?? false,
+      notification_settings: mergedSettings
+    };
+
+    const result = await this.update(userId, updatesPayload);
+
+    if (!result.success) {
+      return { data: null, error: result.error, success: false };
+    }
+
+    const updatedPreferences =
+      (result.data && result.data.preferences && result.data.preferences.notification_settings) ||
+      mergedSettings;
+
+    return {
+      data: mergeNotificationSettings(updatedPreferences),
+      error: null,
+      success: true
     };
   }
 }

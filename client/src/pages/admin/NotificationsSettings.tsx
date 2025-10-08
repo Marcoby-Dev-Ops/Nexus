@@ -10,7 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/hooks/index';
 import { toast } from 'sonner';
 import { pushNotificationService } from '@/services/core/PushNotificationService';
-import { Bell, Mail, Smartphone, MessageSquare, Settings, RefreshCw, Save, XCircle, Zap, Users, BarChart3, Shield, Globe, Calendar, FileText, DollarSign, TrendingUp } from 'lucide-react';
+import {
+  notificationPreferencesService,
+  NotificationSettings,
+  NotificationChannelSetting,
+  NotificationCategorySetting
+} from '@/services/core/NotificationPreferencesService';
+import { Bell, Mail, Smartphone, MessageSquare, Settings, RefreshCw, Save, Zap, Users, BarChart3, Shield, Globe, Calendar, FileText, DollarSign, TrendingUp } from 'lucide-react';
+import { useNotifications } from '@/shared/hooks/NotificationContext';
 interface NotificationChannel {
   id: string;
   name: string;
@@ -46,6 +53,7 @@ interface NotificationPreferences {
 
 const NotificationsSettings: React.FC = () => {
   const { user, session } = useAuth();
+  const { addNotification } = useNotifications();
   
   // Helper function to get channel icon
   const getChannelIcon = (channelType: string) => {
@@ -72,143 +80,85 @@ const NotificationsSettings: React.FC = () => {
       default: return <Bell className="w-4 h-4" />;
     }
   };
-  const [preferences, setPreferences] = useState<NotificationPreferences>({
-    globalEnabled: true,
-    quietHours: {
-      enabled: false,
-      start: '22:00',
-      end: '08:00'
-    },
-    channels: [
-      {
-        id: 'email',
-        name: 'Email',
-        type: 'email',
-        enabled: true,
-        icon: <Mail className="w-4 h-4" />
+
+  const mapSettingsToState = (settings: NotificationSettings): NotificationPreferences => {
+    const channels = Object.entries(settings.channels || {}).map(([id, channel]) => ({
+      id,
+      name: channel.name,
+      type: channel.type,
+      enabled: channel.enabled,
+      icon: getChannelIcon(channel.type)
+    }));
+
+    const categories = Object.entries(settings.categories || {}).map(([id, category]) => ({
+      id,
+      name: category.name,
+      description: category.description,
+      icon: getCategoryIcon(id),
+      channels: {
+        email: Boolean(category.channels?.email),
+        push: Boolean(category.channels?.push),
+        sms: Boolean(category.channels?.sms),
+        in_app: Boolean(category.channels?.in_app)
       },
-      {
-        id: 'push',
-        name: 'Push Notifications',
-        type: 'push',
-        enabled: true,
-        icon: <Bell className="w-4 h-4" />
+      frequency: category.frequency || 'immediate'
+    }));
+
+    return {
+      globalEnabled: settings.global_enabled ?? true,
+      quietHours: {
+        enabled: settings.quiet_hours_enabled ?? false,
+        start: settings.quiet_hours_start || '22:00',
+        end: settings.quiet_hours_end || '08:00'
       },
-      {
-        id: 'in_app',
-        name: 'In-App',
-        type: 'in_app',
-        enabled: true,
-        icon: <MessageSquare className="w-4 h-4" />
-      }
-    ],
-    categories: [
-      {
-        id: 'security',
-        name: 'Security & Privacy',
-        description: 'Login alerts, password changes, and security updates',
-        icon: <Shield className="w-4 h-4" />,
-        channels: {
-          email: true,
-          push: true,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'immediate'
+      channels,
+      categories
+    };
+  };
+
+  const mapStateToSettings = (state: NotificationPreferences): NotificationSettings => {
+    const channelMap = state.channels.reduce<Record<string, NotificationChannelSetting>>(
+      (acc, channel) => {
+        acc[channel.id] = {
+          name: channel.name,
+          type: channel.type,
+          enabled: channel.enabled
+        };
+        return acc;
       },
-      {
-        id: 'business',
-        name: 'Business Updates',
-        description: 'Important business metrics and performance alerts',
-        icon: <BarChart3 className="w-4 h-4" />,
-        channels: {
-          email: true,
-          push: false,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'daily'
+      {}
+    );
+
+    const categoryMap = state.categories.reduce<Record<string, NotificationCategorySetting>>(
+      (acc, category) => {
+        acc[category.id] = {
+          name: category.name,
+          description: category.description,
+          channels: {
+            email: category.channels.email,
+            push: category.channels.push,
+            sms: category.channels.sms,
+            in_app: category.channels.in_app
+          },
+          frequency: category.frequency
+        };
+        return acc;
       },
-      {
-        id: 'integrations',
-        name: 'Integration Status',
-        description: 'Integration sync status and connection issues',
-        icon: <Zap className="w-4 h-4" />,
-        channels: {
-          email: false,
-          push: true,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'immediate'
-      },
-      {
-        id: 'team',
-        name: 'Team Activity',
-        description: 'Team member activities and collaboration updates',
-        icon: <Users className="w-4 h-4" />,
-        channels: {
-          email: false,
-          push: false,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'daily'
-      },
-      {
-        id: 'calendar',
-        name: 'Calendar & Events',
-        description: 'Meeting reminders and calendar updates',
-        icon: <Calendar className="w-4 h-4" />,
-        channels: {
-          email: true,
-          push: true,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'immediate'
-      },
-      {
-        id: 'documents',
-        name: 'Document Updates',
-        description: 'Document changes and collaboration updates',
-        icon: <FileText className="w-4 h-4" />,
-        channels: {
-          email: false,
-          push: false,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'daily'
-      },
-      {
-        id: 'billing',
-        name: 'Billing & Payments',
-        description: 'Payment confirmations and billing alerts',
-        icon: <DollarSign className="w-4 h-4" />,
-        channels: {
-          email: true,
-          push: false,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'immediate'
-      },
-      {
-        id: 'analytics',
-        name: 'Analytics & Insights',
-        description: 'Performance reports and trend analysis',
-        icon: <TrendingUp className="w-4 h-4" />,
-        channels: {
-          email: true,
-          push: false,
-          sms: false,
-          in_app: true
-        },
-        frequency: 'weekly'
-      }
-    ]
-  });
+      {}
+    );
+
+    return {
+      global_enabled: state.globalEnabled,
+      quiet_hours_enabled: state.quietHours.enabled,
+      quiet_hours_start: state.quietHours.start,
+      quiet_hours_end: state.quietHours.end,
+      channels: channelMap,
+      categories: categoryMap
+    };
+  };
+  const [preferences, setPreferences] = useState<NotificationPreferences>(() =>
+    mapSettingsToState(notificationPreferencesService.getDefaultSettings())
+  );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
@@ -223,57 +173,15 @@ const NotificationsSettings: React.FC = () => {
   const fetchNotificationPreferences = async () => {
     try {
       setLoading(true);
-      
-      const response = await fetch('/api/user-preferences/notifications', {
-        headers: {
-          'Authorization': `Bearer ${session?.session?.accessToken}`,
-        },
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          // Transform the data to match our component state
-          const apiData = result.data;
-          
-          // Transform channels from object to array format
-          const channelsArray = Object.entries(apiData.channels || {}).map(([key, value]: [string, any]) => ({
-            id: key,
-            name: value.name || key,
-            type: value.type || key,
-            enabled: value.enabled || false,
-            icon: getChannelIcon(key)
-          }));
-          
-          // Transform categories from object to array format
-          const categoriesArray = Object.entries(apiData.categories || {}).map(([key, value]: [string, any]) => ({
-            id: key,
-            name: value.name || key,
-            description: value.description || '',
-            icon: getCategoryIcon(key),
-            channels: {
-              email: value.channels?.email || false,
-              push: value.channels?.push || false,
-              sms: value.channels?.sms || false,
-              in_app: value.channels?.in_app || false
-            },
-            frequency: value.frequency || 'immediate'
-          }));
-          
-          setPreferences({
-            globalEnabled: apiData.global_enabled || true,
-            quietHours: {
-              enabled: apiData.quiet_hours_enabled || false,
-              start: apiData.quiet_hours_start || '22:00',
-              end: apiData.quiet_hours_end || '08:00'
-            },
-            channels: channelsArray,
-            categories: categoriesArray
-          });
-        }
-      } else {
-        throw new Error('Failed to fetch notification preferences');
+      const result = await notificationPreferencesService.fetchSettings(
+        session?.session?.accessToken
+      );
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to fetch notification preferences');
       }
+
+      setPreferences(mapSettingsToState(result.data));
     } catch (error) {
       console.error('Error fetching notification preferences: ', error);
       toast.error('Failed to load notification preferences');
@@ -285,66 +193,31 @@ const NotificationsSettings: React.FC = () => {
   const handleSavePreferences = async () => {
     try {
       setSaving(true);
-      
-      // Transform the component state back to API format
-      const apiData = {
-        global_enabled: preferences.globalEnabled,
-        quiet_hours_enabled: preferences.quietHours.enabled,
-        quiet_hours_start: preferences.quietHours.start,
-        quiet_hours_end: preferences.quietHours.end,
-        channels: {
-          email: {
-            enabled: preferences.channels.find(c => c.id === 'email')?.enabled ?? true,
-            name: 'Email',
-            type: 'email'
-          },
-          push: {
-            enabled: preferences.channels.find(c => c.id === 'push')?.enabled ?? true,
-            name: 'Push Notifications',
-            type: 'push'
-          },
-          in_app: {
-            enabled: preferences.channels.find(c => c.id === 'in_app')?.enabled ?? true,
-            name: 'In-App',
-            type: 'in_app'
-          }
-        },
-        categories: preferences.categories.reduce((acc, category) => {
-          acc[category.id] = {
-            name: category.name,
-            description: category.description,
-            channels: {
-              email: category.channels.email ?? false,
-              push: category.channels.push ?? false,
-              in_app: category.channels.in_app ?? false
-            },
-            frequency: category.frequency
-          };
-          return acc;
-        }, {} as Record<string, any>)
-      };
-      
-      const response = await fetch('/api/user-preferences/notifications', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.session?.accessToken}`,
-        },
-        body: JSON.stringify(apiData),
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          toast.success('Notification preferences saved successfully');
-        } else {
-          throw new Error(result.error || 'Failed to save preferences');
-        }
-      } else {
-        throw new Error('Failed to save notification preferences');
+      const payload = mapStateToSettings(preferences);
+
+      const result = await notificationPreferencesService.saveSettings(
+        payload,
+        session?.session?.accessToken
+      );
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to save notification preferences');
       }
+
+      setPreferences(mapSettingsToState(result.data));
+      addNotification({
+        type: 'success',
+        title: 'Preferences Saved',
+        message: 'Notification preferences updated successfully.'
+      });
+      toast.success('Notification preferences saved successfully');
     } catch (error) {
       console.error('Error saving notification preferences:', error);
+      addNotification({
+        type: 'error',
+        title: 'Save Failed',
+        message: 'We could not save notification settings. Please try again.'
+      });
       toast.error('Failed to save notification preferences');
     } finally {
       setSaving(false);
@@ -408,16 +281,31 @@ const NotificationsSettings: React.FC = () => {
         if (subscription) {
           setPushSubscribed(true);
           toast.success('Push notifications enabled successfully');
+          addNotification({
+            type: 'success',
+            title: 'Push Enabled',
+            message: 'Browser push notifications are now active.'
+          });
         }
       } else {
         // Unsubscribe from push notifications
         await pushNotificationService.unsubscribeFromPush();
         setPushSubscribed(false);
         toast.success('Push notifications disabled successfully');
+        addNotification({
+          type: 'info',
+          title: 'Push Disabled',
+          message: 'Browser push notifications have been turned off.'
+        });
       }
     } catch (error) {
       console.error('Error toggling push notifications:', error);
       toast.error('Failed to toggle push notifications');
+      addNotification({
+        type: 'error',
+        title: 'Push Toggle Failed',
+        message: 'Something went wrong when updating push notifications.'
+      });
     }
   };
 
@@ -425,9 +313,19 @@ const NotificationsSettings: React.FC = () => {
     try {
       await pushNotificationService.sendTestNotification();
       toast.success('Test notification sent successfully');
+      addNotification({
+        type: 'info',
+        title: 'Test Notification Sent',
+        message: 'Check your browser notifications tray to confirm delivery.'
+      });
     } catch (error) {
       console.error('Error sending test notification:', error);
       toast.error('Failed to send test notification');
+      addNotification({
+        type: 'error',
+        title: 'Test Notification Failed',
+        message: 'We could not send the test push notification.'
+      });
     }
   };
 

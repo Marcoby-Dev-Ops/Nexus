@@ -76,6 +76,7 @@ const socketService = require('./src/services/SocketService');
 
 // Import Socket.IO test routes
 const socketTestRoutes = require('./src/routes/socket-test');
+const pushRoutes = require('./src/routes/push');
 
 const app = express();
 const server = createServer(app);
@@ -302,6 +303,7 @@ app.use('/api/me', meRoutes);
 app.use('/api/var-leads', varLeadsRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/thoughts', thoughtsRoutes);
+app.use('/api/push', pushRoutes);
 
 // Apply suggestion endpoint (audit + apply)
 app.use('/api/apply-suggestion', generalLimiter, applySuggestionRoutes);
