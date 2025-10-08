@@ -5,8 +5,7 @@
  */
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne, updateOne } from '@/lib/api-client';
-import { logger } from '@/shared/utils/logger';
+import { selectData, selectOne, updateOne } from '@/lib/database';
 
 // ============================================================================
 // INTERFACES

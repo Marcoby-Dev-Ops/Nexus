@@ -4,7 +4,7 @@
  */
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne } from '@/lib/api-client';
+import { selectData, selectOne } from '@/lib/database';
 export interface ConnectedSource {
   id: string;
   name: string;

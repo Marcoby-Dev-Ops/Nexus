@@ -1,6 +1,6 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne, insertOne, updateOne } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne } from '@/lib/database';
 
 export interface HubSpotContact {
   id: string;

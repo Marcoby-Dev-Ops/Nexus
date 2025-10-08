@@ -1,5 +1,4 @@
-import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import type { OnboardingInsight } from './OnboardingInsightsService';
+import { BaseService } from '@/core/services/BaseService';
 
 export interface FireInitiative {
   id: string;
@@ -258,7 +257,7 @@ export class FireCycleManagementService extends BaseService {
         return {
           initiative,
           priority,
-          reasoning: this.generatePriorityReasoning(initiative, priority, context),
+          reasoning: this.generatePriorityReasoning(initiative, priority),
           expectedROI,
           implementationPath,
           riskFactors,
@@ -385,7 +384,7 @@ export class FireCycleManagementService extends BaseService {
   /**
    * Calculate expected ROI
    */
-  private calculateExpectedROI(initiative: FireInitiative, context: FireCycleContext): number {
+  private calculateExpectedROI(initiative: FireInitiative, _context: FireCycleContext): number {
     // This is a simplified calculation - in production, this would be more sophisticated
     const impactMultiplier = { Low: 1.1, Medium: 1.25, High: 1.5, Critical: 2.0 };
     const confidenceMultiplier = initiative.confidence / 100;
@@ -398,7 +397,7 @@ export class FireCycleManagementService extends BaseService {
   /**
    * Generate implementation path
    */
-  private generateImplementationPath(initiative: FireInitiative, context: FireCycleContext): string[] {
+  private generateImplementationPath(initiative: FireInitiative, _context: FireCycleContext): string[] {
     const path = [];
     
     switch (initiative.implementationDifficulty) {
@@ -470,8 +469,7 @@ export class FireCycleManagementService extends BaseService {
    */
   private generatePriorityReasoning(
     initiative: FireInitiative, 
-    priority: number, 
-    context: FireCycleContext
+    priority: number
   ): string {
     const reasons: string[] = [];
     
@@ -499,14 +497,14 @@ export class FireCycleManagementService extends BaseService {
    */
   private async getExistingInitiatives(userId: string): Promise<FireInitiative[]> {
     try {
-      const { data: thoughts } = await this.supabase
-        .from('thoughts')
-        .select('*')
-        .eq('category', 'fire_initiative')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      const { data: thoughts, error } = await selectData(
+        'thoughts',
+        '*',
+        { category: 'fire_initiative', user_id: userId },
+        'created_at DESC'
+      );
 
-      if (!thoughts) return [];
+      if (error || !thoughts) return [];
 
       return thoughts.map((thought: any) => this.transformThoughtToInitiative(thought));
     } catch (error) {

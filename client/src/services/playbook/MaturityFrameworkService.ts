@@ -1,4 +1,4 @@
-import { callRPC, callEdgeFunction, selectData, selectOne, insertOne, updateOne } from '@/lib/api-client';
+import { callRPC, callEdgeFunction, selectData, selectOne, insertOne, updateOne } from '@/lib/database';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';

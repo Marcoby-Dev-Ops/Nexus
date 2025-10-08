@@ -12,8 +12,8 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
-import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/api-client';
-import type { ApiResponse } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/database';
+import type { ApiResponse } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================

@@ -1,7 +1,7 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
-import { selectData as select, selectWithOptions, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
+import { selectData as select, selectWithOptions, selectOne, insertOne, updateOne, deleteOne } from '@/lib/database';
 import { z } from 'zod';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 

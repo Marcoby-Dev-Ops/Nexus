@@ -1,7 +1,7 @@
 import { msalInstance } from '@/shared/auth/msal';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
-import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne } from '@/lib/database';
 
 export interface Microsoft365Token {
   access_token: string;

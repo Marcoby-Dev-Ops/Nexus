@@ -1,3 +1,5 @@
+import { logger } from '@/shared/utils/logger';
+
 export interface FireInitiative {
   id: string;
   title: string;
@@ -22,7 +24,7 @@ export class FireInitiativeService {
     try {
       // Validate required parameters
       if (!userId || !insight?.title) {
-        console.error('Missing required parameters for FIRE initiative');
+        logger.error('Missing required parameters for FIRE initiative');
         return false;
       }
 
@@ -70,7 +72,7 @@ export class FireInitiativeService {
       };
 
       // Debug: Log the payload (remove in production)
-      console.log('Sending FIRE initiative payload:', JSON.stringify(payload, null, 2));
+      logger.info('Sending FIRE initiative payload:', JSON.stringify(payload, null, 2));
 
       // Save to thoughts table via API
       const response = await fetch('/api/thoughts', {
@@ -83,14 +85,14 @@ export class FireInitiativeService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('API Error Response:', errorText);
+        logger.error('API Error Response:', errorText);
         throw new Error(`Failed to save FIRE initiative: ${response.statusText} - ${errorText}`);
       }
 
       const result = await response.json();
       return result.thought ? true : false;
     } catch (error) {
-      console.error('Error saving FIRE initiative:', error);
+      logger.error('Error saving FIRE initiative:', error);
       return false;
     }
   }
@@ -132,7 +134,7 @@ This FIRE initiative was identified during onboarding and marked as valuable for
    * Get alternative insights when user disagrees with current ones
    */
   static getAlternativeInsights(userContext: any): any[] {
-    const { user, selectedIntegrations, selectedTools } = userContext;
+    const { selectedIntegrations } = userContext;
     
     // Generate alternative insights based on user context
     const alternatives = [

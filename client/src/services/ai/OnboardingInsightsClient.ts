@@ -1,5 +1,5 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { callEdgeFunction } from '@/lib/api-client';
+import { callEdgeFunction } from '@/lib/database';
 import type { OnboardingInsight, OnboardingContext } from './OnboardingInsightsService';
 
 /**

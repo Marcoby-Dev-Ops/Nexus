@@ -1,4 +1,4 @@
-import { callRPC } from '@/lib/api-client';
+import { callRPC } from '@/lib/database';
 import type { WorkflowGenerationRequest } from './n8nWorkflowBuilder';
 import { N8nWorkflowBuilder } from './n8nWorkflowBuilder';
 import { n8nService } from '@/services/automation/n8nService';

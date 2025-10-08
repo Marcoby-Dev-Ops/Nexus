@@ -3,7 +3,7 @@
  * Handles security operations and compliance
  */
 
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { insertOne } from '@/lib/database';
 import type { SecurityEvent, SecurityManager } from './index';
 
 export class SecurityManagerImpl implements SecurityManager {
@@ -13,12 +13,10 @@ export class SecurityManagerImpl implements SecurityManager {
    */
   async logEvent(event: Omit<SecurityEvent, 'id' | 'timestamp'>): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('security_events')
-        .insert({
-          ...event,
-          timestamp: new Date().toISOString()
-        });
+      const { error } = await insertOne('security_events', {
+        ...event,
+        timestamp: new Date().toISOString()
+      });
 
       if (error) {
          

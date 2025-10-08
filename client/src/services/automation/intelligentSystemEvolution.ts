@@ -4,7 +4,7 @@
  * Generates new components, optimizes workflows, and adapts to business needs
  */
 
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import { useAuth } from '@/hooks';
 import { n8nService } from '@/services/automation/n8nService';

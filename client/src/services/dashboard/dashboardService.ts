@@ -4,7 +4,7 @@
  */
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne, callRPC } from '@/lib/api-client';
+import { selectData, selectOne, callRPC } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 // Enhanced Dashboard Types

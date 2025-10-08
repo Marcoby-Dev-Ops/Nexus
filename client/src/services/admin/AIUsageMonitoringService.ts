@@ -1,7 +1,5 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
-import { logger } from '@/shared/utils/logger';
 
 // ============================================================================
 // SCHEMAS

@@ -7,7 +7,7 @@
 
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne, insertOne, updateOne } from '@/lib/api-client';
+import { selectData, insertOne, updateOne } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 // ============================================================================

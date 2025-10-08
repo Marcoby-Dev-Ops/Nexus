@@ -4,7 +4,7 @@
  */
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData } from '@/lib/api-client';
+import { selectData } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 export interface BusinessProfile {

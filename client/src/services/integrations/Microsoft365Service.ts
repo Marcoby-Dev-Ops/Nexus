@@ -1,6 +1,6 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
-import { selectData, upsertOne, deleteOne } from '@/lib/api-client';
+import { selectData, upsertOne, deleteOne } from '@/lib/database';
 import { msalInstance } from '@/shared/auth/msal';
 
 export interface Microsoft365Config {

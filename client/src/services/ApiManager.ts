@@ -1,3 +1,5 @@
+import { logger } from '@/shared/utils/logger';
+
 /**
  * Simple API Manager for making HTTP requests
  */
@@ -47,7 +49,7 @@ export class ApiManager {
 
       return JSON.parse(text);
     } catch (error) {
-      console.error('API request failed:', error);
+      logger.error('API request failed', { endpoint: url, error });
       throw error;
     }
   }

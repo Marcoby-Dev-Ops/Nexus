@@ -5,15 +5,14 @@
  * dependency injection and lifecycle management.
  */
 
-import type { ServiceResponse } from '@/core/services/BaseService';
 import type { ServiceMetadata } from './shared/types';
 
 // Core Services
-import { userService, UserService } from './core/UserService';
-import { analyticsService, AnalyticsService } from './core/AnalyticsService';
+import { userService } from './core/UserService';
+import { analyticsService } from './core/AnalyticsService';
 // CompanyService removed - using API calls instead
-import { financialService, FinancialService } from './core/FinancialService';
-import { notificationService, NotificationService } from './core/NotificationService';
+import { financialService } from './core/FinancialService';
+import { notificationService } from './core/NotificationService';
 
 // Business Services
 import { ContactService } from './business/ContactService';
@@ -27,16 +26,16 @@ import { ConsolidatedAIService } from './ai/ConsolidatedAIService';
 import { SpeechService } from './ai/SpeechService';
 import { MentalModelsService } from './ai/MentalModelsService';
 import { NextBestActionService } from './ai/NextBestActionService';
-import { expertKnowledgeService } from './ai/ExpertKnowledgeService';
 import { enhancedChatService } from '@/lib/ai/enhancedChatService';
 import { chatContextApi } from '@/lib/api/chatContextApi';
+import { expertKnowledgeService } from './ai/ExpertKnowledgeService';
 
-    // Playbook Services
-    import { unifiedPlaybookService } from './playbook/UnifiedPlaybookService';
-    import { FireCycleService } from './playbook/FireCycleService';
-    import { FireInitiativeAcceptanceService } from './playbook/FireInitiativeAcceptanceService';
-    import { journeyIntakeService } from './playbook/JourneyIntakeService';
-    import JourneyTicketService from './playbook/JourneyTicketService';
+// Playbook Services
+import { unifiedPlaybookService } from './playbook/UnifiedPlaybookService';
+import { FireCycleService } from './playbook/FireCycleService';
+import { FireInitiativeAcceptanceService } from './playbook/FireInitiativeAcceptanceService';
+import { journeyIntakeService } from './playbook/JourneyIntakeService';
+import JourneyTicketService from './playbook/JourneyTicketService';
 
 // Integration Services
 import { ConsolidatedIntegrationService } from './integrations/consolidatedIntegrationService';

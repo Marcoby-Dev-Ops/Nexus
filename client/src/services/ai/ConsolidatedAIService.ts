@@ -28,7 +28,7 @@
 import { z } from 'zod';
 import { BaseService } from '../shared/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, callRPC } from '@/lib/database';
 
 // ============================================================================
 // SCHEMAS

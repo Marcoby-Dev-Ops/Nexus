@@ -1,7 +1,7 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/database';
 
 export interface UnifiedClientProfile {
   id: string;

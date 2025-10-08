@@ -1,5 +1,5 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction, callPublicEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction, callPublicEdgeFunction } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 

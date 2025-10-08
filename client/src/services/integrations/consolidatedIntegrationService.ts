@@ -21,7 +21,7 @@ import {
   updateOne, 
   upsertOne, 
   deleteOne 
-} from '@/lib/api-client';
+} from '@/lib/database';
 import { database } from '@/lib/database';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';

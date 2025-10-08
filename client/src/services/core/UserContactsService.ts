@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ApiClient } from '@/lib/api-client';
+import { ApiClient } from '@/lib/database';
 import { getEnv } from '@/core/environment';
 import { logger } from '@/shared/utils/logger';
 

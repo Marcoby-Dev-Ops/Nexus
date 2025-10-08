@@ -2,7 +2,7 @@ import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 
 // Import the getAuthHeaders function from api-client
-import { getAuthHeaders } from '@/lib/api-client';
+import { getAuthHeaders } from '@/lib/database';
 
 export interface UserPreferences {
   id?: string;

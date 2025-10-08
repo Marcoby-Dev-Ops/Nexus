@@ -16,7 +16,7 @@ import {
   updateOne, 
   upsertOne, 
   deleteOne 
-} from '@/lib/api-client';
+} from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import { 
   type QuantumBusinessProfile,

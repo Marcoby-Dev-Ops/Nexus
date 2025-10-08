@@ -5,7 +5,7 @@
  */
 
 import { BaseService } from '../shared/BaseService';
-import { callEdgeFunction } from '@/lib/api-client';
+import { callEdgeFunction } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 import type { UserJourneyProgress, JourneyResponse } from '../playbook/JourneyTypes';
 

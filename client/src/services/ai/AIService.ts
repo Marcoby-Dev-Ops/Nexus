@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface, ServiceConfig } from '@/core/services/interfaces';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 // import { NexusAIGatewayService } from '@/ai/services/NexusAIGatewayService'; // Removed - server-side service
 
@@ -1004,7 +1004,7 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     };
   }
 
-  private async processAnalysis(operation: AIOperation) {
+  private async processAnalysis(_operation: AIOperation) {
     // Mock analysis processing
     await new Promise(resolve => setTimeout(resolve, 2000));
     
@@ -1025,7 +1025,7 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     };
   }
 
-  private async processInsights(operation: AIOperation) {
+  private async processInsights(_operation: AIOperation) {
     // Mock insights processing
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -1047,7 +1047,7 @@ export class AIService extends BaseService implements CrudServiceInterface<AIOpe
     };
   }
 
-  private async processTraining(operation: AIOperation) {
+  private async processTraining(_operation: AIOperation) {
     // Mock training processing
     await new Promise(resolve => setTimeout(resolve, 5000));
     

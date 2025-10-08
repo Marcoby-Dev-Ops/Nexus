@@ -10,8 +10,6 @@
 
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import { postgres } from '@/lib/postgres';
-import { logger } from '@/shared/utils/logger';
-
 // ============================================================================
 // INTERFACES
 // ============================================================================
@@ -521,7 +519,7 @@ export class AIFormAssistanceService extends BaseService {
             data: {
               completed: Object.keys(validatedSuggestions).length > 0,
               suggestedData: validatedSuggestions,
-              confidence: this.calculateConfidence(validatedSuggestions, patterns),
+              confidence: this.calculateConfidence(validatedSuggestions),
               reasoning: this.generateReasoning(validatedSuggestions, patterns)
             },
             error: null
@@ -720,7 +718,7 @@ export class AIFormAssistanceService extends BaseService {
    */
   private detectFormat(value: string): string {
     if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'email';
-    if (/^\+?[\d\s\-\(\)]+$/.test(value)) return 'phone';
+    if (/^\+?[-\d\s()]+$/.test(value)) return 'phone';
     if (/^\d{1,5}\s+[A-Za-z\s]+/.test(value)) return 'address';
     
     return 'text';
@@ -731,7 +729,7 @@ export class AIFormAssistanceService extends BaseService {
   /**
    * Validate field value
    */
-  private validateFieldValue(field: string, value: any, context: CompletionContext): boolean {
+  private validateFieldValue(field: string, value: any, _context: CompletionContext): boolean {
     if (!value) return false;
     
     const fieldType = this.detectFieldType(field);
@@ -740,7 +738,7 @@ export class AIFormAssistanceService extends BaseService {
       case 'email':
         return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
       case 'phone':
-        return /^\+?[\d\s\-\(\)]+$/.test(value);
+        return /^\+?[-\d\s()]+$/.test(value);
       default:
         return typeof value === 'string' && value.trim().length > 0;
     }
@@ -749,7 +747,7 @@ export class AIFormAssistanceService extends BaseService {
   /**
    * Generate field enhancement
    */
-  private async generateFieldEnhancement(field: string, value: string, context: CompletionContext): Promise<any> {
+  private async generateFieldEnhancement(field: string, value: string, _context: CompletionContext): Promise<any> {
     const fieldType = this.detectFieldType(field);
     
     // Enhance value based on field type
@@ -815,7 +813,7 @@ export class AIFormAssistanceService extends BaseService {
   /**
    * Calculate confidence score
    */
-  private calculateConfidence(suggestions: Record<string, any>, patterns: Record<string, any>): number {
+  private calculateConfidence(suggestions: Record<string, any>): number {
     if (Object.keys(suggestions).length === 0) return 0;
     
     const scores = Object.values(suggestions).map((s: any) => s.confidence || 0);

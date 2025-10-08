@@ -5,7 +5,7 @@
 
 import { logger } from '@/shared/utils/logger';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectOne, selectData, callRPC } from '@/lib/api-client';
+import { selectOne, selectData, callRPC } from '@/lib/database';
 
 // ============================================================================
 // INTERFACES

@@ -1,7 +1,7 @@
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/database';
 import { z } from 'zod';
 import { getUserTimezone, toUserTimezone } from '@/shared/utils/timezone';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';

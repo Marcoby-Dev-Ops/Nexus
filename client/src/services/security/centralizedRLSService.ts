@@ -4,7 +4,7 @@
  * Provides policy registration, application, and recommendations
  */
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData, insertOne, updateOne, deleteOne, callRPC } from '@/lib/api-client';
+import { selectData, insertOne, updateOne, deleteOne, callRPC } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 export interface RLSPolicy {

@@ -5,7 +5,7 @@
 
 import { BaseService } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
-import { callEdgeFunction } from '@/lib/api-client';
+import { callEdgeFunction } from '@/lib/database';
 
 export interface CompanyFoundationData {
   name: string;

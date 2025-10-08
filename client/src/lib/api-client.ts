@@ -1,6 +1,12 @@
 /**
  * Simple API client for browser operations
  * Replaces UnifiedDatabaseService browser functionality
+ *
+ * DEPRECATION NOTICE:
+ * Do not import from '@/lib/api-client' directly in feature code.
+ * Migrate imports to '@/lib/database' which re-exports the public helper surface
+ * (selectData, selectOne, insertOne, updateOne, upsertOne, deleteOne, selectWithOptions, callRPC, callEdgeFunction, getAuthHeaders).
+ * After migration completes this file will be renamed to an internal module.
  */
 
 import { getEnv } from '@/core/environment';
@@ -50,7 +56,11 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
             const refreshSuccess = await attemptTokenRefresh();
             if (refreshSuccess) {
               const freshSession = await authentikAuthService.getSession();
-              token = freshSession?.session?.accessToken || freshSession?.accessToken || null;
+              // freshSession likely a ServiceResponse<AuthSession>
+              if (freshSession && freshSession.success && freshSession.data) {
+                const candidate = (freshSession.data as any).accessToken || (freshSession.data as any).session?.accessToken;
+                token = candidate || null;
+              }
               if (authLogsEnabled && token) {
                 loggingUtils.auth('Token refreshed successfully');
               }
@@ -99,7 +109,10 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
                 const refreshSuccess = await attemptTokenRefresh();
                 if (refreshSuccess) {
                   const freshSession = await authentikAuthService.getSession();
-                  token = freshSession?.session?.accessToken || freshSession?.accessToken || null;
+                  if (freshSession && freshSession.success && freshSession.data) {
+                    const candidate = (freshSession.data as any).accessToken || (freshSession.data as any).session?.accessToken;
+                    token = candidate || null;
+                  }
                   if (authLogsEnabled && token) {
                     loggingUtils.auth('Stored token refreshed successfully');
                   }
@@ -124,15 +137,13 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
           // Hydrate the store asynchronously without blocking callers
           try {
             useAuthStore.getState().setAuthState(storedSession);
-          } catch (_error) {
-            /* no-op */
-          }
+          } catch { /* ignore hydrate errors */ }
         }
       } catch (error) {
-        if (authLogsEnabled) console.error('Error parsing session data:', error);
+        if (authLogsEnabled) loggingUtils.auth('Error parsing session data', { error });
       }
     } else if (authLogsEnabled) {
-      console.log('No authentik_session found in localStorage');
+      loggingUtils.auth('No authentik_session found in localStorage');
     }
   }
 
@@ -153,13 +164,6 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
     if (authLogsEnabled) loggingUtils.auth('Authorization header set');
   } else {
     if (authLogsEnabled) loggingUtils.auth('No token found, requests will be unauthenticated');
-    if (
-      typeof window !== 'undefined' &&
-      !window.location.pathname.includes('/auth/') &&
-      !window.location.pathname.includes('/login')
-    ) {
-      if (authLogsEnabled) console.warn('User not authenticated. Please sign in to access the application.');
-    }
   }
 
   return headers;
@@ -199,7 +203,7 @@ async function attemptTokenRefresh(): Promise<boolean> {
 
 attemptTokenRefresh.isRefreshing = false;
 
-async function makeAuthenticatedRequest<T>(
+async function makeAuthenticatedRequest(
   url: string,
   options: RequestInit,
   retryCount: number = 0
@@ -473,46 +477,41 @@ export async function selectOne<T = any>(
   const result = await client.get<T[]>(endpoint);
   
   // Debug logging
-  console.log('selectOne debug:', { table, filters, endpoint, result });
-  console.log('selectOne result.data type:', typeof result.data, 'isArray:', Array.isArray(result.data), 'value:', result.data);
+  // debug logs removed (can be re-enabled via loggingUtils if needed)
   
   if (result.success && result.data) {
     // Handle nested response structure: { success: true, data: { success: true, data: [...], count: 1 } }
     if (result.data && typeof result.data === 'object' && 'data' in result.data && Array.isArray(result.data.data)) {
       if (result.data.data.length > 0) {
-        console.log('selectOne returning nested array item:', result.data.data[0]);
         return {
           success: true,
           data: result.data.data[0],
-          error: null
+          error: undefined
         };
       }
     }
     // Handle direct array response
     else if (Array.isArray(result.data) && result.data.length > 0) {
-      console.log('selectOne returning array item:', result.data[0]);
       return {
         success: true,
         data: result.data[0],
-        error: null
+        error: undefined
       };
     }
     // Handle case where API returns single object directly
     else if (!Array.isArray(result.data) && result.data && typeof result.data === 'object') {
-      console.log('selectOne returning single object:', result.data);
       return {
         success: true,
         data: result.data,
-        error: null
+        error: undefined
       };
     }
   }
   
   // If we get here, either result.success is false or result.data is null/undefined
-  console.log('selectOne no data found:', { success: result.success, hasData: !!result.data, error: result.error });
   return {
     success: false,
-    data: null,
+    data: undefined,
     error: result.error || 'No record found'
   };
 }
@@ -578,8 +577,8 @@ export async function callRPC<T = any>(
 
   // Handle nested RPC response structure
   let actualData = response.data;
-  if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-    actualData = response.data.data;
+  if (response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
+    actualData = (response.data as any).data;
   }
 
   return { success: true, data: actualData as T };

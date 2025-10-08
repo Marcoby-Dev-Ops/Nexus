@@ -1,4 +1,4 @@
-import { selectData as select, selectOne, insertOne, updateOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, callEdgeFunction } from '@/lib/database';
 import type { N8nWorkflowDefinition } from './n8nWorkflowBuilder';
 import { N8nWorkflowBuilder } from './n8nWorkflowBuilder';
 import { n8nService } from '@/services/automation/n8nService';

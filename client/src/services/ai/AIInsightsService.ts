@@ -11,8 +11,7 @@
 import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/api-client';
-import { logger } from '@/shared/utils/logger';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from '@/lib/database';
 
 // ============================================================================
 // SCHEMAS
@@ -507,7 +506,7 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
   /**
    * Detect business patterns
    */
-  async detectBusinessPatterns(userId: string, data: any[]): Promise<ServiceResponse<BusinessPattern[]>> {
+  async detectBusinessPatterns(userId: string, _data: any[]): Promise<ServiceResponse<BusinessPattern[]>> {
     return this.executeDbOperation(async () => {
       this.logMethodCall('detectBusinessPatterns', { userId });
 
@@ -798,17 +797,17 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
   }
 
   // Helper methods for generating recommendations and insights
-  private determineCategory(context: Record<string, any>): AIRecommendation['category'] {
+  private determineCategory(_context: Record<string, any>): AIRecommendation['category'] {
     const categories: AIRecommendation['category'][] = ['business', 'operational', 'strategic', 'tactical'];
     return categories[Math.floor(Math.random() * categories.length)];
   }
 
-  private determinePriority(context: Record<string, any>): AIRecommendation['priority'] {
+  private determinePriority(_context: Record<string, any>): AIRecommendation['priority'] {
     const priorities: AIRecommendation['priority'][] = ['low', 'medium', 'high', 'critical'];
     return priorities[Math.floor(Math.random() * priorities.length)];
   }
 
-  private generateTitle(context: Record<string, any>): string {
+  private generateTitle(_context: Record<string, any>): string {
     const titles = [
       'Optimize Customer Onboarding',
       'Improve Response Times',
@@ -819,29 +818,29 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
     return titles[Math.floor(Math.random() * titles.length)];
   }
 
-  private generateDescription(context: Record<string, any>): string {
+  private generateDescription(_context: Record<string, any>): string {
     return 'This is a generated recommendation description based on the provided context.';
   }
 
-  private generateImplementation(context: Record<string, any>): string {
+  private generateImplementation(_context: Record<string, any>): string {
     return 'Implement the recommended changes through a phased approach.';
   }
 
-  private generateExpectedOutcome(context: Record<string, any>): string {
+  private generateExpectedOutcome(_context: Record<string, any>): string {
     return 'Expected improvement in key metrics within the specified timeframe.';
   }
 
-  private determineTimeframe(context: Record<string, any>): string {
+  private determineTimeframe(_context: Record<string, any>): string {
     const timeframes = ['1 month', '2 months', '3 months', '6 months'];
     return timeframes[Math.floor(Math.random() * timeframes.length)];
   }
 
-  private determineDepartments(context: Record<string, any>): string[] {
+  private determineDepartments(_context: Record<string, any>): string[] {
     const departments = ['Sales', 'Marketing', 'Operations', 'Support', 'Engineering'];
     return departments.slice(0, Math.floor(Math.random() * 3) + 1);
   }
 
-  private generateTags(context: Record<string, any>): string[] {
+  private generateTags(_context: Record<string, any>): string[] {
     const tags = ['optimization', 'automation', 'efficiency', 'growth', 'customer'];
     return tags.slice(0, Math.floor(Math.random() * 3) + 1);
   }
@@ -902,7 +901,6 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
   private async analyzeRevenuePatterns(revenueData: any): Promise<PredictiveInsight | null> {
     const currentRevenue = revenueData.current || 0;
     const historicalRevenue = revenueData.historical || [];
-    const growthRate = revenueData.growthRate || 0;
 
     if (historicalRevenue.length < 3) return null;
 
@@ -1142,7 +1140,7 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
   /**
    * Generate organizational context
    */
-  private async generateOrganizationalContext(companyId: string): Promise<OrganizationalContext> {
+  private async generateOrganizationalContext(_companyId: string): Promise<OrganizationalContext> {
     // Get recent data for analysis (mock data for now)
     const recentData = this.getMockRecentData();
 
@@ -1588,8 +1586,12 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
       });
       body += `\n`;
     }
+    const closing =
+      tone === 'casual'
+        ? "Let's stay in touch."
+        : 'I appreciate your time and will follow up soon.';
     
-    body += `I'll follow up with you soon.\n\nBest regards`;
+    body += `${closing}\n\nBest regards`;
     
     return body;
   }
@@ -1616,12 +1618,12 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
   // ============================================================================
 
   // Helper methods for generating predictive insights
-  private determineInsightType(context: Record<string, any>): PredictiveInsight['type'] {
+  private determineInsightType(_context: Record<string, any>): PredictiveInsight['type'] {
     const types: PredictiveInsight['type'][] = ['revenue', 'efficiency', 'risk', 'opportunity', 'customer'];
     return types[Math.floor(Math.random() * types.length)];
   }
 
-  private generateInsightTitle(context: Record<string, any>): string {
+  private generateInsightTitle(_context: Record<string, any>): string {
     const titles = [
       'Revenue Growth Prediction',
       'Customer Churn Risk',
@@ -1631,49 +1633,49 @@ export class AIInsightsService extends BaseService implements CrudServiceInterfa
     return titles[Math.floor(Math.random() * titles.length)];
   }
 
-  private generateInsightDescription(context: Record<string, any>): string {
+  private generateInsightDescription(_context: Record<string, any>): string {
     return 'This is a generated predictive insight description based on the provided context.';
   }
 
-  private generatePrediction(context: Record<string, any>): string {
+  private generatePrediction(_context: Record<string, any>): string {
     return 'Predicted outcome based on current trends and patterns.';
   }
 
-  private determineInsightTimeframe(context: Record<string, any>): string {
+  private determineInsightTimeframe(_context: Record<string, any>): string {
     const timeframes = ['Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024'];
     return timeframes[Math.floor(Math.random() * timeframes.length)];
   }
 
-  private generateImpactValue(context: Record<string, any>): string {
+  private generateImpactValue(_context: Record<string, any>): string {
     const values = ['+15%', '+25%', '+35%', '-10%', '-20%'];
     return values[Math.floor(Math.random() * values.length)];
   }
 
-  private determineImpactMetric(context: Record<string, any>): string {
+  private determineImpactMetric(_context: Record<string, any>): string {
     const metrics = ['Revenue', 'Efficiency', 'Customer Satisfaction', 'Cost'];
     return metrics[Math.floor(Math.random() * metrics.length)];
   }
 
-  private generateActionLabel(context: Record<string, any>): string {
+  private generateActionLabel(_context: Record<string, any>): string {
     const labels = ['Take Action', 'Monitor Closely', 'Investigate Further', 'Scale Operations'];
     return labels[Math.floor(Math.random() * labels.length)];
   }
 
-  private generateActionDescription(context: Record<string, any>): string {
+  private generateActionDescription(_context: Record<string, any>): string {
     return 'Recommended action based on the predictive insight.';
   }
 
 
 
-  private generateHistoricalData(context: Record<string, any>): any[] {
+  private generateHistoricalData(_context: Record<string, any>): any[] {
     return [];
   }
 
-  private generateCurrentData(context: Record<string, any>): any {
+  private generateCurrentData(_context: Record<string, any>): any {
     return {};
   }
 
-  private generateProjectedData(context: Record<string, any>): any {
+  private generateProjectedData(_context: Record<string, any>): any {
     return {};
   }
 

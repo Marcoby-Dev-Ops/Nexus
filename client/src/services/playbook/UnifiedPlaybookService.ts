@@ -20,7 +20,7 @@ import {
   updateOne, 
   upsertOne, 
   deleteOne 
-} from '@/lib/api-client';
+} from '@/lib/database';
 
 // ============================================================================
 // UNIFIED SCHEMAS

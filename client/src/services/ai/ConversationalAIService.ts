@@ -13,7 +13,7 @@ import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import { quantumBusinessService } from '@/services/business/QuantumBusinessService';
-import { selectData } from '@/lib/api-client';
+import { selectData } from '@/lib/database';
 
 export interface ConversationContext {
   userId: string;
@@ -111,12 +111,6 @@ interface BusinessContext {
       focusAreas: string[];
     };
   };
-}
-
-interface Ticket {
-  title: string;
-  description: string;
-  priority?: 'high' | 'medium' | 'low';
 }
 
 interface Thought {
@@ -813,7 +807,7 @@ export class ConversationalAIService extends BaseService {
       }
       
       return { isValid: true, value };
-    } catch (error) {
+    } catch {
       return { isValid: false, error: 'I couldn\'t understand that response. Please try again.' };
     }
   }
@@ -1182,4 +1176,3 @@ export class ConversationalAIService extends BaseService {
 }
 
 export const conversationalAIService = ConversationalAIService.getInstance();
-

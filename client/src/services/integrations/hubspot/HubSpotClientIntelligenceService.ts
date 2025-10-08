@@ -1,5 +1,5 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 interface HubSpotContact {

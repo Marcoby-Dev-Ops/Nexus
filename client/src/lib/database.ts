@@ -3,7 +3,7 @@
  * Replaces Supabase client with direct PostgreSQL connection
  */
 
-import { callRPC, selectData, selectOne, insertOne, updateOne, deleteOne, upsertOne, selectWithOptions } from './api-client';
+import { callRPC, selectData, selectOne, insertOne, updateOne, deleteOne, upsertOne, selectWithOptions, callEdgeFunction, getAuthHeaders } from './api-client';
 
 // Export the new API client functions
 export {
@@ -14,7 +14,9 @@ export {
   updateOne,
   deleteOne,
   upsertOne,
-  selectWithOptions
+  selectWithOptions,
+  callEdgeFunction,
+  getAuthHeaders
 };
 
 // Vector search functions for pgvector
