@@ -35,7 +35,13 @@ try {
 } catch (err) {
   logger.warn('Facts routes not available, skipping /api/facts mounting', { error: err.message });
 }
-const telemetryRoutes = require('./src/routes/telemetry');
+
+let telemetryRoutes = null;
+try {
+  telemetryRoutes = require('./src/routes/telemetry');
+} catch (err) {
+  logger.warn('Telemetry routes not available, skipping /api/telemetry mounting', { error: err.message });
+}
 const edgeRoutes = require('./src/routes/edge');
 const chatRoutes = require('./src/routes/chat');
 const organizationRoutes = require('./src/routes/organizations');

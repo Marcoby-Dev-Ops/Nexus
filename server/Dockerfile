@@ -10,7 +10,9 @@ COPY package.json ./
 
 # Install pnpm and dependencies
 RUN npm install -g pnpm
-RUN pnpm install
+# Use shamefully-hoist to create a flat node_modules layout inside the container
+# so that modules like 'express' resolve correctly even in monorepo contexts.
+RUN pnpm install --prod --shamefully-hoist
 
 # Copy source code
 COPY . .
