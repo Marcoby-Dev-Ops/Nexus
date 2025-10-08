@@ -92,15 +92,24 @@ export const LandingPage: React.FC = () => {
           <div className="text-center">
             <Badge variant="secondary" className="mb-4">
               <Sparkles className="w-4 h-4 mr-2" />
+<<<<<<< Updated upstream
               The Future of Business Intelligence
+=======
+              Your Business Command Center
+>>>>>>> Stashed changes
             </Badge>
             <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
               Your Business's
               <span className="text-primary"> Operating System</span>
             </h1>
+<<<<<<< Updated upstream
             <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
               Stop juggling 15+ tools. Nexus connects everything into one intelligent system that 
               predicts problems, automates solutions, and grows your business while you sleep.
+=======
+            <p className="text-xl text-muted-foreground mb-6 max-w-3xl mx-auto">
+              Nexus brings every department into the same workspace, keeping your documentation and playbooks centralized with an AI partner that understands your business.
+>>>>>>> Stashed changes
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button size="lg" className="w-full sm:w-auto">
@@ -109,10 +118,16 @@ export const LandingPage: React.FC = () => {
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
+<<<<<<< Updated upstream
               <Button variant="outline" size="lg" className="w-full sm:w-auto">
                 <Link to="/demo/nexus-operating-system" className="flex items-center justify-center w-full">
                   <Play className="mr-2 h-4 w-4" />
                   See It In Action
+=======
+              <Button asChild variant="ghost" size="lg" className="w-full sm:w-auto">
+                <Link to="/demo/assistant" className="flex items-center justify-center w-full">
+                  See the Workspace
+>>>>>>> Stashed changes
                 </Link>
               </Button>
             </div>
@@ -163,7 +178,11 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-foreground mb-4">
+<<<<<<< Updated upstream
               Real Results, Real Businesses
+=======
+              Your team is an organization, work like one with Nexus
+>>>>>>> Stashed changes
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               See how different businesses use Nexus to solve their biggest challenges
@@ -177,10 +196,17 @@ export const LandingPage: React.FC = () => {
                   <Badge variant="outline" className="w-fit mb-3">{useCase.type}</Badge>
                   <CardTitle className="text-lg">{useCase.scenario}</CardTitle>
                 </CardHeader>
+<<<<<<< Updated upstream
                 <CardContent>
                   <p className="text-muted-foreground mb-4 text-sm">{useCase.solution}</p>
                   <div className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
+=======
+                <CardContent className="flex-1 flex flex-col justify-between gap-4">
+                  <p className="text-muted-foreground text-sm">{useCase.solution}</p>
+                  <div className="flex items-center pt-4">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+>>>>>>> Stashed changes
                     <span className="text-sm font-medium text-green-600">{useCase.result}</span>
                   </div>
                 </CardContent>
@@ -216,6 +242,7 @@ export const LandingPage: React.FC = () => {
                 </p>
                 <ul className="space-y-2 text-sm text-muted-foreground mb-4">
                   <li className="flex items-center">
+<<<<<<< Updated upstream
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Predict customer churn before it happens
                   </li>
@@ -226,6 +253,18 @@ export const LandingPage: React.FC = () => {
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Generate weekly performance reports automatically
+=======
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Dedicated workspaces for each function
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Shared metrics and health checks across the company
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    RBAC and audit history built in
+>>>>>>> Stashed changes
                   </li>
                 </ul>
                 <Button variant="ghost" size="sm">
@@ -250,6 +289,7 @@ export const LandingPage: React.FC = () => {
                 </p>
                 <ul className="space-y-2 text-sm text-muted-foreground mb-4">
                   <li className="flex items-center">
+<<<<<<< Updated upstream
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Live sales, marketing, and operations data
                   </li>
@@ -260,6 +300,18 @@ export const LandingPage: React.FC = () => {
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Custom alerts for critical metrics
+=======
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Chat that understands your org structure and priorities
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Instant summaries and follow-up questions
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Actionable insights generated from your knowledge base
+>>>>>>> Stashed changes
                   </li>
                 </ul>
                 <Button variant="ghost" size="sm">
@@ -284,6 +336,7 @@ export const LandingPage: React.FC = () => {
                 </p>
                 <ul className="space-y-2 text-sm text-muted-foreground mb-4">
                   <li className="flex items-center">
+<<<<<<< Updated upstream
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Auto-send follow-ups to leads
                   </li>
@@ -294,6 +347,18 @@ export const LandingPage: React.FC = () => {
                   <li className="flex items-center">
                     <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
                     Reorder inventory when stock is low
+=======
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Structured spaces for SOPs, meeting notes, and decision logs
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Search that understands business context
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                    Reference documentation live inside chat
+>>>>>>> Stashed changes
                   </li>
                 </ul>
                 <Button variant="ghost" size="sm">
@@ -333,7 +398,14 @@ export const LandingPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Shopify, WooCommerce, Stripe, PayPal
                 </p>
+<<<<<<< Updated upstream
                 <Badge variant="secondary" className="text-xs">Real-time sync</Badge>
+=======
+                <div className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                  <span className="text-sm font-medium text-green-600">Live inside the OS—no more buried docs</span>
+                </div>
+>>>>>>> Stashed changes
               </CardContent>
             </Card>
 
@@ -348,7 +420,14 @@ export const LandingPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Salesforce, HubSpot, Pipedrive, Zoho
                 </p>
+<<<<<<< Updated upstream
                 <Badge variant="secondary" className="text-xs">Lead tracking</Badge>
+=======
+                <div className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                  <span className="text-sm font-medium text-green-600">Keeps conversations grounded in fact</span>
+                </div>
+>>>>>>> Stashed changes
               </CardContent>
             </Card>
 
@@ -363,6 +442,7 @@ export const LandingPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground mb-4">
                   Google Analytics, Mixpanel, Amplitude
                 </p>
+<<<<<<< Updated upstream
                 <Badge variant="secondary" className="text-xs">Data insights</Badge>
               </CardContent>
             </Card>
@@ -371,6 +451,11 @@ export const LandingPage: React.FC = () => {
               <CardHeader>
                 <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center mx-auto mb-4">
                   <Workflow className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+=======
+                <div className="flex items-center">
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
+                  <span className="text-sm font-medium text-green-600">Nothing gets lost between teams</span>
+>>>>>>> Stashed changes
                 </div>
                 <CardTitle className="text-lg">Automation</CardTitle>
               </CardHeader>

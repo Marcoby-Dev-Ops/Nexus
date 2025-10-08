@@ -2,10 +2,9 @@
  * Central route map for title / breadcrumb generation
  * Extend as new routes are added.
  */
-import { OrganizationsPage } from '@/pages/organizations/OrganizationsPage';
-import { OrganizationDetailsPage } from '@/pages/organizations/[orgId]/OrganizationDetailsPage';
-import { OrganizationSettingsPage } from '@/pages/organizations/[orgId]/OrganizationSettingsPage';
-import { OrganizationMembersPage } from '@/pages/organizations/[orgId]/OrganizationMembersPage';
+// Organization pages were previously referenced here; imports removed because this file
+// only provides a route -> label mapping. If you need to reference these pages in
+// code, re-add imports where they are used.
 
 export const ROUTELABELS: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -135,7 +134,6 @@ export const ROUTELABELS: Record<string, string> = {
   '/business/fire-cycle/roadmap': 'Roadmap Phase',
   '/business/fire-cycle/execute': 'Execute Phase',
   '/business/fire-cycle/goals': 'Business Goals',
-  '/chat': 'Chat',
   '/journey-intake': 'Journey Intake', // Legacy route - redirects to /chat
   // Workspace routes
   '/tasks/workspace/actions': 'Action Center',
