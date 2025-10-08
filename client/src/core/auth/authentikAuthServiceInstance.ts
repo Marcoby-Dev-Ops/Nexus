@@ -8,6 +8,7 @@
 import { BaseService } from '@/core/services/BaseService';
 import { generateCodeVerifier, generateCodeChallenge } from '@/shared/utils/pkce';
 import { useAuthStore, persistSessionToStorage, loadSessionFromStorage, clearStoredSession } from './authStore';
+import { getRuntimeEnv } from '@/lib/runtimeEnv';
 
 // Auth interfaces
 export interface AuthUser {
@@ -49,8 +50,8 @@ class AuthentikAuthService extends BaseService {
   constructor() {
     super();
 
-    this.baseUrl = import.meta.env.VITE_AUTHENTIK_URL || 'https://identity.marcoby.com';
-    this.clientId = import.meta.env.VITE_AUTHENTIK_CLIENT_ID || '';
+  this.baseUrl = getRuntimeEnv('VITE_AUTHENTIK_URL') || import.meta.env.VITE_AUTHENTIK_URL || 'https://identity.marcoby.com';
+  this.clientId = getRuntimeEnv('VITE_AUTHENTIK_CLIENT_ID') || import.meta.env.VITE_AUTHENTIK_CLIENT_ID || '';
     this.redirectUri = `${window.location.origin}/auth/callback`;
 
     if (!this.clientId) {

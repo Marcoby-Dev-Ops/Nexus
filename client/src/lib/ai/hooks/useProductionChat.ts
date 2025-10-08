@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks';
 import { quotaService, type ChatQuotaLimits } from '../services/quotaService';
 import type { ChatMessage, ChatState, ChatActions, AttachmentData } from '@/core/types/chat';
 import { logger } from '@/shared/utils/logger';
-import { selectData, insertOne } from '@/lib/api-client';
+import { selectData, insertOne } from '@/lib/database';
 
 interface UseProductionChatOptions {
   conversationId: string;

@@ -1,4 +1,4 @@
-import { callEdgeFunction } from '@/lib/api-client';
+import { callEdgeFunction } from '@/lib/database';
 import { contextualRAG, type ConversationTurn, type AgentContext } from './contextualRAG';
 import { logger } from '@/shared/utils/logger';
 import { chatContextApi } from '@/lib/api/chatContextApi';

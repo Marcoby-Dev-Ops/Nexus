@@ -1,4 +1,4 @@
-import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/api-client';
+import { selectData, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/database';
 import { vectorSearch } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 

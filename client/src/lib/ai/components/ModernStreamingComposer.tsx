@@ -12,7 +12,7 @@ import type { SlashCommand } from '@/services/ai';
 import SlashCommandMenu from './SlashCommandMenu';
 import SourceDrawer from './SourceDrawer';
 import type { SourceMeta } from './SourceDrawer';
-import { callEdgeFunction } from '@/lib/api-client';
+import { callEdgeFunction } from '@/lib/database';
 import { contextualRAG } from '@/lib/ai/core/contextualRAG';
 import { useAuth } from '@/hooks/index';
 import { useSimpleDashboard } from '@/hooks/dashboard/useSimpleDashboard';

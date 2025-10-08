@@ -19,6 +19,9 @@ export {
   getAuthHeaders
 };
 
+// Re-export ApiClient for modules that import it from '@/lib/database'
+export { ApiClient } from './api-client';
+
 // Vector search functions for pgvector
 export const vectorSearch = {
   /**

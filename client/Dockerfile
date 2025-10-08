@@ -34,15 +34,28 @@ COPY --from=build /app/dist /usr/share/nginx/html
 # Copy the repo nginx config as template (keeps Dockerfile simpler and consistent with repo)
 COPY nginx.conf /etc/nginx/nginx.conf.template
 
-# Create startup script for environment variable substitution
+# Create startup script for environment variable substitution and runtime config
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo 'set -e' >> /docker-entrypoint.sh && \
+    # Prepare backend URL used by nginx and the app
     echo 'export BACKEND_URL=${VITE_API_URL:-https://napi.marcoby.com}' >> /docker-entrypoint.sh && \
     echo 'echo "BACKEND_URL: $BACKEND_URL"' >> /docker-entrypoint.sh && \
-    echo 'envsubst '"'"'$BACKEND_URL'"'"' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf' >> /docker-entrypoint.sh && \
+    # Generate nginx config from template
+    echo 'envsubst '\''$BACKEND_URL'\'' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf' >> /docker-entrypoint.sh && \
     echo 'echo "Nginx configuration generated successfully"' >> /docker-entrypoint.sh && \
     echo 'nginx -t' >> /docker-entrypoint.sh && \
     echo 'echo "Nginx configuration test passed"' >> /docker-entrypoint.sh && \
+    # Generate runtime env-config.js for the frontend to read at runtime
+    echo 'cat > /usr/share/nginx/html/env-config.js <<EOF' >> /docker-entrypoint.sh && \
+    echo 'window.__APP_CONFIG__ = {' >> /docker-entrypoint.sh && \
+    echo '  "VITE_API_URL": "'"'"'${VITE_API_URL:-}'"'"'",' >> /docker-entrypoint.sh && \
+    echo '  "VITE_AUTHENTIK_CLIENT_ID": "'"'"'${VITE_AUTHENTIK_CLIENT_ID:-}'"'"'",' >> /docker-entrypoint.sh && \
+    echo '  "VITE_AUTHENTIK_URL": "'"'"'${VITE_AUTHENTIK_URL:-}'"'"'",' >> /docker-entrypoint.sh && \
+    echo '  "VITE_ENABLE_STRICT_MODE": "'"'"'${VITE_ENABLE_STRICT_MODE:-false}'"'"'"' >> /docker-entrypoint.sh && \
+    echo '};' >> /docker-entrypoint.sh && \
+    echo 'EOF' >> /docker-entrypoint.sh && \
+    echo 'echo "env-config.js generated"' >> /docker-entrypoint.sh && \
+    # Start nginx in foreground
     echo 'exec nginx -g "daemon off;"' >> /docker-entrypoint.sh && \
     chmod +x /docker-entrypoint.sh
 

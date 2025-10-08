@@ -1,4 +1,4 @@
-import { getAuthHeaders } from '@/lib/api-client';
+import { getAuthHeaders } from '@/lib/database';
 import type { FileAttachment } from '@/shared/types/chat';
 
 interface UploadAttachmentsOptions {

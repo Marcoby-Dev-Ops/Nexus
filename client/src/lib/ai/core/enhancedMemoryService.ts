@@ -1,6 +1,6 @@
 import type { RAGContext } from './contextualRAG';
 import { contextualRAG } from './contextualRAG';
-import { selectData, insertOne, updateOne } from '@/lib/api-client';
+import { selectData, insertOne, updateOne } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 export interface MemoryItem {

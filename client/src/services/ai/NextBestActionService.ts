@@ -8,7 +8,7 @@
  * 4. Immediate execution capabilities
  */
 
-import { callRPC, callEdgeFunction, selectData, selectOne, insertOne, updateOne } from '@/lib/database';
+import { selectData, selectOne, insertOne, updateOne } from '@/lib/database';
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
@@ -162,7 +162,7 @@ export class NextBestActionService extends BaseService {
   /**
    * Create actionable recommendations based on analysis
    */
-  private async createActionRecommendations(analysis: any, context: any): Promise<NextBestAction[]> {
+  private async createActionRecommendations(analysis: any, _context: any): Promise<NextBestAction[]> {
     const actions: NextBestAction[] = [];
 
     // Generate actions based on analysis results
@@ -332,27 +332,27 @@ export class NextBestActionService extends BaseService {
     }
   }
 
-  private async executeSalesAction(action: NextBestAction, executionData?: any) {
+  private async executeSalesAction(_action: NextBestAction, _executionData?: any) {
     // Implement sales action execution
     return { success: true, message: 'Sales action executed' };
   }
 
-  private async executeMarketingAction(action: NextBestAction, executionData?: any) {
+  private async executeMarketingAction(_action: NextBestAction, _executionData?: any) {
     // Implement marketing action execution
     return { success: true, message: 'Marketing action executed' };
   }
 
-  private async executeFinanceAction(action: NextBestAction, executionData?: any) {
+  private async executeFinanceAction(_action: NextBestAction, _executionData?: any) {
     // Implement finance action execution
     return { success: true, message: 'Finance action executed' };
   }
 
-  private async executeOpsAction(action: NextBestAction, executionData?: any) {
+  private async executeOpsAction(_action: NextBestAction, _executionData?: any) {
     // Implement operations action execution
     return { success: true, message: 'Operations action executed' };
   }
 
-  private async executeGeneralAction(action: NextBestAction, executionData?: any) {
+  private async executeGeneralAction(_action: NextBestAction, _executionData?: any) {
     // Implement general action execution
     return { success: true, message: 'General action executed' };
   }
@@ -367,7 +367,7 @@ export class NextBestActionService extends BaseService {
   /**
    * Delegate action to team member or AI agent
    */
-  async delegateAction(actionId: string, targetId: string, userId: string): Promise<ServiceResponse<any>> {
+  async delegateAction(actionId: string, targetId: string, _userId: string): Promise<ServiceResponse<any>> {
     try {
       // Update action status to delegated
       await updateOne(this.tableName, actionId, { 
@@ -392,7 +392,7 @@ export class NextBestActionService extends BaseService {
   /**
    * Get available delegation targets
    */
-  async getDelegationTargets(actionId: string): Promise<ServiceResponse<DelegationTarget[]>> {
+  async getDelegationTargets(_actionId: string): Promise<ServiceResponse<DelegationTarget[]>> {
     try {
       // Get team members and AI agents
       const teamMembers = await selectData('team_members', '*');

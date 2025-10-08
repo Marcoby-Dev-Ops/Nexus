@@ -39,6 +39,19 @@ export interface EnvironmentVars {
  * Works in both frontend (Vite) and backend (Node.js) environments
  */
 export function getEnvVar(name: string): string | undefined {
+  // Frontend runtime: check window.__APP_CONFIG__ injected at runtime by the container
+  if (typeof window !== 'undefined') {
+    const runtime = (window as any).__APP_CONFIG__ || {};
+    if (runtime && runtime[name] !== undefined && runtime[name] !== '') {
+      // allow values injected as quoted strings
+      let v = String(runtime[name]);
+      if ((v.startsWith("'") && v.endsWith("'")) || (v.startsWith('"') && v.endsWith('"'))) {
+        v = v.slice(1, -1);
+      }
+      return v;
+    }
+  }
+
   // Frontend: Vite environment (import.meta.env)
   if (typeof import.meta !== 'undefined' && import.meta.env) {
     return import.meta.env[name];
@@ -162,9 +175,10 @@ export function getEnvironmentInfo(): Record<string, any> {
 /**
  * Safe logging of environment info (no secrets)
  */
-export function logEnvironmentInfo(): void {
+export function logEnvironmentInfo(): Record<string, any> {
   const info = getEnvironmentInfo();
-  console.log('🌍 Environment Info:', info);
+  // Return environment info for callers to log or inspect. Avoid direct console usage to satisfy lint rules.
+  return info;
 }
 
 // Export commonly used getters

@@ -2,8 +2,8 @@ import { enhancedChatService } from '../enhancedChatService';
 import { chatContextApi } from '@/lib/api/chatContextApi';
 import { getAgent } from '../agentRegistry';
 
-// Mock the API client
-jest.mock('@/lib/api-client', () => ({
+// Mock the database (api-client re-export layer)
+jest.mock('@/lib/database', () => ({
   callEdgeFunction: jest.fn(),
   selectData: jest.fn(),
   selectOne: jest.fn()
@@ -93,7 +93,7 @@ describe('EnhancedChatService', () => {
       });
 
       // Mock the edge function response
-      const { callEdgeFunction } = require('@/lib/api-client');
+  const { callEdgeFunction } = require('@/lib/database');
       callEdgeFunction.mockResolvedValue({
         success: true,
         data: {
@@ -182,7 +182,7 @@ describe('EnhancedChatService', () => {
         data: mockUserContext
       });
 
-      const { callEdgeFunction } = require('@/lib/api-client');
+  const { callEdgeFunction } = require('@/lib/database');
       callEdgeFunction.mockResolvedValue({
         success: true,
         data: {

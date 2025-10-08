@@ -1,4 +1,4 @@
-import { callEdgeFunction } from '@/lib/api-client';
+import { callEdgeFunction } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 export interface VectorSearchResult {

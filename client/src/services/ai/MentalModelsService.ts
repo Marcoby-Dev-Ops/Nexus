@@ -1,5 +1,4 @@
 import { BaseService, type ServiceResponse } from '../shared/BaseService';
-import type { UserContext } from './types';
 
 export interface MentalModelInsight {
   modelName: string;
@@ -71,80 +70,79 @@ export class MentalModelsService extends BaseService {
     successPatternRecognition: {
       name: 'Success Pattern Recognition',
       principle: 'Study organizations that solved your same problem and follow their proven patterns',
-      apply: async (userGoal: string, context: any): Promise<SuccessPattern[]> => {
-        return this.identifySuccessPatterns(userGoal, context);
+      apply: async (userGoal: string): Promise<SuccessPattern[]> => {
+        return this.identifySuccessPatterns(userGoal);
       }
     },
     
     riskMinimization: {
       name: 'Risk Minimization',
       principle: 'Heads I win, tails I don\'t lose much',
-      apply: async (userInsight: string, context: any): Promise<RiskProfile> => {
-        return this.evaluateRiskProfile(userInsight, context);
+      apply: async (userInsight: string): Promise<RiskProfile> => {
+        return this.evaluateRiskProfile(userInsight);
       }
     },
     
     timeAllocation: {
       name: 'Time Allocation',
       principle: 'Optimize your 168-hour week for maximum business impact',
-      apply: async (userPlan: string, context: any): Promise<TimeAllocation> => {
-        return this.create168HourWeek(userPlan, context);
+      apply: async (userPlan: string): Promise<TimeAllocation> => {
+        return this.create168HourWeek(userPlan);
       }
     },
     
     lowHangingFruit: {
       name: 'Low-Hanging Fruit',
       principle: 'Identify and execute high-impact, low-effort opportunities first',
-      apply: async (userPlan: string, context: any): Promise<QuickWin[]> => {
-        return this.identifyQuickWins(userPlan, context);
+      apply: async (userPlan: string): Promise<QuickWin[]> => {
+        return this.identifyQuickWins(userPlan);
       }
     },
     
     skinInTheGame: {
       name: 'Skin in the Game',
       principle: 'Create personal accountability and commitment to drive success',
-      apply: async (userAction: string, context: any): Promise<AccountabilityFramework> => {
-        return this.createAccountability(userAction, context);
+      apply: async (userAction: string): Promise<AccountabilityFramework> => {
+        return this.createAccountability(userAction);
       }
     },
     
     circleOfCompetence: {
       name: 'Circle of Competence',
       principle: 'Stay within your areas of expertise and partner for gaps',
-      apply: async (userInsight: string, context: any): Promise<CompetenceAssessment> => {
-        return this.assessCapabilities(userInsight, context);
+      apply: async (userInsight: string): Promise<CompetenceAssessment> => {
+        return this.assessCapabilities(userInsight);
       }
     },
     
     giversVsTakers: {
       name: 'Givers vs Takers',
       principle: 'Focus on creating value for others first, success follows',
-      apply: async (userAction: string, context: any): Promise<GiverTakerAnalysis> => {
-        return this.evaluateApproach(userAction, context);
+      apply: async (userAction: string): Promise<GiverTakerAnalysis> => {
+        return this.evaluateApproach(userAction);
       }
     },
     
     ruleOf72: {
       name: 'Rule of 72',
       principle: 'Understand compound growth and time value of business decisions',
-      apply: async (userGoal: string, context: any): Promise<any> => {
-        return this.calculateCompoundGrowth(userGoal, context);
+      apply: async (userGoal: string): Promise<any> => {
+        return this.calculateCompoundGrowth(userGoal);
       }
     },
     
     dhandhoFramework: {
       name: 'Dhandho Framework',
       principle: 'Zero-risk entrepreneurship through asymmetric opportunities',
-      apply: async (userGoal: string, context: any): Promise<any> => {
-        return this.identifyAsymmetricOpportunities(userGoal, context);
+      apply: async (userGoal: string): Promise<any> => {
+        return this.identifyAsymmetricOpportunities(userGoal);
       }
     }
   };
 
   async applyToPhase(
     phase: 'focus' | 'insight' | 'roadmap' | 'execute',
-    input: string,
-    context: any
+    input: string
   ): Promise<ServiceResponse<Record<string, any>>> {
     try {
       const phaseModels = {
@@ -160,7 +158,7 @@ export class MentalModelsService extends BaseService {
       for (const modelName of applicableModels) {
         const model = this.mentalModels[modelName as keyof typeof this.mentalModels];
         if (model) {
-          insights[modelName] = await model.apply(input, context);
+          insights[modelName] = await model.apply(input);
         }
       }
 
@@ -184,7 +182,7 @@ export class MentalModelsService extends BaseService {
     }
   }
 
-  private async identifySuccessPatterns(userGoal: string, context: any): Promise<SuccessPattern[]> {
+  private async identifySuccessPatterns(userGoal: string): Promise<SuccessPattern[]> {
     // AI-powered pattern recognition based on user goal
     const patterns: SuccessPattern[] = [];
     
@@ -219,7 +217,7 @@ export class MentalModelsService extends BaseService {
     return patterns;
   }
 
-  private async evaluateRiskProfile(userInsight: string, context: any): Promise<RiskProfile> {
+  private async evaluateRiskProfile(userInsight: string): Promise<RiskProfile> {
     const riskFactors: string[] = [];
     const mitigationStrategies: string[] = [];
     let currentRisk: 'low' | 'medium' | 'high' = 'medium';
@@ -249,7 +247,7 @@ export class MentalModelsService extends BaseService {
     };
   }
 
-  private async create168HourWeek(userPlan: string, context: any): Promise<TimeAllocation> {
+  private async create168HourWeek(_userPlan: string): Promise<TimeAllocation> {
     const currentTimeUsage = {
       dayJob: 40,
       family: 20,
@@ -282,7 +280,7 @@ export class MentalModelsService extends BaseService {
     };
   }
 
-  private async identifyQuickWins(userPlan: string, context: any): Promise<QuickWin[]> {
+  private async identifyQuickWins(userPlan: string): Promise<QuickWin[]> {
     const quickWins: QuickWin[] = [];
 
     if (userPlan.toLowerCase().includes('sales') || userPlan.toLowerCase().includes('revenue')) {
@@ -316,7 +314,7 @@ export class MentalModelsService extends BaseService {
     return quickWins;
   }
 
-  private async createAccountability(userAction: string, context: any): Promise<AccountabilityFramework> {
+  private async createAccountability(_userAction: string): Promise<AccountabilityFramework> {
     return {
       personalInvestment: 'Commit 20 hours/week for 3 months',
       measurableOutcomes: ['Revenue increase', 'Customer satisfaction', 'Process efficiency'],
@@ -326,7 +324,7 @@ export class MentalModelsService extends BaseService {
     };
   }
 
-  private async assessCapabilities(userInsight: string, context: any): Promise<CompetenceAssessment> {
+  private async assessCapabilities(_userInsight: string): Promise<CompetenceAssessment> {
     return {
       currentStrengths: ['Business strategy', 'Customer relationships', 'Problem solving'],
       gaps: ['Technical implementation', 'Data analysis', 'Advanced automation'],
@@ -336,7 +334,7 @@ export class MentalModelsService extends BaseService {
     };
   }
 
-  private async evaluateApproach(userAction: string, context: any): Promise<GiverTakerAnalysis> {
+  private async evaluateApproach(_userAction: string): Promise<GiverTakerAnalysis> {
     return {
       giverBehaviors: [
         'Focus on user value first',
@@ -356,7 +354,7 @@ export class MentalModelsService extends BaseService {
     };
   }
 
-  private async calculateCompoundGrowth(userGoal: string, context: any): Promise<any> {
+  private async calculateCompoundGrowth(_userGoal: string): Promise<any> {
     // Rule of 72: Time to double = 72 / growth rate
     return {
       principle: 'Rule of 72',
@@ -370,7 +368,7 @@ export class MentalModelsService extends BaseService {
     };
   }
 
-  private async identifyAsymmetricOpportunities(userGoal: string, context: any): Promise<any> {
+  private async identifyAsymmetricOpportunities(_userGoal: string): Promise<any> {
     return {
       principle: 'Dhandho Framework',
       explanation: 'Heads I win big, tails I don\'t lose much',

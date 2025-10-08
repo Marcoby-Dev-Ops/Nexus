@@ -26,9 +26,15 @@ const validateEnvironment = async () => {
       'VITE_AUTHENTIK_CLIENT_ID',
       'VITE_AUTHENTIK_URL'
     ];
-    
+    // Merge runtime-injected config (window.__APP_CONFIG__) with build-time import.meta.env
+    const runtimeConfig = (window as any).__APP_CONFIG__ || {};
+    const getEnvValue = (key: string) => {
+      // Prefer runtime config, fall back to build-time Vite env
+      return runtimeConfig[key] ?? (import.meta.env as any)[key];
+    };
+
     const missingVars = requiredEnvVars.filter(
-      varName => !import.meta.env[varName]
+      varName => !getEnvValue(varName)
     );
     
     if (missingVars.length > 0) {
@@ -63,9 +69,10 @@ const initializeApp = async () => {
     
     logger.info('Rendering application...');
     
-    // Conditionally enable StrictMode based on environment
-    // Disable in development to reduce double rendering during debugging
-    const enableStrictMode = import.meta.env.PROD || import.meta.env.VITE_ENABLE_STRICT_MODE === 'true';
+  // Conditionally enable StrictMode based on environment
+  // Prefer runtime setting (window.__APP_CONFIG__) then fallback to build-time Vite env
+  const runtimeConfig = (window as any).__APP_CONFIG__ || {};
+  const enableStrictMode = Boolean(runtimeConfig.VITE_ENABLE_STRICT_MODE === 'true' || import.meta.env.PROD || import.meta.env.VITE_ENABLE_STRICT_MODE === 'true');
     
     const AppWrapper = () => (
       <ErrorBoundary>

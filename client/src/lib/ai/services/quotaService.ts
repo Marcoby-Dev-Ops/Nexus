@@ -1,4 +1,4 @@
-import { selectData, insertOne, updateOne } from '@/lib/api-client';
+import { selectData, insertOne, updateOne } from '@/lib/database';
 import { logger } from '@/shared/utils/logger';
 
 export type LicenseTierId = 'free' | 'pro' | 'enterprise' | 'custom';
