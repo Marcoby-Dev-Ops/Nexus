@@ -1,0 +1,34 @@
+services:
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: dev
+    container_name: nexus-frontend-dev
+    command: pnpm dev --host
+    env_file:
+      - ./client/.env
+    volumes:
+      - ./client:/app:rw
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: nexus-server-dev
+    command: pnpm dev
+    env_file:
+      - ./server/.env
+    volumes:
+      - ./server:/app:rw
+      - /app/node_modules
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres

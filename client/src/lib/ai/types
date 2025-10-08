@@ -1,0 +1,109 @@
+import { z } from 'zod';
+
+// Enhanced Agent Schema with Wharton Blueprint Principles
+export const AgentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['executive', 'departmental', 'specialist']),
+  parentId: z.string().optional(),
+  description: z.string(),
+  capabilities: z.array(z.string()),
+  
+  // Enhanced Knowledge Base with Transparency
+  knowledgeBase: z.object({
+    expertise: z.array(z.string()),
+    tools: z.array(z.string()),
+    frameworks: z.array(z.string()),
+    experience: z.string(),
+    // Wharton Principle: Explain AI decisions clearly
+    decisionExplanation: z.object({
+      reasoning: z.string(),
+      methodology: z.string(),
+      confidence: z.number().min(0).max(1),
+      alternatives: z.array(z.string()),
+    }),
+  }),
+  
+  // Enhanced Personality with Context-Aware Selection
+  personality: z.object({
+    communicationStyle: z.string(),
+    decisionMaking: z.string(),
+    expertiseLevel: z.string(),
+    background: z.string(),
+    // Wharton Principle: Human-like vs Machine-like optimization
+    personalityType: z.enum(['human-like', 'machine-like', 'adaptive']),
+    contextPreferences: z.object({
+      favorableDecisions: z.enum(['human-like', 'machine-like']),
+      highPressure: z.enum(['human-like', 'machine-like']),
+      sensitiveTopics: z.enum(['human-like', 'machine-like']),
+      technicalTasks: z.enum(['human-like', 'machine-like']),
+    }),
+    // Wharton Principle: Add human-like touches
+    humanTouches: z.object({
+      name: z.string().optional(),
+      avatar: z.string().optional(),
+      personalization: z.boolean(),
+      empathy: z.boolean(),
+      gratitude: z.boolean(),
+    }),
+  }),
+  
+  // Enhanced System Prompt with Transparency
+  systemPrompt: z.string(),
+  
+  // Wharton Principle: User Control and Autonomy
+  userControl: z.object({
+    customizableName: z.boolean(),
+    avatarSelection: z.boolean(),
+    personalityAdjustment: z.boolean(),
+    transparencyLevel: z.enum(['basic', 'detailed', 'expert']),
+    explanationPreference: z.enum(['always', 'on-request', 'never']),
+  }),
+  
+  // Performance Metrics for Trust Building
+  performanceMetrics: z.object({
+    accuracy: z.number().min(0).max(1),
+    responseTime: z.number(),
+    userSatisfaction: z.number().min(0).max(5),
+    successRate: z.number().min(0).max(1),
+  }),
+  
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+export const DepartmentAgentSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  department: z.enum(['sales', 'finance', 'operations', 'marketing']),
+  serviceIntegration: z.object({
+    serviceName: z.string(),
+    dataAccess: z.array(z.string()),
+    capabilities: z.array(z.string()),
+  }),
+  tools: z.array(z.object({
+    name: z.string(),
+    description: z.string(),
+    parameters: z.record(z.any()),
+  })),
+});
+
+export type Agent = z.infer<typeof AgentSchema>;
+export type DepartmentAgent = z.infer<typeof DepartmentAgentSchema>;
+
+export interface RoutingDecision {
+  agentId: string;
+  confidence: number;
+  reasoning: string;
+  shouldRoute: boolean;
+  context?: string;
+}
+
+export interface UserContext {
+  preferences: string[];
+  businessType: string;
+  currentChallenges: string[];
+  goals: string[];
+  expertise: string[];
+}

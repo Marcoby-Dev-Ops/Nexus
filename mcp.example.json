@@ -1,0 +1,64 @@
+{
+  "mcpServers": {
+    "authentik": {
+      "command": "/path/to/authentik-mcp",
+      "args": [
+        "--base-url",
+        "https://identity.example.com"
+      ],
+      "env": {
+        "AUTHENTIK_TOKEN": "${AUTHENTIK_TOKEN}"
+      }
+    },
+    "postgresql-local": {
+      "command": "pnpm",
+      "args": [
+        "dlx",
+        "@henkey/postgres-mcp-server",
+        "--connection-string",
+        "postgresql://user:password@localhost:5432/nexus_rag"
+      ]
+    },
+    "coolify": {
+      "command": "pnpm",
+      "args": ["dlx", "@felixallistar/coolify-mcp", "--server"],
+      "env": {
+        "COOLIFY_API_TOKEN": "${COOLIFY_API_TOKEN}",
+        "COOLIFY_API_URL": "https://cloud.example.com"
+      }
+    },
+    "redis-mcp-server": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "https://github.com/redis/mcp-redis.git",
+        "redis-mcp-server",
+        "--url",
+        "redis://localhost:6379/0"
+      ]
+    },
+    "GitHub": {
+      "command": "docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server",
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}"
+      },
+      "args": []
+    },
+    "stripe": {
+      "type": "http",
+      "url": "https://mcp.stripe.com",
+      "headers": {
+        "Authorization": "Bearer ${STRIPE_API_KEY}"
+      }
+    },
+    "paypal": {
+      "command": "pnpm",
+      "args": ["dlx", "@paypal/mcp", "--tools=all"],
+      "env": {
+        "PAYPAL_ACCESS_TOKEN": "${PAYPAL_ACCESS_TOKEN}",
+        "PAYPAL_ENVIRONMENT": "SANDBOX"
+      }
+    }
+  }
+}

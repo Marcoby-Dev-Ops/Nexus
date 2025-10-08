@@ -1,0 +1,145 @@
+######################################################################
+# Nexus docker-compose
+# Cleaned & de-duplicated. Supports local dev and can be adapted for prod.
+# Usage (dev):
+#   docker compose up -d --build
+#
+# For production you may:
+#   - Override NODE_ENV=production
+#   - Provide strong secrets via environment or an .env file
+#   - Remove published ports for internal services (postgres, redis)
+#   - Add a reverse proxy / TLS (e.g., Traefik / Caddy) instead of exposing 5173:80
+######################################################################
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: nexus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nexus_db}
+      POSTGRES_USER: ${POSTGRES_USER:-nexus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus_password}
+      TZ: ${TZ:-UTC}
+    volumes:
+      - nexus_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-nexus} -d ${POSTGRES_DB:-nexus_db}' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus-network
+
+  redis:
+    image: redis:7-bullseye
+    container_name: nexus-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"  # remove in prod; internal only then
+    command: >-
+      redis-server
+      --appendonly yes
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb}
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - nexus_redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ 'CMD', 'redis-cli', 'ping' ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - nexus-network
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      # For faster rebuilds in dev, you could add:
+      # target: dev
+    container_name: nexus-server
+    restart: unless-stopped
+    env_file:
+      - server/.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-nexus}:${POSTGRES_PASSWORD:-nexus_password}@postgres:5432/${POSTGRES_DB:-nexus_db}}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-nexus_password}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "3001:3001"  # remove or reverse proxy in prod
+    networks:
+      - nexus-network
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_AUTHENTIK_CLIENT_ID: ${VITE_AUTHENTIK_CLIENT_ID}
+        VITE_AUTHENTIK_URL: ${VITE_AUTHENTIK_URL}
+        VITE_STRIPE_PUBLISHABLE_KEY: ${VITE_STRIPE_PUBLISHABLE_KEY}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+        VITE_HUBSPOT_CLIENT_ID: ${VITE_HUBSPOT_CLIENT_ID}
+        VITE_MICROSOFT_CLIENT_ID: ${VITE_MICROSOFT_CLIENT_ID}
+        VITE_DEV: ${VITE_DEV}
+    container_name: nexus-frontend
+    restart: unless-stopped
+    env_file:
+      - ./client/.env
+    environment:
+      # Avoid overriding VITE_* with blanks if not passed; compose passes build-time args above.
+      VITE_API_URL: http://server:3001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    depends_on:
+      server:
+        condition: service_started
+    ports:
+      - '5173:80'  # serve built assets via nginx at :5173 locally
+    networks:
+      - nexus-network
+
+volumes:
+  nexus_postgres_data:
+    driver: local
+  nexus_redis_data:
+    driver: local
+
+networks:
+  nexus-network:
+    driver: bridge
+    name: nexus-network
+
+######################################################################
+# Optional: Logging limits (uncomment to enable)
+# logging:
+#   driver: json-file
+#   options:
+#     max-size: "10m"
+#     max-file: "3"
+######################################################################
+
+######################################################################
+# Optional: Profiles example (run only backend services)
+# services:
+#   server:
+#     profiles: ["api"]
+#   postgres:
+#     profiles: ["api"]
+#   redis:
+#     profiles: ["api"]
+# Then: docker compose --profile api up -d
+######################################################################

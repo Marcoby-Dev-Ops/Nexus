@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus — AI-native Business Operating System</title>
+  <meta name="description" content="Nexus unifies data, AI insights, and automation into a single business operating system — forecast trends, automate actions, and scale with confidence." />
+    <meta name="keywords" content="business intelligence, AI, analytics, automation, dashboard, nexus" />
+    <meta name="author" content="Nexus Team" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nexus.app/" />
+  <meta property="og:title" content="Nexus — AI-native Business Operating System" />
+  <meta property="og:description" content="Unify your data and let AI surface opportunities, automate workflows, and protect revenue." />
+    <meta property="og:image" content="/Nexus/nexus-square-192x192-transparent.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://nexus.app/" />
+  <meta property="twitter:title" content="Nexus — AI-native Business Operating System" />
+  <meta property="twitter:description" content="Unify your data and let AI surface opportunities, automate workflows, and protect revenue." />
+    <meta property="twitter:image" content="/Nexus/nexus-square-192x192-transparent.png" />
+
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- Favicon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/Nexus/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/Nexus/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/Nexus/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    
+    <!-- Theme color -->
+    <meta name="theme-color" content="#10b981" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Runtime environment injected by container at startup.
+         In development the Vite dev server may 404 /env.js; we provide a
+         minimal public/env.js so the request succeeds and then use a
+         module fallback below to populate runtime envs from import.meta.env
+         (so VITE_* variables are available without rebuilding). -->
+    <script src="/env.js"></script>
+
+    <script type="module">
+      // If /env.js was not provided by the container or it provided an
+      // empty object, populate window.__RUNTIME_ENV from Vite's
+      // import.meta.env (development friendly). Only copy VITE_ keys.
+      (function () {
+        // Consider env.js valid only if it defines at least one non-empty VITE_ variable.
+        const hasEnv = window.__RUNTIME_ENV && Object.keys(window.__RUNTIME_ENV || {}).some(k => k.startsWith('VITE_') && window.__RUNTIME_ENV[k]);
+        if (!hasEnv) {
+            const runtime = window.__RUNTIME_ENV || {};
+            try {
+              for (const k in import.meta.env) {
+                if (k && k.startsWith('VITE_') && import.meta.env[k]) runtime[k] = import.meta.env[k];
+              }
+            } catch (e) {
+              // import.meta may not be available in some non-module contexts; ignore.
+            }
+            window.__RUNTIME_ENV = runtime;
+          }
+      })();
+    </script>
+
+    <script type="module" src="/src/app/main.tsx"></script>
+  </body>
+</html> 

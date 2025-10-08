@@ -1,0 +1,417 @@
+/**
+ * Modern Streaming Composer
+ * 
+ * A ChatGPT/Claude-inspired chat interface that wraps the existing StreamingComposer
+ * functionality with a modern, polished UI design.
+ */
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/shared/ui/components/Toast';
+import { AIService } from '@/services/ai';
+import type { SlashCommand } from '@/services/ai';
+import SlashCommandMenu from './SlashCommandMenu';
+import SourceDrawer from './SourceDrawer';
+import type { SourceMeta } from './SourceDrawer';
+import { callEdgeFunction } from '@/lib/api-client';
+import { contextualRAG } from '@/lib/ai/core/contextualRAG';
+import { AIChatResponseSchema, type AIChatResponse } from '@/lib/ai/schemas/aiResponseSchema';
+import { useAuth } from '@/hooks/index';
+import { useSimpleDashboard } from '@/hooks/dashboard/useSimpleDashboard';
+import { useNextBestActions } from '@/hooks/useNextBestActions';
+import { useLiveBusinessHealth } from '@/hooks/dashboard/useLiveBusinessHealth';
+import ModernChatInterface from './ModernChatInterface';
+
+// Initialize AIService instance for slash commands
+const aiService = new AIService();
+
+interface ModernStreamingComposerProps {
+  conversationId?: string | null;
+  onConversationId?: (id: string) => void;
+  agentId: string;
+  context?: Record<string, unknown>;
+  // MVP Essential Callbacks
+  onMessageReceived?: (message: ChatMessage) => void;
+  onMessageSent?: (message: ChatMessage) => void;
+  onError?: (error: string) => void;
+  onStreamingStart?: () => void;
+  onStreamingEnd?: () => void;
+  className?: string;
+}
+
+import type { ChatMessage } from '@/shared/types/chat';
+
+interface FileAttachment {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url?: string;
+  file?: File;
+}
+
+
+
+export default function ModernStreamingComposer({
+  conversationId,
+  onConversationId,
+  agentId,
+  context = {},
+  onMessageReceived,
+  onMessageSent,
+  onError,
+  onStreamingStart,
+  onStreamingEnd,
+  className
+}: ModernStreamingComposerProps) {
+  // Debug: Log agentId prop (removed for production)
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [showSources, setShowSources] = useState(false);
+  const [currentSources, setCurrentSources] = useState<SourceMeta[]>([]);
+  const [slashCommands, setSlashCommands] = useState<SlashCommand[]>([]);
+  const [showSlashMenu, setShowSlashMenu] = useState(false);
+  const [currentMessageId, setCurrentMessageId] = useState<string | null>(null);
+  const activeRequests = React.useRef<Record<string, any>>({});
+  
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { data: dashboardData } = useSimpleDashboard();
+  const { actions: nextBestActions } = useNextBestActions();
+  const { healthData: businessHealth } = useLiveBusinessHealth();
+
+  // Load slash commands
+  useEffect(() => {
+    const loadCommands = async () => {
+      try {
+        const commands = await aiService.getSlashCommands();
+        setSlashCommands(commands);
+      } catch {
+        // Silently fail for slash commands - not critical for core functionality
+      }
+    };
+    loadCommands();
+  }, []);
+
+  // Monitor messages state changes (reduced logging)
+  useEffect(() => {
+    // Messages state monitoring removed for production
+  }, [messages]);
+
+  const handleSendMessage = useCallback(async (message: string, attachments: FileAttachment[] = []) => {
+    if (!message.trim() && attachments.length === 0) return;
+    
+    // Ensure user is authenticated
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to use the chat.",
+        type: "error"
+      });
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      conversation_id: conversationId || 'temp',
+      role: 'user',
+      content: message,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      metadata: {
+        attachments
+      }
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsStreaming(true);
+    onStreamingStart?.();
+    onMessageSent?.(userMessage);
+
+    try {
+      // Prepare context data
+      const contextData = {
+        ...context,
+        user: user ? {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName
+        } : null,
+        dashboard: dashboardData,
+        nextBestActions,
+        businessHealth, // ✅ Add business health data to context
+        conversationId,
+        agentId
+      };
+
+      // Determine whether this message is asking for contact info (simple heuristic)
+      const isContactRequest = /what(?:'| i?s)?\s*(?:is|\'s)?\s*(?:my|the)\s*(phone|phone number|email|email address|contact)/i.test(message);
+
+      // If contact info is requested, fetch allowed contact fields from server and include in context
+      let fetchedContact: Record<string, any> | null = null;
+      if (isContactRequest) {
+        try {
+          const contactResp = await fetch('/api/me/contact', { method: 'GET', credentials: 'include' });
+          if (contactResp.ok) {
+            const parsed = await contactResp.json();
+            if (parsed && parsed.success) {
+              fetchedContact = parsed.data || null;
+            }
+          }
+        } catch (err) {
+          // Non-fatal: proceed without contact details
+        }
+      }
+
+      // Call the AI chat endpoint with conversation history
+      
+      let response;
+      const requestId = `req-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
+      try {
+        // track request so we can abort server-side if needed
+        activeRequests.current[requestId] = true;
+        response = await callEdgeFunction('ai_chat', {
+          message,
+          context: {
+            ...contextData,
+            agentId,
+            previousMessages: messages.map(msg => ({
+              role: msg.role,
+              content: msg.content,
+              timestamp: msg.created_at
+            })),
+            // Only attach contact info when explicitly requested and fetched from the server
+            contact: fetchedContact
+          },
+          attachments: attachments.map(att => ({
+            name: att.name,
+            size: att.size,
+            type: att.type,
+            url: att.url
+          }))
+        ,
+        requestId
+        });
+        
+      } catch (apiError: unknown) {
+        throw new Error(`API call failed: ${apiError instanceof Error ? apiError.message : 'Unknown error'}`);
+      }
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to get response from AI');
+      }
+
+      // Validate response shape using Zod
+      const parseResult = AIChatResponseSchema.safeParse(response.data);
+      if (!parseResult.success) {
+        // Validation failed - treat similar to an AI error but keep the app stable
+        console.error('AI response validation failed', parseResult.error.format());
+        throw new Error('Invalid AI response shape');
+      }
+      const responseData = parseResult.data as AIChatResponse;
+
+      // Ensure we have content to display
+  const messageContent = responseData.content || 'I received your message but I\'m having trouble generating a response right now. Please try again.';
+
+      // Build assistantMessage (either persisted or streaming temp) and append
+      let assistantMessage: ChatMessage | null = null;
+      if (responseData.serverMessage) {
+        const serverMsg = responseData.serverMessage as any;
+        assistantMessage = {
+          id: serverMsg.id || (Date.now() + 1).toString(),
+          conversation_id: conversationId || 'temp',
+          role: 'assistant',
+          content: serverMsg.content || messageContent,
+          created_at: serverMsg.created_at || new Date().toISOString(),
+          updated_at: serverMsg.updated_at || new Date().toISOString(),
+          metadata: { ...(serverMsg.metadata || {}), streaming: false }
+        } as ChatMessage;
+        setMessages(prev => [...prev, assistantMessage as ChatMessage]);
+        // Normalize sources from AI response into SourceMeta[] expected by SourceDrawer
+        const normalizedSources: SourceMeta[] = (responseData.sources || []).map(s => ({
+          title: s.title || undefined,
+          url: s.url || undefined,
+          // `content` is required by SourceMeta; prefer snippet, then title, then empty string
+          content: s.snippet || s.title || ''
+        }));
+        setCurrentSources(normalizedSources);
+        onMessageReceived?.(assistantMessage as ChatMessage);
+      } else {
+        assistantMessage = {
+          id: (Date.now() + 1).toString(),
+          conversation_id: conversationId || 'temp',
+          role: 'assistant',
+          content: messageContent,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          metadata: {
+            streaming: true
+          }
+        } as ChatMessage;
+        setCurrentMessageId(assistantMessage.id);
+        setMessages(prev => [...prev, assistantMessage as ChatMessage]);
+        const normalizedSources2: SourceMeta[] = (responseData.sources || []).map(s => ({
+          title: s.title || undefined,
+          url: s.url || undefined,
+          content: s.snippet || s.title || ''
+        }));
+        setCurrentSources(normalizedSources2);
+      }
+
+      // Update user context
+      if (user?.id) {
+        try {
+          await contextualRAG.updateUserContext(user.id, {
+            currentTopic: message,
+            recentInteractions: [message, responseData.content || '']
+          });
+        } catch {
+          // Silently fail for context updates - not critical for core functionality
+        }
+      }
+
+      // Update conversation ID if provided
+      if (responseData.conversationId && onConversationId) {
+        onConversationId(responseData.conversationId);
+      }
+
+      // Finalize message: if it's a streaming temp message, mark it finished
+      if (assistantMessage) {
+        setMessages(prev => prev.map(msg => msg.id === assistantMessage!.id ? { ...msg, metadata: { ...(msg.metadata || {}), streaming: false }, isStreaming: false } : msg));
+        onMessageReceived?.(assistantMessage as ChatMessage);
+        setCurrentMessageId(null);
+      }
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      onError?.(errorMessage);
+      
+      // Determine the type of error and provide appropriate feedback
+      let fallbackContent = "I apologize, but I'm having trouble connecting to my services right now. Please try again in a moment, or contact support if the issue persists.";
+      let toastTitle = "Connection Error";
+      let toastDescription = "Unable to connect to AI services. Please try again.";
+      
+      if (errorMessage.includes('Failed to fetch') || errorMessage.includes('NetworkError')) {
+        fallbackContent = "I'm unable to connect to the server right now. Please check your internet connection and try again.";
+        toastTitle = "Network Error";
+        toastDescription = "Please check your internet connection and try again.";
+      } else if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        fallbackContent = "Your session has expired. Please refresh the page and sign in again.";
+        toastTitle = "Authentication Error";
+        toastDescription = "Please refresh the page and sign in again.";
+      } else if (errorMessage.includes('500') || errorMessage.includes('Internal Server Error')) {
+        fallbackContent = "The server is experiencing issues right now. Please try again in a few minutes.";
+        toastTitle = "Server Error";
+        toastDescription = "The server is experiencing issues. Please try again later.";
+      }
+      
+      // Add a fallback response if the AI service is unavailable
+      const fallbackMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        conversation_id: conversationId || 'temp',
+        role: 'assistant',
+        content: fallbackContent,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        metadata: {
+          streaming: false
+        }
+      };
+      
+      setMessages(prev => [...prev, fallbackMessage]);
+      
+      toast({
+        title: toastTitle,
+        description: toastDescription,
+        type: "error"
+      });
+    } finally {
+      setIsStreaming(false);
+      onStreamingEnd?.();
+    }
+  }, [user, dashboardData, nextBestActions, businessHealth, context, conversationId, agentId, onMessageSent, onMessageReceived, onError, onStreamingStart, onStreamingEnd, onConversationId, toast, messages]);
+
+  const handleStopGeneration = useCallback(() => {
+    setIsStreaming(false);
+    onStreamingEnd?.();
+    
+    // Attempt server-side abort for any active requests
+    Object.keys(activeRequests.current).forEach(async (rid) => {
+      try {
+        await callEdgeFunction('ai_abort', { requestId: rid });
+      } catch (e) {
+        // ignore
+      }
+      delete activeRequests.current[rid];
+    });
+
+    // Mark current message as not streaming
+    if (currentMessageId) {
+      setMessages(prev => prev.map(msg => 
+        msg.id === currentMessageId 
+          ? { ...msg, isStreaming: false }
+          : msg
+      ));
+      setCurrentMessageId(null);
+    }
+  }, [currentMessageId, onStreamingEnd]);
+
+  // Utility functions for future use - commented out to avoid unused variable warnings
+  // const copyMessage = (content: string) => {
+  //   navigator.clipboard.writeText(content);
+  //   toast({ 
+  //     title: "Copied to clipboard",
+  //     description: "Message copied to clipboard",
+  //     type: "success"
+  //   });
+  // };
+
+  // const regenerateMessage = (messageId: string) => {
+  //   const message = messages.find(msg => msg.id === messageId);
+  //   if (message && message.role === 'user') {
+  //     // Remove the assistant response and regenerate
+  //     setMessages(prev => prev.filter(msg => msg.id !== messageId && msg.id !== (parseInt(messageId) + 1).toString()));
+  //     handleSendMessage(message.content, message.metadata.attachments || []);
+  //   }
+  // };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Modern Chat Interface */}
+      <div className="flex-1 min-h-0">
+        <ModernChatInterface
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          onStopGeneration={handleStopGeneration}
+          isStreaming={isStreaming}
+          placeholder="Ask me anything about your business..."
+          showTypingIndicator={isStreaming}
+          className={className}
+          userName={user?.firstName || "User"}
+        />
+      </div>
+
+      {/* Sources Drawer */}
+      {showSources && currentSources.length > 0 && (
+        <SourceDrawer
+          open={showSources}
+          source={currentSources[0]}
+          onClose={() => setShowSources(false)}
+        />
+      )}
+
+      {/* Slash Command Menu */}
+      {showSlashMenu && (
+        <SlashCommandMenu
+          commands={slashCommands}
+          selectedIndex={0}
+          onSelectCommand={(_command: SlashCommand) => {
+            setShowSlashMenu(false);
+            // Handle slash command execution
+          }}
+          onMouseEnter={() => {}}
+        />
+      )}
+    </div>
+  );
+}

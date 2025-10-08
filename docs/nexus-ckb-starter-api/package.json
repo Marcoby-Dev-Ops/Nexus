@@ -1,0 +1,42 @@
+{
+  "name": "nexus-ckb-starter-api",
+  "version": "0.2.0",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=18.18.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev:api": "tsx src/server/index.ts",
+    "start": "node dist/server/index.js",
+    "migrate": "tsx src/services/index/pgvector/migrate.ts",
+    "ingest:one": "tsx src/workers/ingest.ts",
+    "search:dev": "tsx src/dev-search.ts"
+  },
+  "dependencies": {
+    "@microsoft/microsoft-graph-client": "^3.0.7",
+    "googleapis": "^144.0.0",
+    "docxtemplater": "^3.42.3",
+    "pizzip": "^3.1.7",
+    "mammoth": "^1.6.0",
+    "pdf-parse": "^1.1.1",
+    "zod": "^3.23.8",
+    "bullmq": "^5.8.0",
+    "pg": "^8.12.0",
+    "pgvector": "^0.2.0",
+    "dotenv": "^16.4.5",
+    "commander": "^12.1.0",
+    "node-fetch": "^3.3.2",
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+  "pino": "^9.9.0",
+    "uuid": "^11.0.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.4.5",
+    "@types/node": "^20.12.7",
+    "@types/express": "^4.17.21"
+  }
+}

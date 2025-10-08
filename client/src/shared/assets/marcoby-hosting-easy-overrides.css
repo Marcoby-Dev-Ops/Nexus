@@ -1,0 +1,144 @@
+/*
+ Marcoby / Hosting Easy - Branding overrides
+ This file re-uses the project's design tokens defined in
+ `client/src/shared/assets/index.css` (eg. --primary, --accent, --foreground)
+ and applies them to the legacy Hosting Easy selectors so the theme
+ matches the Marcoby look & feel used by this codebase.
+
+ To enable: import this file into your app entry or include it in the theme
+ build pipeline. For a WordPress theme, enqueue or include the stylesheet
+ after the original theme CSS so these rules take precedence.
+*/
+
+/* Use the project's font stack and tokens */
+body, #wrapper_all, #wrapper_fixed {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
+/* Links */
+a {
+  color: hsl(var(--primary));
+}
+a:hover {
+  color: hsl(var(--accent));
+}
+
+/* Header / Logo tweaks */
+h1#header_logo a {
+  color: hsl(var(--foreground));
+  font-family: 'Inter', 'Swiss921', Arial, sans-serif;
+  font-weight: 700;
+}
+h5#header_logo {
+  color: hsl(var(--primary));
+}
+
+.header-logo-wrapper, .header-wrapper {
+  align-items: center;
+}
+
+/* Main menu: use brand tokens for background and accents */
+#menu {
+  background-image: linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--popover)) 100%);
+  border-radius: 0.5rem; /* uses project's default radius feel */
+  box-shadow: 0 1px 1px rgba(0,0,0,0.06);
+}
+#menu ul.dropdown li a {
+  color: hsl(var(--muted-foreground));
+}
+#menu ul.dropdown li a:hover,
+#menu ul.dropdown li:hover a,
+#menu ul.dropdown li.current_page_item a,
+#menu ul.dropdown li.current-menu-item a {
+  color: hsl(var(--foreground));
+  background: linear-gradient(to bottom, hsl(var(--primary-subtle)), hsl(var(--primary-subtle)));
+}
+
+/* Buttons */
+.rpwp-button,
+.rpwp-button.colorize,
+.rpwp-button.colorize-2,
+.rpwp-button2 {
+  font-family: inherit;
+  border-radius: 0.5rem;
+  border: none;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.rpwp-button.colorize {
+  background: linear-gradient(to bottom, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
+  color: hsl(var(--primary-foreground));
+}
+.rpwp-button.colorize:hover {
+  background: linear-gradient(to bottom, hsl(var(--accent)) 0%, hsl(var(--primary)) 100%);
+  color: hsl(var(--primary-foreground));
+}
+
+.rpwp-button.colorize-2 {
+  background: linear-gradient(to bottom, hsl(var(--secondary)) 0%, hsl(var(--primary)) 100%);
+  color: hsl(var(--primary-foreground));
+}
+.rpwp-button.colorize-2:hover {
+  background: linear-gradient(to bottom, hsl(var(--warning)) 0%, hsl(var(--accent)) 100%);
+  color: hsl(var(--card-foreground));
+}
+
+/* Breadcrumbs and small UI */
+#crumbs, #crumbs a, .current {
+  color: hsl(var(--muted-foreground));
+}
+
+/* Content panels use card/background tokens */
+#default_content, #internal_page_1, #contacts_page, #category_content, #front_page_content {
+  background: none;
+  color: hsl(var(--foreground));
+}
+
+/* Footer links */
+#footer_menu ul li a {
+  color: hsl(var(--muted-foreground));
+}
+#footer_menu ul li a:hover {
+  color: hsl(var(--primary));
+}
+
+/* Shared boxed elements adopt card background */
+#shared-box, #shared-box-small, #shared-box-medium, #shared-box-large, .article1-plan-box {
+  background: linear-gradient(to bottom, hsl(var(--card)) 0%, hsl(var(--popover)) 100%);
+  color: hsl(var(--foreground));
+  border: 1px solid hsl(var(--border));
+}
+
+/* Domain tld badges */
+.tld, .tld-price-value, .tld-period {
+  color: hsl(var(--primary-foreground));
+}
+.tld-price {
+  background: linear-gradient(to bottom, hsl(var(--primary)) 0%, hsl(var(--primary-hover)) 100%);
+}
+
+/* Make inputs follow design tokens */
+input, select, textarea {
+  background: hsl(var(--input));
+  color: hsl(var(--card-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.375rem;
+}
+
+/* Utility: prefer project's focus ring for accessibility */
+*:focus {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Give precedence to these rules on small screens if needed */
+@media only screen and (max-width: 1024px) {
+  h1#header_logo a {
+    color: hsl(var(--foreground));
+  }
+  h5#header_logo { color: hsl(var(--primary)); }
+}

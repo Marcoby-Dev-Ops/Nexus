@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.app.json",
+  "include": [
+    "src/lib/ai/components/UserKnowledgeViewer.tsx"
+  ],
+  "compilerOptions": {
+    "noEmit": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "name": "nexus-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nexus Platform - Full Stack Business Management System",
+  "scripts": {
+    "dev": "cd client && pnpm dev",
+    "build": "cd client && pnpm build",
+    "start": "cd server && pnpm start",
+    "client:type-check": "pnpm --filter nexus-client -w run type-check",
+    "client:lint": "pnpm --filter nexus-client -w run lint",
+  "server:lint": "pnpm --filter nexus-client -w exec -- eslint ../server --ext ts --report-unused-disable-directives --max-warnings 0 --cache --cache-location .eslintcache || true",
+  "lint": "pnpm --filter nexus-client -w run lint && pnpm --filter nexus-client -w exec -- eslint ../server --ext ts --report-unused-disable-directives --max-warnings 0 --cache --cache-location .eslintcache || true",
+  "lint:ci": "ESLINT_CACHE_LOCATION=.eslintcache pnpm --filter nexus-client -w run lint && pnpm --filter nexus-client -w exec -- eslint ../server --ext ts --report-unused-disable-directives --max-warnings 0 --cache --cache-location .eslintcache || true",
+    "install:client": "cd client && pnpm install",
+    "install:server": "cd server && pnpm install",
+    "install:all": "pnpm install:client && pnpm install:server",
+    "purge-user": "node server/scripts/purge-user.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "pg": "^8.16.3"
+  }
+}

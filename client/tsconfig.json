@@ -1,0 +1,53 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@app/*":           ["src/app/*"],
+      "@core/*":          ["src/core/*"],
+      "@/core/*":         ["src/core/*"],
+      "@/shared/*":        ["src/shared/*"],
+      "@/hooks/*":         ["src/hooks/*"],
+      "@/components/*":    ["src/components/*"],
+      "@/lib/*":           ["src/lib/*"],
+      "@/domains/*":       ["src/domains/*"],
+      "@/pages/*":         ["src/pages/*"],
+      "@/services/*":      ["src/services/*"],
+      "@/stores/*":        ["src/stores/*"],
+      "@/business/*":      ["src/business/*"],
+      "@/utils/*":         ["src/utils/*"],
+      "@/types/*":         ["src/types/*"],
+      "@/styles/*":        ["src/styles/*"],
+      // "@/ai/*":            ["src/ai/*"], // Removed - consolidated to @/lib/ai/*
+
+      "@dashboard/*":     ["src/domains/dashboard/*"],
+      "@workspace/*":     ["src/domains/workspace/*"],
+      "@marketplace/*":   ["src/domains/marketplace/*"],
+      "@business/*":      ["src/domains/business/*"],
+      "@admin/*":         ["src/domains/admin/*"],
+      "@ai/*":            ["src/domains/ai/*"],
+      "@analytics/*":     ["src/domains/analytics/*"],
+      "@integrations/*":  ["src/domains/integrations/*"],
+      "@help-center/*":   ["src/domains/help-center/*"],
+      "@knowledge/*":     ["src/domains/knowledge/*"],
+      "@automation/*":    ["src/domains/automation/*"],
+      "@fire-cycle/*":    ["src/domains/fire-cycle/*"],
+      "@waitlist/*":      ["src/domains/waitlist/*"],
+      "@hype/*":          ["src/domains/hype/*"],
+      "@entrepreneur/*":  ["src/domains/entrepreneur/*"],
+      "@development/*":   ["src/domains/development/*"],
+      "@departments/*":   ["src/domains/departments/*"],
+      "@domains/*":       ["src/domains/*"],
+    },
+    "esModuleInterop": true,
+    "jsx": "react-jsx",
+  "types": ["vitest/globals", "@testing-library/jest-dom"]
+  },
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ],
+  "exclude": [
+    "src/in-progress"
+  ]
+}

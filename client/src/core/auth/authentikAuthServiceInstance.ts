@@ -1,0 +1,672 @@
+/**
+ * Authentik OAuth2 Authentication Service
+ *
+ * This service handles OAuth2 authentication with Authentik (Marcoby IAM)
+ * using the Authorization Code flow with PKCE for security.
+ */
+
+import { BaseService } from '@/core/services/BaseService';
+import { API_ENDPOINTS } from '@/lib/api-url';
+import { generateCodeVerifier, generateCodeChallenge } from '@/shared/utils/pkce';
+import { useAuthStore, persistSessionToStorage, loadSessionFromStorage, clearStoredSession } from './authStore';
+
+// Auth interfaces
+export interface AuthUser {
+  id: string;
+  email: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface AuthSession {
+  user: AuthUser;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: string;
+  session?: {
+    accessToken: string;
+    refreshToken?: string;
+    expiresAt?: string;
+  };
+}
+
+export interface ServiceResponse<T> {
+  success: boolean;
+  data: T | null;
+  error: string | null;
+}
+
+export interface SignInRequest {
+  email: string;
+  password: string;
+}
+
+class AuthentikAuthService extends BaseService {
+  private baseUrl: string;
+  private clientId: string;
+  private redirectUri: string;
+
+  constructor() {
+    super();
+
+    this.baseUrl = import.meta.env.VITE_AUTHENTIK_URL || 'https://identity.marcoby.com';
+    this.clientId = import.meta.env.VITE_AUTHENTIK_CLIENT_ID || '';
+    this.redirectUri = `${window.location.origin}/auth/callback`;
+
+    if (!this.clientId) {
+      this.logger.error('VITE_AUTHENTIK_CLIENT_ID is not configured');
+    }
+  }
+
+  private getInMemorySession(): AuthSession | null {
+    return useAuthStore.getState().session;
+  }
+
+  private syncSessionFromStorage(): AuthSession | null {
+    const session = loadSessionFromStorage();
+    if (session) {
+      useAuthStore.getState().setAuthState(session);
+    }
+    return session;
+  }
+
+  private ensureSessionInMemory(): AuthSession | null {
+    return this.getInMemorySession() ?? this.syncSessionFromStorage();
+  }
+
+  // Determine if session is still valid. Previous 5 min buffer was too aggressive for
+  // short-lived tokens (e.g., 5 min access tokens) causing immediate refresh + failure loop.
+  // New approach:
+  //  - Use a small default buffer (30s)
+  //  - Only attempt proactive refresh when remaining lifetime < buffer
+  //  - Treat tokens with >30s remaining as valid
+  private isSessionValid(session: AuthSession, bufferMs = 30 * 1000): boolean {
+    if (!session) return false;
+
+    const accessToken = session.session?.accessToken || session.accessToken;
+    if (!accessToken) {
+      if (this.authLogsEnabled) this.logger.info('Session invalid: no access token');
+      return false;
+    }
+
+    const expiresAt = session.session?.expiresAt || session.expiresAt;
+    if (!expiresAt) {
+      if (this.authLogsEnabled) this.logger.info('Session invalid: no expiration time');
+      return false;
+    }
+
+    const expiryTime = new Date(expiresAt).getTime();
+  const now = Date.now();
+  const remaining = expiryTime - now;
+  if (!Number.isFinite(expiryTime)) return false;
+  // If remaining time is greater than buffer, it's valid
+  const isValid = remaining > bufferMs;
+    
+    if (this.authLogsEnabled) {
+      this.logger.info('Session validation', {
+        expiryTime: new Date(expiryTime).toISOString(),
+        currentTime: new Date().toISOString(),
+        bufferMs,
+        isValid,
+        remainingMs: remaining,
+        remainingSeconds: Math.round(remaining / 1000)
+      });
+    }
+    
+    return isValid;
+  }
+
+  private commitSession(
+    session: AuthSession | null,
+    options: { keepInitialized?: boolean; persist?: boolean } = {}
+  ): void {
+    const { keepInitialized = true, persist = true } = options;
+    const store = useAuthStore.getState();
+
+    if (session) {
+      store.setAuthState(session);
+      if (persist) {
+        persistSessionToStorage(session);
+      }
+      return;
+    }
+
+    store.clearAuthState(keepInitialized);
+    if (persist) {
+      clearStoredSession();
+    }
+  }
+
+  private get authLogsEnabled(): boolean {
+    try {
+      return ((import.meta as any)?.env?.VITE_ENABLE_AUTH_LOGS === 'true') || import.meta.env.DEV;
+  } catch {
+      return import.meta.env.DEV;
+    }
+  }
+
+  async isAuthenticated(): Promise<ServiceResponse<boolean>> {
+    try {
+      const session = this.ensureSessionInMemory();
+
+      if (!session || !session.user?.id) {
+        if (this.authLogsEnabled) this.logger.info('No valid session available in memory');
+        this.commitSession(null);
+        return { success: true, data: false, error: null };
+      }
+
+      if (this.isSessionValid(session)) {
+        if (this.authLogsEnabled) {
+          this.logger.info('User is authenticated', {
+            userId: session.user.id,
+            expiresAt: session.session?.expiresAt,
+          });
+        }
+        return { success: true, data: true, error: null };
+      }
+
+      // If token is within buffer window, schedule a background refresh instead of declaring unauthenticated.
+      if (this.authLogsEnabled) {
+        this.logger.info('Session near expiry (within buffer), launching background refresh');
+      }
+      try {
+        // Fire and forget (do not block caller). If it fails, next call will handle.
+        this.refreshSession().catch(err => {
+          if (this.authLogsEnabled) {
+            this.logger.warn('Background refresh failed', { error: err instanceof Error ? err.message : String(err) });
+          }
+        });
+        return { success: true, data: true, error: null };
+      } catch {
+        if (this.authLogsEnabled) this.logger.warn('Background refresh threw synchronously');
+        return { success: true, data: true, error: null }; // still treat as authenticated for grace period
+      }
+    } catch (error) {
+      this.logger.error('Error checking authentication status', error);
+      this.commitSession(null);
+      return {
+        success: false,
+        data: false,
+        error: error instanceof Error ? error.message : 'Failed to check authentication status',
+      };
+    }
+  }
+
+  async getSession(): Promise<ServiceResponse<AuthSession>> {
+    try {
+      const session = this.ensureSessionInMemory();
+
+      if (!session) {
+        return { success: false, data: null, error: 'No session found' };
+      }
+
+      if (!this.isSessionValid(session, 0)) {
+        const refreshResult = await this.refreshSession();
+        if (refreshResult.success) {
+          return refreshResult;
+        }
+        return { success: false, data: null, error: 'Session expired' };
+      }
+
+      return { success: true, data: session, error: null };
+    } catch (error) {
+      this.logger.error('Failed to get session', error);
+      return { success: false, data: null, error: 'Failed to get session' };
+    }
+  }
+
+  async setSession(sessionData: AuthSession): Promise<ServiceResponse<void>> {
+    try {
+      if (!sessionData || !sessionData.user) {
+        throw new Error('Invalid session data: missing user information');
+      }
+
+      if (!sessionData.session?.accessToken) {
+        throw new Error('Invalid session data: missing access token');
+      }
+
+      const session: AuthSession = {
+        ...sessionData,
+        session: {
+          accessToken: sessionData.session.accessToken,
+          refreshToken: sessionData.session.refreshToken,
+          expiresAt: sessionData.session.expiresAt || new Date(Date.now() + 3600 * 1000).toISOString(),
+        },
+      };
+
+      if (this.authLogsEnabled) {
+        this.logger.info('Setting session', {
+          userId: session.user.id,
+          expiresAt: session.session?.expiresAt,
+          hasRefreshToken: !!session.session?.refreshToken,
+        });
+      }
+
+      this.commitSession(session);
+      if (this.authLogsEnabled) {
+        try {
+          const stored = localStorage.getItem('authentik_session');
+          const parsed = stored ? JSON.parse(stored) : null;
+          this.logger.info('Session persisted verification', {
+            persisted: !!parsed,
+            persistedUserId: parsed?.user?.id,
+            persistedExpiresAt: parsed?.session?.expiresAt,
+          });
+        } catch (e) {
+          this.logger.warn('Failed to verify persisted session', e);
+        }
+      }
+      return { success: true, data: null, error: null };
+    } catch (error) {
+      this.logger.error('Failed to set session', error);
+      return { success: false, data: null, error: 'Failed to set session' };
+    }
+  }
+
+  async refreshSession(): Promise<ServiceResponse<AuthSession>> {
+    try {
+      const session = this.ensureSessionInMemory();
+      if (!session) {
+        if (this.authLogsEnabled) this.logger.info('No session to refresh');
+        return { success: false, data: null, error: 'No session to refresh' };
+      }
+
+      const refreshToken = session.session?.refreshToken;
+      if (!refreshToken) {
+        if (this.authLogsEnabled) this.logger.info('No refresh token available');
+        return { success: false, data: null, error: 'No refresh token available' };
+      }
+
+      if (this.authLogsEnabled) {
+        this.logger.info('Attempting token refresh', {
+          userId: session.user.id,
+          hasRefreshToken: !!refreshToken,
+          refreshTokenLength: refreshToken.length
+        });
+      }
+
+      const response = await fetch(API_ENDPOINTS.OAUTH_REFRESH, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: 'authentik',
+          refreshToken,
+        }),
+      });
+
+      const isJson = response.headers.get('content-type')?.includes('application/json');
+      const payload = isJson ? await response.json() : await response.text();
+
+      if (!response.ok) {
+        const errorData = typeof payload === 'object' && payload !== null ? payload : { error: payload };
+        const errorMessage =
+          errorData?.details || errorData?.error_description || errorData?.error || `HTTP ${response.status}`;
+
+        this.logger.error('Token refresh failed', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMessage,
+          errorData,
+          refreshTokenLength: refreshToken.length,
+          clientId: this.clientId,
+          endpoint: API_ENDPOINTS.OAUTH_REFRESH,
+        });
+
+        if (response.status === 400 || response.status === 401) {
+          if (this.authLogsEnabled) {
+            this.logger.info('Clearing invalid session due to authentication error');
+          }
+          this.commitSession(null);
+        }
+
+        return { success: false, data: null, error: `Token refresh failed: ${errorMessage}` };
+      }
+
+      const tokenData = typeof payload === 'object' && payload !== null ? payload : {};
+
+      if (!tokenData.access_token) {
+        this.logger.error('Token refresh response missing access token', {
+          tokenData,
+        });
+        return { success: false, data: null, error: 'Token refresh failed: missing access token' };
+      }
+
+      if (this.authLogsEnabled) {
+        this.logger.info('Token refresh successful', {
+          hasAccessToken: !!tokenData.access_token,
+          hasRefreshToken: !!tokenData.refresh_token,
+          expiresIn: tokenData.expires_in,
+          tokenType: tokenData.token_type
+        });
+      }
+
+      const updatedSession: AuthSession = {
+        ...session,
+        session: {
+          ...session.session,
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token || refreshToken,
+          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+        },
+      };
+
+      await this.setSession(updatedSession);
+      return { success: true, data: updatedSession, error: null };
+    } catch (error) {
+      this.logger.error('Failed to refresh session', error);
+      return {
+        success: false,
+        data: null,
+        error: error instanceof Error ? error.message : 'Failed to refresh session',
+      };
+    }
+  }
+
+  async getAuthStatus(): Promise<ServiceResponse<{ isAuthenticated: boolean; hasSession: boolean }>> {
+    try {
+      const session = this.ensureSessionInMemory();
+      const hasSession = !!session;
+
+      if (!hasSession) {
+        return {
+          success: true,
+          data: { isAuthenticated: false, hasSession: false },
+          error: null,
+        };
+      }
+
+      const isAuthenticated = await this.isAuthenticated();
+      return {
+        success: true,
+        data: { isAuthenticated: Boolean(isAuthenticated.data), hasSession },
+        error: null,
+      };
+    } catch (error) {
+      this.logger.error('Failed to get auth status', error);
+      return {
+        success: false,
+        data: null,
+        error: 'Failed to get auth status',
+      };
+    }
+  }
+
+  async handleOAuthCallback(code: string, state: string): Promise<ServiceResponse<AuthSession>> {
+    try {
+      const storedState = localStorage.getItem('authentik_oauth_state');
+      if (state !== storedState) {
+        throw new Error('Invalid state parameter');
+      }
+
+      const codeVerifier = localStorage.getItem('authentik_code_verifier');
+      if (!codeVerifier) {
+        throw new Error('No code verifier found');
+      }
+
+      if (this.authLogsEnabled)
+        this.logger.info('OAuth callback parameters', {
+          code: code.substring(0, 10) + '...',
+          state: state.substring(0, 10) + '...',
+          codeVerifier: codeVerifier.substring(0, 10) + '...',
+          redirectUri: this.redirectUri,
+        });
+
+      const tokenResponse = await fetch('/api/oauth/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: 'authentik',
+          code,
+          redirectUri: this.redirectUri,
+          codeVerifier,
+          state,
+        }),
+      });
+
+      if (!tokenResponse.ok) {
+        const errorData = await tokenResponse.text();
+        this.logger.error('Token exchange failed', {
+          status: tokenResponse.status,
+          statusText: tokenResponse.statusText,
+          errorData,
+        });
+        throw new Error(`Token exchange failed: ${tokenResponse.status} - ${errorData}`);
+      }
+
+      const tokenData = await tokenResponse.json();
+      if (this.authLogsEnabled)
+        this.logger.info('Token exchange successful', {
+          hasAccessToken: !!tokenData.access_token,
+          hasRefreshToken: !!tokenData.refresh_token,
+          expiresIn: tokenData.expires_in,
+          allTokenData: tokenData,
+        });
+
+      const userResponse = await fetch('/api/oauth/userinfo', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          provider: 'authentik',
+          accessToken: tokenData.access_token,
+        }),
+      });
+
+      if (!userResponse.ok) {
+        const userErrorData = await userResponse.text();
+        this.logger.error('Failed to get user info', {
+          status: userResponse.status,
+          statusText: userResponse.statusText,
+          errorData: userErrorData,
+        });
+        throw new Error('Failed to get user info');
+      }
+
+      const rawUserInfo = await userResponse.json();
+      // Support both direct userinfo object and wrapped { success, userinfo }
+      const userData: any = rawUserInfo?.userinfo || rawUserInfo;
+      if (!userData) {
+        throw new Error('Empty user info payload');
+      }
+      if (this.authLogsEnabled)
+        this.logger.info('User info retrieved', {
+          externalId: userData.sub,
+            email: userData.email,
+          name: userData.name,
+          wrapped: !!rawUserInfo?.userinfo,
+          allUserData: userData,
+        });
+
+      // Use the JWT sub directly as the user ID - this matches what the server expects
+      const userId = userData.sub?.toString();
+      
+      if (this.authLogsEnabled) {
+        this.logger.info('Using JWT sub as user ID', { 
+          jwtSub: userData.sub,
+          email: userData.email,
+          name: userData.name 
+        });
+      }
+
+      const session: AuthSession = {
+        user: {
+          id: userId,
+          email: userData.email,
+          name: userData.name,
+          firstName: userData.first_name || userData.given_name || undefined,
+          lastName: userData.last_name || userData.family_name || undefined,
+        },
+        session: {
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000).toISOString(),
+        },
+      };
+
+      if (this.authLogsEnabled)
+        this.logger.info('Storing session', {
+          sessionId: session.user.id,
+          sessionEmail: session.user.email,
+          hasAccessToken: !!session.session?.accessToken,
+          hasRefreshToken: !!session.session?.refreshToken,
+          expiresAt: session.session?.expiresAt,
+        });
+      await this.setSession(session);
+
+      // (Cleanup) Removed temporary fallback manual persistence; rely on setSession persistence.
+
+      localStorage.removeItem('authentik_oauth_state');
+      localStorage.removeItem('authentik_code_verifier');
+
+      return { success: true, data: session, error: null };
+    } catch (error) {
+      this.logger.error('Failed to handle OAuth callback', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        userData: error instanceof Error && 'userData' in error ? (error as any).userData : undefined,
+      });
+      return { success: false, data: null, error: 'Failed to handle OAuth callback' };
+    }
+  }
+
+  async updateUser(userData: Partial<AuthUser>): Promise<ServiceResponse<AuthUser>> {
+    try {
+      const session = await this.getSession();
+      if (!session.success || !session.data) {
+        return { success: false, data: null, error: 'No active session' };
+      }
+
+      const response = await fetch(`${this.baseUrl}/core/users/${session.data.user.id}/`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${session.data.session?.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update user');
+      }
+
+      const updatedUserData = await response.json();
+
+      const updatedSession: AuthSession = {
+        ...session.data,
+        user: {
+          ...session.data.user,
+          ...updatedUserData,
+        },
+      };
+
+      await this.setSession(updatedSession);
+      return { success: true, data: updatedSession.user, error: null };
+    } catch (error) {
+      this.logger.error('Failed to update user', error);
+      return { success: false, data: null, error: 'Failed to update user' };
+    }
+  }
+
+  async signOut(): Promise<ServiceResponse<void>> {
+    try {
+      const session = this.ensureSessionInMemory();
+      if (session?.session?.accessToken) {
+        try {
+          await fetch(`${this.baseUrl}/application/o/revoke_token/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              token: session.session.accessToken,
+              client_id: this.clientId,
+            }),
+          });
+        } catch (error) {
+          this.logger.warn('Failed to revoke token', error);
+        }
+      }
+
+      this.commitSession(null, { keepInitialized: true });
+      localStorage.removeItem('authentik_oauth_state');
+      localStorage.removeItem('authentik_code_verifier');
+
+      return { success: true, data: null, error: null };
+    } catch (error) {
+      this.logger.error('Failed to sign out', error);
+      return { success: false, data: null, error: 'Failed to sign out' };
+    }
+  }
+
+  async initiateOAuthFlow(
+    redirectUri?: string,
+    additionalParams?: Record<string, string>
+  ): Promise<ServiceResponse<string>> {
+    try {
+      if (!this.clientId) {
+        throw new Error('Authentik client ID not configured');
+      }
+
+      const codeVerifier = generateCodeVerifier(128);
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+      const stateResponse = await fetch('/api/oauth/state', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 'auth',
+          integrationSlug: 'authentik',
+          redirectUri: redirectUri || this.redirectUri,
+        }),
+      });
+
+      if (!stateResponse.ok) {
+        throw new Error('Failed to generate OAuth state');
+      }
+
+      const stateData = await stateResponse.json();
+      const { state } = stateData.data;
+
+      localStorage.setItem('authentik_code_verifier', codeVerifier);
+      localStorage.setItem('authentik_oauth_state', state);
+
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: this.clientId,
+        redirect_uri: redirectUri || this.redirectUri,
+        scope: 'openid email profile offline_access',
+        state,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+        ...additionalParams,
+      });
+
+      const authUrl = `${this.baseUrl}/application/o/authorize/?${params.toString()}`;
+
+      if (this.authLogsEnabled)
+        this.logger.info('Initiating OAuth flow', {
+          authUrl,
+          clientId: this.clientId,
+          redirectUri: redirectUri || this.redirectUri,
+          state: state.substring(0, 10) + '...',
+          codeChallenge: codeChallenge.substring(0, 10) + '...',
+          codeVerifier: codeVerifier.substring(0, 10) + '...',
+        });
+
+      return { success: true, data: authUrl, error: null };
+    } catch (error) {
+      this.logger.error('Failed to initiate OAuth flow', error);
+      return { success: false, data: null, error: 'Failed to initiate OAuth flow' };
+    }
+  }
+}
+
+export const authentikAuthService = new AuthentikAuthService();

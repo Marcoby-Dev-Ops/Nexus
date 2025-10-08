@@ -1,0 +1,62 @@
+# Node
+node_modules/
+.env
+.env.*
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build output
+dist/
+dist-ssr/
+build/
+.vite/
+          
+# Testing
+coverage/
+backups/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Docker
+nexus-db-data/
+
+# Misc
+*.local
+.env
+server/uploads/
+server/.env
+
+# Security - Additional patterns
+*.key
+*.pem
+*.p12
+*.pfx
+secrets/
+config/secrets/
+.secrets
+mcp.json
+.cursor/mcp.json
+
+# Backup files that might contain sensitive data
+*.bak
+*.backup
+*.old
+*~dev
+
+*storybook.log
+storybook-static

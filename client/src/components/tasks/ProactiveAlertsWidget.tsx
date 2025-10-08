@@ -1,0 +1,1 @@
+export { default, ProactiveAlertsWidget } from '@shared/components/widgets/ProactiveAlertsWidget'; 

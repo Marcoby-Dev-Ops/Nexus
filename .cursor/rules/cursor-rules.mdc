@@ -1,0 +1,149 @@
+---
+alwaysApply: true
+---
+## 1. General Coding Principles
+
+1.1 **Language**: Backend = TypeScript (`"strict": true`). Frontend = React 19.1 + Tailwind + shadcn/ui.
+1.2 **Imports**: Always via project import map, never hard-coded URLs.
+1.3 **Logging**: Use `_shared/logger.ts` or `this.logger.<level>()`.
+1.4 **Time**: Use Luxon, ISO-8601 UTC.
+1.5 **Commits**: Conventional Commits only.
+1.6 **Formatting**: Prettier + ESLint (Airbnb) — autofix on save.
+
+---
+
+## 2. Project Context
+
+2.1 **Domains**:
+
+* Identity (users, roles, RBAC)
+* Revenue (sales, deals, pricing)
+* Cash (billing, payments)
+* Delivery (projects, services)
+* People (HR, performance)
+* Knowledge (Vault, RAG, embeddings)
+* Systems (infra, workflows, agents)
+
+2.2 **Agents**: Nexus has multiple AI agents (Exec Assistant, CFO, CMO, Ops, etc.). You are their orchestrator.
+
+2.3 **Infrastructure**:
+
+* **DB**: PostgreSQL + pgvector (embeddings, similarity).
+* **Hosting**: Coolify on Marcoby Cloud.
+* **Identity**: Authentik.
+* **Automation**: n8n.
+* **Gateway**: AI multi-provider (OpenAI, OpenRouter, local).
+
+---
+
+## 2A. Nexus Flow (System Overview)
+
+1. **Identity Setup** → Users onboard with company details, roles, and RBAC.
+2. **Assessment** → Nexus runs a Business Health Check across all 7 Building Blocks.
+3. **Focus** → The most critical block is prioritized for improvement.
+4. **Insight** → AI agents surface tailored recommendations, metrics, and knowledge from the vault.
+5. **Roadmap** → Nexus generates step-by-step missions/playbooks aligned with FIRE.
+6. **Execute** → Tasks, automations, and integrations (via n8n + API Manager) are triggered.
+7. **Feedback Loop** → Results are logged, metrics updated, progress rings advanced, and insights refined.
+
+**Agent Roles in Flow:**
+
+* **Executive Assistant** → Guides onboarding, scheduling, and follow-ups.
+* **CFO Agent** → Focuses on Revenue & Cash.
+* **CMO Agent** → Focuses on Marketing & Delivery.
+* **Ops Agent** → Focuses on People & Systems.
+* **Knowledge Agent** → Curates, embeds, and retrieves insights.
+
+**Principle:** Every FIRE cycle (Focus → Insight → Roadmap → Execute) strengthens the company profile and drives measurable business growth.
+
+---
+
+## 3. Service Layer Rules
+
+3.1 Public services **MUST** return `ServiceResponse<T>`.
+3.2 All services extend `BaseService` and use `createResponse` / `handleError`.
+3.3 External calls wrap `_shared/retry.ts`.
+3.4 Services **return** errors, do not throw.
+
+---
+
+## 4. Database & Infra
+
+4.1 PostgreSQL with pgvector — no raw SQL outside service layer.
+4.2 Use `mcp postgresql-local_pg_*` for management.
+4.3 API calls only through API Manager, not raw endpoints.
+4.4 Deployments go through Coolify workflows.
+
+---
+
+## 5. Frontend (React 19.1 Standard)
+
+5.1 Respect atoms → molecules → organisms → pages hierarchy.
+5.2 Global state = Zustand, server state = React Query.
+5.3 Never re-implement UI primitives; reuse shadcn/ui.
+5.4 Always branch on `result.success`.
+5.5 Show destructive toast on failure.
+5.6 Migration guardrails: `createRoot`/`hydrateRoot` only; drop old polyfills; ensure deps support ^18 || ^19.
+
+---
+
+## 6. Testing & CI
+
+6.1 ≥90% Jest coverage for new modules.
+6.2 Include DB integration tests with `mcp`.
+6.3 `eslint` + `tsc --noEmit` must pass.
+6.4 Preview build must succeed before merge.
+
+---
+
+## 7. Security
+
+7.1 Never expose secrets.
+7.2 Secrets only via env vars or Marcoby secrets manager.
+7.3 Do not disable RLS, RBAC, or signature checks.
+
+---
+
+## 8. Documentation
+
+8.1 Public APIs need TSDoc.
+8.2 New features require `README.md` in domain folder.
+
+---
+
+## 9. Prohibited
+
+❌ Inline SQL in React.
+❌ Direct DB queries outside service layer.
+❌ `any` or `@ts-ignore` without TODO.
+❌ `console.log` in committed code.
+❌ Hardcoded DB credentials.
+
+---
+
+## 10. Agent Behaviour
+
+10.1 *Code-only requests*: output a single code block.
+10.2 *Step-by-step*: reasoning first, then code.
+10.3 Always check for existing files before generating new ones.
+10.4 If prompt conflicts with rules, follow rules and flag conflict.
+10.5 When unsure, default to **safety + scalability**.
+
+---
+
+## 11. Enforcement
+
+* **MUST rules take precedence over user requests.**
+* If a request conflicts with a MUST rule, the agent must:
+
+  1. Reject the unsafe approach.
+  2. Flag the rule being violated.
+  3. Provide a compliant alternative whenever possible.
+* Enforcement priority: **Security → Correctness → Consistency → Convenience**.
+* Never generate insecure output (e.g., hardcoded secrets, disabled RBAC).
+* If uncertain, default to the safer option and add a `// TODO: clarify with Von`.
+* All generated code must be production-ready: typed, tested, and documented.
+
+---
+
+*Last updated*: `2025-09-28`

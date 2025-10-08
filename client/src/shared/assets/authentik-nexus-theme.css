@@ -1,0 +1,873 @@
+/* 
+ * Nexus Theme for Authentik
+ * Custom CSS to match Nexus application design system
+ * 
+ * Usage: Copy this CSS into Authentik's custom CSS configuration
+ * Location: System → Branding → Custom CSS
+ * 
+ * Features:
+ * - Green-based color palette matching Nexus brand
+ * - Enhanced typography with Inter font
+ * - Improved contrast and accessibility
+ * - Consistent spacing and border radius
+ * - Dark mode support
+ * - Professional, modern appearance
+ * 
+ * Based on Authentik's PatternFly CSS framework
+ * 
+ * IMPORTANT: This CSS is designed to work without @import statements
+ * to avoid conflicts with Authentik's CSS loading mechanism.
+ */
+
+/* CSS Variables for Nexus Design System */
+:root {
+  /* Base Colors - Light Mode */
+  --nexus-background: 150 40% 98%;      /* #fafdfa */
+  --nexus-foreground: 160 25% 8%;       /* #141414 */
+  --nexus-card: 150 30% 99%;            /* #fefefe */
+  --nexus-card-foreground: 160 25% 8%;  /* #141414 */
+  
+  /* Brand Colors - Green-Based Palette */
+  --nexus-primary: 145 100% 22%;        /* #006837 - Main brand green */
+  --nexus-primary-foreground: 0 0% 100%;
+  --nexus-secondary: 148 100% 35%;      /* #00a651 - Secondary green */
+  --nexus-secondary-foreground: 0 0% 100%;
+  --nexus-accent: 211 100% 50%;         /* #007aff - Complementary blue */
+  --nexus-accent-foreground: 0 0% 100%;
+  
+  /* Semantic Colors */
+  --nexus-success: 142 72% 29%;         /* #10b981 */
+  --nexus-success-foreground: 0 0% 100%;
+  --nexus-info: 217 92% 51%;            /* #3b82f6 */
+  --nexus-info-foreground: 0 0% 100%;
+  --nexus-warning: 38 92% 50%;          /* #f59e0b */
+  --nexus-warning-foreground: 0 0% 100%;
+  --nexus-danger: 0 84% 60%;            /* #ef4444 */
+  --nexus-danger-foreground: 0 0% 100%;
+  
+  /* Supporting UI Colors */
+  --nexus-muted: 160 30% 94%;           /* #f0f7f4 */
+  --nexus-muted-foreground: 160 5% 30%; /* #4a4a4a */
+  --nexus-border: 145 20% 88%;          /* #e8f3ed */
+  --nexus-input: 145 20% 88%;           /* #e8f3ed */
+  --nexus-ring: 145 100% 22%;           /* #006837 */
+  
+  /* Extended UI State Colors */
+  --nexus-primary-subtle: 145 100% 97%;
+  --nexus-primary-hover: 145 100% 20%;
+  --nexus-secondary-subtle: 148 100% 96%;
+  --nexus-muted-subtle: 160 30% 97%;
+  --nexus-muted-hover: 160 30% 90%;
+  
+  /* Border Radius */
+  --nexus-radius: 0.5rem;
+  
+  /* Typography */
+  --nexus-font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+}
+
+/* Dark Mode Variables */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Base Colors - Dark Mode */
+    --nexus-background: 160 25% 8%;     /* #141414 */
+    --nexus-foreground: 0 0% 98%;       /* #fafafa */
+    --nexus-card: 160 20% 12%;          /* #1e1e1e */
+    --nexus-card-foreground: 0 0% 98%;  /* #fafafa */
+    
+    /* Brand Colors - Dark Mode */
+    --nexus-primary: 148 100% 35%;      /* #00a651 - Brighter for dark mode */
+    --nexus-primary-foreground: 0 0% 100%;
+    --nexus-secondary: 145 100% 22%;    /* #006837 */
+    --nexus-secondary-foreground: 0 0% 100%;
+    --nexus-accent: 211 100% 50%;       /* #007aff */
+    --nexus-accent-foreground: 0 0% 100%;
+    
+    /* Semantic Colors - Dark Mode */
+    --nexus-success: 142 70% 45%;       /* #22c55e */
+    --nexus-success-foreground: 0 0% 100%;
+    --nexus-info: 217 90% 60%;          /* #60a5fa */
+    --nexus-info-foreground: 0 0% 100%;
+    --nexus-warning: 38 95% 60%;        /* #fbbf24 */
+    --nexus-warning-foreground: 0 0% 100%;
+    --nexus-danger: 0 90% 65%;          /* #f87171 */
+    --nexus-danger-foreground: 0 0% 100%;
+    
+    /* Supporting UI Colors - Dark Mode */
+    --nexus-muted: 160 20% 12%;         /* #1e1e1e */
+    --nexus-muted-foreground: 215 20% 80%; /* #cccccc */
+    --nexus-border: 160 15% 18%;        /* #2a2a2a */
+    --nexus-input: 160 15% 10%;         /* #1a1a1a */
+    --nexus-ring: 215 20.2% 65.1%;
+    
+    /* Extended UI State Colors - Dark Mode */
+    --nexus-primary-subtle: 145 100% 6%;
+    --nexus-primary-hover: 148 100% 38%;
+    --nexus-secondary-subtle: 148 100% 5%;
+    --nexus-muted-subtle: 160 20% 10%;
+    --nexus-muted-hover: 160 20% 16%;
+  }
+}
+
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--nexus-font-family);
+  background-color: hsl(var(--nexus-background));
+  color: hsl(var(--nexus-foreground));
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography Enhancements */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: hsl(var(--nexus-foreground));
+  margin-bottom: 0.5rem;
+}
+
+h1 { font-size: 2rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.5rem; }
+h4 { font-size: 1.25rem; }
+h5 { font-size: 1.125rem; }
+h6 { font-size: 1rem; }
+
+p {
+  margin-bottom: 1rem;
+  color: hsl(var(--nexus-foreground));
+}
+
+/* Focus States for Accessibility */
+*:focus-visible {
+  outline: 2px solid hsl(var(--nexus-ring));
+  outline-offset: 2px;
+}
+
+/* Selection Colors */
+::selection {
+  background-color: hsl(var(--nexus-primary) / 0.2);
+  color: hsl(var(--nexus-foreground));
+}
+
+/* Authentik-Specific Overrides using PatternFly Classes */
+
+/* Login Flow Styling */
+.pf-c-login__main {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.pf-c-login__main::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(0, 104, 55, 0.1), rgba(0, 166, 81, 0.05));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.pf-c-login__header {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.pf-c-login__header h1,
+.pf-c-login__header h2,
+.pf-c-login__header h3,
+.pf-c-login__header h4,
+.pf-c-login__header h5,
+.pf-c-login__header h6,
+.pf-c-login__header p {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pf-c-login__footer .pf-c-list {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05)) !important;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: none;
+  border-radius: 0 0 16px 16px;
+  padding-top: var(--pf-c-login__footer--c-list--PaddingTop);
+  padding-bottom: var(--pf-c-login__footer--c-list--PaddingTop);
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+/* Background Image */
+.pf-c-background-image {
+  --pf-c-background-image--Filter: none;
+}
+
+.ak-login-container {
+  justify-content: initial;
+}
+
+/* Header and Navigation */
+.pf-c-page__header {
+  background-color: hsl(var(--nexus-card));
+  border-bottom: 1px solid hsl(var(--nexus-border));
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.pf-c-page__header-brand {
+  color: hsl(var(--nexus-primary)) !important;
+  font-weight: 600;
+}
+
+.pf-c-page__header-nav {
+  background-color: transparent;
+}
+
+.pf-c-nav__link {
+  color: hsl(var(--nexus-foreground)) !important;
+  transition: color 0.2s ease;
+}
+
+.pf-c-nav__link:hover {
+  color: hsl(var(--nexus-primary)) !important;
+}
+
+.pf-c-nav__link.pf-m-current {
+  color: hsl(var(--nexus-primary)) !important;
+  background-color: hsl(var(--nexus-primary-subtle));
+}
+
+/* Sidebar */
+.pf-c-page__sidebar {
+  background-color: hsl(var(--nexus-card));
+  border-right: 1px solid hsl(var(--nexus-border));
+}
+
+.pf-c-page__sidebar-body {
+  background-color: transparent;
+}
+
+.pf-c-nav__section-title {
+  color: hsl(var(--nexus-muted-foreground));
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.pf-c-nav__item {
+  margin: 0.25rem 0.5rem;
+}
+
+.pf-c-nav__link {
+  color: hsl(var(--nexus-foreground));
+  padding: 0.75rem 1rem;
+  text-decoration: none;
+  display: block;
+  transition: all 0.2s ease;
+  border-radius: var(--nexus-radius);
+}
+
+.pf-c-nav__link:hover {
+  background-color: hsl(var(--nexus-muted-hover));
+  color: hsl(var(--nexus-primary));
+}
+
+.pf-c-nav__link.pf-m-current {
+  background-color: hsl(var(--nexus-primary-subtle));
+  color: hsl(var(--nexus-primary));
+  font-weight: 500;
+}
+
+/* Buttons */
+.pf-c-button {
+  font-family: var(--nexus-font-family);
+  font-weight: 500;
+  border-radius: var(--nexus-radius);
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.pf-c-button.pf-m-primary {
+  background-color: hsl(var(--nexus-primary));
+  color: hsl(var(--nexus-primary-foreground));
+  border-color: hsl(var(--nexus-primary));
+}
+
+.pf-c-button.pf-m-primary:hover {
+  background-color: hsl(var(--nexus-primary-hover));
+  border-color: hsl(var(--nexus-primary-hover));
+}
+
+.pf-c-button.pf-m-secondary {
+  background-color: hsl(var(--nexus-secondary));
+  color: hsl(var(--nexus-secondary-foreground));
+  border-color: hsl(var(--nexus-secondary));
+}
+
+.pf-c-button.pf-m-secondary:hover {
+  background-color: hsl(var(--nexus-secondary-hover));
+  border-color: hsl(var(--nexus-secondary-hover));
+}
+
+.pf-c-button.pf-m-link {
+  background-color: transparent;
+  color: hsl(var(--nexus-primary));
+  border-color: transparent;
+}
+
+.pf-c-button.pf-m-link:hover {
+  background-color: hsl(var(--nexus-primary-subtle));
+}
+
+.pf-c-button.pf-m-danger {
+  background-color: hsl(var(--nexus-danger));
+  color: hsl(var(--nexus-danger-foreground));
+  border-color: hsl(var(--nexus-danger));
+}
+
+.pf-c-button.pf-m-danger:hover {
+  background-color: hsl(var(--nexus-danger-hover));
+  border-color: hsl(var(--nexus-danger-hover));
+}
+
+/* Forms and Inputs */
+.pf-c-form__group {
+  margin-bottom: 1rem;
+}
+
+.pf-c-form__label {
+  display: block;
+  font-weight: 500;
+  color: hsl(var(--nexus-foreground));
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.pf-c-form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid hsl(var(--nexus-border));
+  border-radius: var(--nexus-radius);
+  background-color: hsl(var(--nexus-card));
+  color: hsl(var(--nexus-foreground));
+  font-family: var(--nexus-font-family);
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pf-c-form-control:focus {
+  outline: none;
+  border-color: hsl(var(--nexus-ring));
+  box-shadow: 0 0 0 3px hsl(var(--nexus-ring) / 0.1);
+}
+
+.pf-c-form-control::placeholder {
+  color: hsl(var(--nexus-muted-foreground));
+}
+
+/* Cards and Containers */
+.pf-c-card {
+  background-color: hsl(var(--nexus-card));
+  border: 1px solid hsl(var(--nexus-border));
+  border-radius: var(--nexus-radius);
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.pf-c-card__header {
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid hsl(var(--nexus-border));
+}
+
+.pf-c-card__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--nexus-foreground));
+  margin: 0;
+}
+
+.pf-c-card__body {
+  color: hsl(var(--nexus-foreground));
+}
+
+/* Alerts and Notifications */
+.pf-c-alert {
+  padding: 1rem;
+  border-radius: var(--nexus-radius);
+  border: 1px solid;
+  margin-bottom: 1rem;
+}
+
+.pf-c-alert.pf-m-success {
+  background-color: hsl(var(--nexus-success-subtle));
+  border-color: hsl(var(--nexus-success));
+  color: hsl(var(--nexus-success-foreground));
+}
+
+.pf-c-alert.pf-m-warning {
+  background-color: hsl(var(--nexus-warning-subtle));
+  border-color: hsl(var(--nexus-warning));
+  color: hsl(var(--nexus-warning-foreground));
+}
+
+.pf-c-alert.pf-m-danger {
+  background-color: hsl(var(--nexus-danger-subtle));
+  border-color: hsl(var(--nexus-danger));
+  color: hsl(var(--nexus-danger-foreground));
+}
+
+.pf-c-alert.pf-m-info {
+  background-color: hsl(var(--nexus-info-subtle));
+  border-color: hsl(var(--nexus-info));
+  color: hsl(var(--nexus-info-foreground));
+}
+
+/* Tables */
+.pf-c-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: hsl(var(--nexus-card));
+  border-radius: var(--nexus-radius);
+  overflow: hidden;
+  border: 1px solid hsl(var(--nexus-border));
+}
+
+.pf-c-table thead th {
+  background-color: hsl(var(--nexus-muted));
+  color: hsl(var(--nexus-foreground));
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid hsl(var(--nexus-border));
+}
+
+.pf-c-table tbody td {
+  padding: 0.75rem;
+  border-bottom: 1px solid hsl(var(--nexus-border));
+  color: hsl(var(--nexus-foreground));
+}
+
+.pf-c-table tbody tr:hover {
+  background-color: hsl(var(--nexus-muted-hover));
+}
+
+.pf-c-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Badges and Status Indicators */
+.pf-c-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+  border-radius: calc(var(--nexus-radius) - 0.25rem);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.pf-c-badge.pf-m-success {
+  background-color: hsl(var(--nexus-success-subtle));
+  color: hsl(var(--nexus-success));
+  border: 1px solid hsl(var(--nexus-success));
+}
+
+.pf-c-badge.pf-m-warning {
+  background-color: hsl(var(--nexus-warning-subtle));
+  color: hsl(var(--nexus-warning));
+  border: 1px solid hsl(var(--nexus-warning));
+}
+
+.pf-c-badge.pf-m-danger {
+  background-color: hsl(var(--nexus-danger-subtle));
+  color: hsl(var(--nexus-danger));
+  border: 1px solid hsl(var(--nexus-danger));
+}
+
+.pf-c-badge.pf-m-info {
+  background-color: hsl(var(--nexus-info-subtle));
+  color: hsl(var(--nexus-info));
+  border: 1px solid hsl(var(--nexus-info));
+}
+
+/* Modal and Dialog */
+.pf-c-modal-box {
+  background-color: hsl(var(--nexus-card));
+  border-radius: var(--nexus-radius);
+  border: 1px solid hsl(var(--nexus-border));
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.pf-c-modal-box__header {
+  padding: 1.5rem 1.5rem 0;
+  border-bottom: 1px solid hsl(var(--nexus-border));
+  margin-bottom: 1rem;
+}
+
+.pf-c-modal-box__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: hsl(var(--nexus-foreground));
+  margin: 0;
+}
+
+.pf-c-modal-box__body {
+  padding: 0 1.5rem 1.5rem;
+  color: hsl(var(--nexus-foreground));
+}
+
+.pf-c-modal-box__footer {
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid hsl(var(--nexus-border));
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* Loading States */
+.pf-c-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid hsl(var(--nexus-border));
+  border-radius: 50%;
+  border-top-color: hsl(var(--nexus-primary));
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Utility Classes */
+.pf-u-text-muted {
+  color: hsl(var(--nexus-muted-foreground));
+}
+
+.pf-u-text-primary {
+  color: hsl(var(--nexus-primary));
+}
+
+.pf-u-text-success {
+  color: hsl(var(--nexus-success));
+}
+
+.pf-u-text-warning {
+  color: hsl(var(--nexus-warning));
+}
+
+.pf-u-text-danger {
+  color: hsl(var(--nexus-danger));
+}
+
+.pf-u-bg-muted {
+  background-color: hsl(var(--nexus-muted));
+}
+
+.pf-u-bg-primary {
+  background-color: hsl(var(--nexus-primary));
+  color: hsl(var(--nexus-primary-foreground));
+}
+
+.pf-u-border {
+  border: 1px solid hsl(var(--nexus-border));
+}
+
+.pf-u-rounded {
+  border-radius: var(--nexus-radius);
+}
+
+.pf-u-shadow {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+.pf-u-shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .pf-c-card {
+    padding: 1rem;
+  }
+  
+  .pf-c-modal-box {
+    margin: 1rem;
+    max-width: calc(100vw - 2rem);
+  }
+  
+  .pf-c-table {
+    font-size: 0.875rem;
+  }
+  
+  .pf-c-table thead th,
+  .pf-c-table tbody td {
+    padding: 0.5rem;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .pf-c-page__header,
+  .pf-c-page__sidebar,
+  .pf-c-modal-box__footer {
+    display: none !important;
+  }
+  
+  .pf-c-card {
+    border: none;
+    box-shadow: none;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --nexus-border: 0 0% 0%;
+    --nexus-muted-foreground: 0 0% 0%;
+  }
+  
+  .pf-c-button {
+    border-width: 2px;
+  }
+  
+  .pf-c-form-control {
+    border-width: 2px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .pf-c-spinner {
+    animation: none;
+  }
+}
+
+/* Additional Authentik-specific overrides */
+.ak-form__field {
+  margin-bottom: 1rem;
+}
+
+.ak-form__label {
+  display: block;
+  font-weight: 500;
+  color: hsl(var(--nexus-foreground));
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.ak-form__input,
+.ak-form__textarea,
+.ak-form__select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid hsl(var(--nexus-border));
+  border-radius: var(--nexus-radius);
+  background-color: hsl(var(--nexus-card));
+  color: hsl(var(--nexus-foreground));
+  font-family: var(--nexus-font-family);
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ak-form__input:focus,
+.ak-form__textarea:focus,
+.ak-form__select:focus {
+  outline: none;
+  border-color: hsl(var(--nexus-ring));
+  box-shadow: 0 0 0 3px hsl(var(--nexus-ring) / 0.1);
+}
+
+.ak-form__input::placeholder,
+.ak-form__textarea::placeholder {
+  color: hsl(var(--nexus-muted-foreground));
+}
+
+/* Icon sizing for SSO logos */
+.ak-provider-icon {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  min-height: 48px !important;
+}
+
+.ak-provider-icon img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+
+/* Footer styling */
+.pf-c-login__footer {
+  --pf-global--Color--100: inherit;
+  --pf-global--Color--200: inherit;
+  --pf-global--BorderColor--100: inherit;
+  --pf-global--primary-color--100: inherit;
+  --pf-global--link--Color: inherit;
+  --pf-global--link--Color--hover: inherit;
+  --pf-global--BackgroundColor--100: inherit;
+}
+
+/* Update "Powered by" text to "Powered by Marcoby" */
+.pf-c-login__footer .pf-c-list__item:contains("Powered by")::after {
+  content: "Powered by Marcoby";
+  display: block;
+  text-align: center;
+  color: inherit;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
+/* More reliable approach to replace "Powered by" text */
+.pf-c-login__footer .pf-c-list__item {
+  position: relative;
+}
+
+/* Hide the original text */
+.pf-c-login__footer .pf-c-list__item a[href*="authentik"],
+.pf-c-login__footer .pf-c-list__item span,
+.pf-c-login__footer .pf-c-list__item div {
+  visibility: hidden;
+  position: relative;
+}
+
+/* Add the new text */
+.pf-c-login__footer .pf-c-list__item a[href*="authentik"]::after,
+.pf-c-login__footer .pf-c-list__item span::after,
+.pf-c-login__footer .pf-c-list__item div::after {
+  content: "Powered by Marcoby";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  visibility: visible;
+  text-align: center;
+  color: inherit;
+  font-size: 0.875rem;
+  text-decoration: none;
+  pointer-events: none;
+}
+
+/* Alternative: Target specific footer elements */
+.pf-c-login__footer .pf-c-list__item:last-child {
+  position: relative;
+}
+
+.pf-c-login__footer .pf-c-list__item:last-child::after {
+  content: "Powered by Marcoby";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: inherit;
+  font-size: 0.875rem;
+  z-index: 1;
+}
+
+/* Dark mode specific overrides */
+@media (prefers-color-scheme: dark) {
+  .pf-c-login__main::before,
+  .pf-c-login__footer .pf-c-list::before {
+    background-color: transparent;
+  }
+  
+  /* Enhanced text contrast for dark backgrounds */
+  .pf-c-login__main,
+  .pf-c-login__footer .pf-c-list {
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    font-weight: 500;
+  }
+  
+  .pf-c-login__main input,
+  .pf-c-login__main button {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    backdrop-filter: blur(10px);
+  }
+  
+  .pf-c-login__main input::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  /* Enhanced button styling for dark mode */
+  .pf-c-login__main .pf-c-button.pf-m-primary {
+    background: linear-gradient(135deg, hsl(var(--nexus-primary)), hsl(var(--nexus-secondary)));
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 104, 55, 0.4);
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  .pf-c-login__main .pf-c-button.pf-m-primary:hover {
+    background: linear-gradient(135deg, hsl(var(--nexus-secondary)), hsl(var(--nexus-primary)));
+    box-shadow: 0 6px 20px rgba(0, 104, 55, 0.6);
+    transform: translateY(-1px);
+  }
+}
+
+/* CSS Reset to prevent conflicts */
+.pf-c-login__main *,
+.pf-c-login__footer * {
+  box-sizing: border-box;
+}
+
+/* Ensure proper CSS loading order */
+.pf-c-login__main {
+  all: unset;
+  display: block;
+}
+
+.pf-c-login__main * {
+  all: revert;
+}
+
+/* Fix for potential CSS conflicts */
+.pf-c-login__main,
+.pf-c-login__footer {
+  font-family: var(--nexus-font-family) !important;
+  color: inherit !important;
+}

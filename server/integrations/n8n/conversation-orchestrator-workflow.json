@@ -1,0 +1,164 @@
+{
+  "name": "Conversation Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "conversation-orchestrator",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "conversation-orchestrator"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Analyze this user message and determine:\n\n1. **Intent Classification**:\n   - greeting (hello, hi, hey, etc.)\n   - question (what, how, why, etc.)\n   - request (help, need, want, etc.)\n   - statement (sharing information)\n   - clarification (what do you mean, etc.)\n\n2. **Business Context**:\n   - finance (money, revenue, profit, etc.)\n   - operations (process, workflow, efficiency)\n   - strategy (planning, goals, objectives)\n   - customers (market, sales, service)\n   - team (people, management, culture)\n   - technology (tools, systems, automation)\n\n3. **Conversation Purpose**:\n   - information seeking\n   - problem solving\n   - decision making\n   - planning\n   - casual conversation\n\n4. **Required Actions**:\n   - provide information\n   - ask follow-up question\n   - suggest solution\n   - gather more context\n   - redirect to specific topic\n\nUser message: {{ $json.message }}\nUser context: {{ $json.user }}\nConversation history length: {{ $json.conversationHistory ? $json.conversationHistory.length : 0 }}\n\nProvide a structured JSON response with:\n{\n  \"intent\": \"classified_intent\",\n  \"businessContext\": \"detected_context\",\n  \"purpose\": \"conversation_purpose\",\n  \"actions\": [\"required_actions\"],\n  \"confidence\": 0.95\n}",
+        "hasOutputParser": true
+      },
+      "id": "intent-analysis",
+      "name": "Intent Analysis",
+      "type": "nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/ckb/search",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"{{ $json.intent }}\",\n  \"user_id\": \"{{ $json.user.id }}\",\n  \"company_id\": \"{{ $json.user.companyId || $json.user.organizationId }}\",\n  \"limit\": 3\n}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "ckb-query",
+      "name": "CKB Query",
+      "type": "nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Generate a helpful, contextual response based on the analysis:\n\n**User Intent**: {{ $json.intent }}\n**Business Context**: {{ $json.businessContext }}\n**Conversation Purpose**: {{ $json.purpose }}\n**CKB Knowledge**: {{ $json.ckbResults ? $json.ckbResults.data : 'No relevant knowledge found' }}\n**User Message**: {{ $json.message }}\n\n**Response Guidelines**:\n- Be conversational and helpful\n- Ask only ONE question at a time\n- Build on previous context\n- Provide actionable insights when possible\n- Keep response focused and concise (under 200 words)\n- Match the user's intent appropriately\n\n**For Greetings**: Give a warm welcome and ask what they'd like to work on\n**For Questions**: Provide helpful information and ask a follow-up\n**For Requests**: Offer assistance and ask for more details\n**For Statements**: Acknowledge and explore further\n**For Clarification**: Explain clearly and ask if they need more details\n\nGenerate a natural, business-focused response:",
+        "hasOutputParser": false
+      },
+      "id": "response-generation",
+      "name": "Response Generation",
+      "type": "nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:3000/api/ckb/learn",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"message\": \"{{ $json.message }}\",\n  \"response\": \"{{ $json.aiResponse }}\",\n  \"intent\": \"{{ $json.intent }}\",\n  \"businessContext\": \"{{ $json.businessContext }}\",\n  \"user_id\": \"{{ $json.user.id }}\",\n  \"company_id\": \"{{ $json.user.companyId || $json.user.organizationId }}\",\n  \"conversationLength\": {{ $json.conversationHistory ? $json.conversationHistory.length : 0 }}\n}",
+        "options": {
+          "timeout": 5000
+        },
+        "onError": "continueRegularOutput"
+      },
+      "id": "ckb-learning",
+      "name": "CKB Learning",
+      "type": "nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1120, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": true,\n  \"data\": {\n    \"content\": \"{{ $json.aiResponse }}\",\n    \"intent\": \"{{ $json.intent }}\",\n    \"businessContext\": \"{{ $json.businessContext }}\",\n    \"purpose\": \"{{ $json.purpose }}\",\n    \"actions\": {{ $json.actions }},\n    \"ckbInsights\": {\n      \"documentsFound\": {{ $json.ckbResults ? $json.ckbResults.data.length : 0 }},\n      \"mostRelevant\": {{ $json.ckbResults && $json.ckbResults.data.length > 0 ? $json.ckbResults.data[0].title : 'null' }}\n    },\n    \"conversationPurpose\": \"{{ $json.purpose }}\",\n    \"nextSteps\": {{ $json.actions }},\n    \"modelInfo\": {\n      \"model\": \"Claude 3.5 Sonnet\",\n      \"provider\": \"Anthropic\"\n    },\n    \"agentId\": \"conversation-orchestrator\",\n    \"conversationId\": \"{{ $json.conversationId }}\"\n  }\n}",
+        "options": {}
+      },
+      "id": "response-return",
+      "name": "Response Return",
+      "type": "nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1340, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Intent Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Analysis": {
+      "main": [
+        [
+          {
+            "node": "CKB Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CKB Query": {
+      "main": [
+        [
+          {
+            "node": "Response Generation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Generation": {
+      "main": [
+        [
+          {
+            "node": "CKB Learning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CKB Learning": {
+      "main": [
+        [
+          {
+            "node": "Response Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2024-01-27T10:00:00.000Z",
+      "updatedAt": "2024-01-27T10:00:00.000Z",
+      "id": "conversation-orchestrator",
+      "name": "conversation-orchestrator"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2024-01-27T10:00:00.000Z",
+  "versionId": "1"
+}
