@@ -5,7 +5,8 @@ import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { CompanySelector } from '@/shared/components/organization/CompanySelector';
-import { User, Settings, LogOut, Menu, Sparkles, Building2, Shield, Brain, Bell, Palette } from 'lucide-react';
+import { Settings, LogOut, Menu, Sparkles, Shield, Brain } from 'lucide-react';
+import { ThemeToggleAdvanced } from '@/components/ui/theme-toggle-advanced';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 
 interface HeaderProps {
@@ -39,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
       
       // Force redirect to login
       window.location.href = '/login';
-    } catch (_error) {
+  } catch {
       // Force redirect even on error
       window.location.href = '/login';
     }
@@ -48,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
   const handleSignIn = async () => {
     try {
       await signIn();
-    } catch (_error) {
+  } catch {
       // Handle sign in error silently
     }
   };
@@ -196,6 +197,8 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
         <div className="flex items-center space-x-4">
           {/* Company Selector */}
           <CompanySelector />
+          {/* Theme Toggle */}
+          <ThemeToggleAdvanced />
           
                                 {user ? (
              <div className="relative" ref={dropdownRef}>

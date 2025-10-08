@@ -1,8 +1,50 @@
-version: '3.8'
+
 
 services:
+  # ------------------------------
+  # Backend API (Node.js server)
+  # ------------------------------
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: nexus-server
+    env_file:
+      - ./server/.env
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    networks:
+      - nexus-network
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # ------------------------------
+  # Frontend (Vite + Nginx)
+  # ------------------------------
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: nexus-frontend
+    env_file:
+      - ./client/.env
+    ports:
+      - "5173:80"   # Expose the Nginx-served app on host 5173
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - nexus-network
+
+  # ------------------------------
   # Redis for caching and session storage
+  # ------------------------------
   redis:
     image: redis:7-alpine
     container_name: nexus-redis
@@ -11,9 +53,9 @@ services:
     volumes:
       - redis_data:/data
     command: >
-      redis-server 
-      --appendonly yes 
-      --maxmemory ${REDIS_MAX_MEMORY:-256mb} 
+      redis-server \
+      --appendonly yes \
+      --maxmemory ${REDIS_MAX_MEMORY:-256mb} \
       --maxmemory-policy allkeys-lru
     restart: unless-stopped
     healthcheck:
@@ -24,7 +66,9 @@ services:
     networks:
       - nexus-network
 
-  # Development database admin (optional)
+  # ------------------------------
+  # (Optional) pgAdmin UI
+  # ------------------------------
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: nexus-pgadmin
@@ -36,9 +80,6 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
     networks:
       - nexus-network
