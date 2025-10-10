@@ -169,7 +169,7 @@ export class MultiModalIntelligence {
   /**
    * Extract text from video
    */
-  async extractVideoText(video: File | string): Promise<{
+  async extractVideoText(_video: File | string): Promise<{
     text: string;
     timestamps: Array<{
       time: number;
@@ -285,7 +285,7 @@ export class MultiModalIntelligence {
     return models.length > 0 ? models: ['gpt-4-vision'];
   }
 
-  private calculateCost(models: string[], input: MultiModalInput): number {
+  private calculateCost(models: string[], _input: MultiModalInput): number {
     let cost = 0;
     const baseTokens = 100; // Base tokens for any request
     
@@ -299,7 +299,7 @@ export class MultiModalIntelligence {
     return cost;
   }
 
-  private async simulateProcessing(input: MultiModalInput): Promise<void> {
+  private async simulateProcessing(_input: MultiModalInput): Promise<void> {
     const processingTime = 1000 + Math.random() * 3000;
     await new Promise(resolve => setTimeout(resolve, processingTime));
   }

@@ -620,6 +620,7 @@ export class NexusUnifiedBrain {
     learningPoints: string[];
     nextBestActions: string[];
     recommendations: Array<{ action: string; priority: string; impact: number }>;
+    dataPoints: Array<{ metric: string; value: any; type: string }>;
   }> {
     // Analyze the user action with business context
     const businessIntent = this.inferBusinessIntent(action, context);
@@ -641,14 +642,15 @@ export class NexusUnifiedBrain {
       expertInsights,
       learningPoints,
       nextBestActions,
-      recommendations
+      recommendations,
+      dataPoints
     };
   }
 
   /**
    * Infer business intent from user action
    */
-  private inferBusinessIntent(action: string, context: Record<string, any>): string {
+  private inferBusinessIntent(action: string, _context: Record<string, any>): string {
     const actionLower = action.toLowerCase();
     
     if (actionLower.includes('sales') || actionLower.includes('pipeline') || actionLower.includes('deal')) {
@@ -697,7 +699,7 @@ export class NexusUnifiedBrain {
    */
   private generateExpertInsights(
     action: string,
-    context: Record<string, any>,
+    _context: Record<string, any>,
     businessIntent: string
   ): Array<{ insight: string; domain: string; confidence: number }> {
     const insights = [];
@@ -752,7 +754,7 @@ export class NexusUnifiedBrain {
    */
   private generateLearningPoints(
     action: string,
-    context: Record<string, any>,
+    _context: Record<string, any>,
     businessIntent: string
   ): string[] {
     const learningPoints = [];
@@ -783,7 +785,7 @@ export class NexusUnifiedBrain {
    */
   private generateNextBestActions(
     action: string,
-    context: Record<string, any>,
+    _context: Record<string, any>,
     businessIntent: string
   ): string[] {
     const actions = [];
@@ -814,7 +816,7 @@ export class NexusUnifiedBrain {
    */
   private generateRecommendationsFromAction(
     action: string,
-    context: Record<string, any>,
+    _context: Record<string, any>,
     businessIntent: string
   ): Array<{ action: string; priority: string; impact: number }> {
     const recommendations = [];

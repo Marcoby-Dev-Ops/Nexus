@@ -50,13 +50,61 @@ class AuthentikAuthService extends BaseService {
   constructor() {
     super();
 
-  this.baseUrl = getRuntimeEnv('VITE_AUTHENTIK_URL') || import.meta.env.VITE_AUTHENTIK_URL || 'https://identity.marcoby.com';
-  this.clientId = getRuntimeEnv('VITE_AUTHENTIK_CLIENT_ID') || import.meta.env.VITE_AUTHENTIK_CLIENT_ID || '';
+    const rawBaseUrl =
+      getRuntimeEnv('VITE_AUTHENTIK_URL') ||
+      import.meta.env.VITE_AUTHENTIK_URL ||
+      'https://identity.marcoby.com';
+
+    this.baseUrl = this.normalizeBaseUrl(rawBaseUrl);
+    this.clientId = getRuntimeEnv('VITE_AUTHENTIK_CLIENT_ID') || import.meta.env.VITE_AUTHENTIK_CLIENT_ID || '';
     this.redirectUri = `${window.location.origin}/auth/callback`;
 
     if (!this.clientId) {
       this.logger.error('VITE_AUTHENTIK_CLIENT_ID is not configured');
     }
+  }
+
+  private normalizeBaseUrl(rawUrl: string): string {
+    const fallback = 'https://identity.marcoby.com';
+    if (!rawUrl) {
+      this.logger.warn('VITE_AUTHENTIK_URL missing, falling back to default Marcoby IAM host');
+      return fallback;
+    }
+
+    const trimmed = rawUrl.trim();
+    if (!trimmed) {
+      this.logger.warn('VITE_AUTHENTIK_URL empty after trimming, falling back to default Marcoby IAM host');
+      return fallback;
+    }
+
+    let normalized = trimmed;
+    let protocolAdded = false;
+
+    if (normalized.startsWith('//')) {
+      normalized = `https:${normalized}`;
+      protocolAdded = true;
+    } else if (!/^https?:\/\//i.test(normalized)) {
+      normalized = `https://${normalized}`;
+      protocolAdded = true;
+    }
+
+    if (protocolAdded) {
+      this.logger.warn('VITE_AUTHENTIK_URL missing protocol, defaulting to https:// prefix', {
+        original: rawUrl,
+        normalized,
+      });
+    }
+
+    normalized = normalized.replace(/\/+$/, '');
+
+    if (!/^https?:\/\//i.test(normalized)) {
+      this.logger.warn('VITE_AUTHENTIK_URL could not be normalized with a valid protocol, using fallback', {
+        original: rawUrl,
+      });
+      return fallback;
+    }
+
+    return normalized || fallback;
   }
 
   private getInMemorySession(): AuthSession | null {

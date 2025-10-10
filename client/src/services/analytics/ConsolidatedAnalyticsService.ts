@@ -1,6 +1,5 @@
 import { BaseService } from '@/services/shared/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
-import { logger } from '@/shared/utils/logger';
 
 // Import individual analytics services
 import { InsightsAnalyticsClient } from './InsightsAnalyticsClient';
@@ -22,7 +21,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
 
   // ==================== Insights Analytics Methods ====================
   
-  async getInsightsAnalytics(companyId: string): Promise<ServiceResponse<any>> {
+  async getInsightsAnalytics(_companyId: string): Promise<ServiceResponse<any>> {
     try {
       return await this.insightsAnalytics.getInsightsAnalytics(companyId);
     } catch (error) {
@@ -30,7 +29,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     }
   }
 
-  async generateInsightsReport(companyId: string, period: string): Promise<ServiceResponse<any>> {
+  async generateInsightsReport(_companyId: string, period: string): Promise<ServiceResponse<any>> {
     try {
       return await this.insightsAnalytics.generateInsightsReport(companyId, period);
     } catch (error) {
@@ -38,7 +37,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     }
   }
 
-  async getAnalyticsMetrics(companyId: string, metrics: string[]): Promise<ServiceResponse<any>> {
+  async getAnalyticsMetrics(_companyId: string, _metrics: string[]): Promise<ServiceResponse<any>> {
     try {
       return await this.insightsAnalytics.getAnalyticsMetrics(companyId, metrics);
     } catch (error) {
@@ -48,7 +47,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
 
   // ==================== Dashboard Analytics Methods ====================
   
-  async getDashboardData(companyId: string): Promise<ServiceResponse<any>> {
+  async getDashboardData(_companyId: string): Promise<ServiceResponse<any>> {
     try {
       // This would integrate with dashboardService functionality
       const dashboardData = {
@@ -64,7 +63,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     }
   }
 
-  async getBusinessOverview(companyId: string): Promise<ServiceResponse<any>> {
+  async getBusinessOverview(_companyId: string): Promise<ServiceResponse<any>> {
     try {
       // Mock implementation - would integrate with actual dashboard service
       const overview = {
@@ -81,7 +80,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     }
   }
 
-  async getTrendAnalytics(companyId: string, period: string = '30d'): Promise<ServiceResponse<any>> {
+  async getTrendAnalytics(_companyId: string, period: string = '30d'): Promise<ServiceResponse<any>> {
     try {
       // Mock implementation - would integrate with actual trend analysis
       const trends = {
@@ -97,7 +96,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     }
   }
 
-  async getPerformanceMetrics(companyId: string): Promise<ServiceResponse<any>> {
+  async getPerformanceMetrics(_companyId: string): Promise<ServiceResponse<any>> {
     try {
       // Mock implementation - would integrate with actual performance metrics
       const metrics = {
@@ -115,7 +114,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
 
   // ==================== AI Usage Monitoring Methods ====================
   
-  async getAIUsageStats(companyId: string, period: string = '30d'): Promise<ServiceResponse<any>> {
+  async getAIUsageStats(_companyId: string, period: string = '30d'): Promise<ServiceResponse<any>> {
     try {
       // Mock implementation - would integrate with actual AI usage monitoring
       const usageStats = {
@@ -134,7 +133,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     }
   }
 
-  async getAIUsageBreakdown(companyId: string): Promise<ServiceResponse<any>> {
+  async getAIUsageBreakdown(_companyId: string): Promise<ServiceResponse<any>> {
     try {
       // Mock implementation - would integrate with actual AI usage breakdown
       const breakdown = {
@@ -208,7 +207,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
     }
   }
 
-  async getReportHistory(companyId: string): Promise<ServiceResponse<any>> {
+  async getReportHistory(_companyId: string): Promise<ServiceResponse<any>> {
     try {
       // Mock implementation - would integrate with actual report history
       const reports = [
@@ -237,7 +236,7 @@ export class ConsolidatedAnalyticsService extends BaseService {
   /**
    * Get comprehensive analytics overview for a company
    */
-  async getAnalyticsOverview(companyId: string): Promise<ServiceResponse<any>> {
+  async getAnalyticsOverview(_companyId: string): Promise<ServiceResponse<any>> {
     try {
       const [
         dashboardData,

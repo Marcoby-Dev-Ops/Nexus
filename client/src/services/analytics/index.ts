@@ -1,10 +1,9 @@
+import { logger } from '@/shared/utils/logger';
 /**
  * Analytics Services Index
  */
 
 import { BaseService } from '@/core/services/BaseService';
-import { logger } from '@/shared/utils/logger';
-
 // Consolidated analytics service - primary interface
 export { ConsolidatedAnalyticsService } from './ConsolidatedAnalyticsService';
 
@@ -33,8 +32,6 @@ export interface CommunicationHealthScore {
 }
 
 // Analytics Services
-import { AnalyticsService, analyticsService } from '../core/AnalyticsService';
-
 export { AnalyticsService, analyticsService } from '../core/AnalyticsService';
 
 // Communication Analytics Service - wrapper around core analytics service
@@ -44,8 +41,6 @@ class CommunicationAnalyticsService extends BaseService {
   async getInsights(): Promise<UnifiedCommunicationInsights> {
     try {
       // Get communication-related events and metrics from the core analytics service
-      const events = await this.analytics.getEvents({ event_type: 'communication' });
-      const metrics = await this.analytics.getMetrics({ metric_type: 'communication' });
       
       // Transform the data into the expected format
       return {
@@ -61,7 +56,7 @@ class CommunicationAnalyticsService extends BaseService {
         }
       };
     } catch (error) {
-      this.logger.error('Error getting communication insights:', error);
+      logger.error('Error getting communication insights:', error);
       // Return mock data as fallback
       return {
         totalMessages: 0,
@@ -81,8 +76,6 @@ class CommunicationAnalyticsService extends BaseService {
   async getHealthScore(): Promise<CommunicationHealthScore> {
     try {
       // Get communication health metrics from the core analytics service
-      const businessMetrics = await this.analytics.getBusinessMetrics('current-user');
-      
       return {
         overall: 75, // Calculate from various metrics
         responsiveness: 80,
@@ -97,7 +90,7 @@ class CommunicationAnalyticsService extends BaseService {
         lastUpdated: new Date()
       };
     } catch (error) {
-      this.logger.error('Error getting communication health score:', error);
+      logger.error('Error getting communication health score:', error);
       // Return mock data as fallback
       return {
         overall: 0,

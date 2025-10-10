@@ -1,6 +1,5 @@
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
-// import { AIGateway } from '@/ai/lib/AIGateway'; // Removed - consolidated AI structure
-import { logger } from '@/shared/utils/logger';
+import { AIGateway } from '@/lib/ai/lib/AIGateway';
 
 export interface OnboardingInsight {
   id: string;

@@ -76,7 +76,7 @@ export class SpeechService extends BaseService {
     }
   }
 
-  async transcribeAudio(audioBlob: Blob): Promise<SpeechServiceResponse> {
+  async transcribeAudio(_audioBlob: Blob): Promise<SpeechServiceResponse> {
     try {
       if (!this.isSupported) {
         return this.handleError('Speech recognition is not supported in this browser');

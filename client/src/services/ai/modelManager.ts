@@ -288,7 +288,7 @@ export class ModelManager {
     }
   }
 
-  async getPerformanceMetrics(timeframe: 'day' | 'week' | 'month' = 'week'): Promise<{
+  async getPerformanceMetrics(_timeframe: 'day' | 'week' | 'month' = 'week'): Promise<{
     averageAccuracy: number;
     averageResponseTime: number;
     averageErrorRate: number;
