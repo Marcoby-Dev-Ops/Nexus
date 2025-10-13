@@ -36,6 +36,7 @@ export const userProfileSchema = z.object({
   location: optionalStringMin(2, 'Location must be at least 2 characters'),
   website: urlSchema,
   phone: optionalPhone,
+  chatTone: z.string().optional(),
 });
 
 export type UserProfileFormData = z.infer<typeof userProfileSchema>;

@@ -5,6 +5,8 @@
 
 const { query } = require('../database/connection');
 const { logger } = require('../utils/logger');
+const CompanyService = require('./CompanyService');
+const companyService = new CompanyService();
 
 class UserProfileService {
   constructor() {
@@ -59,6 +61,42 @@ class UserProfileService {
       }
 
       logger.info('Basic user profile created', { userId });
+      // Attempt to provision a company for the user (best-effort).
+      // We extract common signup/company fields from jwtPayload and additionalData.
+      try {
+        const signupData = {
+          businessName: (jwtPayload && (jwtPayload.business_name || (jwtPayload.attributes && jwtPayload.attributes.business_name))) || additionalData.businessName || additionalData.companyName || null,
+          companyName: (jwtPayload && (jwtPayload.company_name || (jwtPayload.attributes && jwtPayload.attributes.company_name))) || additionalData.companyName || additionalData.businessName || null,
+          industry: (jwtPayload && (jwtPayload.industry || (jwtPayload.attributes && jwtPayload.attributes.industry))) || additionalData.industry || null,
+          companySize: (jwtPayload && (jwtPayload.company_size || (jwtPayload.attributes && jwtPayload.attributes.company_size))) || additionalData.companySize || additionalData.company_size || null,
+          website: (jwtPayload && jwtPayload.website) || additionalData.website || null,
+          domain: (jwtPayload && jwtPayload.domain) || additionalData.domain || null,
+          fundingStage: (jwtPayload && (jwtPayload.funding_stage || (jwtPayload.attributes && jwtPayload.attributes.funding_stage))) || additionalData.fundingStage || null,
+          revenueRange: (jwtPayload && (jwtPayload.revenue_range || (jwtPayload.attributes && jwtPayload.attributes.revenue_range))) || additionalData.revenueRange || null
+        };
+
+        const provisioning = await companyService.ensureCompanyForUser(userId, signupData, jwtPayload);
+        if (provisioning && provisioning.success && provisioning.company) {
+          logger.info('Company provisioned for new user', { userId, companyId: provisioning.company.id });
+          // Update user profile with company association
+          try {
+            await this.updateProfileData(userId, { company_id: provisioning.company.id, company_name: provisioning.company.name }, jwtPayload);
+            // Refresh profile to include updates
+            const updatedResult = await query('SELECT * FROM user_profiles WHERE user_id = $1', [userId], jwtPayload);
+            const profile = updatedResult.data && updatedResult.data.length > 0 ? updatedResult.data[0] : basicProfile.profile;
+            return {
+              success: true,
+              profile: profile,
+              created: true
+            };
+          } catch (upErr) {
+            logger.warn('Failed to update user profile with company info after provisioning', { userId, error: upErr.message });
+            // Fall through to return basic profile
+          }
+        }
+      } catch (provErr) {
+        logger.warn('Company provisioning failed (non-blocking)', { userId, error: provErr && provErr.message ? provErr.message : provErr });
+      }
       return {
         success: true,
         profile: basicProfile.profile,

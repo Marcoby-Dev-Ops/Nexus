@@ -5,11 +5,12 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
+import { Avatar, AvatarFallback } from '@/shared/components/ui/Avatar';
 import { useToast } from '@/shared/ui/components/Toast';
 import { Bot, Brain, Database } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
+import { logger } from '@/shared/utils/logger';
 import ChatMessage from './ChatMessage';
 import ChatInput from './ChatInput';
 import ChatWelcome from './ChatWelcome';
@@ -29,6 +30,9 @@ interface ModernChatInterfaceProps {
   ragEnabled?: boolean;
   ragConfidence?: number;
   knowledgeTypes?: string[];
+  ragSources?: any[];
+  ragRecommendations?: string[];
+  businessContext?: Record<string, any> | null;
 }
 
 export default function ModernChatInterface({
@@ -41,12 +45,19 @@ export default function ModernChatInterface({
   showTypingIndicator = false,
   className,
   userName = "User",
-  agentId = "executive-assistant",
+  agentId: _agentId = "executive-assistant",
   agentName = "Executive Assistant",
   ragEnabled = false,
   ragConfidence = 0,
   knowledgeTypes = []
+  ,
+  ragSources = [],
+  ragRecommendations = [],
+  businessContext = null
 }: ModernChatInterfaceProps) {
+  // show preferred tone if provided
+  const toneLabel = (businessContext && (businessContext.user as any)?.preferredTone) || 'friendly';
+  const [contextOpen, setContextOpen] = useState(false);
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isRecording, setIsRecording] = useState(false);
@@ -77,8 +88,7 @@ export default function ModernChatInterface({
 
   // Debug: Monitor messages prop
   useEffect(() => {
-    console.log('ModernChatInterface received messages:', messages);
-    console.log('Messages count in interface:', messages.length);
+    logger.debug('ModernChatInterface received messages', { count: messages.length });
   }, [messages]);
 
   const handleSendMessage = useCallback(() => {
@@ -123,7 +133,7 @@ export default function ModernChatInterface({
               <span className="text-sm font-medium text-gray-200">{agentName}</span>
             </div>
             <div className="text-xs text-gray-400">
-              Connected and ready to help
+              Connected · Tone: <span className="text-gray-200">{toneLabel}</span>
             </div>
           </div>
           
@@ -146,11 +156,65 @@ export default function ModernChatInterface({
                     </span>
                   </div>
                 )}
+                {/* Toggle business context panel */}
+                <button
+                  onClick={() => setContextOpen(!contextOpen)}
+                  className="ml-3 text-xs text-gray-300 hover:text-white bg-gray-800 px-2 py-1 rounded"
+                >
+                  {contextOpen ? 'Hide context' : 'Show context'}
+                </button>
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Business Context Panel */}
+      {ragEnabled && contextOpen && (
+        <div className="bg-gray-850 border-b border-gray-700 px-4 py-3 text-sm text-gray-200">
+          <div className="max-w-4xl mx-auto space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-xs text-gray-300">Business context</div>
+              <div className="text-xs text-gray-400">{ragSources.length} sources • {knowledgeTypes.length} types</div>
+            </div>
+
+            {/* Top recommendations */}
+            {ragRecommendations && ragRecommendations.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-300 mb-1">Top recommendations</div>
+                <ul className="list-disc ml-4 text-gray-200">
+                  {ragRecommendations.slice(0, 3).map((rec, i) => (
+                    <li key={i} className="text-xs">{rec}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Top sources preview */}
+            {ragSources && ragSources.length > 0 && (
+              <div>
+                <div className="text-xs text-gray-300 mb-1">Sources</div>
+                <div className="grid grid-cols-1 gap-2">
+                  {ragSources.slice(0, 3).map((s, idx) => (
+                    <div key={idx} className="text-xs text-gray-200 bg-gray-800 rounded px-3 py-2 border border-gray-700">
+                      <div className="truncate">{(s?.content || s?.title || s?.name || '').toString().slice(0, 240)}</div>
+                      {s?.source && <div className="text-xxs text-gray-400 mt-1">{s.source}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Small business context summary (if any) */}
+            {businessContext && Object.keys(businessContext).length > 0 && (
+              <div className="text-xs text-gray-300">
+                <div className="mb-1">Context snapshot</div>
+                <pre className="text-[11px] text-gray-200 bg-gray-800 p-2 rounded max-h-40 overflow-auto">{JSON.stringify(businessContext, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Messages Container - Fixed height with proper scrolling */}
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 [scrollbar-gutter:stable]">

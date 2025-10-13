@@ -14,7 +14,9 @@
 
 import { callEdgeFunction } from '../api-client';
 import { ckbRAGService } from './CKBRAGService';
-import type { CKBQuery, CKBResponse } from './CKBRAGService';
+import type { CKBResponse } from './CKBRAGService';
+import { getPersona } from './personas';
+import { logger } from '@/shared/utils/logger';
 
 export interface NexusRAGContext {
   user: {
@@ -90,7 +92,7 @@ class NexusRAGService {
       
       if (context.company?.id) {
         try {
-          console.log('🔍 Querying Nexus Knowledge Base for business documentation...');
+          logger.debug('Querying Nexus Knowledge Base for business documentation');
           
           // Get CKB RAG context
           ckbResponse = await ckbRAGService.queryCKB({
@@ -104,14 +106,14 @@ class NexusRAGService {
           // Get comprehensive business knowledge
           businessKnowledge = await this.getBusinessKnowledge(context.company.id, message);
           
-          console.log('✅ Knowledge Base Response:', {
+          logger.info('Knowledge Base Response', {
             confidence: ckbResponse.confidence,
             sourcesCount: ckbResponse.sources.length,
-            knowledgeTypes: Object.keys(businessKnowledge).filter(key => businessKnowledge[key as keyof BusinessKnowledge]?.length > 0),
+            knowledgeTypes: businessKnowledge ? Object.keys(businessKnowledge).filter(key => (businessKnowledge as any)[key]?.length > 0) : [],
             hasRecommendations: ckbResponse.recommendations.length > 0
           });
         } catch (error) {
-          console.warn('⚠️ Knowledge base query failed, continuing with basic context:', error);
+          logger.warn('Knowledge base query failed, continuing with basic context', { error });
         }
       }
 
@@ -133,7 +135,7 @@ class NexusRAGService {
         }
       };
     } catch (error) {
-      console.error('❌ Nexus RAG processing error:', error);
+      logger.error('Nexus RAG processing error', { error });
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to process message'
@@ -167,7 +169,7 @@ class NexusRAGService {
         historicalData
       };
     } catch (error) {
-      console.error('Error getting business knowledge:', error);
+      logger.error('Error getting business knowledge', { error });
       return {
         processes: [],
         procedures: [],
@@ -194,7 +196,7 @@ class NexusRAGService {
       });
       return response.success ? response.data || [] : [];
     } catch (error) {
-      console.warn('Error querying business processes:', error);
+      logger.warn('Error querying business processes', { error });
       return [];
     }
   }
@@ -213,7 +215,7 @@ class NexusRAGService {
       });
       return response.success ? response.data || [] : [];
     } catch (error) {
-      console.warn('Error querying business procedures:', error);
+      logger.warn('Error querying business procedures', { error });
       return [];
     }
   }
@@ -232,7 +234,7 @@ class NexusRAGService {
       });
       return response.success ? response.data || [] : [];
     } catch (error) {
-      console.warn('Error querying business policies:', error);
+      logger.warn('Error querying business policies', { error });
       return [];
     }
   }
@@ -251,7 +253,7 @@ class NexusRAGService {
       });
       return response.success ? response.data || [] : [];
     } catch (error) {
-      console.warn('Error querying business evidence:', error);
+      logger.warn('Error querying business evidence', { error });
       return [];
     }
   }
@@ -270,7 +272,7 @@ class NexusRAGService {
       });
       return response.success ? response.data || [] : [];
     } catch (error) {
-      console.warn('Error querying business documentation:', error);
+      logger.warn('Error querying business documentation', { error });
       return [];
     }
   }
@@ -289,7 +291,7 @@ class NexusRAGService {
       });
       return response.success ? response.data || [] : [];
     } catch (error) {
-      console.warn('Error querying best practices:', error);
+      logger.warn('Error querying best practices', { error });
       return [];
     }
   }
@@ -308,7 +310,7 @@ class NexusRAGService {
       });
       return response.success ? response.data || [] : [];
     } catch (error) {
-      console.warn('Error querying historical data:', error);
+      logger.warn('Error querying historical data', { error });
       return [];
     }
   }
@@ -364,7 +366,15 @@ class NexusRAGService {
     businessKnowledge: BusinessKnowledge | null,
     message: string
   ): string {
-    let prompt = `You are ${context.agent.id}, a specialized AI assistant for ${context.company?.name || 'business operations'}.
+    // Prepend persona-specific system intro when available
+    const persona = getPersona(context.agent?.id);
+  const promptIntro = persona?.systemIntro ? `${persona.systemIntro}
+
+` : '';
+
+  const userTone = (context.user as any)?.preferredTone || persona?.tone || 'professional';
+
+  let prompt = `${promptIntro}You are ${persona?.name || context.agent.id}, a specialized AI assistant for ${context.company?.name || 'business operations'}.
 
 Your capabilities include: ${context.agent.capabilities.join(', ')}.
 
@@ -374,7 +384,8 @@ User Context:
 - Department: ${context.user.department}
 ${context.company ? `- Company: ${context.company.name} (${context.company.industry} industry, ${context.company.size})` : ''}
 
-Conversation History: ${context.conversation.history.length} messages`;
+Conversation History: ${context.conversation.history.length} messages
+Tone: ${userTone}`;
 
     // Add RAG context if available
     if (ckbResponse) {
@@ -479,7 +490,7 @@ Current message: "${message}"`;
         knowledgeTypes: this.getKnowledgeTypes(businessKnowledge)
       };
     } catch (error) {
-      console.error('Error getting RAG stats:', error);
+      logger.error('Error getting RAG stats', { error });
       return {
         totalDocuments: 0,
         documentTypes: {},
@@ -497,7 +508,7 @@ Current message: "${message}"`;
     try {
       const stats = await this.getRAGStats(companyId);
       return stats.totalDocuments > 0 && stats.confidence > 0.5;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

@@ -13,8 +13,7 @@ import { z } from 'zod';
 import { BaseService, type ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import { selectData, selectOne, insertOne, updateOne, deleteOne, callRPC } from '@/lib/database';
-import type { ApiResponse } from '@/lib/database';
-import { logger } from '@/shared/utils/logger';
+import type { ApiResponse as ServiceApiSuccessResponse } from '@/core/types/errors';
 
 // ============================================================================
 // SCHEMAS
@@ -410,9 +409,18 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
   }
 
   /**
-   * Convert ApiResponse to ServiceResponse
+   * Exhaustive API response shape used by this service.
+   * Accepts both legacy `ApiResponse` unions and the generic responses returned
+   * from the api-client helpers (which expose `success: boolean`).
    */
-  private convertApiResponse<T>(apiResponse: ApiResponse<T>): ServiceResponse<T> {
+  private convertApiResponse<T>(
+    apiResponse: ServiceApiSuccessResponse<T> | {
+      success?: boolean;
+      data?: T | null;
+      error?: string | null;
+      status?: number;
+    }
+  ): ServiceResponse<T> {
     const data = (apiResponse && 'data' in apiResponse ? apiResponse.data : null) as T | null;
     const error = (apiResponse && 'error' in apiResponse ? apiResponse.error : undefined) ?? null;
     return {
@@ -482,7 +490,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     return this.executeDbOperation(async () => {
       this.logMethodCall('update', { id, data });
       
-      const result = await updateOne<CompanyProfile>(this.config.tableName, id, {
+      const result = await updateOne<CompanyProfile>(this.config.tableName, { id }, {
         ...data,
         updated_at: new Date().toISOString()
       });
@@ -505,7 +513,7 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
     return this.executeDbOperation(async () => {
       this.logMethodCall('delete', { id });
       
-      const result = await deleteOne<boolean>(this.config.tableName, id);
+  const result = await deleteOne<boolean>(this.config.tableName, { id });
       const serviceResponse = this.convertApiResponse<boolean>(result);
       
       if (!serviceResponse.success) {
@@ -790,4 +798,3 @@ export class CompanyService extends BaseService implements CrudServiceInterface<
 // ============================================================================
 
 export const companyService = new CompanyService();
-

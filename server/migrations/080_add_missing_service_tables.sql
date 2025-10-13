@@ -165,18 +165,8 @@ CREATE TRIGGER update_playbook_items_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_user_playbook_progress_updated_at
-    BEFORE UPDATE ON user_playbook_progress
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
 CREATE TRIGGER update_building_blocks_updated_at
     BEFORE UPDATE ON building_blocks
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_user_building_block_implementations_updated_at
-    BEFORE UPDATE ON user_building_block_implementations
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 

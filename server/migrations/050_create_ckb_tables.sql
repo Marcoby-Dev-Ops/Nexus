@@ -1,8 +1,8 @@
 -- Migration: Create CKB (Company Knowledge Base) Tables - Fixed for Authentik
 -- Description: Tables for company knowledge base functionality
 
--- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "vector";
 
 -- Create ckb_documents table - Company Knowledge Base document storage with vector embeddings
 CREATE TABLE IF NOT EXISTS ckb_documents (

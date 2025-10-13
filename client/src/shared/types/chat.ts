@@ -105,6 +105,7 @@ export interface ChatActions {
   updateConversation: (conversationId: string, updates: Partial<Conversation>) => Promise<void>;
   archiveConversation: (conversationId: string) => Promise<void>;
   deleteConversation: (conversationId: string) => Promise<void>;
+  cleanEmptyConversations: () => Promise<void>;
   clearMessages: () => void;
   setCurrentConversation: (conversation: Conversation | null) => void;
   setCurrentConversationById: (conversationId: string) => Promise<void>;

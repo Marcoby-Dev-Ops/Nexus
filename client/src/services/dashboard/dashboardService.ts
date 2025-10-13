@@ -204,20 +204,32 @@ export class DashboardService extends BaseService {
       let internalUserId = userId;
       
       try {
-        const profileResult = await selectData('user_profiles', '*', { user_id: userId });
-        
-        if (profileResult.success && profileResult.data && profileResult.data.length > 0) {
-          userProfile = profileResult.data[0];
-          internalUserId = userProfile.user_id;
+        // First ensure the profile exists and capture it if the RPC returns data
+        const ensureResult = await callRPC<any>('ensure_user_profile', { user_id: userId });
+        if (ensureResult.success) {
+          const ensuredProfile = ensureResult.data?.profile;
+          if (ensuredProfile) {
+            userProfile = ensuredProfile;
+            internalUserId = ensuredProfile.user_id || userId;
+          }
         } else {
-          // If no profile found, try to create one using the RPC function
-          const rpcResult = await callRPC('ensure_user_profile', { user_id: userId });
-          
-          if (rpcResult.success && rpcResult.data && rpcResult.data.length > 0) {
-            userProfile = rpcResult.data[0];
-            internalUserId = userProfile.user_id;
+          this.logger.warn('ensure_user_profile RPC reported failure', {
+            userId,
+            error: ensureResult.error
+          });
+        }
+
+        // If the ensure call didn't return the profile, fetch it directly
+        if (!userProfile) {
+          const profileResult = await callRPC<any>('get_user_profile', { user_id: userId });
+          if (profileResult.success && profileResult.data) {
+            userProfile = profileResult.data;
+            internalUserId = userProfile.user_id || userId;
           } else {
-            this.logger.error('Failed to get user profile for dashboard', { userId });
+            this.logger.error('Failed to get user profile for dashboard', {
+              userId,
+              error: profileResult.error
+            });
             return { data: null, error: 'Failed to get user profile' };
           }
         }
@@ -227,7 +239,7 @@ export class DashboardService extends BaseService {
       }
       
       const [businessProfileResult, integrationsResult] = await Promise.all([
-        selectOne<any>('business_profiles', internalUserId),
+        selectOne<any>('business_profiles', { user_id: internalUserId }),
         selectData<any>('user_integrations', '*', { user_id: internalUserId })
       ]);
 

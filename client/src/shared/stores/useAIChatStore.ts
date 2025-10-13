@@ -266,7 +266,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
 
   updateConversation: async (conversationId: string, updates: Partial<Conversation>) => {
     try {
-      const { data, error } = await updateOne('ai_conversations', conversationId, {
+      const { data, error } = await updateOne('ai_conversations', { id: conversationId }, {
         ...updates,
         updated_at: new Date().toISOString()
       });
@@ -297,7 +297,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
   deleteConversation: async (conversationId: string) => {
     try {
       // TODO: Implement soft delete or hard delete based on requirements
-      const { error } = await updateOne('ai_conversations', conversationId, { 
+      const { error } = await updateOne('ai_conversations', { id: conversationId }, { 
         is_archived: true 
       });
 
@@ -315,6 +315,21 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
 
     } catch (err) {
   logger.error('Error deleting conversation', { err });
+    }
+  },
+
+  cleanEmptyConversations: async () => {
+    try {
+      const state = get();
+      const emptyConvs = state.conversations.filter(conv => !conv.is_archived && (conv.message_count === 0 || !conv.message_count));
+      for (const conv of emptyConvs) {
+        // Archive empty conversation
+        await get().updateConversation(conv.id, { is_archived: true });
+      }
+      // Refresh conversations
+      await get().fetchConversations();
+    } catch (err) {
+      logger.error('Error cleaning empty conversations', { err });
     }
   },
 

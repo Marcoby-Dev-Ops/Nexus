@@ -3,30 +3,25 @@ import { useAuth } from '@/hooks/index';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/Card';
 import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/Input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/Select';
 import { Label } from '@/shared/components/ui/Label';
-import { Separator } from '@/shared/components/ui/Separator';
 import { Badge } from '@/shared/components/ui/Badge';
-import { Alert, AlertDescription } from '@/shared/components/ui/Alert';
 import { 
   User, 
-  Mail, 
   Shield, 
   Key, 
-  Trash2, 
-  Save, 
-  AlertTriangle,
-  CheckCircle
+  Trash2
 } from 'lucide-react';
 
 // Import our new service patterns
-import { logger } from '@/shared/utils/logger';
+// logger intentionally omitted (unused in this file)
 import { useFormWithValidation } from '@/shared/hooks/useFormWithValidation';
-import { FormField, FormSection } from '@/shared/components/forms/FormField';
+import { FormField } from '@/shared/components/forms/FormField';
 import { userProfileSchema, type UserProfileFormData } from '@/shared/validation/schemas';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 
 const AccountSettings: React.FC = () => {
-  const { user } = useAuth();
+  useAuth(); // ensure auth hook runs but we don't need the user object here
   
   // Use UserContext for profile data
   const { profile, loading: profileLoading, updateProfile } = useUserProfile();
@@ -35,7 +30,7 @@ const AccountSettings: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   // Initialize form with our new pattern
-  const { form, handleSubmit, isSubmitting, isValid, errors } = useFormWithValidation({
+  const { form, handleSubmit, isSubmitting } = useFormWithValidation({
     schema: userProfileSchema,
     defaultValues: {
       firstName: '',
@@ -43,7 +38,7 @@ const AccountSettings: React.FC = () => {
       displayName: '',
       jobTitle: '',
       company: '',
-      role: '',
+      role: undefined,
       department: '',
       businessEmail: '',
       personalEmail: '',
@@ -51,11 +46,12 @@ const AccountSettings: React.FC = () => {
       location: '',
       website: '',
       phone: '',
+      chatTone: 'friendly',
     },
     onSubmit: async (data: UserProfileFormData) => {
       if (!profile?.id) return;
 
-      const updates = {
+      const updates: any = {
         first_name: data.firstName,
         last_name: data.lastName,
         display_name: data.displayName,
@@ -68,18 +64,21 @@ const AccountSettings: React.FC = () => {
         location: data.location,
         linkedin_url: data.website,
         phone: data.phone,
+        // Persist chat tone preference into preferences JSON
+        preferences: {
+          ...(profile?.preferences || {}),
+          chatTone: data.chatTone
+        }
       };
 
       setIsUpdating(true);
       try {
-        const result = await updateProfile(updates);
+        const result = await updateProfile(updates as any);
         if (result.success) {
           setIsEditing(false);
         } else {
           throw new Error(result.error || 'Failed to update profile');
         }
-      } catch (error) {
-        throw new Error('Failed to update profile');
       } finally {
         setIsUpdating(false);
       }
@@ -96,14 +95,15 @@ const AccountSettings: React.FC = () => {
         displayName: profile.display_name || '',
         jobTitle: profile.job_title || '',
         company: profile.company || '',
-        role: profile.role || '',
+        role: profile.role || undefined,
         department: profile.department || '',
-        businessEmail: profile.business_email || '',
-        personalEmail: profile.personal_email || '',
+        businessEmail: (profile as any).business_email || '',
+        personalEmail: (profile as any).personal_email || '',
         bio: profile.bio || '',
         location: profile.location || '',
         website: profile.linkedin_url || '',
-        phone: profile.phone || '',
+        phone: (profile as any).phone || '',
+        chatTone: (profile?.preferences as any)?.chatTone || 'friendly',
       });
     }
   }, [profile, form]);
@@ -122,14 +122,15 @@ const AccountSettings: React.FC = () => {
         displayName: profile.display_name || '',
         jobTitle: profile.job_title || '',
         company: profile.company || '',
-        role: profile.role || '',
+        role: profile.role || undefined,
         department: profile.department || '',
-        businessEmail: profile.business_email || '',
-        personalEmail: profile.personal_email || '',
+        businessEmail: (profile as any).business_email || '',
+        personalEmail: (profile as any).personal_email || '',
         bio: profile.bio || '',
         location: profile.location || '',
         website: profile.linkedin_url || '',
-        phone: profile.phone || '',
+        phone: (profile as any).phone || '',
+        chatTone: (profile?.preferences as any)?.chatTone || 'friendly',
       });
     }
   };
@@ -172,73 +173,100 @@ const AccountSettings: React.FC = () => {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                form={form}
                 name="firstName"
                 label="First Name"
-                placeholder="Enter your first name"
+                control={form.control}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => <Input {...(field as any)} placeholder="Enter your first name" />}
+              </FormField>
               <FormField
-                form={form}
                 name="lastName"
                 label="Last Name"
-                placeholder="Enter your last name"
+                control={form.control}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => <Input {...(field as any)} placeholder="Enter your last name" />}
+              </FormField>
             </div>
             
             <FormField
-              form={form}
               name="displayName"
               label="Display Name"
-              placeholder="Enter your display name"
+              control={form.control}
               disabled={!isEditing}
-            />
+            >
+              {(field) => <Input {...(field as any)} placeholder="Enter your display name" />}
+            </FormField>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                form={form}
                 name="jobTitle"
                 label="Job Title"
-                placeholder="Enter your job title"
+                control={form.control}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => <Input {...(field as any)} placeholder="Enter your job title" />}
+              </FormField>
               <FormField
-                form={form}
                 name="department"
                 label="Department"
-                placeholder="Enter your department"
+                control={form.control}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => <Input {...(field as any)} placeholder="Enter your department" />}
+              </FormField>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
-                form={form}
                 name="businessEmail"
                 label="Business Email"
-                type="email"
-                placeholder="Enter your business email"
+                control={form.control}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => <Input {...(field as any)} type="email" placeholder="Enter your business email" />}
+              </FormField>
               <FormField
-                form={form}
                 name="personalEmail"
                 label="Personal Email"
-                type="email"
-                placeholder="Enter your personal email"
+                control={form.control}
                 disabled={!isEditing}
-              />
+              >
+                {(field) => <Input {...(field as any)} type="email" placeholder="Enter your personal email" />}
+              </FormField>
             </div>
             
             <FormField
-              form={form}
               name="phone"
               label="Phone Number"
-              type="tel"
-              placeholder="Enter your phone number"
+              control={form.control}
               disabled={!isEditing}
-            />
+            >
+              {(field) => <Input {...(field as any)} type="tel" placeholder="Enter your phone number" />}
+            </FormField>
+
+            {/* Chat Preferences */}
+            <div className="mt-4">
+              <Label className="text-sm">Chat Preferences</Label>
+              <div className="mt-2">
+                <Select
+                  onValueChange={(val) => form.setValue('chatTone', val)}
+                  value={form.getValues('chatTone')}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select tone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="friendly">Friendly</SelectItem>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="playful">Playful</SelectItem>
+                    <SelectItem value="concise">Concise</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-2">Choose how the AI assistant should phrase replies to you.</p>
+              </div>
+            </div>
 
             <div className="flex gap-2 pt-4">
               {!isEditing ? (

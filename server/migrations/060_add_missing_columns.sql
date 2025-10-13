@@ -23,7 +23,10 @@ ADD COLUMN IF NOT EXISTS emergency_contact JSONB DEFAULT '{}',
 ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'pending', 'suspended')),
 ADD COLUMN IF NOT EXISTS last_login TIMESTAMP WITH TIME ZONE,
 ADD COLUMN IF NOT EXISTS profile_completion_percentage INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id);
+ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES companies(id),
+ADD COLUMN IF NOT EXISTS organization_id UUID REFERENCES organizations(id),
+ADD COLUMN IF NOT EXISTS business_type VARCHAR(100),
+ADD COLUMN IF NOT EXISTS funding_stage VARCHAR(100);
 
 -- Add missing columns to companies table
 ALTER TABLE companies 
@@ -51,6 +54,7 @@ ADD COLUMN IF NOT EXISTS preferences JSONB DEFAULT '{}';
 CREATE INDEX IF NOT EXISTS idx_user_profiles_role ON user_profiles(role);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_department ON user_profiles(department);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_company_id ON user_profiles(company_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_organization_id ON user_profiles(organization_id);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_status ON user_profiles(status);
 CREATE INDEX IF NOT EXISTS idx_user_profiles_timezone ON user_profiles(timezone);
 CREATE INDEX IF NOT EXISTS idx_organizations_tenant_id ON organizations(tenant_id);

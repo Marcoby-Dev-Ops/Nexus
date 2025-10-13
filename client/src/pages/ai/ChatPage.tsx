@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/shared/utils/logger';
 import { useUserProfile, useUserCompany } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import {
@@ -35,39 +36,20 @@ const getAllAgents = async (): Promise<Agent[]> => {
   return result.success && result.data ? result.data : [];
 };
 
-const getAgentsByType = async (type: Agent['type']): Promise<Agent[]> => {
-  const result = await aiService.getAgents();
-  if (result.success && result.data) {
-    return result.data.filter((agent: Agent) => agent.type === type);
-  }
-  return [];
-};
+// getAgentsByType removed (unused)
 
-interface ChatStats {
-  totalConversations: number;
-  averageResponseTime: number;
-  userSatisfaction: number;
-  messagesToday: number;
-  activeAgents: number;
-  automationRate: number;
-}
-
-interface ConversationRow { 
-  id: string; 
-  title: string | null; 
-  updatedat: string;
-  agent_id?: string;
-  message_count?: number;
-}
+// Local types are omitted - reuse shared types from store where needed
 
 export default function ChatPage() {
   const { user } = useAuth();
   const { profile: userProfile } = useUserProfile();
   const { company: userCompany } = useUserCompany();
+  // User preferred chat tone (stored in profile.preferences.chatTone)
+  const preferredTone = (userProfile?.preferences as any)?.chatTone || 'friendly';
   
-  // Debug: Log user context data
+  // Log user context data
   useEffect(() => {
-    console.log('User context data:', {
+    logger.debug('User context data', {
       user: user?.id,
       userProfile,
       userCompany,
@@ -93,17 +75,7 @@ export default function ChatPage() {
   const [agents, setAgents] = useState<Agent[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState<string>('executive-assistant');
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [showConversationSidebar, setShowConversationSidebar] = useState<boolean>(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
-  const [stats, setStats] = useState<ChatStats>({
-    totalConversations: 0,
-    averageResponseTime: 0,
-    userSatisfaction: 0,
-    messagesToday: 0,
-    activeAgents: 0,
-    automationRate: 0
-  });
   const [loading, setLoading] = useState(true);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -111,6 +83,9 @@ export default function ChatPage() {
   const [ragEnabled, setRagEnabled] = useState(false);
   const [ragConfidence, setRagConfidence] = useState(0);
   const [knowledgeTypes, setKnowledgeTypes] = useState<string[]>([]);
+  const [ragSources, setRagSources] = useState<any[]>([]);
+  const [ragRecommendations, setRagRecommendations] = useState<string[]>([]);
+  const [businessContextData, setBusinessContextData] = useState<Record<string, any> | null>(null);
 
   // Get selected agent object
   const selectedAgent = agents.find(agent => agent.id === selectedAgentId);
@@ -131,8 +106,9 @@ export default function ChatPage() {
         await setCurrentConversationById(currentConversationId);
       }
 
-      // IMMEDIATELY save and display the user message
-      await sendMessage(message, attachments);
+  // IMMEDIATELY save and display the user message
+  // sendMessage signature: sendMessage(content: string, conversationId: string, attachments: FileAttachment[])
+  await sendMessage(message, currentConversationId, attachments || []);
 
       // Now set loading states for AI response
       setIsLoading(true);
@@ -146,7 +122,8 @@ export default function ChatPage() {
           id: user.id,
           name: userProfile?.display_name || `${userProfile?.first_name || ''} ${userProfile?.last_name || ''}`.trim() || 'User',
           role: userProfile?.job_title || 'User',
-          department: 'General'
+          department: 'General',
+          preferredTone: preferredTone
         },
         company: userCompany ? {
           id: userCompany.id,
@@ -171,7 +148,7 @@ export default function ChatPage() {
         attachments: attachments || []
       };
 
-      console.log('🔍 Processing with Nexus RAG Service...');
+      logger.debug('Processing with Nexus RAG Service');
       const nexusResponse = await nexusRAGService.processMessage({
         message,
         context: nexusContext,
@@ -179,27 +156,30 @@ export default function ChatPage() {
       });
 
       if (nexusResponse.success && nexusResponse.data) {
-        console.log('✅ Nexus RAG Response:', {
+        logger.info('Nexus RAG Response', {
           confidence: nexusResponse.data.confidence,
           sourcesCount: nexusResponse.data.sources.length,
           hasRecommendations: nexusResponse.data.recommendations.length > 0
         });
         
-        // Update RAG status
+        // Update RAG status and business context
         setRagEnabled(true);
         setRagConfidence(nexusResponse.data.confidence);
         setKnowledgeTypes(nexusResponse.data.knowledgeTypes || []);
-        
+        setRagSources(nexusResponse.data.sources || []);
+        setRagRecommendations(nexusResponse.data.recommendations || []);
+        setBusinessContextData(nexusResponse.data.businessContext || {});
+
         // Save the AI response
         await saveAIResponse(nexusResponse.data.content, currentConversationId);
-        
+
         // Refresh conversations to show the updated list
         await fetchConversations();
       } else {
         throw new Error(nexusResponse.error || 'Failed to process message');
       }
     } catch (error) {
-      console.error('Chat error:', error);
+      logger.error('Chat error', { error });
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       toast({
         title: "Error",
@@ -217,56 +197,40 @@ export default function ChatPage() {
     setIsLoading(false);
   };
 
-  useEffect(() => {
-    loadChatData();
-  }, []);
-
-  // Update stats when conversations change
-  useEffect(() => {
-    setStats(prev => ({
-      ...prev,
-      totalConversations: conversations.length
-    }));
-  }, [conversations]);
-
-  // Load conversations when component mounts
-  useEffect(() => {
-    fetchConversations();
-  }, [fetchConversations]);
-
-  const loadChatData = async () => {
+  const loadChatData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const allAgents = await getAllAgents();
       setAgents(allAgents);
-      
       // Set default agent if none selected
       if (!selectedAgentId && allAgents.length > 0) {
         setSelectedAgentId(allAgents[0].id);
       } else if (!selectedAgentId) {
-        // If no agents are available, use a default ID
         setSelectedAgentId('executive-assistant');
       }
-      
-      // Update stats with real data
-      setStats({
-        totalConversations: conversations.length,
-        averageResponseTime: 2.3,
-        userSatisfaction: 94,
-        messagesToday: 23,
-        activeAgents: allAgents.length,
-        automationRate: 78
-      });
     } catch (error) {
-      console.error('Error loading chat data:', error);
+      logger.error('Error loading chat data', { error });
       setError('Failed to load chat data. Please refresh the page.');
       setAgents([]);
       setSelectedAgentId('executive-assistant');
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedAgentId]);
+
+  useEffect(() => {
+    loadChatData();
+  }, [loadChatData]);
+
+  // Update stats when conversations change - currently omitted (unused)
+
+  // Load conversations when component mounts
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  
 
   const handleNewConversation = async () => {
     try {
@@ -289,7 +253,7 @@ export default function ChatPage() {
         type: "success"
       });
     } catch (error) {
-      console.error('Error creating new conversation:', error);
+      logger.error('Error creating new conversation', { error });
       toast({
         title: "Error",
         description: "Failed to create new conversation. Please try again.",
@@ -298,10 +262,7 @@ export default function ChatPage() {
     }
   };
 
-  // Debug: Log selectedAgentId changes
-  useEffect(() => {
-    console.log('ChatPage selectedAgentId changed to:', selectedAgentId);
-  }, [selectedAgentId]);
+  // Selected agent debug omitted
 
   const handleConversationSelect = async (convId: string) => {
     setConversationId(convId);
@@ -311,7 +272,7 @@ export default function ChatPage() {
       // Load messages for the selected conversation
       await fetchMessages(convId);
     } catch (error) {
-      console.error('Error loading conversation messages:', error);
+      logger.error('Error loading conversation messages', { error });
       toast({
         title: "Error",
         description: "Failed to load conversation messages.",
@@ -320,10 +281,6 @@ export default function ChatPage() {
     }
   };
 
-  const handleAgentSelect = (agentId: string) => {
-    setSelectedAgentId(agentId);
-    setConversationId(null); // Start new conversation with new agent
-  };
 
   const handleSearchClick = () => {
     // Navigate to CKB search page
@@ -355,7 +312,7 @@ export default function ChatPage() {
         type: "success"
       });
     } catch (error) {
-      console.error('Error archiving conversation:', error);
+      logger.error('Error archiving conversation', { error });
       toast({
         title: "Error",
         description: "Failed to archive conversation. Please try again.",
@@ -376,7 +333,7 @@ export default function ChatPage() {
         type: "success"
       });
     } catch (error) {
-      console.error('Error cleaning empty conversations:', error);
+      logger.error('Error cleaning empty conversations', { error });
       toast({
         title: "Cleanup Failed",
         description: "Failed to clean empty conversations. Please try again.",
@@ -469,6 +426,7 @@ export default function ChatPage() {
 
         {/* Agent Selection */}
         <div className="p-2 space-y-1">
+          {/* Tone is configured in Settings → Account Settings */}
           {!sidebarCollapsed && (
             <h3 className="text-xs font-medium text-gray-400 mb-2">Choose Agent</h3>
           )}
@@ -591,6 +549,9 @@ export default function ChatPage() {
               {nonEmptyConversations.map((conv) => (
                 <div
                   key={conv.id}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleConversationSelect(conv.id); } }}
                   className={cn(
                     "w-full text-left px-3 py-2 rounded-md text-xs transition-colors flex items-center justify-between cursor-pointer",
                     conversationId === conv.id
@@ -659,7 +620,7 @@ export default function ChatPage() {
                  onStopGeneration={handleStopGeneration}
                  isStreaming={isStreaming}
                  disabled={isLoading}
-                 placeholder="Ask anything..."
+                                 placeholder="Ask anything — general questions or ask about your business. Try: 'How's our cash flow?'"
                  showTypingIndicator={isStreaming}
                  className="h-full"
                  userName={user?.name || "User"}
@@ -668,6 +629,9 @@ export default function ChatPage() {
                  ragEnabled={ragEnabled}
                  ragConfidence={ragConfidence}
                  knowledgeTypes={knowledgeTypes}
+                                 ragSources={ragSources}
+                                 ragRecommendations={ragRecommendations}
+                                 businessContext={businessContextData}
                />
             </React.Suspense>
           </div>
