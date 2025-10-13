@@ -33,7 +33,35 @@ class UserProfileService {
       );
 
       if (existingResult.data && existingResult.data.length > 0) {
-        // Profile exists, update last activity and return
+        // Profile exists, sync with latest Authentik data and update last activity
+        const authentikData = this.extractAuthentikUserData(jwtPayload);
+        
+        // Prepare update data with Authentik sync + activity update
+        const updateData = {
+          ...authentikData.profileData,
+          last_active_at: 'NOW()',
+          updated_at: 'NOW()'
+        };
+
+        // Only update if we have Authentik data to sync
+        if (Object.keys(authentikData.profileData).length > 0) {
+          try {
+            const syncResult = await this.updateProfileData(userId, authentikData.profileData, jwtPayload);
+            if (syncResult.success) {
+              logger.info('User profile synced with Authentik data on login', { 
+                userId, 
+                updatedFields: Object.keys(authentikData.profileData)
+              });
+            }
+          } catch (syncError) {
+            logger.warn('Failed to sync Authentik data on login', { 
+              userId, 
+              error: syncError.message 
+            });
+          }
+        }
+
+        // Always update last activity
         const updatedProfile = await query(
           `UPDATE user_profiles
            SET last_active_at = NOW(), updated_at = NOW()
@@ -43,7 +71,7 @@ class UserProfileService {
           jwtPayload
         );
 
-        logger.info('User profile already exists, updated last activity', { userId });
+        logger.info('User profile exists, synced with Authentik and updated activity', { userId });
         return {
           success: true,
           profile: updatedProfile.data[0],
@@ -61,19 +89,28 @@ class UserProfileService {
       }
 
       logger.info('Basic user profile created', { userId });
+      // Extract comprehensive Authentik signup data and sync to user profile
+      const authentikData = this.extractAuthentikUserData(jwtPayload);
+      
+      // Update user profile with Authentik data
+      if (Object.keys(authentikData.profileData).length > 0) {
+        try {
+          await this.updateProfileData(userId, authentikData.profileData, jwtPayload);
+          logger.info('User profile updated with Authentik data', { 
+            userId, 
+            updatedFields: Object.keys(authentikData.profileData) 
+          });
+        } catch (updateError) {
+          logger.warn('Failed to update profile with Authentik data', { 
+            userId, 
+            error: updateError.message 
+          });
+        }
+      }
+
       // Attempt to provision a company for the user (best-effort).
-      // We extract common signup/company fields from jwtPayload and additionalData.
       try {
-        const signupData = {
-          businessName: (jwtPayload && (jwtPayload.business_name || (jwtPayload.attributes && jwtPayload.attributes.business_name))) || additionalData.businessName || additionalData.companyName || null,
-          companyName: (jwtPayload && (jwtPayload.company_name || (jwtPayload.attributes && jwtPayload.attributes.company_name))) || additionalData.companyName || additionalData.businessName || null,
-          industry: (jwtPayload && (jwtPayload.industry || (jwtPayload.attributes && jwtPayload.attributes.industry))) || additionalData.industry || null,
-          companySize: (jwtPayload && (jwtPayload.company_size || (jwtPayload.attributes && jwtPayload.attributes.company_size))) || additionalData.companySize || additionalData.company_size || null,
-          website: (jwtPayload && jwtPayload.website) || additionalData.website || null,
-          domain: (jwtPayload && jwtPayload.domain) || additionalData.domain || null,
-          fundingStage: (jwtPayload && (jwtPayload.funding_stage || (jwtPayload.attributes && jwtPayload.attributes.funding_stage))) || additionalData.fundingStage || null,
-          revenueRange: (jwtPayload && (jwtPayload.revenue_range || (jwtPayload.attributes && jwtPayload.attributes.revenue_range))) || additionalData.revenueRange || null
-        };
+        const signupData = authentikData.companyData;
 
         const provisioning = await companyService.ensureCompanyForUser(userId, signupData, jwtPayload);
         if (provisioning && provisioning.success && provisioning.company) {
@@ -113,32 +150,50 @@ class UserProfileService {
   }
 
   /**
-   * Create basic user profile
+   * Create basic user profile with Authentik data sync
    */
   async createBasicProfile(userId, userEmail = null, additionalData = {}, jwtPayload = null) {
     try {
-      const email = userEmail || `${userId}@authentik.local`;
+      // Extract Authentik data for initial profile creation
+      const authentikData = this.extractAuthentikUserData(jwtPayload);
       
+      // Merge Authentik data with defaults and additional data
+      const email = userEmail || authentikData.profileData.email || `${userId}@authentik.local`;
+      const displayName = authentikData.profileData.display_name || 
+                         (authentikData.profileData.first_name && authentikData.profileData.last_name) 
+                           ? `${authentikData.profileData.first_name} ${authentikData.profileData.last_name}`.trim()
+                           : 'User';
+      const completionPercentage = authentikData.profileData.profile_completion_percentage || 0;
+      const signupCompleted = authentikData.profileData.signup_completed || false;
+      const onboardingCompleted = authentikData.profileData.onboarding_completed || false;
+      const businessProfileCompleted = authentikData.profileData.business_profile_completed || false;
+      
+      // Create the initial profile with Authentik data
       const result = await query(
         `INSERT INTO user_profiles (
-          user_id, email, display_name, role, status, 
+          user_id, email, display_name, first_name, last_name, phone, 
+          company_name, role, status, 
           onboarding_completed, profile_completion_percentage, 
           subscription_tier, signup_completed, business_profile_completed,
           last_active_at, created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW(), NOW()
         ) RETURNING *`,
         [
           userId,
           email,
-          'User',
+          displayName,
+          authentikData.profileData.first_name || null,
+          authentikData.profileData.last_name || null,
+          authentikData.profileData.phone || null,
+          authentikData.profileData.company_name || null,
           'user',
           'active',
-          false,
-          0,
+          onboardingCompleted,
+          completionPercentage,
           'free',
-          false,
-          false
+          signupCompleted,
+          businessProfileCompleted
         ],
         jwtPayload
       );
@@ -520,6 +575,71 @@ class UserProfileService {
         error: error.message
       };
     }
+  }
+
+  /**
+   * Extract and map Authentik user data from JWT payload
+   * Maps Authentik attributes to our user profile and company schema
+   */
+  extractAuthentikUserData(jwtPayload) {
+    if (!jwtPayload) {
+      return { profileData: {}, companyData: {} };
+    }
+
+    const attrs = jwtPayload.attributes || {};
+    
+    // Extract user profile data
+    const profileData = {};
+    
+    // Basic user information
+    if (jwtPayload.email) profileData.email = jwtPayload.email;
+    if (jwtPayload.name) profileData.display_name = jwtPayload.name;
+    if (attrs.first_name) profileData.first_name = attrs.first_name;
+    if (attrs.last_name) profileData.last_name = attrs.last_name;
+    if (attrs.phone) profileData.phone = attrs.phone;
+    
+    // Professional information
+    if (attrs.business_name) profileData.company_name = attrs.business_name;
+    
+    // Signup completion tracking
+    if (attrs.signup_completed === true) {
+      profileData.signup_completed = true;
+      profileData.onboarding_completed = attrs.enrollment_flow_completed === true;
+      profileData.business_profile_completed = attrs.business_profile_completed === true;
+    }
+    
+    // Calculate profile completion percentage based on available data
+    const completionFields = [
+      'first_name', 'last_name', 'email', 'phone', 'company_name',
+      'signup_completed', 'business_profile_completed'
+    ];
+    const completedFields = completionFields.filter(field => 
+      profileData[field] || attrs[field] || jwtPayload[field]
+    ).length;
+    const completionPercentage = Math.round((completedFields / completionFields.length) * 100);
+    profileData.profile_completion_percentage = completionPercentage;
+
+    // Extract company data for provisioning
+    const companyData = {
+      businessName: attrs.business_name || null,
+      companyName: attrs.business_name || null,
+      industry: attrs.industry || null,
+      companySize: attrs.company_size || null,
+      businessType: attrs.business_type || null,
+      fundingStage: attrs.funding_stage || null,
+      revenueRange: attrs.revenue_range || null,
+      website: jwtPayload.website || null,
+      domain: jwtPayload.domain || null
+    };
+
+    logger.info('Extracted Authentik user data', { 
+      hasProfileData: Object.keys(profileData).length > 0,
+      hasCompanyData: Object.values(companyData).some(v => v !== null),
+      profileFields: Object.keys(profileData),
+      completionPercentage
+    });
+
+    return { profileData, companyData };
   }
 }
 
