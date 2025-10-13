@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 interface OptimizedSignupFieldProps {
-  type: 'text' | 'email' | 'tel' | 'select';
+  type: 'text' | 'email' | 'tel' | 'select' | 'url';
   name: string;
   label: string;
   value: string;
@@ -19,6 +19,7 @@ interface OptimizedSignupFieldProps {
   maxLength?: number;
   pattern?: string;
   inputMode?: 'text' | 'email' | 'tel' | 'url' | 'numeric' | 'decimal';
+  normalizeUrl?: boolean;
 }
 
 export function OptimizedSignupField({
@@ -39,10 +40,10 @@ export function OptimizedSignupField({
   maxLength,
   pattern,
   inputMode,
+  normalizeUrl = false,
 }: OptimizedSignupFieldProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const [isValid, setIsValid] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredSuggestions, setFilteredSuggestions] = useState<string[]>([]);
 
@@ -87,6 +88,26 @@ export function OptimizedSignupField({
     setIsFocused(false);
     // Delay hiding suggestions to allow for clicks
     setTimeout(() => setShowSuggestions(false), 200);
+
+    // Optionally normalize URLs on blur (e.g., add https:// if missing)
+    if (normalizeUrl && value && typeof value === 'string') {
+      const trimmed = value.trim();
+      if (trimmed.length > 0) {
+        let normalized = trimmed;
+        if (!/^https?:\/\//i.test(normalized)) {
+          normalized = `https://${normalized}`;
+        }
+        try {
+          const url = new URL(normalized);
+          const finalUrl = url.toString();
+          if (finalUrl !== value) {
+            onChange(finalUrl);
+          }
+        } catch {
+          // leave as-is if not a valid URL; zod validation or field-level validation will handle errors
+        }
+      }
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {

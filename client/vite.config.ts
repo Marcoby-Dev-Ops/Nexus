@@ -24,6 +24,31 @@ export default defineConfig(({ mode }) => {
    
    
   
+  // Build a development CSP header so Vite dev pages can use Google Fonts and local API
+  const devApiUrl = env.VITE_API_URL || 'http://localhost:3001';
+  const devApiOrigin = (() => {
+    try {
+      return new URL(devApiUrl).origin;
+    } catch {
+      return 'http://localhost:3001';
+    }
+  })();
+
+  const devCsp = [
+    "default-src 'self'",
+    "img-src 'self' data: https:",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    // Allow Google Fonts stylesheets
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Some browsers honor style-src-elem separately; include for completeness
+    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    // Allow XHR/fetch/WebSocket to HTTPS, WSS, WS, and local API
+    `connect-src 'self' https: wss: ws: ${devApiOrigin}`,
+    // Allow Google Fonts font files and data URIs
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "frame-ancestors 'self'"
+  ].join('; ');
+
   return {
     base: '/',
     plugins,
@@ -84,6 +109,9 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5173,
       host: true,
+      headers: {
+        'Content-Security-Policy': devCsp,
+      },
       proxy: {
         '/api': {
           target: 'http://localhost:3001',

@@ -15,7 +15,8 @@ const getAllowedTables = () => [
   'chat_usage_tracking',
   
   // Business & Organization Tables
-  'building_blocks', 'business_health_snapshots', 'companies', 'company_members', 'identities', 
+  'building_blocks', 'business_health_snapshots', 'business_identity',
+  'companies', 'company_members', 'identities', 
   'organizations', 'user_organizations',
   
   // Knowledge & CKB Tables

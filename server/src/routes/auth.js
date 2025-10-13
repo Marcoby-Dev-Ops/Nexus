@@ -9,6 +9,8 @@ const AUTHENTIK_BASE_URL = process.env.AUTHENTIK_BASE_URL || 'https://identity.m
 const AUTHENTIK_API_TOKEN = process.env.AUTHENTIK_API_TOKEN;
 
 const AuditService = require('../services/AuditService');
+const userProfileService = require('../services/UserProfileService');
+const companyService = require('../services/CompanyService');
 const router = Router();
 
 // POST /api/auth/create-user - Create new user in Authentik
@@ -19,6 +21,8 @@ router.post('/create-user', async (req, res) => {
       businessType,
       industry,
       companySize,
+      website,
+      domain,
       firstName,
       lastName,
       email,
@@ -69,6 +73,19 @@ router.post('/create-user', async (req, res) => {
         first_name: firstName,
         last_name: lastName,
         phone: phone || '',
+        website: website || '',
+        domain: (() => {
+          try {
+            const publicDomains = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','aol.com','yandex.com','mail.com']);
+            const inputDom = (domain || '').toLowerCase().trim();
+            if (inputDom && !publicDomains.has(inputDom)) return inputDom;
+            if (!email || !email.includes('@')) return '';
+            const dom = email.split('@')[1].toLowerCase();
+            return publicDomains.has(dom) ? '' : dom;
+          } catch (_) {
+            return '';
+          }
+        })(),
         funding_stage: fundingStage || '',
         revenue_range: revenueRange || '',
         signup_completed: true,
@@ -88,8 +105,29 @@ router.post('/create-user', async (req, res) => {
     });
 
     if (!createResponse.ok) {
-      const errorData = await createResponse.json();
-      logger.error('Authentik user creation failed:', errorData);
+      const errorData = await createResponse.json().catch(() => ({}));
+      logger.error('Authentik user creation failed:', {
+        status: createResponse.status,
+        statusText: createResponse.statusText,
+        errorData,
+        requestData: {
+          username,
+          email,
+          businessName
+        }
+      });
+
+      // If Authentik reports an invalid or expired token, surface a clear 503 so
+      // the frontend (and operator) know this is an upstream auth config issue.
+      const detail = (errorData && errorData.detail) ? String(errorData.detail).toLowerCase() : '';
+      if (createResponse.status === 401 || createResponse.status === 403 || /token invalid|expired/.test(detail)) {
+        return res.status(503).json({
+          success: false,
+          error: 'Authentik API token invalid or expired',
+          note: 'authentik-token-invalid'
+        });
+      }
+
       return res.status(400).json({
         success: false,
         error: `Failed to create user: ${errorData.detail || createResponse.statusText}`
@@ -146,6 +184,8 @@ router.post('/update-business-info', async (req, res) => {
       businessType,
       industry,
       companySize,
+      website,
+      domain,
       firstName,
       lastName,
       email,
@@ -188,6 +228,18 @@ router.post('/update-business-info', async (req, res) => {
     }
 
     // Update user attributes with business information
+    // Derive domain from email when possible (avoid public email providers)
+    const deriveDomain = (em) => {
+      try {
+        if (!em || !em.includes('@')) return '';
+        const dom = em.split('@')[1].toLowerCase();
+        const publicDomains = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','aol.com','yandex.com','mail.com']);
+        return publicDomains.has(dom) ? '' : dom;
+      } catch (e) {
+        return '';
+      }
+    };
+
     const updatedUserData = {
       ...existingUser,
       name: `${firstName} ${lastName}`,
@@ -200,6 +252,8 @@ router.post('/update-business-info', async (req, res) => {
         first_name: firstName,
         last_name: lastName,
         phone: phone || '',
+        website: website || existingUser.attributes?.website || '',
+        domain: (domain && domain.trim()) ? domain : (deriveDomain(email) || existingUser.attributes?.domain || ''),
         funding_stage: fundingStage || '',
         revenue_range: revenueRange || '',
         signup_completed: true,
@@ -252,6 +306,83 @@ router.post('/update-business-info', async (req, res) => {
       logger.warn('Failed to record audit for user update', { error: auditErr?.message || auditErr });
     }
 
+    // Sync company data to Nexus database
+    // This ensures the company is created/updated with the correct business name
+    // immediately when the user submits their business information
+    try {
+      const userId = updatedUser.pk.toString();
+      
+      // Prepare company data from the signup form
+      const companyData = {
+        businessName: businessName,
+        companyName: businessName,
+        industry: industry || 'Technology',
+        companySize: companySize || '1-10',
+        businessType: businessType || null,
+        fundingStage: fundingStage || null,
+        revenueRange: revenueRange || null,
+        website: website || existingUser.attributes?.website || null,
+        domain: (domain && domain.trim()) ? domain : (deriveDomain(email) || existingUser.attributes?.domain || null),
+        // Pass along email to allow domain derivation deeper if needed
+        emailForDomain: email
+      };
+
+      // Ensure company is created/updated with correct data
+      const companyResult = await companyService.ensureCompanyForUser(
+        userId,
+        companyData,
+        null // No JWT payload needed here since we have all the data
+      );
+
+      if (companyResult.success && companyResult.company) {
+        logger.info('Company created/updated during signup', {
+          userId: userId,
+          companyId: companyResult.company.id,
+          companyName: businessName
+        });
+
+        // Ensure user profile exists and is associated with the company
+        await userProfileService.ensureUserProfile(
+          userId,
+          email,
+          {
+            company_id: companyResult.company.id,
+            company_name: businessName,
+            first_name: firstName,
+            last_name: lastName,
+            phone: phone || null,
+            signup_completed: true,
+            business_profile_completed: true,
+            onboarding_completed: true
+          },
+          {
+            email: email,
+            name: `${firstName} ${lastName}`,
+            attributes: updatedUserData.attributes
+          }
+        );
+        
+        logger.info('User profile synced with company during signup', {
+          userId: userId,
+          email: email,
+          companyId: companyResult.company.id
+        });
+      } else {
+        logger.warn('Company creation failed during signup (non-blocking)', {
+          userId: userId,
+          error: companyResult.error || 'Unknown error'
+        });
+      }
+    } catch (syncError) {
+      logger.error('Failed to sync company during signup (non-blocking)', {
+        error: syncError.message,
+        stack: syncError.stack,
+        userId: updatedUser.pk
+      });
+      // Don't fail the request - company can be created on next login
+      // but log it prominently so we can monitor for issues
+    }
+
     res.json({
       success: true,
       userId: updatedUser.pk.toString(),
@@ -279,6 +410,15 @@ router.get('/check-user/:email', async (req, res) => {
       });
     }
 
+    if (!AUTHENTIK_BASE_URL || !AUTHENTIK_API_TOKEN) {
+      logger.warn('AUTHENTIK config missing, returning user existence fallback', { email });
+      return res.json({
+        success: true,
+        exists: false,
+        note: 'authentik-unavailable-fallback'
+      });
+    }
+
     const response = await fetch(`${AUTHENTIK_BASE_URL}/api/v3/core/users/?search=${encodeURIComponent(email)}`, {
       headers: {
         'Authorization': `Bearer ${AUTHENTIK_API_TOKEN}`,
@@ -286,14 +426,16 @@ router.get('/check-user/:email', async (req, res) => {
     });
 
     if (!response.ok) {
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to check user existence'
+      logger.warn('Authentik user existence check failed, using fallback allow', { status: response.status, email });
+      return res.json({
+        success: true,
+        exists: false,
+        note: 'authentik-error-fallback'
       });
     }
 
     const data = await response.json();
-    const userExists = data.results.some(user => user.email === email);
+    const userExists = data.results.some(user => (user.email || '').toLowerCase() === email.toLowerCase());
 
     res.json({
       success: true,
@@ -301,10 +443,11 @@ router.get('/check-user/:email', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Error checking user existence:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Internal server error'
+    logger.error('Error checking user existence:', { error, email: req.params?.email });
+    res.json({
+      success: true,
+      exists: false,
+      note: 'authentik-exception-fallback'
     });
   }
 });
@@ -317,6 +460,8 @@ router.put('/update-user', async (req, res) => {
       businessType,
       industry,
       companySize,
+      website,
+      domain,
       firstName,
       lastName,
       email,
@@ -359,6 +504,18 @@ router.put('/update-user', async (req, res) => {
     }
 
     // Update user attributes with business information
+    // Derive domain from email when possible (avoid public email providers)
+    const deriveDomain = (em) => {
+      try {
+        if (!em || !em.includes('@')) return '';
+        const dom = em.split('@')[1].toLowerCase();
+        const publicDomains = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','aol.com','yandex.com','mail.com']);
+        return publicDomains.has(dom) ? '' : dom;
+      } catch (e) {
+        return '';
+      }
+    };
+
     const updatedUserData = {
       ...existingUser,
       name: `${firstName} ${lastName}`,
@@ -371,6 +528,8 @@ router.put('/update-user', async (req, res) => {
         first_name: firstName,
         last_name: lastName,
         phone: phone || '',
+        website: website || existingUser.attributes?.website || '',
+        domain: (domain && domain.trim()) ? domain : (deriveDomain(email) || existingUser.attributes?.domain || ''),
         funding_stage: fundingStage || '',
         revenue_range: revenueRange || '',
         signup_completed: true,
@@ -492,22 +651,61 @@ router.get('/check-username/:username', async (req, res) => {
       });
     }
 
-    const response = await fetch(`${AUTHENTIK_BASE_URL}/api/v3/core/users/?search=${encodeURIComponent(username)}`, {
+    // If Authentik configuration is missing, provide a non-blocking fallback
+    if (!AUTHENTIK_BASE_URL || !AUTHENTIK_API_TOKEN) {
+      logger.warn('AUTHENTIK config missing, returning username availability fallback', { username });
+      return res.json({
+        success: true,
+        available: true,
+        username,
+        note: 'authentik-unavailable-fallback'
+      });
+    }
+
+    const response = await fetch(`${AUTHENTIK_BASE_URL}/api/v3/core/users/?search=${encodeURIComponent(email)}`, {
       headers: {
         'Authorization': `Bearer ${AUTHENTIK_API_TOKEN}`,
       },
+    }).catch((err) => {
+      logger.warn('Failed to reach Authentik for check-user', { err: err?.message || err });
+      return null;
     });
 
+    if (!response) {
+      // Authentik unreachable - return a safe fallback
+      return res.status(503).json({
+        success: false,
+        error: 'Authentik service unavailable',
+        note: 'authentik-unreachable'
+      });
+    }
+
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      logger.error('Authentik check-user failed', { status: response.status, errorData });
+      const detail = (errorData && errorData.detail) ? String(errorData.detail).toLowerCase() : '';
+      if (response.status === 401 || response.status === 403 || /token invalid|expired/.test(detail)) {
+        return res.status(503).json({
+          success: false,
+          error: 'Authentik API token invalid or expired',
+          note: 'authentik-token-invalid'
+        });
+      }
+
       return res.status(500).json({
         success: false,
-        error: 'Failed to check username availability'
+        error: 'Failed to check user existence',
+        detail: errorData
       });
     }
 
     const data = await response.json();
-    const userExists = data.results.some(user => user.username === username);
+    const userExists = Array.isArray(data.results) && data.results.some(user => user.email === email);
 
+    res.json({
+      success: true,
+      exists: userExists
+    });
     res.json({
       success: true,
       available: !userExists,
@@ -620,10 +818,14 @@ router.get('/session-info', async (req, res) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: 'No token provided',
-        code: 'NO_TOKEN'
+      // During public pages (e.g., signup), allow anonymous probe without error spam
+      return res.status(200).json({
+        success: true,
+        data: {
+          message: 'No token provided',
+          userId: null,
+          hasProfile: false
+        }
       });
     }
 
@@ -644,11 +846,17 @@ router.get('/session-info', async (req, res) => {
         }
       });
     } catch (validationError) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid token',
-        code: 'INVALID_TOKEN',
-        details: validationError.message
+      logger.debug('Invalid session token provided to session-info probe', {
+        error: validationError instanceof Error ? validationError.message : String(validationError),
+      });
+      return res.status(200).json({
+        success: true,
+        data: {
+          message: 'Invalid token',
+          userId: null,
+          hasProfile: false
+        },
+        code: 'INVALID_TOKEN'
       });
     }
   } catch (error) {

@@ -5,6 +5,12 @@ const emailSchema = z.string().email('Please enter a valid email address');
 const passwordSchema = z.string().min(8, 'Password must be at least 8 characters');
 const phoneSchema = z.string().regex(/^\+?[\d\s-()]+$/, 'Please enter a valid phone number');
 const urlSchema = z.string().url('Please enter a valid URL').optional().or(z.literal(''));
+// Basic domain validation: labels and TLD, no protocol
+const domainSchema = z
+  .string()
+  .regex(/^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/i, 'Please enter a valid domain (e.g., example.com)')
+  .optional()
+  .or(z.literal(''));
 
 // Helpers to treat empty strings as undefined for optional fields
 const emptyToUndefined = <T>(schema: z.ZodType<T>) =>
@@ -144,6 +150,8 @@ export const multiStepSignupSchema = z.object({
   businessType: z.string().min(1, 'Business type is required'),
   industry: z.string().min(1, 'Industry is required'),
   companySize: z.string().min(1, 'Company size is required'),
+  website: urlSchema, // optional URL
+  domain: domainSchema, // optional domain
   
   // Conditional fields
   fundingStage: z.string().optional(),
@@ -165,6 +173,8 @@ export const businessInfoSchema = z.object({
   businessType: z.string().min(1, 'Business type is required'),
   industry: z.string().min(1, 'Industry is required'),
   companySize: z.string().min(1, 'Company size is required'),
+  website: urlSchema, // optional URL
+  domain: domainSchema,
   fundingStage: z.string().optional(),
   revenueRange: z.string().optional(),
   teamSize: z.string().optional(),

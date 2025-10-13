@@ -54,28 +54,46 @@ class CompanyService {
         revenueRange = ''
       } = companyData;
 
+      // Generate a default description if none provided
+      const defaultDescription = description || 
+        `${businessType || 'Business'} company in the ${industry || 'Technology'} industry`;
+
+      // Map funding stage to growth stage
+      // Growth stages align with the business progression system
+      const growthStageMap = {
+        'bootstrap': 'foundation-building',      // Just starting, building foundation
+        'seed': 'operational-establishment',     // Establishing operations
+        'series-a': 'growth-acceleration',       // Scaling and accelerating growth
+        'series-b': 'optimization-excellence',   // Optimizing for efficiency
+        'series-c': 'optimization-excellence',   // Continuing optimization
+        'public': 'elite-operations'             // Mature, elite operations
+      };
+      const growthStage = fundingStage ? growthStageMap[fundingStage] || 'foundation-building' : 'foundation-building';
+
       // Create the company
       const companyResult = await query(
         `INSERT INTO companies (
           name, domain, industry, size, description, website, 
-          owner_id, is_active, settings, subscription_plan, max_users,
+          owner_id, is_active, settings, business_identity, subscription_plan, max_users,
           created_at, updated_at
         ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW()
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW()
         ) RETURNING *`,
         [
           name,
           domain,
           industry,
           size,
-          description,
+          defaultDescription,
           website,
           userId,
           true,
+          JSON.stringify({}), // Empty settings for now
           JSON.stringify({
             business_type: businessType,
             funding_stage: fundingStage,
-            revenue_range: revenueRange
+            revenue_range: revenueRange,
+            growth_stage: growthStage
           }),
           'free',
           5
@@ -259,17 +277,69 @@ class CompanyService {
         };
       }
 
-      // Extract company data from signup data
+      // Extract company data from signup/jwt with robust fallbacks
+      const attrs = (jwtPayload && jwtPayload.attributes) ? jwtPayload.attributes : {};
+      const prefer = (...vals) => vals.find(v => typeof v === 'string' && v.trim().length > 0) || null;
+      const rawName = prefer(signupData?.businessName, signupData?.companyName, attrs.business_name, attrs.company_name);
+
+      // Derive domain from email if not a public provider
+      const deriveDomain = (em) => {
+        try {
+          if (!em || !em.includes('@')) return '';
+          const dom = em.split('@')[1].toLowerCase();
+          const publicDomains = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','aol.com','yandex.com','mail.com']);
+          return publicDomains.has(dom) ? '' : dom;
+        } catch (e) {
+          return '';
+        }
+      };
+
+      const candidateDomain = prefer(signupData?.domain, attrs.domain) || deriveDomain(signupData?.emailForDomain || jwtPayload?.email);
+
+      // If no email-derived domain, try to derive from provided website URL
+      const deriveDomainFromWebsite = (url) => {
+        try {
+          if (!url || typeof url !== 'string') return '';
+          const normalized = url.startsWith('http') ? url : `https://${url}`;
+          const { hostname } = new URL(normalized);
+          const host = hostname.toLowerCase().replace(/^www\./, '');
+          return host || '';
+        } catch (e) {
+          return '';
+        }
+      };
+
+      let websiteFromInput = prefer(signupData?.website, attrs.website) || '';
+      let finalDomain = candidateDomain || '';
+      if (!finalDomain && websiteFromInput) {
+        finalDomain = deriveDomainFromWebsite(websiteFromInput);
+      }
+
+      // If no explicit name, try deriving a reasonable name from the domain
+      const deriveNameFromDomain = (dom) => {
+        try {
+          if (!dom || typeof dom !== 'string') return '';
+          // Take the first label (e.g., marcoby from marcoby.com)
+          const base = dom.split('.')[0];
+          if (!base) return '';
+          return base.charAt(0).toUpperCase() + base.slice(1);
+        } catch (e) {
+          return '';
+        }
+      };
+
+      const derivedName = deriveNameFromDomain(finalDomain);
+
       const companyData = {
-        name: signupData.businessName || signupData.companyName || 'My Business',
-        industry: signupData.industry || 'Technology',
-        size: signupData.companySize || '1-10',
-        description: signupData.description || '',
-        website: signupData.website || '',
-        domain: signupData.domain || '',
-        businessType: signupData.businessType || '',
-        fundingStage: signupData.fundingStage || '',
-        revenueRange: signupData.revenueRange || ''
+        name: rawName || derivedName || 'My Business',
+        industry: prefer(signupData?.industry, attrs.industry) || 'Technology',
+        size: prefer(signupData?.companySize, attrs.company_size) || '1-10',
+        description: signupData?.description || '',
+        website: websiteFromInput,
+        domain: finalDomain,
+        businessType: prefer(signupData?.businessType, attrs.business_type) || '',
+        fundingStage: prefer(signupData?.fundingStage, attrs.funding_stage) || '',
+        revenueRange: prefer(signupData?.revenueRange, attrs.revenue_range) || ''
       };
 
       // Create new company
@@ -362,24 +432,25 @@ class CompanyService {
         jwtPayload
       );
 
-        if (columnCheck.error || !columnCheck.data || columnCheck.data.length === 0) {
-          // Column doesn't exist, return default business identity structure
-          this.logger.info('business_identity column not found, returning default identity structure', { companyId });
-          const defaultIdentity = {
-            foundation: {
-              name: 'My Company',
-              legalStructure: 'LLC',
-              businessModel: 'B2B',
-              companyStage: 'Startup'
-            },
-            missionVisionValues: {},
-            productsServices: {},
-            targetMarket: {},
-            competitiveLandscape: {},
-            businessOperations: {},
-            financialContext: {},
-            strategicContext: {}
-          };
+      // Standard default identity ensuring "foundation" exists with expected fields
+      const defaultIdentity = {
+        foundation: {
+          name: 'My Company',
+          industry: 'Technology',
+          companySize: '1-10'
+        },
+        missionVisionValues: {},
+        productsServices: {},
+        targetMarket: {},
+        competitiveLandscape: {},
+        businessOperations: {},
+        financialContext: {},
+        strategicContext: {}
+      };
+
+      if (columnCheck.error || !columnCheck.data || columnCheck.data.length === 0) {
+        // Column doesn't exist, return default business identity structure
+        this.logger.info('business_identity column not found, returning default identity structure', { companyId });
         return {
           success: true,
           data: defaultIdentity,
@@ -400,45 +471,23 @@ class CompanyService {
       if (!result.data || result.data.length === 0) {
         return {
           success: true,
-          data: {
-            foundation: {
-              name: 'My Company',
-              legalStructure: 'LLC',
-              businessModel: 'B2B',
-              companyStage: 'Startup'
-            },
-            missionVisionValues: {},
-            productsServices: {},
-            targetMarket: {},
-            competitiveLandscape: {},
-            businessOperations: {},
-            financialContext: {},
-            strategicContext: {}
-          },
+          data: defaultIdentity,
           error: null
         };
       }
 
-      const businessIdentity = result.data[0].business_identity || {
-        foundation: {
-          name: 'My Company',
-          legalStructure: 'LLC',
-          businessModel: 'B2B',
-          companyStage: 'Startup'
-        },
-        missionVisionValues: {},
-        productsServices: {},
-        targetMarket: {},
-        competitiveLandscape: {},
-        businessOperations: {},
-        financialContext: {},
-        strategicContext: {}
-      };
+      const existingIdentity = result.data[0].business_identity && typeof result.data[0].business_identity === 'object'
+        ? result.data[0].business_identity
+        : {};
+
+      // Ensure default "foundation" (and other sections) are present without overwriting existing values
+      const mergedIdentity = this.deepMerge(defaultIdentity, existingIdentity);
+
       this.logger.info('Business identity retrieved', { companyId });
 
       return {
         success: true,
-        data: businessIdentity,
+        data: mergedIdentity,
         error: null
       };
 

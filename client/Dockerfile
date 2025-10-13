@@ -1,5 +1,6 @@
 # Multi-stage build for React/Vite application
-FROM node:20-alpine AS base
+# Use current LTS Node with a minimal Alpine base to reduce vulnerabilities
+FROM node:22-alpine AS base
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -19,6 +20,14 @@ FROM base AS build
 WORKDIR /app
 
 # Build the client application
+ARG VITE_API_URL
+ARG VITE_AUTHENTIK_CLIENT_ID
+ARG VITE_AUTHENTIK_URL
+ARG VITE_ENABLE_STRICT_MODE
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_AUTHENTIK_CLIENT_ID=${VITE_AUTHENTIK_CLIENT_ID}
+ENV VITE_AUTHENTIK_URL=${VITE_AUTHENTIK_URL}
+ENV VITE_ENABLE_STRICT_MODE=${VITE_ENABLE_STRICT_MODE}
 RUN pnpm run build
 
 # Production stage
@@ -38,20 +47,22 @@ COPY nginx.conf /etc/nginx/nginx.conf.template
 RUN echo '#!/bin/sh' > /docker-entrypoint.sh && \
     echo 'set -e' >> /docker-entrypoint.sh && \
     # Prepare backend URL used by nginx and the app
-    echo 'export BACKEND_URL=${VITE_API_URL:-https://napi.marcoby.com}' >> /docker-entrypoint.sh && \
-    echo 'echo "BACKEND_URL: $BACKEND_URL"' >> /docker-entrypoint.sh && \
+    echo 'export BACKEND_URL=${VITE_API_URL:-http://localhost:3001}' >> /docker-entrypoint.sh && \
+    echo 'export BACKEND_PROXY_URL=${BACKEND_PROXY_URL:-http://nexus-server:3001}' >> /docker-entrypoint.sh && \
+    echo 'echo "BACKEND_URL (frontend): $BACKEND_URL"' >> /docker-entrypoint.sh && \
+    echo 'echo "BACKEND_PROXY_URL (nginx): $BACKEND_PROXY_URL"' >> /docker-entrypoint.sh && \
     # Generate nginx config from template
-    echo 'envsubst '\''$BACKEND_URL'\'' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf' >> /docker-entrypoint.sh && \
+    echo 'envsubst '\''$BACKEND_PROXY_URL'\'' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf' >> /docker-entrypoint.sh && \
     echo 'echo "Nginx configuration generated successfully"' >> /docker-entrypoint.sh && \
     echo 'nginx -t' >> /docker-entrypoint.sh && \
     echo 'echo "Nginx configuration test passed"' >> /docker-entrypoint.sh && \
     # Generate runtime env-config.js for the frontend to read at runtime
     echo 'cat > /usr/share/nginx/html/env-config.js <<EOF' >> /docker-entrypoint.sh && \
     echo 'window.__APP_CONFIG__ = {' >> /docker-entrypoint.sh && \
-    echo '  "VITE_API_URL": "'"'"'${VITE_API_URL:-}'"'"'",' >> /docker-entrypoint.sh && \
-    echo '  "VITE_AUTHENTIK_CLIENT_ID": "'"'"'${VITE_AUTHENTIK_CLIENT_ID:-}'"'"'",' >> /docker-entrypoint.sh && \
-    echo '  "VITE_AUTHENTIK_URL": "'"'"'${VITE_AUTHENTIK_URL:-}'"'"'",' >> /docker-entrypoint.sh && \
-    echo '  "VITE_ENABLE_STRICT_MODE": "'"'"'${VITE_ENABLE_STRICT_MODE:-false}'"'"'"' >> /docker-entrypoint.sh && \
+    echo "  \"VITE_API_URL\": \"\${VITE_API_URL:-}\"," >> /docker-entrypoint.sh && \
+    echo "  \"VITE_AUTHENTIK_CLIENT_ID\": \"\${VITE_AUTHENTIK_CLIENT_ID:-}\"," >> /docker-entrypoint.sh && \
+    echo "  \"VITE_AUTHENTIK_URL\": \"\${VITE_AUTHENTIK_URL:-}\"," >> /docker-entrypoint.sh && \
+    echo "  \"VITE_ENABLE_STRICT_MODE\": \"\${VITE_ENABLE_STRICT_MODE:-false}\"" >> /docker-entrypoint.sh && \
     echo '};' >> /docker-entrypoint.sh && \
     echo 'EOF' >> /docker-entrypoint.sh && \
     echo 'echo "env-config.js generated"' >> /docker-entrypoint.sh && \

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { logger } from '@/shared/utils/logger';
 import { useAuthentikAuth } from '@/shared/contexts/AuthentikAuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSignupOptimization } from '@/hooks/useSignupOptimization';
@@ -11,17 +12,47 @@ import { AuthentikSignupService } from '@/services/auth/AuthentikSignupService';
 import { UsernameSelector } from '@/components/auth/UsernameSelector';
 import { buildApiUrl } from '@/lib/api-url';
 
-type SignupStep = 'business-info' | 'contact-info' | 'username-selection' | 'verification';
+// Note: step type is managed inside the signup optimization hook
 
 export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
   const [showExitIntent, setShowExitIntent] = useState(false);
-  const [showSocialProof, setShowSocialProof] = useState(true);
+  const [showSocialProof] = useState(true);
   const [signupSuccess, setSignupSuccess] = useState(false);
-  const [userCredentials, setUserCredentials] = useState<{ username: string; password: string } | null>(null);
+  // credentials are handled via Authentik flow
   const [enrollmentData, setEnrollmentData] = useState<{ email?: string; username?: string } | null>(null);
+  const enrollmentProbeAttemptedRef = useRef(false);
+  
+  const hasStoredAuthContext = () => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    try {
+      if (window.localStorage.getItem('authentik_session')) {
+        return true;
+      }
+    } catch {
+      // localStorage access may throw in some environments; ignore and fall back to cookies
+    }
+
+    try {
+      const cookies = document.cookie.split(';').map(cookie => cookie.trim());
+      if (cookies.some(cookie => cookie.startsWith('authentik_session='))) {
+        return true;
+      }
+      // Legacy server-side session cookie
+      if (cookies.some(cookie => cookie.startsWith('nexus_session='))) {
+        return true;
+      }
+    } catch {
+      // Ignore cookie parsing errors
+    }
+
+    return false;
+  };
   
   const navigate = useNavigate();
   const { signIn } = useAuthentikAuth();
@@ -51,7 +82,7 @@ export default function Signup() {
   useEffect(() => {
     const timer = setTimeout(() => setMounted(true), 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [goToStep, handleUsernameSelect, updateField]);
 
   // Check for enrollment data and authenticated user
   useEffect(() => {
@@ -111,8 +142,8 @@ export default function Signup() {
             }
           }
         }
-      } catch (error) {
-        console.log('No authenticated session found, proceeding with normal signup flow');
+      } catch {
+        logger.debug('No authenticated session found, proceeding with normal signup flow');
       }
     };
 
@@ -132,11 +163,16 @@ export default function Signup() {
       if (email && username) {
         goToStep('business-info');
       }
-    } else {
-      // No URL parameters, check for authenticated session
-      checkEnrollmentUser();
+    } else if (!enrollmentProbeAttemptedRef.current) {
+      const shouldCheck = hasStoredAuthContext();
+      if (shouldCheck) {
+        enrollmentProbeAttemptedRef.current = true;
+        checkEnrollmentUser();
+      } else {
+        logger.debug('Skipping session enrollment check on public signup page (no stored auth context detected)');
+      }
     }
-  }, []);
+  }, [goToStep, handleUsernameSelect, updateField]);
 
   // Exit intent detection
   useEffect(() => {
@@ -165,7 +201,7 @@ export default function Signup() {
   // Analytics tracking
   const handleStepComplete = (step: string) => {
     // In a real app, this would send data to your analytics service
-    console.log(`Step completed: ${step}`);
+    logger.ui(`Signup step completed: ${step}`);
   };
 
   const handleNextStep = () => {
@@ -201,6 +237,8 @@ export default function Signup() {
           businessType: formData.businessType,
           industry: formData.industry,
           companySize: formData.companySize,
+          website: formData.website || undefined,
+          domain: formData.domain || undefined,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -236,6 +274,8 @@ export default function Signup() {
           businessType: formData.businessType,
           industry: formData.industry,
           companySize: formData.companySize,
+          website: formData.website || undefined,
+          domain: formData.domain || undefined,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -251,6 +291,8 @@ export default function Signup() {
           businessType: formData.businessType,
           industry: formData.industry,
           companySize: formData.companySize,
+          website: formData.website || undefined,
+          domain: formData.domain || undefined,
           firstName: formData.firstName,
           lastName: formData.lastName,
           email: formData.email,
@@ -277,14 +319,14 @@ export default function Signup() {
         const signInResult = await signIn();
         if (!signInResult.success) {
           // If signIn fails, still show success but with a note about manual login
-          console.warn('Auto sign-in failed, user will need to login manually:', signInResult.error);
+          logger.warn('Auto sign-in failed, user will need to login manually', { error: signInResult.error });
         }
       } else {
         // For existing users, redirect to dashboard
         navigate('/dashboard');
       }
 
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred while creating your account');
     } finally {
       setLoading(false);
@@ -325,22 +367,7 @@ export default function Signup() {
   ];
 
   // Auto-suggestions for industries
-  const industrySuggestions = [
-    'SaaS / Software',
-    'FinTech',
-    'HealthTech',
-    'EdTech',
-    'E-commerce',
-    'AI / Machine Learning',
-    'Cybersecurity',
-    'Digital Marketing',
-    'Consulting Services',
-    'Manufacturing',
-    'Healthcare',
-    'Education',
-    'Real Estate',
-    'Food & Beverage',
-  ];
+  // Industry suggestions removed (unused); dynamic options handled via hook
 
   const renderBusinessInfoStep = () => (
     <div className="space-y-6">
@@ -405,6 +432,35 @@ export default function Signup() {
           ]}
           required
           helpText="This helps us provide appropriate scaling recommendations"
+          showHelp={true}
+        />
+      </div>
+
+      {/* Optional Website field to pre-seed company domain */}
+      <div className="grid grid-cols-1 gap-6">
+        <OptimizedSignupField
+          type="url"
+          name="website"
+          label="Company Website (optional)"
+          value={formData.website || ''}
+          onChange={(value) => updateField('website', value)}
+          error={getFieldError('website')}
+          placeholder="https://yourcompany.com"
+          inputMode="url"
+          normalizeUrl
+          helpText="Adding your website helps us set your company domain correctly on day one"
+          showHelp={true}
+        />
+        <OptimizedSignupField
+          type="text"
+          name="domain"
+          label="Company Domain (optional)"
+          value={formData.domain || ''}
+          onChange={(value) => updateField('domain', value.replace(/^https?:\/\//i, '').replace(/\/$/, ''))}
+          error={getFieldError('domain')}
+          placeholder="yourcompany.com"
+          inputMode="text"
+          helpText="If left blank, we'll try to derive this from your website or email."
           showHelp={true}
         />
       </div>
@@ -527,7 +583,17 @@ export default function Signup() {
           required
           autoComplete="email"
           inputMode="email"
-          helpText="This will be your login email and we'll send important updates here"
+          helpText={(() => {
+            const isPublic = (() => {
+              const em = formData.email || '';
+              const dom = em.includes('@') ? em.split('@')[1].toLowerCase() : '';
+              const publicDomains = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','aol.com','yandex.com','mail.com']);
+              return dom && publicDomains.has(dom);
+            })();
+            return isPublic
+              ? 'Using a personal email? Add your website below so we can set your company domain correctly.'
+              : "This will be your login email and we'll send important updates here";
+          })()}
           showHelp={true}
         />
 
@@ -541,7 +607,7 @@ export default function Signup() {
           placeholder="+1 (555) 123-4567"
           autoComplete="tel"
           inputMode="tel"
-          pattern="^\+?[\d\s-()]+$"
+          pattern="^\+?[0-9 ()-]+$"
           helpText="Optional - for account recovery and important notifications"
           showHelp={true}
         />

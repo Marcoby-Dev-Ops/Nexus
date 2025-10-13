@@ -23,13 +23,42 @@ const apiRequest = async <T>(endpoint: string, options: RequestInit = {}): Promi
       },
     })
 
-    const data = await response.json()
-    
-    if (!response.ok) {
-      throw new Error(data.error || `HTTP ${response.status}`)
+    const contentType = response.headers.get('content-type') ?? ''
+    let parsedBody: any
+
+    if (contentType.includes('application/json')) {
+      parsedBody = await response.json()
+    } else {
+      const rawText = await response.text()
+      try {
+        parsedBody = JSON.parse(rawText)
+      } catch {
+        console.warn('Unexpected non-JSON response from identity API', {
+          endpoint,
+          status: response.status,
+          preview: rawText.slice(0, 120),
+        })
+
+        if (!response.ok) {
+          return { success: false, error: `HTTP ${response.status}` }
+        }
+
+        return { success: true, data: undefined } as ApiResponse<T>
+      }
     }
 
-    return data
+    if (!response.ok) {
+      const errorMessage =
+        (parsedBody && typeof parsedBody === 'object' && 'error' in parsedBody && parsedBody.error) ||
+        `HTTP ${response.status}`
+      return { success: false, error: errorMessage }
+    }
+
+    if (parsedBody && typeof parsedBody === 'object' && 'success' in parsedBody) {
+      return parsedBody as ApiResponse<T>
+    }
+
+    return { success: true, data: parsedBody as T }
   } catch (error) {
     console.error('API request failed:', error)
     return {

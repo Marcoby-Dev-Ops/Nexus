@@ -233,37 +233,54 @@ app.use((req, res, next) => {
 // Health check endpoint with detailed status
 app.get('/health', async (req, res) => {
   try {
-    const healthStatus = {
-      status: 'ok',
+    const verbose = process.env.HEALTH_VERBOSE === 'true' || process.env.NODE_ENV !== 'production';
+
+    const baseStatus = {
+      status: 'ok'
+    };
+
+    const healthStatus = verbose ? {
+      ...baseStatus,
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
       version: process.env.npm_package_version || '1.0.0',
       uptime: process.uptime(),
       memory: process.memoryUsage(),
       checks: {}
-    };
+    } : { ...baseStatus };
 
     // Database health check
     try {
       const { testConnection } = require('./src/database/connection');
       const dbHealth = await testConnection();
-      healthStatus.checks.database = {
-        status: dbHealth.success ? 'ok' : 'error',
-        ...(dbHealth.success && { version: dbHealth.version }),
-        ...(dbHealth.error && { error: dbHealth.error })
-      };
+      if (verbose) {
+        healthStatus.checks = healthStatus.checks || {};
+        healthStatus.checks.database = {
+          status: dbHealth.success ? 'ok' : 'error',
+          ...(dbHealth.success && { version: dbHealth.version }),
+          ...(dbHealth.error && { error: dbHealth.error })
+        };
+      } else {
+        // Minimal signal in production
+        healthStatus.database = dbHealth.success ? 'ok' : 'error';
+      }
     } catch (dbError) {
-      healthStatus.checks.database = {
-        status: 'error',
-        error: dbError.message
-      };
+      if (verbose) {
+        healthStatus.checks = healthStatus.checks || {};
+        healthStatus.checks.database = {
+          status: 'error',
+          error: dbError.message
+        };
+      } else {
+        healthStatus.database = 'error';
+      }
     }
 
     // Overall health status
     const allChecksPassed = Object.values(healthStatus.checks).every(check => check.status === 'ok');
     healthStatus.status = allChecksPassed ? 'ok' : 'degraded';
 
-    const statusCode = allChecksPassed ? 200 : 503;
+  const statusCode = allChecksPassed ? 200 : 503;
     res.status(statusCode).json(healthStatus);
 
   } catch (error) {
@@ -338,20 +355,19 @@ logger.info('AI Gateway routes mounted at /api/ai');
 logger.info('CKB routes mounted at /api/ckb');
 
 // Graceful shutdown handling
-const gracefulShutdown = (signal) => {
+const gracefulShutdown = async (signal) => {
   logger.info(`Received ${signal}, starting graceful shutdown...`);
   
-  // Close database connections
-  const { closePool } = require('./src/database/connection');
-  closePool()
-    .then(() => {
-      logger.info('Database connections closed');
-      process.exit(0);
-    })
-    .catch((error) => {
-      logger.error('Error during shutdown:', error);
-      process.exit(1);
-    });
+  try {
+    // Close database connections
+    const { closePool } = require('./src/database/connection');
+    await closePool();
+    logger.info('Database connections closed');
+    process.exit(0);
+  } catch (error) {
+    logger.error('Error during shutdown:', error);
+    process.exit(1);
+  }
 };
 
 // Handle shutdown signals

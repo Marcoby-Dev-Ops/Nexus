@@ -12,6 +12,8 @@ export interface BusinessSignupData {
   businessType: string;
   industry: string;
   companySize: string;
+  website?: string;
+  domain?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -35,6 +37,7 @@ export interface UpdateUserResult {
 }
 
 import { buildApiUrl } from '@/lib/api-url';
+import { logger } from '@/shared/utils/logger';
 
 export class AuthentikSignupService {
   /**
@@ -52,8 +55,8 @@ export class AuthentikSignupService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('User creation failed:', errorData);
+  const errorData = await response.json();
+  logger.error('User creation failed', errorData);
         return {
           success: false,
           error: errorData.error || `Failed to create user: ${response.statusText}`
@@ -68,7 +71,7 @@ export class AuthentikSignupService {
       };
 
     } catch (error) {
-      console.error('Error creating user:', error);
+  logger.error('Error creating user', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -91,8 +94,8 @@ export class AuthentikSignupService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Business info update failed:', errorData);
+  const errorData = await response.json();
+  logger.error('Business info update failed', errorData);
         return {
           success: false,
           error: errorData.error || `Failed to update business information: ${response.statusText}`
@@ -107,7 +110,7 @@ export class AuthentikSignupService {
       };
 
     } catch (error) {
-      console.error('Error updating business information:', error);
+  logger.error('Error updating business information', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'
@@ -128,7 +131,7 @@ export class AuthentikSignupService {
       });
 
       if (!response.ok) {
-        console.error('Failed to check user existence');
+  logger.error('Failed to check user existence');
         return false;
       }
 
@@ -136,7 +139,7 @@ export class AuthentikSignupService {
       return data.exists;
 
     } catch (error) {
-      console.error('Error checking user existence:', error);
+  logger.error('Error checking user existence', error);
       return false;
     }
   }
@@ -161,7 +164,7 @@ export class AuthentikSignupService {
       return data.exists ? { email } : null;
 
     } catch (error) {
-      console.error('Error fetching user by email:', error);
+  logger.error('Error fetching user by email', error);
       return null;
     }
   }
@@ -181,8 +184,8 @@ export class AuthentikSignupService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.error('User update failed:', errorData);
+  const errorData = await response.json();
+  logger.error('User update failed', errorData);
         return {
           success: false,
           error: errorData.error || `Failed to update user: ${response.statusText}`
@@ -197,7 +200,7 @@ export class AuthentikSignupService {
       };
 
     } catch (error) {
-      console.error('Error updating user:', error);
+  logger.error('Error updating user', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred'

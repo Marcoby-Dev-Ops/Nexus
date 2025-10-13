@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { logger } from '@/shared/utils/logger';
 import { useUserProfile } from '@/shared/contexts/UserContext';
@@ -12,18 +13,7 @@ import type {
 type Company = CompanyProfile;
 
 // Temporary type until CompanyAnalytics is properly defined
-interface CompanyAnalytics {
-  companyId: string;
-  employeeCount: number;
-  mrr: number;
-  growthStage: string;
-  industry: string;
-  size: string;
-  websiteVisitors: number;
-  csat: number;
-  grossMargin: number;
-  lastUpdated: string;
-}
+// Removed unused CompanyAnalytics interface to satisfy lint rules
 
 /**
  * CompanyContext provides read-through cached company data and related resources
@@ -110,7 +100,7 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
 
   const isFresh = useCallback((lastFetch: number | null) => {
     return Boolean(lastFetch && Date.now() - lastFetch < CACHE_TTL_MS);
-  }, []);
+  }, [CACHE_TTL_MS]);
 
   const clearErrors = useCallback(() => {
     setCompanyError(null);
@@ -288,6 +278,36 @@ export const CompanyProvider: React.FC<CompanyProviderProps> = ({ children }) =>
       clearErrors();
     }
   }, [companyId, loadCompany, loadBusinessIdentity, loadHealth, clearErrors]);
+
+  // Auto-fix: if company was created with placeholder name, but profile has a real company_name, update it
+  const autoFixAttemptedRef = React.useRef(false);
+  useEffect(() => {
+    // Only attempt once per session to avoid loops
+    if (autoFixAttemptedRef.current) return;
+    if (!company?.id) return;
+    const currentName = (company.name || '').trim();
+    if (!currentName) return;
+    const isPlaceholder = currentName.toLowerCase() === 'my business';
+    const desiredName = (profile?.company_name || '').trim();
+    if (isPlaceholder && desiredName && desiredName.toLowerCase() !== 'my business') {
+      autoFixAttemptedRef.current = true;
+      (async () => {
+        try {
+          logger.info('Auto-fixing placeholder company name', { companyId: company.id, from: currentName, to: desiredName });
+          const result = await companyService.update(company.id, { name: desiredName });
+          if (result.success && result.data) {
+            setCompany(result.data);
+            setLastCompanyFetch(Date.now());
+            logger.info('Company name auto-fixed successfully', { companyId: company.id, name: result.data.name });
+          } else {
+            logger.warn('Failed to auto-fix company name', { companyId: company.id, error: result.error });
+          }
+        } catch (err) {
+          logger.warn('Error during company name auto-fix', { companyId: company.id, error: err instanceof Error ? err.message : String(err) });
+        }
+      })();
+    }
+  }, [company?.id, company?.name, profile?.company_name]);
 
   const value: CompanyContextType = useMemo(() => ({
     company,

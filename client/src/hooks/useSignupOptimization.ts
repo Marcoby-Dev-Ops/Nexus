@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { buildApiUrl } from '@/lib/api-url';
-import { businessInfoSchema, contactInfoSchema, type MultiStepSignupFormData } from '@/shared/validation/schemas';
+import { type MultiStepSignupFormData } from '@/shared/validation/schemas';
+import { logger } from '@/shared/utils/logger';
 
 type SignupStep = 'business-info' | 'contact-info' | 'username-selection' | 'verification';
 
@@ -12,6 +13,7 @@ interface SignupOptimizationState {
   isDirty: boolean;
   autoSaveStatus: 'saved' | 'saving' | 'error';
   progress: number;
+  timeSpent: number;
   // Add new state for smart dependencies
   conditionalFields: Record<string, boolean>;
   dynamicOptions: Record<string, Array<{ value: string; label: string }>>;
@@ -27,6 +29,8 @@ export function useSignupOptimization() {
       businessType: '',
       industry: '',
       companySize: '',
+      website: '',
+      domain: '',
       firstName: '',
       lastName: '',
       email: '',
@@ -42,6 +46,7 @@ export function useSignupOptimization() {
     isDirty: false,
     autoSaveStatus: 'saved',
     progress: 0,
+    timeSpent: 0,
     // Initialize conditional fields
     conditionalFields: {
       showFundingStage: false,
@@ -60,7 +65,7 @@ export function useSignupOptimization() {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameError, setUsernameError] = useState<string>('');
 
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load saved data on mount
   useEffect(() => {
@@ -73,7 +78,7 @@ export function useSignupOptimization() {
           formData: { ...prev.formData, ...parsed.formData },
           currentStep: parsed.currentStep || 'business-info',
         }));
-      } catch (error) {
+      } catch {
         // Warning logging removed for production
       }
     }
@@ -92,7 +97,7 @@ export function useSignupOptimization() {
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
       setState(prev => ({ ...prev, autoSaveStatus: 'saved' }));
-    } catch (error) {
+    } catch {
       // Error logging removed for production
       setState(prev => ({ ...prev, autoSaveStatus: 'error' }));
     }
@@ -112,7 +117,7 @@ export function useSignupOptimization() {
   // Real-time validation
   const validateField = useCallback((field: keyof MultiStepSignupFormData, value: string) => {
     // For optional fields, only validate if they have a value
-    if (['fundingStage', 'revenueRange', 'teamSize'].includes(field) && !value) {
+    if (['fundingStage', 'revenueRange', 'teamSize', 'domain', 'website'].includes(field as string) && !value) {
       return ''; // No error for empty optional fields
     }
 
@@ -132,6 +137,26 @@ export function useSignupOptimization() {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(value)) {
         return 'Please enter a valid email address';
+      }
+    }
+
+  if (field === 'website' && value) {
+      // basic URL format check; full validation handled by zod where used
+      try {
+        const url = new URL(value);
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          return 'Please enter a valid URL starting with http or https';
+        }
+      } catch {
+        return 'Please enter a valid URL';
+      }
+    }
+
+    if (field === 'domain' && value) {
+      // simple domain check (no protocol, has dot)
+      const domainRegex = /^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/i;
+      if (!domainRegex.test(value)) {
+        return 'Please enter a valid domain (e.g., example.com)';
       }
     }
 
@@ -232,6 +257,30 @@ export function useSignupOptimization() {
     
     setState(prev => {
       const newFormData = { ...prev.formData, [field]: value };
+
+      // Heuristic: derive domain from website or email when possible
+      try {
+        if (field === 'website' && value) {
+          // strip protocol and path to get host
+          const url = new URL(value);
+          const host = url.hostname;
+          if (!newFormData.domain) {
+            newFormData.domain = host;
+          }
+        }
+      } catch {
+        // ignore invalid URL here; validation handles it
+      }
+      if (field === 'email' && value && !newFormData.domain) {
+        const parts = value.split('@');
+        if (parts.length === 2) {
+          const domain = parts[1].toLowerCase();
+          const publicDomains = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','aol.com','yandex.com','mail.com']);
+          if (!publicDomains.has(domain)) {
+            newFormData.domain = domain;
+          }
+        }
+      }
       const newErrors = { ...prev.errors, [field]: error };
       
       // Remove error if field is now valid
@@ -286,9 +335,10 @@ export function useSignupOptimization() {
 
   // Calculate progress
   useEffect(() => {
-    const stepProgress = {
+    const stepProgress: Record<SignupStep, number> = {
       'business-info': 33,
       'contact-info': 66,
+      'username-selection': 85,
       'verification': 100,
     };
     
@@ -406,15 +456,21 @@ export function useSignupOptimization() {
 
   // Check if username is available
   const checkUsernameAvailability = useCallback(async (username: string) => {
-    if (!username || username.length < 3) return false;
-    
     setIsCheckingUsername(true);
-    setUsernameError('');
-    
     try {
       const response = await fetch(buildApiUrl(`/api/auth/check-username/${encodeURIComponent(username)}`));
+      if (response.status === 429) {
+        setUsernameError('Too many username checks in a short period. Please wait a moment and try again.');
+        return false;
+      }
+
+      if (!response.ok) {
+        setUsernameError('Unable to check username availability right now. Please try again shortly.');
+        return false;
+      }
+
       const data = await response.json();
-      
+
       if (data.available) {
         setUsernameError('');
         return true;
@@ -423,7 +479,10 @@ export function useSignupOptimization() {
         return false;
       }
     } catch (error) {
-      setUsernameError('Unable to check username availability');
+      if (error instanceof Error) {
+        logger.error('Username availability check failed', { error: error.message });
+      }
+      setUsernameError('Unable to check username availability. Please try again.');
       return false;
     } finally {
       setIsCheckingUsername(false);
@@ -432,12 +491,30 @@ export function useSignupOptimization() {
 
   // Handle username selection
   const handleUsernameSelect = useCallback(async (username: string) => {
-    setSelectedUsername(username);
+    const sanitizedUsername = username.trim();
+    setSelectedUsername(sanitizedUsername);
+
+    if (sanitizedUsername.length === 0) {
+      setUsernameError('');
+      return;
+    }
+
+    if (sanitizedUsername.length < 3) {
+      setUsernameError('Username must be at least 3 characters long');
+      return;
+    }
+
+    const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+    if (!usernamePattern.test(sanitizedUsername)) {
+      setUsernameError('Username can only contain letters, numbers, underscores, and hyphens');
+      return;
+    }
+
     setUsernameError('');
     
     // Check availability when user selects a username
-    if (username.length >= 3) {
-      await checkUsernameAvailability(username);
+    if (sanitizedUsername.length >= 3) {
+      await checkUsernameAvailability(sanitizedUsername);
     }
   }, [checkUsernameAvailability]);
 
