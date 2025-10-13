@@ -39,6 +39,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Ensure trigger is idempotent when rerunning migrations
+DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON user_profiles;
 CREATE TRIGGER update_user_profiles_updated_at
   BEFORE UPDATE ON user_profiles
   FOR EACH ROW
