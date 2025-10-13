@@ -1,8 +1,8 @@
 -- Migration: create table to audit PII access events
 CREATE TABLE IF NOT EXISTS pii_access_audit (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id uuid NOT NULL, -- the internal user record that owns the PII
-  actor_id uuid NULL, -- the actor who accessed the PII (could be same as user for self-requests)
+  user_id VARCHAR(255) NOT NULL, -- Changed from UUID to match user_profiles.user_id
+  actor_id VARCHAR(255) NULL, -- Changed from UUID to match user_profiles.user_id
   endpoint text NOT NULL,
   field text NOT NULL,
   exposed boolean NOT NULL DEFAULT false,
@@ -14,3 +14,4 @@ CREATE TABLE IF NOT EXISTS pii_access_audit (
 
 -- Index to query recent access by user
 CREATE INDEX IF NOT EXISTS idx_pii_audit_user_id_created_at ON pii_access_audit (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_pii_audit_actor_id ON pii_access_audit (actor_id);

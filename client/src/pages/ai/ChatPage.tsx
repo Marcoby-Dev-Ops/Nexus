@@ -31,9 +31,38 @@ import { useAuth } from '@/hooks/useAuth';
 // Service-backed helpers
 const aiService = new ConsolidatedAIService();
 
+const normalizeAgentData = (rawData: unknown): Agent[] => {
+  if (Array.isArray(rawData)) {
+    return rawData as Agent[];
+  }
+
+  if (rawData && typeof rawData === 'object') {
+    const nestedData = (rawData as { data?: unknown }).data;
+    if (Array.isArray(nestedData)) {
+      return nestedData as Agent[];
+    }
+
+    if (nestedData && typeof nestedData === 'object') {
+      const doubleNestedData = (nestedData as { data?: unknown }).data;
+      if (Array.isArray(doubleNestedData)) {
+        return doubleNestedData as Agent[];
+      }
+    }
+  }
+
+  logger.warn('Unexpected agent payload shape from getAgents', {
+    receivedType: Array.isArray(rawData) ? 'array' : typeof rawData,
+  });
+  return [];
+};
+
 const getAllAgents = async (): Promise<Agent[]> => {
   const result = await aiService.getAgents();
-  return result.success && result.data ? result.data : [];
+  if (!result.success || !result.data) {
+    return [];
+  }
+
+  return normalizeAgentData(result.data);
 };
 
 // getAgentsByType removed (unused)

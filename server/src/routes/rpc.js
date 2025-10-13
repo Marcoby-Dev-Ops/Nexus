@@ -35,7 +35,10 @@ router.post('/:function', authenticateToken, async (req, res) => {
       'get_company_health',
       'monitor_company_health',
       'get_company_ai_context',
-      'get_company_next_action'
+      'get_company_next_action',
+      'sync_authentik_user_data',
+      'force_sync_authentik_user',
+      'get_authentik_sync_status'
     ];
 
     if (!allowedFunctions.includes(functionName)) {
@@ -144,6 +147,21 @@ router.post('/:function', authenticateToken, async (req, res) => {
       
       case 'get_company_next_action':
         result = await companyService.getNextAction(params.companyId, req.user.jwtPayload);
+        break;
+      
+      case 'sync_authentik_user_data':
+        // Sync user profile and company data from Authentik JWT
+        result = await syncAuthentikUserData(params.user_id || userId, req.user.jwtPayload);
+        break;
+      
+      case 'force_sync_authentik_user':
+        // Force refresh user profile from Authentik
+        result = await forceSyncAuthentikUser(params.user_id || userId, req.user.jwtPayload);
+        break;
+      
+      case 'get_authentik_sync_status':
+        // Get sync status for a user
+        result = await getAuthentikSyncStatus(params.user_id || userId);
         break;
       
       default:
@@ -461,6 +479,119 @@ async function getRequiredOnboardingSteps() {
   // Extract just the step_id values from the result
   const stepIds = result.data ? result.data.map(row => row.step_id) : [];
   return stepIds;
+}
+
+/**
+ * Sync user profile and company data from Authentik JWT payload
+ */
+async function syncAuthentikUserData(userId, jwtPayload) {
+  try {
+    logger.info('Syncing Authentik user data via RPC', { userId });
+    
+    // Use the UserProfileService to ensure profile with Authentik data
+    const result = await userProfileService.ensureUserProfile(
+      userId,
+      jwtPayload?.email,
+      {},
+      jwtPayload
+    );
+    
+    if (!result.success) {
+      throw createError(`Failed to sync Authentik user data: ${result.error}`, 500);
+    }
+    
+    return {
+      profile_synced: true,
+      company_synced: !!result.data?.company_id,
+      user_profile: result.data,
+      company: result.company,
+      last_sync: new Date().toISOString()
+    };
+    
+  } catch (error) {
+    logger.error('Error syncing Authentik user data', { userId, error });
+    throw createError(`Authentik sync failed: ${error.message}`, 500);
+  }
+}
+
+/**
+ * Force refresh user profile from Authentik
+ * This calls the same sync logic but can be triggered manually
+ */
+async function forceSyncAuthentikUser(userId, jwtPayload) {
+  try {
+    logger.info('Force syncing Authentik user data via RPC', { userId });
+    
+    // Force a fresh sync by calling ensureUserProfile
+    const result = await userProfileService.ensureUserProfile(
+      userId,
+      jwtPayload?.email,
+      {}, // Empty updates to force sync
+      jwtPayload
+    );
+    
+    if (!result.success) {
+      throw createError(`Failed to force sync Authentik user data: ${result.error}`, 500);
+    }
+    
+    return {
+      profile_synced: true,
+      company_synced: !!result.data?.company_id,
+      user_profile: result.data,
+      company: result.company,
+      forced_sync: true,
+      last_sync: new Date().toISOString()
+    };
+    
+  } catch (error) {
+    logger.error('Error force syncing Authentik user data', { userId, error });
+    throw createError(`Authentik force sync failed: ${error.message}`, 500);
+  }
+}
+
+/**
+ * Get Authentik sync status for a user
+ */
+async function getAuthentikSyncStatus(userId) {
+  try {
+    // Get user profile to check sync status
+    const result = await userProfileService.getUserProfile(userId);
+    
+    if (!result.success) {
+      return {
+        success: false,
+        error: 'User profile not found'
+      };
+    }
+    
+    const profile = result.data;
+    
+    // Determine what fields have been synced from Authentik
+    const syncedFields = [];
+    if (profile.first_name) syncedFields.push('first_name');
+    if (profile.last_name) syncedFields.push('last_name');
+    if (profile.email) syncedFields.push('email');
+    if (profile.phone) syncedFields.push('phone');
+    if (profile.company_name) syncedFields.push('company_name');
+    
+    // Calculate completion percentage
+    const totalFields = ['first_name', 'last_name', 'email', 'phone', 'company_name'];
+    const completionPercentage = Math.round((syncedFields.length / totalFields.length) * 100);
+    
+    return {
+      success: true,
+      last_sync: profile.updated_at,
+      synced_fields: syncedFields,
+      completion_percentage: completionPercentage,
+      profile_completion_percentage: profile.profile_completion_percentage || 0,
+      signup_completed: profile.signup_completed || false,
+      business_profile_completed: profile.business_profile_completed || false
+    };
+    
+  } catch (error) {
+    logger.error('Error getting Authentik sync status', { userId, error });
+    throw createError(`Failed to get sync status: ${error.message}`, 500);
+  }
 }
 
 module.exports = router;

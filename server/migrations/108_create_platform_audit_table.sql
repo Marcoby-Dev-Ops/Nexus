@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS platform_audit (
   event_type text NOT NULL, -- e.g., 'pii_access', 'apply_suggestion', 'db_insert', 'db_update', 'login', etc.
   object_type text NULL, -- e.g., 'company', 'identity', 'user_profiles'
   object_id uuid NULL,
-  actor_id uuid NULL, -- who performed the action
-  target_user_id uuid NULL, -- user whose data was affected (if applicable)
+  actor_id VARCHAR(255) NULL, -- Changed from UUID to match user_profiles.user_id
+  target_user_id VARCHAR(255) NULL, -- Changed from UUID to match user_profiles.user_id
   endpoint text NULL,
   ip inet NULL,
   user_agent text NULL,

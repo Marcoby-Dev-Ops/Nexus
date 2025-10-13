@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS suggestions_audit (
   source_message_id UUID,
   target_type TEXT NOT NULL,
   target_id UUID NOT NULL,
-  user_id UUID NOT NULL,
+  user_id VARCHAR(255) NOT NULL, -- Changed from UUID to match user_profiles.user_id
   suggested_changes JSONB NOT NULL,
   before_snapshot JSONB,
   after_snapshot JSONB,
@@ -15,3 +15,4 @@ CREATE TABLE IF NOT EXISTS suggestions_audit (
 );
 
 CREATE INDEX IF NOT EXISTS idx_suggestions_audit_target ON suggestions_audit (target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_suggestions_audit_user_id ON suggestions_audit (user_id);

@@ -1,8 +1,14 @@
+/* eslint-disable react-refresh/only-export-components */
+
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/index';
 import { userService } from '@/services/core/UserService';
 import { companyService } from '@/services/core/CompanyService';
 import { logger } from '@/shared/utils/logger';
+import { 
+  extractAuthentikUserData, 
+  logAuthentikSyncInfo 
+} from '@/services/auth/AuthentikSyncService';
 
 import type { UserProfile } from '@/services/core/UserService';
 
@@ -52,28 +58,7 @@ interface UserProviderProps {
 }
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
-  // Safely access auth context with error boundary
-  let authContext;
-  try {
-    authContext = useAuth();
-  } catch (error) {
-    // If auth context is not available, provide fallback values
-    authContext = {
-      user: null,
-      isAuthenticated: false,
-      loading: true,
-      initialized: false,
-      error: null,
-      signIn: async () => ({ success: false, error: 'Auth not available' }),
-      signUp: async () => ({ success: false, error: 'Auth not available' }),
-      signOut: async () => ({ success: false, error: 'Auth not available' }),
-      resetPassword: async () => ({ success: false, error: 'Auth not available' }),
-      updateProfile: async () => ({ success: false, error: 'Auth not available' }),
-      refreshAuth: async () => {},
-      session: null
-    };
-  }
-  
+  const authContext = useAuth();
   const { user, isAuthenticated } = authContext;
   
   // State
@@ -83,7 +68,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [mappingReady, setMappingReady] = useState(false);
   const [internalUserId, setInternalUserId] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
   const [profileLoaded, setProfileLoaded] = useState(false);
   
   // Track if we've already loaded profile for current user to prevent infinite loops
@@ -129,6 +113,19 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setProfile(result.data as any);
       setProfileLoaded(true);
       loadedUserIdRef.current = userId;
+      
+      // Log Authentik sync information if available
+      if (user && result.data) {
+        try {
+          const authentikData = extractAuthentikUserData(user);
+          if (Object.keys(authentikData).length > 0) {
+            logAuthentikSyncInfo(userId, result.data, authentikData);
+          }
+        } catch (syncError) {
+          logger.warn('Failed to process Authentik sync info', { userId, error: syncError });
+        }
+      }
+      
       logger.info('User profile loaded successfully', { userId });
     } catch (error) {
       logger.error('Failed to load user profile', { userId, error });
@@ -136,7 +133,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [userService, isAuthenticated, profileLoaded]);
+  }, [isAuthenticated, profileLoaded, user]);
 
   // Load company data
   const loadCompany = useCallback(async () => {
@@ -146,7 +143,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     }
 
     try {
-      const result = await companyApi.get(profile.company_id);
+      const result = await companyService.get(profile.company_id);
       if (result.success && result.data) {
         setCompany(result.data as CompanyProfile);
         logger.info('Company profile loaded successfully', { companyId: profile.company_id });
@@ -245,7 +242,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setProfileLoaded(false); // Reset when user logs out
       loadedUserIdRef.current = null; // Reset loaded user ID
     }
-  }, [user?.id, isAuthenticated, loading, profileLoaded]); // Remove loadProfile from dependencies
+  }, [user?.id, isAuthenticated, loading, profileLoaded, loadProfile]);
 
   // Load company when profile changes
   useEffect(() => {

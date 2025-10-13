@@ -2,10 +2,21 @@
 -- Ensures Authentik hashed IDs are stored without casting errors and introduces
 -- dedicated tables for managing user contact information.
 
--- 1. Guarantee user_profiles.user_id can store Authentik hashed IDs
-ALTER TABLE user_profiles
-  ALTER COLUMN user_id TYPE VARCHAR(255)
-  USING user_id::text;
+-- 1. Guarantee user_profiles.user_id can store Authentik hashed IDs (idempotent)
+DO $$
+BEGIN
+  -- Only alter if not already VARCHAR(255)
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'user_profiles' 
+    AND column_name = 'user_id' 
+    AND data_type != 'character varying'
+  ) THEN
+    ALTER TABLE user_profiles
+      ALTER COLUMN user_id TYPE VARCHAR(255)
+      USING user_id::text;
+  END IF;
+END $$;
 
 -- Reassert NOT NULL in case older schemas lost it
 ALTER TABLE user_profiles
