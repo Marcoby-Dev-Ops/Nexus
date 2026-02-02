@@ -27,6 +27,7 @@ import JourneysPage from '@/pages/journey/JourneysPage';
 import BusinessIdentityJourneyPage from '@/pages/journey/BusinessIdentityJourneyPage';
 import IdentityPage from '@/pages/IdentityPage';
 import ChatPage from '@/pages/chat/ChatPage';
+import CoolifyOpsPage from '@/pages/operations/CoolifyOpsPage';
 
 // Integrations pages
 import { IntegrationsDashboard } from '../integrations/pages/IntegrationsDashboard';
@@ -162,6 +163,16 @@ function AppRoutes() {
             <IntegrationsDashboard />
           </ProtectedRoute>
         } 
+      />
+
+      {/* Ops */}
+      <Route
+        path="/operations/coolify"
+        element={
+          <ProtectedRoute>
+            <CoolifyOpsPage />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/integrations/test-oauth" 

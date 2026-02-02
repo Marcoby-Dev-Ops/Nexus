@@ -84,6 +84,9 @@ const socketService = require('./src/services/SocketService');
 const socketTestRoutes = require('./src/routes/socket-test');
 const pushRoutes = require('./src/routes/push');
 
+// Ops routes
+const opsCoolifyRoutes = require('./src/routes/ops/coolify');
+
 const app = express();
 const server = createServer(app);
 const PORT = process.env.API_PORT || 3001;
@@ -332,6 +335,9 @@ app.use('/api/var-leads', varLeadsRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/thoughts', thoughtsRoutes);
 app.use('/api/push', pushRoutes);
+
+// Ops (approve-first, authenticated)
+app.use('/api/ops/coolify', opsCoolifyRoutes);
 
 // Apply suggestion endpoint (audit + apply)
 app.use('/api/apply-suggestion', generalLimiter, applySuggestionRoutes);

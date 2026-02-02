@@ -27,6 +27,7 @@ export const ROUTELABELS: Record<string, string> = {
   '/settings/billing': 'Billing',
   '/settings/integrations': 'Integrations',
   '/operations': 'Operations',
+  '/operations/coolify': 'Ops Command Center',
   '/operations/analytics': 'Operations Analytics',
   '/finance': 'Finance',
   '/finance/operations': 'Financial Operations',
