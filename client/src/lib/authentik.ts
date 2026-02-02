@@ -21,9 +21,11 @@ export const AUTHENTIK_CONFIG = {
   clientSecret: '', // Server-side only - not exposed to client
   
   // Redirect URIs
-  redirectUri: import.meta.env.DEV 
+  // Best practice for plug-and-play deployments: derive from the current origin
+  // so the same build works on any customer domain (e.g. app.nexus.<customer>.com).
+  redirectUri: import.meta.env.DEV
     ? 'http://localhost:5173/auth/callback'
-    : 'https://nexus.marcoby.com/auth/callback',
+    : `${window.location.origin}/auth/callback`,
   
   // Scopes
   scopes: ['openid', 'profile', 'email', 'groups', 'offline_access'],
