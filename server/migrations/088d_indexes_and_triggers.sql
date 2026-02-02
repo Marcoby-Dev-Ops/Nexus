@@ -98,24 +98,24 @@ BEGIN
   END IF;
 END$$;
 
--- Drop existing triggers before creating to prevent duplicate trigger errors
-DROP TRIGGER IF EXISTS update_playbook_templates_updated_at ON playbook_templates;
-CREATE TRIGGER update_playbook_templates_updated_at
-  BEFORE UPDATE ON playbook_templates
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+-- Drop/create triggers only when tables exist (prevents migration failure on partial schemas)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'playbook_templates') THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS update_playbook_templates_updated_at ON playbook_templates';
+    EXECUTE 'CREATE TRIGGER update_playbook_templates_updated_at BEFORE UPDATE ON playbook_templates FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()';
+  END IF;
 
-DROP TRIGGER IF EXISTS update_playbook_items_updated_at ON playbook_items;
-CREATE TRIGGER update_playbook_items_updated_at
-  BEFORE UPDATE ON playbook_items
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'playbook_items') THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS update_playbook_items_updated_at ON playbook_items';
+    EXECUTE 'CREATE TRIGGER update_playbook_items_updated_at BEFORE UPDATE ON playbook_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()';
+  END IF;
 
-DROP TRIGGER IF EXISTS update_user_playbook_progress_updated_at ON user_playbook_progress;
-CREATE TRIGGER update_user_playbook_progress_updated_at
-  BEFORE UPDATE ON user_playbook_progress
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_playbook_progress') THEN
+    EXECUTE 'DROP TRIGGER IF EXISTS update_user_playbook_progress_updated_at ON user_playbook_progress';
+    EXECUTE 'CREATE TRIGGER update_user_playbook_progress_updated_at BEFORE UPDATE ON user_playbook_progress FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()';
+  END IF;
+END$$;
 
 CREATE OR REPLACE FUNCTION update_journey_analytics_updated_at()
 RETURNS TRIGGER AS $$
