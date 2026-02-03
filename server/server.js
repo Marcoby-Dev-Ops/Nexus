@@ -99,16 +99,26 @@ if (process.env.TRUST_PROXY === 'true' || process.env.NODE_ENV === 'production')
   logger.info('Express trust proxy enabled (using X-Forwarded-For) for proper client IP detection');
 }
 
+// CORS / allowed origins
+// In production, allow a comma-separated list via CORS_ORIGINS (preferred),
+// or a single FRONTEND_URL for backwards compatibility.
+const prodOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'https://napp.marcoby.net,https://nexus.marcoby.net')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? prodOrigins
+  : ['http://localhost:5173', 'http://localhost:3000'];
+
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? [process.env.FRONTEND_URL || 'https://nexus.marcoby.net']
-      : ['http://localhost:5173', 'http://localhost:3000'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
-    credentials: true
+    credentials: true,
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
 });
 
 // Socket.IO authentication middleware
@@ -191,17 +201,25 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
+      // Allow Cloudflare Insights (if enabled) and a specific inline script hash seen in production.
+      // Prefer nonces/hashes over 'unsafe-inline'.
+      scriptSrc: [
+        "'self'",
+        "https://static.cloudflareinsights.com",
+        // Inline script hash from browser console error
+        "'sha256-d2YSkA49HLdjngaF+0EcXMxNSRwoe/GEriqK+A2G0UU='",
+      ],
+      // Some browsers separate elem/directives; keep consistent.
+      scriptSrcElem: ["'self'", "https://static.cloudflareinsights.com"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https:", "wss:"],
     },
   },
 }));
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://nexus.marcoby.net']
-    : ['http://localhost:5173', 'http://localhost:3000'],
+  origin: allowedOrigins,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
