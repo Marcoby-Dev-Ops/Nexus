@@ -152,8 +152,10 @@ export function getEnvironmentConfig(): EnvironmentConfig {
         password: getEnvVar(['VITE_POSTGRES_PASSWORD', 'POSTGRES_PASSWORD']) || 'postgres',
       },
       api: {
-        url: getEnvVar(['VITE_API_URL', 'API_URL']) || 'http://localhost:3001',
-        baseUrl: getEnvVar(['VITE_API_URL', 'API_URL']) || 'http://localhost:3001',
+        // Prefer same-origin proxying in production (frontend -> /api -> nginx -> backend) to avoid CORS.
+        // Set VITE_API_URL if you intentionally want cross-origin API calls.
+        url: getEnvVar(['VITE_API_URL', 'API_URL']) || '',
+        baseUrl: getEnvVar(['VITE_API_URL', 'API_URL']) || '',
       },
       google: {
         mapsApiKey:

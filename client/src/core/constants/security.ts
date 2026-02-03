@@ -12,7 +12,8 @@ export const SECURITY_CONFIG = {
       "'unsafe-inline'", // Required for Vite dev mode
       "'unsafe-eval'",   // Required for Vite dev mode
       import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com',
-      import.meta.env.VITE_API_URL || 'https://napi.marcoby.com'
+      // API is same-origin by default in production (proxied via /api). Only include when explicitly set.
+      ...(import.meta.env.VITE_API_URL ? [import.meta.env.VITE_API_URL] : [])
     ],
     'style-src': [
       "'self'",
@@ -32,10 +33,12 @@ export const SECURITY_CONFIG = {
     'connect-src': [
       "'self'",
       import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com',
-      import.meta.env.VITE_API_URL || 'https://napi.marcoby.com',
+      ...(import.meta.env.VITE_API_URL ? [import.meta.env.VITE_API_URL] : []),
       import.meta.env.VITE_N8N_URL || 'https://automate.marcoby.net',
       `wss://${new URL(import.meta.env.VITE_AUTHENTIK_BASE_URL || 'https://identity.marcoby.com').host}`,
-      `wss://${new URL(import.meta.env.VITE_API_URL || 'https://napi.marcoby.com').host}`
+      ...(import.meta.env.VITE_API_URL
+        ? [`wss://${new URL(import.meta.env.VITE_API_URL).host}`]
+        : [])
     ],
     'frame-src': [
       "'self'",

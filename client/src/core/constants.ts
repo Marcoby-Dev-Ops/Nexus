@@ -5,7 +5,8 @@ export const constants = () => {
 
 // API Configuration
 export const API_CONFIG = {
-  baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001',
+  // Prefer same-origin proxying via nginx in production.
+  baseUrl: import.meta.env.VITE_API_URL || '',
   timeout: 30000,
   retries: 3,
   endpoints: {

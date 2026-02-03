@@ -12,7 +12,9 @@
 import { getEnv } from '@/core/environment';
 
 function getApiBaseUrl(): string {
-  return getEnv().api.baseUrl || 'http://localhost:3001';
+  // MVP default: same-origin. Nginx proxies /api/* to the backend.
+  // If you want cross-origin calls, set VITE_API_URL.
+  return getEnv().api.baseUrl || '';
 }
 import { loggingUtils } from '@/core/config/logging';
 import { useAuthStore } from '@/core/auth/authStore';

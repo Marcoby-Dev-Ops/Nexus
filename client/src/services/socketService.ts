@@ -2,7 +2,8 @@ import type { Socket } from 'socket.io-client';
 import { io } from 'socket.io-client';
 import { useAuthStore } from '@/core/auth/authStore';
 
-const URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Prefer same-origin in production (nginx can proxy websocket endpoints if needed).
+const URL = import.meta.env.VITE_API_URL || '';
 
 let socket: Socket | null = null;
 
