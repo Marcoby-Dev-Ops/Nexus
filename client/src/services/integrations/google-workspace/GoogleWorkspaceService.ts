@@ -4,6 +4,7 @@ import { logger } from '@/shared/utils/logger';
 import { retryFetch } from '@/shared/utils/retry';
 import { createGoogleWorkspaceAuthUrl } from './utils';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
+import { getApiBaseUrl } from '@/core/apiBase';
 
 // Google Workspace data types
 export interface GoogleWorkspaceTokens {
@@ -181,7 +182,7 @@ export class GoogleWorkspaceService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/workspace/refresh-token`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/workspace/refresh-token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

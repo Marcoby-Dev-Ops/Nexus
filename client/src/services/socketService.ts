@@ -3,7 +3,9 @@ import { io } from 'socket.io-client';
 import { useAuthStore } from '@/core/auth/authStore';
 
 // Prefer same-origin in production (nginx can proxy websocket endpoints if needed).
-const URL = import.meta.env.VITE_API_URL || '';
+import { getApiBaseUrl } from '@/core/apiBase';
+
+const URL = getApiBaseUrl();
 
 let socket: Socket | null = null;
 
@@ -28,7 +30,7 @@ export const getSocket = (): Socket | null => {
   }
 
   if (!socket) {
-    socket = io(URL, {
+    socket = io(URL || undefined, {
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
       autoConnect: true,

@@ -152,10 +152,20 @@ export function getEnvironmentConfig(): EnvironmentConfig {
         password: getEnvVar(['VITE_POSTGRES_PASSWORD', 'POSTGRES_PASSWORD']) || 'postgres',
       },
       api: {
-        // Prefer same-origin proxying in production (frontend -> /api -> nginx -> backend) to avoid CORS.
-        // Set VITE_API_URL if you intentionally want cross-origin API calls.
-        url: getEnvVar(['VITE_API_URL', 'API_URL']) || '',
-        baseUrl: getEnvVar(['VITE_API_URL', 'API_URL']) || '',
+        // Best practice: prefer same-origin proxying in production (frontend -> /api -> nginx -> backend)
+        // to avoid CORS and simplify cookies/OAuth.
+        //
+        // If you intentionally want cross-origin API calls, set:
+        //   - VITE_FORCE_CROSS_ORIGIN_API=true
+        //   - VITE_API_URL=https://your-api.example.com
+        url:
+          getEnvVar(['VITE_FORCE_CROSS_ORIGIN_API', 'FORCE_CROSS_ORIGIN_API']) === 'true'
+            ? (getEnvVar(['VITE_API_URL', 'API_URL']) || '')
+            : '',
+        baseUrl:
+          getEnvVar(['VITE_FORCE_CROSS_ORIGIN_API', 'FORCE_CROSS_ORIGIN_API']) === 'true'
+            ? (getEnvVar(['VITE_API_URL', 'API_URL']) || '')
+            : '',
       },
       google: {
         mapsApiKey:

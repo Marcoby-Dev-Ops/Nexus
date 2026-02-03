@@ -8,6 +8,7 @@ import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callE
 import { logger } from '@/shared/utils/logger';
 import { retryFetch } from '@/shared/utils/retry';
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
+import { getApiBaseUrl } from '@/core/apiBase';
 
 // Google Analytics data types
 interface GoogleAnalyticsTokens {
@@ -78,7 +79,7 @@ export class GoogleAnalyticsService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/analytics/get-tokens`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/analytics/get-tokens`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +111,7 @@ export class GoogleAnalyticsService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/analytics/refresh-tokens`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/analytics/refresh-tokens`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -142,7 +143,7 @@ export class GoogleAnalyticsService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/analytics/test-connection`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/analytics/test-connection`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +179,7 @@ export class GoogleAnalyticsService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/analytics/connection-status`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/analytics/connection-status`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -215,7 +216,7 @@ export class GoogleAnalyticsService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/analytics/sync`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/analytics/sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -247,7 +248,7 @@ export class GoogleAnalyticsService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/analytics/get-data`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/analytics/get-data`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -309,7 +310,7 @@ export class GoogleAnalyticsService extends BaseService {
         return this.createErrorResponse('No valid session found');
       }
 
-      const response = await retryFetch(`${import.meta.env.VITE_API_URL}/api/google/analytics/disconnect`, {
+      const response = await retryFetch(`${getApiBaseUrl()}/api/google/analytics/disconnect`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

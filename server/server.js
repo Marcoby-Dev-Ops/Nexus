@@ -223,8 +223,10 @@ app.use(helmet({
       scriptSrc: [
         "'self'",
         "https://static.cloudflareinsights.com",
-        // Inline script hash from browser console error
+        // Inline script hashes observed in production.
+        // Prefer nonces/hashes over 'unsafe-inline'.
         "'sha256-d2YSkA49HLdjngaF+0EcXMxNSRwoe/GEriqK+A2G0UU='",
+        "'sha256-vDRXYtG0JCx4vG4d/wsNH83cpGjOwjcVNBo8EnvTw+U='",
       ],
       // Some browsers separate elem/directives; keep consistent.
       scriptSrcElem: ["'self'", "https://static.cloudflareinsights.com"],

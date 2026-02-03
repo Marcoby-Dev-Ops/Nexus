@@ -1,4 +1,5 @@
 import { BaseService } from '@/core/services/BaseService';
+import { getApiBaseUrl } from '@/core/apiBase';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import type { CrudServiceInterface } from '@/core/services/interfaces';
 import { selectData as select, selectOne, insertOne, updateOne, deleteOne, callEdgeFunction } from '@/lib/database';
@@ -476,7 +477,7 @@ export class CalendarService extends BaseService implements CrudServiceInterface
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/microsoft/calendar/list?${params.toString()}`,
+        `${getApiBaseUrl()}/api/microsoft/calendar/list?${params.toString()}`,
         {
           headers: {
             'Content-Type': 'application/json',

@@ -9,6 +9,7 @@ import { BaseService } from '@/core/services/BaseService';
 import { generateCodeVerifier, generateCodeChallenge } from '@/shared/utils/pkce';
 import { useAuthStore, persistSessionToStorage, loadSessionFromStorage, clearStoredSession } from './authStore';
 import { getRuntimeEnv } from '@/lib/runtimeEnv';
+import { getApiBaseUrl } from '@/core/apiBase';
 
 // Auth interfaces
 export interface AuthUser {
@@ -435,7 +436,7 @@ class AuthentikAuthService extends BaseService {
           redirectUri: this.redirectUri,
         });
 
-      const tokenApiUrl = import.meta.env.VITE_API_URL || '';
+      const tokenApiUrl = getApiBaseUrl();
       const tokenResponse = await fetch(`${tokenApiUrl}/api/oauth/token`, {
         method: 'POST',
         headers: {
@@ -469,7 +470,7 @@ class AuthentikAuthService extends BaseService {
           allTokenData: tokenData,
         });
 
-      const userInfoApiUrl = import.meta.env.VITE_API_URL || '';
+      const userInfoApiUrl = getApiBaseUrl();
       const userResponse = await fetch(`${userInfoApiUrl}/api/oauth/userinfo`, {
         method: 'POST',
         headers: {
@@ -631,7 +632,7 @@ class AuthentikAuthService extends BaseService {
       const codeVerifier = generateCodeVerifier(128);
       const codeChallenge = await generateCodeChallenge(codeVerifier);
 
-      const stateApiUrl = import.meta.env.VITE_API_URL || '';
+      const stateApiUrl = getApiBaseUrl();
       const stateResponse = await fetch(`${stateApiUrl}/api/oauth/state`, {
         method: 'POST',
         headers: {

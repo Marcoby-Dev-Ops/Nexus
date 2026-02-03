@@ -12,8 +12,8 @@
 import { getEnv } from '@/core/environment';
 
 function getApiBaseUrl(): string {
-  // MVP default: same-origin. Nginx proxies /api/* to the backend.
-  // If you want cross-origin calls, set VITE_API_URL.
+  // Best practice: same-origin. Nginx proxies /api/* to the backend.
+  // Cross-origin is only enabled when VITE_FORCE_CROSS_ORIGIN_API=true.
   return getEnv().api.baseUrl || '';
 }
 import { loggingUtils } from '@/core/config/logging';
