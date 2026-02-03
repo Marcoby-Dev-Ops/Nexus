@@ -100,21 +100,38 @@ if (process.env.TRUST_PROXY === 'true' || process.env.NODE_ENV === 'production')
 }
 
 // CORS / allowed origins
-// In production, allow a comma-separated list via CORS_ORIGINS (preferred),
-// or a single FRONTEND_URL for backwards compatibility.
-const prodOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'https://napp.marcoby.net,https://nexus.marcoby.net')
+// Goal: allow "whatever is added to the domain field" without hardcoding each hostname.
+// In practice, we safely allow same-site origins (subdomains) for marcoby.{net,com}.
+// - Supports credentials (cookies) by reflecting the Origin when allowed.
+// - Still allows explicit overrides via CORS_ORIGINS / FRONTEND_URL.
+const prodOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || '')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);
+
+const allowedOriginRegexes = [
+  // Allow any subdomain of marcoby.net and marcoby.com over https
+  /^https:\/\/([a-z0-9-]+\.)*marcoby\.net$/i,
+  /^https:\/\/([a-z0-9-]+\.)*marcoby\.com$/i,
+];
 
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? prodOrigins
   : ['http://localhost:5173', 'http://localhost:3000'];
 
+const isAllowedOrigin = (origin) => {
+  if (!origin) return true; // same-origin / server-to-server
+  if (allowedOrigins.includes(origin)) return true; // explicit allowlist
+  return allowedOriginRegexes.some((re) => re.test(origin));
+};
+
 // Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, cb) => {
+      if (isAllowedOrigin(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked for origin: ${origin}`));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -219,7 +236,10 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: allowedOrigins,
+  origin: (origin, cb) => {
+    if (isAllowedOrigin(origin)) return cb(null, true);
+    return cb(new Error(`CORS blocked for origin: ${origin}`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
