@@ -86,7 +86,7 @@ async function completeOnboardingHandler(payload, user) {
 
       // 2. Check if user already has an organization
       const existingOrgResult = await query(
-        `SELECT uo.org_id 
+        `SELECT uo.organization_id 
          FROM user_organizations uo 
          WHERE uo.user_id = $1 AND uo.is_primary = true`,
         [internalUserId]
@@ -97,7 +97,7 @@ async function completeOnboardingHandler(payload, user) {
 
       if (existingOrgResult.rows.length > 0) {
         // User already has an organization
-        organizationId = existingOrgResult.rows[0].org_id;
+        organizationId = existingOrgResult.rows[0].organization_id;
         console.log('User already has organization:', organizationId);
       } else {
         // Create new organization using the organizations API
@@ -129,7 +129,7 @@ async function completeOnboardingHandler(payload, user) {
 
         // Add user as owner of the organization
         await query(
-          `INSERT INTO user_organizations (user_id, org_id, role, permissions, is_primary, created_at)
+          `INSERT INTO user_organizations (user_id, organization_id, role, permissions, is_primary, created_at)
            VALUES ($1, $2, $3, $4, $5, NOW())`,
           [
             internalUserId,

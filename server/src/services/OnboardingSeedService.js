@@ -58,9 +58,9 @@ async function upsertUserProfile(userId, profileData, jwtPayload) {
 
 async function ensureOrganization(userId, organizationData, jwtPayload) {
   const existingMembership = await query(
-    `SELECT uo.org_id, uo.role, o.name
+    `SELECT uo.organization_id, uo.role, o.name
      FROM user_organizations uo
-     JOIN organizations o ON o.id = uo.org_id
+     JOIN organizations o ON o.id = uo.organization_id
      WHERE uo.user_id = $1
      ORDER BY uo.is_primary DESC, uo.joined_at ASC
      LIMIT 1`,
@@ -73,7 +73,7 @@ async function ensureOrganization(userId, organizationData, jwtPayload) {
   }
 
   if (existingMembership.data && existingMembership.data.length > 0) {
-    const orgId = existingMembership.data[0].org_id;
+    const orgId = existingMembership.data[0].organization_id;
 
     const updates = await query(
       `UPDATE organizations
@@ -126,7 +126,7 @@ async function ensureOrganization(userId, organizationData, jwtPayload) {
   const orgId = created.data[0].id;
 
   const membership = await query(
-    `INSERT INTO user_organizations (user_id, org_id, role, permissions, is_primary, created_at)
+    `INSERT INTO user_organizations (user_id, organization_id, role, permissions, is_primary, created_at)
      VALUES ($1, $2, $3, $4, $5, NOW())
      RETURNING id`,
     [

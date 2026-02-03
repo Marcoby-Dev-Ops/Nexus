@@ -276,7 +276,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const membershipQuery = `
       SELECT role, permissions, is_primary, created_at as joined_at
       FROM user_organizations
-      WHERE user_id = $1 AND org_id = $2
+      WHERE user_id = $1 AND organization_id = $2
     `;
 
     const { data: memberships, error: membershipError } = await query(membershipQuery, [userId, orgId], req.user.jwtPayload || { sub: userId });
@@ -378,7 +378,7 @@ router.get('/:id/members', authenticateToken, async (req, res) => {
     // Check if user is a member of this organization
     const membershipQuery = `
       SELECT 1 FROM user_organizations
-      WHERE user_id = $1 AND org_id = $2
+      WHERE user_id = $1 AND organization_id = $2
     `;
 
     const { data: memberships, error: membershipError } = await query(membershipQuery, [userId, orgId], req.user.jwtPayload || { sub: userId });
@@ -403,18 +403,18 @@ router.get('/:id/members', authenticateToken, async (req, res) => {
       SELECT 
         uo.id,
         uo.user_id,
-        uo.org_id,
+        uo.organization_id as org_id,
         uo.role,
         uo.permissions,
         uo.is_primary,
-        uo.created_at as joined_at,
+        COALESCE(uo.created_at, uo.joined_at) as joined_at,
         up.id as user_profile_id,
         up.name,
         up.email
       FROM user_organizations uo
-      LEFT JOIN user_profiles up ON uo.user_id = up.id
-      WHERE uo.org_id = $1
-      ORDER BY uo.created_at ASC
+      LEFT JOIN user_profiles up ON uo.user_id = up.user_id
+      WHERE uo.organization_id = $1
+      ORDER BY COALESCE(uo.created_at, uo.joined_at) ASC
     `;
 
     const { data: members, error: membersError } = await query(membersQuery, [orgId], req.user.jwtPayload || { sub: userId });
@@ -516,7 +516,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
     // Add user as owner of the organization
     const addMemberQuery = `
-      INSERT INTO user_organizations (user_id, org_id, role, permissions, is_primary, created_at)
+      INSERT INTO user_organizations (user_id, organization_id, role, permissions, is_primary, created_at)
       VALUES ($1, $2, $3, $4, $5, NOW())
       RETURNING *
     `;
@@ -584,7 +584,7 @@ router.put('/:id', authenticateToken, (req, res) => {
     // Check if user has permission to update this organization (owner or admin)
     const permissionQuery = `
       SELECT role FROM user_organizations
-      WHERE user_id = $1 AND org_id = $2 AND role IN ('owner', 'admin')
+      WHERE user_id = $1 AND organization_id = $2 AND role IN ('owner', 'admin')
     `;
 
     const { data: permissions, error: permError } = await query(permissionQuery, [userId, orgId], req.user.jwtPayload || { sub: userId });
@@ -710,7 +710,7 @@ router.delete('/:id', authenticateToken, (req, res) => {
     // Check if user is the owner of this organization
     const ownershipQuery = `
       SELECT 1 FROM user_organizations
-      WHERE user_id = $1 AND org_id = $2 AND role = 'owner'
+      WHERE user_id = $1 AND organization_id = $2 AND role = 'owner'
     `;
 
     const { data: ownership, error: ownershipError } = await query(ownershipQuery, [userId, orgId], req.user.jwtPayload || { sub: userId });
