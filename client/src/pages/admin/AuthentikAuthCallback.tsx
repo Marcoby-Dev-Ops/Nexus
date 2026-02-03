@@ -20,25 +20,19 @@ export default function AuthentikAuthCallback() {
   const hasProcessed = useRef(false);
   const { refreshAuth } = useAuthentikAuth();
 
-  // Immediate logging to confirm component is mounted
-  console.log('🔍 [MarcobyIAMCallback] Component mounted');
-  console.log('🔍 [MarcobyIAMCallback] URL:', window.location.href);
-  console.log('🔍 [MarcobyIAMCallback] Search params:', Object.fromEntries(searchParams.entries()));
-
   useEffect(() => {
     const handleCallback = async () => {
-      // Add immediate logging to see if callback is reached
-      logger.info('🔍 [MarcobyIAMCallback] Callback component mounted, processing...');
-      logger.info('🔍 [MarcobyIAMCallback] Current URL:', window.location.href);
-      logger.info('🔍 [MarcobyIAMCallback] Search params:', Object.fromEntries(searchParams.entries()));
-      
-      // Prevent multiple processing
+      // Prevent multiple processing (React.StrictMode can cause double-mount)
       if (hasProcessed.current) {
         logger.info('OAuth callback already processed, skipping...');
         return;
       }
-      
       hasProcessed.current = true;
+
+      logger.info('🔍 [MarcobyIAMCallback] Processing OAuth callback...', {
+        url: window.location.href,
+        params: Object.fromEntries(searchParams.entries()),
+      });
       
       try {
         logger.info('Processing Marcoby IAM OAuth callback...');
@@ -86,8 +80,9 @@ export default function AuthentikAuthCallback() {
          }
 
          // Success! Refresh authentication state
-         logger.info('🔍 [MarcobyIAMCallback] OAuth callback successful, refreshing auth state', { 
-           userId: result.data.id 
+         logger.info('🔍 [MarcobyIAMCallback] OAuth callback successful, refreshing auth state', {
+           userId: result.data.user?.id,
+           groups: result.data.user?.groups,
          });
          
          // Refresh the authentication context (only once)

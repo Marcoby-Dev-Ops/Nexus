@@ -18,6 +18,7 @@ export interface AuthUser {
   name?: string;
   firstName?: string;
   lastName?: string;
+  groups?: string[];
 }
 
 export interface AuthSession {
@@ -466,49 +467,34 @@ class AuthentikAuthService extends BaseService {
         this.logger.info('Token exchange successful', {
           hasAccessToken: !!tokenData.access_token,
           hasRefreshToken: !!tokenData.refresh_token,
+          hasUser: !!tokenData.user,
           expiresIn: tokenData.expires_in,
-          allTokenData: tokenData,
         });
 
-      const userInfoApiUrl = getApiBaseUrl();
-      const userResponse = await fetch(`${userInfoApiUrl}/api/oauth/userinfo`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          provider: 'authentik',
-          accessToken: tokenData.access_token,
-        }),
-      });
-
-      if (!userResponse.ok) {
-        const userErrorData = await userResponse.text();
-        this.logger.error('Failed to get user info', {
-          status: userResponse.status,
-          statusText: userResponse.statusText,
-          errorData: userErrorData,
-        });
-        throw new Error('Failed to get user info');
+      // User info is now included in token response (decoded from id_token)
+      const userData = tokenData.user;
+      if (!userData) {
+        this.logger.error('No user data in token response');
+        throw new Error('No user data in token response');
       }
 
-      const userData = await userResponse.json();
       if (this.authLogsEnabled)
-        this.logger.info('User info retrieved', {
+        this.logger.info('User info from id_token', {
           externalId: userData.sub,
           email: userData.email,
           name: userData.name,
-          allUserData: userData,
+          groups: userData.groups,
         });
 
       // Use the JWT sub directly as the user ID - this matches what the server expects
       const userId = userData.sub?.toString();
-      
+
       if (this.authLogsEnabled) {
-        this.logger.info('Using JWT sub as user ID', { 
+        this.logger.info('Using JWT sub as user ID', {
           jwtSub: userData.sub,
           email: userData.email,
-          name: userData.name 
+          name: userData.name,
+          groups: userData.groups,
         });
       }
 
@@ -517,8 +503,9 @@ class AuthentikAuthService extends BaseService {
           id: userId,
           email: userData.email,
           name: userData.name,
-          firstName: userData.first_name || userData.given_name || undefined,
-          lastName: userData.last_name || userData.family_name || undefined,
+          firstName: userData.given_name || undefined,
+          lastName: userData.family_name || undefined,
+          groups: userData.groups || [],
         },
         session: {
           accessToken: tokenData.access_token,

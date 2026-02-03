@@ -10,6 +10,21 @@ function generateRandomString(length) {
   return crypto.randomBytes(length).toString('base64url');
 }
 
+// Helper function to decode JWT payload (without signature verification)
+// Safe to use when token is received directly from the IdP over HTTPS
+function decodeJwtPayload(jwt) {
+  if (!jwt || typeof jwt !== 'string') return null;
+  const parts = jwt.split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const payload = Buffer.from(parts[1], 'base64url').toString('utf8');
+    return JSON.parse(payload);
+  } catch (e) {
+    logger.warn('Failed to decode JWT payload', e);
+    return null;
+  }
+}
+
 // OAuth provider configurations (server-side only) - Dynamic function to read env vars at runtime
 function getOAuthProviders() {
   return {
@@ -259,8 +274,28 @@ router.post('/token', async (req, res) => {
       });
     }
 
-    // For Authentik, return the full token response
+    // For Authentik, decode id_token and include user info in response
     if (provider === 'authentik') {
+      const idTokenPayload = decodeJwtPayload(tokenData.id_token);
+
+      // Extract user info from id_token claims
+      const user = idTokenPayload ? {
+        sub: idTokenPayload.sub,
+        email: idTokenPayload.email,
+        email_verified: idTokenPayload.email_verified,
+        name: idTokenPayload.name || idTokenPayload.preferred_username,
+        given_name: idTokenPayload.given_name,
+        family_name: idTokenPayload.family_name,
+        preferred_username: idTokenPayload.preferred_username,
+        groups: idTokenPayload.groups || [],
+      } : null;
+
+      logger.info('Token exchange successful, user extracted from id_token', {
+        sub: user?.sub,
+        email: user?.email,
+        hasGroups: user?.groups?.length > 0,
+      });
+
       return res.json({
         access_token: tokenData.access_token,
         token_type: tokenData.token_type,
@@ -268,6 +303,7 @@ router.post('/token', async (req, res) => {
         refresh_token: tokenData.refresh_token,
         scope: tokenData.scope,
         id_token: tokenData.id_token,
+        user, // Include decoded user info directly
       });
     } else {
       // For other providers, return the standard format
