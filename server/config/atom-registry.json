@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "updatedAt": "2026-02-03T00:00:00.000Z",
+  "principles": {
+    "electronsNeverRedefineNucleus": true,
+    "allMutationsHaveProvenance": true
+  },
+  "layers": {
+    "nucleus": {
+      "label": "Nucleus",
+      "description": "What the business IS (identity). Slow-changing, high gravity."
+    },
+    "constraint": {
+      "label": "Constraints",
+      "description": "Guardrails/policies. Stable, enforced, auditable."
+    },
+    "electron": {
+      "label": "Electron Cloud",
+      "description": "Operational state (systems, facts). High-velocity, connector-sourced."
+    },
+    "energy": {
+      "label": "Energy",
+      "description": "Decisions/approvals that cause change."
+    }
+  },
+  "entities": {
+    "organization": {
+      "label": "Organization",
+      "layer": "nucleus",
+      "authority": "nexus",
+      "stability": "frozen",
+      "changePolicy": {
+        "requiresDecision": true,
+        "requiresApproval": "owner_or_admin",
+        "allowsAutoUpdate": false
+      },
+      "api": {
+        "idField": "id",
+        "routes": {
+          "create": { "method": "POST", "path": "/api/organizations" },
+          "update": { "method": "PUT", "path": "/api/organizations/:id" },
+          "delete": { "method": "DELETE", "path": "/api/organizations/:id" }
+        }
+      },
+      "ui": {
+        "primarySurface": "/settings",
+        "secondarySurfaces": ["/admin"]
+      }
+    },
+    "policy": {
+      "label": "Policies & Guardrails",
+      "layer": "constraint",
+      "authority": "nexus",
+      "stability": "controlled",
+      "changePolicy": {
+        "requiresDecision": true,
+        "requiresApproval": "owner",
+        "allowsAutoUpdate": false
+      },
+      "notes": "Not fully implemented yet. Registry entry exists to enforce the boundary as policy objects are introduced."
+    },
+    "connector": {
+      "label": "Connector",
+      "layer": "electron",
+      "authority": "connector",
+      "stability": "volatile",
+      "changePolicy": {
+        "requiresDecision": false,
+        "requiresApproval": "none",
+        "allowsAutoUpdate": true
+      }
+    },
+    "fact": {
+      "label": "Fact",
+      "layer": "electron",
+      "authority": "connector",
+      "stability": "volatile",
+      "changePolicy": {
+        "requiresDecision": false,
+        "requiresApproval": "none",
+        "allowsAutoUpdate": true
+      },
+      "dataRules": {
+        "timestamped": true,
+        "neverOverwrite": true
+      }
+    },
+    "decision": {
+      "label": "Decision",
+      "layer": "energy",
+      "authority": "human_or_ai",
+      "stability": "controlled",
+      "changePolicy": {
+        "requiresDecision": false,
+        "requiresApproval": "varies",
+        "allowsAutoUpdate": false
+      }
+    }
+  },
+  "enforcement": {
+    "decisionContext": {
+      "acceptedFields": ["decisionId", "decision_id"],
+      "acceptedHeaders": ["x-nexus-decision-id"],
+      "mode": "block"
+    }
+  }
+}

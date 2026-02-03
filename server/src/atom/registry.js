@@ -5,8 +5,9 @@ let cached = null;
 let cachedMtimeMs = null;
 
 function getRegistryPath() {
-  // server/src/atom/registry.js -> server/src/atom -> server/src -> server -> repo root
-  return path.resolve(__dirname, '../../../config/atom-registry.json');
+  // In Docker builds, the server image context is ./server, so the registry must live under server/.
+  // server/src/atom/registry.js -> server/src/atom -> server/src -> server
+  return path.resolve(__dirname, '../../config/atom-registry.json');
 }
 
 function loadAtomRegistry() {
