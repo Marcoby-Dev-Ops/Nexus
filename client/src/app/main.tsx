@@ -16,6 +16,16 @@ import '@/shared/services/i18n';
 // Initialize storage cleanup to fix potential localStorage corruption
 initializeStorageCleanup();
 
+// HTML escape helper for safe error display
+const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+};
+
 // QueryClient removed for now to isolate React hooks issue
 
 // Initialize environment validation
@@ -106,7 +116,7 @@ const initializeApp = async () => {
             <h1 class="text-2xl font-bold text-destructive">Application Startup Error</h1>
             <p class="text-muted-foreground">Failed to initialize the application.</p>
             <pre class="mt-2 p-3 bg-muted rounded-md text-xs overflow-auto max-h-40">
-              ${error instanceof Error ? error.toString() : 'Unknown error'}
+              ${escapeHtml(error instanceof Error ? error.toString() : 'Unknown error')}
             </pre>
             <button onclick="window.location.reload()" class="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
               Reload Application

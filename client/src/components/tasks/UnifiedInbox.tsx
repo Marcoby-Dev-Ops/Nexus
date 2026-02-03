@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import { Button } from '@/shared/components/ui/Button';
 import { Loader2, Mail, AlertCircle, Search, Star, EyeOff, Unlink, Plus, Settings, Inbox, Send, Archive, Trash2, Filter, MoreHorizontal, RefreshCw, Brain, TrendingUp, AlertTriangle, CheckCircle, Clock, Zap, Target, Lightbulb, Map as MapIcon, Play, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/Avatar';
@@ -1034,7 +1035,7 @@ const UnifiedInbox: React.FC = () => {
                         {emailViewMode === 'html' && fullEmailContent.html_content ? (
                           <div 
                             className="email-html-content"
-                            dangerouslySetInnerHTML={{ __html: fullEmailContent.html_content }} 
+                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(fullEmailContent.html_content) }} 
                           />
                         ) : emailViewMode === 'text' && fullEmailContent.content ? (
                           <pre className="whitespace-pre-wrap text-sm font-mono bg-background p-3 rounded border">
