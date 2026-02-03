@@ -31,7 +31,8 @@ ENV VITE_ENABLE_STRICT_MODE=${VITE_ENABLE_STRICT_MODE}
 RUN pnpm run build
 
 # Production stage
-FROM nginx:alpine AS production
+# Pin nginx version for security (update periodically)
+FROM nginx:1.27-alpine AS production
 
 # Install envsubst and curl/wget for environment variable substitution and health checks
 # Coolify expects curl or wget to be available for HEALTHCHECK
