@@ -28,6 +28,7 @@ import BusinessIdentityJourneyPage from '@/pages/journey/BusinessIdentityJourney
 import IdentityPage from '@/pages/IdentityPage';
 import ChatPage from '@/pages/chat/ChatPage';
 import CoolifyOpsPage from '@/pages/operations/CoolifyOpsPage';
+import AtomModelPage from '@/pages/AtomModelPage';
 
 // Integrations pages
 import { IntegrationsDashboard } from '../integrations/pages/IntegrationsDashboard';
@@ -171,6 +172,16 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CoolifyOpsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Nexus Atom Model (Registry visualization) */}
+      <Route
+        path="/atom-model"
+        element={
+          <ProtectedRoute>
+            <AtomModelPage />
           </ProtectedRoute>
         }
       />

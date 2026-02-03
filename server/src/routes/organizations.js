@@ -2,6 +2,7 @@ const express = require('express');
 const { query } = require('../database/connection');
 const { logger } = require('../utils/logger');
 const { authenticateToken } = require('../middleware/auth');
+const { requireDecisionContext } = require('../middleware/atomPolicy');
 
 const router = express.Router();
 
@@ -556,7 +557,9 @@ router.post('/', authenticateToken, async (req, res) => {
  * PUT /api/organizations/:id
  * Update an organization
  */
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, (req, res) => {
+  // Nucleus mutations require explicit decision context (Energy)
+  requireDecisionContext('organization', 'update')(req, res, async () => {
   try {
     const userId = req.user?.id;
     const orgId = req.params.id;
@@ -674,13 +677,16 @@ router.put('/:id', authenticateToken, async (req, res) => {
       error: 'Internal server error'
     });
   }
+  });
 });
 
 /**
  * DELETE /api/organizations/:id
  * Delete an organization (only owners can delete)
  */
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, (req, res) => {
+  // Nucleus mutations require explicit decision context (Energy)
+  requireDecisionContext('organization', 'delete')(req, res, async () => {
   try {
     const userId = req.user?.id;
     const orgId = req.params.id;
@@ -762,6 +768,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       error: 'Internal server error'
     });
   }
+  });
 });
 
 module.exports = router;

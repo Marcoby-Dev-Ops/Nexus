@@ -50,6 +50,7 @@ const userContactsRoutes = require('./src/routes/user-contacts');
 const meRoutes = require('./src/routes/me');
 const varLeadsRoutes = require('./src/routes/var-leads');
 const integrationRoutes = require('./src/routes/integrations');
+const atomRegistryRoutes = require('./src/routes/atom-registry');
 const authRoutes = require('./src/routes/auth');
 const companyRoutes = require('./src/routes/companies');
 const oauthRoutes = require('./routes/oauth');
@@ -375,6 +376,7 @@ app.use('/api/var-leads', varLeadsRoutes);
 app.use('/api/integrations', integrationRoutes);
 app.use('/api/thoughts', thoughtsRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/atom-registry', atomRegistryRoutes);
 
 // Ops (approve-first, authenticated)
 app.use('/api/ops/coolify', opsCoolifyRoutes);
