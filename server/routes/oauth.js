@@ -324,9 +324,20 @@ router.post('/token', async (req, res) => {
 /**
  * Get user info from OAuth provider (server-side proxy)
  */
-router.post('/userinfo', async (req, res) => {
+function getAccessTokenFromRequest(req) {
+  // Support Authorization: Bearer <token> as well as JSON body
+  const auth = req.get('authorization') || req.get('Authorization');
+  if (auth && auth.toLowerCase().startsWith('bearer ')) {
+    return auth.slice(7).trim();
+  }
+  return (req.body && req.body.accessToken) || null;
+}
+
+async function handleUserinfo(req, res) {
   try {
-    const { provider, accessToken } = req.body;
+    const provider = (req.body && req.body.provider) || (req.query && req.query.provider) || 'authentik';
+    const accessToken = getAccessTokenFromRequest(req);
+
     
     const config = getOAuthProviders()[provider];
     if (!config) {
@@ -337,18 +348,33 @@ router.post('/userinfo', async (req, res) => {
       return res.status(400).json({ error: 'Access token required' });
     }
 
+    logger.info('OAuth userinfo proxy request', {
+      provider,
+      hasAuthHeader: !!(req.get('authorization') || req.get('Authorization')),
+      tokenLength: accessToken ? String(accessToken).length : 0,
+      ip: req.ip
+    });
+
     // For Authentik, use the userinfo endpoint
     if (provider === 'authentik') {
       const userResponse = await fetch(`${config.userInfoUrl}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json'
         },
       });
 
       if (!userResponse.ok) {
+        const details = await userResponse.text().catch(() => '');
+        logger.warn('Authentik userinfo request failed', {
+          status: userResponse.status,
+          statusText: userResponse.statusText,
+          detailsPreview: details ? details.slice(0, 500) : ''
+        });
         return res.status(400).json({ 
           error: 'Failed to get user info',
-          details: await userResponse.text()
+          status: userResponse.status,
+          details
         });
       }
 
@@ -373,9 +399,14 @@ router.post('/userinfo', async (req, res) => {
       return res.json(userData);
     }
   } catch (error) {
+    logger.error('OAuth userinfo proxy error', { error: error?.message || String(error) });
     res.status(500).json({ error: 'Internal server error' });
   }
-});
+}
+
+// Support both POST (existing clients) and GET (some clients/proxies)
+router.post('/userinfo', handleUserinfo);
+router.get('/userinfo', handleUserinfo);
 
 /**
  * Refresh OAuth tokens (server-side)
