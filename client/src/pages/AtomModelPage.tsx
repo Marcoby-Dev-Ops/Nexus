@@ -29,7 +29,7 @@ type AtomRegistry = {
 const layerOrder = ['nucleus', 'constraint', 'electron', 'energy'];
 
 export default function AtomModelPage() {
-  const { getAccessToken } = useAuthentikAuth();
+  const { session } = useAuthentikAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [registry, setRegistry] = useState<AtomRegistry | null>(null);
@@ -40,7 +40,12 @@ export default function AtomModelPage() {
       try {
         setLoading(true);
         setError(null);
-        const token = await getAccessToken();
+
+        const token = session?.session?.accessToken;
+        if (!token) {
+          throw new Error('No access token available (not authenticated)');
+        }
+
         const resp = await fetch('/api/atom-registry', {
           headers: {
             Authorization: `Bearer ${token}`
@@ -60,7 +65,7 @@ export default function AtomModelPage() {
     return () => {
       mounted = false;
     };
-  }, [getAccessToken]);
+  }, [session?.session?.accessToken]);
 
   const grouped = useMemo(() => {
     const entities = registry?.entities || {};
