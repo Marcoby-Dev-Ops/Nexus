@@ -33,6 +33,18 @@ class NexusAIGatewayService {
    * Initialize available providers based on configuration
    */
   initializeProviders() {
+    // Check OpenClaw provider
+    if (this.config.enableOpenClaw !== false) { // Enable by default if not explicitly disabled
+      try {
+        const openclawUrl = process.env.OPENCLAW_API_URL || 'http://localhost:18789/v1';
+        const openclawApiKey = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
+        this.providers.set('openclaw', new OpenClawProvider(openclawUrl, openclawApiKey));
+        logger.info('OpenClaw provider initialized');
+      } catch (error) {
+        logger.warn(`Failed to initialize OpenClaw provider: ${error.message}`);
+      }
+    }
+
     // Check OpenAI provider
     if (this.config.enableOpenAI) {
       const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -110,6 +122,7 @@ class NexusAIGatewayService {
         task: 'chat',
         role: request.role || 'chat',
         input: this.formatChatInput(request.messages),
+        messages: request.messages,
         system: request.system,
         tools: request.tools,
         json: request.json,
@@ -219,8 +232,8 @@ class NexusAIGatewayService {
    * Select the best provider for the request
    */
   selectProvider(request) {
-    // Priority order: OpenAI > OpenRouter > Local
-    const providers = ['openai', 'openrouter', 'local'];
+    // Priority order: OpenClaw > OpenAI > OpenRouter > Local
+    const providers = ['openclaw', 'openai', 'openrouter', 'local'];
     
     for (const providerName of providers) {
       const provider = this.providers.get(providerName);
@@ -270,6 +283,11 @@ class NexusAIGatewayService {
    */
   selectModel(role, provider) {
     const models = {
+      openclaw: {
+        chat: 'gpt-4o-mini',
+        reasoning: 'gpt-4o',
+        embed: 'text-embedding-3-small'
+      },
       openai: {
         chat: 'gpt-3.5-turbo',
         reasoning: 'gpt-4',
@@ -468,6 +486,103 @@ class NexusAIGatewayService {
     };
 
     return role ? models[role] || [] : models;
+  }
+}
+
+class OpenClawProvider {
+  constructor(baseUrl, apiKey) {
+    this.baseUrl = baseUrl;
+    this.apiKey = apiKey;
+  }
+
+  async call(request) {
+    // Send standard OpenAI format
+    const startTime = performance.now();
+    
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: request.model,
+          messages: this.buildMessages(request),
+          max_tokens: this.getMaxTokens(request),
+          temperature: this.getTemperature(request),
+          stream: false,
+          user: request.userId // Vital for OpenClaw memory
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`OpenClaw API error: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const endTime = performance.now();
+      const latencyMs = endTime - startTime;
+
+      return {
+        output: data.choices[0]?.message?.content || '',
+        tokens: {
+          prompt: data.usage?.prompt_tokens || 0,
+          completion: data.usage?.completion_tokens || 0
+        },
+        costCents: this.calculateCost(data.usage, request.model),
+        model: request.model,
+        provider: 'openclaw',
+        latencyMs
+      };
+    } catch (error) {
+      throw new Error(`OpenClaw request failed: ${error.message}`);
+    }
+  }
+
+  buildMessages(request) {
+    // Prefer structured messages if available (OpenClaw/OpenAI compatible)
+    if (request.messages && Array.isArray(request.messages) && request.messages.length > 0) {
+      // Clone to avoid mutating original request
+      let messages = [...request.messages];
+      
+      // Ensure system prompt is definitely included if provided separately
+      if (request.system) {
+        // If the first message isn't system, prepend. 
+        // If it IS system, we rely on the one in messages array unless we want to override.
+        // Let's assume request.system is the authoritative Source of Truth for system prompt.
+        if (messages.length === 0 || messages[0].role !== 'system') {
+           messages.unshift({ role: 'system', content: request.system });
+        }
+      }
+      return messages;
+    }
+
+    // Fallback to flattened input if no structured messages found
+    const messages = [];
+    if (request.system) {
+      messages.push({ role: 'system', content: request.system });
+    }
+    messages.push({ role: 'user', content: request.input });
+    return messages;
+  }
+
+  getMaxTokens(request) {
+    return 4000;
+  }
+
+  getTemperature(request) {
+    return 0.7;
+  }
+
+  calculateCost(usage, model) {
+    const promptTokens = usage?.prompt_tokens || 0;
+    const completionTokens = usage?.completion_tokens || 0;
+    // 4o mini pricing: $0.15/1M input, $0.60/1M output
+    // in cents per 1k: 0.0015 cents input, 0.006 cents output
+    const promptCost = (promptTokens / 1000) * 0.015;
+    const completionCost = (completionTokens / 1000) * 0.06;
+    return Math.round((promptCost + completionCost) * 100);
   }
 }
 
