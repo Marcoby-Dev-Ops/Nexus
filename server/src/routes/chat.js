@@ -19,6 +19,9 @@ function ensureUploadRoot() {
   }
 }
 
+// UUID v4 regex for validating conversationId (prevents path traversal)
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     try {
@@ -27,8 +30,20 @@ const storage = multer.diskStorage({
         return cb(new Error('conversationId is required'));
       }
 
+      // Validate conversationId is a UUID to prevent path traversal attacks
+      if (!UUID_REGEX.test(conversationId)) {
+        return cb(new Error('Invalid conversationId format'));
+      }
+
       ensureUploadRoot();
       const conversationDir = path.join(UPLOAD_ROOT, conversationId);
+
+      // Double-check the resolved path is within UPLOAD_ROOT (defense in depth)
+      const resolvedPath = path.resolve(conversationDir);
+      if (!resolvedPath.startsWith(path.resolve(UPLOAD_ROOT))) {
+        return cb(new Error('Invalid upload path'));
+      }
+
       if (!fs.existsSync(conversationDir)) {
         fs.mkdirSync(conversationDir, { recursive: true });
       }

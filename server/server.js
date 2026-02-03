@@ -337,6 +337,13 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Simple healthz endpoint for orchestration (Kubernetes/Coolify)
+// This avoids the need for a sidecar proxy just for health checks
+app.get('/healthz', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.status(200).json({ ok: true, service: 'openclaw-coolify' });
+});
+
 // API routes with specific rate limiting
 
 // Database operations - apply DB rate limiting
