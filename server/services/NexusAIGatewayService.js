@@ -284,7 +284,7 @@ class NexusAIGatewayService {
   selectModel(role, provider) {
     const models = {
       openclaw: {
-        chat: 'gpt-4o-mini',
+        chat: 'gpt-4o',
         reasoning: 'gpt-4o',
         embed: 'text-embedding-3-small'
       },
