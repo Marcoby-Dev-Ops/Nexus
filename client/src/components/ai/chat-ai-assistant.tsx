@@ -117,20 +117,51 @@ Let's explore: How do you want people to perceive your company? What tone do you
     setInputValue('')
     setIsTyping(true)
 
-    // Simulate AI response - replace with actual AI API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    
-    const aiResponse = generateAIResponse(section, inputValue, messages, context)
-    
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      type: 'assistant',
-      content: aiResponse,
-      timestamp: new Date()
-    }
+    try {
+      // Send message to OpenClaw through our backend
+      const response = await fetch('/api/chat/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') || '' // Get the auth token
+        },
+        body: JSON.stringify({
+          message: inputValue,
+          context: {
+            section,
+            ...context,
+            messageHistory: messages
+          }
+        })
+      });
 
-    setMessages(prev => [...prev, assistantMessage])
-    setIsTyping(false)
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      const data = await response.json();
+      
+      const assistantMessage: Message = {
+        id: data.data.conversationId || (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: data.data.reply,
+        timestamp: new Date(data.data.timestamp)
+      }
+
+      setMessages(prev => [...prev, assistantMessage])
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+      // Add error message to chat
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   const generateAIResponse = (section: string, userInput: string, messageHistory: Message[], context?: any) => {

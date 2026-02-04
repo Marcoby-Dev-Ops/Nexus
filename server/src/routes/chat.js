@@ -7,7 +7,91 @@ const { createError } = require('../middleware/errorHandler');
 const { query } = require('../database/connection');
 const { logger } = require('../utils/logger');
 
+// OpenClaw Integration
+const openClawAPI = {
+    sendMessage: async (userId, message, context) => {
+        try {
+            // TODO: Replace with actual OpenClaw API call
+            const response = await fetch('http://localhost:3000/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    userId,
+                    message,
+                    context
+                })
+            });
+            return await response.json();
+        } catch (error) {
+            logger.error('OpenClaw API call failed', {
+                error: error.message,
+                userId,
+                context
+            });
+            throw error;
+        }
+    }
+};
+
 const router = express.Router();
+
+// Chat message endpoint
+router.post('/message', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user?.id;
+        const { message, context = {} } = req.body;
+
+        if (!userId) {
+            throw createError('Unauthorized', 401);
+        }
+
+        if (!message) {
+            throw createError('Message is required', 400);
+        }
+
+        // Send message to OpenClaw
+        const response = await openClawAPI.sendMessage(userId, message, {
+            ...context,
+            authentikToken: req.headers.authorization
+        });
+
+        // Store the message in the database
+        const insertResult = await query(
+            `INSERT INTO ai_conversations (user_id, message, response, metadata)
+             VALUES ($1, $2, $3, $4)
+             RETURNING id, created_at`,
+            [userId, message, response.reply, JSON.stringify(context)],
+            req.user?.jwtPayload
+        );
+
+        if (insertResult.error) {
+            throw createError('Failed to save conversation', 500);
+        }
+
+        res.json({
+            success: true,
+            data: {
+                conversationId: insertResult.data[0].id,
+                message,
+                reply: response.reply,
+                timestamp: insertResult.data[0].created_at
+            }
+        });
+    } catch (error) {
+        logger.error('Chat message processing failed', {
+            error: error.message,
+            stack: error.stack,
+            userId: req.user?.id
+        });
+
+        res.status(error.statusCode || 500).json({
+            success: false,
+            error: error.message || 'Failed to process chat message'
+        });
+    }
+});
 
 const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024; // 25 MB
 const MAX_FILES_PER_REQUEST = 5;
