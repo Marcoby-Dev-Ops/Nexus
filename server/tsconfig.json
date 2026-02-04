@@ -15,5 +15,5 @@
     "noEmit": true
   },
   "include": ["**/*.ts", "types/**/*.d.ts", "scripts/**/*.ts"],
-  "exclude": ["node_modules", "dist", "services/**/*", "**/*.js"]
+  "exclude": ["node_modules", "dist", "services/**/*", "**/*.js", "ARCHIVE_2026_02"]
 }
