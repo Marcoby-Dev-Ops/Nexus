@@ -5,7 +5,7 @@ const { logger } = require('../utils/logger');
 const { authLimiter } = require('../middleware/rateLimit');
 
 const AuditService = require('../services/AuditService');
-const creditService = require('../../services/CreditService'); // Import CreditService
+const creditService = require('../services/CreditService');
 
 const router = Router();
 router.use(authenticateToken);
