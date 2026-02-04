@@ -1,74 +1,101 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/shared/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
-import { Badge } from '@/shared/components/ui/Badge';
 import { PublicHeader } from '@/shared/components/layout/PublicHeader';
 import {
-  Brain,
-  Shield,
   ArrowRight,
-  CheckCircle,
+  Check,
   Lock,
   Eye,
-  Server,
-  UserCheck,
-  MessageSquare,
+  Terminal,
+  Shield,
   Database,
-  GitBranch
+  Server,
+  Code2,
+  Fingerprint
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background">
       <PublicHeader />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-6">
-              <Shield className="w-4 h-4 mr-2" />
-              Private. Transparent. Yours.
-            </Badge>
+      {/* Hero - Bold, minimal, distinctive */}
+      <section className="relative min-h-[85vh] flex items-center">
+        {/* Subtle grid background */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `
+              linear-gradient(to right, currentColor 1px, transparent 1px),
+              linear-gradient(to bottom, currentColor 1px, transparent 1px)
+            `,
+            backgroundSize: '64px 64px'
+          }}
+        />
 
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              AI that works with you,<br />
-              <span className="text-primary">not instead of you</span>
+        {/* Accent line */}
+        <div className="absolute left-0 top-1/4 w-1 h-32 bg-[#1bb072]" />
+
+        <div className="relative max-w-6xl mx-auto px-6 lg:px-8 py-20">
+          <div className="max-w-4xl">
+            {/* Eyebrow */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="h-px w-12 bg-[#1bb072]" />
+              <span className="text-sm font-mono text-[#1bb072] tracking-wider uppercase">
+                Private AI Workspace
+              </span>
+            </div>
+
+            {/* Headline */}
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
+              AI that works
+              <br />
+              <span className="text-[#1bb072]">with</span> you.
             </h1>
 
-            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-              Nexus is how AI should work: your data stays private, your decisions stay yours,
-              and AI amplifies what you're already good at. No black boxes. No data harvesting.
-              Just a powerful partner that makes you better at your job.
+            {/* Subhead */}
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mb-12 leading-relaxed">
+              Your data stays private. Your decisions stay yours.
+              Nexus is how AI should work—a powerful partner that makes you better,
+              not a black box that replaces you.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-              <Button size="lg" className="text-lg px-8 py-6">
-                <Link to="/signup" className="flex items-center">
-                  Get Started Free
-                  <ArrowRight className="ml-2 h-5 w-5" />
+            {/* CTAs */}
+            <div className="flex flex-wrap gap-4 mb-16">
+              <Button
+                size="lg"
+                className="h-14 px-8 text-lg bg-[#1bb072] hover:bg-[#159960] border-0"
+              >
+                <Link to="/signup" className="flex items-center gap-2">
+                  Get Started
+                  <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-                <Link to="/demo/assistant" className="flex items-center">
-                  See How It Works
+              <Button
+                variant="outline"
+                size="lg"
+                className="h-14 px-8 text-lg border-2"
+              >
+                <Link to="/demo/assistant" className="flex items-center gap-2">
+                  <Terminal className="h-5 w-5" />
+                  See Demo
                 </Link>
               </Button>
             </div>
 
-            {/* Trust indicators */}
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+            {/* Trust badges - minimal */}
+            <div className="flex flex-wrap gap-8 text-sm text-muted-foreground">
               <span className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Your data never leaves your instance
+                <Lock className="h-4 w-4 text-[#1bb072]" />
+                Data stays local
               </span>
               <span className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                See everything AI does
+                <Eye className="h-4 w-4 text-[#1bb072]" />
+                Fully transparent
               </span>
               <span className="flex items-center gap-2">
-                <UserCheck className="w-4 h-4" />
+                <Fingerprint className="h-4 w-4 text-[#1bb072]" />
                 You stay in control
               </span>
             </div>
@@ -76,373 +103,302 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* What Nexus Is */}
-      <section className="py-20 bg-muted/30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What you're signing up for
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Clear expectations. No surprises.
-            </p>
-          </div>
+      {/* The Promise - What you get */}
+      <section className="py-32 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-start">
+            {/* Left: Statement */}
+            <div className="lg:sticky lg:top-32">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Clear expectations.
+                <br />
+                <span className="text-muted-foreground">No surprises.</span>
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Before you sign up, know exactly what Nexus is—and isn't.
+              </p>
+            </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* What Nexus IS */}
-            <Card className="border-2 border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <CheckCircle className="w-6 h-6 text-green-500" />
-                  Nexus IS
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">A private AI workspace</p>
-                    <p className="text-sm text-muted-foreground">Your conversations, documents, and data stay in your instance. We don't train on your data.</p>
+            {/* Right: IS / IS NOT */}
+            <div className="space-y-8">
+              {/* IS */}
+              <div className="p-8 rounded-lg border-2 border-[#1bb072]/30 bg-[#1bb072]/5">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 rounded-full bg-[#1bb072] flex items-center justify-center">
+                    <Check className="h-5 w-5 text-white" />
                   </div>
+                  <h3 className="text-xl font-bold">Nexus is</h3>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">AI that augments your thinking</p>
-                    <p className="text-sm text-muted-foreground">Get better answers, faster research, clearer writing—while you stay in the driver's seat.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Transparent and accountable</p>
-                    <p className="text-sm text-muted-foreground">See what AI is doing, why it made recommendations, and override anything you disagree with.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium">Built to connect your tools</p>
-                    <p className="text-sm text-muted-foreground">Bring context from your existing systems so AI understands your business—without sending data elsewhere.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <ul className="space-y-4">
+                  {[
+                    { title: 'A private AI workspace', desc: 'Your data lives in your instance. We never train on it.' },
+                    { title: 'AI that augments you', desc: 'Better answers, faster research—you stay in control.' },
+                    { title: 'Transparent by default', desc: 'See what AI does, why it recommends, override anything.' },
+                    { title: 'Built to connect your tools', desc: 'Context from your systems, processed locally.' },
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#1bb072] mt-2.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{item.title}</p>
+                        <p className="text-sm text-muted-foreground">{item.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-            {/* What Nexus is NOT */}
-            <Card className="border-2 border-muted">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <span className="w-6 h-6 rounded-full border-2 border-muted-foreground flex items-center justify-center text-muted-foreground text-sm">✕</span>
-                  Nexus is NOT
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-muted-foreground">A replacement for human judgment</p>
-                    <p className="text-sm text-muted-foreground">AI suggests. You decide. Every time.</p>
+              {/* IS NOT */}
+              <div className="p-8 rounded-lg border border-border bg-muted/30">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 rounded-full border-2 border-muted-foreground flex items-center justify-center">
+                    <span className="text-muted-foreground font-bold">✕</span>
                   </div>
+                  <h3 className="text-xl font-bold text-muted-foreground">Nexus is not</h3>
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-muted-foreground">Another data-hungry cloud service</p>
-                    <p className="text-sm text-muted-foreground">We minimize what leaves your instance. Your data is not our product.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-muted-foreground">Magic that "just works"</p>
-                    <p className="text-sm text-muted-foreground">AI has limits. We're honest about them. You'll get better results when you understand how it works.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
-                  <div>
-                    <p className="font-medium text-muted-foreground">A locked-in ecosystem</p>
-                    <p className="text-sm text-muted-foreground">Export your data anytime. Use other tools. We earn your continued use, not trap you.</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                <ul className="space-y-4 text-muted-foreground">
+                  {[
+                    { title: 'A replacement for your judgment', desc: 'AI suggests. You decide. Every time.' },
+                    { title: 'Another data-hungry service', desc: 'Your data is not our product.' },
+                    { title: 'Magic that "just works"', desc: 'AI has limits. We\'re honest about them.' },
+                    { title: 'A locked-in ecosystem', desc: 'Export your data anytime. No traps.' },
+                  ].map((item, i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground mt-2.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium">{item.title}</p>
+                        <p className="text-sm">{item.desc}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Human + AI, balanced
+      {/* How it works - Simple flow */}
+      <section className="py-32 bg-muted/30 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Human + AI
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              The best results come from collaboration, not automation.
+            <p className="text-xl text-muted-foreground">
+              The best results come from collaboration.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <Card className="text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <MessageSquare className="w-8 h-8 text-primary" />
-                </div>
-                <CardTitle>You ask</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Bring your questions, problems, or half-formed ideas. Nexus meets you where you are.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Brain className="w-8 h-8 text-primary" />
-                </div>
-                <CardTitle>AI thinks</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Drawing on your context and knowledge, AI analyzes, researches, and drafts—showing its work.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center">
-              <CardHeader>
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <UserCheck className="w-8 h-8 text-primary" />
-                </div>
-                <CardTitle>You decide</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Review, edit, approve, or reject. Nothing happens without your say. You build judgment, not dependency.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Privacy Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <Badge variant="secondary" className="mb-4">
-                <Lock className="w-4 h-4 mr-2" />
-                Privacy by Design
-              </Badge>
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">
-                Your data stays with you
-              </h2>
-              <p className="text-lg text-muted-foreground mb-6">
-                Most AI tools send everything to the cloud. Nexus is different.
-                Your instance processes what it can locally, and when it does reach out to AI providers,
-                it sends only what's necessary—never your full context, never your private documents.
-              </p>
-              <ul className="space-y-3">
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span>Conversations stored in your database, not ours</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span>Documents processed locally when possible</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span>No training on your data—ever</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span>Full data export anytime you want</span>
-                </li>
-              </ul>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Card className="p-6 text-center">
-                <Server className="w-8 h-8 text-primary mx-auto mb-3" />
-                <p className="font-medium">Your Instance</p>
-                <p className="text-sm text-muted-foreground">Data lives here</p>
-              </Card>
-              <Card className="p-6 text-center">
-                <Database className="w-8 h-8 text-primary mx-auto mb-3" />
-                <p className="font-medium">Your Database</p>
-                <p className="text-sm text-muted-foreground">You control access</p>
-              </Card>
-              <Card className="p-6 text-center">
-                <Shield className="w-8 h-8 text-primary mx-auto mb-3" />
-                <p className="font-medium">Encrypted</p>
-                <p className="text-sm text-muted-foreground">At rest and in transit</p>
-              </Card>
-              <Card className="p-6 text-center">
-                <GitBranch className="w-8 h-8 text-primary mx-auto mb-3" />
-                <p className="font-medium">Open Source</p>
-                <p className="text-sm text-muted-foreground">Audit the code</p>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* What You Can Do */}
-      <section className="py-20">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              What you'll actually use it for
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Real work, done better.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                title: "Research & Analysis",
-                description: "Quickly understand complex topics, compare options, and find answers buried in your documents.",
+                step: '01',
+                title: 'You ask',
+                desc: 'Bring your questions, problems, or half-formed ideas.',
+                icon: Terminal
               },
               {
-                title: "Writing & Communication",
-                description: "Draft emails, reports, and proposals that sound like you—just faster and clearer.",
+                step: '02',
+                title: 'AI thinks',
+                desc: 'Analyzes your context, researches, drafts—shows its work.',
+                icon: Code2
               },
               {
-                title: "Decision Support",
-                description: "Get a second opinion on strategy, see blind spots, and pressure-test your thinking.",
-              },
-              {
-                title: "Process Documentation",
-                description: "Turn tribal knowledge into clear SOPs that your team can actually follow.",
-              },
-              {
-                title: "Data Interpretation",
-                description: "Make sense of spreadsheets, reports, and metrics without becoming a data scientist.",
-              },
-              {
-                title: "Learning & Onboarding",
-                description: "Get up to speed on new topics or help new team members understand how things work.",
-              },
-            ].map((item, index) => (
-              <Card key={index} className="hover:border-primary/50 transition-colors">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </CardContent>
-              </Card>
+                step: '03',
+                title: 'You decide',
+                desc: 'Review, edit, approve. Nothing happens without your say.',
+                icon: Fingerprint
+              }
+            ].map((item, i) => (
+              <div key={i} className="relative">
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-12 left-full w-full h-px bg-border -translate-x-1/2 z-0" />
+                )}
+                <div className="relative bg-card p-8 rounded-lg border border-border">
+                  <span className="text-6xl font-bold text-[#1bb072]/20 absolute top-4 right-6">
+                    {item.step}
+                  </span>
+                  <div className="w-12 h-12 rounded-lg bg-[#1bb072]/10 flex items-center justify-center mb-6">
+                    <item.icon className="h-6 w-6 text-[#1bb072]" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+                  <p className="text-muted-foreground">{item.desc}</p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-primary/5">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Ready to work with AI the right way?
+      {/* Privacy architecture */}
+      <section className="py-32 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left: Visual */}
+            <div className="order-2 lg:order-1">
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { icon: Server, label: 'Your Instance', sub: 'Data lives here' },
+                  { icon: Database, label: 'Your Database', sub: 'You control access' },
+                  { icon: Shield, label: 'Encrypted', sub: 'At rest & in transit' },
+                  { icon: Code2, label: 'Open Source', sub: 'Audit the code' },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    className="p-6 rounded-lg border border-border bg-card hover:border-[#1bb072]/50 transition-colors"
+                  >
+                    <item.icon className="h-8 w-8 text-[#1bb072] mb-4" />
+                    <p className="font-bold">{item.label}</p>
+                    <p className="text-sm text-muted-foreground">{item.sub}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right: Copy */}
+            <div className="order-1 lg:order-2">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-px w-12 bg-[#1bb072]" />
+                <span className="text-sm font-mono text-[#1bb072] tracking-wider uppercase">
+                  Privacy by Design
+                </span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
+                Your data
+                <br />
+                stays with you.
+              </h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                Most AI tools send everything to the cloud. Nexus is different—your instance
+                processes locally, and when it reaches AI providers, it sends only what's
+                necessary. Never your full context. Never your private documents.
+              </p>
+              <ul className="space-y-3">
+                {[
+                  'Conversations stored in your database',
+                  'Documents processed locally when possible',
+                  'No training on your data—ever',
+                  'Full data export anytime'
+                ].map((item, i) => (
+                  <li key={i} className="flex items-center gap-3">
+                    <Check className="h-5 w-5 text-[#1bb072]" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Use cases - minimal */}
+      <section className="py-32 bg-muted/30 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              What you'll use it for
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Real work. Done better.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { title: 'Research & Analysis', desc: 'Understand complex topics, compare options, find buried answers.' },
+              { title: 'Writing & Comms', desc: 'Draft emails, reports, proposals—faster and clearer.' },
+              { title: 'Decision Support', desc: 'Second opinions, blind spots, pressure-tested thinking.' },
+              { title: 'Process Docs', desc: 'Turn tribal knowledge into clear SOPs.' },
+              { title: 'Data Interpretation', desc: 'Make sense of spreadsheets without becoming a data scientist.' },
+              { title: 'Learning', desc: 'Get up to speed. Help others understand.' },
+            ].map((item, i) => (
+              <div
+                key={i}
+                className="p-6 rounded-lg border border-border bg-card hover:border-[#1bb072]/50 transition-colors group"
+              >
+                <div className="w-2 h-2 rounded-full bg-[#1bb072] mb-4 group-hover:scale-150 transition-transform" />
+                <h3 className="font-bold mb-2">{item.title}</h3>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA - Clean */}
+      <section className="py-32 border-t border-border">
+        <div className="max-w-3xl mx-auto px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Ready to work with AI
+            <br />
+            <span className="text-[#1bb072]">the right way?</span>
           </h2>
-          <p className="text-lg text-muted-foreground mb-8">
-            No credit card required. No data harvesting. Just a better way to work.
+          <p className="text-xl text-muted-foreground mb-10">
+            No credit card. No data harvesting. Just a better way to work.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="text-lg px-8 py-6">
-              <Link to="/signup" className="flex items-center">
+          <div className="flex flex-wrap justify-center gap-4 mb-8">
+            <Button
+              size="lg"
+              className="h-14 px-10 text-lg bg-[#1bb072] hover:bg-[#159960] border-0"
+            >
+              <Link to="/signup" className="flex items-center gap-2">
                 Get Started Free
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
-              <Link to="/pricing" className="flex items-center">
-                View Pricing
-              </Link>
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-14 px-10 text-lg border-2"
+            >
+              <Link to="/pricing">View Pricing</Link>
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-6">
-            14-day free trial • Full access • Cancel anytime • Export your data
+          <p className="text-sm text-muted-foreground font-mono">
+            14-day trial • Full access • Cancel anytime • Export your data
           </p>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-card border-t">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex items-center mb-4">
-                <img
-                  src="/Nexus/nexus-horizontal-160x48-transparent.png"
-                  alt="Nexus by Marcoby"
-                  className="h-8 w-auto"
-                />
-              </div>
-              <p className="text-muted-foreground text-sm mb-4">
-                AI that works with you, not instead of you. Private, transparent, and built to make you better at what you do.
-              </p>
-              <p className="text-muted-foreground text-sm">
-                &copy; {new Date().getFullYear()} Marcoby. All rights reserved.
+      {/* Footer - Minimal */}
+      <footer className="py-16 border-t border-border">
+        <div className="max-w-6xl mx-auto px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-12">
+            <div className="md:col-span-2">
+              <img
+                src="/Nexus/nexus-horizontal-160x48-transparent.png"
+                alt="Nexus"
+                className="h-8 mb-6"
+              />
+              <p className="text-muted-foreground max-w-sm">
+                AI that works with you, not instead of you.
+                Private, transparent, built to make you better.
               </p>
             </div>
-
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Product</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link to="/pricing" className="text-muted-foreground hover:text-primary transition-colors">
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/demo/assistant" className="text-muted-foreground hover:text-primary transition-colors">
-                    Demo
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/signup" className="text-muted-foreground hover:text-primary transition-colors">
-                    Get Started
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/login" className="text-muted-foreground hover:text-primary transition-colors">
-                    Sign In
-                  </Link>
-                </li>
+              <h4 className="font-bold mb-4">Product</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/pricing" className="hover:text-[#1bb072] transition-colors">Pricing</Link></li>
+                <li><Link to="/demo/assistant" className="hover:text-[#1bb072] transition-colors">Demo</Link></li>
+                <li><Link to="/signup" className="hover:text-[#1bb072] transition-colors">Get Started</Link></li>
               </ul>
             </div>
-
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Company</h3>
-              <ul className="space-y-2 text-sm">
-                <li>
-                  <Link to="/help/about" className="text-muted-foreground hover:text-primary transition-colors">
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/legal/privacy" className="text-muted-foreground hover:text-primary transition-colors">
-                    Privacy
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/legal/terms" className="text-muted-foreground hover:text-primary transition-colors">
-                    Terms
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/help/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                    Contact
-                  </Link>
-                </li>
+              <h4 className="font-bold mb-4">Company</h4>
+              <ul className="space-y-2 text-muted-foreground">
+                <li><Link to="/help/about" className="hover:text-[#1bb072] transition-colors">About</Link></li>
+                <li><Link to="/legal/privacy" className="hover:text-[#1bb072] transition-colors">Privacy</Link></li>
+                <li><Link to="/legal/terms" className="hover:text-[#1bb072] transition-colors">Terms</Link></li>
               </ul>
             </div>
+          </div>
+          <div className="mt-12 pt-8 border-t border-border flex flex-wrap justify-between items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} Marcoby. All rights reserved.
+            </p>
+            <p className="text-sm text-muted-foreground font-mono">
+              Built with intention.
+            </p>
           </div>
         </div>
       </footer>
