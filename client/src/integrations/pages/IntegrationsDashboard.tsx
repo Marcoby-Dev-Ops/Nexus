@@ -271,7 +271,6 @@ export const IntegrationsDashboard: React.FC = () => {
           ))}
         </div>
       )}
-    </div>
 
       {/* OAuth Integrations */}
       {oauthIntegrations.length > 0 && (
