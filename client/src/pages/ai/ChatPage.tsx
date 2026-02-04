@@ -15,7 +15,6 @@ import {
   Search,
   Trash2,
   User,
-  ChevronLeft,
   Pencil,
   FileText,
   X} from 'lucide-react';
@@ -318,6 +317,9 @@ export default function ChatPage() {
     );
   }
 
+  // Determine the best display name for the user
+  const displayName = userProfile?.display_name || userProfile?.full_name || userProfile?.first_name || user?.name || "User";
+
   return (
     <div className="flex h-screen bg-gray-900 text-white">
       {/* Left Sidebar */}
@@ -477,8 +479,14 @@ export default function ChatPage() {
         
       </div>
 
+
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col min-h-0">
+          {/* Welcome Back Greeting */}
+          <div className="flex flex-col items-center justify-center pt-12 pb-4">
+            <h2 className="text-2xl font-semibold text-white mb-2">Welcome back, {displayName}!</h2>
+            <p className="text-gray-400 text-sm">How can I help you today?</p>
+          </div>
           {/* Chat Interface */}
           <div className="flex-1 min-h-0 overflow-hidden">
             <React.Suspense fallback={
@@ -491,7 +499,7 @@ export default function ChatPage() {
                 </div>
               </div>
             }>
-                             <ModernChatInterface
+              <ModernChatInterface
                 messages={
                   isStreaming && streamingContent 
                   ? [
@@ -508,23 +516,23 @@ export default function ChatPage() {
                   ]
                   : storeMessages
                 }
-                 onSendMessage={handleSendMessage}
-                 onStopGeneration={handleStopGeneration}
-                 isStreaming={isStreaming}
-                 disabled={isLoading}
-                                 placeholder="Ask anything — general questions or ask about your business. Try: 'How's our cash flow?'"
-                 showTypingIndicator={isStreaming}
-                 className="h-full"
-                 userName={user?.name || "User"}
-                 agentId={selectedAgentId}
-                 agentName={selectedAgent?.name || "Executive Assistant"}
-                 ragEnabled={ragEnabled}
-                 ragConfidence={ragConfidence}
-                 knowledgeTypes={knowledgeTypes}
-                                 ragSources={ragSources}
-                                 ragRecommendations={ragRecommendations}
-                                 businessContext={businessContextData}
-               />
+                onSendMessage={handleSendMessage}
+                onStopGeneration={handleStopGeneration}
+                isStreaming={isStreaming}
+                disabled={isLoading}
+                placeholder="Ask anything — general questions or ask about your business. Try: 'How's our cash flow?'"
+                showTypingIndicator={isStreaming}
+                className="h-full"
+                userName={displayName}
+                agentId={selectedAgentId}
+                agentName={selectedAgent?.name || "Executive Assistant"}
+                ragEnabled={ragEnabled}
+                ragConfidence={ragConfidence}
+                knowledgeTypes={knowledgeTypes}
+                ragSources={ragSources}
+                ragRecommendations={ragRecommendations}
+                businessContext={businessContextData}
+              />
             </React.Suspense>
           </div>
         </div>

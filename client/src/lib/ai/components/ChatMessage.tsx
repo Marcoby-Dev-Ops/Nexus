@@ -20,13 +20,47 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
     content: message.content?.substring(0, 50) + '...'
   });
 
-  const formatMessage = (content: string) => {
-    return content.split('\n').map((line, index) => (
-      <React.Fragment key={index}>
-        {line}
-        {index < content.split('\n').length - 1 && <br />}
-      </React.Fragment>
-    ));
+
+  // Helper: detect and render /media URLs as images or file links
+  const renderContent = (content: string) => {
+    // Regex for /media/filename.ext
+    const mediaRegex = /(https?:\/\/[^\s]+\/media\/[^\s]+|\/media\/[^\s]+)/g;
+    const parts = content.split(mediaRegex);
+    return parts.map((part, idx) => {
+      if (mediaRegex.test(part)) {
+        const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(part);
+        const isDoc = /\.(pdf|docx?|xlsx?|csv|pptx?|txt)$/i.test(part);
+        const url = part.startsWith('http') ? part : `${window.location.origin}${part}`;
+        if (isImage) {
+          return (
+            <div key={idx} className="my-2">
+              <img src={url} alt="Generated" className="max-w-xs rounded shadow border border-gray-700" style={{maxHeight: 240}} />
+              <div className="flex gap-2 mt-1">
+                <Button size="xs" variant="ghost" onClick={() => navigator.clipboard.writeText(url)}>Copy Link</Button>
+                <Button size="xs" variant="ghost" asChild><a href={url} download target="_blank" rel="noopener noreferrer">Download</a></Button>
+              </div>
+            </div>
+          );
+        } else if (isDoc) {
+          return (
+            <div key={idx} className="my-2">
+              <a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-400">{url.split('/').pop()}</a>
+              <Button size="xs" variant="ghost" onClick={() => navigator.clipboard.writeText(url)} className="ml-2">Copy Link</Button>
+              <Button size="xs" variant="ghost" asChild><a href={url} download>Download</a></Button>
+            </div>
+          );
+        } else {
+          // Unknown file type, just link
+          return (
+            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-400">{url}</a>
+          );
+        }
+      }
+      // Plain text, preserve line breaks
+      return part.split('\n').map((line, i) => (
+        <React.Fragment key={i}>{line}{i < part.split('\n').length - 1 && <br />}</React.Fragment>
+      ));
+    });
   };
 
   // Ensure message has required properties
@@ -81,7 +115,7 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
             : 'bg-gray-800 text-gray-100'
         )}>
           <div className="prose prose-invert max-w-none">
-            {formatMessage(message.content)}
+            {message.role === 'assistant' ? renderContent(message.content) : formatMessage(message.content)}
           </div>
           
           {/* Pacing Analysis Badge */}

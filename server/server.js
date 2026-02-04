@@ -399,10 +399,15 @@ app.use('/api/intake', intakeRoutes);
 app.use('/api/journey-intake', journeyIntakeRoutes);
 app.use('/api/ticket-management', ticketManagementRoutes);
 
+
 // Analytics and CKB routes
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ckb', ckbRoutes);
 app.use('/api/audit', auditRoutes);
+
+// Media serving route for generated files/images
+const mediaRoutes = require('./src/routes/media');
+app.use('/media', mediaRoutes);
 
 // Socket.IO test routes (development only)
 if (process.env.NODE_ENV !== 'production') {
