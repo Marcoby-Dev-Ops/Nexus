@@ -24,78 +24,14 @@ const {
 const MigrationRunner = require('./src/database/migrate');
 
 // Import routes
-const dbRoutes = require('./src/routes/db');
-const rpcRoutes = require('./src/routes/rpc');
-const vectorRoutes = require('./src/routes/vector');
-let factsRoutes = null;
-try {
-  // facts route is optional in some production builds/images; require defensively so the
-  // server can still start even if the file wasn't copied into the image by accident.
-  factsRoutes = require('./src/routes/facts');
-} catch (err) {
-  logger.warn('Facts routes not available, skipping /api/facts mounting', { error: err.message });
-}
-
-let telemetryRoutes = null;
-try {
-  telemetryRoutes = require('./src/routes/telemetry');
-} catch (err) {
-  logger.warn('Telemetry routes not available, skipping /api/telemetry mounting', { error: err.message });
-}
-
-let edgeRoutes = null;
-try {
-  edgeRoutes = require('./src/routes/edge');
-} catch (err) {
-  logger.warn('Edge routes not available, skipping /api/edge mounting', { error: err.message });
-}
 const chatRoutes = require('./src/routes/chat');
 const organizationRoutes = require('./src/routes/organizations');
 const userPreferencesRoutes = require('./src/routes/user-preferences');
 const userContactsRoutes = require('./src/routes/user-contacts');
 const meRoutes = require('./src/routes/me');
-const varLeadsRoutes = require('./src/routes/var-leads');
-const integrationRoutes = require('./src/routes/integrations');
-const atomRegistryRoutes = require('./src/routes/atom-registry');
 const authRoutes = require('./src/routes/auth');
 const companyRoutes = require('./src/routes/companies');
 const oauthRoutes = require('./src/routes/oauth');
-const applySuggestionRoutes = require('./src/routes/apply-suggestion');
-
-// Import AI Gateway routes
-const aiGatewayRoutes = require('./src/routes/ai-gateway');
-const aiInsightsRoutes = require('./src/routes/ai-insights');
-
-// Import thoughts routes
-const thoughtsRoutes = require('./src/routes/thoughts');
-
-// Import analytics routes
-const analyticsRoutes = require('./src/routes/analytics');
-
-// Import intake agent routes
-const intakeRoutes = require('./src/routes/intake');
-
-// Import ticket management agent routes
-const ticketManagementRoutes = require('./src/routes/ticket-management');
-
-// Import CKB routes
-const ckbRoutes = require('./src/routes/ckb');
-
-// Import Audit routes
-const auditRoutes = require('./src/routes/audit');
-
-// Import journey intake routes
-const journeyIntakeRoutes = require('./src/routes/journey-intake');
-
-// Import Socket.IO service
-const socketService = require('./src/services/SocketService');
-
-// Import Socket.IO test routes
-const socketTestRoutes = require('./src/routes/socket-test');
-const pushRoutes = require('./src/routes/push');
-
-// Ops routes
-const opsCoolifyRoutes = require('./src/routes/ops/coolify');
 
 const app = express();
 const server = createServer(app);
@@ -218,8 +154,7 @@ io.on('connection', (socket) => {
 // Make io available to other modules
 app.set('io', io);
 
-// Initialize Socket.IO service
-socketService.initialize(io);
+// ...existing code...
 
 // Security middleware
 app.use(helmet({
@@ -354,81 +289,14 @@ app.get('/healthz', (req, res) => {
 });
 
 // API routes with specific rate limiting
-
-// Database operations - apply DB rate limiting
-app.use('/api/db', dbLimiter, dbRoutes);
-
-// Authentication routes - apply strict auth rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/companies', authLimiter, companyRoutes);
 app.use('/api/oauth', authLimiter, oauthRoutes);
-
-// AI/ML routes - apply AI rate limiting (cost-sensitive)
-app.use('/api/ai', aiLimiter, aiGatewayRoutes);
-app.use('/api/ai-insights', aiLimiter, aiInsightsRoutes);
-
-// Other API routes - use general rate limiting
-app.use('/api/rpc', rpcRoutes);
-app.use('/api/vector', vectorRoutes);
-if (factsRoutes) {
-  app.use('/api/facts', factsRoutes);
-  logger.info('Facts routes mounted at /api/facts');
-} else {
-  logger.warn('Facts routes not mounted because they are not available');
-}
-if (telemetryRoutes) {
-  app.use('/api/telemetry', telemetryRoutes);
-  logger.info('Telemetry routes mounted at /api/telemetry');
-} else {
-  logger.warn('Telemetry routes not mounted because they are not available');
-}
-
-if (edgeRoutes) {
-  app.use('/api/edge', edgeRoutes);
-  logger.info('Edge routes mounted at /api/edge');
-} else {
-  logger.warn('Edge routes not mounted because they are not available');
-}
 app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
 app.use('/api/user-contacts', userContactsRoutes);
 app.use('/api/me', meRoutes);
-app.use('/api/var-leads', varLeadsRoutes);
-app.use('/api/integrations', integrationRoutes);
-app.use('/api/thoughts', thoughtsRoutes);
-app.use('/api/push', pushRoutes);
-app.use('/api/atom-registry', atomRegistryRoutes);
-
-// Ops (approve-first, authenticated)
-app.use('/api/ops/coolify', opsCoolifyRoutes);
-
-// Apply suggestion endpoint (audit + apply)
-app.use('/api/apply-suggestion', generalLimiter, applySuggestionRoutes);
-
-// Agent routes - use general rate limiting
-app.use('/api/intake', intakeRoutes);
-app.use('/api/journey-intake', journeyIntakeRoutes);
-app.use('/api/ticket-management', ticketManagementRoutes);
-
-
-// Analytics and CKB routes
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/ckb', ckbRoutes);
-app.use('/api/audit', auditRoutes);
-
-// Media serving route for generated files/images
-const mediaRoutes = require('./src/routes/media');
-app.use('/media', mediaRoutes);
-
-// Socket.IO test routes (development only)
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/api/socket-test', socketTestRoutes);
-  logger.info('Socket.IO test routes mounted at /api/socket-test');
-}
-
-logger.info('AI Gateway routes mounted at /api/ai');
-logger.info('CKB routes mounted at /api/ckb');
 
 // Graceful shutdown handling
 const gracefulShutdown = async (signal) => {
