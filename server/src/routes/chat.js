@@ -40,12 +40,9 @@ router.post('/message', authenticateToken, async (req, res) => {
             throw createError('AI Service Unavailable', 503);
         }
 
-        // Call AI Gateway
-        // We act as a single-turn chat for now, or the client should send history.
-        // For V1 "single agent" wrapper:
+        // Call AI Gateway - model is determined by OpenClaw configuration
         const aiResponse = await aiGateway.chat({
             messages: [{ role: 'user', content: message }],
-            model: 'zai/glm-4.7', // Default to the cost-effective model
             userId: userId,
             tenantId: req.user.company_id || 'default'
         });
@@ -55,6 +52,7 @@ router.post('/message', authenticateToken, async (req, res) => {
         }
 
         const reply = aiResponse.data.message;
+        const modelUsed = aiResponse.data.model || 'unknown';
 
         // Store conversation
         // Using correct schema: ai_conversations with messages JSONB
@@ -65,20 +63,20 @@ router.post('/message', authenticateToken, async (req, res) => {
 
         const insertResult = await query(
             `INSERT INTO ai_conversations (
-                user_id, 
-                title, 
-                messages, 
-                model, 
-                message_count, 
+                user_id,
+                title,
+                messages,
+                model,
+                message_count,
                 metadata
              )
              VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING id, created_at`,
             [
-                userId, 
+                userId,
                 message.substring(0, 50) + (message.length > 50 ? '...' : ''), // Use first part of message as title
                 JSON.stringify(conversationMessages),
-                'zai/glm-4.7',
+                modelUsed,
                 2,
                 JSON.stringify(context)
             ],

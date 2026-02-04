@@ -366,15 +366,15 @@ class NexusAIGatewayService {
     
     // Default models (Basic/Standard Tier) - Cost efficient, high speed
     const basicModels = {
-      openclaw: 'zai/glm-4.7',
+      openclaw: null, // Use OpenClaw's configured default model
       openai: 'gpt-4o-mini',
-      openrouter: 'gpt-4o-mini', 
+      openrouter: 'gpt-4o-mini',
       local: 'llama2'
     };
-    
+
     // Premium models (Power/Enterprise Tier) - High intelligence, complex reasoning
     const premiumModels = {
-      openclaw: 'zai/glm-4.7', // High capability, low cost
+      openclaw: null, // Use OpenClaw's configured default model
       openai: 'gpt-4o',
       openrouter: 'anthropic/claude-3-5-sonnet',
       local: 'mixtral-8x7b'
@@ -587,20 +587,25 @@ class OpenClawProvider {
       // OpenClawProvider is constructed with baseUrl (e.g. http://host:port/v1)
       const url = `${this.baseUrl.replace(/\/$/, '')}/chat/completions`;
       
+      const requestBody = {
+        messages: this.buildMessages(request),
+        max_tokens: this.getMaxTokens(request),
+        temperature: this.getTemperature(request),
+        stream: true,
+        user: request.userId
+      };
+      // Only include model if specified, otherwise let OpenClaw use its default
+      if (request.model) {
+        requestBody.model = request.model;
+      }
+
       const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${this.apiKey}`
           },
-          body: JSON.stringify({
-            model: request.model,
-            messages: this.buildMessages(request),
-            max_tokens: this.getMaxTokens(request),
-            temperature: this.getTemperature(request),
-            stream: true,
-            user: request.userId
-          })
+          body: JSON.stringify(requestBody)
       });
   
       if (!response.ok) throw new Error(`OpenClaw Stream Error: ${response.statusText}`);
@@ -639,7 +644,19 @@ class OpenClawProvider {
     // Send standard OpenAI format
     const startTime = performance.now();
     const url = `${this.baseUrl.replace(/\/$/, '')}/chat/completions`;
-    
+
+    const requestBody = {
+      messages: this.buildMessages(request),
+      max_tokens: this.getMaxTokens(request),
+      temperature: this.getTemperature(request),
+      stream: false,
+      user: request.userId // Vital for OpenClaw memory
+    };
+    // Only include model if specified, otherwise let OpenClaw use its default
+    if (request.model) {
+      requestBody.model = request.model;
+    }
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -647,14 +664,7 @@ class OpenClawProvider {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        body: JSON.stringify({
-          model: request.model,
-          messages: this.buildMessages(request),
-          max_tokens: this.getMaxTokens(request),
-          temperature: this.getTemperature(request),
-          stream: false,
-          user: request.userId // Vital for OpenClaw memory
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -671,8 +681,8 @@ class OpenClawProvider {
           prompt: data.usage?.prompt_tokens || 0,
           completion: data.usage?.completion_tokens || 0
         },
-        costCents: this.calculateCost(data.usage, request.model),
-        model: request.model,
+        costCents: this.calculateCost(data.usage, data.model || request.model),
+        model: data.model || request.model || 'openclaw-default',
         provider: 'openclaw',
         latencyMs
       };
