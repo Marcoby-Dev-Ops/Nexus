@@ -11,6 +11,10 @@ services:
     container_name: nexus-server
     env_file:
       - ./server/.env
+    environment:
+      # OpenClaw Configuration (override via Coolify env vars)
+      OPENCLAW_API_URL: ${OPENCLAW_API_URL:-http://localhost:18789/v1}
+      OPENCLAW_API_KEY: ${OPENCLAW_API_KEY:-sk-openclaw-local}
     ports:
       - "3001:3001"
     restart: unless-stopped
