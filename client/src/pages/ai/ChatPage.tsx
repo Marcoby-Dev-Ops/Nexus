@@ -26,16 +26,7 @@ import { useToast } from '@/shared/ui/components/Toast';
 import { cn } from '@/shared/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 
-type Agent = { id: string; name: string; type: string; capabilities: string[] };
 
-// Mock agents for UI
-const MOCK_AGENTS: Agent[] = [
-  { id: 'nexus', name: 'Nexus Core', type: 'assistant', capabilities: ['business-context', 'streaming'] }
-];
-
-const getAllAgents = async (): Promise<Agent[]> => {
-  return MOCK_AGENTS;
-};
 
 // getAgentsByType removed (unused)
 
@@ -73,8 +64,7 @@ export default function ChatPage() {
     clearMessages,
     isLoading: conversationsLoading 
   } = useAIChatStore();
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('executive-assistant');
+  // Single-agent mode: no agent selection
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
@@ -89,8 +79,7 @@ export default function ChatPage() {
   const [businessContextData, setBusinessContextData] = useState<Record<string, any> | null>(null);
   const [streamingContent, setStreamingContent] = useState('');
 
-  // Get selected agent object
-  const selectedAgent = agents.find(agent => agent.id === selectedAgentId);
+
 
   // Chat handlers
   const handleSendMessage = async (message: string, attachments?: any[]) => {
@@ -167,31 +156,7 @@ export default function ChatPage() {
     setIsLoading(false);
   };
 
-  const loadChatData = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const allAgents = await getAllAgents();
-      setAgents(allAgents);
-      // Set default agent if none selected
-      if (!selectedAgentId && allAgents.length > 0) {
-        setSelectedAgentId(allAgents[0].id);
-      } else if (!selectedAgentId) {
-        setSelectedAgentId('executive-assistant');
-      }
-    } catch (error) {
-      logger.error('Error loading chat data', { error });
-      setError('Failed to load chat data. Please refresh the page.');
-      setAgents([]);
-      setSelectedAgentId('executive-assistant');
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedAgentId]);
 
-  useEffect(() => {
-    loadChatData();
-  }, [loadChatData]);
 
   // Update stats when conversations change - currently omitted (unused)
 
@@ -204,19 +169,10 @@ export default function ChatPage() {
 
   const handleNewConversation = async () => {
     try {
-      // Clear current conversation state
       setConversationId(null);
-      setSelectedAgentId('executive-assistant');
-      
-      // Clear current conversation in store
       setCurrentConversation(null);
-      
-      // Clear messages from the store
       clearMessages();
-      
-      // Refresh conversations to show the updated list
       await fetchConversations();
-      
       toast({
         title: "New conversation",
         description: "Ready to start a new conversation!",
@@ -394,57 +350,8 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Agent Selection */}
-        <div className="p-2 space-y-1">
-          {/* Tone is configured in Settings → Account Settings */}
-          {!sidebarCollapsed && (
-            <h3 className="text-xs font-medium text-gray-400 mb-2">Choose Agent</h3>
-          )}
-          
-          {/* Executive Assistant (Default) */}
-          <Button
-            onClick={() => setSelectedAgentId('executive-assistant')}
-            className={cn(
-              "w-full justify-start text-xs transition-colors",
-              selectedAgentId === 'executive-assistant'
-                ? "bg-blue-600 hover:bg-blue-700 text-white border-0"
-                : "bg-gray-800 hover:bg-gray-700 text-gray-300 border-0",
-              sidebarCollapsed ? "justify-center p-1" : "justify-start p-2"
-            )}
-          >
-            <Brain className="w-3 h-3" />
-            {!sidebarCollapsed && <span className="ml-1">Executive Assistant</span>}
-          </Button>
 
-          {/* 7 Building Block Agents */}
-          {[
-            { id: 'business-identity-consultant', name: 'Identity', icon: Target },
-            { id: 'sales-expert', name: 'Revenue', icon: TrendingUp },
-            { id: 'finance-expert', name: 'Cash', icon: Activity },
-            { id: 'operations-expert', name: 'Delivery', icon: Zap },
-            { id: 'people-expert', name: 'People', icon: Users },
-            { id: 'knowledge-expert', name: 'Knowledge', icon: FileText },
-            { id: 'systems-expert', name: 'Systems', icon: Settings }
-          ].map((agent) => {
-            const IconComponent = agent.icon;
-            return (
-              <Button
-                key={agent.id}
-                onClick={() => setSelectedAgentId(agent.id)}
-                className={cn(
-                  "w-full justify-start text-xs transition-colors",
-                  selectedAgentId === agent.id
-                    ? "bg-blue-600 hover:bg-blue-700 text-white border-0"
-                    : "bg-gray-800 hover:bg-gray-700 text-gray-300 border-0",
-                  sidebarCollapsed ? "justify-center p-1" : "justify-start p-2"
-                )}
-              >
-                <IconComponent className="w-3 h-3" />
-                {!sidebarCollapsed && <span className="ml-1">{agent.name}</span>}
-              </Button>
-            );
-          })}
-        </div>
+        {/* Agent selection removed for single-agent mode */}
 
         {/* Action Buttons */}
         <div className="p-2 space-y-1 border-t border-gray-800">

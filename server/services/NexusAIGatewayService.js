@@ -125,13 +125,7 @@ class NexusAIGatewayService {
       // Credit Check (unless it's system user or unlimited)
       const hasCredits = userStatus?.can_run_inference || effectiveUserId === SYSTEM_USER_ID;
       
-      async *chatStream(request) {
-        logger.warn(`Credit check failed for user ${effectiveUserId}`);
-        return {
-          success: false,
-          error: 'Insufficient credits. Please upgrade your plan or top up your wallet.'
-        };
-      }
+      // (Removed invalid async generator definition)
 
       // Determine model based on plan tier
       const tier = userStatus?.subscription?.features?.tier || 'basic';
