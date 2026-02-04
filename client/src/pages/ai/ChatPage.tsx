@@ -19,50 +19,22 @@ import {
   Pencil,
   FileText,
   X} from 'lucide-react';
-import { ConsolidatedAIService } from '@/services/ai/ConsolidatedAIService';
-import type { Agent } from '@/services/ai/ConsolidatedAIService';
+import { conversationalAIService } from '@/services/ai/ConversationalAIService';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
 import { useToast } from '@/shared/ui/components/Toast';
 import { cn } from '@/shared/lib/utils';
-import { nexusRAGService } from '@/lib/services/NexusRAGService';
 import { useAuth } from '@/hooks/useAuth';
 
-// Service-backed helpers
-const aiService = new ConsolidatedAIService();
+type Agent = { id: string; name: string; type: string; capabilities: string[] };
 
-const normalizeAgentData = (rawData: unknown): Agent[] => {
-  if (Array.isArray(rawData)) {
-    return rawData as Agent[];
-  }
-
-  if (rawData && typeof rawData === 'object') {
-    const nestedData = (rawData as { data?: unknown }).data;
-    if (Array.isArray(nestedData)) {
-      return nestedData as Agent[];
-    }
-
-    if (nestedData && typeof nestedData === 'object') {
-      const doubleNestedData = (nestedData as { data?: unknown }).data;
-      if (Array.isArray(doubleNestedData)) {
-        return doubleNestedData as Agent[];
-      }
-    }
-  }
-
-  logger.warn('Unexpected agent payload shape from getAgents', {
-    receivedType: Array.isArray(rawData) ? 'array' : typeof rawData,
-  });
-  return [];
-};
+// Mock agents for UI
+const MOCK_AGENTS: Agent[] = [
+  { id: 'nexus', name: 'Nexus Core', type: 'assistant', capabilities: ['business-context', 'streaming'] }
+];
 
 const getAllAgents = async (): Promise<Agent[]> => {
-  const result = await aiService.getAgents();
-  if (!result.success || !result.data) {
-    return [];
-  }
-
-  return normalizeAgentData(result.data);
+  return MOCK_AGENTS;
 };
 
 // getAgentsByType removed (unused)
@@ -115,6 +87,7 @@ export default function ChatPage() {
   const [ragSources, setRagSources] = useState<any[]>([]);
   const [ragRecommendations, setRagRecommendations] = useState<string[]>([]);
   const [businessContextData, setBusinessContextData] = useState<Record<string, any> | null>(null);
+  const [streamingContent, setStreamingContent] = useState('');
 
   // Get selected agent object
   const selectedAgent = agents.find(agent => agent.id === selectedAgentId);
@@ -145,68 +118,36 @@ export default function ChatPage() {
 
 
 
-      // Use Nexus RAG Service for comprehensive context integration
-      const nexusContext = {
-        user: {
-          id: user.id,
-          name: userProfile?.display_name || `${userProfile?.first_name || ''} ${userProfile?.last_name || ''}`.trim() || 'User',
-          role: userProfile?.job_title || 'User',
-          department: 'General',
-          preferredTone: preferredTone
-        },
-        company: userCompany ? {
-          id: userCompany.id,
-          name: userCompany.name,
-          industry: userCompany.industry || 'Unknown',
-          size: userCompany.size || 'Unknown',
-          description: userCompany.description
-        } : null,
-        agent: {
-          id: selectedAgentId,
-          type: selectedAgent?.type || 'assistant',
-          capabilities: selectedAgent?.capabilities || []
-        },
-        conversation: {
-          id: currentConversationId,
-          history: storeMessages.map(msg => ({
-            role: msg.role,
-            content: msg.content,
-            timestamp: msg.created_at
-          }))
-        },
-        attachments: attachments || []
+      // Use Conversational AI Service (Streaming)
+      const contextInit = await conversationalAIService.initializeContext(user.id, userCompany?.id || 'default');
+      const aiContext = contextInit.success ? contextInit.data : { 
+          userId: user.id, 
+          organizationId: userCompany?.id || 'default', 
+          businessContext: {} 
       };
 
-      logger.debug('Processing with Nexus RAG Service');
-      const nexusResponse = await nexusRAGService.processMessage({
-        message,
-        context: nexusContext,
-        agentId: selectedAgentId
-      });
+      let accumulatedResponse = '';
+      setStreamingContent('');
+      
+      const token = localStorage.getItem('nexus_auth_token') || '';
+      
+      await conversationalAIService.streamMessage(
+          message,
+          aiContext,
+          (chunk) => {
+              accumulatedResponse += chunk;
+              setStreamingContent(accumulatedResponse);
+          },
+          token
+      );
 
-      if (nexusResponse.success && nexusResponse.data) {
-        logger.info('Nexus RAG Response', {
-          confidence: nexusResponse.data.confidence,
-          sourcesCount: nexusResponse.data.sources.length,
-          hasRecommendations: nexusResponse.data.recommendations.length > 0
-        });
-        
-        // Update RAG status and business context
-        setRagEnabled(true);
-        setRagConfidence(nexusResponse.data.confidence);
-        setKnowledgeTypes(nexusResponse.data.knowledgeTypes || []);
-        setRagSources(nexusResponse.data.sources || []);
-        setRagRecommendations(nexusResponse.data.recommendations || []);
-        setBusinessContextData(nexusResponse.data.businessContext || {});
+      // Save final response
+      await saveAIResponse(accumulatedResponse, currentConversationId);
+      setStreamingContent('');
+      
+      // Refresh conversations
+      await fetchConversations();
 
-        // Save the AI response
-        await saveAIResponse(nexusResponse.data.content, currentConversationId);
-
-        // Refresh conversations to show the updated list
-        await fetchConversations();
-      } else {
-        throw new Error(nexusResponse.error || 'Failed to process message');
-      }
     } catch (error) {
       logger.error('Chat error', { error });
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
@@ -644,7 +585,22 @@ export default function ChatPage() {
               </div>
             }>
                              <ModernChatInterface
-                 messages={storeMessages}
+                messages={
+                  isStreaming && streamingContent 
+                  ? [
+                      ...storeMessages,
+                      {
+                          id: 'streaming-msg',
+                          conversation_id: conversationId || 'temp',
+                          role: 'assistant',
+                          content: streamingContent,
+                          created_at: new Date().toISOString(),
+                          updated_at: new Date().toISOString(),
+                          metadata: { streaming: true, model: 'gpt-4' }
+                      }
+                  ]
+                  : storeMessages
+                }
                  onSendMessage={handleSendMessage}
                  onStopGeneration={handleStopGeneration}
                  isStreaming={isStreaming}

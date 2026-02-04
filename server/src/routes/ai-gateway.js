@@ -87,8 +87,48 @@ router.post('/chat', extractTenantId, async (req, res) => {
       return res.status(503).json({ error: 'AI Gateway service not available' });
     }
 
+    const { stream } = req.body;
+
+    // Handle Streaming Response
+    if (stream) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const chatRequest = {
+        messages: req.body.messages || [],
+        system: req.body.system,
+        role: req.body.role || 'chat',
+        sensitivity: req.body.sensitivity || 'internal',
+        budgetCents: req.body.budgetCents,
+        latencyTargetMs: req.body.latencyTargetMs,
+        json: req.body.json,
+        tools: req.body.tools,
+        tenantId: req.tenantId,
+        userId: req.body.userId,
+        orgId: req.body.orgId,
+        stream: true
+      };
+
+      try {
+        const streamIterator = await aiGateway.chatStream(chatRequest);
+        
+        for await (const chunk of streamIterator) {
+          res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        }
+        res.write('data: [DONE]\n\n');
+        res.end();
+      } catch (streamError) {
+        logger.error('Streaming error:', streamError);
+        res.write(`data: ${JSON.stringify({ error: streamError.message })}\n\n`);
+        res.end();
+      }
+      return;
+    }
+
+    // Handle Standard Response
     const chatRequest = {
-      messages: req.body.messages || [],
+  messages: req.body.messages || [],
       system: req.body.system,
       role: req.body.role || 'chat',
       sensitivity: req.body.sensitivity || 'internal',

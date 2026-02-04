@@ -101,10 +101,11 @@ export default function AuthentikAuthCallback() {
            setProcessing(false);
          } else {
            // Determine redirect destination
-           // Priority: 1) URL next param, 2) location state from, 3) default dashboard
+           // Priority: 1) URL next param, 2) location state from, 3) default to chat (Single Purpose)
            const urlNext = searchParams.get('next');
            const stateFrom = location.state?.from?.pathname;
-           const redirectDestination = urlNext || stateFrom || '/dashboard';
+           // FORCE CHAT DEFAULT: replace '/dashboard' with '/chat'
+           const redirectDestination = (urlNext || stateFrom || '/chat').replace('/dashboard', '/chat');
            
            logger.info('🔍 [MarcobyIAMCallback] Redirecting to:', {
              urlNext,

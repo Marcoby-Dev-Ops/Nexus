@@ -1,19 +1,14 @@
 /**
  * Conversational Chat Component
  * 
- * Provides "ChatGPT but it knows their business" experience with:
- * - Focused questions and validation
- * - Progress tracking
- * - Business context awareness
- * - Step-by-step task completion
- * - Clean, professional layout matching ModernChatInterface
+ * Provides a responsive, streaming chat interface backed by the Nexus AI Gateway.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/Avatar';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
-import { Send, Brain, Lightbulb, Ticket, Building, Target, BookOpen, Bot, User, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Bot, User, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { cn } from '@/shared/lib/utils';
 import { conversationalAIService, type ConversationContext } from '@/services/ai/ConversationalAIService';
@@ -23,13 +18,8 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  knowledgeContext?: {
-    relevantThoughts?: string[];
-    activeTickets?: string[];
-    businessInsights?: string[];
-    focusAreas?: string[];
-    recommendations?: string[];
-  };
+  error?: boolean;
+  errorMessage?: string;
 }
 
 interface ConversationalChatProps {
@@ -46,116 +36,132 @@ export const ConversationalChat: React.FC<ConversationalChatProps> = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [expandedContext, setExpandedContext] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Auto-scroll to bottom when new messages arrive
+  // Retrieve auth token roughly (in a real app, use a dedicated hook)
+  const getAuthToken = () => localStorage.getItem('nexus_auth_token') || '';
+
+  // Auto-scroll logic
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Initial focus when component mounts
+  // Focus input on mount
   useEffect(() => {
-    setTimeout(() => {
-      chatInputRef.current?.focus();
-    }, 100);
+    setTimeout(() => chatInputRef.current?.focus(), 100);
   }, []);
 
-  // Initialize with welcome message
+  // Welcome message with context stats
   useEffect(() => {
     if (messages.length === 0) {
-      const knowledgeBase = context.businessContext.knowledgeBase;
-      const companyName = knowledgeBase?.companyData?.name || 'your business';
-      const industry = knowledgeBase?.companyData?.industry || 'your industry';
-      const activeTasks = knowledgeBase?.brainTickets?.filter(t => t.status === 'open').length || 0;
-      const insights = knowledgeBase?.thoughts?.length || 0;
+      const kb = context.businessContext.knowledgeBase;
+      const name = kb?.companyData?.name || 'your business';
+      const countTicks = kb?.brainTickets?.filter(t => t.status === 'open').length || 0;
       
-      // Get recent focus areas
-      const recentThoughts = knowledgeBase?.thoughts?.slice(0, 3) || [];
-      const focusAreas = recentThoughts.map(t => t.title.split(' - ')[1] || t.title.split(' ')[0]).slice(0, 2);
-      
-      const welcomeMessage: ChatMessage = {
+      setMessages([{
         id: 'welcome',
         role: 'assistant',
-        content: `Hi! I'm your Nexus AI assistant, and I have deep knowledge of ${companyName}. 
-
-I can see you're in the ${industry} industry and have ${insights} business insights in your knowledgebase. You currently have ${activeTasks} active tasks that need attention.
-
-${focusAreas.length > 0 ? `Based on your recent work, I know you've been focusing on ${focusAreas.join(' and ')}. ` : ''}
-
-I'm here to help you with anything related to your business - from optimizing your processes to growing your revenue, managing your team, or working through your active tasks. What would you like to work on today?`,
-        timestamp: new Date(),
-        knowledgeContext: {
-          businessInsights: [`I understand ${companyName}'s ${industry} business context`],
-          focusAreas: focusAreas,
-          activeTickets: knowledgeBase?.brainTickets?.filter(t => t.status === 'open').slice(0, 2).map(t => t.title) || [],
-          recommendations: [
-            activeTasks > 0 ? `You have ${activeTasks} active tasks that might need attention` : null,
-            insights > 0 ? `I can reference ${insights} insights from your business knowledgebase` : null
-          ].filter(Boolean) as string[]
-        }
-      };
-      setMessages([welcomeMessage]);
+        content: `Hi! I'm Nexus. I maintain a live context of ${name}, including ${kb?.thoughts?.length || 0} insights and ${countTicks} active tasks. How can I help you today?`,
+        timestamp: new Date()
+      }]);
     }
   }, [context, messages.length]);
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() || isProcessing) return;
+    const text = inputValue.trim();
+    if (!text || isProcessing) return;
 
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: inputValue.trim(),
-      timestamp: new Date()
+    // 1. Add User Message
+    const userMsg: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: text,
+        timestamp: new Date()
     };
-
-    setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMsg]);
     setInputValue('');
     setIsProcessing(true);
 
+    // 2. Prepare Assistant Message Placeholder
+    const assistantMsgId = (Date.now() + 1).toString();
+    setMessages(prev => [...prev, {
+        id: assistantMsgId,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date()
+    }]);
+
     try {
-      const response = await conversationalAIService.processMessage(
-        inputValue.trim(),
-        context
-      );
+        let streamContent = '';
+        const token = getAuthToken();
 
-      if (response.success && response.data) {
-        const assistantMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: response.data.response,
-          timestamp: new Date(),
-          knowledgeContext: response.data.knowledgeContext
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
-
-        // Update context if provided
-        if (response.data.collectedData && Object.keys(response.data.collectedData).length > 0) {
-          const updatedContext = {
-            ...context,
-            collectedData: { ...context.collectedData, ...response.data.collectedData }
-          };
-          onContextUpdate?.(updatedContext);
+        // Check for auth token
+        if (!token) {
+          throw new Error('Please sign in to use Nexus chat.');
         }
-      } else {
+
+        // Build conversation history from existing messages (exclude welcome message and current placeholder)
+        const conversationHistory = messages
+            .filter(m => m.id !== 'welcome' && m.id !== assistantMsgId && !m.error)
+            .map(m => ({ role: m.role, content: m.content }));
+
+        await conversationalAIService.streamMessage(
+            text,
+            context,
+            (chunk) => {
+                streamContent += chunk;
+                setMessages(prev => prev.map(m =>
+                    m.id === assistantMsgId
+                        ? { ...m, content: streamContent }
+                        : m
+                ));
+            },
+            token,
+            conversationHistory
+        );
+
+        // Check for empty response
+        if (!streamContent.trim()) {
+          setMessages(prev => prev.map(m =>
+            m.id === assistantMsgId
+              ? { ...m, content: "I couldn't generate a response. Please try rephrasing your question." }
+              : m
+          ));
+        }
+    } catch (err) {
+        console.error('Chat error:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to generate response.';
+
+        // Update the assistant message to show the error inline
+        setMessages(prev => prev.map(m =>
+          m.id === assistantMsgId
+            ? { ...m, content: '', error: true, errorMessage }
+            : m
+        ));
+
         toast({
-          title: "Error",
-          description: response.error || "Failed to process message",
-          variant: "destructive"
+            title: "Connection Error",
+            description: errorMessage,
+            variant: "destructive"
         });
-      }
-    } catch (error) {
-      console.error('Error processing message:', error);
-      toast({
-        title: "Error",
-        description: "Failed to process message. Please try again.",
-        variant: "destructive"
-      });
     } finally {
-      setIsProcessing(false);
+        setIsProcessing(false);
+        chatInputRef.current?.focus();
+    }
+  };
+
+  const handleRetry = (messageId: string) => {
+    // Find the user message before the failed assistant message
+    const messageIndex = messages.findIndex(m => m.id === messageId);
+    if (messageIndex > 0) {
+      const userMessage = messages[messageIndex - 1];
+      if (userMessage.role === 'user') {
+        // Remove the failed message and retry
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+        setInputValue(userMessage.content);
+      }
     }
   };
 
@@ -166,178 +172,88 @@ I'm here to help you with anything related to your business - from optimizing yo
     }
   };
 
-  const toggleContextSection = (sectionId: string) => {
-    setExpandedContext(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
-      } else {
-        newSet.add(sectionId);
-      }
-      return newSet;
-    });
-  };
-
-  const renderKnowledgeContext = (knowledgeContext?: any, messageId: string) => {
-    if (!knowledgeContext) return null;
-    
-    const sections = [
-      { id: 'insights', icon: Lightbulb, title: 'Business Insights', data: knowledgeContext.businessInsights, color: 'text-yellow-400' },
-      { id: 'focus', icon: Target, title: 'Recent Focus Areas', data: knowledgeContext.focusAreas, color: 'text-green-400' },
-      { id: 'tasks', icon: Ticket, title: 'Active Tasks', data: knowledgeContext.activeTickets, color: 'text-orange-400' },
-      { id: 'recommendations', icon: BookOpen, title: 'Recommendations', data: knowledgeContext.recommendations, color: 'text-purple-400' },
-      { id: 'thoughts', icon: Brain, title: 'Related Knowledge', data: knowledgeContext.relevantThoughts, color: 'text-blue-400' }
-    ].filter(section => section.data && section.data.length > 0);
-
-    if (sections.length === 0) return null;
-
-    return (
-      <div className="mt-3 space-y-2">
-        {sections.map((section) => {
-          const IconComponent = section.icon;
-          const isExpanded = expandedContext.has(`${messageId}-${section.id}`);
-          
-          return (
-            <div key={section.id} className="bg-gray-800/50 rounded-lg border border-gray-700/50 overflow-hidden">
-              <button
-                onClick={() => toggleContextSection(`${messageId}-${section.id}`)}
-                className="w-full px-3 py-2 flex items-center justify-between text-left hover:bg-gray-700/50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <IconComponent className={cn("w-4 h-4", section.color)} />
-                  <span className="text-sm font-medium text-gray-200">{section.title}</span>
-                  <span className="text-xs text-gray-400">({section.data.length})</span>
-                </div>
-                {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                )}
-              </button>
-              
-              {isExpanded && (
-                <div className="px-3 pb-3 border-t border-gray-700/50">
-                  <div className="text-sm text-gray-300 space-y-1 pt-2">
-                    {section.data.map((item: string, index: number) => (
-                      <div key={index} className="flex items-start gap-2">
-                        <span className="text-gray-500 mt-1">•</span>
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
-
   return (
-    <div className={cn(
-      "flex flex-col h-full bg-gray-900 text-white rounded-lg border border-gray-700 overflow-hidden",
-      className
-    )}>
-      {/* Agent Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-4 py-3">
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-gray-200">Business-Aware AI Assistant</span>
-          </div>
-          <div className="text-xs text-gray-400">
-            Connected and ready to help with your business
-          </div>
-        </div>
-      </div>
-
-      {/* Messages Container - Fixed height with proper scrolling */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800 [scrollbar-gutter:stable]">
-        <div className="px-4 py-4 space-y-4">
-          <div className="space-y-6">
-            {messages.map((message) => (
-              <div key={message.id} className="flex gap-4 max-w-4xl mx-auto justify-start">
-                <div className="flex-shrink-0">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className={cn(
-                      "text-gray-300",
-                      message.role === 'assistant' ? "bg-gray-700" : "bg-blue-600"
-                    )}>
-                      {message.role === 'assistant' ? (
-                        <Bot className="w-4 h-4" />
-                      ) : (
-                        <User className="w-4 h-4" />
-                      )}
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="flex-1 max-w-3xl">
-                  <div className={cn(
-                    "rounded-2xl px-4 py-3",
-                    message.role === 'assistant' 
-                      ? "bg-gray-800 text-gray-100" 
-                      : "bg-blue-600 text-white"
-                  )}>
-                    <div className="whitespace-pre-wrap text-sm leading-relaxed">
-                      {message.content}
-                    </div>
-                    {renderKnowledgeContext(message.knowledgeContext, message.id)}
-                  </div>
-                  <div className="mt-2 text-xs text-gray-400">
-                    {message.timestamp.toLocaleTimeString()}
-                  </div>
-                </div>
-              </div>
-            ))}
-            
-            {/* Typing Indicator */}
-            {isProcessing && (
-              <div className="flex gap-4 max-w-4xl mx-auto justify-start">
-                <div className="flex-shrink-0">
-                  <Avatar className="w-8 h-8">
-                    <AvatarFallback className="bg-gray-700 text-gray-300">
-                      <Bot className="w-4 h-4" />
-                    </AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="flex-1 max-w-3xl">
-                  <div className="bg-gray-800 rounded-2xl px-4 py-3">
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+    <div className={cn("flex flex-col h-full bg-slate-900 overflow-hidden", className)}>
+      {/* Configure Area - Top Bar if needed, currently empty/hidden */}
+      
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={cn(
+              "flex gap-3 max-w-[85%]",
+              message.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
             )}
+          >
+            <Avatar className={cn("h-8 w-8 mt-1", 
+              message.role === 'assistant' ? "bg-indigo-500/20" : "bg-slate-700"
+            )}>
+              <AvatarFallback className={message.role === 'assistant' ? "text-indigo-400" : "text-slate-300"}>
+                {message.role === 'assistant' ? <Bot size={16} /> : <User size={16} />}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className={cn(
+              "rounded-lg p-4 text-sm leading-relaxed whitespace-pre-wrap",
+              message.role === 'user'
+                ? "bg-indigo-600 text-white"
+                : message.error
+                  ? "bg-red-900/30 text-red-300 border border-red-800"
+                  : "bg-slate-800 text-slate-200 border border-slate-700"
+            )}>
+              {message.error ? (
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p>{message.errorMessage || 'Something went wrong.'}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRetry(message.id)}
+                      className="mt-2 h-7 px-2 text-xs text-red-300 hover:text-red-200 hover:bg-red-900/50"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+              ) : message.content ? (
+                message.content
+              ) : isProcessing && message.id === messages[messages.length - 1].id ? (
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-xs">Thinking...</span>
+                </div>
+              ) : null}
+            </div>
           </div>
-          <div ref={messagesEndRef} />
-        </div>
+        ))}
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area - Fixed at bottom */}
-      <div className="border-t border-gray-700 bg-gray-800 p-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex gap-2">
-            <Input
-              ref={chatInputRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask about your business..."
-              disabled={isProcessing}
-              className="flex-1 bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500"
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim() || isProcessing}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
-          </div>
+      {/* Input Area */}
+      <div className="p-4 bg-slate-900 border-t border-slate-800">
+        <div className="flex gap-2 relative max-w-4xl mx-auto">
+          <Input
+            ref={chatInputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={isProcessing ? "Nexus is thinking..." : "Ask Nexus about your business..."}
+            disabled={isProcessing}
+            className="bg-slate-800 border-slate-700 text-slate-200 placeholder:text-slate-500 pr-12 h-12"
+          />
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={!inputValue.trim() || isProcessing}
+            className="absolute right-1 top-1 h-10 w-10 p-0 bg-transparent hover:bg-slate-700 text-slate-400 hover:text-white"
+          >
+            {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+          </Button>
+        </div>
+        <div className="text-center mt-2">
+            <span className="text-xs text-slate-600">Nexus AI Gateway • Enterprise Retrieval</span>
         </div>
       </div>
     </div>
