@@ -21,7 +21,7 @@ import {
   RefreshCw,
   CheckCircle
 } from 'lucide-react';
-import { Button } from '@/shared/components/ui/button';
+import { Button } from '@/shared/components/ui/Button';
 import { Input } from '@/shared/components/ui/input';
 import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
