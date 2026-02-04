@@ -6,925 +6,392 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { PublicHeader } from '@/shared/components/layout/PublicHeader';
 import {
   Brain,
-  Eye,
-  Zap,
-  TrendingUp,
-  Users,
-  Target,
-  Sparkles,
-  ArrowRight,
-  Play,
-  CheckCircle,
-  AlertTriangle,
-  Clock,
-  DollarSign,
-  BarChart3,
-  Workflow,
   Shield,
-  Globe,
-  Smartphone
+  ArrowRight,
+  CheckCircle,
+  Lock,
+  Eye,
+  Server,
+  UserCheck,
+  MessageSquare,
+  Database,
+  GitBranch
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
-  const painPoints = [
-    {
-      icon: AlertTriangle,
-      problem: "Can't see how your business actually works",
-      solution: "Nexus maps every connection between departments and data",
-      benefit: "See the complete picture, not just parts"
-    },
-    {
-      icon: Clock,
-      problem: "Drowning in tools but starving for insights",
-      solution: "AI analyzes across all systems and surfaces what matters",
-      benefit: "Get answers in seconds, not hours"
-    },
-    {
-      icon: DollarSign,
-      problem: "Decisions based on guesswork, not data",
-      solution: "Real-time intelligence from your actual business operations",
-      benefit: "Make informed decisions with confidence"
-    }
-  ];
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <PublicHeader />
 
-  const useCases = [
-    {
-      type: "E-commerce Store",
-      scenario: "Sales dropping but can't see why",
-      solution: "Nexus connected Shopify, email, and analytics—revealing that abandoned cart emails were going to spam. AI detected the pattern and recommended fixes.",
-      result: "Recovered $45K in lost revenue"
-    },
-    {
-      type: "SaaS Startup",
-      scenario: "Growing but churn is high",
-      solution: "Nexus analyzed usage patterns across product, support, and billing data—showing exactly which features predict churn and when to intervene.",
-      result: "Reduced churn by 32%"
-    },
-    {
-      type: "Service Business",
-      scenario: "Team overwhelmed with manual processes",
-      solution: "Nexus mapped their workflow, identified bottlenecks, and automated repetitive tasks—from invoicing to client follow-ups.",
-      result: "Saved 25 hours per week"
-    }
-  ];
-
-  const integrations = [
-    { name: "Shopify", category: "E-commerce" },
-    { name: "Salesforce", category: "CRM" },
-    { name: "QuickBooks", category: "Accounting" },
-    { name: "Slack", category: "Communication" },
-    { name: "Google Analytics", category: "Analytics" },
-    { name: "Mailchimp", category: "Marketing" },
-      return (
-        <div className="min-h-screen bg-background flex flex-col">
-          {/* Public Header */}
-          <PublicHeader />
-          {/* Hero Section */}
-          <div className="flex-1">
-            <div className="relative overflow-hidden">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-                <div className="text-center">
-                  <Badge variant="secondary" className="mb-4">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Your Business Command Center
-                  </Badge>
-                  <h1 className="text-4xl md:text-6xl font-bold text-center mb-6">
-                    The AI assistant you can trust
-                  </h1>
-                  <p className="text-lg md:text-2xl text-center mb-8 text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                    Nexus puts you in control. Your data stays private, your choices matter, and your AI works for you—not the cloud. No hidden data sharing, no lock-in, just a powerful, transparent assistant you can rely on every day.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <Button size="lg" className="w-full sm:w-auto">
-                      <Link to="/signup" className="flex items-center justify-center w-full">
-                        Start Free Trial
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button asChild variant="ghost" size="lg" className="w-full sm:w-auto">
-                      <Link to="/demo/assistant" className="flex items-center justify-center w-full">
-                        See the Workspace
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <PublicFooter />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Success Formula Section */}
-      <div className="py-12 bg-gradient-to-b from-primary/5 to-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8">
-            <Badge variant="secondary" className="mb-4">
-              <Clock className="w-4 h-4 mr-2" />
-              Fast Time to Value
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+          <div className="text-center">
+            <Badge variant="secondary" className="mb-6">
+              <Shield className="w-4 h-4 mr-2" />
+              Private. Transparent. Yours.
             </Badge>
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              From Setup to Success in Minutes, Not Months
-            </h2>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="outline" className="text-xs">5 Minutes</Badge>
-                  <Target className="w-5 h-5 text-primary" />
-                </div>
-                <CardTitle className="text-xl">The Hook</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-3">
-                  Connect your tools and instantly see real insights
-                </p>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground">
-                    "3 deals at risk worth $45K"
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    One-click actions to save them
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="outline" className="text-xs">1 Week</Badge>
-                  <CheckCircle className="w-5 h-5 text-primary" />
-                </div>
-                <CardTitle className="text-xl">The Trust</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-3">
-                  Accurate predictions you can rely on
-                </p>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground">
-                    Cross-platform intelligence
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Measurable business impact
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+              AI that works with you,<br />
+              <span className="text-primary">not instead of you</span>
+            </h1>
 
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <Badge variant="outline" className="text-xs">1 Month</Badge>
-                  <Sparkles className="w-5 h-5 text-primary" />
-                </div>
-                <CardTitle className="text-xl">The Habit</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-3">
-                  Can't imagine running your business without it
-                </p>
-                <div className="bg-muted/50 rounded-lg p-3">
-                  <p className="text-sm font-medium text-foreground">
-                    "Sales close rate improved 12%"
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    System learns and adapts
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+              Nexus is how AI should work: your data stays private, your decisions stay yours,
+              and AI amplifies what you're already good at. No black boxes. No data harvesting.
+              Just a powerful partner that makes you better at your job.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
+              <Button size="lg" className="text-lg px-8 py-6">
+                <Link to="/signup" className="flex items-center">
+                  Get Started Free
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+                <Link to="/demo/assistant" className="flex items-center">
+                  See How It Works
+                </Link>
+              </Button>
+            </div>
+
+            {/* Trust indicators */}
+            <div className="flex flex-wrap justify-center gap-6 text-sm text-muted-foreground">
+              <span className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Your data never leaves your instance
+              </span>
+              <span className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                See everything AI does
+              </span>
+              <span className="flex items-center gap-2">
+                <UserCheck className="w-4 h-4" />
+                You stay in control
+              </span>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Problem/Solution Section */}
-      <div className="py-16 bg-muted/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Stop Drowning in Tools. Start Running Your Business.
+      {/* What Nexus Is */}
+      <section className="py-20 bg-muted/30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What you're signing up for
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              These are the problems Nexus was built to solve
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            {painPoints.map((item, index) => (
-        <Card key={index} className="border-l-4 border-l-red-500">
-          <CardHeader className="pb-3">
-                  <div className="flex items-center mb-4">
-                    <item.icon className="w-6 h-6 text-red-500 mr-3" />
-                    <CardTitle className="text-lg text-red-600">{item.problem}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-start">
-                      <ArrowRight className="w-4 h-4 text-green-500 mr-2 mt-1 flex-shrink-0" />
-                      <p className="text-sm text-muted-foreground">{item.solution}</p>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {item.benefit}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* AI Assistant - Core Feature Section */}
-      <div className="py-16 bg-gradient-to-b from-primary/10 via-background to-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              <Brain className="w-4 h-4 mr-2" />
-              Powered by AI
-            </Badge>
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Your AI Business Advisor, Always On
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Nexus draws the line across your organization—connecting your data, your processes, and your people. 
-              Then it helps you see how everything works and makes it work better.
+              Clear expectations. No surprises.
             </p>
           </div>
 
-          {/* Main AI Feature Grid */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-12">
-            {/* Left: Chat Interface Preview */}
-            <Card className="border-2 border-primary/20 bg-gradient-to-br from-card to-primary/5">
-              <CardHeader className="pb-3">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <Brain className="w-6 h-6 text-primary" />
-                  </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* What Nexus IS */}
+            <Card className="border-2 border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                  Nexus IS
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
                   <div>
-                    <CardTitle className="text-xl">Conversational Intelligence</CardTitle>
-                    <p className="text-sm text-muted-foreground">Ask anything about your business</p>
+                    <p className="font-medium">A private AI workspace</p>
+                    <p className="text-sm text-muted-foreground">Your conversations, documents, and data stay in your instance. We don't train on your data.</p>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Sample conversation */}
-                  <div className="bg-card/80 backdrop-blur rounded-lg p-4 border">
-                    <p className="text-sm font-medium mb-2 text-muted-foreground">You:</p>
-                    <p className="text-sm">"Why did revenue drop 12% last week?"</p>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">AI that augments your thinking</p>
+                    <p className="text-sm text-muted-foreground">Get better answers, faster research, clearer writing—while you stay in the driver's seat.</p>
                   </div>
-                  <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
-                    <div className="flex items-start gap-2 mb-2">
-                      <Brain className="w-4 h-4 text-primary mt-1" />
-                      <p className="text-sm font-medium text-primary">Nexus AI:</p>
-                    </div>
-                    <p className="text-sm mb-3">
-                      "I analyzed data across Sales, Marketing, and Finance. Here's what I found:"
-                    </p>
-                    <ul className="text-sm space-y-2 mb-3">
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                        <span>Email campaign CTR dropped 40% (deliverability issue detected)</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                        <span>3 enterprise deals pushed to next quarter</span>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5" />
-                        <span>Seasonal pattern matches Q4 2024 (expected recovery in 2 weeks)</span>
-                      </li>
-                    </ul>
-                    <Badge variant="secondary" className="text-xs">
-                      <Target className="w-3 h-3 mr-1" />
-                      3 recommended actions ready
-                    </Badge>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Transparent and accountable</p>
+                    <p className="text-sm text-muted-foreground">See what AI is doing, why it made recommendations, and override anything you disagree with.</p>
                   </div>
-                  <Button className="w-full" size="lg">
-                    <Link to="/demo/assistant" className="flex items-center justify-center w-full">
-                      Try the AI Assistant
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Built to connect your tools</p>
+                    <p className="text-sm text-muted-foreground">Bring context from your existing systems so AI understands your business—without sending data elsewhere.</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Right: Key Capabilities */}
-            <div className="space-y-6">
-              <Card className="border-l-4 border-l-primary">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    <CardTitle className="text-lg">Department-Aware Intelligence</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Specialized AI assistants for Sales, Finance, Operations, and more. Each understands your department's context, metrics, and goals.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="outline">Sales Assistant</Badge>
-                    <Badge variant="outline">Finance Assistant</Badge>
-                    <Badge variant="outline">Operations Assistant</Badge>
-                    <Badge variant="outline">Marketing Assistant</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-l-primary">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Workflow className="w-5 h-5 text-primary" />
-                    <CardTitle className="text-lg">Living Knowledge Base</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Upload documents, SOPs, and playbooks. Nexus learns your business and keeps answers accurate and up-to-date.
-                  </p>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Semantic search across all documents</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Auto-update responses as docs change</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-500" />
-                      <span>Citation tracking for accuracy</span>
-                    </li>
-                  </ul>
-                </CardContent>
-              </Card>
-
-              <Card className="border-l-4 border-l-primary">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2">
-                    <Zap className="w-5 h-5 text-primary" />
-                    <CardTitle className="text-lg">Connected Intelligence</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Nexus connects to all your tools—CRM, accounting, analytics—so AI has complete context for every decision.
-                  </p>
-                  <div className="bg-muted/50 rounded p-3">
-                    <p className="text-xs font-medium mb-2">Real-time data from:</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary" className="text-xs">Salesforce</Badge>
-                      <Badge variant="secondary" className="text-xs">QuickBooks</Badge>
-                      <Badge variant="secondary" className="text-xs">Shopify</Badge>
-                      <Badge variant="secondary" className="text-xs">Google Analytics</Badge>
-                      <Badge variant="secondary" className="text-xs">+100 more</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Three Pillars of AI */}
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <Eye className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <CardTitle>See How It Works</CardTitle>
+            {/* What Nexus is NOT */}
+            <Card className="border-2 border-muted">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <span className="w-6 h-6 rounded-full border-2 border-muted-foreground flex items-center justify-center text-muted-foreground text-sm">✕</span>
+                  Nexus is NOT
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Nexus maps your entire organization—showing connections between departments, processes, and data that you never saw before.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <Brain className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">A replacement for human judgment</p>
+                    <p className="text-sm text-muted-foreground">AI suggests. You decide. Every time.</p>
+                  </div>
                 </div>
-                <CardTitle>Understand Why</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  AI analyzes patterns, identifies root causes, and predicts outcomes—turning your data into clear, actionable insights.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mx-auto mb-3">
-                  <Zap className="w-6 h-6 text-green-600 dark:text-green-400" />
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">Another data-hungry cloud service</p>
+                    <p className="text-sm text-muted-foreground">We minimize what leaves your instance. Your data is not our product.</p>
+                  </div>
                 </div>
-                <CardTitle>Make It Better</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  From recommendations to automated workflows, Nexus doesn't just tell you what to do—it helps you do it.
-                </p>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">Magic that "just works"</p>
+                    <p className="text-sm text-muted-foreground">AI has limits. We're honest about them. You'll get better results when you understand how it works.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-2 h-2 rounded-full bg-muted-foreground mt-2 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-muted-foreground">A locked-in ecosystem</p>
+                    <p className="text-sm text-muted-foreground">Export your data anytime. Use other tools. We earn your continued use, not trap you.</p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Use Cases Section */}
-      <div className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Real Businesses. Real Results.
+      {/* How It Works */}
+      <section className="py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Human + AI, balanced
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See how different businesses use Nexus to solve their biggest challenges
+              The best results come from collaboration, not automation.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
-            {useCases.map((useCase, index) => (
-        <Card key={index} className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-3">
-                  <Badge variant="outline" className="w-fit mb-3">{useCase.type}</Badge>
-                  <CardTitle className="text-lg">{useCase.scenario}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col justify-between gap-4">
-                  <p className="text-muted-foreground text-sm">{useCase.solution}</p>
-                  <div className="flex items-center pt-4">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    <span className="text-sm font-medium text-green-600">{useCase.result}</span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+            <Card className="text-center">
+              <CardHeader>
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <MessageSquare className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle>You ask</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Bring your questions, problems, or half-formed ideas. Nexus meets you where you are.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Brain className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle>AI thinks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Drawing on your context and knowledge, AI analyzes, researches, and drafts—showing its work.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardHeader>
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <UserCheck className="w-8 h-8 text-primary" />
+                </div>
+                <CardTitle>You decide</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground">
+                  Review, edit, approve, or reject. Nothing happens without your say. You build judgment, not dependency.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Trinity Framework */}
-      <div className="py-16 bg-muted/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Badge variant="secondary" className="mb-4">
-              <Brain className="w-4 h-4 mr-2" />
-              Core Technology
-            </Badge>
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              The Complete Operating System
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-6">
-              Nexus connects your entire organization into one intelligent system—where insights flow into actions, 
-              actions generate data, and every cycle makes your business smarter.
-            </p>
-            <div className="inline-block bg-muted/50 rounded-lg px-6 py-3 border border-border">
-              <p className="text-sm font-mono text-muted-foreground">
-                <span className="text-primary font-semibold">Insight</span> → <span className="text-primary font-semibold">Action</span> → <span className="text-primary font-semibold">Execution</span> → <span className="text-primary font-semibold">Learning</span> → <span className="text-primary font-semibold">Sharper Insight</span>
+      {/* Privacy Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <Badge variant="secondary" className="mb-4">
+                <Lock className="w-4 h-4 mr-2" />
+                Privacy by Design
+              </Badge>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                Your data stays with you
+              </h2>
+              <p className="text-lg text-muted-foreground mb-6">
+                Most AI tools send everything to the cloud. Nexus is different.
+                Your instance processes what it can locally, and when it does reach out to AI providers,
+                it sends only what's necessary—never your full context, never your private documents.
               </p>
+              <ul className="space-y-3">
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Conversations stored in your database, not ours</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Documents processed locally when possible</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>No training on your data—ever</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                  <span>Full data export anytime you want</span>
+                </li>
+              </ul>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-6 text-center">
+                <Server className="w-8 h-8 text-primary mx-auto mb-3" />
+                <p className="font-medium">Your Instance</p>
+                <p className="text-sm text-muted-foreground">Data lives here</p>
+              </Card>
+              <Card className="p-6 text-center">
+                <Database className="w-8 h-8 text-primary mx-auto mb-3" />
+                <p className="font-medium">Your Database</p>
+                <p className="text-sm text-muted-foreground">You control access</p>
+              </Card>
+              <Card className="p-6 text-center">
+                <Shield className="w-8 h-8 text-primary mx-auto mb-3" />
+                <p className="font-medium">Encrypted</p>
+                <p className="text-sm text-muted-foreground">At rest and in transit</p>
+              </Card>
+              <Card className="p-6 text-center">
+                <GitBranch className="w-8 h-8 text-primary mx-auto mb-3" />
+                <p className="font-medium">Open Source</p>
+                <p className="text-sm text-muted-foreground">Audit the code</p>
+              </Card>
             </div>
           </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Brain className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle>THINK</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  AI analyzes patterns across your entire business, predicts trends, and surfaces opportunities before your competitors see them.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Predictive analytics for revenue and churn
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Next-best-action recommendations
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Risk detection and opportunity alerts
-                  </li>
-                </ul>
-                <Button variant="ghost" size="sm">
-                  <Link to="/demo/trinity-brain" className="flex items-center">
-                    See AI in Action
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Eye className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle>SEE</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Unified dashboards show real-time metrics across every department. From sales pipelines to cash flow, see everything in one place.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Cross-department business health metrics
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Real-time KPI tracking and alerts
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Customizable views for each role
-                  </li>
-                </ul>
-                <Button variant="ghost" size="sm">
-                  <Link to="/demo/cross-departmental-intelligence" className="flex items-center">
-                    View Dashboard Demo
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 hover:border-primary/50 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                  <Zap className="w-6 h-6 text-primary" />
-                </div>
-                <CardTitle>ACT</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Execute decisions instantly with automated workflows. From follow-up emails to task assignments, Nexus handles execution while you focus on strategy.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground mb-4">
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    One-click campaign launches and approvals
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Automated task routing and follow-ups
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-                    Decision journal tracks outcomes
-                  </li>
-                </ul>
-                <Button variant="ghost" size="sm">
-                  <Link to="/demo/automated-workflow" className="flex items-center">
-                    Watch Automation Demo
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Integrations Section */}
-      <div className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Connect Everything
+      {/* What You Can Do */}
+      <section className="py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What you'll actually use it for
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Nexus integrates with 100+ tools you already use. No more data silos, no more manual work.
+              Real work, done better.
             </p>
           </div>
 
-          {/* Integration Categories */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <TrendingUp className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <CardTitle className="text-lg">E-commerce</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Shopify, WooCommerce, Stripe, PayPal
-                </p>
-                <Badge variant="secondary" className="text-xs">Real-time sync</Badge>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-6 h-6 text-green-600 dark:text-green-400" />
-                </div>
-                <CardTitle className="text-lg">CRM & Sales</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Salesforce, HubSpot, Pipedrive, Zoho
-                </p>
-                <Badge variant="secondary" className="text-xs">Lead tracking</Badge>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <CardTitle className="text-lg">Analytics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Google Analytics, Mixpanel, Amplitude
-                </p>
-                <Badge variant="secondary" className="text-xs">Data insights</Badge>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-lg flex items-center justify-center mx-auto mb-4">
-                  <Workflow className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <CardTitle className="text-lg">Automation</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Zapier, n8n, Make, Microsoft Power Automate
-                </p>
-                <Badge variant="secondary" className="text-xs">Workflow builder</Badge>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Integration Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-            {integrations.map((integration, index) => (
-              <div key={index} className="flex flex-col items-center p-4 bg-card border rounded-lg hover:border-primary/50 transition-colors">
-                <div className="w-8 h-8 bg-muted rounded flex items-center justify-center mb-2">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <span className="text-xs font-medium text-center">{integration.name}</span>
-                <span className="text-xs text-muted-foreground">{integration.category}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Integration Benefits */}
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-l-4 border-l-primary">
-              <CardHeader className="pb-3">
-                <div className="flex items-center mb-4">
-                  <Zap className="w-6 h-6 text-primary mr-3" />
-                  <CardTitle className="text-lg">One-Click Setup</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Connect your tools in minutes with our guided setup process. No technical expertise required.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    OAuth 2.0 secure authentication
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Pre-built data mappings
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Real-time sync capabilities
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-primary">
-              <CardHeader className="pb-3">
-                <div className="flex items-center mb-4">
-                  <Shield className="w-6 h-6 text-primary mr-3" />
-                  <CardTitle className="text-lg">Enterprise Security</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Enterprise-grade security with encryption, audit logging, and role-based access control.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    AES-256 encryption at rest
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    TLS 1.3 encryption in transit
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Role-based access control
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    SSO & MFA support
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Audit logging
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            <Card className="border-l-4 border-l-primary">
-              <CardHeader className="pb-3">
-                <div className="flex items-center mb-4">
-                  <Smartphone className="w-6 h-6 text-primary mr-3" />
-                  <CardTitle className="text-lg">Mobile Ready</CardTitle>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Access your unified business data anywhere with our responsive mobile interface.
-                </p>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Native mobile app
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Offline capability
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Push notifications
-                  </li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* CTA for Integrations */}
-          <div className="text-center mt-12">
-            <Button size="lg" className="mr-4">
-              <Link to="/integrations" className="flex items-center">
-                View All Integrations
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg">
-              <Link to="/demo/integrations" className="flex items-center">
-                <Play className="mr-2 h-4 w-4" />
-                See Integration Demo
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="py-16 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Everything You Need to Scale
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From startup to enterprise, Nexus grows with your business
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
               {
-                icon: TrendingUp,
-                title: "Predictive Analytics",
-                description: "Forecast trends and opportunities before they happen",
-                example: "Predict which customers will churn next month"
+                title: "Research & Analysis",
+                description: "Quickly understand complex topics, compare options, and find answers buried in your documents.",
               },
               {
-                icon: Users,
-                title: "Team Coordination",
-                description: "Seamless collaboration across all departments",
-                example: "Automatically assign tasks based on workload"
+                title: "Writing & Communication",
+                description: "Draft emails, reports, and proposals that sound like you—just faster and clearer.",
               },
               {
-                icon: Target,
-                title: "Goal Optimization",
-                description: "Automatically adjust strategies to hit targets",
-                example: "AI suggests marketing budget reallocation"
+                title: "Decision Support",
+                description: "Get a second opinion on strategy, see blind spots, and pressure-test your thinking.",
               },
               {
-                icon: Sparkles,
-                title: "AI-Powered Insights",
-                description: "Get actionable recommendations 24/7",
-                example: "Daily email with 3 priority actions"
+                title: "Process Documentation",
+                description: "Turn tribal knowledge into clear SOPs that your team can actually follow.",
               },
               {
-                icon: Eye,
-                title: "Real-time Monitoring",
-                description: "Track performance across all business metrics",
-                example: "Live dashboard updates every 5 minutes"
+                title: "Data Interpretation",
+                description: "Make sense of spreadsheets, reports, and metrics without becoming a data scientist.",
               },
               {
-                icon: Zap,
-                title: "Automated Workflows",
-                description: "Eliminate repetitive tasks and focus on growth",
-                example: "Auto-follow up with leads after 24 hours"
-              }
-            ].map((feature, index) => (
-              <Card key={index} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mb-3">
-                    <feature.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <CardTitle className="text-lg">{feature.title}</CardTitle>
+                title: "Learning & Onboarding",
+                description: "Get up to speed on new topics or help new team members understand how things work.",
+              },
+            ].map((item, index) => (
+              <Card key={index} className="hover:border-primary/50 transition-colors">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">{item.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground mb-3">{feature.description}</p>
-                  <Badge variant="secondary" className="text-xs">
-                    {feature.example}
-                  </Badge>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
                 </CardContent>
               </Card>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* CTA Section */}
-      <div className="py-16 bg-primary/5">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <Badge variant="secondary" className="mb-4">
-            <Sparkles className="w-4 h-4 mr-2" />
-            No Credit Card Required
-          </Badge>
-          <h2 className="text-3xl font-bold text-foreground mb-4">
-            Ready to Transform Your Business?
+      <section className="py-20 bg-primary/5">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Ready to work with AI the right way?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join hundreds of businesses using Nexus as their command center. Get real insights in 10 minutes.
+            No credit card required. No data harvesting. Just a better way to work.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg">
-              <Link to="/signup" className="flex items-center justify-center w-full">
-                Start Your Free Trial
-                <ArrowRight className="ml-2 h-4 w-4" />
+            <Button size="lg" className="text-lg px-8 py-6">
+              <Link to="/signup" className="flex items-center">
+                Get Started Free
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
-            <Button variant="outline" size="lg">
-              <Link to="/pricing" className="flex items-center justify-center w-full">
+            <Button variant="outline" size="lg" className="text-lg px-8 py-6">
+              <Link to="/pricing" className="flex items-center">
                 View Pricing
               </Link>
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-4">
-            14-day free trial • Full feature access • Cancel anytime
+          <p className="text-sm text-muted-foreground mt-6">
+            14-day free trial • Full access • Cancel anytime • Export your data
           </p>
         </div>
-      </div>
+      </section>
 
       {/* Footer */}
       <footer className="bg-card border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Company Info */}
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center mb-4">
-                <img 
-                  src="/Nexus/nexus-horizontal-160x48-transparent.png" 
-                  alt="Nexus by Marcoby" 
+                <img
+                  src="/Nexus/nexus-horizontal-160x48-transparent.png"
+                  alt="Nexus by Marcoby"
                   className="h-8 w-auto"
                 />
               </div>
               <p className="text-muted-foreground text-sm mb-4">
-                Nexus is your business operating system—a skill-bridge that helps entrepreneurs see, act, and think through every decision with AI-powered intelligence and automated execution.
+                AI that works with you, not instead of you. Private, transparent, and built to make you better at what you do.
               </p>
               <p className="text-muted-foreground text-sm">
                 &copy; {new Date().getFullYear()} Marcoby. All rights reserved.
               </p>
             </div>
 
-            {/* Product Links */}
             <div>
               <h3 className="font-semibold text-foreground mb-4">Product</h3>
               <ul className="space-y-2 text-sm">
@@ -934,7 +401,7 @@ export const LandingPage: React.FC = () => {
                   </Link>
                 </li>
                 <li>
-                  <Link to="/demo/nexus-operating-system" className="text-muted-foreground hover:text-primary transition-colors">
+                  <Link to="/demo/assistant" className="text-muted-foreground hover:text-primary transition-colors">
                     Demo
                   </Link>
                 </li>
@@ -951,69 +418,34 @@ export const LandingPage: React.FC = () => {
               </ul>
             </div>
 
-            {/* Support Links */}
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Support</h3>
+              <h3 className="font-semibold text-foreground mb-4">Company</h3>
               <ul className="space-y-2 text-sm">
                 <li>
-                  <Link to="/help" className="text-muted-foreground hover:text-primary transition-colors">
-                    Help Center
+                  <Link to="/help/about" className="text-muted-foreground hover:text-primary transition-colors">
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/legal/privacy" className="text-muted-foreground hover:text-primary transition-colors">
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/legal/terms" className="text-muted-foreground hover:text-primary transition-colors">
+                    Terms
                   </Link>
                 </li>
                 <li>
                   <Link to="/help/contact" className="text-muted-foreground hover:text-primary transition-colors">
-                    Contact Us
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/help/faq" className="text-muted-foreground hover:text-primary transition-colors">
-                    FAQ
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/help/documentation" className="text-muted-foreground hover:text-primary transition-colors">
-                    Documentation
+                    Contact
                   </Link>
                 </li>
               </ul>
-            </div>
-          </div>
-
-          {/* Legal Links */}
-          <div className="border-t mt-8 pt-8">
-            <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-              <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                <Link to="/legal/privacy" className="hover:text-primary transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link to="/legal/terms" className="hover:text-primary transition-colors">
-                  Terms of Service
-                </Link>
-                <Link to="/legal/cookies" className="hover:text-primary transition-colors">
-                  Cookie Policy
-                </Link>
-                <Link to="/legal/security" className="hover:text-primary transition-colors">
-                  Security
-                </Link>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Link to="https://twitter.com/marcobyhq" className="text-muted-foreground hover:text-primary transition-colors">
-                  <span className="sr-only">Twitter</span>
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
-                  </svg>
-                </Link>
-                <Link to="https://linkedin.com/company/marcoby" className="text-muted-foreground hover:text-primary transition-colors">
-                  <span className="sr-only">LinkedIn</span>
-                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
-                  </svg>
-                </Link>
-              </div>
             </div>
           </div>
         </div>
       </footer>
     </div>
   );
-}; 
+};
