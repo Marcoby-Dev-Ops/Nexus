@@ -31,6 +31,8 @@ const userContactsRoutes = require('./src/routes/user-contacts');
 const meRoutes = require('./src/routes/me');
 const authRoutes = require('./src/routes/auth');
 const companyRoutes = require('./src/routes/companies');
+const dbRoutes = require('./src/routes/db');
+const rpcRoutes = require('./src/routes/rpc');
 
 const app = express();
 const server = createServer(app);
@@ -295,6 +297,8 @@ app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
 app.use('/api/user-contacts', userContactsRoutes);
 app.use('/api/me', meRoutes);
+app.use('/api/db', dbLimiter, dbRoutes);
+app.use('/api/rpc', dbLimiter, rpcRoutes);
 
 // Graceful shutdown handling
 const gracefulShutdown = async (signal) => {
