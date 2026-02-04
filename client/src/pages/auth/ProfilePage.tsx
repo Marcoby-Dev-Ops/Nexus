@@ -259,11 +259,18 @@ export default function ProfilePage() {
             <Avatar className="h-20 w-20">
               <AvatarImage src={user.avatarUrl} />
               <AvatarFallback className="text-lg">
-                {user.firstName?.[0]}{user.lastName?.[0] || user.email[0].toUpperCase()}
+                {/* Defensive: fallback to email if names are missing */}
+                {user.firstName?.[0] || user.email?.[0]?.toUpperCase() || '?'}
+                {user.lastName?.[0] || ''}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="text-lg font-semibold">{user.firstName} {user.lastName}</h3>
+              <h3 className="text-lg font-semibold">
+                {/* Defensive: fallback to display_name or email if names are missing */}
+                {(user.firstName || user.lastName)
+                  ? `${user.firstName || ''} ${user.lastName || ''}`.trim()
+                  : (user.displayName || user.email || 'User')}
+              </h3>
               <p className="text-muted-foreground">{user.email}</p>
             </div>
           </div>
