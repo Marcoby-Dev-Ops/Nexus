@@ -319,6 +319,87 @@ router.post('/thoughts/insert', authenticateToken, async (req, res) => {
 });
 
 /**
+ * POST /api/vector/thoughts/semantic - Semantic search thoughts by text query
+ * Combines embedding generation + vector search in one call
+ */
+router.post('/thoughts/semantic', authenticateToken, async (req, res) => {
+  try {
+    const { query: searchQuery, match_count = 5 } = req.body;
+    const userId = req.user.id;
+
+    if (!searchQuery || typeof searchQuery !== 'string') {
+      throw createError('query must be a non-empty string', 400);
+    }
+
+    if (match_count < 1 || match_count > 20) {
+      throw createError('match_count must be between 1 and 20', 400);
+    }
+
+    // Step 1: Generate embedding for the search query
+    const embeddingResponse = await aiGateway.generateEmbeddings({
+      text: searchQuery,
+      model: 'text-embedding-3-small',
+      tenantId: req.user?.company_id || 'default-tenant',
+      userId: userId
+    });
+
+    if (!embeddingResponse.success || !embeddingResponse.data?.embedding) {
+      // Fallback: return empty results if embedding fails (don't block the chat)
+      logger.warn('Embedding generation failed, returning empty semantic results');
+      return res.json({ success: true, data: [] });
+    }
+
+    const queryEmbedding = embeddingResponse.data.embedding;
+    const vectorString = `[${queryEmbedding.join(',')}]`;
+
+    // Step 2: Search thoughts by vector similarity
+    const sql = `
+      SELECT
+        id,
+        title,
+        content,
+        category,
+        tags,
+        1 - (embedding <=> $1::vector) as similarity
+      FROM thoughts
+      WHERE user_id = $2
+        AND embedding IS NOT NULL
+      ORDER BY embedding <=> $1::vector
+      LIMIT $3
+    `;
+
+    const result = await query(sql, [vectorString, userId, match_count]);
+
+    if (result.error) {
+      logger.error('Semantic search query failed:', result.error);
+      return res.json({ success: true, data: [] });
+    }
+
+    // Filter by minimum similarity threshold (0.5)
+    const relevantThoughts = (result.data || []).filter(t => t.similarity > 0.5);
+
+    logger.info('Semantic thoughts search', {
+      userId,
+      query: searchQuery.substring(0, 50),
+      resultsFound: relevantThoughts.length
+    });
+
+    res.json({
+      success: true,
+      data: relevantThoughts
+    });
+
+  } catch (error) {
+    logger.error('Semantic thoughts search error:', error);
+    // Don't fail the request - return empty results
+    res.json({
+      success: true,
+      data: []
+    });
+  }
+});
+
+/**
  * GET /api/vector/stats - Get vector search statistics
  */
 router.get('/stats', authenticateToken, async (req, res) => {

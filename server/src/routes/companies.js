@@ -7,6 +7,135 @@ const { createError } = require('../middleware/errorHandler');
 const router = express.Router();
 
 /**
+ * GET /api/companies/current - Get user's current company
+ */
+router.get('/current', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's company via their profile
+    const sql = `
+      SELECT c.*
+      FROM companies c
+      INNER JOIN user_profiles up ON c.id = up.company_id
+      WHERE up.user_id = $1
+      LIMIT 1
+    `;
+
+    const result = await query(sql, [userId]);
+
+    if (result.error) {
+      throw createError(`Failed to fetch company: ${result.error}`, 500);
+    }
+
+    if (!result.data || result.data.length === 0) {
+      // No company yet - return empty but successful
+      return res.json({ success: true, data: null });
+    }
+
+    res.json({ success: true, data: result.data[0] });
+  } catch (error) {
+    logger.error('Company GET /current error:', error);
+    res.status(error.status || 500).json({
+      success: false,
+      error: error.message || 'Failed to fetch company'
+    });
+  }
+});
+
+/**
+ * PATCH /api/companies/current - Update user's current company
+ */
+router.patch('/current', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const updateData = req.body;
+
+    logger.info('Updating current company', { userId, updateFields: Object.keys(updateData) });
+
+    // Get user's company ID
+    const profileSql = `SELECT company_id FROM user_profiles WHERE user_id = $1`;
+    const profileResult = await query(profileSql, [userId]);
+
+    if (profileResult.error || !profileResult.data || profileResult.data.length === 0) {
+      throw createError('No company found for user', 404);
+    }
+
+    const companyId = profileResult.data[0].company_id;
+    if (!companyId) {
+      throw createError('No company associated with user', 404);
+    }
+
+    // Build update query dynamically
+    const updateFields = [];
+    const params = [];
+    let paramIndex = 1;
+
+    const allowedFields = [
+      'name', 'domain', 'industry', 'size', 'description', 'website',
+      'logo_url', 'stage', 'settings'
+    ];
+
+    Object.entries(updateData).forEach(([key, value]) => {
+      if (allowedFields.includes(key)) {
+        if (typeof value === 'object' && value !== null) {
+          updateFields.push(`${key} = $${paramIndex}`);
+          params.push(JSON.stringify(value));
+        } else {
+          updateFields.push(`${key} = $${paramIndex}`);
+          params.push(value);
+        }
+        paramIndex++;
+      }
+    });
+
+    if (updateFields.length === 0) {
+      throw createError('No valid fields to update', 400);
+    }
+
+    params.push(companyId);
+
+    const updateSql = `
+      UPDATE companies
+      SET ${updateFields.join(', ')}, updated_at = NOW()
+      WHERE id = $${paramIndex}
+      RETURNING *
+    `;
+
+    const result = await query(updateSql, params);
+
+    if (result.error) {
+      throw createError(`Failed to update company: ${result.error}`, 500);
+    }
+
+    // Audit company update
+    try {
+      const AuditService = require('../services/AuditService');
+      await AuditService.recordEvent({
+        eventType: 'company_update',
+        objectType: 'company',
+        objectId: companyId,
+        actorId: userId,
+        endpoint: '/api/companies/current',
+        ip: req.ip,
+        userAgent: req.get('User-Agent') || null,
+        data: { updatedFields: Object.keys(updateData) }
+      });
+    } catch (auditErr) {
+      logger.warn('Failed to record audit for company update', { error: auditErr?.message || auditErr });
+    }
+
+    res.json({ success: true, data: result.data[0] });
+  } catch (error) {
+    logger.error('Company PATCH /current error:', error);
+    res.status(error.status || 500).json({
+      success: false,
+      error: error.message || 'Failed to update company'
+    });
+  }
+});
+
+/**
  * GET /api/companies/:id - Get company by ID
  */
 router.get('/:id', authenticateToken, async (req, res) => {

@@ -53,12 +53,12 @@ const integrationRoutes = require('./src/routes/integrations');
 const atomRegistryRoutes = require('./src/routes/atom-registry');
 const authRoutes = require('./src/routes/auth');
 const companyRoutes = require('./src/routes/companies');
-const oauthRoutes = require('./routes/oauth');
+const oauthRoutes = require('./src/routes/oauth');
 const applySuggestionRoutes = require('./src/routes/apply-suggestion');
 
 // Import AI Gateway routes
-const aiGatewayRoutes = require('./routes/ai-gateway');
-const aiInsightsRoutes = require('./routes/ai-insights');
+const aiGatewayRoutes = require('./src/routes/ai-gateway');
+const aiInsightsRoutes = require('./src/routes/ai-insights');
 
 // Import thoughts routes
 const thoughtsRoutes = require('./src/routes/thoughts');
@@ -73,7 +73,10 @@ const intakeRoutes = require('./src/routes/intake');
 const ticketManagementRoutes = require('./src/routes/ticket-management');
 
 // Import CKB routes
-const ckbRoutes = require('./routes/ckb');
+const ckbRoutes = require('./src/routes/ckb');
+
+// Import Audit routes
+const auditRoutes = require('./src/routes/audit');
 
 // Import journey intake routes
 const journeyIntakeRoutes = require('./src/routes/journey-intake');
@@ -399,6 +402,7 @@ app.use('/api/ticket-management', ticketManagementRoutes);
 // Analytics and CKB routes
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ckb', ckbRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Socket.IO test routes (development only)
 if (process.env.NODE_ENV !== 'production') {

@@ -5,10 +5,191 @@ const { logger } = require('../utils/logger');
 const { authLimiter } = require('../middleware/rateLimit');
 
 const AuditService = require('../services/AuditService');
-const router = Router();
+const creditService = require('../../services/CreditService'); // Import CreditService
 
-// Returns a minimal, safe contact payload for the authenticated user.
+const router = Router();
 router.use(authenticateToken);
+
+/**
+ * GET /me
+ * Returns the current user's profile information
+ */
+router.get('/', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const jwtPayload = req.user.jwtPayload || { sub: userId };
+
+    // Fetch user profile
+    const profileResult = await query(
+      `SELECT
+        up.*,
+        u.email,
+        u.name as auth_name
+       FROM user_profiles up
+       LEFT JOIN users u ON up.user_id = u.id
+       WHERE up.user_id = $1
+       LIMIT 1`,
+      [userId],
+      jwtPayload
+    );
+
+    if (!profileResult.data || profileResult.data.length === 0) {
+      // Return minimal info if no profile exists yet
+      return res.json({
+        success: true,
+        data: {
+          user_id: userId,
+          display_name: req.user.name || null,
+          email: req.user.email || null
+        }
+      });
+    }
+
+    const profile = profileResult.data[0];
+    return res.json({
+      success: true,
+      data: {
+        user_id: profile.user_id,
+        display_name: profile.display_name || profile.first_name || profile.auth_name,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        email: profile.email,
+        role: profile.role,
+        job_title: profile.job_title,
+        preferences: profile.preferences || {},
+        company_id: profile.company_id
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to fetch /me', { error });
+    return res.status(500).json({ success: false, error: 'Failed to load profile' });
+  }
+});
+
+/**
+ * PATCH /me
+ * Updates the current user's profile information
+ */
+router.patch('/', async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const jwtPayload = req.user.jwtPayload || { sub: userId };
+    const updates = req.body;
+
+    // Build dynamic update query
+    const allowedFields = ['display_name', 'first_name', 'last_name', 'role', 'job_title', 'preferences'];
+    const updateParts = [];
+    const values = [];
+    let paramIndex = 1;
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (allowedFields.includes(key)) {
+        updateParts.push(`${key} = $${paramIndex}`);
+        values.push(key === 'preferences' ? JSON.stringify(value) : value);
+        paramIndex++;
+      }
+    }
+
+    if (updateParts.length === 0) {
+      return res.status(400).json({ success: false, error: 'No valid fields to update' });
+    }
+
+    values.push(userId);
+
+    // Check if profile exists
+    const existsResult = await query(
+      `SELECT id FROM user_profiles WHERE user_id = $1`,
+      [userId],
+      jwtPayload
+    );
+
+    let result;
+    if (existsResult.data && existsResult.data.length > 0) {
+      // Update existing profile
+      result = await query(
+        `UPDATE user_profiles
+         SET ${updateParts.join(', ')}, updated_at = NOW()
+         WHERE user_id = $${paramIndex}
+         RETURNING *`,
+        values,
+        jwtPayload
+      );
+    } else {
+      // Create new profile
+      const insertFields = ['user_id'];
+      const insertValues = [userId];
+      const insertPlaceholders = ['$1'];
+      let insertIndex = 2;
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (allowedFields.includes(key)) {
+          insertFields.push(key);
+          insertValues.push(key === 'preferences' ? JSON.stringify(value) : value);
+          insertPlaceholders.push(`$${insertIndex}`);
+          insertIndex++;
+        }
+      }
+
+      result = await query(
+        `INSERT INTO user_profiles (${insertFields.join(', ')})
+         VALUES (${insertPlaceholders.join(', ')})
+         RETURNING *`,
+        insertValues,
+        jwtPayload
+      );
+    }
+
+    if (result.error) {
+      throw new Error(result.error);
+    }
+
+    logger.info('User profile updated', { userId, fields: Object.keys(updates) });
+    return res.json({ success: true, data: result.data[0] });
+  } catch (error) {
+    logger.error('Failed to update /me', { error });
+    return res.status(500).json({ success: false, error: 'Failed to update profile' });
+  }
+});
+
+/**
+ * GET /me/subscription
+ * Returns current plan, credit balance, and capabilities.
+ * Used by frontend to gate UI features and show quota.
+ * Auto-provisions Explorer plan for new users on first access.
+ */
+router.get('/subscription', authLimiter, async (req, res) => {
+  try {
+    let status = await creditService.getUserStatus(req.user.id);
+
+    // If no subscription exists, provision the default Explorer plan
+    if (!status?.subscription) {
+      await creditService.ensureDefaultSubscription(req.user.id);
+      // Re-fetch after provisioning
+      status = await creditService.getUserStatus(req.user.id);
+    }
+
+    // Default fallback if still no subscription (shouldn't happen after ensure)
+    const plan = status?.subscription || {
+      name: 'Explorer',
+      monthly_credit_allowance: 100,
+      features: { tier: 'basic', allowed_models: ['gpt-4o-mini'], capabilities: ['chat', 'search'] }
+    };
+
+    const payload = {
+      plan_name: plan.plan_name || plan.name,
+      balance_cents: status?.balance_cents || 100,
+      monthly_allowance: plan.monthly_credit_allowance,
+      capabilities: plan.features?.capabilities || ['chat'],
+      tier: plan.features?.tier || 'basic',
+      can_inference: status?.can_run_inference ?? true // Default to true for new users with credits
+    };
+
+    return res.json({ success: true, data: payload });
+  } catch (error) {
+    logger.error('Failed to fetch subscription', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch subscription status' });
+  }
+});
 
 // Apply stricter rate limiting to contact endpoint to reduce PII exposure risk
 router.get('/contact', authLimiter, async (req, res) => {

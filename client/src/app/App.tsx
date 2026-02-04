@@ -14,7 +14,7 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 // Core pages - only what we need for foundation
 import { LandingPage } from '@/shared/pages/LandingPage';
-import { Dashboard } from '@/pages';
+// import { Dashboard } from '@/pages';
 import Login from '@/pages/auth/Login';
 import Signup from '@/pages/auth/Signup';
 import ProfilePage from '@/pages/auth/ProfilePage';
@@ -25,8 +25,9 @@ import { AdminPage } from '@/pages/admin/AdminPage';
 import AuthDebug from '@/pages/auth/AuthDebug';
 import JourneysPage from '@/pages/journey/JourneysPage';
 import BusinessIdentityJourneyPage from '@/pages/journey/BusinessIdentityJourneyPage';
-import IdentityPage from '@/pages/IdentityPage';
+import KnowledgePage from '@/pages/knowledge/KnowledgePage';
 import ChatPage from '@/pages/chat/ChatPage';
+import AuditPage from '@/pages/audit/AuditPage';
 import CoolifyOpsPage from '@/pages/operations/CoolifyOpsPage';
 import AtomModelPage from '@/pages/AtomModelPage';
 
@@ -75,11 +76,7 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route 
         path="/dashboard" 
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } 
+        element={<Navigate to="/chat" replace />}
       />
       <Route 
         path="/profile" 
@@ -118,14 +115,14 @@ function AppRoutes() {
         } 
       />
       
-      {/* Identity route */}
-      <Route 
-        path="/identity" 
+      {/* Knowledge - What Nexus knows about you */}
+      <Route
+        path="/knowledge"
         element={
           <ProtectedRoute>
-            <IdentityPage />
+            <KnowledgePage />
           </ProtectedRoute>
-        } 
+        }
       />
       
       {/* Journey routes */}
@@ -155,7 +152,17 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       />
-      
+
+      {/* Audit & Transparency */}
+      <Route
+        path="/audit"
+        element={
+          <ProtectedRoute>
+            <AuditPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* Integrations routes */}
       <Route 
         path="/integrations" 
@@ -202,10 +209,10 @@ function AppRoutes() {
         } 
       />
       
-      {/* Redirect all other routes to dashboard */}
+      {/* Redirect all other routes to chat */}
       <Route 
         path="*" 
-        element={<Navigate to="/dashboard" replace />}
+        element={<Navigate to="/chat" replace />}
       />
     </Routes>
   );
