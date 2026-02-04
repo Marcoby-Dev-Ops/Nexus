@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
 
 -- Seed default plans (Personas/Editions)
 INSERT INTO subscription_plans (id, name, price_cents, monthly_credit_allowance, features) VALUES
-('explorer', 'Explorer (Free)', 0, 100, '{"tier": "basic", "allowed_models": ["gpt-4o-mini"], "capabilities": ["chat", "search"]}'),
-('assistant', 'Assistant (Basic)', 1000, 100000, '{"tier": "standard", "allowed_models": ["gpt-4o-mini"], "capabilities": ["chat", "search", "docs"]}'), -- $10/mo
-('professional', 'Professional (Power)', 3000, 500000, '{"tier": "premium", "allowed_models": ["gpt-4o", "gpt-4o-mini"], "capabilities": ["chat", "search", "analysis", "coding"]}'), -- $30/mo
+('explorer', 'Explorer (Free)', 0, 100, '{"tier": "basic", "allowed_models": ["zai/glm-4.7"], "capabilities": ["chat", "search"]}'),
+('assistant', 'Assistant (Basic)', 1000, 100000, '{"tier": "standard", "allowed_models": ["zai/glm-4.7"], "capabilities": ["chat", "search", "docs"]}'), -- $10/mo
+('professional', 'Professional (Power)', 3000, 500000, '{"tier": "premium", "allowed_models": ["gpt-4o", "zai/glm-4.7"], "capabilities": ["chat", "search", "analysis", "coding"]}'), -- $30/mo
 ('enterprise', 'Enterprise', 100000, -1, '{"tier": "unlimited", "allowed_models": ["all"], "capabilities": ["all"]}')
 ON CONFLICT (id) DO NOTHING;
 

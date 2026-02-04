@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS ai_conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL DEFAULT 'Untitled Conversation',
-    model VARCHAR(100) DEFAULT 'gpt-4',
+    model VARCHAR(100) DEFAULT 'zai/glm-4.7',
     system_prompt TEXT,
     messages JSONB NOT NULL DEFAULT '[]'::jsonb,
     message_count INTEGER NOT NULL DEFAULT 0 CHECK (message_count >= 0),

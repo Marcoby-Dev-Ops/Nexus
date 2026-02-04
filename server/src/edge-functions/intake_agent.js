@@ -118,7 +118,7 @@ Focus on understanding the user's business context and providing actionable, int
 `;
 
     const aiResponse = await processWithLLM(analysisPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.3,
       maxTokens: 2000
     });
@@ -204,7 +204,7 @@ Focus on matching the user's needs with the most capable and appropriate agent.
 `;
 
     const aiResponse = await processWithLLM(selectionPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.2,
       maxTokens: 1000
     });
@@ -279,7 +279,7 @@ Focus on selecting a playbook that will guide the user to successful completion 
 `;
 
     const aiResponse = await processWithLLM(selectionPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.3,
       maxTokens: 1200
     });
@@ -361,7 +361,7 @@ Focus on creating a ticket that clearly captures the user's intent and provides 
 `;
 
     const aiResponse = await processWithLLM(ticketPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.3,
       maxTokens: 1500
     });

@@ -9,7 +9,7 @@ const { logger } = require('../utils/logger');
  * Process a request with LLM for intelligent analysis
  * @param {string} prompt - The prompt to send to the LLM
  * @param {Object} options - Processing options
- * @param {string} options.model - LLM model to use (default: 'gpt-4')
+ * @param {string} options.model - LLM model to use (default: 'zai/glm-4.7')
  * @param {number} options.temperature - Temperature for response generation (default: 0.3)
  * @param {number} options.maxTokens - Maximum tokens for response (default: 1000)
  * @returns {Promise<Object>} - LLM response with success status and data
@@ -17,7 +17,7 @@ const { logger } = require('../utils/logger');
 async function processWithLLM(prompt, options = {}) {
   try {
     const {
-      model = 'gpt-4',
+      model = 'zai/glm-4.7',
       temperature = 0.3,
       maxTokens = 1000
     } = options;

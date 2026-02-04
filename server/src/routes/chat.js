@@ -7,33 +7,18 @@ const { createError } = require('../middleware/errorHandler');
 const { query } = require('../database/connection');
 const { logger } = require('../utils/logger');
 
-// OpenClaw Integration
-const openClawAPI = {
-    sendMessage: async (userId, message, context) => {
-        try {
-            // TODO: Replace with actual OpenClaw API call
-            const response = await fetch('http://localhost:3000/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    userId,
-                    message,
-                    context
-                })
-            });
-            return await response.json();
-        } catch (error) {
-            logger.error('OpenClaw API call failed', {
-                error: error.message,
-                userId,
-                context
-            });
-            throw error;
-        }
-    }
-};
+// Initialize AI Gateway
+let aiGateway;
+try {
+    const { NexusAIGatewayService } = require('../../services/NexusAIGatewayService');
+    aiGateway = new NexusAIGatewayService({
+        enableOpenClaw: true,
+        enableOpenAI: true,
+        enableUsageTracking: true
+    });
+} catch (error) {
+    logger.error('Failed to initialize NexusAIGatewayService in chat route', error);
+}
 
 const router = express.Router();
 
@@ -51,32 +36,67 @@ router.post('/message', authenticateToken, async (req, res) => {
             throw createError('Message is required', 400);
         }
 
-        // Send message to OpenClaw
-        const response = await openClawAPI.sendMessage(userId, message, {
-            ...context,
-            authentikToken: req.headers.authorization
+        if (!aiGateway) {
+            throw createError('AI Service Unavailable', 503);
+        }
+
+        // Call AI Gateway
+        // We act as a single-turn chat for now, or the client should send history.
+        // For V1 "single agent" wrapper:
+        const aiResponse = await aiGateway.chat({
+            messages: [{ role: 'user', content: message }],
+            model: 'zai/glm-4.7', // Default to the cost-effective model
+            userId: userId,
+            tenantId: req.user.company_id || 'default'
         });
 
-        // Store the message in the database
+        if (!aiResponse.success) {
+            throw createError(aiResponse.error || 'AI processing failed', 500);
+        }
+
+        const reply = aiResponse.data.message;
+
+        // Store conversation
+        // Using correct schema: ai_conversations with messages JSONB
+        const conversationMessages = [
+            { role: 'user', content: message, timestamp: new Date().toISOString() },
+            { role: 'assistant', content: reply, timestamp: new Date().toISOString() }
+        ];
+
         const insertResult = await query(
-            `INSERT INTO ai_conversations (user_id, message, response, metadata)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO ai_conversations (
+                user_id, 
+                title, 
+                messages, 
+                model, 
+                message_count, 
+                metadata
+             )
+             VALUES ($1, $2, $3, $4, $5, $6)
              RETURNING id, created_at`,
-            [userId, message, response.reply, JSON.stringify(context)],
+            [
+                userId, 
+                message.substring(0, 50) + (message.length > 50 ? '...' : ''), // Use first part of message as title
+                JSON.stringify(conversationMessages),
+                'zai/glm-4.7',
+                2,
+                JSON.stringify(context)
+            ],
             req.user?.jwtPayload
         );
 
         if (insertResult.error) {
-            throw createError('Failed to save conversation', 500);
+            logger.error('Failed to save conversation', { error: insertResult.error });
+            // Don't fail the request if just DB save failed, return the reply
         }
 
         res.json({
             success: true,
             data: {
-                conversationId: insertResult.data[0].id,
+                conversationId: insertResult.data ? insertResult.data[0].id : null,
                 message,
-                reply: response.reply,
-                timestamp: insertResult.data[0].created_at
+                reply,
+                timestamp: new Date().toISOString()
             }
         });
     } catch (error) {

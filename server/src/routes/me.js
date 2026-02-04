@@ -172,7 +172,7 @@ router.get('/subscription', authLimiter, async (req, res) => {
     const plan = status?.subscription || {
       name: 'Explorer',
       monthly_credit_allowance: 100,
-      features: { tier: 'basic', allowed_models: ['gpt-4o-mini'], capabilities: ['chat', 'search'] }
+      features: { tier: 'basic', allowed_models: ['zai/glm-4.7'], capabilities: ['chat', 'search'] }
     };
 
     const payload = {

@@ -290,7 +290,7 @@ router.post('/qa', async (req, res) => {
           content: `Based on these company documents:\n\n${context}\n\nQuestion: ${question}`
         }
       ],
-      model: 'gpt-4o-mini',
+      model: 'zai/glm-4.7',
       temperature: 0.3,
       tenantId: req.user.company_id || 'default-tenant',
       userId: req.user.id

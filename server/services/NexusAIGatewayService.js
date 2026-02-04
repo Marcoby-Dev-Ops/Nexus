@@ -125,7 +125,7 @@ class NexusAIGatewayService {
       // Credit Check (unless it's system user or unlimited)
       const hasCredits = userStatus?.can_run_inference || effectiveUserId === SYSTEM_USER_ID;
       
-      if (!hasCredits) {
+      async *chatStream(request) {
         logger.warn(`Credit check failed for user ${effectiveUserId}`);
         return {
           success: false,
@@ -150,9 +150,9 @@ class NexusAIGatewayService {
         sensitivity: request.sensitivity || 'internal',
         budgetCents: request.budgetCents,
         latencyTargetMs: request.latencyTargetMs,
-        model: selectedModel,
-        userId: effectiveUserId,
-        orgId: request.orgId || null
+           const response = await provider.call(llmRequest);
+           yield { content: response.output };
+           return;
       };
 
       // Call the provider
@@ -185,7 +185,7 @@ class NexusAIGatewayService {
     }
   }
 
-  async chatStream(request) {
+  async *chatStream(request) {
     logger.info('Chat stream request received');
     const provider = this.selectProvider(request);
     if (!provider) throw new Error('No provider available');
@@ -372,7 +372,7 @@ class NexusAIGatewayService {
     
     // Default models (Basic/Standard Tier) - Cost efficient, high speed
     const basicModels = {
-      openclaw: 'gpt-4o-mini',
+      openclaw: 'zai/glm-4.7',
       openai: 'gpt-4o-mini',
       openrouter: 'gpt-4o-mini', 
       local: 'llama2'
@@ -380,7 +380,7 @@ class NexusAIGatewayService {
     
     // Premium models (Power/Enterprise Tier) - High intelligence, complex reasoning
     const premiumModels = {
-      openclaw: 'gpt-4o', // or gemini-pro-1.5
+      openclaw: 'zai/glm-4.7', // High capability, low cost
       openai: 'gpt-4o',
       openrouter: 'anthropic/claude-3-5-sonnet',
       local: 'mixtral-8x7b'
@@ -573,7 +573,7 @@ class NexusAIGatewayService {
    */
   getAvailableModels(role) {
     const models = {
-      chat: ['gpt-4', 'gpt-3.5-turbo', 'claude-3-opus', 'claude-3-sonnet', 'llama2'],
+      chat: ['zai/glm-4.7', 'gpt-4o', 'gpt-3.5-turbo', 'claude-3-opus', 'claude-3-sonnet', 'llama2'],
       embed: ['text-embedding-ada-002', 'text-embedding-3-small', 'text-embedding-3-large'],
       rerank: ['rerank-english-v2.0', 'rerank-multilingual-v2.0']
     };
@@ -589,7 +589,11 @@ class OpenClawProvider {
   }
 
   async *callStream(request) {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      // Ensure baseUrl ends with /v1/chat/completions logic or /v1
+      // OpenClawProvider is constructed with baseUrl (e.g. http://host:port/v1)
+      const url = `${this.baseUrl.replace(/\/$/, '')}/chat/completions`;
+      
+      const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -640,9 +644,10 @@ class OpenClawProvider {
   async call(request) {
     // Send standard OpenAI format
     const startTime = performance.now();
+    const url = `${this.baseUrl.replace(/\/$/, '')}/chat/completions`;
     
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -102,7 +102,7 @@ Focus on providing practical, business-focused advice that helps move the ticket
 `;
 
     const aiResponse = await processWithLLM(analysisPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.3,
       maxTokens: 1500
     });
@@ -179,7 +179,7 @@ Focus on business logic, data integrity, and user experience.
 `;
 
     const aiResponse = await processWithLLM(validationPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.2,
       maxTokens: 1000
     });
@@ -250,7 +250,7 @@ Consider business value, completeness, and long-term impact.
 `;
 
     const aiResponse = await processWithLLM(completionPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.3,
       maxTokens: 1200
     });
@@ -350,7 +350,7 @@ Focus on actionable insights that will improve the user's ticket management effe
 `;
 
     const aiResponse = await processWithLLM(healthPrompt, {
-      model: 'gpt-4',
+      model: 'zai/glm-4.7',
       temperature: 0.4,
       maxTokens: 2000
     });
