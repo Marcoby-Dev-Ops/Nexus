@@ -1,6 +1,5 @@
 const { logger } = require('../src/utils/logger');
 const { performance } = require('perf_hooks');
-const creditService = require('./CreditService');
 require('../loadEnv');
 
 // System user ID for onboarding and system-level operations
@@ -118,19 +117,6 @@ class NexusAIGatewayService {
         };
       }
 
-      // Check credit availability and get plan features
-      const effectiveUserId = request.userId && request.userId !== 'onboarding' ? request.userId : SYSTEM_USER_ID;
-      const userStatus = await creditService.getUserStatus(effectiveUserId);
-      
-      // Credit Check (unless it's system user or unlimited)
-      const hasCredits = userStatus?.can_run_inference || effectiveUserId === SYSTEM_USER_ID;
-      
-      // (Removed invalid async generator definition)
-
-      // Determine model based on plan tier
-      const tier = userStatus?.subscription?.features?.tier || 'basic';
-      const selectedModel = this.selectModel(request.role || 'chat', provider.name, tier);
-
       // Prepare the LLM request
       const llmRequest = {
         task: 'chat',
@@ -144,9 +130,9 @@ class NexusAIGatewayService {
         sensitivity: request.sensitivity || 'internal',
         budgetCents: request.budgetCents,
         latencyTargetMs: request.latencyTargetMs,
-           const response = await provider.call(llmRequest);
-           yield { content: response.output };
-           return;
+        model: this.selectModel(request.role || 'chat', provider.name),
+        userId: request.userId && request.userId !== 'onboarding' ? request.userId : SYSTEM_USER_ID,
+        orgId: request.orgId || null
       };
 
       // Call the provider
@@ -170,71 +156,15 @@ class NexusAIGatewayService {
       logger.error('Chat request failed:', error);
       
       // Record failed usage if we have a request context
-      // Note: we can't record here if provider fails before returning initial structure
-       // Fixed: llmRequest and response might be undefined if error occurs early
+      if (llmRequest && response) {
+        await this.recordUsage(llmRequest, response, false, error.message);
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
-  }
-
-  async *chatStream(request) {
-    logger.info('Chat stream request received');
-    const provider = this.selectProvider(request);
-    if (!provider) throw new Error('No provider available');
-
-    // Check credits
-    const effectiveUserId = request.userId && request.userId !== 'onboarding' ? request.userId : SYSTEM_USER_ID;
-    const hasCredits = await creditService.checkAvailability(effectiveUserId);
-    if (!hasCredits) throw new Error('Insufficient credits');
-
-    // Determine model
-    const userStatus = await creditService.getUserStatus(effectiveUserId);
-    const tier = userStatus?.subscription?.features?.tier || 'basic';
-    const selectedModel = this.selectModel(request.role || 'chat', provider.name, tier);
-
-    const llmRequest = {
-      ...request,
-      model: selectedModel,
-      stream: true,
-      userId: effectiveUserId
-    };
-
-    // Providers must implement callStream generator
-    if (!provider.callStream) {
-       // Fallback to non-stream if not implemented
-       const response = await provider.call(llmRequest);
-       yield { content: response.output };
-       return;
-    }
-
-    // Proxy the stream
-    const stream = provider.callStream(llmRequest);
-    let fullContent = '';
-    
-    for await (const chunk of stream) {
-        if (chunk.content) fullContent += chunk.content;
-        yield chunk;
-    }
-
-    // Record usage after stream completes (estimated based on length)
-    // 1 token ~= 4 chars
-    const estimatedTokens = Math.ceil(fullContent.length / 4);
-    const usage = {
-        tokens: { prompt: 0, completion: estimatedTokens }, // Prompt tokens hard to count without tokenizer
-        costCents: 0, // Need accurate token count for cost
-        model: selectedModel,
-        provider: provider.name
-    };
-    // Calculate cost properly if we can using approximations
-    usage.costCents = this.calculateCost(
-        { prompt_tokens: 100, completion_tokens: estimatedTokens }, // Dummy prompt token count
-        selectedModel
-    );
-
-    // Record usage (fire and forget)
-    this.recordUsage(llmRequest, usage, true).catch(err => logger.error('Stream usage record failed', err));
   }
 
   /**
@@ -255,15 +185,6 @@ class NexusAIGatewayService {
           success: false,
           error: 'No suitable embedding provider available'
         };
-      }
-
-      // Check credit availability
-      const effectiveUserId = request.userId && request.userId !== 'onboarding' ? request.userId : SYSTEM_USER_ID;
-      const userStatus = await creditService.getUserStatus(effectiveUserId);
-      const hasCredits = userStatus?.can_run_inference || effectiveUserId === SYSTEM_USER_ID;
-
-      if (!hasCredits) {
-         return { success: false, error: 'Insufficient credits.' };
       }
 
       const llmRequest = {
@@ -360,34 +281,31 @@ class NexusAIGatewayService {
   /**
    * Select appropriate model for the role and provider
    */
-  selectModel(role, provider, tier = 'basic') {
-    // Model Selection Matrix based on Tier/Persona
-    const isPremium = tier === 'premium' || tier === 'unlimited';
-    
-    // Default models (Basic/Standard Tier) - Cost efficient, high speed
-    const basicModels = {
-      openclaw: null, // Use OpenClaw's configured default model
-      openai: 'gpt-4o-mini',
-      openrouter: 'gpt-4o-mini',
-      local: 'llama2'
+  selectModel(role, provider) {
+    const models = {
+      openclaw: {
+        chat: null, // Use OpenClaw's configured default model
+        reasoning: null,
+        embed: null
+      },
+      openai: {
+        chat: 'gpt-3.5-turbo',
+        reasoning: 'gpt-4',
+        embed: 'text-embedding-ada-002'
+      },
+      openrouter: {
+        chat: 'gpt-3.5-turbo',
+        reasoning: 'gpt-4',
+        embed: 'text-embedding-ada-002'
+      },
+      local: {
+        chat: 'llama2',
+        reasoning: 'llama2',
+        embed: 'text-embedding-ada-002'
+      }
     };
-
-    // Premium models (Power/Enterprise Tier) - High intelligence, complex reasoning
-    const premiumModels = {
-      openclaw: null, // Use OpenClaw's configured default model
-      openai: 'gpt-4o',
-      openrouter: 'anthropic/claude-3-5-sonnet',
-      local: 'mixtral-8x7b'
-    };
-
-    const modelMap = isPremium ? premiumModels : basicModels;
     
-    // Specific role overrides if needed (e.g., embed is always the same)
-    if (role === 'embed') {
-        return provider === 'openai' ? 'text-embedding-3-small' : 'text-embedding-ada-002';
-    }
-
-    return modelMap[provider] || 'gpt-4o-mini';
+    return models[provider]?.[role] || models[provider]?.chat || 'gpt-3.5-turbo';
   }
 
   /**
@@ -529,18 +447,13 @@ class NexusAIGatewayService {
       // Import the monitoring service dynamically to avoid circular dependencies
       const { aiUsageMonitoringService } = await import('../src/services/AIUsageMonitoringService.js');
       await aiUsageMonitoringService.recordUsage(usageRecord);
+    } catch (error) {
+      logger.error('Failed to record usage in database:', error);
+    }
 
-        // Deduct credits if successful
-        if (success && usageRecord.cost_cents > 0) {
-           await creditService.deductCredits(
-             usageRecord.user_id,
-             usageRecord.cost_cents,
-             `AI Usage: ${usageRecord.task_type} (${usageRecord.model})`,
-             usageRecord.request_id || `req_${Date.now()}`
-           );
-        }
-      } catch (error) {
-        logger.error('Failed to record usage/credits in database:', error);
+    // Log usage for debugging
+    logger.info('AI usage recorded', {
+      provider: usageRecord.provider,
       model: usageRecord.model,
       cost_usd: usageRecord.cost_usd,
       tokens: usageRecord.total_tokens,
@@ -567,7 +480,7 @@ class NexusAIGatewayService {
    */
   getAvailableModels(role) {
     const models = {
-      chat: ['zai/glm-4.7', 'gpt-4o', 'gpt-3.5-turbo', 'claude-3-opus', 'claude-3-sonnet', 'llama2'],
+      chat: ['gpt-4', 'gpt-3.5-turbo', 'claude-3-opus', 'claude-3-sonnet', 'llama2'],
       embed: ['text-embedding-ada-002', 'text-embedding-3-small', 'text-embedding-3-large'],
       rerank: ['rerank-english-v2.0', 'rerank-multilingual-v2.0']
     };
@@ -582,89 +495,25 @@ class OpenClawProvider {
     this.apiKey = apiKey;
   }
 
-  async *callStream(request) {
-      // Ensure baseUrl ends with /v1/chat/completions logic or /v1
-      // OpenClawProvider is constructed with baseUrl (e.g. http://host:port/v1)
-      const url = `${this.baseUrl.replace(/\/$/, '')}/chat/completions`;
-      
-      const requestBody = {
-        messages: this.buildMessages(request),
-        max_tokens: this.getMaxTokens(request),
-        temperature: this.getTemperature(request),
-        stream: true,
-        user: request.userId
-      };
-      // Only include model if specified, otherwise let OpenClaw use its default
-      if (request.model) {
-        requestBody.model = request.model;
-      }
-
-      const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
-          },
-          body: JSON.stringify(requestBody)
-      });
-  
-      if (!response.ok) throw new Error(`OpenClaw Stream Error: ${response.statusText}`);
-      if (!response.body) throw new Error('No response body');
-  
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-  
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || ''; // Keep incomplete line
-  
-        for (const line of lines) {
-           if (line.trim() === '') continue;
-           if (line.includes('[DONE]')) return;
-           
-           if (line.startsWith('data: ')) {
-               try {
-                   const data = JSON.parse(line.slice(6));
-                   const content = data.choices?.[0]?.delta?.content || '';
-                   if (content) yield { content };
-               } catch (e) {
-                   // ignore parse error
-               }
-           }
-        }
-      }
-  }
-
   async call(request) {
     // Send standard OpenAI format
     const startTime = performance.now();
-    const url = `${this.baseUrl.replace(/\/$/, '')}/chat/completions`;
-
-    const requestBody = {
-      messages: this.buildMessages(request),
-      max_tokens: this.getMaxTokens(request),
-      temperature: this.getTemperature(request),
-      stream: false,
-      user: request.userId // Vital for OpenClaw memory
-    };
-    // Only include model if specified, otherwise let OpenClaw use its default
-    if (request.model) {
-      requestBody.model = request.model;
-    }
-
+    
     try {
-      const response = await fetch(url, {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          ...(request.model && { model: request.model }), // Only include if specified
+          messages: this.buildMessages(request),
+          max_tokens: this.getMaxTokens(request),
+          temperature: this.getTemperature(request),
+          stream: false,
+          user: request.userId // Vital for OpenClaw memory
+        })
       });
 
       if (!response.ok) {
@@ -729,14 +578,11 @@ class OpenClawProvider {
   calculateCost(usage, model) {
     const promptTokens = usage?.prompt_tokens || 0;
     const completionTokens = usage?.completion_tokens || 0;
-    
-    // GPT-4o Mini Pricing (standard): $0.15 / 1M input, $0.60 / 1M output
-    // Cost in cents/1K -> $0.00015 / 1K -> 0.015 cents
-    const promptCost = (promptTokens / 1000) * 0.00015;  // dollars
-    const completionCost = (completionTokens / 1000) * 0.00060; // dollars
-    
-    // Return cost in cents
-    return Math.max(1, Math.ceil((promptCost + completionCost) * 100));
+    // 4o mini pricing: $0.15/1M input, $0.60/1M output
+    // in cents per 1k: 0.0015 cents input, 0.006 cents output
+    const promptCost = (promptTokens / 1000) * 0.015;
+    const completionCost = (completionTokens / 1000) * 0.06;
+    return Math.round((promptCost + completionCost) * 100);
   }
 }
 
@@ -862,13 +708,11 @@ class OpenAIProvider {
     const promptTokens = usage?.prompt_tokens || 0;
     const completionTokens = usage?.completion_tokens || 0;
     
-    // GPT-4o Mini Pricing (standard): $0.15 / 1M input, $0.60 / 1M output
-    // Cost in cents/1K -> $0.00015 / 1K -> 0.015 cents
-    const promptCost = (promptTokens / 1000) * 0.00015;  // dollars
-    const completionCost = (completionTokens / 1000) * 0.00060; // dollars
+    // Rough cost estimates (in cents)
+    const promptCost = (promptTokens / 1000) * 0.2; // $0.002 per 1K tokens
+    const completionCost = (completionTokens / 1000) * 0.6; // $0.006 per 1K tokens
     
-    // Return cost in cents
-    return Math.max(1, Math.ceil((promptCost + completionCost) * 100));
+    return Math.round((promptCost + completionCost) * 100);
   }
 
   calculateEmbeddingCost(usage, model) {
@@ -968,13 +812,11 @@ class OpenRouterProvider {
     const promptTokens = usage?.prompt_tokens || 0;
     const completionTokens = usage?.completion_tokens || 0;
     
-    // GPT-4o Mini Pricing (standard): $0.15 / 1M input, $0.60 / 1M output
-    // Cost in cents/1K -> $0.00015 / 1K -> 0.015 cents
-    const promptCost = (promptTokens / 1000) * 0.00015;  // dollars
-    const completionCost = (completionTokens / 1000) * 0.00060; // dollars
+    // Rough cost estimates (in cents) - OpenRouter costs vary by model
+    const promptCost = (promptTokens / 1000) * 0.15;
+    const completionCost = (completionTokens / 1000) * 0.5;
     
-    // Return cost in cents
-    return Math.max(1, Math.ceil((promptCost + completionCost) * 100));
+    return Math.round((promptCost + completionCost) * 100);
   }
 
   async embed(request) {

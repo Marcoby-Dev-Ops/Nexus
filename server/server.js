@@ -42,7 +42,13 @@ try {
 } catch (err) {
   logger.warn('Telemetry routes not available, skipping /api/telemetry mounting', { error: err.message });
 }
-const edgeRoutes = require('./src/routes/edge');
+
+let edgeRoutes = null;
+try {
+  edgeRoutes = require('./src/routes/edge');
+} catch (err) {
+  logger.warn('Edge routes not available, skipping /api/edge mounting', { error: err.message });
+}
 const chatRoutes = require('./src/routes/chat');
 const organizationRoutes = require('./src/routes/organizations');
 const userPreferencesRoutes = require('./src/routes/user-preferences');
@@ -376,7 +382,13 @@ if (telemetryRoutes) {
 } else {
   logger.warn('Telemetry routes not mounted because they are not available');
 }
-app.use('/api/edge', edgeRoutes);
+
+if (edgeRoutes) {
+  app.use('/api/edge', edgeRoutes);
+  logger.info('Edge routes mounted at /api/edge');
+} else {
+  logger.warn('Edge routes not mounted because they are not available');
+}
 app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
