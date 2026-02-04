@@ -2,7 +2,7 @@ import { selectData as select, selectOne, insertOne, updateOne, deleteOne } from
 import { BaseService } from '@/core/services/BaseService';
 import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
-import { OAuthTokenService } from '@/core/auth/OAuthTokenService';
+// OAuthTokenService import removed
 import { z } from 'zod';
 import { DateTime } from 'luxon';
 import { nowIsoUtc, addDaysUtcIso, fromMaybeDateOrIsoToDate } from '@/shared/utils/time';
@@ -61,7 +61,7 @@ export interface CalendarStats {
  * Extends BaseService for consistent error handling and logging
  */
 export class CalendarService extends BaseService {
-  private oauthTokenService = new OAuthTokenService();
+  // OAuthTokenService instance removed
 
   /**
    * Get calendar events from all connected sources
@@ -129,7 +129,7 @@ export class CalendarService extends BaseService {
       if (!user) throw new Error('User not authenticated');
 
       // Get access token for the specific source
-      const accessToken = await this.oauthTokenService.getAccessToken(user.id, source);
+      // OAuth access token retrieval removed
       if (!accessToken) {
         logger.warn(`No access token found for ${source} calendar`);
         return [];

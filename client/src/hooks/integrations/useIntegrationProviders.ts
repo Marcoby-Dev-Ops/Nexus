@@ -1,6 +1,6 @@
 import { analyticsService } from '@/services/analytics';
 import { serviceRegistry } from '@/core/services/ServiceRegistry';
-import type { OAuthTokenService } from '@/core/auth/OAuthTokenService';
+// OAuthTokenService type import removed
 import { useState, useEffect } from 'react';
 
 interface ProviderState {
@@ -44,8 +44,7 @@ export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
       try {
         setIsMicrosoftConnecting(true);
         // Use the service registry to get the OAuth token service
-        const oauthTokenService = serviceRegistry.getService<OAuthTokenService>('oauth-token');
-        const validationResult = await oauthTokenService.validateToken('microsoft');
+        // OAuth token validation removed
         const connected = validationResult.success && validationResult.data?.isValid === true;
         setIsMicrosoftConnected(connected);
       } catch (e: any) {
@@ -93,8 +92,7 @@ export const useIntegrationProviders = (): UseIntegrationProvidersReturn => {
     try {
       setIsMicrosoftConnecting(true);
       // Use the service registry to get the OAuth token service
-      const oauthTokenService = serviceRegistry.getService<OAuthTokenService>('oauth-token');
-      await oauthTokenService.revokeToken('microsoft');
+      // OAuth token revoke removed
       setIsMicrosoftConnected(false);
     } catch (e: any) {
       setMicrosoftError(e);

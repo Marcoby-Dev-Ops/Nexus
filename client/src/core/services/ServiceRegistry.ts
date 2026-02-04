@@ -59,7 +59,7 @@ import { BusinessProcessAutomationService } from '@/shared/services/BusinessProc
 
 // Auth services
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
-import { OAuthTokenService } from '@/core/auth/OAuthTokenService';
+// OAuthTokenService import removed
 
 // Admin services
 import { WaitlistService } from '@/components/admin/onboarding/lib/waitlistService';
@@ -168,7 +168,7 @@ export class ServiceRegistry {
 
     // Auth Services
     this.registerService('auth', authentikAuthService, 'Authentication', 'auth');
-    this.registerService('oauth-token', new OAuthTokenService(), 'OAuth token management', 'auth');
+    // OAuth token management service registration removed
 
     // Admin Services
     this.registerService('waitlist', new WaitlistService(), 'Waitlist management', 'admin');

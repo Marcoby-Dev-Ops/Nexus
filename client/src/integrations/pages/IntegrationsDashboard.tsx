@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { useIntegrations } from '../hooks/useIntegrations';
-import { useOAuthIntegrations } from '../hooks/useOAuthIntegrations';
 import { IntegrationCard } from '../components/IntegrationCard';
-import { OAuthIntegrationCard } from '../components/OAuthIntegrationCard';
-import { OAuthConnectionModal } from '../components/OAuthConnectionModal';
 import { IntegrationWizard } from '../components/IntegrationWizard';
 import { Button } from '../../shared/components/ui/Button';
 import { Input } from '../../shared/components/ui/Input';
@@ -18,7 +15,6 @@ export const IntegrationsDashboard: React.FC = () => {
   const [filter, setFilter] = useState<IntegrationFilter>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showOAuthModal, setShowOAuthModal] = useState(false);
   
   // Mock user ID for now - in real app this would come from auth context
   const userId = 'test-user-123';
@@ -200,46 +196,9 @@ export const IntegrationsDashboard: React.FC = () => {
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="text-2xl font-bold text-red-600">{statusCounts.error}</div>
-          <div className="text-sm text-red-700">Error</div>
-        </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="text-2xl font-bold text-yellow-600">{statusCounts.pending}</div>
-          <div className="text-sm text-yellow-700">Pending</div>
-        </div>
-      </div>
-
-      {/* OAuth Status Overview */}
       {oauthIntegrations.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">OAuth Integrations</h3>
-          <div className="grid grid-cols-5 gap-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-blue-600">{oauthStatusSummary.total}</div>
-              <div className="text-sm text-blue-700">Total</div>
-            </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-600">{oauthStatusSummary.connected}</div>
-              <div className="text-sm text-green-700">Connected</div>
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-600">{oauthStatusSummary.disconnected}</div>
-              <div className="text-sm text-gray-700">Disconnected</div>
-            </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-red-600">{oauthStatusSummary.error}</div>
-              <div className="text-sm text-red-700">Error</div>
-            </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="text-2xl font-bold text-yellow-600">{oauthStatusSummary.pending}</div>
-              <div className="text-sm text-yellow-700">Pending</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search integrations..."
@@ -285,10 +244,6 @@ export const IntegrationsDashboard: React.FC = () => {
           </SelectContent>
         </Select>
       </div>
-
-      {/* Integrations Grid */}
-      {filteredIntegrations.length === 0 ? (
-        <div className="text-center py-12">
           <div className="text-gray-500 mb-4">No integrations found</div>
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
