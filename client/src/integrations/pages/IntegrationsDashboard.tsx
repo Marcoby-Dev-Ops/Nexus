@@ -196,9 +196,13 @@ export const IntegrationsDashboard: React.FC = () => {
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="text-2xl font-bold text-red-600">{statusCounts.error}</div>
+          <div className="text-sm text-red-700">Error</div>
+        </div>
+      </div>
+
+      {/* OAuth Search Bar (if any OAuth integrations) */}
       {oauthIntegrations.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            </div>
+        <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <Input
             placeholder="Search integrations..."
@@ -207,43 +211,47 @@ export const IntegrationsDashboard: React.FC = () => {
             className="pl-10"
           />
         </div>
-        <Select
-          value={filter.status || ''}
-          onValueChange={(value) => setFilter(prev => ({ 
-            ...prev, 
-            status: (value as Integration['status']) || undefined 
-          }))}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="error">Error</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={filter.type || ''}
-          onValueChange={(value) => setFilter(prev => ({ 
-            ...prev, 
-            type: (value as Integration['type']) || undefined 
-          }))}
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Filter by type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
-            <SelectItem value="api">API</SelectItem>
-            <SelectItem value="webhook">Webhook</SelectItem>
-            <SelectItem value="oauth">OAuth</SelectItem>
-            <SelectItem value="custom">Custom</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      )}
+      <Select
+        value={filter.status || ''}
+        onValueChange={(value) => setFilter(prev => ({ 
+          ...prev, 
+          status: (value as Integration['status']) || undefined 
+        }))}
+      >
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Filter by status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">All Statuses</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="inactive">Inactive</SelectItem>
+          <SelectItem value="error">Error</SelectItem>
+          <SelectItem value="pending">Pending</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select
+        value={filter.type || ''}
+        onValueChange={(value) => setFilter(prev => ({ 
+          ...prev, 
+          type: (value as Integration['type']) || undefined 
+        }))}
+      >
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="Filter by type" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="">All Types</SelectItem>
+          <SelectItem value="api">API</SelectItem>
+          <SelectItem value="webhook">Webhook</SelectItem>
+          <SelectItem value="oauth">OAuth</SelectItem>
+          <SelectItem value="custom">Custom</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Integrations List or Empty State */}
+      {filteredIntegrations.length === 0 ? (
+        <div>
           <div className="text-gray-500 mb-4">No integrations found</div>
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="w-4 h-4 mr-2" />
@@ -263,6 +271,7 @@ export const IntegrationsDashboard: React.FC = () => {
           ))}
         </div>
       )}
+    </div>
 
       {/* OAuth Integrations */}
       {oauthIntegrations.length > 0 && (

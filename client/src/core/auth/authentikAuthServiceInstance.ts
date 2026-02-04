@@ -45,6 +45,25 @@ export interface SignInRequest {
 }
 
 class AuthentikAuthService extends BaseService {
+    // Parse JWT ID token for user info
+    private parseIdToken(idToken: string): any {
+      try {
+        const base64Url = idToken.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map(function (c) {
+              return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join('')
+        );
+        return JSON.parse(jsonPayload);
+      } catch (e) {
+        this.logger.error('Failed to parse id_token', e);
+        return null;
+      }
+    }
   private baseUrl: string;
   private clientId: string;
   private redirectUri: string;
@@ -437,42 +456,54 @@ class AuthentikAuthService extends BaseService {
           redirectUri: this.redirectUri,
         });
 
-      const tokenApiUrl = getApiBaseUrl();
-      const tokenResponse = await fetch(`${tokenApiUrl}/api/oauth/token`, {
+      // Exchange code for tokens directly with Authentik
+      const tokenUrl = `${this.baseUrl}/application/o/token/`;
+      const params = new URLSearchParams();
+      params.append('grant_type', 'authorization_code');
+      params.append('code', code);
+      params.append('redirect_uri', this.redirectUri);
+      params.append('client_id', this.clientId);
+      params.append('code_verifier', codeVerifier);
+
+      const response = await fetch(tokenUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          provider: 'authentik',
-          code,
-          redirectUri: this.redirectUri,
-          codeVerifier,
-          state,
-        }),
+        body: params.toString(),
       });
 
-      if (!tokenResponse.ok) {
-        const errorData = await tokenResponse.text();
+      if (!response.ok) {
+        let errorData: any;
+        try {
+          errorData = await response.json();
+        } catch (_e) {
+          errorData = { error: 'Failed to parse error response' };
+        }
+        const errorMessage =
+          errorData?.error_description || errorData?.error || `HTTP ${response.status} - ${response.statusText}`;
         this.logger.error('Token exchange failed', {
-          status: tokenResponse.status,
-          statusText: tokenResponse.statusText,
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMessage,
           errorData,
         });
-        throw new Error(`Token exchange failed: ${tokenResponse.status} - ${errorData}`);
+        throw new Error(`Token exchange failed: ${response.status} - ${errorMessage}`);
       }
 
-      const tokenData = await tokenResponse.json();
+      const tokenData = await response.json();
       if (this.authLogsEnabled)
         this.logger.info('Token exchange successful', {
           hasAccessToken: !!tokenData.access_token,
           hasRefreshToken: !!tokenData.refresh_token,
-          hasUser: !!tokenData.user,
           expiresIn: tokenData.expires_in,
         });
 
-      // User info is now included in token response (decoded from id_token)
-      const userData = tokenData.user;
+      // Parse ID token for user info if present
+      let userData = null;
+      if (tokenData.id_token) {
+        userData = this.parseIdToken(tokenData.id_token);
+      }
       if (!userData) {
         this.logger.error('No user data in token response');
         throw new Error('No user data in token response');
@@ -616,28 +647,10 @@ class AuthentikAuthService extends BaseService {
         throw new Error('Authentik client ID not configured');
       }
 
+      // Generate PKCE and state locally
       const codeVerifier = generateCodeVerifier(128);
       const codeChallenge = await generateCodeChallenge(codeVerifier);
-
-      const stateApiUrl = getApiBaseUrl();
-      const stateResponse = await fetch(`${stateApiUrl}/api/oauth/state`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: 'auth',
-          integrationSlug: 'authentik',
-          redirectUri: redirectUri || this.redirectUri,
-        }),
-      });
-
-      if (!stateResponse.ok) {
-        throw new Error('Failed to generate OAuth state');
-      }
-
-      const stateData = await stateResponse.json();
-      const { state } = stateData.data;
+      const state = this.generateRandomString(32);
 
       localStorage.setItem('authentik_code_verifier', codeVerifier);
       localStorage.setItem('authentik_oauth_state', state);
@@ -670,6 +683,16 @@ class AuthentikAuthService extends BaseService {
       this.logger.error('Failed to initiate OAuth flow', error);
       return { success: false, data: null, error: 'Failed to initiate OAuth flow' };
     }
+  }
+
+  private generateRandomString(length: number): string {
+    const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    const values = window.crypto.getRandomValues(new Uint32Array(length));
+    for (let i = 0; i < length; i++) {
+      result += charset[values[i] % charset.length];
+    }
+    return result;
   }
 }
 
