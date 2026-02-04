@@ -14,7 +14,7 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 // Core pages - only what we need for foundation
 import { LandingPage } from '@/shared/pages/LandingPage';
-// import { Dashboard } from '@/pages';
+// ...existing code...
 import Login from '@/pages/auth/Login';
 import Signup from '@/pages/auth/Signup';
 import ProfilePage from '@/pages/auth/ProfilePage';
@@ -74,10 +74,7 @@ function AppRoutes() {
       <Route path="/auth/debug" element={<AuthDebug />} />
       
       {/* Protected routes */}
-      <Route 
-        path="/dashboard" 
-        element={<Navigate to="/chat" replace />}
-      />
+      {/* /dashboard route removed: only core, sidebar-linked pages remain */}
       <Route 
         path="/profile" 
         element={

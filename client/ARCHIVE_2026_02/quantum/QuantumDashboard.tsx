@@ -96,3 +96,4 @@ export function QuantumDashboard({ className }: QuantumDashboardProps) {
     </div>
   );
 }
+// Move to ARCHIVE_2026_02/quantum/QuantumDashboard.tsx

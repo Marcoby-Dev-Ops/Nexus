@@ -75,42 +75,43 @@ export const LandingPage: React.FC = () => {
     { name: "Slack", category: "Communication" },
     { name: "Google Analytics", category: "Analytics" },
     { name: "Mailchimp", category: "Marketing" },
-    { name: "Zapier", category: "Automation" },
-    { name: "Stripe", category: "Payments" }
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Public Header */}
-      <PublicHeader />
-      
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <div className="text-center">
-            <Badge variant="secondary" className="mb-4">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Your Business Command Center
-            </Badge>
-            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
-              See How Your Business Really Works. Then Make It Work Better.
-            </h1>
-            <p className="text-xl text-muted-foreground mb-6 max-w-3xl mx-auto">
-              Nexus draws the line across your organization—connecting data, processes, and people with AI intelligence. 
-              Get answers in seconds, make informed decisions, and automate what slows you down.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" className="w-full sm:w-auto">
-                <Link to="/signup" className="flex items-center justify-center w-full">
-                  Start Free Trial
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild variant="ghost" size="lg" className="w-full sm:w-auto">
-                <Link to="/demo/assistant" className="flex items-center justify-center w-full">
-                  See the Workspace
-                </Link>
-              </Button>
+      return (
+        <div className="min-h-screen bg-background flex flex-col">
+          {/* Public Header */}
+          <PublicHeader />
+          {/* Hero Section */}
+          <div className="flex-1">
+            <div className="relative overflow-hidden">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+                <div className="text-center">
+                  <Badge variant="secondary" className="mb-4">
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Your Business Command Center
+                  </Badge>
+                  <h1 className="text-4xl md:text-6xl font-bold text-center mb-6">
+                    The AI assistant you can trust
+                  </h1>
+                  <p className="text-lg md:text-2xl text-center mb-8 text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+                    Nexus puts you in control. Your data stays private, your choices matter, and your AI works for you—not the cloud. No hidden data sharing, no lock-in, just a powerful, transparent assistant you can rely on every day.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <Button size="lg" className="w-full sm:w-auto">
+                      <Link to="/signup" className="flex items-center justify-center w-full">
+                        Start Free Trial
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button asChild variant="ghost" size="lg" className="w-full sm:w-auto">
+                      <Link to="/demo/assistant" className="flex items-center justify-center w-full">
+                        See the Workspace
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <PublicFooter />
             </div>
           </div>
         </div>

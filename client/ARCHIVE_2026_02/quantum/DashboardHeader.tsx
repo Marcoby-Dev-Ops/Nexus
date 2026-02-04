@@ -38,4 +38,5 @@ export function DashboardHeader({ displayName, onRefresh, refreshing }: Dashboar
       </div>
     </motion.div>
   );
-}
+    }
+// Move to ARCHIVE_2026_02/quantum/DashboardHeader.tsx

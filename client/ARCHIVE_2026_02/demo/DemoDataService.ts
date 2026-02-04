@@ -524,7 +524,7 @@ class DemoDataService {
   /**
    * Get all demo data for a user
    */
-  getAllDemoData(userId: string) {
+  getAllDemoData(userId: string): void {
     return {
       financial: this.getFinancialData(userId),
       integrations: this.getIntegrationData(userId),
@@ -535,6 +535,7 @@ class DemoDataService {
       metrics: this.getMetricsData(userId)
     };
   }
+  // Moved to ARCHIVE_2026_02/demo/DemoDataService.ts
 }
 
 export const demoDataService = DemoDataService.getInstance();

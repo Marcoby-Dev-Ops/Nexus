@@ -7,12 +7,15 @@ import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType } from '@/shared/types/chat';
 import TransparencyDisplay from './TransparencyDisplay';
 
+import { getGravatarUrl } from '@/shared/utils/gravatar';
+
 interface ChatMessageProps {
   message: ChatMessageType;
   onCopy: (content: string) => void;
+  userEmail?: string;
 }
 
-export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
+export default function ChatMessage({ message, onCopy, userEmail }: ChatMessageProps) {
   console.log('ChatMessage rendering:', {
     id: message.id,
     role: message.role,
@@ -90,9 +93,11 @@ export default function ChatMessage({ message, onCopy }: ChatMessageProps) {
         message.role === 'user' ? 'order-2' : 'order-1'
       )}>
         <Avatar className="w-8 h-8">
-          <AvatarImage 
-            src={message.role === 'user' ? undefined : undefined} 
-          />
+          {message.role === 'user' ? (
+            <AvatarImage src={getGravatarUrl(userEmail)} />
+          ) : (
+            <AvatarImage src={undefined} />
+          )}
           <AvatarFallback className="bg-gray-700 text-gray-300">
             {message.role === 'user' ? (
               <User className="w-4 h-4" />

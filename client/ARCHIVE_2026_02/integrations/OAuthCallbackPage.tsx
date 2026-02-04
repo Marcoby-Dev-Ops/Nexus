@@ -205,3 +205,4 @@ export const OAuthCallbackPage: React.FC = () => {
     </div>
   );
 };
+// Moved to ARCHIVE_2026_02/integrations/OAuthCallbackPage.tsx

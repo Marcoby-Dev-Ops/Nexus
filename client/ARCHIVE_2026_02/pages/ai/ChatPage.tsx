@@ -524,6 +524,7 @@ export default function ChatPage() {
                 showTypingIndicator={isStreaming}
                 className="h-full"
                 userName={displayName}
+                userEmail={userProfile?.email || user?.email}
                 agentId={selectedAgentId}
                 agentName={selectedAgent?.name || "Executive Assistant"}
                 ragEnabled={ragEnabled}

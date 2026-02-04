@@ -25,6 +25,7 @@ interface ModernChatInterfaceProps {
   showTypingIndicator?: boolean;
   className?: string;
   userName?: string;
+  userEmail?: string;
   agentId?: string;
   agentName?: string;
   ragEnabled?: boolean;
@@ -45,12 +46,12 @@ export default function ModernChatInterface({
   showTypingIndicator = false,
   className,
   userName = "User",
+  userEmail,
   agentId: _agentId = "executive-assistant",
   agentName = "Executive Assistant",
   ragEnabled = false,
   ragConfidence = 0,
-  knowledgeTypes = []
-  ,
+  knowledgeTypes = [],
   ragSources = [],
   ragRecommendations = [],
   businessContext = null
@@ -228,6 +229,7 @@ export default function ModernChatInterface({
                   key={message.id} 
                   message={message} 
                   onCopy={copyMessage}
+                  userEmail={userEmail}
                 />
               ))}
               
