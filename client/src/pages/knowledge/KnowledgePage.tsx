@@ -22,7 +22,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
-import { Input } from '@/shared/components/ui/input';
+import { Input } from '@/shared/components/ui/Input';
 import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { useToast } from '@/shared/components/ui/use-toast';
