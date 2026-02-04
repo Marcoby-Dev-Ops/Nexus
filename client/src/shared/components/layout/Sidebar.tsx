@@ -152,19 +152,23 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
     );
   };
 
-  const renderSection = (title: string, items: any[], icon: React.ReactNode) => (
-    <div className="border-b border-border pb-4 last:border-b-0">
-      <div className="px-4 py-2">
-        <div className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          {icon}
-          <span className="ml-2">{title}</span>
+  const renderSection = (title: string, items: any[], icon: React.ReactNode) => {
+    if (items.length === 0) return null;
+
+    return (
+      <div className="border-b border-border pb-4 last:border-b-0">
+        <div className="px-4 py-2">
+          <div className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            {icon}
+            <span className="ml-2">{title}</span>
+          </div>
+        </div>
+        <div className="space-y-1">
+          {items.map((item) => renderNavItem(item))}
         </div>
       </div>
-      <div className="space-y-1">
-        {items.map((item) => renderNavItem(item))}
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <>
