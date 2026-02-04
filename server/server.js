@@ -31,7 +31,6 @@ const userContactsRoutes = require('./src/routes/user-contacts');
 const meRoutes = require('./src/routes/me');
 const authRoutes = require('./src/routes/auth');
 const companyRoutes = require('./src/routes/companies');
-const oauthRoutes = require('./src/routes/oauth');
 
 const app = express();
 const server = createServer(app);
@@ -291,7 +290,6 @@ app.get('/healthz', (req, res) => {
 // API routes with specific rate limiting
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/companies', authLimiter, companyRoutes);
-app.use('/api/oauth', authLimiter, oauthRoutes);
 app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
