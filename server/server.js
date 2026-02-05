@@ -35,6 +35,9 @@ const dbRoutes = require('./src/routes/db');
 const rpcRoutes = require('./src/routes/rpc');
 const aiRoutes = require('./src/routes/ai');
 
+// Import OpenClaw integration routes
+const openclawIntegrationRoutes = require('./routes/openclaw-integration');
+
 const app = express();
 const server = createServer(app);
 const PORT = process.env.API_PORT || 3001;
@@ -301,6 +304,9 @@ app.use('/api/user-contacts', userContactsRoutes);
 app.use('/api/me', meRoutes);
 app.use('/api/db', dbLimiter, dbRoutes);
 app.use('/api/rpc', dbLimiter, rpcRoutes);
+
+// OpenClaw integration routes
+app.use('/api/openclaw', openclawIntegrationRoutes);
 
 // Graceful shutdown handling
 const gracefulShutdown = async (signal) => {

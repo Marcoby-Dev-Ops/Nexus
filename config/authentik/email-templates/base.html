@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1F2937;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 20px;
+        }
+        .header {
+            color: #0F172A;
+            margin-bottom: 30px;
+        }
+        .content {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 8px;
+        }
+        .footer {
+            margin-top: 30px;
+            color: #6B7280;
+            font-size: 14px;
+        }
+        .button {
+            display: inline-block;
+            background: #0F172A;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://identity.marcoby.com/static/marcoby_authentik_logos/logo_256.png" alt="Marcoby" class="logo">
+        <div class="content">
+            {% block content %}{% endblock %}
+        </div>
+        <div class="footer">
+            <p>Need help? Contact <a href="mailto:support@marcoby.com">Marcoby Support</a></p>
+            <p>&copy; {% now "Y" %} Marcoby. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

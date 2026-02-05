@@ -2,19 +2,18 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   MessageCircle, 
   Send, 
   Bot, 
   User, 
-  Sparkles, 
-  Wand2, 
-  Check, 
-  X, 
   Loader2,
-  RotateCcw
+  Mic,
+  MicOff,
+  Upload,
+  Volume2,
+  VolumeX
 } from "lucide-react"
 
 interface Message {
@@ -25,25 +24,10 @@ interface Message {
 }
 
 interface ChatAIAssistantProps {
-  section: 'mission' | 'vision' | 'purpose' | 'values' | 'culture' | 'brand'
-  context?: {
-    companyName?: string
-    industry?: string
-    businessModel?: string
-    existingValues?: string[]
-  }
-  onGenerate: (content: string) => void
-  onAccept: (content: string) => void
-  onReject: () => void
+  // Add any necessary props here
 }
 
-export function ChatAIAssistant({ 
-  section, 
-  context, 
-  onGenerate, 
-  onAccept, 
-  onReject 
-}: ChatAIAssistantProps) {
+export function ChatAIAssistant() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -246,149 +230,120 @@ Let's explore: How do you want people to perceive your company? What tone do you
   }
 
   return (
-    <Card className="border-dashed border-2 border-primary/20">
+    <Card className="h-[calc(100vh-8rem)] flex flex-col">
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">AI Chat Assistant</CardTitle>
-            <Badge variant="secondary" className="text-xs">
-              <Sparkles className="h-3 w-3 mr-1" />
-              AI Powered
-            </Badge>
-          </div>
-          <Button variant="outline" size="sm" onClick={resetChat}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset
-          </Button>
+        <div className="flex items-center gap-2">
+          <MessageCircle className="h-5 w-5 text-primary" />
+          <CardTitle className="text-lg">Marcoby Assistant</CardTitle>
         </div>
         <CardDescription>
-          Have a conversation with AI to help generate your {section} content
+          How can I help you today?
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex-1 flex flex-col space-y-4">
         {/* Chat Messages */}
-        <Card className="h-80">
-          <ScrollArea className="h-full p-4">
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {message.type === 'assistant' && (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                      <Bot className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
-                  <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 ${
-                      message.type === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                  </div>
-                  {message.type === 'user' && (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                      <User className="h-4 w-4" />
-                    </div>
-                  )}
-                </div>
-              ))}
-              {isTyping && (
-                <div className="flex gap-3 justify-start">
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {message.type === 'assistant' && (
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
                     <Bot className="h-4 w-4 text-primary" />
                   </div>
-                  <div className="bg-muted rounded-lg px-3 py-2">
-                    <div className="flex items-center gap-1">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span className="text-sm">AI is thinking...</span>
-                    </div>
+                )}
+                <div
+                  className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                    message.type === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                </div>
+                {message.type === 'user' && (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
+            ))}
+            {isTyping && (
+              <div className="flex gap-3 justify-start">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <Bot className="h-4 w-4 text-primary" />
+                </div>
+                <div className="bg-muted rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-1">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Thinking...</span>
                   </div>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-        </Card>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
 
         {/* Input Area */}
-        <div className="flex gap-2">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type your response..."
-            className="flex-1"
-          />
+        <div className="flex gap-2 pt-2">
+          <div className="flex-1 flex gap-2 items-center">
+            <Input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type a message..."
+              className="flex-1"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+              title={isVoiceEnabled ? "Disable voice responses" : "Enable voice responses"}
+            >
+              {isVoiceEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={isRecording ? stopRecording : startRecording}
+              className={isRecording ? "text-red-500" : ""}
+              title={isRecording ? "Stop recording" : "Start recording"}
+            >
+              {isRecording ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+            <div className="relative">
+              <input
+                type="file"
+                className="hidden"
+                id="file-upload"
+                onChange={handleFileUpload}
+                accept="image/*,.pdf,.doc,.docx,.txt"
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => document.getElementById('file-upload')?.click()}
+                title="Upload file"
+              >
+                <Upload className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
           <Button onClick={handleSendMessage} disabled={!inputValue.trim() || isTyping}>
             <Send className="h-4 w-4" />
           </Button>
         </div>
-
-        {/* Generate Final Content */}
-        {messages.length > 2 && !showGeneratedContent && (
-          <div className="flex justify-center">
-            <Button onClick={handleGenerateFinal} disabled={isTyping}>
-              {isTyping ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Wand2 className="h-4 w-4 mr-2" />
-                  Generate Final Content
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-
-        {/* Generated Content */}
-        {showGeneratedContent && generatedContent && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium">Generated Content:</span>
-            </div>
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                onClick={() => onAccept(generatedContent)}
-                className="flex-1"
-              >
-                <Check className="h-4 w-4 mr-2" />
-                Accept & Use
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={handleGenerateFinal}
-                className="flex-1"
-              >
-                <Wand2 className="h-4 w-4 mr-2" />
-                Regenerate
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={() => {
-                  setShowGeneratedContent(false)
-                  onReject()
-                }}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   )

@@ -33,13 +33,16 @@ class NexusAIGatewayService {
    * Initialize available providers based on configuration
    */
   initializeProviders() {
-    // Check OpenClaw provider
+    // Check OpenClaw provider - ENABLED BY DEFAULT for Nexus
     if (this.config.enableOpenClaw !== false) { // Enable by default if not explicitly disabled
       try {
         const openclawUrl = process.env.OPENCLAW_API_URL || 'http://localhost:18789/v1';
         const openclawApiKey = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
         this.providers.set('openclaw', new OpenClawProvider(openclawUrl, openclawApiKey));
-        logger.info('OpenClaw provider initialized');
+        logger.info('OpenClaw provider initialized - WILL BE USED AS DEFAULT AI ENGINE');
+        
+        // Set OpenClaw as preferred provider if available
+        this.preferredProvider = 'openclaw';
       } catch (error) {
         logger.warn(`Failed to initialize OpenClaw provider: ${error.message}`);
       }

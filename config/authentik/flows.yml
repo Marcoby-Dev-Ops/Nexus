@@ -1,0 +1,23 @@
+flow_messages:
+  welcome: "Welcome to Marcoby's Identity Management"
+  login_header: "Sign in to your Marcoby account"
+  registration_header: "Create your Marcoby account"
+  password_reset_header: "Reset your Marcoby password"
+  success_message: "Successfully authenticated with Marcoby"
+
+flows:
+  authentication:
+    title: "Welcome to Marcoby"
+    background: "/static/marcoby_authentik_logos/flow_background.jpg"
+    
+  authorization:
+    title: "Authorize Application"
+    
+  invalidation:
+    title: "Sign Out of Marcoby"
+    
+  recovery:
+    title: "Reset Your Marcoby Password"
+    
+  enrollment:
+    title: "Complete Your Marcoby Account Setup"

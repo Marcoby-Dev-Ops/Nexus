@@ -1,0 +1,20 @@
+:root {
+    --pf-global--primary-color--100: #0F172A;
+    --pf-global--primary-color--200: #475569;
+}
+
+.ak-login-container {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 2rem;
+}
+
+.ak-login-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    color: var(--pf-global--primary-color--100);
+}
+
+.ak-logo {
+    max-width: 200px;
+    margin-bottom: 2rem;
+}

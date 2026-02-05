@@ -1,0 +1,16 @@
+branding:
+  title: "Marcoby Identity"
+  logo: "/static/marcoby_authentik_logos/logo_256.png"
+  favicon: "/static/marcoby_authentik_logos/favicon_32.png"
+  flow_background: "/static/marcoby_authentik_logos/flow_background.jpg"
+  corporate_background: true
+  colors:
+    primary: "#0F172A"
+    secondary: "#475569"
+  footer_links:
+    - name: "About Marcoby"
+      href: "https://marcoby.com/about"
+    - name: "Contact Support"
+      href: "https://marcoby.com/support"
+    - name: "Privacy Policy"
+      href: "https://marcoby.com/privacy"
