@@ -17,7 +17,8 @@ import {
   User,
   Pencil,
   FileText,
-  X} from 'lucide-react';
+  X,
+  ChevronLeft} from 'lucide-react';
 import { conversationalAIService } from '@/services/ai/ConversationalAIService';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
@@ -66,7 +67,7 @@ export default function ChatPage() {
   // Single-agent mode: no agent selection
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -108,10 +109,10 @@ export default function ChatPage() {
 
       // Use Conversational AI Service (Streaming)
       const contextInit = await conversationalAIService.initializeContext(user.id, userCompany?.id || 'default');
-      const aiContext = contextInit.success ? contextInit.data : { 
-          userId: user.id, 
-          organizationId: userCompany?.id || 'default', 
-          businessContext: {} 
+      const aiContext = (contextInit.success && contextInit.data) ? contextInit.data : {
+          userId: user.id,
+          organizationId: userCompany?.id || 'default',
+          businessContext: {}
       };
 
       let accumulatedResponse = '';
@@ -303,10 +304,10 @@ export default function ChatPage() {
             <X className="w-8 h-8 text-white" />
           </div>
           <p className="text-red-400 mb-4">{error}</p>
-          <Button 
+          <Button
             onClick={() => {
               setError(null);
-              loadChatData();
+              fetchConversations();
             }}
             className="bg-blue-600 hover:bg-blue-700"
           >
@@ -525,8 +526,8 @@ export default function ChatPage() {
                 className="h-full"
                 userName={displayName}
                 userEmail={userProfile?.email || user?.email}
-                agentId={selectedAgentId}
-                agentName={selectedAgent?.name || "Executive Assistant"}
+                agentId="nexus-assistant"
+                agentName="Executive Assistant"
                 ragEnabled={ragEnabled}
                 ragConfidence={ragConfidence}
                 knowledgeTypes={knowledgeTypes}

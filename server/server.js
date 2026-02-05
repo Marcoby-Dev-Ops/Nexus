@@ -33,6 +33,7 @@ const authRoutes = require('./src/routes/auth');
 const companyRoutes = require('./src/routes/companies');
 const dbRoutes = require('./src/routes/db');
 const rpcRoutes = require('./src/routes/rpc');
+const aiRoutes = require('./src/routes/ai');
 
 const app = express();
 const server = createServer(app);
@@ -293,6 +294,7 @@ app.get('/healthz', (req, res) => {
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/companies', authLimiter, companyRoutes);
 app.use('/api/chat', uploadLimiter, chatRoutes);
+app.use('/api/ai', aiRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
 app.use('/api/user-contacts', userContactsRoutes);

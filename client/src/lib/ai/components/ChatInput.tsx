@@ -172,7 +172,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               <Button
                 size="sm"
                 onClick={isStreaming ? onStopGeneration : onSendMessage}
-                disabled={disabled || (!input.trim() && attachments.length === 0)}
+                disabled={disabled || (!isStreaming && !input.trim() && attachments.length === 0)}
                 className={cn(
                   "rounded-full w-8 h-8 p-0",
                   isStreaming 
