@@ -89,10 +89,10 @@ router.post('/conversations/sync', authenticateOpenClaw, async (req, res) => {
     });
     
     // Import database client
-    const db = require('../src/utils/database');
+    const { query } = require('../src/database/connection');
     
     // Use the sync function from migration
-    const result = await db.query(
+    const result = await query(
       `SELECT sync_openclaw_conversation(
         $1, $2, $3, $4::jsonb, $5, $6, $7::jsonb
       ) as conversation_id`,
@@ -150,9 +150,9 @@ router.get('/conversations', authenticateOpenClaw, async (req, res) => {
       });
     }
     
-    const db = require('../src/utils/database');
+    const { query } = require('../src/database/connection');
     
-    const result = await db.query(
+    const result = await query(
       `SELECT * FROM openclaw_conversations WHERE user_id = $1 ORDER BY created_at DESC`,
       [userId]
     );
@@ -182,7 +182,7 @@ router.get('/conversations/:conversationId', authenticateOpenClaw, async (req, r
     const { conversationId } = req.params;
     const { userId } = req.query;
     
-    const db = require('../src/utils/database');
+    const { query: dbQuery } = require('../src/database/connection');
     
     let query = `SELECT * FROM openclaw_conversations WHERE id = $1`;
     let params = [conversationId];
@@ -192,7 +192,7 @@ router.get('/conversations/:conversationId', authenticateOpenClaw, async (req, r
       params.push(userId);
     }
     
-    const result = await db.query(query, params);
+    const result = await dbQuery(query, params);
     
     if (result.rows.length === 0) {
       return res.status(404).json({
