@@ -198,6 +198,130 @@ function structureResponse(content, intent, phase, conversationId, originalRespo
 }
 
 /**
+ * Generate mock Model-Way response for testing
+ */
+function generateMockModelWayResponse(intent, phase, messages, userId, conversationId) {
+  const lastUserMessage = messages
+    .filter(m => m.role === 'user')
+    .slice(-1)[0]?.content || 'Your request';
+  
+  const responseTemplates = {
+    [INTENT_TYPES.BRAINSTORM.id]: `🧠 **Brainstorming Session** (${phase} phase)
+
+Based on your request: "${lastUserMessage.substring(0, 100)}..."
+
+**Ideas Generated:**
+1. Idea A: [Description]
+2. Idea B: [Description] 
+3. Idea C: [Description]
+
+**Next Phase Actions:**
+- Which idea resonates most?
+- Should we dive deeper into any of these?
+- Need more variations or constraints?
+
+*Model-Way Framework: Using structured brainstorming to generate creative options.*`,
+    
+    [INTENT_TYPES.SOLVE.id]: `🛠 **Problem Solving** (${phase} phase)
+
+Problem: "${lastUserMessage.substring(0, 100)}..."
+
+**Analysis:**
+- Root causes identified: [List]
+- Constraints: [List]
+- Available resources: [List]
+
+**Potential Solutions:**
+1. Solution A: [Description with pros/cons]
+2. Solution B: [Description with pros/cons]
+
+**Recommended Approach:** [Based on ${phase} phase analysis]
+
+*Model-Way Framework: Systematic problem-solving with clear phases.*`,
+    
+    [INTENT_TYPES.WRITE.id]: `✍️ **Writing Assistance** (${phase} phase)
+
+Writing task: "${lastUserMessage.substring(0, 100)}..."
+
+**Structure Outline:**
+1. Introduction: [Key points]
+2. Main sections: [Breakdown]
+3. Conclusion: [Summary]
+
+**Tone & Style:** Professional/Business
+
+**Draft Snippet:** [Example paragraph]
+
+**Next Steps:** Review, revise, or proceed to next section?
+
+*Model-Way Framework: Structured writing process for better outcomes.*`,
+    
+    [INTENT_TYPES.DECIDE.id]: `📊 **Decision Making** (${phase} phase)
+
+Decision to make: "${lastUserMessage.substring(0, 100)}..."
+
+**Decision Criteria:**
+1. [Criterion 1]
+2. [Criterion 2]
+3. [Criterion 3]
+
+**Options Analysis:**
+- Option A: [Analysis]
+- Option B: [Analysis]
+- Option C: [Analysis]
+
+**Recommendation:** [Based on ${phase} phase evaluation]
+
+*Model-Way Framework: Data-driven decision process.*`,
+    
+    [INTENT_TYPES.LEARN.id]: `📚 **Learning Session** (${phase} phase)
+
+Learning goal: "${lastUserMessage.substring(0, 100)}..."
+
+**Key Concepts:**
+1. [Concept 1 with explanation]
+2. [Concept 2 with explanation]
+3. [Concept 3 with explanation]
+
+**Examples & Applications:**
+- [Example 1]
+- [Example 2]
+
+**Check Understanding:**
+- Question 1: [To test comprehension]
+- Question 2: [To test application]
+
+*Model-Way Framework: Structured learning for deeper understanding.*`
+  };
+  
+  const content = responseTemplates[intent.id] || `**Nexus Model-Way Framework**
+  
+Intent: ${intent.name}
+Phase: ${phase}
+  
+Your request is being processed with structured AI collaboration.
+  
+This demonstrates the Model-Way Framework in action.`;
+  
+  return structureResponse(
+    content,
+    intent,
+    phase,
+    conversationId,
+    {
+      success: true,
+      content,
+      model: 'openclaw-modelway-mock',
+      usage: {
+        prompt_tokens: 100,
+        completion_tokens: 200,
+        total_tokens: 300
+      }
+    }
+  );
+}
+
+/**
  * POST /api/ai/chat
  * Streaming chat endpoint with Model-Way Framework
  */
@@ -252,7 +376,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             user: userId // Critical for OpenClaw memory
         };
 
-        logger.info('Proxying chat request to OpenClaw with Model-Way Framework', {
+        logger.info('Model-Way Framework chat request (MOCK MODE)', {
             userId,
             conversationId,
             intent: intent.name,
@@ -262,25 +386,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
 
-        const openClawResponse = await fetch(`${OPENCLAW_API_URL}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENCLAW_API_KEY}`
-            },
-            body: JSON.stringify(openClawPayload)
-        });
-
-        if (!openClawResponse.ok) {
-            const errorText = await openClawResponse.text();
-            logger.error('OpenClaw API error', {
-                status: openClawResponse.status,
-                error: errorText
-            });
-            return res.status(openClawResponse.status).json({
-                success: false,
-                error: `OpenClaw error: ${openClawResponse.status} ${errorText}`
-            });
+        // MOCK MODE: Return simulated Model-Way responses
+        // TODO: Replace with actual OpenClaw API call when available
+        const mockResponse = generateMockModelWayResponse(intent, phase, messages, userId, conversationId);
+        
+        if (!stream) {
+            return res.json(mockResponse);
         }
 
         if (!stream) {

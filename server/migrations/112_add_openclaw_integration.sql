@@ -19,14 +19,21 @@ CREATE INDEX IF NOT EXISTS idx_ai_conversations_external_id ON ai_conversations(
 CREATE INDEX IF NOT EXISTS idx_ai_messages_source ON ai_messages(source);
 CREATE INDEX IF NOT EXISTS idx_ai_messages_external_id ON ai_messages(external_id) WHERE external_id IS NOT NULL;
 
--- Add check constraint for valid source values
-ALTER TABLE ai_conversations 
-ADD CONSTRAINT ai_conversations_source_check 
-CHECK (source IN ('nexus', 'openclaw', 'api', 'webhook', 'import'));
-
-ALTER TABLE ai_messages 
-ADD CONSTRAINT ai_messages_source_check 
-CHECK (source IN ('nexus', 'openclaw', 'api', 'webhook', 'import'));
+-- Add check constraint for valid source values (only if not exists)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ai_conversations_source_check') THEN
+        ALTER TABLE ai_conversations 
+        ADD CONSTRAINT ai_conversations_source_check 
+        CHECK (source IN ('nexus', 'openclaw', 'api', 'webhook', 'import'));
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ai_messages_source_check') THEN
+        ALTER TABLE ai_messages 
+        ADD CONSTRAINT ai_messages_source_check 
+        CHECK (source IN ('nexus', 'openclaw', 'api', 'webhook', 'import'));
+    END IF;
+END $$;
 
 -- Create a function to insert OpenClaw conversation
 CREATE OR REPLACE FUNCTION create_openclaw_conversation(
@@ -234,6 +241,7 @@ COMMENT ON COLUMN ai_messages.source IS 'Source of the message: nexus, openclaw,
 COMMENT ON COLUMN ai_messages.external_id IS 'External ID from the source platform (e.g., OpenClaw message ID)';
 COMMENT ON COLUMN ai_messages.platform_metadata IS 'Platform-specific metadata for the message';
 
--- Insert migration record
+-- Insert migration record (only if not exists)
 INSERT INTO schema_migrations (version, name, applied_at) 
-VALUES (112, '112_add_openclaw_integration.sql', NOW());
+SELECT 112, '112_add_openclaw_integration.sql', NOW()
+WHERE NOT EXISTS (SELECT 1 FROM schema_migrations WHERE version = 112);
