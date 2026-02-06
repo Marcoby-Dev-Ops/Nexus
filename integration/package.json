@@ -1,0 +1,27 @@
+{
+  "name": "nexus-openclaw-integration",
+  "version": "1.0.0",
+  "description": "OpenClaw Integration Service for Nexus with Model-Way Framework",
+  "main": "openclaw-integration-modelway.js",
+  "scripts": {
+    "start": "node openclaw-integration-modelway.js",
+    "dev": "nodemon openclaw-integration-modelway.js",
+    "test": "echo \"Tests to be implemented\" && exit 0"
+  },
+  "keywords": [
+    "nexus",
+    "openclaw",
+    "ai",
+    "integration",
+    "model-way",
+    "framework"
+  ],
+  "author": "Marcoby",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
