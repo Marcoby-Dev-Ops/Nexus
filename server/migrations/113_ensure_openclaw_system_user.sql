@@ -13,8 +13,6 @@ BEGIN
             user_id,
             email,
             display_name,
-            is_active,
-            is_system_user,
             metadata,
             created_at,
             updated_at
@@ -22,11 +20,10 @@ BEGIN
             v_openclaw_user_id,
             'openclaw@system.local',
             'OpenClaw System',
-            true,
-            true,
             jsonb_build_object(
                 'source', 'system',
                 'system_type', 'openclaw',
+                'is_system_user', true,
                 'description', 'System user for OpenClaw integration'
             ),
             NOW(),
@@ -43,8 +40,8 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_ai_conversations_source_user 
 ON ai_conversations(source, user_id);
 
-CREATE INDEX IF NOT EXISTS idx_ai_messages_source_user 
-ON ai_messages(source, user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_messages_source_conversation
+ON ai_messages(source, conversation_id);
 
 -- Create a function to get conversation statistics by source
 CREATE OR REPLACE FUNCTION get_conversation_stats_by_source(
