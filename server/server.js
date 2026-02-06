@@ -270,10 +270,12 @@ app.get('/health', async (req, res) => {
     }
 
     // Overall health status
-    const allChecksPassed = Object.values(healthStatus.checks).every(check => check.status === 'ok');
+    const checks = healthStatus.checks ? Object.values(healthStatus.checks) : [];
+    const dbOk = healthStatus.database ? healthStatus.database === 'ok' : true;
+    const allChecksPassed = checks.every(check => check.status === 'ok') && dbOk;
     healthStatus.status = allChecksPassed ? 'ok' : 'degraded';
 
-  const statusCode = allChecksPassed ? 200 : 503;
+    const statusCode = allChecksPassed ? 200 : 503;
     res.status(statusCode).json(healthStatus);
 
   } catch (error) {

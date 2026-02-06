@@ -79,11 +79,11 @@ CREATE OR REPLACE FUNCTION cleanup_old_openclaw_conversations(
 DECLARE
     v_deleted_count INTEGER;
 BEGIN
-    DELETE FROM ai_conversations 
-    WHERE source = 'openclaw' 
-    AND created_at < NOW() - (p_older_than_days || ' days')::INTERVAL
-    RETURNING COUNT(*) INTO v_deleted_count;
-    
+    DELETE FROM ai_conversations
+    WHERE source = 'openclaw'
+    AND created_at < NOW() - (p_older_than_days || ' days')::INTERVAL;
+
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
     RETURN v_deleted_count;
 END;
 $$ LANGUAGE plpgsql;
