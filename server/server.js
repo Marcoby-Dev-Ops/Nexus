@@ -290,7 +290,7 @@ app.get('/health', async (req, res) => {
 // This avoids the need for a sidecar proxy just for health checks
 app.get('/healthz', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.status(200).json({ ok: true, service: 'nexus-backend' });
+  res.status(200).json({ ok: true, service: 'openclaw-coolify' });
 });
 
 // API routes with specific rate limiting
