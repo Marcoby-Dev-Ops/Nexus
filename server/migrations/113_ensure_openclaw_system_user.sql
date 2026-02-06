@@ -110,6 +110,4 @@ FROM ai_messages;
 -- Add comment to document the system user
 COMMENT ON TABLE user_profiles IS 'User profiles including system users like OpenClaw';
 
--- Insert migration record
-INSERT INTO schema_migrations (version, name, applied_at) 
-VALUES (113, '113_ensure_openclaw_system_user.sql', NOW());
+-- Migration record is inserted by the migration runner

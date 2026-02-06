@@ -241,7 +241,4 @@ COMMENT ON COLUMN ai_messages.source IS 'Source of the message: nexus, openclaw,
 COMMENT ON COLUMN ai_messages.external_id IS 'External ID from the source platform (e.g., OpenClaw message ID)';
 COMMENT ON COLUMN ai_messages.platform_metadata IS 'Platform-specific metadata for the message';
 
--- Insert migration record (only if not exists)
-INSERT INTO schema_migrations (version, name, applied_at) 
-SELECT 112, '112_add_openclaw_integration.sql', NOW()
-WHERE NOT EXISTS (SELECT 1 FROM schema_migrations WHERE version = 112);
+-- Migration record is inserted by the migration runner
