@@ -61,7 +61,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
             />
             
             {/* Main content area - Full width responsive */}
-            <main id="main-content" role="main" className="flex-1 overflow-y-auto">
+            <main id="main-content" role="main" className="flex-1 overflow-y-auto relative">
               <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-8 pb-6">
                 {children}
               </div>

@@ -24,7 +24,7 @@ export default function Signup() {
   // credentials are handled via Authentik flow
   const [enrollmentData, setEnrollmentData] = useState<{ email?: string; username?: string } | null>(null);
   const enrollmentProbeAttemptedRef = useRef(false);
-  
+
   const hasStoredAuthContext = () => {
     if (typeof window === 'undefined') {
       return false;
@@ -53,10 +53,10 @@ export default function Signup() {
 
     return false;
   };
-  
+
   const navigate = useNavigate();
   const { signIn } = useAuthentikAuth();
-  
+
   const {
     formData,
     currentStep,
@@ -89,7 +89,7 @@ export default function Signup() {
     const urlParams = new URLSearchParams(window.location.search);
     const email = urlParams.get('email');
     const username = urlParams.get('username');
-    
+
     // Check if user is coming from enrollment flow (has authenticated session)
     const checkEnrollmentUser = async () => {
       try {
@@ -118,11 +118,11 @@ export default function Signup() {
               const userData = await userResponse.json();
               if (userData.success && userData.user) {
                 const user = userData.user;
-                setEnrollmentData({ 
-                  email: user.email, 
-                  username: user.username 
+                setEnrollmentData({
+                  email: user.email,
+                  username: user.username
                 });
-                
+
                 // Pre-populate form with user data
                 updateField('email', user.email);
                 if (user.username) {
@@ -134,7 +134,7 @@ export default function Signup() {
                 if (user.attributes?.last_name) {
                   updateField('lastName', user.attributes.last_name);
                 }
-                
+
                 // Skip to business info step since user is already verified
                 goToStep('business-info');
                 return;
@@ -150,7 +150,7 @@ export default function Signup() {
     // If URL parameters are provided, use them (fallback)
     if (email || username) {
       setEnrollmentData({ email: email || undefined, username: username || undefined });
-      
+
       // Pre-populate form data if available
       if (email) {
         updateField('email', email);
@@ -158,7 +158,7 @@ export default function Signup() {
       if (username) {
         handleUsernameSelect(username);
       }
-      
+
       // If we have both email and username, skip to business info step
       if (email && username) {
         goToStep('business-info');
@@ -258,14 +258,14 @@ export default function Signup() {
         clearSavedData();
         setSignupSuccess(true);
 
-        // Redirect to dashboard since user is already verified
-        navigate('/dashboard');
+        // Redirect to chat since user is already verified
+        navigate('/chat');
         return;
       }
 
       // Check if user already exists first
       const userExists = await AuthentikSignupService.checkUserExists(formData.email);
-      
+
       let result;
       if (userExists) {
         // User exists, update their business info instead
@@ -322,8 +322,8 @@ export default function Signup() {
           logger.warn('Auto sign-in failed, user will need to login manually', { error: signInResult.error });
         }
       } else {
-        // For existing users, redirect to dashboard
-        navigate('/dashboard');
+        // For existing users, redirect to chat
+        navigate('/chat');
       }
 
     } catch {
@@ -387,7 +387,7 @@ export default function Signup() {
           helpText="Use your official business name as it appears on legal documents"
           showHelp={true}
         />
-        
+
         <OptimizedSignupField
           type="select"
           name="businessType"
@@ -587,7 +587,7 @@ export default function Signup() {
             const isPublic = (() => {
               const em = formData.email || '';
               const dom = em.includes('@') ? em.split('@')[1].toLowerCase() : '';
-              const publicDomains = new Set(['gmail.com','yahoo.com','outlook.com','hotmail.com','icloud.com','proton.me','protonmail.com','aol.com','yandex.com','mail.com']);
+              const publicDomains = new Set(['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'proton.me', 'protonmail.com', 'aol.com', 'yandex.com', 'mail.com']);
               return dom && publicDomains.has(dom);
             })();
             return isPublic
@@ -638,7 +638,7 @@ export default function Signup() {
           {enrollmentData?.username ? 'Confirm Your Username' : 'Choose Your Username'}
         </h4>
         <p className="text-sm text-blue-300">
-          {enrollmentData?.username 
+          {enrollmentData?.username
             ? 'Your username is already set from the enrollment process. You can change it if needed.'
             : 'Select a username for your Nexus account. This will be used for logging in.'
           }
@@ -682,14 +682,14 @@ export default function Signup() {
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
               <h4 className="text-green-200 font-bold text-lg">
-                {enrollmentData?.email && enrollmentData?.username 
-                  ? 'Account Setup Complete!' 
+                {enrollmentData?.email && enrollmentData?.username
+                  ? 'Account Setup Complete!'
                   : 'Account Created Successfully!'
                 }
               </h4>
             </div>
             <p className="text-green-300 mb-4">
-              {enrollmentData?.email && enrollmentData?.username 
+              {enrollmentData?.email && enrollmentData?.username
                 ? 'Welcome to Nexus! Your account has been updated with business information and you\'re being redirected to your dashboard.'
                 : 'Welcome to Nexus! Your account has been created successfully. You\'ll now be redirected to complete your authentication setup.'
               }
@@ -699,7 +699,7 @@ export default function Signup() {
               <ul className="text-green-300 text-sm space-y-1">
                 {enrollmentData?.email && enrollmentData?.username ? (
                   <>
-                    <li>• You'll be redirected to your Nexus dashboard</li>
+                    <li>• You'll be redirected to your Nexus AI chat</li>
                     <li>• Your account is fully set up and ready to use</li>
                     <li>• Start exploring Nexus features and capabilities</li>
                     <li>• Configure your business settings and preferences</li>
@@ -743,8 +743,8 @@ export default function Signup() {
           <div className="flex space-x-4">
             <div className="flex-1 py-4 px-6 bg-green-500/20 border border-green-500/30 text-green-200 font-semibold rounded-xl flex items-center justify-center">
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-400 mr-3"></div>
-              {enrollmentData?.email && enrollmentData?.username 
-                ? 'Redirecting to dashboard...'
+              {enrollmentData?.email && enrollmentData?.username
+                ? 'Redirecting to chat...'
                 : 'Redirecting to authentication setup...'
               }
             </div>
@@ -808,23 +808,23 @@ export default function Signup() {
   const getStepTitle = () => {
     switch (currentStep) {
       case 'business-info':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Complete your business profile'
           : 'Tell us about your business';
       case 'contact-info':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Update your contact information'
           : 'Your contact information';
       case 'username-selection':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Confirm your username'
           : 'Choose Your Username';
       case 'verification':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Complete your setup'
           : 'Complete registration with Marcoby';
       default:
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Complete your Nexus setup'
           : 'Sign up for Nexus';
     }
@@ -833,23 +833,23 @@ export default function Signup() {
   const getStepDescription = () => {
     switch (currentStep) {
       case 'business-info':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Let\'s complete your business profile to personalize your Nexus experience'
           : 'Help us understand your business needs to provide the best experience';
       case 'contact-info':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'We\'ll use this information to keep you updated and provide support'
           : 'We\'ll use this information to set up your account and keep you updated';
       case 'username-selection':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Your username is already set. You can change it if needed.'
           : 'Choose a unique username for your Nexus account.';
       case 'verification':
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Complete your business profile setup and access your Nexus dashboard'
           : 'Complete your registration through Marcoby IAM for secure access';
       default:
-        return enrollmentData?.email && enrollmentData?.username 
+        return enrollmentData?.email && enrollmentData?.username
           ? 'Complete your Nexus setup and start growing your business'
           : 'Join thousands of businesses using Nexus to grow and succeed';
     }
@@ -858,16 +858,16 @@ export default function Signup() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-900 via-green-900 to-slate-900">
       {/* Background image */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
         style={{
           backgroundImage: 'url(/marcoby_authentik_logos/flow_background.jpg)',
         }}
       />
-      
+
       {/* Overlay for better text readability */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900/20 via-green-900/5 to-slate-900/20" />
-      
+
       {/* Animated background elements */}
       <div className="absolute inset-0">
         <div className="absolute top-0 -left-4 w-72 h-72 bg-green-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
@@ -892,9 +892,8 @@ export default function Signup() {
       </div>
 
       <div className="relative z-10 min-h-screen flex items-center justify-center p-4">
-        <div className={`w-full max-w-2xl transform transition-all duration-700 ease-out ${
-          mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
-        }`}>
+        <div className={`w-full max-w-2xl transform transition-all duration-700 ease-out ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
+          }`}>
           {/* Logo and branding */}
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
@@ -951,27 +950,27 @@ export default function Signup() {
               {currentStep === 'verification' && renderVerificationStep()}
             </div>
           </div>
-          
+
           {/* Footer */}
           <div className="text-center mt-8 space-y-4">
             <p className="text-sm text-green-300">
               Already have an account?{' '}
-              <Link 
-                to="/login" 
+              <Link
+                to="/login"
                 className="text-green-200 hover:text-white transition-colors duration-200 font-medium underline"
               >
                 Sign in here
               </Link>
             </p>
             <p className="text-sm text-green-300">
-              <Link 
-                to="/" 
+              <Link
+                to="/"
                 className="text-green-200 hover:text-white transition-colors duration-200 flex items-center justify-center group"
               >
-               <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
-                 <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-               </svg>
-               Back to home page
+                <svg className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
+                </svg>
+                Back to home page
               </Link>
             </p>
           </div>

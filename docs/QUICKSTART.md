@@ -1,46 +1,48 @@
-# 🚀 Nexus MVP - Quick Start
+# Quickstart Guide
+
+Welcome to Nexus, your personal assistant platform for actionable intelligence and automation.
 
 ## Prerequisites
-- Docker installed and running
-- pnpm installed (`npm i -g pnpm`)
-- Node.js 18+
 
-## Setup (5 minutes)
+- Node.js 22+ (Bun supported)
+- [OpenClaw](https://github.com/openclaw/openclaw) installed
 
-1. **Run the setup script:**
+## Setup
+
+1. Clone Nexus:
    ```bash
-   ./setup.sh
+   git clone https://github.com/your-org/nexus.git
+   cd nexus
    ```
 
-2. **Copy environment variables:**
+2. Install dependencies:
    ```bash
-   cp supabase/.env .env.local
+   pnpm install
    ```
 
-3. **Start the development server:**
+3. Configure OpenClaw gateway:
+   ```bash
+   openclaw config set gateway.mode=local
+   ```
+
+4. Start Nexus:
    ```bash
    pnpm dev
    ```
 
-4. **Open your browser:**
-   - App: http://localhost:3000
-   - Supabase Studio: http://localhost:54323
+## Connect Channels
 
-## What You'll See
-
-✅ **Login Page** - Enter your email to get a magic link  
-✅ **Dashboard** - Clean interface with navigation  
-✅ **Thought Capture** - Add thoughts that appear in your timeline  
-✅ **Memory Timeline** - Chronological view of all your thoughts  
+- Use OpenClaw to connect messaging, voice, and web channels.
+- See [OpenClaw Channel Docs](https://docs.openclaw.ai/channels) for details.
 
 ## Next Steps
 
-- **Phase 2**: Add See → Think → Act planning framework
-- **Phase 3**: Integrate n8n workflows for actions
+- [Developer Guide](./DEVELOPER_GUIDE.md)
+- [Service Layer Architecture](./SERVICE_LAYER_ARCHITECTURE.md)
+- [Project Overview](./PROJECT_OVERVIEW.md)
 
 ---
-
-🎉 **You now have the first full loop of Nexus working!**
+For full docs, visit [https://docs.openclaw.ai/quickstart](https://docs.openclaw.ai/quickstart)
 
 
 

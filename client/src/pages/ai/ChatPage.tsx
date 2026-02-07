@@ -270,7 +270,7 @@ export default function ChatPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <Sparkles className="w-8 h-8 text-gray-300 animate-pulse" />
@@ -284,7 +284,7 @@ export default function ChatPage() {
   // Ensure we have a valid user
   if (!user) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="w-16 h-16 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-gray-300" />
@@ -298,7 +298,7 @@ export default function ChatPage() {
   // Show error state if there's an error
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="w-16 h-16 bg-red-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <X className="w-8 h-8 text-white" />
@@ -322,7 +322,7 @@ export default function ChatPage() {
   const displayName = userProfile?.display_name || userProfile?.full_name || userProfile?.first_name || user?.name || "User";
 
   return (
-    <div className="flex h-screen bg-gray-900 text-white">
+    <div className="flex h-full bg-gray-900 text-white">
       {/* Left Sidebar */}
       <div className={cn(
         "bg-gray-900 border-r border-gray-800 flex flex-col transition-all duration-300 ease-in-out h-full",

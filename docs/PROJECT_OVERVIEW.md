@@ -144,3 +144,31 @@ Nexus is the spine unifying Marcoby's three pillars—**Pulse** (products), **Ca
   - Role-based permissions and advanced sharing options
 - **Status:** Planned, not yet implemented
 - **Notes:** Requires Azure App Registration and Microsoft Graph API integration. Will use shadcn/ui and Tailwind for frontend, with secure backend proxy for file operations.
+
+---
+
+# Project Overview
+
+Nexus is evolving into a personal assistant platform focused on actionable intelligence and reasoning. The core architecture leverages OpenClaw for agent orchestration, channel connectivity, and automation.
+
+## Assistant Paradigm
+
+- **Contextual Reasoning:** Agents understand user context and intent.
+- **Actionable Intelligence:** Nexus not only analyzes information but acts on it—scheduling, messaging, automating tasks.
+- **Integration:** OpenClaw provides robust channel support and agent SDKs.
+
+## Architecture Highlights
+
+- Modular agent framework (OpenClaw SDK)
+- Multi-channel routing (Telegram, Discord, Slack, etc.)
+- Extensible skills/tools
+- Secure configuration and RBAC
+
+## Next Steps
+
+- [Quickstart Guide](https://docs.openclaw.ai/quickstart)
+- [Developer Guide](https://docs.openclaw.ai/developer-guide)
+- [Service Layer Architecture](./SERVICE_LAYER_ARCHITECTURE.md)
+
+---
+For more, see [https://docs.openclaw.ai/](https://docs.openclaw.ai/)

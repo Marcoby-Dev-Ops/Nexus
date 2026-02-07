@@ -7,11 +7,11 @@
 const { query } = require('../database/connection');
 const { createError } = require('../middleware/errorHandler');
 const { logger } = require('../utils/logger');
-const { 
-  generateSystemPrompt, 
-  selectAgent, 
-  validatePrompt, 
-  shouldSwitchPrompt 
+const {
+  generateSystemPrompt,
+  selectAgent,
+  validatePrompt,
+  shouldSwitchPrompt
 } = require('./promptManager');
 
 // Initialize conversation history using local database
@@ -33,6 +33,7 @@ let aiGateway;
 try {
   const { NexusAIGatewayService } = require('../../services/NexusAIGatewayService');
   aiGateway = new NexusAIGatewayService({
+    enableOpenClaw: true,
     enableOpenAI: true,
     enableOpenRouter: true,
     enableLocal: true,
@@ -193,7 +194,7 @@ function generateAgentSystemPrompt(agentId, userContext = {}, businessHealth = {
   };
 
   const agent = agentConfigs[agentId] || agentConfigs['assistant'];
-  
+
   let systemPrompt = `You are ${agent.name}, a ${agent.role} with ${agent.background}. You specialize in ${agent.expertise}.
 
 Your communication style is ${agent.style}. You should:
@@ -408,7 +409,7 @@ async function generateAIResponse(message, systemPrompt, conversationHistory, ag
 
   } catch (error) {
     logger.error('Error generating AI response:', error);
-    
+
     // Log the specific error for debugging
     if (error.message.includes('API key')) {
       logger.error('AI Gateway configuration issue - check API keys');
@@ -428,36 +429,36 @@ async function generateAIResponse(message, systemPrompt, conversationHistory, ag
  */
 function generateFallbackResponse(message, agentId, businessHealth) {
   const userMessage = message.toLowerCase();
-  
+
   // Simple keyword-based responses as fallback
   if (userMessage.includes('hello') || userMessage.includes('hi') || userMessage.includes('hey')) {
     return "Hello! I'm here to help you with your business needs. What would you like to work on today?";
   }
-  
+
   if (userMessage.includes('business') || userMessage.includes('company')) {
     return "I'd be happy to help you with your business. What specific aspect would you like to focus on?";
   }
-  
+
   if (userMessage.includes('strategy') || userMessage.includes('plan')) {
     return "Business strategy is crucial for success. What's your primary goal right now?";
   }
-  
+
   if (userMessage.includes('finance') || userMessage.includes('money') || userMessage.includes('revenue')) {
     return "Financial health is key to business sustainability. What financial aspect would you like to discuss?";
   }
-  
+
   if (userMessage.includes('customer') || userMessage.includes('client')) {
     return "Understanding your customers is essential. What aspect of customer relationships would you like to explore?";
   }
-  
+
   if (userMessage.includes('team') || userMessage.includes('people')) {
     return "Your team is your greatest asset. What aspect of team management would you like to discuss?";
   }
-  
+
   if (userMessage.includes('growth') || userMessage.includes('expand')) {
     return "Business growth requires careful planning. What's your growth objective?";
   }
-  
+
   return "I'm here to help you optimize your business. What specific area would you like to work on?";
 }
 
@@ -468,10 +469,10 @@ function analyzeBusinessHealth(businessHealth) {
   if (!businessHealth || Object.keys(businessHealth).length === 0) {
     return null;
   }
-  
+
   const insights = [];
   const scores = {};
-  
+
   // Analyze different business areas
   if (businessHealth.finance) {
     const financeScore = businessHealth.finance.score || 0;
@@ -484,7 +485,7 @@ function analyzeBusinessHealth(businessHealth) {
       insights.push("Your financial health needs attention - focus on improving cash flow and profitability.");
     }
   }
-  
+
   if (businessHealth.operations) {
     const opsScore = businessHealth.operations.score || 0;
     scores.operations = opsScore;
@@ -496,7 +497,7 @@ function analyzeBusinessHealth(businessHealth) {
       insights.push("Your operations need improvement - consider streamlining workflows and reducing inefficiencies.");
     }
   }
-  
+
   if (businessHealth.customers) {
     const customerScore = businessHealth.customers.score || 0;
     scores.customers = customerScore;
@@ -508,11 +509,11 @@ function analyzeBusinessHealth(businessHealth) {
       insights.push("Your customer satisfaction needs work - focus on improving customer experience and retention.");
     }
   }
-  
+
   return {
     insights,
     scores,
-    overallHealth: Object.values(scores).length > 0 ? 
+    overallHealth: Object.values(scores).length > 0 ?
       Object.values(scores).reduce((a, b) => a + b, 0) / Object.values(scores).length : 0
   };
 }
@@ -522,9 +523,9 @@ function analyzeBusinessHealth(businessHealth) {
  */
 async function ai_chat(payload, user) {
   logger.info('AI chat function called', { userId: user?.id });
-  
+
   const { message, context = {}, attachments = [] } = payload;
-  
+
   const {
     conversationId,
     agentId: initialAgentId = 'executive-assistant',
@@ -535,7 +536,7 @@ async function ai_chat(payload, user) {
     nextBestActions = [],
     businessHealth = {}
   } = context;
-  
+
   let agentId = initialAgentId;
 
   try {
@@ -553,16 +554,16 @@ async function ai_chat(payload, user) {
     const userContext = await buildUserProfileContext(user?.id, providedUserContext, contextUser);
 
     const systemPrompt = generateAgentSystemPrompt(agentId, userContext, businessHealth);
-    
+
     // Prepare conversation history
     const conversationHistory = previousMessages || [];
-    
+
     // Generate AI response
     const aiResponse = await generateAIResponse(
-      sanitizedMessage, 
-      systemPrompt, 
-      conversationHistory, 
-      agentId, 
+      sanitizedMessage,
+      systemPrompt,
+      conversationHistory,
+      agentId,
       businessHealth
     );
 
@@ -594,7 +595,7 @@ async function ai_chat(payload, user) {
 
   } catch (error) {
     logger.error('Error in AI chat:', error);
-    
+
     return {
       success: false,
       error: error.message || 'Failed to process chat message',

@@ -62,8 +62,8 @@ function validateJWTToken(token) {
       throw new Error('Token expired');
     }
 
-    // Check issuer - be more permissive during debugging
-    const expectedIssuer = 'https://identity.marcoby.com';
+    // Check issuer - use configured Authentik base URL
+    const expectedIssuer = process.env.AUTHENTIK_BASE_URL || 'https://identity.marcoby.com';
     if (payload.iss) {
       const isAuthentikIssuer = payload.iss === expectedIssuer || 
                                payload.iss.startsWith(expectedIssuer + '/application/');
