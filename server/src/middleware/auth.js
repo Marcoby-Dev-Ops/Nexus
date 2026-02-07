@@ -63,31 +63,32 @@ function validateJWTToken(token) {
     }
 
     // Check issuer - use configured Authentik base URL
-    const expectedIssuer = process.env.AUTHENTIK_BASE_URL || 'https://identity.marcoby.com';
+    // Normalize by stripping trailing slashes to avoid mismatches
+    // (Authentik sends "https://host/" while config has "https://host")
+    const expectedIssuer = (process.env.AUTHENTIK_BASE_URL || 'https://identity.marcoby.com').replace(/\/+$/, '');
     if (payload.iss) {
-      const isAuthentikIssuer = payload.iss === expectedIssuer || 
-                               payload.iss.startsWith(expectedIssuer + '/application/');
-      
+      const normalizedIss = payload.iss.replace(/\/+$/, '');
+      const isAuthentikIssuer = normalizedIss === expectedIssuer ||
+                               normalizedIss.startsWith(expectedIssuer + '/application/');
+
       if (!isAuthentikIssuer) {
-        logger.warn('Token issuer mismatch', { 
-          expected: expectedIssuer, 
-          actual: payload.iss 
+        logger.warn('Token issuer mismatch', {
+          expected: expectedIssuer,
+          actual: payload.iss
         });
-        
+
         // Strict issuer validation for production
         throw new Error('Invalid token issuer');
       }
     }
 
-    // Check audience - be more permissive during debugging
+    // Check audience against configured client ID
     const clientId = process.env.AUTHENTIK_CLIENT_ID;
-    if (payload.aud && payload.aud !== clientId) {
-      logger.warn('Token audience mismatch', { 
-        expected: clientId, 
-        actual: payload.aud 
+    if (payload.aud && clientId && payload.aud !== clientId) {
+      logger.warn('Token audience mismatch', {
+        expected: clientId,
+        actual: payload.aud
       });
-      
-      // Strict audience validation for production
       throw new Error('Invalid token audience');
     }
 
