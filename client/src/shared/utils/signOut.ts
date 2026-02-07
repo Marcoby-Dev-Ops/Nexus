@@ -1,31 +1,44 @@
 import { authentikAuthService } from '@/core/auth/authentikAuthServiceInstance';
 import { logger } from '@/shared/utils/logger';
 
+function getAuthentikBaseUrl(): string {
+  // Match the same resolution order as authentikAuthServiceInstance
+  const url =
+    (window as any).__APP_CONFIG__?.VITE_AUTHENTIK_URL ||
+    import.meta.env.VITE_AUTHENTIK_URL ||
+    'https://identity.marcoby.com';
+  return url.replace(/\/+$/, '');
+}
+
+function clearAllAuthStorage(): void {
+  const authKeys = [
+    'authentik_token',
+    'authentik_refresh_token',
+    'authentik_session',
+    'supabase.auth.token',
+    'supabase.auth.refreshToken',
+    'supabase.auth.expiresAt',
+    'supabase.auth.expiresIn',
+    'supabase.auth.tokenType',
+    'supabase.auth.user',
+    'supabase.auth.session',
+  ];
+  authKeys.forEach(key => localStorage.removeItem(key));
+  sessionStorage.clear();
+}
+
 export async function performSignOut(): Promise<void> {
   try {
     logger.info('Signing out user');
-    
-    // Sign out from Authentik
+
+    // Sign out from Authentik (revokes the token)
     const result = await authentikAuthService.signOut();
-    
+
     if (!result.success) {
       logger.error('Failed to sign out from Marcoby IAM:', result.error);
     }
 
-    // Clear all authentication-related local storage
-    localStorage.removeItem('authentik_token');
-    localStorage.removeItem('authentik_refresh_token');
-    localStorage.removeItem('authentik_session');
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('supabase.auth.refreshToken');
-    localStorage.removeItem('supabase.auth.expiresAt');
-    localStorage.removeItem('supabase.auth.expiresIn');
-    localStorage.removeItem('supabase.auth.tokenType');
-    localStorage.removeItem('supabase.auth.user');
-    localStorage.removeItem('supabase.auth.session');
-
-    // Clear any session storage
-    sessionStorage.clear();
+    clearAllAuthStorage();
 
     // Clear any cached data
     if ('caches' in window) {
@@ -37,27 +50,28 @@ export async function performSignOut(): Promise<void> {
       }
     }
 
-    // Redirect to login page
-    window.location.href = '/login';
-    
+    // Redirect to Authentik's session-end page to invalidate the SSO cookie.
+    // Without this, the Authentik session cookie stays active and /login
+    // silently re-authenticates the user via OAuth.
+    const authentikBase = getAuthentikBaseUrl();
+    const postLogoutRedirect = `${window.location.origin}/login`;
+    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
+
     logger.info('User signed out successfully');
   } catch (error) {
     logger.error('Error during sign out:', error);
-    
-    // Even if there's an error, clear local storage and redirect
-    localStorage.removeItem('authentik_token');
-    localStorage.removeItem('authentik_refresh_token');
-    localStorage.removeItem('authentik_session');
-    localStorage.removeItem('supabase.auth.token');
-    localStorage.removeItem('supabase.auth.refreshToken');
-    localStorage.removeItem('supabase.auth.expiresAt');
-    localStorage.removeItem('supabase.auth.expiresIn');
-    localStorage.removeItem('supabase.auth.tokenType');
-    localStorage.removeItem('supabase.auth.user');
-    localStorage.removeItem('supabase.auth.session');
-    sessionStorage.clear();
-    
-    window.location.href = '/login';
+
+    clearAllAuthStorage();
+
+    // Fallback: still try Authentik session-end
+    try {
+      const authentikBase = getAuthentikBaseUrl();
+      const postLogoutRedirect = `${window.location.origin}/login`;
+      window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
+    } catch {
+      // Last resort: just go to login
+      window.location.href = '/login';
+    }
   }
 }
 
@@ -67,23 +81,19 @@ export async function performSignOut(): Promise<void> {
 export const signOutWithRedirect = async (redirectTo: string = '/'): Promise<void> => {
   try {
     logger.info('Signing out with redirect', { redirectTo });
-    
-    // Perform the sign out
-    await performSignOut();
-    
-    // Override the redirect
-    setTimeout(() => {
-      logger.info('Redirecting to specified page', { redirectTo });
-      window.location.href = redirectTo;
-    }, 100);
-    
+    await authentikAuthService.signOut();
+    clearAllAuthStorage();
+
+    const authentikBase = getAuthentikBaseUrl();
+    const postLogoutRedirect = redirectTo.startsWith('http') ? redirectTo : `${window.location.origin}${redirectTo}`;
+    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
   } catch (error) {
     logger.error('Sign out with redirect failed', { error: (error as Error).message });
-    
-    // Redirect even on error
-    setTimeout(() => {
-      window.location.href = redirectTo;
-    }, 100);
+    clearAllAuthStorage();
+
+    const authentikBase = getAuthentikBaseUrl();
+    const postLogoutRedirect = redirectTo.startsWith('http') ? redirectTo : `${window.location.origin}${redirectTo}`;
+    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
   }
 };
 
@@ -91,53 +101,27 @@ export const signOutWithRedirect = async (redirectTo: string = '/'): Promise<voi
  * Force sign out without waiting for auth service
  * Use this when auth service is unavailable
  */
-export const forceSignOut = (redirectTo: string = '/'): void => {
-  logger.info('Force sign out called', { redirectTo });
-  
-  // Clear everything immediately
+export const forceSignOut = (redirectTo?: string): void => {
+  logger.info('Force sign out called');
+
   try {
-    // Clear all storage
     localStorage.clear();
     sessionStorage.clear();
-    
-    // Clear any cached data
+
     if ('caches' in window) {
       caches.keys().then(cacheNames => {
-        cacheNames.forEach(cacheName => {
-          caches.delete(cacheName);
-        });
+        cacheNames.forEach(cacheName => caches.delete(cacheName));
       });
     }
-
-    // Force clear any remaining auth-related items
-    const authKeys = [
-      'authentik_token',
-      'authentik_refresh_token', 
-      'authentik_session',
-      'supabase.auth.token',
-      'supabase.auth.refreshToken',
-      'supabase.auth.expiresAt',
-      'supabase.auth.expiresIn',
-      'supabase.auth.tokenType',
-      'supabase.auth.user',
-      'supabase.auth.session'
-    ];
-    
-    authKeys.forEach(key => {
-      try {
-        localStorage.removeItem(key);
-      } catch (e) {
-        // Ignore errors
-      }
-    });
   } catch (error) {
     logger.warn('Error during force sign out cleanup', { error: (error as Error).message });
   }
-  
-  // Force redirect
+
+  // Redirect to Authentik session-end to invalidate SSO cookie
   setTimeout(() => {
-    logger.info('Force redirecting to home page');
-    window.location.href = redirectTo;
+    const authentikBase = getAuthentikBaseUrl();
+    const postLogoutRedirect = redirectTo || `${window.location.origin}/login`;
+    window.location.href = `${authentikBase}/if/session-end/?redirect_uri=${encodeURIComponent(postLogoutRedirect)}`;
   }, 50);
 };
 
