@@ -7,15 +7,15 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { ConversationContextManager } from '@/lib/ai/conversation-context-manager'
-import { 
-  MessageCircle, 
-  Send, 
-  Bot, 
-  User, 
-  Sparkles, 
-  Wand2, 
-  Check, 
-  X, 
+import {
+  MessageCircle,
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  Wand2,
+  Check,
+  X,
   Loader2,
   RotateCcw,
   Eye,
@@ -44,11 +44,11 @@ interface ChatFormGridProps {
   onCancel: () => void
 }
 
-export function ChatFormGrid({ 
-  section, 
-  context, 
+export function ChatFormGrid({
+  section,
+  context,
   currentValue,
-  onUpdate, 
+  onUpdate,
   onSave,
   onCancel
 }: ChatFormGridProps) {
@@ -83,11 +83,11 @@ export function ChatFormGrid({
   const getWelcomeMessage = (section: string, context?: any) => {
     const companyName = context?.companyName || 'your company'
     const industry = context?.industry || 'your industry'
-    
+
     // Get stored context for this section
     const storedContext = contextManager.getContextSummary(section)
     const relevantQuestions = contextManager.getRelevantQuestions(section)
-    
+
     const baseMessages = {
       mission: `Hi! I'm here to help you craft a compelling mission statement for ${companyName}.`,
       vision: `Hello! I'd love to help you create a powerful vision statement for ${companyName}.`,
@@ -96,14 +96,14 @@ export function ChatFormGrid({
       culture: `Hi! Let's define the culture that makes ${companyName} unique.`,
       brand: `Hello! I'm here to help you define ${companyName}'s brand personality.`
     }
-    
+
     let welcomeMessage = baseMessages[section] || 'Hi! I\'m here to help you with this section.'
-    
+
     // Add stored context if available
     if (storedContext) {
       welcomeMessage += `\n\nI remember our previous conversations about this topic. ${storedContext}`
     }
-    
+
     // Add relevant questions
     if (relevantQuestions.length > 0) {
       welcomeMessage += `\n\nLet's continue exploring: ${relevantQuestions[0]}`
@@ -119,7 +119,7 @@ export function ChatFormGrid({
       }
       welcomeMessage += `\n\nLet's start with: ${defaultQuestions[section] || 'What would you like to explore?'}`
     }
-    
+
     return welcomeMessage
   }
 
@@ -134,7 +134,7 @@ export function ChatFormGrid({
     }
 
     setMessages(prev => [...prev, userMessage])
-    
+
     // Store the user's answer as insight
     const lastAssistantMessage = messages.filter(m => m.type === 'assistant').pop()
     if (lastAssistantMessage) {
@@ -144,7 +144,7 @@ export function ChatFormGrid({
         contextManager.addAnswer(section, question, inputValue, 'Medium')
       }
     }
-    
+
     setInputValue('')
     setIsTyping(true)
 
@@ -172,7 +172,7 @@ export function ChatFormGrid({
       }
 
       const data = await response.json();
-      
+
       const assistantMessage: Message = {
         id: data.data.conversationId || (Date.now() + 1).toString(),
         type: 'assistant',
@@ -213,80 +213,60 @@ export function ChatFormGrid({
       /How does your team prefer to work\?/,
       /How do you want people to perceive/
     ]
-    
+
     for (const pattern of questionPatterns) {
       const match = message.match(pattern)
       if (match) {
         return match[0]
       }
     }
-    
+
     return null
   }
 
-  const generateAIResponse = (section: string, userInput: string, messageHistory: Message[], context?: any) => {
-    // This is a mock AI response generator - replace with actual AI API
-    const responses = {
-      mission: [
-        "That's a great start! Now, who are your main customers? What makes them choose you over competitors?",
-        "Interesting! What specific problem does this solve for your customers? How does it make their lives better?",
-        "Perfect! Now let's think about your unique approach. What sets your solution apart from others in the market?",
-        "Excellent! Based on what you've told me, I can help you craft a mission statement. Would you like me to generate one now?"
-      ],
-      vision: [
-        "That's inspiring! What kind of change do you want to create in the world? How will the industry be different because of your company?",
-        "Great vision! What would success look like for your company? How would you measure that you've achieved your vision?",
-        "Wonderful! What legacy do you want to leave? How do you want to be remembered in your industry?",
-        "Fantastic! I have enough information to create a vision statement. Should I generate one for you?"
-      ],
-      purpose: [
-        "That's powerful! What drives you personally to work on this? What would you do even if you weren't getting paid?",
-        "I love that! What cause or mission are you most passionate about? How does your work contribute to something bigger?",
-        "That's meaningful! What impact do you hope to have on your customers' lives? How do you want to make a difference?",
-        "Perfect! I think I understand your purpose now. Would you like me to help you articulate it clearly?"
-      ],
-      values: [
-        "Those are important values! How do these values show up in your daily work? Can you give me an example?",
-        "Great values! How do you ensure your team lives these values? What behaviors do you reward?",
-        "Excellent! What would you never compromise on, even if it meant losing business?",
-        "Wonderful! I have a good sense of your values. Should I help you refine and articulate them?"
-      ]
-    }
+  // generateAIResponse removed — OpenClaw handles all AI responses via /api/chat/message
 
-    const sectionResponses = responses[section] || responses.mission
-    const randomResponse = sectionResponses[Math.floor(Math.random() * sectionResponses.length)]
-    
-    return randomResponse
-  }
 
   const handleGenerateFinal = async () => {
     setIsTyping(true)
-    
-    // Simulate final generation
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    const finalContent = generateFinalContent(section, messages, context)
-    setGeneratedContent(finalContent)
-    setShowGeneratedContent(true)
-    onUpdate(finalContent) // Update the form in real-time
-    setIsTyping(false)
+
+    try {
+      // Build a prompt from conversation history for OpenClaw to generate final content
+      const conversationSummary = messages
+        .map(m => `${m.type === 'user' ? 'User' : 'Assistant'}: ${m.content}`)
+        .join('\n')
+
+      const generatePrompt = `Based on our conversation below, generate a concise, polished ${getSectionTitle().toLowerCase()} for ${context?.companyName || 'the company'}.\n\nConversation:\n${conversationSummary}\n\nGenerate ONLY the final ${getSectionTitle().toLowerCase()} text, nothing else.`
+
+      const response = await fetch('/api/chat/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('token') || ''
+        },
+        body: JSON.stringify({
+          message: generatePrompt,
+          context: { section, ...context }
+        })
+      })
+
+      if (!response.ok) throw new Error('Failed to generate content')
+
+      const data = await response.json()
+      const finalContent = data.data?.reply || 'Failed to generate content. Please try again.'
+
+      setGeneratedContent(finalContent)
+      setShowGeneratedContent(true)
+      onUpdate(finalContent)
+    } catch (error) {
+      console.error('Failed to generate final content:', error)
+      setGeneratedContent('Failed to generate content. Please try again.')
+      setShowGeneratedContent(true)
+    } finally {
+      setIsTyping(false)
+    }
   }
 
-  const generateFinalContent = (section: string, messageHistory: Message[], context?: any) => {
-    const companyName = context?.companyName || 'your company'
-    const industry = context?.industry || 'your industry'
-    
-    const finalContents = {
-      mission: `To revolutionize ${industry} by providing innovative solutions that empower businesses to achieve their full potential, while maintaining the highest standards of quality and customer satisfaction.`,
-      vision: `To become the leading ${industry} company that transforms how businesses operate, creating a world where every organization can thrive through cutting-edge technology and exceptional service.`,
-      purpose: `We exist to solve complex challenges in ${industry}, making a meaningful difference in the lives of our customers and communities through innovative solutions and unwavering commitment to excellence.`,
-      values: `Innovation, Integrity, Customer-Centricity, Excellence, Collaboration`,
-      culture: `We foster a collaborative, remote-first environment where transparency, continuous learning, and mutual respect drive our success.`,
-      brand: `Professional yet approachable, innovative yet reliable, ambitious yet humble`
-    }
-    
-    return finalContents[section] || 'Generated content based on our conversation...'
-  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -365,11 +345,10 @@ export function ChatFormGrid({
                     </div>
                   )}
                   <div
-                    className={`max-w-[80%] rounded-lg px-3 py-2 ${
-                      message.type === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
+                    className={`max-w-[80%] rounded-lg px-3 py-2 ${message.type === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
+                      }`}
                   >
                     <p className="text-sm">{message.content}</p>
                   </div>
@@ -441,8 +420,8 @@ export function ChatFormGrid({
               <CardTitle className="text-lg">{getSectionTitle()}</CardTitle>
             </div>
             <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => setIsEditing(!isEditing)}
               >
@@ -467,8 +446,8 @@ export function ChatFormGrid({
                 <p className="text-sm whitespace-pre-wrap">{generatedContent}</p>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   onClick={() => {
                     onUpdate(generatedContent)
                     setShowGeneratedContent(false)
@@ -478,9 +457,9 @@ export function ChatFormGrid({
                   <Check className="h-4 w-4 mr-2" />
                   Accept & Use
                 </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={handleGenerateFinal}
                   className="flex-1"
                 >

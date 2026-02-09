@@ -63,7 +63,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { messages, stream = true, conversationId: providedConvId, system } = req.body;
+    const { messages, stream = true, conversationId: providedConvId } = req.body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
         return res.status(400).json({ success: false, error: 'Messages array is required' });
@@ -72,28 +72,20 @@ router.post('/chat', authenticateToken, async (req, res) => {
     try {
         const conversationId = providedConvId || `conv-${userId}-${Date.now()}`;
 
-        // Build messages array, prepending system prompt if provided
-        let finalMessages = messages;
-        if (system && typeof system === 'string' && system.trim()) {
-            // Prepend system prompt as first message
-            finalMessages = [
-                { role: 'system', content: system },
-                ...messages.filter(m => m.role !== 'system') // Avoid duplicate system messages
-            ];
-        }
+        // Strip any system messages from client - let OpenClaw's soul/system docs handle personality
+        const userMessages = messages.filter(m => m.role !== 'system');
 
-        // Proxy payload with Nexus context forwarded to OpenClaw
+        // Pure proxy payload: no system prompt, OpenClaw's own agent config drives behavior
         const openClawPayload = {
-            messages: finalMessages,
+            messages: userMessages,
             stream: stream,
-            user: userId // Critical for OpenClaw memory
+            user: userId // Critical for OpenClaw per-user memory
         };
 
         logger.info('Chat proxy request', {
             userId,
             conversationId,
-            messageCount: finalMessages.length,
-            hasSystemPrompt: !!system,
+            messageCount: userMessages.length,
             stream,
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
