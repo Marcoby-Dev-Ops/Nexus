@@ -401,6 +401,77 @@ router.post('/chat', authenticateToken, async (req, res) => {
             throw new Error(`OpenClaw API error: ${openClawResponse.status} - ${errorText}`);
         }
 
+        // Check if upstream response is JSON (non-streaming)
+        const contentType = openClawResponse.headers.get('content-type');
+        
+        if (contentType && contentType.includes('application/json')) {
+             // Handle non-streaming upstream response from Bridge
+             const data = await openClawResponse.json();
+             const content = data.choices?.[0]?.message?.content || '';
+             
+             // If client wanted stream, emit it as an SSE event sequence
+             if (stream) {
+                 res.setHeader('Content-Type', 'text/event-stream');
+                 res.setHeader('Cache-Control', 'no-cache');
+                 res.setHeader('Connection', 'keep-alive');
+                 res.setHeader('X-Accel-Buffering', 'no');
+                 res.flushHeaders();
+
+                 const phaseProgress = {
+                    [PHASES.DISCOVERY]: 25,
+                    [PHASES.SYNTHESIS]: 50,
+                    [PHASES.DECISION]: 75,
+                    [PHASES.EXECUTION]: 100
+                 };
+
+                 // 1. Metadata event
+                 res.write(`data: ${JSON.stringify({
+                    metadata: {
+                        modelWay: {
+                            intent: {
+                                id: intent.id,
+                                name: intent.name,
+                                emoji: intent.emoji,
+                                description: intent.description
+                            },
+                            phase: {
+                                id: phase,
+                                name: phase.charAt(0).toUpperCase() + phase.slice(1),
+                                progress: phaseProgress[phase] || 0
+                            },
+                            conversationId,
+                            timestamp: new Date().toISOString()
+                        }
+                    }
+                 })}\n\n`);
+
+                 // 2. Content event
+                 if (content) {
+                    res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                 }
+
+                 // 3. Done event
+                 res.write('data: [DONE]\n\n');
+                 res.end();
+                 return;
+             } else {
+                 // return normal JSON if client didn't want stream
+                 const response = structureResponse(
+                    content,
+                    intent,
+                    phase,
+                    conversationId,
+                    {
+                        success: true,
+                        content,
+                        model: data.model,
+                        usage: data.usage
+                    }
+                );
+                return res.json(response);
+             }
+        }
+
         if (!stream) {
             // Non-streaming: return JSON response with Model-Way metadata
             const data = await openClawResponse.json();
