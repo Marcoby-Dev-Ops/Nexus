@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState } from 'react';
 interface HeaderContextType {
   pageTitle: string | null;
   pageSubtitle: string | null;
+  pageIcon: ReactNode | null;
   pageActions: ReactNode | null;
   setHeaderContent: (title: string | null, subtitle?: string | null, actions?: ReactNode | null) => void;
   setPageActions: (actions: ReactNode | null) => void;

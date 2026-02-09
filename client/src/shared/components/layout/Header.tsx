@@ -1,47 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { OrgSwitcher } from '@/shared/components/layout/OrgSwitcher';
-import { Settings, LogOut, Menu, Sparkles, Shield, Brain } from 'lucide-react';
+import { Settings, LogOut, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react';
 import { ThemeToggleAdvanced } from '@/components/ui/theme-toggle-advanced';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
+import { navItems } from './navConfig';
 
 interface HeaderProps {
   onSidebarToggle?: () => void;
+  isSidebarOpen?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
-  const { user, signIn } = useAuth();
+export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
+  const { user, signIn, signOut } = useAuth();
   const { profile } = useUserProfile();
-  const { pageTitle, pageSubtitle, pageIcon } = useHeaderContext();
+  const { pageTitle, pageSubtitle } = useHeaderContext();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     try {
-      // Clear all auth-related storage
-      localStorage.removeItem('authentik_session');
-      localStorage.removeItem('authentik_token');
-      localStorage.removeItem('authentik_refresh_token');
-      localStorage.removeItem('supabase.auth.token');
-      localStorage.removeItem('supabase.auth.refreshToken');
-      localStorage.removeItem('supabase.auth.expiresAt');
-      localStorage.removeItem('supabase.auth.expiresIn');
-      localStorage.removeItem('supabase.auth.tokenType');
-      localStorage.removeItem('supabase.auth.user');
-      localStorage.removeItem('supabase.auth.session');
-      
-      // Clear session storage
-      sessionStorage.clear();
-      
-      // Force redirect to login
-      window.location.href = '/login';
-  } catch {
-      // Force redirect even on error
+      await signOut();
+      window.location.href = 'https://identity.marcoby.com/if/flow/default-invalidation-flow/';
+    } catch (error) {
+      console.error('Sign out failed', error);
       window.location.href = '/login';
     }
   };
@@ -49,25 +37,14 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
   const handleSignIn = async () => {
     try {
       await signIn();
-  } catch {
+    } catch {
       // Handle sign in error silently
     }
   };
 
-  // Navigation handlers for dropdown items
   const handleSettingsClick = () => {
     setIsDropdownOpen(false);
     navigate('/settings');
-  };
-
-  const handleAIAssistantClick = () => {
-    setIsDropdownOpen(false);
-    navigate('/ai-hub');
-  };
-
-  const handleSecurityClick = () => {
-    setIsDropdownOpen(false);
-    navigate('/settings/security');
   };
 
   // Close dropdown when clicking outside
@@ -84,202 +61,133 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle }) => {
     };
   }, []);
 
-  // Helper function to get display name with priority for display_name
-  const getDisplayName = () => {
-    if (!user) return 'User';
-    
-    // 1. Use display_name from profile if available (user's preferred name)
-    if (profile?.display_name) {
-      return profile.display_name;
-    }
-    
-    // 2. Use full_name from profile if available
-    if (profile?.full_name) {
-      return profile.full_name;
-    }
-    
-    // 3. Use first_name and last_name from profile
-    if (profile?.first_name || profile?.last_name) {
-      const firstName = profile.first_name || '';
-      const lastName = profile.last_name || '';
-      return `${firstName} ${lastName}`.trim();
-    }
-    
-    // 4. Try to get name from AuthUser properties
-    if (user.firstName && user.lastName) {
-      return `${user.firstName} ${user.lastName}`.trim();
-    }
-    
-    if (user.firstName) {
-      return user.firstName;
-    }
-    
-    if (user.lastName) {
-      return user.lastName;
-    }
-    
-    // 5. Use email username as fallback
-    if (user.email) {
-      const username = user.email.split('@')[0];
-      return username.charAt(0).toUpperCase() + username.slice(1).toLowerCase();
-    }
-    
-    return 'User';
-  };
-
-  // Helper function to get initials for avatar
-  const getInitials = () => {
-    if (!user) return 'U';
-    
-    // 1. Try to get initials from profile display_name
-    if (profile?.display_name) {
-      return profile.display_name.charAt(0).toUpperCase();
-    }
-    
-    // 2. Try to get initials from profile first_name
-    if (profile?.first_name) {
-      return profile.first_name.charAt(0).toUpperCase();
-    }
-    
-    // 3. Try to get initials from AuthUser properties
-    if (user.firstName) {
-      return user.firstName.charAt(0).toUpperCase();
-    }
-    
-    if (user.lastName) {
-      return user.lastName.charAt(0).toUpperCase();
-    }
-    
-    // 4. Use email first character as fallback
-    if (user.email) {
-      return user.email.charAt(0).toUpperCase();
-    }
-    
-    return 'U';
-  };
+  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 flex h-14 items-center justify-between">
-        <div className="flex items-center space-x-4">
-          {/* Mobile menu button */}
-          {onSidebarToggle && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onSidebarToggle}
-              className="lg:hidden"
-              aria-label="Toggle sidebar"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex h-14 items-center px-4 sm:px-6 lg:px-8">
+
+        {/* LEFT: Toggle, Logo, Breadcrumbs */}
+        <div className="flex items-center gap-4 min-w-[200px]">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onSidebarToggle}
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            title={isSidebarOpen ? "Close utility panel" : "Open utility panel"}
+          >
+            {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+          </Button>
+
+          <Link to="/" className="flex items-center gap-2 font-bold text-lg mr-4">
+            <span className="text-primary">Nexus</span>
+          </Link>
+
+          {/* Breadcrumbs / Page Title */}
+          {(pageTitle || pageSubtitle) && (
+            <div className="hidden md:flex items-center text-sm text-muted-foreground border-l pl-4 h-6">
+              {pageTitle}
+              {pageSubtitle && (
+                <>
+                  <span className="mx-2">/</span>
+                  <span className="text-foreground font-medium">{pageSubtitle}</span>
+                </>
+              )}
+            </div>
           )}
-          
-          {/* Page title (optional) + always-on ticker/subtitle */}
-          <div className="flex items-center gap-3 min-w-0">
-            {pageIcon ? (
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                {pageIcon}
+        </div>
+
+        {/* CENTER: Main Navigation */}
+        <div className="flex-1 flex justify-center">
+          <nav className="flex items-center space-x-1">
+            {navItems.filter(item => item.category === 'overview' || item.name === 'Settings').map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`
+                  px-4 py-2 text-sm font-medium transition-colors relative group
+                  ${isActive(item.path)
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
+                  }
+                `}
+              >
+                {item.name}
+                {isActive(item.path) && (
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] rounded-full" />
+                )}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        {/* RIGHT: Status, Search, Profile */}
+        <div className="flex items-center gap-4 justify-end min-w-[200px]">
+          {/* System Status */}
+          <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground" title="System Healthy">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            <span>System Healthy</span>
+          </div>
+
+          {/* Search Placeholder */}
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+            <Search className="h-4 w-4" />
+          </Button>
+
+          {/* User Profile */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 outline-none p-1 rounded-full hover:bg-muted transition-colors"
+            >
+              <Avatar className="h-8 w-8 border border-border">
+                <AvatarImage src={/* user?.avatar_url || */ undefined} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs">
+                  {user?.firstName?.[0]}{user?.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+
+            {isDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-56 rounded-md border bg-popover text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 z-50">
+                <div className="p-2 border-b">
+                  <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+                <div className="p-1">
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <User className="h-4 w-4" />
+                    <span>Profile</span>
+                  </button>
+                  <button
+                    onClick={handleSettingsClick}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Settings</span>
+                  </button>
+                  <ThemeToggleAdvanced />
+                </div>
+                <div className="p-1 border-t">
+                  <button
+                    onClick={handleSignOut}
+                    className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Sign out</span>
+                  </button>
+                </div>
               </div>
-            ) : null}
-            {pageTitle ? (
-              <h1 className="text-lg font-semibold whitespace-nowrap">{pageTitle}</h1>
-            ) : null}
-            {pageTitle && pageSubtitle ? (
-              <span className="text-muted-foreground">•</span>
-            ) : null}
-            {pageSubtitle ? (
-              <span className="text-sm text-muted-foreground truncate">{pageSubtitle}</span>
-            ) : null}
+            )}
           </div>
         </div>
-        
-        <div className="flex items-center space-x-4">
-          {/* Company Selector */}
-          <OrgSwitcher />
-          {/* Theme Toggle */}
-          <ThemeToggleAdvanced />
-          
-                                {user ? (
-             <div className="relative" ref={dropdownRef}>
-               <Button 
-                 variant="ghost" 
-                 className="relative h-8 w-8 rounded-full hover:bg-muted/50 transition-colors"
-                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                 aria-expanded={isDropdownOpen}
-                 aria-haspopup="true"
-               >
-                 <Avatar className="h-8 w-8 ring-2 ring-border hover:ring-primary/40 transition-all">
-                   <AvatarImage src={undefined} alt={getDisplayName()} />
-                   <AvatarFallback className="bg-muted text-muted-foreground font-medium">
-                     {getInitials()}
-                   </AvatarFallback>
-                 </Avatar>
-               </Button>
-               
-                               {isDropdownOpen && (
-                  <div 
-                    className="absolute right-0 top-12 w-72 bg-popover border border-border rounded-lg shadow-lg z-dropdown"
-                  >
-                     <div className="p-3 border-b border-border">
-                       <div className="flex flex-col space-y-2">
-                         <div className="flex items-center gap-3">
-                           <Sparkles className="w-4 h-4 text-primary" />
-                           <p className="text-sm font-semibold leading-none text-popover-foreground">{getDisplayName()}</p>
-                         </div>
-                         <p className="text-xs leading-none text-muted-foreground ml-7">
-                           {user.email}
-                         </p>
-                       </div>
-                     </div>
-                     
-                     <div className="p-2">
-                       <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                         onClick={handleSettingsClick}
-                       >
-                                                   <Settings className="mr-3 h-4 w-4 text-muted-foreground" />
-                         <span className="font-medium">Settings</span>
-                       </button>
-                       
-                       <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                         onClick={handleAIAssistantClick}
-                       >
-                         <Brain className="mr-3 h-4 w-4 text-muted-foreground" />
-                         <span className="font-medium">AI Assistant</span>
-                       </button>
-                       
-                       <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors text-left"
-                         onClick={handleSecurityClick}
-                       >
-                         <Shield className="mr-3 h-4 w-4 text-muted-foreground" />
-                         <span className="font-medium">Security</span>
-                       </button>
-                       
-                       <div className="h-px bg-border my-2" />
-                       
-
-                       
-                       <div className="h-px bg-border my-2" />
-                       
-                       <button 
-                         className="w-full flex items-center px-3 py-2.5 rounded-md text-destructive hover:text-destructive-foreground hover:bg-destructive/10 transition-colors text-left"
-                         onClick={handleSignOut}
-                       >
-                         <LogOut className="mr-3 h-4 w-4" />
-                         <span className="font-medium">Sign Out</span>
-                       </button>
-                     </div>
-                   </div>
-                 )}
-               </div>
-             ) : (
-               <Button variant="outline" onClick={handleSignIn}>Sign In</Button>
-             )}
-           </div>
-         </div>
-       </header>
-     );
-   }; 
+      </div>
+    </header>
+  );
+};

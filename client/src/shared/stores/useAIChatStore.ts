@@ -1,12 +1,12 @@
 import { create } from 'zustand';
 import { selectData, insertOne, updateOne } from '@/lib/api-client';
 import { logger } from '@/shared/utils/logger';
-import type { 
-  ChatMessage, 
-  Conversation, 
-  ChatState, 
-  ChatActions, 
-  FileAttachment 
+import type {
+  ChatMessage,
+  Conversation,
+  ChatState,
+  ChatActions,
+  FileAttachment
 } from '../types/chat';
 import { truncateContext, needsTruncation, getConversationStats } from '../utils/contextWindow';
 
@@ -63,7 +63,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       let savedMessage = null;
       if (!insertResp || !insertResp.success) {
         const err = insertResp?.error || 'Insert failed';
-  logger.error('Failed to save user message', { error: err });
+        logger.error('Failed to save user message', { error: err });
         set({ error: 'Failed to send message', isLoading: false });
         return;
       }
@@ -98,7 +98,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       }
 
     } catch (err) {
-  logger.error('Error sending message', { err });
+      logger.error('Error sending message', { err });
       set({ error: 'Error sending message', isLoading: false });
     }
   },
@@ -124,7 +124,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       });
 
       if (!insertResp || !insertResp.success) {
-  logger.error('Failed to save AI response', { error: insertResp?.error });
+        logger.error('Failed to save AI response', { error: insertResp?.error });
         return;
       }
 
@@ -154,19 +154,19 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       });
 
     } catch (err) {
-  logger.error('Error saving AI response', { err });
+      logger.error('Error saving AI response', { err });
     }
   },
 
   fetchMessages: async (conversationId: string) => {
     set({ isLoading: true, error: null });
     try {
-      const { data, error } = await selectData('ai_messages', '*', { 
-        conversation_id: conversationId 
+      const { data, error } = await selectData('ai_messages', '*', {
+        conversation_id: conversationId
       });
-      
+
       if (error) {
-    logger.error('Failed to fetch messages', { error });
+        logger.error('Failed to fetch messages', { error });
         set({ error: 'Failed to fetch messages', isLoading: false });
         return;
       }
@@ -174,30 +174,30 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       const rows = extractRows<ChatMessage>(data);
       // Apply context window management and sort messages chronologically
       const messages = rows || [];
-      
+
       // Sort messages by created_at in ascending order (oldest first)
-      const sortedMessages = messages.sort((a, b) => 
+      const sortedMessages = messages.sort((a, b) =>
         new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       );
-      
-      const truncatedMessages = needsTruncation(sortedMessages) 
+
+      const truncatedMessages = needsTruncation(sortedMessages)
         ? truncateContext(sortedMessages)
         : sortedMessages;
 
-      set({ 
-        messages: truncatedMessages, 
-        isLoading: false 
+      set({
+        messages: truncatedMessages,
+        isLoading: false
       });
 
-      logger.info('Fetched messages', { 
-        conversationId, 
+      logger.info('Fetched messages', {
+        conversationId,
         totalMessages: messages.length,
         truncatedMessages: truncatedMessages.length,
         stats: getConversationStats(truncatedMessages)
       });
 
     } catch (err) {
-  logger.error('Error fetching messages', { err });
+      logger.error('Error fetching messages', { err });
       set({ error: 'Error fetching messages', isLoading: false });
     }
   },
@@ -208,20 +208,20 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       const { data, error } = await selectData('ai_conversations', '*', {});
 
       if (error) {
-  logger.error('Failed to fetch conversations', { error });
+        logger.error('Failed to fetch conversations', { error });
         set({ error: 'Failed to fetch conversations', isLoading: false });
         return;
       }
 
       const rows = extractRows<Conversation>(data);
 
-      set({ 
-        conversations: rows, 
-        isLoading: false 
+      set({
+        conversations: rows,
+        isLoading: false
       });
 
     } catch (err) {
-  logger.error('Error fetching conversations', { err });
+      logger.error('Error fetching conversations', { err });
       set({ error: 'Error fetching conversations', isLoading: false });
     }
   },
@@ -245,21 +245,28 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       };
 
       const { data, error } = await insertOne('ai_conversations', conversation);
-      
+
       if (error) {
-  logger.error('Failed to create conversation', { error });
+        logger.error('Failed to create conversation', { error });
         throw new Error('Failed to create conversation');
       }
 
+      let conversationData = data;
+      if (data && typeof data === 'object') {
+        if ('data' in (data as any) && (data as any).data) {
+          conversationData = (data as any).data;
+        }
+      }
+
       set(state => ({
-        conversations: [...state.conversations, data],
-        currentConversation: data
+        conversations: [...state.conversations, conversationData],
+        currentConversation: conversationData
       }));
 
-      return data.id;
+      return conversationData.id;
 
     } catch (err) {
-  logger.error('Error creating conversation', { err });
+      logger.error('Error creating conversation', { err });
       throw err;
     }
   },
@@ -272,21 +279,21 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       });
 
       if (error) {
-  logger.error('Failed to update conversation', { error });
+        logger.error('Failed to update conversation', { error });
         return;
       }
 
       set(state => ({
-        conversations: state.conversations.map(conv => 
+        conversations: state.conversations.map(conv =>
           conv.id === conversationId ? { ...conv, ...data } : conv
         ),
-        currentConversation: state.currentConversation?.id === conversationId 
+        currentConversation: state.currentConversation?.id === conversationId
           ? { ...state.currentConversation, ...data }
           : state.currentConversation
       }));
 
     } catch (err) {
-  logger.error('Error updating conversation', { err });
+      logger.error('Error updating conversation', { err });
     }
   },
 
@@ -297,24 +304,24 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
   deleteConversation: async (conversationId: string) => {
     try {
       // TODO: Implement soft delete or hard delete based on requirements
-      const { error } = await updateOne('ai_conversations', { id: conversationId }, { 
-        is_archived: true 
+      const { error } = await updateOne('ai_conversations', { id: conversationId }, {
+        is_archived: true
       });
 
       if (error) {
-  logger.error('Failed to delete conversation', { error });
+        logger.error('Failed to delete conversation', { error });
         return;
       }
 
       set(state => ({
         conversations: state.conversations.filter(conv => conv.id !== conversationId),
-        currentConversation: state.currentConversation?.id === conversationId 
-          ? null 
+        currentConversation: state.currentConversation?.id === conversationId
+          ? null
           : state.currentConversation
       }));
 
     } catch (err) {
-  logger.error('Error deleting conversation', { err });
+      logger.error('Error deleting conversation', { err });
     }
   },
 

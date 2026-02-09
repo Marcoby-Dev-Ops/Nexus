@@ -1,210 +1,228 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { X, ChevronRight, Home, Workflow, Grid3X3, Settings } from 'lucide-react';
-import { getOverviewItems, getBuildingBlocksItems, getToolsItems, getSettingsItems } from './navConfig';
-import { Badge } from '@/shared/components/ui/Badge';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  MessageSquare,
+  Trash2,
+  Plus as PlusIcon,
+  Search,
+  FileText,
+  Sparkles,
+  Pencil,
+  X
+} from 'lucide-react';
+import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/hooks/index';
+import { useAIChatStore } from '@/shared/stores/useAIChatStore';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 
-export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const navigate = useNavigate();
   const location = useLocation();
-  const { user: _user } = useAuth();
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const sidebarRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
+  // Connect to AIChatStore
+  const {
+    conversations,
+    conversationsLoading,
+    currentConversation,
+    fetchConversations,
+    deleteConversation,
+    setCurrentConversationById,
+    cleanupEmptyConversations,
+    setConversationId
+  } = useAIChatStore();
 
-  const overviewItems = getOverviewItems();
-  const buildingBlocksItems = getBuildingBlocksItems();
-  const toolsItems = getToolsItems();
-  const settingsItems = getSettingsItems();
-
-  // Close expanded items when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(event.target as Node)) {
-        setExpandedItems(new Set());
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  const toggleExpanded = (itemName: string) => {
-    const newExpanded = new Set(expandedItems);
-    if (newExpanded.has(itemName)) {
-      newExpanded.delete(itemName);
-    } else {
-      newExpanded.add(itemName);
+    if (user && conversations.length === 0) {
+      fetchConversations();
     }
-    setExpandedItems(newExpanded);
+  }, [user, fetchConversations, conversations.length]);
+
+  const handleConversationSelect = async (convId: string) => {
+    await setCurrentConversationById(convId);
+    setConversationId(convId); // Ensure ID is set in store for ChatPage to pick up
+    if (location.pathname !== '/chat') {
+      navigate('/chat');
+    }
+    // On mobile, we might want to close the sidebar? 
+    // But this component is the "Utility Panel", controlled by UnifiedLayout.
+    // If we want to auto-close on mobile, we'd need to know if we are on mobile.
+    // The parent controls visibility via `isOpen`, but passed `onClose`.
+    // Let's call onClose if window width is small (handled by parent logic usually, but we can hint it).
+    if (window.innerWidth < 768) {
+      onClose();
+    }
   };
 
-  const isExpanded = (itemName: string) => expandedItems.has(itemName);
+  const handleNewConversation = () => {
+    // Clear current conversation in store
+    useAIChatStore.getState().setConversationId(null);
+    useAIChatStore.getState().setCurrentConversation(null);
+    useAIChatStore.getState().clearMessages();
 
-  const renderNavItem = (item: any, _level: number = 0) => {
-    const hasChildren = item.children && item.children.length > 0;
-    const expanded = isExpanded(item.name);
+    if (location.pathname !== '/chat') {
+      navigate('/chat');
+    } else {
+      // If already on chat page, just ensuring state is clear is enough
+      // The ChatPage should react to null conversationId by showing empty state
+    }
 
-    return (
-      <div key={item.name} className="relative">
-        <div
-          className="group"
-          onMouseEnter={() => setHovered(item.name)}
-          onMouseLeave={() => setHovered(null)}
-        >
-          {hasChildren ? (
-            // Parent item with children - clickable to expand/collapse and navigate
-            <div className="flex items-center w-full">
-              <Link
-                to={item.path}
-                onClick={onClose}
-                className={`flex items-center flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                  isActive(item.path)
-                    ? 'bg-primary/10 text-primary'
-                    : 'text-foreground hover:bg-muted'
-                }`}
-                title={item.description}
-              >
-                {item.icon}
-                <span className="ml-3 flex-1 text-left">{item.name}</span>
-              </Link>
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  toggleExpanded(item.name);
-                }}
-                className="px-2 py-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-md"
-                title="Toggle submenu"
-              >
-                <ChevronRight 
-                  className={`w-4 h-4 transition-transform duration-200 ${
-                    expanded ? 'rotate-90' : ''
-                  }`} 
-                />
-              </button>
-            </div>
-          ) : (
-            // Leaf item - direct link
-            <Link
-              to={item.path}
-              onClick={onClose}
-              className={`flex items-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                isActive(item.path)
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-foreground hover:bg-muted'
-              }`}
-              title={item.description}
-            >
-              {item.icon}
-              <span className="ml-3">{item.name}</span>
-              {item.badge && (
-                <Badge variant="secondary" className="ml-auto text-xs">
-                  {item.badge}
-                </Badge>
-              )}
-            </Link>
-          )}
-          
-          {/* Tooltip for description */}
-          {hovered === item.name && item.description && (
-            <div className="absolute left-full top-0 mt-0 ml-2 w-48 bg-popover border border-border rounded-md shadow-lg p-2 z-dropdown">
-              <p className="text-xs text-popover-foreground">{item.description}</p>
-            </div>
-          )}
-        </div>
+    if (window.innerWidth < 768) {
+      onClose();
+    }
 
-        {/* Submenu - animated accordion */}
-        {hasChildren && (
-          <div 
-            className={`overflow-hidden transition-all duration-200 ease-in-out ${
-              expanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
-            }`}
-          >
-            <div className="ml-4 mt-1 space-y-1 pb-2">
-              {item.children.map((child: any) => (
-                <Link
-                  key={child.path}
-                  to={child.path}
-                  onClick={onClose}
-                  className={`block px-4 py-2 text-xs rounded-md transition-colors ${
-                    isActive(child.path)
-                      ? 'bg-primary/5 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }`}
-                  title={child.description}
-                >
-                  {child.name}
-                  {child.badge && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      {child.badge}
-                    </Badge>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
+    toast({
+      title: "New conversation",
+      description: "Ready to start a new conversation!",
+      type: "success"
+    });
   };
 
-  const renderSection = (title: string, items: any[], icon: React.ReactNode) => {
-    if (items.length === 0) return null;
-
-    return (
-      <div className="border-b border-border pb-4 last:border-b-0">
-        <div className="px-4 py-2">
-          <div className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-            {icon}
-            <span className="ml-2">{title}</span>
-          </div>
-        </div>
-        <div className="space-y-1">
-          {items.map((item) => renderNavItem(item))}
-        </div>
-      </div>
-    );
+  const handleDeleteConversation = async (convId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this conversation?')) {
+      try {
+        await deleteConversation(convId);
+        toast({
+          title: "Conversation deleted",
+          description: "The conversation has been removed.",
+          type: "success"
+        });
+      } catch (error) {
+        console.error('Failed to delete conversation', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete conversation",
+          type: "error"
+        });
+      }
+    }
   };
+
+  const handleCleanupEmptyConversations = async () => {
+    try {
+      await cleanupEmptyConversations();
+      toast({
+        title: "Cleanup complete",
+        description: "Empty conversations removed.",
+        type: "success"
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to cleanup conversations",
+        type: "error"
+      });
+    }
+  };
+
+  // Only render content if open (though parent manages width/visibility, rendering null here saves performance)
+  // But parent uses CSS transition, so we should keep content rendered but maybe hidden?
+  // Parent uses `w-0` and `overflow-hidden`, so content is hidden.
+  // We'll render full content.
+
+  const nonEmptyConversations = conversations.filter(c => c.message_count > 0);
+  const emptyConversationsCount = conversations.length - nonEmptyConversations.length;
 
   return (
-    <>
-      <aside
-        ref={sidebarRef}
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-card border-r border-border transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-auto lg:z-auto ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
-        <div className="flex h-16 items-center justify-between px-4 border-b border-border">
-          <Link to="/home" className="flex items-center">
-            <img 
-              src="/Nexus/nexus-horizontal-160x48-transparent.png" 
-              alt="Nexus by Marcoby" 
-              className="h-8 w-auto"
-            />
-          </Link>
-          <button className="lg:hidden p-2" onClick={onClose} aria-label="Close">
-            <X className="h-6 w-6" />
-          </button>
+    <div className="flex flex-col h-full bg-muted/10 border-r border-border/40">
+      {/* Utility Header */}
+      <div className="p-4 border-b border-border/40">
+        <h2 className="text-sm font-semibold text-foreground/70 tracking-wider uppercase mb-3">
+          Exploration
+        </h2>
+        <div className="space-y-1">
+          <Button
+            variant="secondary"
+            className="w-full justify-start gap-2 h-9 font-normal bg-background/50 hover:bg-background border-border/50 shadow-sm"
+            onClick={handleNewConversation}
+          >
+            <PlusIcon className="w-4 h-4 text-primary" />
+            <span>New Chat</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 h-9 font-normal text-muted-foreground"
+            onClick={() => { navigate('/search'); if (window.innerWidth < 768) onClose(); }}
+          >
+            <Search className="w-4 h-4" />
+            <span>Search</span>
+          </Button>
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2 h-9 font-normal text-muted-foreground"
+            onClick={() => { navigate('/documents'); if (window.innerWidth < 768) onClose(); }}
+          >
+            <FileText className="w-4 h-4" />
+            <span>Documents</span>
+          </Button>
         </div>
+      </div>
 
-        <nav className="overflow-y-auto h-[calc(100vh-4rem)]">
-          {renderSection('Overview', overviewItems, <Home className="h-3 w-3" />)}
-          {renderSection('Building Blocks', buildingBlocksItems, <Grid3X3 className="h-3 w-3" />)}
-          {renderSection('Tools & Workflow', toolsItems, <Workflow className="h-3 w-3" />)}
-          {renderSection('Settings', settingsItems, <Settings className="h-3 w-3" />)}
-        </nav>
-      </aside>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
-          onClick={onClose}
-        />
-      )}
-    </>
+      {/* Conversations List */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        <div className="p-2">
+          <h3 className="px-2 text-xs font-medium text-muted-foreground/60 mt-4 mb-2">
+            Recent Conversations
+          </h3>
+
+          {conversationsLoading ? (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Sparkles className="w-4 h-4 animate-spin mb-2" />
+              <span className="text-xs">Loading...</span>
+            </div>
+          ) : conversations.length === 0 ? (
+            <div className="text-center py-8 px-4 text-muted-foreground text-xs">
+              No recent conversations. Start exploring!
+            </div>
+          ) : (
+            <div className="space-y-0.5">
+              {emptyConversationsCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCleanupEmptyConversations}
+                  className="w-full text-xs text-muted-foreground hover:text-foreground h-7 justify-start px-2 mb-2"
+                >
+                  <Trash2 className="w-3 h-3 mr-2" />
+                  Cleanup {emptyConversationsCount} empty chats
+                </Button>
+              )}
+
+              {nonEmptyConversations.map((conv) => (
+                <div
+                  key={conv.id}
+                  className={cn(
+                    "group flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted/50 cursor-pointer",
+                    currentConversation?.id === conv.id ? "bg-muted text-foreground font-medium" : "text-muted-foreground"
+                  )}
+                  onClick={() => handleConversationSelect(conv.id)}
+                >
+                  <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
+                  <div className="flex-1 truncate">
+                    {conv.title || "Untitled Conversation"}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => handleDeleteConversation(conv.id, e)}
+                  >
+                    <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
-} 
+}

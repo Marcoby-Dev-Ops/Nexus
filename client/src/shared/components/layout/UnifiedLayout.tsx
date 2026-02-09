@@ -10,7 +10,8 @@ interface UnifiedLayoutProps {
 }
 
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Changed to true for large screens
+  // Changed to false by default for utility panel behavior
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, session, loading, initialized } = useAuth();
   const { isPublicRoute, redirectInProgress } = useRedirectManager();
 
@@ -33,12 +34,9 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
     );
   }
 
-  // Let ProtectedRoute components handle authentication checks
-  // Don't block rendering here - let the routes decide what to show
-
   return (
     <HeaderProvider>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         {/* Skip link for keyboard users */}
         <a
           href="#main-content"
@@ -46,27 +44,29 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
         >
           Skip to main content
         </a>
-        <div className="flex h-screen">
-          {/* Sidebar */}
-          <Sidebar 
-            isOpen={sidebarOpen} 
-            onClose={() => setSidebarOpen(false)}
-          />
-          
-          {/* Main content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
-            <Header 
-              onSidebarToggle={() => setSidebarOpen(true)}
+
+        {/* Header - Sticky Top */}
+        <Header
+          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
+          isSidebarOpen={sidebarOpen}
+        />
+
+        <div className="flex flex-1 overflow-hidden h-[calc(100vh-3.5rem)]">
+          {/* Utility Panel (formerly Sidebar) */}
+          <div className={`
+             border-r bg-muted/10 transition-all duration-300 ease-in-out
+             ${sidebarOpen ? 'w-80 translate-x-0' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
+          `}>
+            <Sidebar
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
             />
-            
-            {/* Main content area - Full width responsive */}
-            <main id="main-content" role="main" className="flex-1 overflow-y-auto relative">
-              <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 pt-8 pb-6">
-                {children}
-              </div>
-            </main>
           </div>
+
+          {/* Main content area */}
+          <main id="main-content" role="main" className="flex-1 overflow-y-auto relative bg-background">
+            {children}
+          </main>
         </div>
       </div>
     </HeaderProvider>
