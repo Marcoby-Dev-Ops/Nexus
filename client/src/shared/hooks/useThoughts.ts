@@ -22,7 +22,7 @@ export const useThoughts = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await selectData('thoughts', { filters: { user_id: userId } });
+      const { data, error } = await selectData('personal_thoughts', { filters: { user_id: userId } });
       if (error) {
         logger.error({ error }, 'Failed to fetch thoughts');
         setError('Failed to fetch thoughts');
@@ -43,7 +43,7 @@ export const useThoughts = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await insertOne('thoughts', thought);
+      const { data, error } = await insertOne('personal_thoughts', thought);
       if (error) {
         logger.error({ error }, 'Failed to add thought');
         setError('Failed to add thought');
@@ -62,7 +62,7 @@ export const useThoughts = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await updateOne('thoughts', id, updates);
+      const { data, error } = await updateOne('personal_thoughts', id, updates);
       if (error) {
         logger.error({ error }, 'Failed to update thought');
         setError('Failed to update thought');
@@ -81,7 +81,7 @@ export const useThoughts = () => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await deleteOne('thoughts', id);
+      const { error } = await deleteOne('personal_thoughts', id);
       if (error) {
         logger.error({ error }, 'Failed to delete thought');
         setError('Failed to delete thought');

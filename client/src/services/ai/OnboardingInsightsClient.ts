@@ -208,9 +208,9 @@ export class OnboardingInsightsClient extends BaseService {
    */
   private async checkForExistingInsights(context: OnboardingContext): Promise<OnboardingInsight[]> {
     try {
-      // Query existing insights from the thoughts table
+      // Query existing insights from the personal_thoughts table
       const { data: existingThoughts } = await this.supabase
-        .from('thoughts')
+        .from('personal_thoughts')
         .select('*')
         .eq('category', 'fire_initiative')
         .eq('user_id', context.user.id || 'onboarding')
@@ -291,7 +291,7 @@ export class OnboardingInsightsClient extends BaseService {
       
       // Get all fire_initiative thoughts from the last 24 hours
       const { data: allThoughts } = await this.supabase
-        .from('thoughts')
+        .from('personal_thoughts')
         .select('*')
         .eq('category', 'fire_initiative')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
@@ -325,7 +325,7 @@ export class OnboardingInsightsClient extends BaseService {
           
           for (const thought of toRemove) {
             await this.supabase
-              .from('thoughts')
+              .from('personal_thoughts')
               .delete()
               .eq('id', thought.id);
             removedCount++;
@@ -353,10 +353,10 @@ export class OnboardingInsightsClient extends BaseService {
    */
   private async storeInsightsForDeduplication(insights: OnboardingInsight[], context: OnboardingContext): Promise<void> {
     try {
-      // Store insights in thoughts table for future deduplication
+      // Store insights in personal_thoughts table for future deduplication
       for (const insight of insights) {
         await this.supabase
-          .from('thoughts')
+          .from('personal_thoughts')
           .insert({
             user_id: context.user.id || 'onboarding',
             company_id: context.user.companyId,

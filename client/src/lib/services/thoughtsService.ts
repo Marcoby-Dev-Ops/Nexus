@@ -32,7 +32,7 @@ export class ThoughtsService extends BaseService {
       if (options?.status) filters.status = options.status;
 
       // Use the API client for the query
-      const result = await selectData<any>('thoughts', '*', filters);
+      const result = await selectData<any>('personal_thoughts', '*', filters);
       const { data, error } = result;
 
       if (error) {
@@ -106,7 +106,7 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getThought', { thoughtId });
 
-      const result = await selectOne<any>('thoughts', thoughtId);
+      const result = await selectOne<any>('personal_thoughts', thoughtId);
       const { data, error } = result;
 
       if (error) {
@@ -184,7 +184,7 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('createThought', { thoughtData });
 
-      const result = await insertOne<any>('thoughts', thoughtData);
+      const result = await insertOne<any>('personal_thoughts', thoughtData);
       const { data, error } = result;
 
       if (error) {
@@ -204,7 +204,7 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('updateThought', { thoughtId, updates });
 
-      const result = await updateOne<any>('thoughts', thoughtId, updates);
+      const result = await updateOne<any>('personal_thoughts', thoughtId, updates);
       const { data, error } = result;
 
       if (error) {
@@ -224,7 +224,7 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('deleteThought', { thoughtId });
 
-      const result = await deleteOne('thoughts', thoughtId);
+      const result = await deleteOne('personal_thoughts', thoughtId);
       const { error } = result;
 
       if (error) {
@@ -293,7 +293,7 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getThoughtsByFirePhase', { userId, phase });
 
-      const result = await selectData<any>('thoughts', '*', { 
+      const result = await selectData<any>('personal_thoughts', '*', { 
         user_id: userId, 
         workflow_stage: phase 
       });
@@ -324,7 +324,7 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getPublicThoughts', {});
 
-      const result = await selectData<any>('thoughts', '*', { is_public: true });
+      const result = await selectData<any>('personal_thoughts', '*', { is_public: true });
       const { data, error } = result;
 
       if (error) {
@@ -352,7 +352,7 @@ export class ThoughtsService extends BaseService {
     return this.executeDbOperation(async () => {
       this.logMethodCall('getThoughtsByCategory', { userId, category });
 
-      const result = await selectData<any>('thoughts', '*', { 
+      const result = await selectData<any>('personal_thoughts', '*', { 
         user_id: userId, 
         category: category 
       });
