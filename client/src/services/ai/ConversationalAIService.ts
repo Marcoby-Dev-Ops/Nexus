@@ -43,8 +43,6 @@ export interface ClientKnowledgeBase {
   }>;
   companyData: {
     name?: string;
-    industry?: string;
-    size?: string;
     tools?: string[];
   };
   userProfile: {
@@ -98,55 +96,51 @@ export class ConversationalAIService extends BaseService {
    */
   private async loadClientKnowledgeBase(userId: string, organizationId: string): Promise<ClientKnowledgeBase> {
     try {
+      // Fixed table name: thoughts → personal_thoughts
       const thoughtsResponse = await selectData(
-        'thoughts',
+        'personal_thoughts',
         'id, title, content, created_at',
         { user_id: userId },
         'created_at DESC',
         10
       );
 
-      const brainTicketsResponse = await selectData(
-        'brain_tickets',
-        'id, title, description, status, created_at',
-        { user_id: userId },
-        'created_at DESC',
-        10
-      );
+      // brain_tickets table doesn't exist - skip for now
+      const brainTicketsResponse = { success: false, data: [] };
 
-      const userContextsResponse = await selectData(
-        'user_contexts',
-        'id, context_data, created_at',
-        { user_id: userId },
-        'created_at DESC',
-        5
-      );
+      // user_contexts table doesn't exist - skip for now
+      const userContextsResponse = { success: false, data: [] };
 
-      const companyResponse = await selectData(
-        'companies',
-        'name, industry, size',
-        { id: organizationId }
-      );
+      // Fixed columns: removed industry, size (don't exist)
+      // Only query if organizationId is a valid UUID, skip if "default"
+      let companyResponse = { success: false, data: [] };
+      if (organizationId && organizationId !== 'default' && organizationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        companyResponse = await selectData(
+          'companies',
+          'name',
+          { id: organizationId }
+        );
+      }
 
-      // Fetch user profile for personalization
+      // Fetch user profile for personalization - removed job_title (doesn't exist)
       const userProfileResponse = await selectData(
         'user_profiles',
-        'display_name, first_name, role, job_title, preferences',
+        'display_name, first_name, role, preferences',
         { user_id: userId }
       );
 
       const profileData = userProfileResponse.success && userProfileResponse.data && userProfileResponse.data.length > 0
-        ? userProfileResponse.data[0] as { display_name?: string; first_name?: string; role?: string; job_title?: string; preferences?: { communication_style?: string } }
+        ? userProfileResponse.data[0] as { display_name?: string; first_name?: string; role?: string; preferences?: { communication_style?: string } }
         : null;
 
       return {
         thoughts: thoughtsResponse.success ? (thoughtsResponse.data as Array<{ id: string; title: string; content: string; created_at: string }>) : [],
         brainTickets: brainTicketsResponse.success ? (brainTicketsResponse.data as Array<{ id: string; title: string; description: string; status: string; created_at: string }>) : [],
         userContexts: userContextsResponse.success ? (userContextsResponse.data as Array<{ id: string; context_data: unknown; created_at: string }>) : [],
-        companyData: companyResponse.success && companyResponse.data && companyResponse.data.length > 0 ? (companyResponse.data[0] as { name?: string; industry?: string; size?: string; tools?: string[] }) : {},
+        companyData: companyResponse.success && companyResponse.data && companyResponse.data.length > 0 ? (companyResponse.data[0] as { name?: string; tools?: string[] }) : {},
         userProfile: {
           name: profileData?.display_name || profileData?.first_name,
-          role: profileData?.role || profileData?.job_title,
+          role: profileData?.role,
           preferences: profileData?.preferences?.communication_style
         }
       };

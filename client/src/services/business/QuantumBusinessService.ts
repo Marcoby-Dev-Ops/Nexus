@@ -99,6 +99,12 @@ export class QuantumBusinessService extends BaseService {
     organizationId: string // Changed from companyId
   ): Promise<QuantumBusinessServiceResponse<QuantumBusinessProfile | null>> {
     try {
+      // Guard against invalid organizationId (like "default")
+      if (!organizationId || organizationId === 'default' || !organizationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        console.log('ℹ️ [QuantumBusinessService] Invalid or default organizationId, returning null:', organizationId);
+        return this.createResponse(null);
+      }
+
       logger.info('Fetching quantum business profile', { organizationId });
 
       console.log('🔍 [QuantumBusinessService] Starting getQuantumProfile with organizationId:', organizationId);
