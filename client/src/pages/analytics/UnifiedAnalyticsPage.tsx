@@ -52,7 +52,7 @@ interface AnalyticsOverview {
 const UnifiedAnalyticsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  
+
   // Extract department from URL path or search params
   const getDepartmentFromPath = () => {
     const path = location.pathname;
@@ -62,16 +62,35 @@ const UnifiedAnalyticsPage: React.FC = () => {
     if (path.includes('/operations/analytics')) return 'operations';
     return searchParams.get('department') || 'all';
   };
-  
+
   const department = getDepartmentFromPath();
   const [selectedView, setSelectedView] = useState<'overview' | 'digestible' | 'technical' | 'insights'>('digestible');
   // Mock data since DataContext is not available
   const businessData = {};
   const systemStatus = { status: 'healthy' };
   const loading = false;
-  const refreshAll = () => {};
+  const refreshAll = () => { };
+  const businessHealth = { score: 92, trend: 'up', summary: 'Operations are running smoothly' };
+  const aiInsights: any[] = [];
+  const integrationStatus: any[] = [];
+  const refresh = () => refreshAll();
 
-  // Mock overview data - in real implementation, this would come from actual analytics
+  // ... (rest of component)
+
+  <CardContent className="flex-1 flex flex-col justify-between">
+    <div className="mb-4">
+      <div className="text-4xl font-bold flex items-center gap-2">
+        {loading ? '...' : businessHealth.score}
+        <span className={`text-base font-medium ${businessHealth.trend === 'up' ? 'text-success' : businessHealth.trend === 'down' ? 'text-destructive' : 'text-muted-foreground'}`}>({businessHealth.trend})</span>
+      </div>
+      <div className="text-sm text-muted-foreground mt-2">
+        {businessHealth.summary}
+      </div>
+    </div>
+    <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
+      <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+    </Button>
+  </CardContent>
   const analyticsOverview: AnalyticsOverview = {
     totalDataSources: 8,
     activeIntegrations: 7,
@@ -268,11 +287,10 @@ const UnifiedAnalyticsPage: React.FC = () => {
                   <div className="text-muted-foreground">No insights available</div>
                 ) : (
                   aiInsights.slice(0, 3).map((insight) => (
-                    <div key={insight.id} className={`p-2 rounded border-l-4 shadow-sm ${
-                      insight.impact === 'high' ? 'border-destructive bg-destructive/20' :
+                    <div key={insight.id} className={`p-2 rounded border-l-4 shadow-sm ${insight.impact === 'high' ? 'border-destructive bg-destructive/20' :
                       insight.impact === 'medium' ? 'border-warning bg-warning/20' :
-                      'border-muted bg-muted/30'
-                    }`}>
+                        'border-muted bg-muted/30'
+                      }`}>
                       <div className="font-semibold flex items-center gap-2">
                         {insight.type === 'opportunity' && <Zap className="w-4 h-4 text-success" />}
                         {insight.type === 'alert' && <AlertCircle className="w-4 h-4 text-destructive" />}
@@ -336,11 +354,11 @@ const UnifiedAnalyticsPage: React.FC = () => {
             <CardContent className="flex-1 flex flex-col justify-between">
               <div className="space-y-2 mb-4">
                 {currentConfig.quickActions.map((action, index) => (
-                  <Button 
+                  <Button
                     key={index}
-                    variant="secondary" 
-                    size="sm" 
-                    className="w-full" 
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
                     onClick={() => window.location.href = action.href}
                   >
                     {action.label}
