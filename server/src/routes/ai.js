@@ -75,11 +75,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Strip any system messages from client - let OpenClaw's soul/system docs handle personality
         const userMessages = messages.filter(m => m.role !== 'system');
 
-        // Pure proxy payload: no system prompt, OpenClaw's own agent config drives behavior
+        // Pure proxy payload: OpenClaw's agent runtime (SOUL.md, AGENTS.md) drives behavior
         const openClawPayload = {
+            model: 'openclaw:main', // Route through OpenClaw agent runtime
             messages: userMessages,
             stream: stream,
-            user: userId // Critical for OpenClaw per-user memory
+            user: userId // Critical for OpenClaw per-user session isolation
         };
 
         logger.info('Chat proxy request', {
@@ -90,12 +91,13 @@ router.post('/chat', authenticateToken, async (req, res) => {
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
 
-        // Call OpenClaw API
+        // Call OpenClaw Chat Completions API
         const openClawResponse = await fetch(`${OPENCLAW_API_URL}/chat/completions`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENCLAW_API_KEY}`
+                'Authorization': `Bearer ${OPENCLAW_API_KEY}`,
+                'x-openclaw-agent-id': 'main'
             },
             body: JSON.stringify(openClawPayload)
         });
