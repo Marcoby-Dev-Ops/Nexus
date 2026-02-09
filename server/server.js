@@ -11,13 +11,13 @@ const { errorHandler, notFound } = require('./src/middleware/errorHandler');
 const { logger } = require('./src/utils/logger');
 
 // Import rate limiting middleware
-const { 
-  generalLimiter, 
-  authLimiter, 
-  dbLimiter, 
-  aiLimiter, 
-  uploadLimiter, 
-  devLimiter 
+const {
+  generalLimiter,
+  authLimiter,
+  dbLimiter,
+  aiLimiter,
+  uploadLimiter,
+  devLimiter
 } = require('./src/middleware/rateLimit');
 
 // Import database migration runner
@@ -34,6 +34,7 @@ const companyRoutes = require('./src/routes/companies');
 const dbRoutes = require('./src/routes/db');
 const rpcRoutes = require('./src/routes/rpc');
 const aiRoutes = require('./src/routes/ai');
+const vectorRoutes = require('./src/routes/vector');
 
 // Import OpenClaw integration routes
 const openclawIntegrationRoutes = require('./routes/openclaw-integration');
@@ -92,7 +93,7 @@ const io = new Server(server, {
 // Socket.IO authentication middleware
 io.use((socket, next) => {
   const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-  
+
   if (!token) {
     return next(new Error('Authentication error: No token provided'));
   }
@@ -110,9 +111,9 @@ io.use((socket, next) => {
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
-  logger.info('Socket.IO client connected', { 
-    socketId: socket.id, 
-    userId: socket.userId 
+  logger.info('Socket.IO client connected', {
+    socketId: socket.id,
+    userId: socket.userId
   });
 
   // Join user to their personal room
@@ -120,38 +121,38 @@ io.on('connection', (socket) => {
 
   // Handle actionable insights subscription
   socket.on('subscribe-insights', (data) => {
-    logger.info('Client subscribed to insights', { 
-      socketId: socket.id, 
+    logger.info('Client subscribed to insights', {
+      socketId: socket.id,
       userId: socket.userId,
-      data 
+      data
     });
     socket.join('insights');
   });
 
   // Handle actionable insights unsubscription
   socket.on('unsubscribe-insights', () => {
-    logger.info('Client unsubscribed from insights', { 
-      socketId: socket.id, 
-      userId: socket.userId 
+    logger.info('Client unsubscribed from insights', {
+      socketId: socket.id,
+      userId: socket.userId
     });
     socket.leave('insights');
   });
 
   // Handle disconnection
   socket.on('disconnect', (reason) => {
-    logger.info('Socket.IO client disconnected', { 
-      socketId: socket.id, 
+    logger.info('Socket.IO client disconnected', {
+      socketId: socket.id,
       userId: socket.userId,
-      reason 
+      reason
     });
   });
 
   // Handle errors
   socket.on('error', (error) => {
-    logger.error('Socket.IO error', { 
-      socketId: socket.id, 
+    logger.error('Socket.IO error', {
+      socketId: socket.id,
       userId: socket.userId,
-      error: error.message 
+      error: error.message
     });
   });
 });
@@ -203,7 +204,7 @@ app.use(cors({
 }));
 
 // Body parsing middleware with size limits
-app.use(express.json({ 
+app.use(express.json({
   limit: '10mb'
 }));
 
@@ -305,6 +306,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/companies', authLimiter, companyRoutes);
 app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/vector', dbLimiter, vectorRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
 app.use('/api/user-contacts', userContactsRoutes);
@@ -318,7 +320,7 @@ app.use('/api/openclaw', openclawIntegrationRoutes);
 // Graceful shutdown handling
 const gracefulShutdown = async (signal) => {
   logger.info(`Received ${signal}, starting graceful shutdown...`);
-  
+
   try {
     // Close database connections
     const { closePool } = require('./src/database/connection');
@@ -357,14 +359,14 @@ app.use(errorHandler);
 if (process.env.NODE_ENV !== 'test') {
   // Run database migrations before starting server
   const migrationRunner = new MigrationRunner();
-  
+
   migrationRunner.runMigrations()
     .then((migrationResult) => {
       if (!migrationResult.success) {
-        logger.warn('Migrations failed, but continuing with server startup', { 
-          applied: migrationResult.applied, 
+        logger.warn('Migrations failed, but continuing with server startup', {
+          applied: migrationResult.applied,
           total: migrationResult.total,
-          error: migrationResult.results?.find(r => !r.success)?.error 
+          error: migrationResult.results?.find(r => !r.success)?.error
         });
       } else {
         logger.info(`Migrations completed: ${migrationResult.applied}/${migrationResult.total} applied`);
@@ -392,7 +394,7 @@ if (process.env.NODE_ENV !== 'test') {
     })
     .catch((error) => {
       logger.warn('Migration runner failed, but continuing with server startup', { error: error.message });
-      
+
       // Start server even if migrations fail
       server.listen(PORT, '0.0.0.0', () => {
         logger.info('🚀 API server started with Socket.IO (migrations skipped)', {

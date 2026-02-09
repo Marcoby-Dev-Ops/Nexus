@@ -25,7 +25,7 @@ BEGIN
             ON quantum_business_profiles FOR ALL 
             USING (
                 organization_id IN (
-                    SELECT organization_id FROM user_profiles WHERE user_id = auth.uid()
+                    SELECT organization_id FROM user_organizations WHERE user_id = auth.uid()::text
                 )
             );
         END IF;
@@ -55,12 +55,12 @@ BEGIN
         
         -- Create RLS policy
         CREATE POLICY "Users can manage quantum profiles for their organization" 
-        ON quantum_business_profiles FOR ALL 
-        USING (
-            organization_id IN (
-                SELECT organization_id FROM user_profiles WHERE user_id = auth.uid()
-            )
-        );
+            ON quantum_business_profiles FOR ALL 
+            USING (
+                organization_id IN (
+                    SELECT organization_id FROM user_organizations WHERE user_id = auth.uid()::text
+                )
+            );
         
         RAISE NOTICE 'Quantum business profiles table created successfully';
     END IF;
