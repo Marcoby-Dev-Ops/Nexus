@@ -1,4 +1,4 @@
-const express = require('./server/node_modules/express');
+const express = require('express');
 const { exec } = require('child_process');
 const app = express();
 
