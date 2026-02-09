@@ -422,6 +422,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
         res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
         res.flushHeaders();
 
+        // Calculate phase progress before using it
+        const phaseProgress = {
+            [PHASES.DISCOVERY]: 25,
+            [PHASES.SYNTHESIS]: 50,
+            [PHASES.DECISION]: 75,
+            [PHASES.EXECUTION]: 100
+        };
+
         // Send Model-Way metadata as first event
         res.write(`data: ${JSON.stringify({
             metadata: {
