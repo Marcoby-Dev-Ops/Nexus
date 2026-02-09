@@ -48,7 +48,6 @@ export interface ClientKnowledgeBase {
   userProfile: {
     name?: string;
     role?: string;
-    preferences?: string;
   };
 }
 
@@ -122,15 +121,15 @@ export class ConversationalAIService extends BaseService {
         );
       }
 
-      // Fetch user profile for personalization - removed job_title (doesn't exist)
+      // Fetch user profile for personalization - removed job_title and preferences (don't exist)
       const userProfileResponse = await selectData(
         'user_profiles',
-        'display_name, first_name, role, preferences',
+        'display_name, first_name, role',
         { user_id: userId }
       );
 
       const profileData = userProfileResponse.success && userProfileResponse.data && userProfileResponse.data.length > 0
-        ? userProfileResponse.data[0] as { display_name?: string; first_name?: string; role?: string; preferences?: { communication_style?: string } }
+        ? userProfileResponse.data[0] as { display_name?: string; first_name?: string; role?: string }
         : null;
 
       return {
@@ -140,8 +139,7 @@ export class ConversationalAIService extends BaseService {
         companyData: companyResponse.success && companyResponse.data && companyResponse.data.length > 0 ? (companyResponse.data[0] as { name?: string; tools?: string[] }) : {},
         userProfile: {
           name: profileData?.display_name || profileData?.first_name,
-          role: profileData?.role,
-          preferences: profileData?.preferences?.communication_style
+          role: profileData?.role
         }
       };
     } catch (error) {

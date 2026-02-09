@@ -44,12 +44,12 @@ const getAllowedTables = () => [
   'monitoring_alerts', 'conversations', 'messages',
 
   // Legacy/Compatibility Tables (keeping for backward compatibility)
-  'tasks', 'thoughts', 'documents', 'business_metrics', 'user_activities',
+  'tasks', 'thoughts', 'personal_thoughts', 'documents', 'business_metrics', 'user_activities',
   'next_best_actions', 'user_action_executions', 'ai_models',
   'analytics_events', 'callback_events', 'user_onboarding_steps',
   'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances',
   'quantum_business_profiles', 'ai_action_card_templates', 'user_contexts',
-  'ai_agents', 'user_licenses'
+  'ai_agents', 'user_licenses', 'contacts', 'deals'
 ];
 
 const DEFAULT_AGENT_CATALOG = [
