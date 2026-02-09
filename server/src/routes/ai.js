@@ -376,7 +376,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             user: userId // Critical for OpenClaw memory
         };
 
-        logger.info('Model-Way Framework chat request (MOCK MODE)', {
+        logger.info('Model-Way Framework chat request', {
             userId,
             conversationId,
             intent: intent.name,
@@ -386,12 +386,19 @@ router.post('/chat', authenticateToken, async (req, res) => {
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
 
-        // MOCK MODE: Return simulated Model-Way responses
-        // TODO: Replace with actual OpenClaw API call when available
-        const mockResponse = generateMockModelWayResponse(intent, phase, messages, userId, conversationId);
-        
-        if (!stream) {
-            return res.json(mockResponse);
+        // Call OpenClaw API
+        const openClawResponse = await fetch(`${OPENCLAW_API_URL}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENCLAW_API_KEY}`
+            },
+            body: JSON.stringify(openClawPayload)
+        });
+
+        if (!openClawResponse.ok) {
+            const errorText = await openClawResponse.text();
+            throw new Error(`OpenClaw API error: ${openClawResponse.status} - ${errorText}`);
         }
 
         if (!stream) {
