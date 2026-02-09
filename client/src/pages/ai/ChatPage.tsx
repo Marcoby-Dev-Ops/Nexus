@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/index';
+import { useAuthStore } from '@/core/auth/authStore';
 import { Button } from '@/shared/components/ui/Button';
 import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
 import { ConversationalAIService } from '@/services/ai/ConversationalAIService';
@@ -103,7 +104,10 @@ export const ChatPage: React.FC = () => {
       let accumulatedResponse = '';
       setStreamingContent('');
 
-      const token = localStorage.getItem('nexus_auth_token') || '';
+      // Get auth token from Zustand auth store
+      const storeState = useAuthStore.getState();
+      const session = storeState.session;
+      const token = session?.session?.accessToken || session?.accessToken || '';
 
       await conversationalAIService.streamMessage(
         message,

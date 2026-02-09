@@ -12,6 +12,7 @@ import { Send, Bot, User, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { cn } from '@/shared/lib/utils';
 import { conversationalAIService, type ConversationContext } from '@/services/ai/ConversationalAIService';
+import { useAuthStore } from '@/core/auth/authStore';
 
 interface ChatMessage {
   id: string;
@@ -40,8 +41,12 @@ export const ConversationalChat: React.FC<ConversationalChatProps> = ({
   const chatInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Retrieve auth token roughly (in a real app, use a dedicated hook)
-  const getAuthToken = () => localStorage.getItem('nexus_auth_token') || '';
+  // Retrieve auth token from Zustand auth store
+  const getAuthToken = () => {
+    const storeState = useAuthStore.getState();
+    const session = storeState.session;
+    return session?.session?.accessToken || session?.accessToken || '';
+  };
 
   // Auto-scroll logic
   useEffect(() => {
