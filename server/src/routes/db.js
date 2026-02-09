@@ -13,36 +13,36 @@ const getAllowedTables = () => [
   // AI & Chat Tables
   'ai_conversations', 'ai_expert_prompts', 'ai_experts', 'ai_memories', 'ai_messages', 'ai_message_attachments',
   'chat_usage_tracking',
-  
+
   // Business & Organization Tables
   'building_blocks', 'business_health_snapshots', 'business_identity',
-  'companies', 'company_members', 'identities', 
+  'companies', 'company_members', 'identities',
   'organizations', 'user_organizations',
-  
+
   // Knowledge & CKB Tables
   'ckb_documents', 'ckb_search_logs', 'ckb_storage_connections', 'knowledge_update_triggers',
-  
+
   // Journey & Playbook Tables
   'journey_analytics', 'journey_context_notes', 'journey_items', 'journey_playbook_mapping',
   'journey_templates', 'playbook_items', 'playbook_knowledge_mappings', 'playbook_templates',
   'user_journey_progress', 'user_journey_responses', 'user_journeys',
   'user_playbook_progress', 'user_playbook_responses',
-  
+
   // Maturity & Assessment Tables
   'maturity_assessments', 'maturity_domains', 'maturity_questions',
-  
+
   // User & Profile Tables
   'user_profiles', 'user_preferences', 'user_integrations', 'user_building_block_implementations',
-  
+
   // Integration & OAuth Tables
   'integrations', 'oauth_states', 'oauth_tokens',
-  
+
   // AI Expert System Tables
   'expert_performance', 'expert_switching_rules',
-  
+
   // Monitoring & Analytics Tables
   'monitoring_alerts', 'conversations', 'messages',
-  
+
   // Legacy/Compatibility Tables (keeping for backward compatibility)
   'tasks', 'thoughts', 'documents', 'business_metrics', 'user_activities',
   'next_best_actions', 'user_action_executions', 'ai_models',
@@ -260,7 +260,7 @@ router.get('/:table', authenticateToken, async (req, res) => {
     const { table } = req.params;
     const { columns, ...filters } = req.query;
     const userId = req.user.id;
-    
+
     // Extract JWT payload from the request (set by auth middleware)
     const jwtPayload = req.user.jwtPayload || { sub: userId };
 
@@ -291,13 +291,13 @@ router.get('/:table', authenticateToken, async (req, res) => {
     };
 
     // Add user-based filtering for security (only for tables that don't use RLS)
-    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
+    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents',
+      'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
       sql += ` WHERE user_id = $${paramIndex}`;
       params.push(userId);
       paramIndex++;
     }
-    
+
     // For onboarding tables, use external user ID directly
     if (['user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
       sql += ` WHERE user_id = $${paramIndex}`;
@@ -307,10 +307,10 @@ router.get('/:table', authenticateToken, async (req, res) => {
 
     // Add additional filters
     let orderByClause = null;
-    
+
     if (filters && Object.keys(filters).length > 0) {
       const filterConditions = [];
-      
+
       Object.entries(filters).forEach(([key, value]) => {
         if (key === 'filter') {
           // Handle nested filter object; accept stringified or object
@@ -320,24 +320,24 @@ router.get('/:table', authenticateToken, async (req, res) => {
               // Handle order_by as ORDER BY clause, not a filter
               orderByClause = filterValue;
             } else {
-          filterConditions.push(`${filterKey} = $${paramIndex}`);
-          params.push(coerceValue(filterValue));
-          paramIndex++;
-        }
-      });
+              filterConditions.push(`${filterKey} = $${paramIndex}`);
+              params.push(coerceValue(filterValue));
+              paramIndex++;
+            }
+          });
         } else if (key.startsWith('filter[') && key.endsWith(']')) {
           // Support filter[user_id]=... style
           const columnName = key.substring(7, key.length - 1);
-          
+
           if (columnName === 'order_by') {
             // Handle order_by as ORDER BY clause, not a filter
             orderByClause = value;
           } else {
-          filterConditions.push(`${columnName} = $${paramIndex}`);
-          params.push(coerceValue(value));
-          paramIndex++;
-        }
-      } else {
+            filterConditions.push(`${columnName} = $${paramIndex}`);
+            params.push(coerceValue(value));
+            paramIndex++;
+          }
+        } else {
           filterConditions.push(`${key} = $${paramIndex}`);
           params.push(coerceValue(value));
           paramIndex++;
@@ -357,7 +357,7 @@ router.get('/:table', authenticateToken, async (req, res) => {
       const orderByParts = orderByClause.split('.');
       const column = orderByParts[0];
       const direction = orderByParts[1] || 'ASC';
-      
+
       if (allowedOrderByColumns.includes(column) && ['ASC', 'DESC', 'asc', 'desc'].includes(direction.toUpperCase())) {
         sql += ` ORDER BY ${column} ${direction.toUpperCase()}`;
       } else {
@@ -622,6 +622,106 @@ router.post('/delete', authenticateToken, async (req, res) => {
 });
 
 /**
+ * POST /api/db/update - Update record by filters (compat with client updateOne)
+ * Supported: { table, filters: { id, idColumn? }, data: { ... } }
+ */
+router.post('/update', authenticateToken, async (req, res) => {
+  try {
+    const { table, filters, data } = req.body || {};
+    const userId = req.user.id;
+    const jwtPayload = req.user.jwtPayload || { sub: userId };
+
+    if (!table || typeof table !== 'string') {
+      throw createError('Table name is required', 400);
+    }
+    if (!filters || typeof filters !== 'object') {
+      throw createError('Filters object is required', 400);
+    }
+    if (!data || typeof data !== 'object') {
+      throw createError('Data object is required', 400);
+    }
+
+    const allowedTables = getAllowedTables();
+    if (!allowedTables.includes(table)) {
+      throw createError(`Table '${table}' not allowed`, 400);
+    }
+
+    // Add updated_at timestamp
+    data.updated_at = new Date().toISOString();
+
+    const dataEntries = Object.entries(data);
+    if (dataEntries.length === 0) {
+      throw createError('No data provided to update', 400);
+    }
+
+    // Build UPDATE query
+    const setClause = dataEntries.map(([col], idx) => `${col} = $${idx + 1}`).join(', ');
+    const values = dataEntries.map(([, val]) => val);
+    let paramIdx = values.length + 1;
+
+    // Filter conditions
+    const conditions = [];
+    const filterParams = [];
+
+    Object.entries(filters).forEach(([key, value]) => {
+      if (key === 'idColumn') return; // Skip metadata
+      conditions.push(`${key} = $${paramIdx++}`);
+      filterParams.push(value);
+    });
+
+    if (conditions.length === 0) {
+      throw createError('At least one filter condition is required', 400);
+    }
+
+    // User scoping (for user-scoped tables)
+    if (USER_SCOPED_TABLES.includes(table)) {
+      conditions.push(`user_id = $${paramIdx++}`);
+      filterParams.push(userId);
+    }
+
+    const sql = `UPDATE ${table} SET ${setClause} WHERE ${conditions.join(' AND ')} RETURNING *`;
+    const params = [...values, ...filterParams];
+
+    const result = await query(sql, params, jwtPayload);
+
+    if (result.error) {
+      throw createError(`Database update failed: ${result.error}`, 500);
+    }
+
+    // Record audit for update
+    try {
+      const updated = result.data && result.data[0] ? result.data[0] : null;
+      if (updated) {
+        await AuditService.recordEvent({
+          eventType: 'db_update',
+          objectType: table,
+          objectId: updated.id,
+          actorId: userId,
+          endpoint: '/api/db/update',
+          ip: req.ip,
+          userAgent: req.get('User-Agent') || null,
+          data: { updated, filters }
+        });
+      }
+    } catch (auditErr) {
+      logger.warn('Failed to record db_update audit', { error: auditErr?.message || auditErr });
+    }
+
+    res.json({
+      success: true,
+      data: result.data[0]
+    });
+
+  } catch (error) {
+    logger.error('Database POST update error:', error);
+    res.status(error.status || 500).json({
+      success: false,
+      error: error.message || 'Database operation failed'
+    });
+  }
+});
+
+/**
  * POST /api/db/:table - Insert new record (legacy signature)
  */
 router.post('/:table', authenticateToken, async (req, res) => {
@@ -715,12 +815,12 @@ router.put('/:table/:id', authenticateToken, async (req, res) => {
     const params = [id, ...values];
 
     // Add user-based filtering for security
-    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
+    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents',
+      'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
       sql += ` AND user_id = $${params.length + 1}`;
       params.push(userId);
     }
-    
+
     // For onboarding tables, use external user ID directly
     if (['user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
       sql += ` AND user_id = $${params.length + 1}`;
@@ -793,12 +893,12 @@ router.delete('/:table/:id', authenticateToken, async (req, res) => {
     const params = [id];
 
     // Add user-based filtering for security
-    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
+    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents',
+      'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
       sql += ` AND user_id = $2`;
       params.push(userId);
     }
-    
+
     // For onboarding tables, use external user ID directly
     if (['user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
       sql += ` AND user_id = $2`;
@@ -849,9 +949,9 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
     }
 
     // Add user_id to data for user-scoped tables
-    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions',
-         'user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
+    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents',
+      'user_activities', 'next_best_actions', 'user_action_executions',
+      'user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
       data.user_id = userId;
     }
 
@@ -865,7 +965,7 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
     const columns = Object.keys(data);
     const values = Object.values(data);
     const placeholders = values.map((_, index) => `$${index + 1}`).join(', ');
-    
+
     // Determine the correct conflict resolution based on table
     let conflictColumns = onConflict;
     if (['user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
@@ -877,7 +977,7 @@ router.post('/:table/upsert', authenticateToken, async (req, res) => {
         conflictColumns = 'user_id';
       }
     }
-    
+
     const updateClause = columns
       .filter(col => !conflictColumns.split(',').includes(col))
       .map((col) => `${col} = EXCLUDED.${col}`)
@@ -951,13 +1051,13 @@ router.post('/:table/query', authenticateToken, async (req, res) => {
     let paramIndex = 1;
 
     // Add user-based filtering for security
-    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents', 
-         'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
+    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents',
+      'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
       sql += ` WHERE user_id = $${paramIndex}`;
       params.push(userId);
       paramIndex++;
     }
-    
+
     // For onboarding tables, use external user ID directly
     if (['user_onboarding_steps', 'user_onboarding_completions', 'user_onboarding_phases'].includes(table)) {
       sql += ` WHERE user_id = $${paramIndex}`;
@@ -968,7 +1068,7 @@ router.post('/:table/query', authenticateToken, async (req, res) => {
     // Add additional filters
     if (filter && Object.keys(filter).length > 0) {
       const filterConditions = [];
-      
+
       Object.entries(filter).forEach(([key, value]) => {
         filterConditions.push(`${key} = $${paramIndex}`);
         params.push(value);

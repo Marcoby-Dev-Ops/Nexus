@@ -37,7 +37,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
 
   if (session) {
     token = session.session?.accessToken || session.accessToken || null;
-    
+
     // Check if token is expired before using it
     if (token) {
       try {
@@ -45,7 +45,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
         if (parts.length === 3) {
           const payload = JSON.parse(atob(parts[1]));
           const now = Math.floor(Date.now() / 1000);
-          
+
           if (payload.exp && payload.exp < now) {
             if (authLogsEnabled) {
               loggingUtils.auth('Token expired, attempting refresh', {
@@ -53,7 +53,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
                 now: new Date().toISOString()
               });
             }
-            
+
             // Attempt to refresh the token
             const refreshSuccess = await attemptTokenRefresh();
             if (refreshSuccess) {
@@ -90,7 +90,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
       try {
         const storedSession = JSON.parse(sessionData);
         token = storedSession?.session?.accessToken || storedSession?.accessToken || null;
-        
+
         // Check if stored token is expired
         if (token) {
           try {
@@ -98,7 +98,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
             if (parts.length === 3) {
               const payload = JSON.parse(atob(parts[1]));
               const now = Math.floor(Date.now() / 1000);
-              
+
               if (payload.exp && payload.exp < now) {
                 if (authLogsEnabled) {
                   loggingUtils.auth('Stored token expired, attempting refresh', {
@@ -106,7 +106,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
                     now: new Date().toISOString()
                   });
                 }
-                
+
                 // Attempt to refresh the token
                 const refreshSuccess = await attemptTokenRefresh();
                 if (refreshSuccess) {
@@ -134,7 +134,7 @@ export async function getAuthHeaders(): Promise<Record<string, string>> {
             }
           }
         }
-        
+
         if (token && !session) {
           // Hydrate the store asynchronously without blocking callers
           try {
@@ -384,7 +384,7 @@ export interface SelectOptions {
   table: string;
   columns?: string;
   filters?: Record<string, unknown>;
-  orderBy?: { column: string; ascending?: boolean}[];
+  orderBy?: { column: string; ascending?: boolean }[];
   limit?: number;
   offset?: number;
 }
@@ -429,12 +429,12 @@ export async function selectData<T = any>(
   filters?: Record<string, unknown>
 ): Promise<ApiResponse<T[]>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  
+
   // Handle both signatures
   let table: string;
   let queryFilters: Record<string, unknown> = {};
   let queryColumns: string | undefined;
-  
+
   if (typeof optionsOrTable === 'string') {
     // Old signature: selectData(table, columns, filters)
     table = optionsOrTable;
@@ -477,10 +477,10 @@ export async function selectOne<T = any>(
   const queryString = buildQueryString(filters);
   const endpoint = queryString ? `/api/db/${table}?${queryString}` : `/api/db/${table}`;
   const result = await client.get<T[]>(endpoint);
-  
+
   // Debug logging
   // debug logs removed (can be re-enabled via loggingUtils if needed)
-  
+
   if (result.success && result.data) {
     // Handle nested response structure: { success: true, data: { success: true, data: [...], count: 1 } }
     if (result.data && typeof result.data === 'object' && 'data' in result.data && Array.isArray(result.data.data)) {
@@ -509,7 +509,7 @@ export async function selectOne<T = any>(
       };
     }
   }
-  
+
   // If we get here, either result.success is false or result.data is null/undefined
   return {
     success: false,
@@ -541,7 +541,7 @@ export async function upsertOne<T = any>(
   onConflict: string = 'id'
 ): Promise<ApiResponse<T>> {
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
-  return client.post<T>('/api/db/upsert', { table, data, onConflict });
+  return client.post<T>(`/api/db/${table}/upsert`, { data, onConflict });
 }
 
 export async function deleteOne<T = any>(
