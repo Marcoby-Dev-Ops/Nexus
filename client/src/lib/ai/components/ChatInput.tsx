@@ -92,7 +92,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   };
 
   return (
-    <div className="border-t border-gray-800 bg-gray-900 p-4 flex-shrink-0">
+    <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 flex-shrink-0">
       <div className="max-w-4xl mx-auto">
         {/* Attachments Display */}
         {attachments.length > 0 && (
@@ -101,17 +101,17 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               {attachments.map((attachment) => (
                 <div
                   key={attachment.id}
-                  className="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-2 text-sm border border-gray-700"
+                  className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 text-sm border border-border"
                 >
-                  <Paperclip className="w-4 h-4 text-gray-400" />
-                  <span className="truncate max-w-[200px] text-gray-200">{attachment.name}</span>
-                  <span className="text-gray-500 text-xs">
+                  <Paperclip className="w-4 h-4 text-muted-foreground" />
+                  <span className="truncate max-w-[200px] text-foreground">{attachment.name}</span>
+                  <span className="text-muted-foreground text-xs">
                     ({(attachment.size / 1024).toFixed(1)} KB)
                   </span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-6 w-6 p-0 text-gray-400 hover:text-red-400"
+                    className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
                     onClick={() => removeAttachment(attachment.id)}
                   >
                     ×
@@ -121,15 +121,15 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
             </div>
           </div>
         )}
-        
+
         <div className="relative">
           {/* Input Container */}
-          <div className="relative bg-gray-800 rounded-2xl border border-gray-700 focus-within:border-gray-600 transition-colors">
+          <div className="relative bg-muted/30 focus-within:bg-muted/50 rounded-2xl border border-input focus-within:border-ring transition-colors">
             {/* Attachment Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               disabled={disabled}
               onClick={handleFileUpload}
             >
@@ -145,7 +145,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               placeholder={isStreaming ? 'Assistant is thinking...' : placeholder}
               disabled={disabled || isStreaming}
               className={cn(
-                "min-h-[52px] max-h-[200px] resize-none border-0 bg-transparent text-gray-100 placeholder-gray-400",
+                "min-h-[52px] max-h-[200px] resize-none border-0 bg-transparent text-foreground placeholder:text-muted-foreground",
                 "pl-12 pr-20 py-3 focus:ring-0 focus:outline-none",
                 "text-base leading-relaxed"
               )}
@@ -161,8 +161,8 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                 onClick={() => setIsRecording(!isRecording)}
                 disabled={disabled || isStreaming}
                 className={cn(
-                  "text-gray-400 hover:text-gray-300",
-                  isRecording && "text-red-400"
+                  "text-muted-foreground hover:text-foreground",
+                  isRecording && "text-destructive"
                 )}
               >
                 {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -174,10 +174,10 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                 onClick={isStreaming ? onStopGeneration : onSendMessage}
                 disabled={disabled || (!isStreaming && !input.trim() && attachments.length === 0)}
                 className={cn(
-                  "rounded-full w-8 h-8 p-0",
-                  isStreaming 
-                    ? "bg-red-600 hover:bg-red-700" 
-                    : "bg-blue-600 hover:bg-blue-700"
+                  "rounded-full w-8 h-8 p-0 transition-colors",
+                  isStreaming
+                    ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                    : "bg-primary hover:bg-primary/90 text-primary-foreground"
                 )}
               >
                 {isStreaming ? (
@@ -190,7 +190,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           </div>
 
           {/* Disclaimer */}
-          <p className="text-xs text-gray-500 text-center mt-2">
+          <p className="text-xs text-muted-foreground text-center mt-2">
             Nexus AI can make mistakes. Check important information.
           </p>
         </div>

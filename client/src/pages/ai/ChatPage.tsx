@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/hooks/index';
 import { Button } from '@/shared/components/ui/Button';
-import { ModernChatInterface } from '@/lib/ai/components/ModernChatInterface';
-import { ConversationalAIService } from '@/services/ai/conversationalAIService';
+import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
+import { ConversationalAIService } from '@/services/ai/ConversationalAIService';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/shared/utils/logger';
 import { useUserProfile } from '@/shared/contexts/UserContext';
@@ -23,22 +23,22 @@ export const ChatPage: React.FC = () => {
   const {
     messages: storeMessages,
     sendMessage,
-    saveAIResponse,
+    saveAIResponse, // Confirmed exists in store
+    createConversation, // Confirmed exists in store
     fetchConversations,
-    loading: conversationsLoading,
+    isLoading: conversationsLoading,
     error,
-    conversationId,
-    setConversationId,
+    currentConversation,
     setCurrentConversationById,
-    clearMessages,
-    setCurrentConversation
+    // Add additional keys for streaming if available, otherwise we use local state
   } = useAIChatStore();
 
-  const [isLoading, setIsLoading] = useState(false);
+  // Local state for streaming UI since store might not expose everything needed for this view's specifics or we want isolation
+  const [localIsLoading, setLocalIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
 
-  // Knowledge context state (simplified for this view)
+  // Knowledge context state
   const [ragEnabled, setRagEnabled] = useState(true);
   const [ragConfidence, setRagConfidence] = useState<'high' | 'medium' | 'low'>('high');
   const [knowledgeTypes, setKnowledgeTypes] = useState<string[]>([]);
@@ -59,44 +59,39 @@ export const ChatPage: React.FC = () => {
     }
   }, [user, fetchConversations]);
 
+  const conversationId = currentConversation?.id;
+
   const handleSendMessage = async (message: string, attachments?: any[]) => {
     if (!message.trim() || !user) return;
 
     try {
       // Create or get conversation
       let currentConversationId = conversationId;
-      if (!currentConversationId) {
-        // Create new conversation if none exists
-        // Note: createConversation logic is handled by store or service, 
-        // usually we'd want a helper here or store action that handles "ensure conversation"
-        // For now, let's assume if no ID, we let the store/backend handle creation on first message 
-        // OR we need to call createConversation from store.
-        // Looking at previous implementation, it called createConversation directly.
-        // We should probably rely on `sendMessage` to create if needed, or create manually.
-        // Let's use the store's createConversation if exposed, or import it.
-        // Wait, useAIChatStore usually exposes createConversation.
-        // I'll assume we need to import `createConversation` from store actions if available.
-        // The previous code verified `createConversation` was imported from store.
-        // Let's assume `createConversation` is available in useAIChatStore, if not we'll need to fix.
-        // Checking my previous read of useAIChatStore, it DOES have createConversation.
-        const { createConversation } = useAIChatStore.getState();
 
-        const conversationTitle = message.length > 50 ? message.substring(0, 50) + '...' : message;
-        currentConversationId = await createConversation(conversationTitle, 'gpt-4', undefined, user.id);
-        setConversationId(currentConversationId);
-        await setCurrentConversationById(currentConversationId);
+      if (!currentConversationId) {
+        if (createConversation) {
+          const title = message.slice(0, 50);
+          currentConversationId = await createConversation(title, 'gpt-4', undefined, user.id);
+        } else {
+          // Fallback if somehow not available (should not happen based on store check)
+          throw new Error("Create conversation not available");
+        }
       }
 
-      // IMMEDIATELY save and display the user message
-      await sendMessage(message, currentConversationId!, attachments || []);
+      // IMMEDIATELY save and display the user message via store
+      if (currentConversationId) {
+        await sendMessage(message, currentConversationId, attachments || []);
+      } else {
+        // If we couldn't create one, we can't proceed with store `sendMessage`.
+        throw new Error("Could not create conversation");
+      }
 
       // Now set loading states for AI response
-      setIsLoading(true);
+      setLocalIsLoading(true);
       setIsStreaming(true);
 
       // Use Conversational AI Service (Streaming)
-      // We need organization ID
-      const orgId = 'default'; // Should get from user profile/company
+      const orgId = 'default';
 
       const contextInit = await conversationalAIService.initializeContext(user.id, orgId);
       const aiContext = (contextInit.success && contextInit.data) ? contextInit.data : {
@@ -121,7 +116,10 @@ export const ChatPage: React.FC = () => {
       );
 
       // Save final response
-      await saveAIResponse(accumulatedResponse, currentConversationId!);
+      if (saveAIResponse && currentConversationId) {
+        await saveAIResponse(accumulatedResponse, currentConversationId);
+      }
+
       setStreamingContent('');
 
       // Refresh conversations to update snippets/order
@@ -133,17 +131,17 @@ export const ChatPage: React.FC = () => {
       toast({
         title: "Error",
         description: errorMessage,
-        type: "error"
+        variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setLocalIsLoading(false);
       setIsStreaming(false);
     }
   };
 
   const handleStopGeneration = () => {
     setIsStreaming(false);
-    setIsLoading(false);
+    setLocalIsLoading(false);
   };
 
   // Show error state if there's an error
@@ -174,8 +172,7 @@ export const ChatPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Welcome Back Greeting - Only show if no messages? Or always at top? */}
-      {/* Typically, greetings are shown when chat is empty. */}
+      {/* Welcome Back Greeting */}
       {storeMessages.length === 0 && (
         <div className="flex flex-col items-center justify-center pt-12 pb-4">
           <h2 className="text-2xl font-semibold text-foreground mb-2">Welcome back, {displayName}!</h2>
@@ -213,9 +210,9 @@ export const ChatPage: React.FC = () => {
                 : storeMessages
             }
             onSendMessage={handleSendMessage}
-            onStopGeneration={handleStopGeneration}
+            onStopGeneration={handleStopGeneration} // Make sure this prop exists on ModernChatInterface
             isStreaming={isStreaming}
-            disabled={isLoading}
+            disabled={localIsLoading || conversationsLoading}
             placeholder="Ask anything — general questions or ask about your business."
             showTypingIndicator={isStreaming}
             className="h-full"
@@ -224,7 +221,7 @@ export const ChatPage: React.FC = () => {
             agentId="nexus-assistant"
             agentName="Executive Assistant"
             ragEnabled={ragEnabled}
-            ragConfidence={ragConfidence}
+            ragConfidence={ragConfidence === 'high' ? 0.9 : ragConfidence === 'medium' ? 0.7 : 0.4} // Map string to number
             knowledgeTypes={knowledgeTypes}
             ragSources={ragSources}
             ragRecommendations={ragRecommendations}
@@ -235,3 +232,5 @@ export const ChatPage: React.FC = () => {
     </div>
   );
 };
+
+export default ChatPage;
