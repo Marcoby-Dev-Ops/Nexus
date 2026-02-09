@@ -11,18 +11,18 @@ const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
 
 // Model-Way Framework Constants - Preserved for metadata consistency
 const INTENT_TYPES = {
-  BRAINSTORM: { id: 'brainstorm', name: '🧠 Brainstorm', emoji: '🧠', description: 'Generate ideas, explore possibilities' },
-  SOLVE: { id: 'solve', name: '🛠 Solve', emoji: '🛠', description: 'Solve a problem, debug, fix issues' },
-  WRITE: { id: 'write', name: '✍️ Write', emoji: '✍️', description: 'Draft content, emails, documents' },
-  DECIDE: { id: 'decide', name: '📊 Decide', emoji: '📊', description: 'Make decisions, analyze options' },
-  LEARN: { id: 'learn', name: '📚 Learn', emoji: '📚', description: 'Learn, research, understand concepts' }
+    BRAINSTORM: { id: 'brainstorm', name: '🧠 Brainstorm', emoji: '🧠', description: 'Generate ideas, explore possibilities' },
+    SOLVE: { id: 'solve', name: '🛠 Solve', emoji: '🛠', description: 'Solve a problem, debug, fix issues' },
+    WRITE: { id: 'write', name: '✍️ Write', emoji: '✍️', description: 'Draft content, emails, documents' },
+    DECIDE: { id: 'decide', name: '📊 Decide', emoji: '📊', description: 'Make decisions, analyze options' },
+    LEARN: { id: 'learn', name: '📚 Learn', emoji: '📚', description: 'Learn, research, understand concepts' }
 };
 
 const PHASES = {
-  DISCOVERY: 'discovery',
-  SYNTHESIS: 'synthesis', 
-  DECISION: 'decision',
-  EXECUTION: 'execution'
+    DISCOVERY: 'discovery',
+    SYNTHESIS: 'synthesis',
+    DECISION: 'decision',
+    EXECUTION: 'execution'
 };
 
 // In-memory conversation tracking (in production, use database)
@@ -30,26 +30,26 @@ const conversations = new Map();
 
 // Helper to structure metadata without injecting prompt logic
 function structureResponse(content, conversationId, originalResponse = {}) {
-  // Mock metadata for compatibility
-  const phaseProgress = 25; 
-  
-  return {
-    ...originalResponse,
-    content,
-    metadata: {
-      ...(originalResponse.metadata || {}),
-      modelWay: {
-        intent: INTENT_TYPES.BRAINSTORM, // Default
-        phase: {
-          id: PHASES.DISCOVERY,
-          name: 'Discovery',
-          progress: phaseProgress
-        },
-        conversationId,
-        timestamp: new Date().toISOString()
-      }
-    }
-  };
+    // Mock metadata for compatibility
+    const phaseProgress = 25;
+
+    return {
+        ...originalResponse,
+        content,
+        metadata: {
+            ...(originalResponse.metadata || {}),
+            modelWay: {
+                intent: INTENT_TYPES.BRAINSTORM, // Default
+                phase: {
+                    id: PHASES.DISCOVERY,
+                    name: 'Discovery',
+                    progress: phaseProgress
+                },
+                conversationId,
+                timestamp: new Date().toISOString()
+            }
+        }
+    };
 }
 
 /**
@@ -63,7 +63,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { messages, stream = true, conversationId: providedConvId } = req.body;
+    const { messages, stream = true, conversationId: providedConvId, system } = req.body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
         return res.status(400).json({ success: false, error: 'Messages array is required' });
@@ -71,10 +71,20 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
     try {
         const conversationId = providedConvId || `conv-${userId}-${Date.now()}`;
-        
-        // Pure proxy payload: No system prompt injection
+
+        // Build messages array, prepending system prompt if provided
+        let finalMessages = messages;
+        if (system && typeof system === 'string' && system.trim()) {
+            // Prepend system prompt as first message
+            finalMessages = [
+                { role: 'system', content: system },
+                ...messages.filter(m => m.role !== 'system') // Avoid duplicate system messages
+            ];
+        }
+
+        // Proxy payload with Nexus context forwarded to OpenClaw
         const openClawPayload = {
-            messages: messages, // Pass user messages directly
+            messages: finalMessages,
             stream: stream,
             user: userId // Critical for OpenClaw memory
         };
@@ -82,7 +92,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         logger.info('Chat proxy request', {
             userId,
             conversationId,
-            messageCount: messages.length,
+            messageCount: finalMessages.length,
+            hasSystemPrompt: !!system,
             stream,
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
@@ -104,22 +115,22 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // Check if upstream response is JSON (non-streaming)
         const contentType = openClawResponse.headers.get('content-type');
-        
-        if (contentType && contentType.includes('application/json')) {
-             // Handle non-streaming upstream response from Bridge
-             const data = await openClawResponse.json();
-             const content = data.choices?.[0]?.message?.content || '';
-             
-             // If client wanted stream, emit it as an SSE event sequence
-             if (stream) {
-                 res.setHeader('Content-Type', 'text/event-stream');
-                 res.setHeader('Cache-Control', 'no-cache');
-                 res.setHeader('Connection', 'keep-alive');
-                 res.setHeader('X-Accel-Buffering', 'no');
-                 res.flushHeaders();
 
-                 // 1. Metadata event (Minimal for compatibility)
-                 res.write(`data: ${JSON.stringify({
+        if (contentType && contentType.includes('application/json')) {
+            // Handle non-streaming upstream response from Bridge
+            const data = await openClawResponse.json();
+            const content = data.choices?.[0]?.message?.content || '';
+
+            // If client wanted stream, emit it as an SSE event sequence
+            if (stream) {
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+                res.setHeader('X-Accel-Buffering', 'no');
+                res.flushHeaders();
+
+                // 1. Metadata event (Minimal for compatibility)
+                res.write(`data: ${JSON.stringify({
                     metadata: {
                         modelWay: {
                             intent: INTENT_TYPES.BRAINSTORM,
@@ -128,28 +139,28 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             timestamp: new Date().toISOString()
                         }
                     }
-                 })}\n\n`);
+                })}\n\n`);
 
-                 // 2. Content event
-                 if (content) {
+                // 2. Content event
+                if (content) {
                     res.write(`data: ${JSON.stringify({ content })}\n\n`);
-                 }
+                }
 
-                 // 3. Done event
-                 res.write('data: [DONE]\n\n');
-                 res.end();
-                 return;
-             } else {
-                 // return normal JSON if client didn't want stream
-                 const response = structureResponse(content, conversationId, {
-                        success: true,
-                        content,
-                        model: data.model,
-                        usage: data.usage
-                    }
+                // 3. Done event
+                res.write('data: [DONE]\n\n');
+                res.end();
+                return;
+            } else {
+                // return normal JSON if client didn't want stream
+                const response = structureResponse(content, conversationId, {
+                    success: true,
+                    content,
+                    model: data.model,
+                    usage: data.usage
+                }
                 );
                 return res.json(response);
-             }
+            }
         }
 
         if (!stream) {
@@ -158,11 +169,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             const content = data.choices?.[0]?.message?.content || '';
 
             const response = structureResponse(content, conversationId, {
-                    success: true,
-                    content,
-                    model: data.model,
-                    usage: data.usage
-                }
+                success: true,
+                content,
+                model: data.model,
+                usage: data.usage
+            }
             );
 
             return res.json(response);
