@@ -21,11 +21,11 @@ class NexusAIGatewayService {
       enableCircuitBreaker: true,
       ...config,
     };
-    
+
     this.providers = new Map();
     this.usageRecords = [];
     this.circuitBreaker = new Map();
-    
+
     this.initializeProviders();
   }
 
@@ -40,7 +40,7 @@ class NexusAIGatewayService {
         const openclawApiKey = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
         this.providers.set('openclaw', new OpenClawProvider(openclawUrl, openclawApiKey));
         logger.info('OpenClaw provider initialized - WILL BE USED AS DEFAULT AI ENGINE');
-        
+
         // Set OpenClaw as preferred provider if available
         this.preferredProvider = 'openclaw';
       } catch (error) {
@@ -103,6 +103,9 @@ class NexusAIGatewayService {
    * Chat with AI using intelligent model routing
    */
   async chat(request) {
+    let llmRequest = null;
+    let response = null;
+
     try {
       logger.info('Chat request received:', {
         role: request.role || 'chat',
@@ -121,7 +124,7 @@ class NexusAIGatewayService {
       }
 
       // Prepare the LLM request
-      const llmRequest = {
+      llmRequest = {
         task: 'chat',
         role: request.role || 'chat',
         input: this.formatChatInput(request.messages),
@@ -139,7 +142,7 @@ class NexusAIGatewayService {
       };
 
       // Call the provider
-      const response = await provider.call(llmRequest);
+      response = await provider.call(llmRequest);
 
       // Record usage for monitoring
       await this.recordUsage(llmRequest, response, true);
@@ -157,12 +160,12 @@ class NexusAIGatewayService {
       };
     } catch (error) {
       logger.error('Chat request failed:', error);
-      
+
       // Record failed usage if we have a request context
       if (llmRequest && response) {
         await this.recordUsage(llmRequest, response, false, error.message);
       }
-      
+
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -174,6 +177,9 @@ class NexusAIGatewayService {
    * Generate embeddings for text
    */
   async generateEmbeddings(request) {
+    let llmRequest = null;
+    let response = null;
+
     try {
       logger.info('Embedding request received:', {
         model: request.model,
@@ -190,7 +196,7 @@ class NexusAIGatewayService {
         };
       }
 
-      const llmRequest = {
+      llmRequest = {
         task: 'embed',
         role: 'embed',
         input: request.text,
@@ -201,7 +207,7 @@ class NexusAIGatewayService {
         orgId: request.orgId || null
       };
 
-      const response = await provider.call(llmRequest);
+      response = await provider.call(llmRequest);
 
       // Record usage for monitoring
       await this.recordUsage(llmRequest, response, true);
@@ -218,12 +224,12 @@ class NexusAIGatewayService {
       };
     } catch (error) {
       logger.error('Embedding generation failed:', error);
-      
+
       // Record failed usage if we have a request context
       if (llmRequest && response) {
         await this.recordUsage(llmRequest, response, false, error.message);
       }
-      
+
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
@@ -237,7 +243,7 @@ class NexusAIGatewayService {
   selectProvider(request) {
     // Priority order: OpenClaw > OpenAI > OpenRouter > Local
     const providers = ['openclaw', 'openai', 'openrouter', 'local'];
-    
+
     for (const providerName of providers) {
       const provider = this.providers.get(providerName);
       if (provider && this.isProviderSuitable(providerName, request)) {
@@ -246,7 +252,7 @@ class NexusAIGatewayService {
         return provider;
       }
     }
-    
+
     return null;
   }
 
@@ -259,7 +265,7 @@ class NexusAIGatewayService {
     if (openaiProvider) {
       return openaiProvider;
     }
-    
+
     // Fallback to other providers
     return this.selectProvider(request);
   }
@@ -272,12 +278,12 @@ class NexusAIGatewayService {
     if (this.isCircuitBreakerOpen(providerName)) {
       return false;
     }
-    
+
     // Check budget constraints
     if (request.budgetCents && request.budgetCents < 1) {
       return providerName === 'local'; // Local is free
     }
-    
+
     return true;
   }
 
@@ -307,7 +313,7 @@ class NexusAIGatewayService {
         embed: 'text-embedding-ada-002'
       }
     };
-    
+
     return models[provider]?.[role] || models[provider]?.chat || 'gpt-3.5-turbo';
   }
 
@@ -326,7 +332,7 @@ class NexusAIGatewayService {
   isCircuitBreakerOpen(providerName) {
     const breaker = this.circuitBreaker.get(providerName);
     if (!breaker) return false;
-    
+
     if (breaker.isOpen) {
       const timeSinceLastFailure = Date.now() - breaker.lastFailure;
       if (timeSinceLastFailure > 60000) { // 1 minute timeout
@@ -336,7 +342,7 @@ class NexusAIGatewayService {
       }
       return true;
     }
-    
+
     return false;
   }
 
@@ -346,7 +352,7 @@ class NexusAIGatewayService {
   async testConnections() {
     try {
       const results = {};
-      
+
       for (const [providerName, provider] of this.providers) {
         try {
           // Test with a simple request
@@ -357,9 +363,9 @@ class NexusAIGatewayService {
             model: this.selectModel('chat', providerName),
             tenantId: 'test'
           };
-          
+
           await provider.call(testRequest);
-          
+
           results[providerName] = {
             status: 'available',
             name: providerName,
@@ -388,7 +394,7 @@ class NexusAIGatewayService {
   async getProviderHealth() {
     try {
       const health = {};
-      
+
       for (const [providerName, provider] of this.providers) {
         const breaker = this.circuitBreaker.get(providerName);
         health[providerName] = {
@@ -501,7 +507,7 @@ class OpenClawProvider {
   async call(request) {
     // Send standard OpenAI format
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -548,14 +554,14 @@ class OpenClawProvider {
     if (request.messages && Array.isArray(request.messages) && request.messages.length > 0) {
       // Clone to avoid mutating original request
       let messages = [...request.messages];
-      
+
       // Ensure system prompt is definitely included if provided separately
       if (request.system) {
         // If the first message isn't system, prepend. 
         // If it IS system, we rely on the one in messages array unless we want to override.
         // Let's assume request.system is the authoritative Source of Truth for system prompt.
         if (messages.length === 0 || messages[0].role !== 'system') {
-           messages.unshift({ role: 'system', content: request.system });
+          messages.unshift({ role: 'system', content: request.system });
         }
       }
       return messages;
@@ -605,7 +611,7 @@ class OpenAIProvider {
     }
 
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -648,7 +654,7 @@ class OpenAIProvider {
 
   async embed(request) {
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/embeddings`, {
         method: 'POST',
@@ -688,13 +694,13 @@ class OpenAIProvider {
 
   buildMessages(request) {
     const messages = [];
-    
+
     if (request.system) {
       messages.push({ role: 'system', content: request.system });
     }
-    
+
     messages.push({ role: 'user', content: request.input });
-    
+
     return messages;
   }
 
@@ -710,23 +716,23 @@ class OpenAIProvider {
     // Simplified cost calculation
     const promptTokens = usage?.prompt_tokens || 0;
     const completionTokens = usage?.completion_tokens || 0;
-    
+
     // Rough cost estimates (in cents)
     const promptCost = (promptTokens / 1000) * 0.2; // $0.002 per 1K tokens
     const completionCost = (completionTokens / 1000) * 0.6; // $0.006 per 1K tokens
-    
+
     return Math.round((promptCost + completionCost) * 100);
   }
 
   calculateEmbeddingCost(usage, model) {
     // Simplified embedding cost calculation
     const promptTokens = usage?.prompt_tokens || 0;
-    
+
     // Rough cost estimates for embeddings (in cents)
     // text-embedding-3-small: $0.00002 per 1K tokens
     const costPer1KTokens = 0.00002;
     const cost = (promptTokens / 1000) * costPer1KTokens;
-    
+
     return Math.round(cost * 100);
   }
 }
@@ -747,7 +753,7 @@ class OpenRouterProvider {
     }
 
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -792,13 +798,13 @@ class OpenRouterProvider {
 
   buildMessages(request) {
     const messages = [];
-    
+
     if (request.system) {
       messages.push({ role: 'system', content: request.system });
     }
-    
+
     messages.push({ role: 'user', content: request.input });
-    
+
     return messages;
   }
 
@@ -814,17 +820,17 @@ class OpenRouterProvider {
     // Simplified cost calculation for OpenRouter
     const promptTokens = usage?.prompt_tokens || 0;
     const completionTokens = usage?.completion_tokens || 0;
-    
+
     // Rough cost estimates (in cents) - OpenRouter costs vary by model
     const promptCost = (promptTokens / 1000) * 0.15;
     const completionCost = (completionTokens / 1000) * 0.5;
-    
+
     return Math.round((promptCost + completionCost) * 100);
   }
 
   async embed(request) {
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/embeddings`, {
         method: 'POST',
@@ -867,11 +873,11 @@ class OpenRouterProvider {
   calculateEmbeddingCost(usage, model) {
     // Simplified embedding cost calculation for OpenRouter
     const promptTokens = usage?.prompt_tokens || 0;
-    
+
     // Rough cost estimates for embeddings (in cents)
     const costPer1KTokens = 0.00002;
     const cost = (promptTokens / 1000) * costPer1KTokens;
-    
+
     return Math.round(cost * 100);
   }
 }
@@ -892,7 +898,7 @@ class LocalProvider {
     }
 
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/v1/chat/completions`, {
         method: 'POST',
@@ -935,7 +941,7 @@ class LocalProvider {
 
   async embed(request) {
     const startTime = performance.now();
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/v1/embeddings`, {
         method: 'POST',
@@ -975,13 +981,13 @@ class LocalProvider {
 
   buildMessages(request) {
     const messages = [];
-    
+
     if (request.system) {
       messages.push({ role: 'system', content: request.system });
     }
-    
+
     messages.push({ role: 'user', content: request.input });
-    
+
     return messages;
   }
 
