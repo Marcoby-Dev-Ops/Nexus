@@ -1,10 +1,10 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
-import { Separator } from "@/components/ui/separator"
+import { Separator } from "@/shared/components/ui/Separator"
 import { MainDashboard } from "@/components/dashboard/main-dashboard"
 import { LayoutDashboard, LogOut, User } from "lucide-react"
 import { useAuth } from "@/hooks/index"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Button } from "@/shared/components/ui/Button"
+import { Avatar, AvatarFallback } from "@/shared/components/ui/Avatar"
 
 export default function HomePage() {
   const { user, signOut } = useAuth();

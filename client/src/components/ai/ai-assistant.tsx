@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
+import { Button } from "@/shared/components/ui/Button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/Card"
+import { Textarea } from "@/shared/components/ui/Textarea"
+import { Badge } from "@/shared/components/ui/Badge"
 import { 
   Sparkles, 
   Wand2, 

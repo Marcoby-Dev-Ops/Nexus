@@ -4,7 +4,7 @@ import { useAuthStore } from '@/core/auth/authStore';
 import { Button } from '@/shared/components/ui/Button';
 import ModernChatInterface from '@/lib/ai/components/ModernChatInterface';
 import { ConversationalAIService } from '@/services/ai/ConversationalAIService';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 import { logger } from '@/shared/utils/logger';
 import { useUserProfile } from '@/shared/contexts/UserContext';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';

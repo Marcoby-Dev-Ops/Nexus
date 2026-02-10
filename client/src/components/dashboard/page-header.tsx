@@ -1,6 +1,6 @@
 import React from 'react'
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext'
-import { ThemeToggleAdvanced } from '@/components/ui/theme-toggle-advanced'
+import { ThemeToggleAdvanced } from '@/shared/components/ui/theme-toggle-advanced'
 
 export function PageHeader() {
   const { pageTitle, pageSubtitle, pageActions } = useHeaderContext()

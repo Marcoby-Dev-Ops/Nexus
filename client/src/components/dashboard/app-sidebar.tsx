@@ -25,7 +25,7 @@ import {
   Wallet,
   Zap,
 } from "lucide-react"
-import { ThemeToggleAdvanced } from "@/components/ui/theme-toggle-advanced"
+import { ThemeToggleAdvanced } from "@/shared/components/ui/theme-toggle-advanced"
 
 import {
   Sidebar,
@@ -35,7 +35,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
+} from "@/shared/components/ui/sidebar"
 
 const data = {
   user: {

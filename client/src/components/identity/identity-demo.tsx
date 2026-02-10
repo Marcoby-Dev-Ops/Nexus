@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/shared/components/ui/Button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/Card"
+import { Input } from "@/shared/components/ui/Input"
+import { Label } from "@/shared/components/ui/Label"
 import { IdentityManager } from '@/lib/identity/identity-manager'
 import { getIndustryLabel } from '@/lib/identity/industry-options'
 import type { BusinessIdentity } from '@/lib/identity/types'

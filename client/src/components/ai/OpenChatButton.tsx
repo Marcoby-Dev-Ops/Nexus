@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/shared/components/ui/Button';
 import { MessageSquare } from 'lucide-react';
 
 interface OpenChatButtonProps {

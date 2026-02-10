@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/shared/components/ui/Button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/ui/Card"
+import { Input } from "@/shared/components/ui/Input"
+import { Badge } from "@/shared/components/ui/Badge"
+import { ScrollArea } from "@/shared/components/ui/ScrollArea"
+import { Textarea } from "@/shared/components/ui/Textarea"
+import { Label } from "@/shared/components/ui/Label"
 import { ConversationContextManager } from '@/lib/ai/conversation-context-manager'
 import {
   MessageCircle,

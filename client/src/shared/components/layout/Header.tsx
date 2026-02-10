@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Settings, LogOut, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react';
-import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ThemeToggle } from '@/shared/components/ui/theme-toggle';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { navItems } from './navConfig';
 

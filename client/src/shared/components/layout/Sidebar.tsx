@@ -14,7 +14,7 @@ import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/hooks/index';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/shared/components/ui/use-toast';
 import type { Conversation } from '@/shared/types/chat';
 
 interface SidebarProps {

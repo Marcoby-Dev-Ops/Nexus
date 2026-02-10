@@ -4,7 +4,7 @@ import { HeaderProvider } from "@/shared/hooks/useHeaderContext"
 import {
   SidebarInset,
   SidebarProvider,
-} from "@/components/ui/sidebar"
+} from "@/shared/components/ui/sidebar"
 
 interface DashboardLayoutProps {
   children: React.ReactNode

@@ -27,6 +27,9 @@ export { default as Dropdown } from './Dropdown';
 export { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from './DropdownMenu';
 export { default as Form, FormField } from './Form';
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './Tooltip';
+export { ThemeToggle } from './theme-toggle';
+export { ThemeToggleAdvanced } from './theme-toggle-advanced';
+export * from './sidebar';
 
 // Types
 export type { ButtonProps } from './Button';
