@@ -23,16 +23,12 @@ async function runHygiene() {
         const shortThreadsQuery = `
             SELECT id, title FROM ai_conversations
             WHERE (
-                id NOT IN (SELECT DISTINCT conversation_id FROM ai_messages)
+                -- Strictly empty threads (0 messages) can be pruned immediately if over 1 hour old
+                (id NOT IN (SELECT DISTINCT conversation_id FROM ai_messages) AND created_at < NOW() - INTERVAL '1 hour')
                 OR 
-                id IN (
-                    SELECT conversation_id 
-                    FROM ai_messages 
-                    GROUP BY conversation_id 
-                    HAVING COUNT(*) <= 2
-                )
+                -- Short abandoned threads (1-2 messages) older than 24h
+                (id IN (SELECT conversation_id FROM ai_messages GROUP BY conversation_id HAVING COUNT(*) <= 2) AND updated_at < NOW() - INTERVAL '24 hours')
             )
-            AND updated_at < NOW() - INTERVAL '24 hours'
             AND is_archived = false
         `;
 
