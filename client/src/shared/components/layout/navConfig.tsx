@@ -23,7 +23,7 @@ export const navItems: NavItem[] = [
   },
   {
     name: 'Knowledge',
-    path: '/identity',
+    path: '/knowledge',
     icon: <Building2 className="h-5 w-5" />,
     description: 'Business Identity & Knowledge',
     category: 'overview'

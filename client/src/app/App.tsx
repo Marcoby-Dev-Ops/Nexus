@@ -14,6 +14,8 @@ import { ErrorBoundary } from '@/shared/components/ErrorBoundary';
 
 // Core pages - only what we need for foundation
 import { LandingPage } from '@/shared/pages/LandingPage';
+import { PrivacyPage } from '@/shared/pages/PrivacyPage';
+import { TermsPage } from '@/shared/pages/TermsPage';
 // ...existing code...
 import Login from '@/pages/auth/Login';
 import Signup from '@/pages/auth/Signup';
@@ -49,6 +51,8 @@ function AppRoutes() {
     <Routes>
       {/* Public routes */}
       <Route path="/" element={<LandingPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
       <Route 
         path="/login" 
         element={

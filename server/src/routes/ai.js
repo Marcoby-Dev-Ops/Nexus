@@ -148,7 +148,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 res.flushHeaders();
 
                 res.write(`data: ${JSON.stringify({
-                    metadata: { modelWay: modelWayMetadata }
+                    metadata: {
+                        modelWay: modelWayMetadata,
+                        contextInjected: false
+                    }
                 })}\n\n`);
                 res.write(`data: ${JSON.stringify({ content: refusalContent })}\n\n`);
                 res.write('data: [DONE]\n\n');
@@ -192,6 +195,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 error: contextError instanceof Error ? contextError.message : String(contextError)
             });
         }
+        const contextInjected = Boolean(contextSystemMessage);
 
         // Strip any system messages from client and inject deterministic backend context
         const openClawMessages = buildOpenClawMessages(messages, contextSystemMessage);
@@ -212,7 +216,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             phase,
             agentId: resolvedAgentId,
             openClawAgentId,
-            injectedContext: Boolean(contextSystemMessage),
+            injectedContext: contextInjected,
             stream,
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
@@ -257,7 +261,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 // 1. Metadata event (Minimal for compatibility)
                 res.write(`data: ${JSON.stringify({
                     metadata: {
-                        modelWay: modelWayMetadata
+                        modelWay: modelWayMetadata,
+                        contextInjected
                     }
                 })}\n\n`);
 
@@ -314,7 +319,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Send metadata as first event
         res.write(`data: ${JSON.stringify({
             metadata: {
-                modelWay: modelWayMetadata
+                modelWay: modelWayMetadata,
+                contextInjected
             }
         })}\n\n`);
 

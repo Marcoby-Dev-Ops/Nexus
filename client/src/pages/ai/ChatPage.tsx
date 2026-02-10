@@ -11,6 +11,7 @@ import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { Sparkles, X } from 'lucide-react';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import { useSearchParams } from 'react-router-dom';
+import type { StreamRuntimeMetadata } from '@/services/ai/ConversationalAIService';
 
 // Initialize AI Service
 const conversationalAIService = new ConversationalAIService();
@@ -61,9 +62,10 @@ export const ChatPage: React.FC = () => {
   const [localIsLoading, setLocalIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
+  const [contextInjectedForStream, setContextInjectedForStream] = useState(false);
 
   // Knowledge context state
-  const ragEnabled = true;
+  const ragEnabled = contextInjectedForStream;
   const ragConfidence: 'high' | 'medium' | 'low' = 'high';
   const knowledgeTypes: string[] = [];
   const ragSources: any[] = [];
@@ -88,6 +90,7 @@ export const ChatPage: React.FC = () => {
     setIsStreaming(false);
     setStreamingContent('');
     setLocalIsLoading(false);
+    setContextInjectedForStream(false);
   }, [currentConversation?.id]);
 
   const conversationId = currentConversation?.id;
@@ -120,6 +123,7 @@ export const ChatPage: React.FC = () => {
       // Now set loading states for AI response
       setLocalIsLoading(true);
       setIsStreaming(true);
+      setContextInjectedForStream(false);
 
       // Use Conversational AI Service (Streaming)
       const orgId = 'default';
@@ -154,6 +158,11 @@ export const ChatPage: React.FC = () => {
         {
           conversationId: currentConversationId || undefined,
           agentId: requestedAgentId
+        },
+        (metadata: StreamRuntimeMetadata) => {
+          if (typeof metadata.contextInjected === 'boolean') {
+            setContextInjectedForStream(metadata.contextInjected);
+          }
         }
       );
 

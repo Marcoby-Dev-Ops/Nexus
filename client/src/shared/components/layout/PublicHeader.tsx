@@ -21,24 +21,24 @@ export function PublicHeader() {
 
         {/* Navigation Links */}
         <nav className="hidden md:flex items-center space-x-8">
-          <Link 
-            to="/pricing" 
+          <a
+            href="/#platform"
             className="text-foreground/90 hover:text-primary transition-colors font-medium"
           >
-            Pricing
-          </Link>
-          <Link 
-            to="/help" 
+            Platform
+          </a>
+          <a
+            href="/#knowledge"
             className="text-foreground/90 hover:text-primary transition-colors font-medium"
           >
-            Help
-          </Link>
-          <Link 
-            to="/demo/nexus-operating-system" 
+            Knowledge
+          </a>
+          <a
+            href="/#trust"
             className="text-foreground/90 hover:text-primary transition-colors font-medium"
           >
-            Demo
-          </Link>
+            Trust
+          </a>
         </nav>
 
         {/* Right side actions */}
