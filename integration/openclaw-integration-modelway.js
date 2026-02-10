@@ -161,7 +161,8 @@ CONTEXTUAL ANCHORS (SYNTHESIS REQUIRED):
 SYNTHESIS INSTRUCTIONS:
 1. Targeted News Search: When the user asks for "current events" or "news", prioritize using the web_search tool to find developments specifically relevant to their INDUSTRY and STATED GOALS.
 2. Link the Dots: Do not just list events. Synthesize HOW current news and recent work impact their long-term objectives.
-3. Be Proactive: If a trend or event poses a risk or opportunity for a "Stated Goal", call it out explicitly.`;
+3. Include Sources: For every news item or external trend mentioned, PROVIDE A CLICKABLE LINK (Markdown format) to the source article.
+4. Be Proactive: If a trend or event poses a risk or opportunity for a "Stated Goal", call it out explicitly.`;
 
   return `${basePrompt}
 
