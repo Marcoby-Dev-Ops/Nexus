@@ -13,6 +13,7 @@ const {
   validatePrompt,
   shouldSwitchPrompt
 } = require('./promptManager');
+const { getAgentConfig } = require('../config/agentCatalog');
 
 // Initialize conversation history using local database
 let conversationHistoryEnabled = true;
@@ -127,73 +128,7 @@ function formatUserContextSummary(userContext = {}) {
 }
 
 function generateAgentSystemPrompt(agentId, userContext = {}, businessHealth = {}) {
-  const agentConfigs = {
-    'executive-assistant': {
-      name: 'Alex',
-      role: 'Executive Assistant',
-      expertise: 'business strategy, decision-making, and high-level planning',
-      style: 'professional, strategic, and business-focused',
-      background: '25+ years Fortune 500 executive experience'
-    },
-    'business-identity-consultant': {
-      name: 'David',
-      role: 'Business Identity Consultant',
-      expertise: 'business identity definition, vision clarification, and value proposition development',
-      style: 'consultative, encouraging, and business-focused',
-      background: '7+ years digital marketing and brand strategy expertise'
-    },
-    'sales-dept': {
-      name: 'Sarah',
-      role: 'Sales Department Specialist',
-      expertise: 'sales strategy, pipeline management, revenue optimization',
-      style: 'relationship-focused and consultative',
-      background: '5+ years B2B sales and customer success experience'
-    },
-    'finance-dept': {
-      name: 'Emma',
-      role: 'Finance Department Specialist',
-      expertise: 'financial planning, budget analysis, cost optimization',
-      style: 'detailed, analytical, and data-driven',
-      background: '8+ years financial analysis and modeling expertise'
-    },
-    'operations-dept': {
-      name: 'Michael',
-      role: 'Operations Department Specialist',
-      expertise: 'process optimization, workflow automation, operational efficiency',
-      style: 'process-oriented and systematic',
-      background: '10+ years process optimization and workflow management'
-    },
-    'marketing-dept': {
-      name: 'David',
-      role: 'Marketing Department Specialist',
-      expertise: 'marketing strategy, campaign optimization, growth initiatives',
-      style: 'creative and data-driven',
-      background: '7+ years digital marketing and brand strategy expertise'
-    },
-    'analyst': {
-      name: 'Emma',
-      role: 'Business Analyst',
-      expertise: 'data analysis, insights, and actionable recommendations',
-      style: 'detailed, analytical, and data-driven',
-      background: '8+ years financial analysis and modeling expertise'
-    },
-    'assistant': {
-      name: 'Sarah',
-      role: 'Business Assistant',
-      expertise: 'user support, guidance, and practical assistance',
-      style: 'helpful, supportive, and user-friendly',
-      background: '5+ years B2B sales and customer success experience'
-    },
-    'specialist': {
-      name: 'Michael',
-      role: 'Business Specialist',
-      expertise: 'specialized knowledge, best practices, and expert guidance',
-      style: 'expert, knowledgeable, and domain-specific',
-      background: '10+ years process optimization and workflow management'
-    }
-  };
-
-  const agent = agentConfigs[agentId] || agentConfigs['assistant'];
+  const agent = getAgentConfig(agentId);
 
   let systemPrompt = `You are ${agent.name}, a ${agent.role} with ${agent.background}. You specialize in ${agent.expertise}.
 

@@ -22,6 +22,11 @@ export interface ConversationContext {
   };
 }
 
+export interface ChatRuntimeOptions {
+  agentId?: string;
+  conversationId?: string;
+}
+
 export interface ClientKnowledgeBase {
   thoughts: Array<{
     id: string;
@@ -164,7 +169,8 @@ export class ConversationalAIService extends BaseService {
     context: ConversationContext,
     onToken: (token: string) => void,
     authToken: string,
-    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
+    runtime: ChatRuntimeOptions = {}
   ): Promise<void> {
 
     // Build messages array with history (last 10 exchanges max to stay within context limits)
@@ -186,7 +192,9 @@ export class ConversationalAIService extends BaseService {
         body: JSON.stringify({
           messages,
           stream: true,
-          userId: context.userId
+          userId: context.userId,
+          conversationId: runtime.conversationId,
+          agentId: runtime.agentId
         })
       });
 
@@ -222,7 +230,7 @@ export class ConversationalAIService extends BaseService {
               } else if (data.content) {
                 onToken(data.content);
               }
-            } catch (e) {
+            } catch {
               // ignore partial/invalid json
             }
           }

@@ -1,53 +1,43 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { logger } = require('../utils/logger');
+const { normalizeAgentId } = require('../config/agentCatalog');
+const { assembleKnowledgeContext } = require('../services/knowledgeContextService');
+const {
+    INTENT_TYPES,
+    PHASES,
+    buildDiscoveryRefusalMessage,
+    buildModelWayMetadata,
+    buildOpenClawMessages,
+    detectIntent,
+    determinePhase,
+    getLastUserMessage,
+    shouldRefuseDirectExecutionInDiscovery
+} = require('../services/aiChatOrchestration');
 require('../../loadEnv');
 
 const router = express.Router();
+
+function toOpenClawAgentId(agentId) {
+    if (agentId === 'executive-assistant') return 'main';
+    return agentId;
+}
 
 // OpenClaw configuration
 const OPENCLAW_API_URL = process.env.OPENCLAW_API_URL || 'http://127.0.0.1:18790/v1';
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
 
-// Model-Way Framework Constants - Preserved for metadata consistency
-const INTENT_TYPES = {
-    BRAINSTORM: { id: 'brainstorm', name: '🧠 Brainstorm', emoji: '🧠', description: 'Generate ideas, explore possibilities' },
-    SOLVE: { id: 'solve', name: '🛠 Solve', emoji: '🛠', description: 'Solve a problem, debug, fix issues' },
-    WRITE: { id: 'write', name: '✍️ Write', emoji: '✍️', description: 'Draft content, emails, documents' },
-    DECIDE: { id: 'decide', name: '📊 Decide', emoji: '📊', description: 'Make decisions, analyze options' },
-    LEARN: { id: 'learn', name: '📚 Learn', emoji: '📚', description: 'Learn, research, understand concepts' }
-};
-
-const PHASES = {
-    DISCOVERY: 'discovery',
-    SYNTHESIS: 'synthesis',
-    DECISION: 'decision',
-    EXECUTION: 'execution'
-};
-
 // In-memory conversation tracking (in production, use database)
 const conversations = new Map();
 
 // Helper to structure metadata without injecting prompt logic
-function structureResponse(content, conversationId, originalResponse = {}) {
-    // Mock metadata for compatibility
-    const phaseProgress = 25;
-
+function structureResponse(content, modelWayMetadata, originalResponse = {}) {
     return {
         ...originalResponse,
         content,
         metadata: {
             ...(originalResponse.metadata || {}),
-            modelWay: {
-                intent: INTENT_TYPES.BRAINSTORM, // Default
-                phase: {
-                    id: PHASES.DISCOVERY,
-                    name: 'Discovery',
-                    progress: phaseProgress
-                },
-                conversationId,
-                timestamp: new Date().toISOString()
-            }
+            modelWay: modelWayMetadata
         }
     };
 }
@@ -108,15 +98,31 @@ router.post('/chat', authenticateToken, async (req, res) => {
         return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { messages, stream = true, conversationId: providedConvId } = req.body;
+    const {
+        messages,
+        stream = true,
+        conversationId: providedConvId,
+        agentId: requestedAgentId
+    } = req.body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
         return res.status(400).json({ success: false, error: 'Messages array is required' });
     }
 
     try {
+        const resolvedAgentId = normalizeAgentId(typeof requestedAgentId === 'string' ? requestedAgentId : undefined);
+        const openClawAgentId = toOpenClawAgentId(resolvedAgentId);
+
         // Persist Conversation and User Message
         const conversationId = await getOrCreateConversation(userId, providedConvId);
+        const intent = detectIntent(messages);
+        const phase = determinePhase(messages);
+        const modelWayMetadata = buildModelWayMetadata(intent, phase, conversationId);
+        conversations.set(conversationId, {
+            intent: intent.id,
+            phase,
+            updatedAt: new Date().toISOString()
+        });
 
         // Save the last user message (assuming the array is history + new message)
         // Ideally we save all new ones, but usually client sends history. 
@@ -129,13 +135,71 @@ router.post('/chat', authenticateToken, async (req, res) => {
             await saveMessage(conversationId, 'user', lastMessage.content);
         }
 
-        // Strip any system messages from client - let OpenClaw's soul/system docs handle personality
-        const userMessages = messages.filter(m => m.role !== 'system');
+        const lastUserMessage = getLastUserMessage(messages);
+        if (shouldRefuseDirectExecutionInDiscovery(phase, lastUserMessage)) {
+            const refusalContent = buildDiscoveryRefusalMessage();
+            await saveMessage(conversationId, 'assistant', refusalContent);
+
+            if (stream) {
+                res.setHeader('Content-Type', 'text/event-stream');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+                res.setHeader('X-Accel-Buffering', 'no');
+                res.flushHeaders();
+
+                res.write(`data: ${JSON.stringify({
+                    metadata: { modelWay: modelWayMetadata }
+                })}\n\n`);
+                res.write(`data: ${JSON.stringify({ content: refusalContent })}\n\n`);
+                res.write('data: [DONE]\n\n');
+                res.end();
+                return;
+            }
+
+            return res.json(structureResponse(refusalContent, modelWayMetadata, {
+                success: true,
+                content: refusalContent,
+                model: 'nexus:policy-guard',
+                usage: null
+            }));
+        }
+
+        let contextSystemMessage = null;
+        try {
+            const context = await assembleKnowledgeContext({
+                userId,
+                jwtPayload: req.user?.jwtPayload,
+                agentId: resolvedAgentId,
+                conversationId,
+                includeShort: true,
+                includeMedium: true,
+                includeLong: true,
+                maxBlocks: 8
+            });
+
+            if (context?.systemContext) {
+                contextSystemMessage = [
+                    'Nexus Working Context (source-of-truth from backend):',
+                    context.systemContext,
+                    `Context Digest: ${context.contextDigest}`
+                ].join('\n\n');
+            }
+        } catch (contextError) {
+            logger.warn('Failed to inject assembled knowledge context into chat', {
+                userId,
+                conversationId,
+                agentId: resolvedAgentId,
+                error: contextError instanceof Error ? contextError.message : String(contextError)
+            });
+        }
+
+        // Strip any system messages from client and inject deterministic backend context
+        const openClawMessages = buildOpenClawMessages(messages, contextSystemMessage);
 
         // Pure proxy payload: OpenClaw's agent runtime (SOUL.md, AGENTS.md) drives behavior
         const openClawPayload = {
             model: 'openclaw:main', // Route through OpenClaw agent runtime
-            messages: userMessages,
+            messages: openClawMessages,
             stream: stream,
             user: userId // Critical for OpenClaw per-user session isolation
         };
@@ -143,7 +207,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
         logger.info('Chat proxy request', {
             userId,
             conversationId,
-            messageCount: userMessages.length,
+            messageCount: openClawMessages.length,
+            intent: intent.id,
+            phase,
+            agentId: resolvedAgentId,
+            openClawAgentId,
+            injectedContext: Boolean(contextSystemMessage),
             stream,
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
@@ -154,7 +223,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${OPENCLAW_API_KEY}`,
-                'x-openclaw-agent-id': 'main'
+                'x-openclaw-agent-id': openClawAgentId
             },
             body: JSON.stringify(openClawPayload)
         });
@@ -188,12 +257,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 // 1. Metadata event (Minimal for compatibility)
                 res.write(`data: ${JSON.stringify({
                     metadata: {
-                        modelWay: {
-                            intent: INTENT_TYPES.BRAINSTORM,
-                            phase: { id: PHASES.DISCOVERY, name: 'Discovery', progress: 25 },
-                            conversationId,
-                            timestamp: new Date().toISOString()
-                        }
+                        modelWay: modelWayMetadata
                     }
                 })}\n\n`);
 
@@ -208,7 +272,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 return;
             } else {
                 // return normal JSON if client didn't want stream
-                const response = structureResponse(content, conversationId, {
+                const response = structureResponse(content, modelWayMetadata, {
                     success: true,
                     content,
                     model: data.model,
@@ -229,7 +293,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 await saveMessage(conversationId, 'assistant', content);
             }
 
-            const response = structureResponse(content, conversationId, {
+            const response = structureResponse(content, modelWayMetadata, {
                 success: true,
                 content,
                 model: data.model,
@@ -250,12 +314,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Send metadata as first event
         res.write(`data: ${JSON.stringify({
             metadata: {
-                modelWay: {
-                    intent: INTENT_TYPES.BRAINSTORM,
-                    phase: { id: PHASES.DISCOVERY, name: 'Discovery', progress: 25 },
-                    conversationId,
-                    timestamp: new Date().toISOString()
-                }
+                modelWay: modelWayMetadata
             }
         })}\n\n`);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/index';
 import { useAuthStore } from '@/core/auth/authStore';
 import { Button } from '@/shared/components/ui/Button';
@@ -10,6 +10,7 @@ import { useUserProfile } from '@/shared/contexts/UserContext';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { Sparkles, X } from 'lucide-react';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
+import { useSearchParams } from 'react-router-dom';
 
 // Initialize AI Service
 const conversationalAIService = new ConversationalAIService();
@@ -27,6 +28,21 @@ export const ChatPage: React.FC = () => {
   const { profile } = useUserProfile();
   const { toast } = useToast();
   const { setHeaderContent } = useHeaderContext();
+  const [searchParams] = useSearchParams();
+  const requestedAgentId = searchParams.get('agent') || 'nexus-assistant';
+
+  const AGENT_LABELS: Record<string, string> = {
+    'nexus-assistant': 'Executive Assistant',
+    'executive-assistant': 'Executive Assistant',
+    'concierge-director': 'Concierge Director',
+    'business-identity-consultant': 'Business Identity Consultant',
+    'sales-dept': 'Sales Specialist',
+    'finance-dept': 'Finance Specialist',
+    'operations-dept': 'Operations Specialist',
+    'marketing-dept': 'Marketing Specialist'
+  };
+
+  const selectedAgentName = AGENT_LABELS[requestedAgentId] || 'Executive Assistant';
 
   // Connect to AIChatStore
   const {
@@ -38,7 +54,6 @@ export const ChatPage: React.FC = () => {
     isLoading: conversationsLoading,
     error,
     currentConversation,
-    setCurrentConversationById,
     // Add additional keys for streaming if available, otherwise we use local state
   } = useAIChatStore();
 
@@ -48,12 +63,12 @@ export const ChatPage: React.FC = () => {
   const [streamingContent, setStreamingContent] = useState('');
 
   // Knowledge context state
-  const [ragEnabled, setRagEnabled] = useState(true);
-  const [ragConfidence, setRagConfidence] = useState<'high' | 'medium' | 'low'>('high');
-  const [knowledgeTypes, setKnowledgeTypes] = useState<string[]>([]);
-  const [ragSources, setRagSources] = useState<any[]>([]);
-  const [ragRecommendations, setRagRecommendations] = useState<string[]>([]);
-  const [businessContextData, setBusinessContextData] = useState<any>(null);
+  const ragEnabled = true;
+  const ragConfidence: 'high' | 'medium' | 'low' = 'high';
+  const knowledgeTypes: string[] = [];
+  const ragSources: any[] = [];
+  const ragRecommendations: string[] = [];
+  const businessContextData = null;
 
   // Update Header
   useEffect(() => {
@@ -131,7 +146,15 @@ export const ChatPage: React.FC = () => {
           accumulatedResponse += chunk;
           setStreamingContent(accumulatedResponse);
         },
-        token
+        token,
+        storeMessages
+          .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+          .slice(-20)
+          .map((msg) => ({ role: msg.role as 'user' | 'assistant', content: msg.content })),
+        {
+          conversationId: currentConversationId || undefined,
+          agentId: requestedAgentId
+        }
       );
 
       // Save final response
@@ -191,14 +214,6 @@ export const ChatPage: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Welcome Back Greeting */}
-      {storeMessages.length === 0 && (
-        <div className="flex flex-col items-center justify-center pt-12 pb-4">
-          <h2 className="text-2xl font-semibold text-foreground mb-2">Welcome back, {displayName}!</h2>
-          <p className="text-muted-foreground text-sm">How can I help you today?</p>
-        </div>
-      )}
-
       {/* Chat Interface */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <React.Suspense fallback={
@@ -237,8 +252,8 @@ export const ChatPage: React.FC = () => {
             className="h-full"
             userName={displayName}
             userEmail={profile?.email || user?.email}
-            agentId="nexus-assistant"
-            agentName="Executive Assistant"
+            agentId={requestedAgentId}
+            agentName={selectedAgentName}
             ragEnabled={ragEnabled}
             ragConfidence={ragConfidence === 'high' ? 0.9 : ragConfidence === 'medium' ? 0.7 : 0.4} // Map string to number
             knowledgeTypes={knowledgeTypes}

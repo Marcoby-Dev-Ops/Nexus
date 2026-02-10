@@ -35,6 +35,7 @@ const dbRoutes = require('./src/routes/db');
 const rpcRoutes = require('./src/routes/rpc');
 const aiRoutes = require('./src/routes/ai');
 const vectorRoutes = require('./src/routes/vector');
+const knowledgeRoutes = require('./src/routes/knowledge');
 
 // Import OpenClaw integration routes
 const openclawIntegrationRoutes = require('./routes/openclaw-integration');
@@ -307,6 +308,7 @@ app.use('/api/companies', authLimiter, companyRoutes);
 app.use('/api/chat', uploadLimiter, chatRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/vector', dbLimiter, vectorRoutes);
+app.use('/api/knowledge', knowledgeRoutes);
 app.use('/api/organizations', organizationRoutes);
 app.use('/api/user-preferences', userPreferencesRoutes);
 app.use('/api/user-contacts', userContactsRoutes);
