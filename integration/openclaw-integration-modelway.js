@@ -19,13 +19,12 @@ const PORT = process.env.PORT || 18790;
 const OPENCLAW_BIN = process.env.OPENCLAW_BIN || 'openclaw';
 const WORKSPACE_DIR = process.env.WORKSPACE_DIR || '/root/.openclaw/workspace';
 
-// Model-Way Framework Constants
+// Model-Way Framework Constants: Nexus Jumpstart Edition
 const INTENT_TYPES = {
-  BRAINSTORM: { id: 'brainstorm', name: '🧠 Brainstorm', emoji: '🧠', description: 'Generate ideas, explore possibilities' },
-  SOLVE: { id: 'solve', name: '🛠 Solve', emoji: '🛠', description: 'Solve a problem, debug, fix issues' },
-  WRITE: { id: 'write', name: '✍️ Write', emoji: '✍️', description: 'Draft content, emails, documents' },
-  DECIDE: { id: 'decide', name: '📊 Decide', emoji: '📊', description: 'Make decisions, analyze options' },
-  LEARN: { id: 'learn', name: '📚 Learn', emoji: '📚', description: 'Learn, research, understand concepts' }
+  PROGRESS: { id: 'progress', name: '📈 Progress', emoji: '📈', description: 'Summarize status, progress, and next actions' },
+  PERFORMANCE: { id: 'performance', name: '📊 Performance', emoji: '📊', description: 'Analyze metrics, KPIs, and business outcomes' },
+  GROWTH: { id: 'growth', name: '🚀 Growth', emoji: '🚀', description: 'Identify growth opportunities and strategic paths' },
+  ASSIST: { id: 'assist', name: '🤝 Assist', emoji: '🤝', description: 'General assistance, tasks, and problem solving' }
 };
 
 const PHASES = {
@@ -44,25 +43,22 @@ const conversations = new Map();
 function detectIntent(messages) {
   const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
 
-  // Simple keyword-based intent detection
-  if (lastMessage.includes('brainstorm') || lastMessage.includes('idea') || lastMessage.includes('creative')) {
-    return INTENT_TYPES.BRAINSTORM;
+  // Jumpstart-aligned intent detection (Specific outcomes first)
+  if (lastMessage.includes('performance') || lastMessage.includes('metric') || lastMessage.includes('analysis') || lastMessage.includes('results') || lastMessage.includes('kpi')) {
+    return INTENT_TYPES.PERFORMANCE;
   }
-  if (lastMessage.includes('solve') || lastMessage.includes('problem') || lastMessage.includes('fix') || lastMessage.includes('debug')) {
-    return INTENT_TYPES.SOLVE;
+  if (lastMessage.includes('growth') || lastMessage.includes('opportunity') || lastMessage.includes('strategy') || lastMessage.includes('scale')) {
+    return INTENT_TYPES.GROWTH;
   }
-  if (lastMessage.includes('write') || lastMessage.includes('draft') || lastMessage.includes('email') || lastMessage.includes('document')) {
-    return INTENT_TYPES.WRITE;
+  if (lastMessage.includes('summarize') || lastMessage.includes('progress') || lastMessage.includes('status') || lastMessage.includes('milestone')) {
+    return INTENT_TYPES.PROGRESS;
   }
-  if (lastMessage.includes('decide') || lastMessage.includes('choose') || lastMessage.includes('option') || lastMessage.includes('analysis')) {
-    return INTENT_TYPES.DECIDE;
-  }
-  if (lastMessage.includes('learn') || lastMessage.includes('research') || lastMessage.includes('understand') || lastMessage.includes('explain')) {
-    return INTENT_TYPES.LEARN;
+  if (lastMessage.includes('help') || lastMessage.includes('assist') || lastMessage.includes('do') || lastMessage.includes('task')) {
+    return INTENT_TYPES.ASSIST;
   }
 
-  // Default to brainstorming for new conversations
-  return INTENT_TYPES.BRAINSTORM;
+  // Fallback to Progress/Assist for new conversations depending on context
+  return messages.length <= 1 ? INTENT_TYPES.PROGRESS : INTENT_TYPES.ASSIST;
 }
 
 /**
@@ -127,35 +123,29 @@ Be specific, actionable, and practical.`
   };
 
   const intentPrompts = {
-    [INTENT_TYPES.BRAINSTORM.id]: `Intent: Brainstorming
-- Generate diverse ideas without judgment
-- Encourage creative thinking
-- Build on ideas with "yes, and..."
-- Quantity over quality initially`,
+    [INTENT_TYPES.PROGRESS.id]: `Intent: Progress Tracking
+- Synthesize recent updates and milestones
+- Highlight completed tasks vs. pending items
+- Clearly outline "Next Actions"
+- Maintain a proactive, organizational tone`,
 
-    [INTENT_TYPES.SOLVE.id]: `Intent: Problem Solving
-- Define the problem clearly
-- Analyze root causes
-- Generate potential solutions
-- Evaluate and recommend best approach`,
+    [INTENT_TYPES.PERFORMANCE.id]: `Intent: Performance Analysis
+- Deep dive into data, metrics, and trends
+- Identify patterns (positive or negative)
+- Compare against benchmarks or goals
+- Use structured data presentation (lists, summaries)`,
 
-    [INTENT_TYPES.WRITE.id]: `Intent: Writing
-- Understand audience and purpose
-- Structure content logically
-- Use appropriate tone and style
-- Provide drafts with clear next steps`,
+    [INTENT_TYPES.GROWTH.id]: `Intent: Strategic Growth
+- Look for untapped opportunities
+- Suggest scaling strategies
+- Analyze competitive advantages
+- Focus on long-term value and expansion`,
 
-    [INTENT_TYPES.DECIDE.id]: `Intent: Decision Making
-- Frame the decision clearly
-- Identify criteria for evaluation
-- Analyze options objectively
-- Make and justify recommendations`,
-
-    [INTENT_TYPES.LEARN.id]: `Intent: Learning
-- Assess current knowledge level
-- Provide clear explanations
-- Use examples and analogies
-- Suggest resources for deeper learning`
+    [INTENT_TYPES.ASSIST.id]: `Intent: General Assistance
+- Execute specific user tasks efficiently
+- Solve immediate problems or blockers
+- Act as a versatile executive assistant
+- Focus on accuracy and speed`
   };
 
   return `${basePrompt}
