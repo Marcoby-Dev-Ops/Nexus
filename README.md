@@ -113,6 +113,7 @@ Nexus/
 | **P2** | **"Model-Way" UI Components** (Intent Pickers) | 🚧 In Progress |
 | **P3** | **Voice Mode** (Realtime Audio) | Planned |
 | **P4** | **Multi-Tenant Isolation** | Planned |
+| **P5** | **Familiar + Distinct Chat UX** (Nexus signature + responsive motion layer) | 🚧 In Progress |
 
 ---
 

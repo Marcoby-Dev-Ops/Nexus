@@ -127,6 +127,17 @@ src/
 2. **Week-2**: real chat → OpenRouter, basic memory, Pulse JSON feed, tests ≥ 80%.
 3. **Week-3**: auth, RBAC, live metrics over WebSocket, first Pulse checkout flow.
 
+### Planned UX Track: Familiar + Distinct
+
+Goal: make Nexus feel immediately familiar (ChatGPT/Gemini patterns) while clearly branded and system-aware.
+
+Current and near-term plan:
+1. **Nexus Signature Layer**: subtle branded composer signature and identity cues.
+2. **Enterprise Density Pass**: tighter typography and spacing for production readability.
+3. **Context Chips (Planned)**: live context indicators under composer (company/projects/knowledge).
+4. **Agent Activity Timeline (Planned)**: visual states for single and multi-agent orchestration.
+5. **Show Mode Motion (Planned)**: state-driven visual emphasis for demos with reduced-motion compliance.
+
 Nexus is the spine unifying Marcoby's three pillars—**Pulse** (products), **Catalyst** (managed services), and **Nexus** (the OS itself)—into a generational, AI-first business platform.
 
 ## Coming Soon
