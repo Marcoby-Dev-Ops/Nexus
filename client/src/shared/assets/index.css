@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Noto Sans Nexus";
+  src: url("./fonts/Noto_Sans/NotoSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Open Sans Nexus";
+  src: url("./fonts/Open_Sans/OpenSans-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Roboto Nexus";
+  src: url("./fonts/Roboto/Roboto-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Modern forced-colors support */
 @supports (forced-colors: active) {
   @media (forced-colors: active) {
@@ -20,6 +44,10 @@
 
 @layer base {
   :root {
+    --font-base: "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-emphasis: "Open Sans Nexus", "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-heading: "Roboto Nexus", "Open Sans Nexus", "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
     /* Enhanced Base Colors - Light Mode with Better Contrast */
     --background: 0 0% 100%;        /* #ffffff - Pure white for maximum contrast */
     --foreground: 0 0% 9%;          /* #171717 - Very dark for excellent contrast */
@@ -187,7 +215,8 @@
   }
 
   body {
-    font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    font-family: var(--font-base);
+    font-size: clamp(16px, 15.5px + 0.2vw, 18px);
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     -webkit-text-size-adjust: 100%;
@@ -196,8 +225,8 @@
     user-select: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    line-height: 1.6;
-    letter-spacing: -0.01em;
+    line-height: 1.65;
+    letter-spacing: -0.005em;
   }
 
   html {
@@ -206,7 +235,8 @@
 
   /* Enhanced Typography */
   h1, h2, h3, h4, h5, h6 {
-    font-weight: 600;
+    font-family: var(--font-heading);
+    font-weight: 700;
     line-height: 1.3;
     letter-spacing: -0.02em;
   }
