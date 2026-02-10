@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card'
-import { Button } from '../components/ui/button'
-import { Badge } from '../components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../shared/components/ui/Card'
+import { Button } from '../shared/components/ui/Button'
+import { Badge } from '../shared/components/ui/Badge'
+import { Avatar, AvatarFallback, AvatarImage } from '../shared/components/ui/Avatar'
 
 const meta: Meta<typeof Card> = {
   title: 'UI/Card',

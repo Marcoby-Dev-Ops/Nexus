@@ -20,6 +20,7 @@ export { Checkbox } from './Checkbox';
 export { RadioGroup, RadioGroupItem } from './RadioGroup';
 export { Switch } from './Switch';
 export { Dialog } from './Dialog';
+export { Sheet, SheetContent, SheetHeader, SheetFooter, SheetTitle, SheetDescription, SheetTrigger, SheetClose } from './Sheet';
 
 // Missing exports for 1.0
 export { default as Breadcrumbs } from './Breadcrumbs';

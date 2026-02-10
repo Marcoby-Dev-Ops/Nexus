@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { AppSidebar } from '../components/dashboard/app-sidebar'
-import { SidebarProvider } from '../components/ui/sidebar'
+import { SidebarProvider } from '../shared/components/ui/sidebar'
 
 const meta: Meta<typeof AppSidebar> = {
   title: 'Dashboard/AppSidebar',

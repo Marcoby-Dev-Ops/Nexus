@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { DashboardLayout } from '../components/dashboard/dashboard-layout'
 import { MainDashboard } from '../components/dashboard/main-dashboard'
 import { LayoutDashboard, User } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Avatar, AvatarFallback } from '../components/ui/avatar'
+import { Button } from '../shared/components/ui/Button'
+import { Avatar, AvatarFallback } from '../shared/components/ui/Avatar'
 
 // Simple version of HomePage without complex hooks
 function SimpleHomePage() {

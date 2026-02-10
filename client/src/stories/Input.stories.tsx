@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import { Button } from '../components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Input } from '../shared/components/ui/Input'
+import { Label } from '../shared/components/ui/Label'
+import { Button } from '../shared/components/ui/Button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../shared/components/ui/Card'
 
 const meta: Meta<typeof Input> = {
   title: 'UI/Input',
