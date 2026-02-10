@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Button } from '@/shared/components/ui/Button';
-import { Paperclip, Mic, MicOff, Send, StopCircle, Plus } from 'lucide-react';
+import { Paperclip, Mic, MicOff, Send, StopCircle, Plus, Sparkles } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { FileAttachment } from '@/shared/types/chat';
 
@@ -20,6 +20,7 @@ interface ChatInputProps {
   thinkingLabel?: string;
   busyElapsedSeconds?: number;
   inline?: boolean;
+  showSignature?: boolean;
 }
 
 interface ChatInputRef {
@@ -40,7 +41,8 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   setIsRecording,
   thinkingLabel = "Agent is thinking",
   busyElapsedSeconds = 0,
-  inline = false
+  inline = false,
+  showSignature = true
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -141,6 +143,18 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
         )}
 
         <div className="relative">
+          {showSignature && (
+            <div className="mb-2.5 flex items-center justify-between px-1">
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-medium tracking-wide text-primary/90">
+                <Sparkles className="h-3 w-3" />
+                Nexus Intelligence
+              </div>
+              <span className="hidden sm:inline text-[11px] text-muted-foreground">
+                Business-aware assistant
+              </span>
+            </div>
+          )}
+
           {/* Input Container */}
           <div className="relative bg-card/80 focus-within:bg-card rounded-2xl border border-input/70 focus-within:border-ring transition-colors shadow-sm">
             {/* Attachment Button */}
@@ -163,9 +177,9 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               placeholder={isStreaming ? `${thinkingLabel}...` : placeholder}
               disabled={disabled || isStreaming}
               className={cn(
-                "min-h-[52px] max-h-[200px] resize-none border-0 bg-transparent text-foreground placeholder:text-muted-foreground",
+                "min-h-[50px] max-h-[200px] resize-none border-0 bg-transparent text-foreground placeholder:text-muted-foreground",
                 "pl-12 pr-20 py-3 focus:ring-0 focus:outline-none",
-                "text-[1.02rem] leading-relaxed"
+                "text-[0.97rem] leading-relaxed"
               )}
               rows={1}
             />

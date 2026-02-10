@@ -153,17 +153,17 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     <div className={cn("relative flex flex-col h-full bg-background", className)}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.12),transparent_46%)] dark:bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.18),transparent_52%)]" />
       {/* Messages Area */}
-      <div className="relative flex-1 overflow-y-auto min-h-0 px-6 py-6 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700">
-        <div className="max-w-5xl mx-auto space-y-6 min-h-full">
+      <div className="relative flex-1 overflow-y-auto min-h-0 px-5 py-5 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700">
+        <div className="max-w-5xl mx-auto space-y-5 min-h-full">
           {isEmptyState ? (
-            <div className="mx-auto flex min-h-full w-full max-w-4xl items-center justify-center py-8">
+            <div className="mx-auto flex min-h-full w-full max-w-4xl items-center justify-center py-4">
               <div className="w-full">
                 <ChatWelcome
                   userName={userName}
                   agentName={agentName}
                   onSuggestionClick={(suggestion) => handleSendMessage(suggestion)}
                 />
-                <div className="mx-auto mt-6 w-full max-w-3xl">
+                <div className="mx-auto mt-5 w-full max-w-3xl">
                   <ChatInput
                     ref={chatInputRef}
                     input={input}
@@ -185,7 +185,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
               </div>
             </div>
           ) : (
-            <div className="space-y-7 pb-4">
+            <div className="space-y-6 pb-3">
               {messages.map((message, index) => {
                 // Check if this is a consecutive message from the same role
                 const isConsecutive = index > 0 && messages[index - 1].role === message.role;
@@ -205,7 +205,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 
               {/* Streaming Indicator / Thinking State */}
               {isStreaming && (
-                <div className="flex w-full mt-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex w-full mt-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
                   <div className="flex items-start gap-3 max-w-3xl w-full">
                     <div className={cn(
                       "flex h-8 w-8 shrink-0 select-none items-center justify-center rounded-md border shadow-sm",

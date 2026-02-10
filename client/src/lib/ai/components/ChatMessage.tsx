@@ -124,7 +124,7 @@ export default function ChatMessage({
         {/* Name label for first message in sequence */}
         {!isConsecutive && (
           <div className={cn(
-            "text-xs text-muted-foreground mb-1",
+            "text-[11px] font-medium text-muted-foreground/90 mb-1",
             message.role === 'user' ? "text-right" : "text-left"
           )}>
             {message.role === 'user' ? (userName || "You") : (agentName || "Assistant")}
@@ -132,12 +132,12 @@ export default function ChatMessage({
         )}
 
         <div className={cn(
-          "rounded-2xl px-4 py-3 shadow-sm",
+          "rounded-2xl px-4 py-2.5 shadow-sm",
           message.role === 'user'
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted/50 text-foreground border border-border'
         )}>
-          <div className="prose prose-sm dark:prose-invert max-w-none break-words">
+          <div className="prose prose-sm dark:prose-invert max-w-none break-words text-[0.96rem] leading-relaxed">
             {renderContent(message.content)}
           </div>
 
