@@ -46,7 +46,8 @@
   :root {
     --font-base: "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     --font-emphasis: "Open Sans Nexus", "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-    --font-heading: "Roboto Nexus", "Open Sans Nexus", "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-heading: "Open Sans Nexus", "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --font-technical: "Roboto Nexus", "Open Sans Nexus", "Noto Sans Nexus", "Noto Sans", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
     /* Enhanced Base Colors - Light Mode with Better Contrast */
     --background: 0 0% 100%;        /* #ffffff - Pure white for maximum contrast */
@@ -236,9 +237,20 @@
   /* Enhanced Typography */
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.3;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.015em;
+  }
+
+  strong, b {
+    font-family: var(--font-emphasis);
+    font-weight: 600;
+  }
+
+  .font-technical {
+    font-family: var(--font-technical);
+    font-weight: 700;
+    letter-spacing: 0;
   }
 
   /* Enhanced Focus States for Better Accessibility */

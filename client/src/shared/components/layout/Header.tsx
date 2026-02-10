@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
             {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
           </Button>
 
-          <Link to="/" className="flex items-center gap-2 font-bold text-lg mr-4">
+          <Link to="/" className="flex items-center gap-2 font-heading text-lg tracking-tight mr-4">
             <span className="text-primary">Nexus</span>
           </Link>
 
@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
               {pageSubtitle && (
                 <>
                   <span className="mx-2">/</span>
-                  <span className="text-foreground font-medium">{pageSubtitle}</span>
+                  <span className="text-foreground font-emphasis">{pageSubtitle}</span>
                 </>
               )}
             </div>
@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
                 key={item.path}
                 to={item.path}
                 className={`
-                  px-4 py-2 text-sm font-medium transition-colors relative group
+                  px-4 py-2 text-sm font-emphasis transition-colors relative group
                   ${isActive(item.path)
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-foreground'
