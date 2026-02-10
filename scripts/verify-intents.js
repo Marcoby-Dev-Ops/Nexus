@@ -9,7 +9,10 @@ const testCases = [
     { prompt: 'Identify growth opportunities', expected: 'growth' },
     { prompt: 'Analyze our Q1 metrics', expected: 'performance' },
     { prompt: 'How can we scale our operations?', expected: 'growth' },
-    { prompt: 'I need help with a spreadsheet', expected: 'assist' }
+    { prompt: 'I need help with a spreadsheet', expected: 'assist' },
+    { prompt: 'Give me a summary of current events and trends', expected: 'growth' },
+    { prompt: 'What was I working on recently?', expected: 'progress' },
+    { prompt: 'Synthesis of my goals vs news', expected: 'growth' }
 ];
 
 async function verify() {

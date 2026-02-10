@@ -43,14 +43,14 @@ const conversations = new Map();
 function detectIntent(messages) {
   const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
 
-  // Jumpstart-aligned intent detection (Specific outcomes first)
-  if (lastMessage.includes('performance') || lastMessage.includes('metric') || lastMessage.includes('analysis') || lastMessage.includes('results') || lastMessage.includes('kpi')) {
-    return INTENT_TYPES.PERFORMANCE;
-  }
-  if (lastMessage.includes('growth') || lastMessage.includes('opportunity') || lastMessage.includes('strategy') || lastMessage.includes('scale')) {
+  // Jumpstart-aligned intent detection (Strategic & External first)
+  if (lastMessage.includes('growth') || lastMessage.includes('opportunity') || lastMessage.includes('strategy') || lastMessage.includes('scale') || lastMessage.includes('current events') || lastMessage.includes('news') || lastMessage.includes('synthesis')) {
     return INTENT_TYPES.GROWTH;
   }
-  if (lastMessage.includes('summarize') || lastMessage.includes('progress') || lastMessage.includes('status') || lastMessage.includes('milestone')) {
+  if (lastMessage.includes('performance') || lastMessage.includes('metric') || lastMessage.includes('analysis') || lastMessage.includes('results') || lastMessage.includes('kpi') || lastMessage.includes('trends')) {
+    return INTENT_TYPES.PERFORMANCE;
+  }
+  if (lastMessage.includes('summarize') || lastMessage.includes('progress') || lastMessage.includes('status') || lastMessage.includes('milestone') || lastMessage.includes('what was i working on')) {
     return INTENT_TYPES.PROGRESS;
   }
   if (lastMessage.includes('help') || lastMessage.includes('assist') || lastMessage.includes('do') || lastMessage.includes('task')) {
@@ -148,13 +148,26 @@ Be specific, actionable, and practical.`
 - Focus on accuracy and speed`
   };
 
+  const contextAnchors = `
+CONTEXTUAL ANCHORS (SYNTHESIS REQUIRED):
+- Current Goals: [Extracted from User Profile & Business Identity]
+- Recent Work: [Extracted from Brain Tickets & Milestone Updates]
+- Integration Trends: [Extracted from Connected Tool Output History]
+
+SYNTHESIS INSTRUCTIONS:
+1. Targeted News Search: When the user asks for "current events" or "news", prioritize using the web_search tool to find developments specifically relevant to their INDUSTRY and STATED GOALS.
+2. Link the Dots: Do not just list events. Synthesize HOW current news and recent work impact their long-term objectives.
+3. Be Proactive: If a trend or event poses a risk or opportunity for a "Stated Goal", call it out explicitly.`;
+
   return `${basePrompt}
+
+${contextAnchors}
 
 ${phasePrompts[phase]}
 
 ${intentPrompts[intent.id]}
 
-Remember: You're using the Model-Way Framework to teach effective AI collaboration.`;
+Remember: You're using the Model-Way Framework to teach effective AI collaboration and provide a high-level Executive Synthesis.`;
 }
 
 /**
