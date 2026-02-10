@@ -23,6 +23,11 @@ function toOpenClawAgentId(agentId) {
     return agentId;
 }
 
+function buildOpenClawSessionId(userId, conversationId) {
+    const raw = `${userId}:${conversationId}`;
+    return raw.replace(/[^a-zA-Z0-9:_-]/g, '_').slice(0, 200);
+}
+
 // OpenClaw configuration
 const OPENCLAW_API_URL = process.env.OPENCLAW_API_URL || 'http://127.0.0.1:18790/v1';
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
@@ -251,12 +256,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Strip any system messages from client and inject deterministic backend context
         const openClawMessages = buildOpenClawMessages(messages, contextSystemMessage);
 
+        const openClawSessionId = buildOpenClawSessionId(userId, conversationId);
+
         // Pure proxy payload: OpenClaw's agent runtime (SOUL.md, AGENTS.md) drives behavior
         const openClawPayload = {
             model: 'openclaw:main', // Route through OpenClaw agent runtime
             messages: openClawMessages,
             stream: stream,
-            user: userId // Critical for OpenClaw per-user session isolation
+            user: openClawSessionId // Isolate OpenClaw memory by Nexus conversation
         };
 
         logger.info('Chat proxy request', {
@@ -267,6 +274,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
             phase,
             agentId: resolvedAgentId,
             openClawAgentId,
+            openClawSessionId,
             injectedContext: contextInjected,
             stream,
             endpoint: `${OPENCLAW_API_URL}/chat/completions`

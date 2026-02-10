@@ -299,6 +299,26 @@ function createKnowledgeContextService(deps = {}) {
     );
   }
 
+  async function fetchCrossConversationMessages(conversationId, userId, jwtPayload) {
+    return optionalQuery(
+      `SELECT
+        m.conversation_id,
+        m.role,
+        m.content,
+        m.created_at,
+        c.title AS conversation_title
+      FROM ai_messages m
+      JOIN ai_conversations c ON c.id = m.conversation_id
+      WHERE c.user_id = $1
+        AND ($2::text IS NULL OR m.conversation_id::text <> $2::text)
+      ORDER BY m.created_at DESC
+      LIMIT 8`,
+      [userId, conversationId || null],
+      jwtPayload,
+      { source: 'ai_messages', mode: 'cross-conversation', conversationId: conversationId || null }
+    );
+  }
+
   async function fetchKnowledgeFacts({ userId, agentId, sharedSubjectIds, includedHorizons, maxRows, jwtPayload }) {
     if (!includedHorizons.length) return [];
 
@@ -487,6 +507,61 @@ function createKnowledgeContextService(deps = {}) {
     });
   }
 
+  function buildCrossConversationMemoryBlock(messages = [], userId, activeConversationId) {
+    if (!messages.length) return null;
+
+    const grouped = new Map();
+
+    for (const message of messages) {
+      const conversationId = String(message.conversation_id || '');
+      if (!conversationId) continue;
+
+      if (!grouped.has(conversationId)) {
+        grouped.set(conversationId, {
+          title: message.conversation_title || null,
+          messages: []
+        });
+      }
+
+      const bucket = grouped.get(conversationId);
+      if (bucket.messages.length < 3) {
+        bucket.messages.push(message);
+      }
+      if (grouped.size >= 2 && Array.from(grouped.values()).every((entry) => entry.messages.length >= 2)) {
+        break;
+      }
+    }
+
+    if (!grouped.size) return null;
+
+    const lines = [];
+    for (const [conversationId, entry] of grouped.entries()) {
+      const shortId = conversationId.slice(0, 8);
+      const title = entry.title ? truncateText(String(entry.title), 64) : `Conversation ${shortId}`;
+      lines.push(`${title} (${shortId})`);
+
+      const orderedMessages = [...entry.messages].sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+      for (const message of orderedMessages.slice(-2)) {
+        const role = String(message.role || 'user').toUpperCase();
+        lines.push(`- ${role}: ${truncateText(message.content, 140)}`);
+      }
+    }
+
+    return createBlock({
+      id: activeConversationId ? `conversation-cross-${activeConversationId}` : 'conversation-cross-latest',
+      title: 'Cross-Conversation Memory',
+      horizon: 'medium',
+      domain: 'conversation-memory',
+      subjectType: 'user',
+      subjectId: userId,
+      content: lines.join('\n'),
+      source: 'db:ai_messages',
+      updatedAt: messages[0]?.created_at,
+      confidence: 0.82,
+      priority: 45
+    });
+  }
+
   function buildKnowledgeFactBlocks(rows = []) {
     return rows.map((row) => {
       const normalizedValue = (() => {
@@ -537,9 +612,10 @@ function createKnowledgeContextService(deps = {}) {
       profile?.company_id ? String(profile.company_id) : null
     ]);
 
-    const [projects, recentMessages, knowledgeFactRows] = await Promise.all([
+    const [projects, recentMessages, crossConversationMessages, knowledgeFactRows] = await Promise.all([
       fetchTopActiveProjects(userId, jwtPayload),
       fetchRecentConversation(conversationId, userId, jwtPayload),
+      fetchCrossConversationMessages(conversationId, userId, jwtPayload),
       fetchKnowledgeFacts({
         userId,
         agentId: resolvedAgentId,
@@ -555,6 +631,7 @@ function createKnowledgeContextService(deps = {}) {
       buildUserIdentityBlock(profile),
       buildUserPreferenceBlock(profile),
       buildActiveProjectsBlock(projects, userId),
+      buildCrossConversationMemoryBlock(crossConversationMessages, userId, conversationId),
       buildRecentConversationBlock(recentMessages, userId),
       ...buildKnowledgeFactBlocks(knowledgeFactRows)
     ].filter(Boolean);
