@@ -19,8 +19,9 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
   streamingMessage: null,
   typingUsers: [],
 
-  sendMessage: async (content: string, conversationId: string, attachments: FileAttachment[] = []) => {
+  sendMessage: async (content: string, conversationId: string, attachments: FileAttachment[] = [], options: { persist?: boolean } = { persist: true }) => {
     const state = get();
+    const { persist = true } = options;
     set({ isLoading: true, error: null });
 
     if (!conversationId) {
@@ -43,37 +44,52 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
         }
       };
 
-      const insertResp = await insertOne('ai_messages', {
-        ...userMessage,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+      let savedMessage: ChatMessage | null = null;
 
-      // Normalize nested API response shape. The server often returns { success: true, data: { ...row... } }
-      let savedMessage = null;
-      if (!insertResp || !insertResp.success) {
-        const err = insertResp?.error || 'Insert failed';
-        logger.error('Failed to save user message', { error: err });
-        set({ error: 'Failed to send message', isLoading: false });
-        return;
-      }
+      if (persist) {
+        const insertResp = await insertOne('ai_messages', {
+          ...userMessage,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
 
-      if (insertResp.data && typeof insertResp.data === 'object') {
-        // If server wrapped the payload as { success: true, data: ROW }
-        if ('data' in (insertResp.data as any) && (insertResp.data as any).data) {
-          savedMessage = (insertResp.data as any).data;
+        // Normalize nested API response shape. The server often returns { success: true, data: { ...row... } }
+        if (!insertResp || !insertResp.success) {
+          const err = insertResp?.error || 'Insert failed';
+          logger.error('Failed to save user message', { error: err });
+          set({ error: 'Failed to send message', isLoading: false });
+          return;
+        }
+
+        if (insertResp.data && typeof insertResp.data === 'object') {
+          // If server wrapped the payload as { success: true, data: ROW }
+          if ('data' in (insertResp.data as any) && (insertResp.data as any).data) {
+            savedMessage = (insertResp.data as any).data;
+          } else {
+            savedMessage = insertResp.data as any;
+          }
         } else {
           savedMessage = insertResp.data as any;
         }
       } else {
-        savedMessage = insertResp.data as any;
+        // Create a local-only message with a temporary ID
+        savedMessage = {
+          id: `temp-${Date.now()}`,
+          ...userMessage,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as ChatMessage;
       }
 
       // Add message to state
-      set(storeState => ({
-        messages: [...storeState.messages, savedMessage],
-        isLoading: false
-      }));
+      if (savedMessage) {
+        set(storeState => ({
+          messages: [...storeState.messages, savedMessage],
+          isLoading: false
+        }));
+      } else {
+        set({ isLoading: false });
+      }
 
       // Update conversation metadata
       if (state.currentConversation?.id === conversationId) {
@@ -93,8 +109,9 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
     }
   },
 
-  saveAIResponse: async (content: string, conversationId: string) => {
+  saveAIResponse: async (content: string, conversationId: string, options: { persist?: boolean } = { persist: true }) => {
     try {
+      const { persist = true } = options;
       // Create AI response message
       const aiMessage: Omit<ChatMessage, 'id' | 'created_at' | 'updated_at'> = {
         conversation_id: conversationId,
@@ -107,32 +124,44 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
         }
       };
 
-      const insertResp = await insertOne('ai_messages', {
-        ...aiMessage,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+      let savedMessage: ChatMessage | null = null;
+      if (persist) {
+        const insertResp = await insertOne('ai_messages', {
+          ...aiMessage,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
 
-      if (!insertResp || !insertResp.success) {
-        logger.error('Failed to save AI response', { error: insertResp?.error });
-        return;
-      }
+        if (!insertResp || !insertResp.success) {
+          logger.error('Failed to save AI response', { error: insertResp?.error });
+          return;
+        }
 
-      let savedMessage = null;
-      if (insertResp.data && typeof insertResp.data === 'object') {
-        if ('data' in (insertResp.data as any) && (insertResp.data as any).data) {
-          savedMessage = (insertResp.data as any).data;
+        if (insertResp.data && typeof insertResp.data === 'object') {
+          if ('data' in (insertResp.data as any) && (insertResp.data as any).data) {
+            savedMessage = (insertResp.data as any).data;
+          } else {
+            savedMessage = insertResp.data as any;
+          }
         } else {
           savedMessage = insertResp.data as any;
         }
       } else {
-        savedMessage = insertResp.data as any;
+        // Create a local-only message with a temporary ID
+        savedMessage = {
+          id: `ai-temp-${Date.now()}`,
+          ...aiMessage,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as ChatMessage;
       }
 
       // Add message to state
-      set(state => ({
-        messages: [...state.messages, savedMessage]
-      }));
+      if (savedMessage) {
+        set(state => ({
+          messages: [...state.messages, savedMessage]
+        }));
+      }
 
       // Update conversation metadata
       await get().updateConversation(conversationId, {

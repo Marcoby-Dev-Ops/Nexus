@@ -163,7 +163,8 @@ export const ChatPage: React.FC = () => {
 
       // save and display the user message via store (only if not a switch or inside an existing conversation)
       if (currentConversationId) {
-        await sendMessage(message, currentConversationId, attachments || []);
+        // We use persist: false because the backend /api/ai/chat already saves the user message for audit/metadata purposes
+        await sendMessage(message, currentConversationId, attachments || [], { persist: false });
       }
 
       // Now set loading states for AI response
@@ -226,7 +227,8 @@ export const ChatPage: React.FC = () => {
 
       // Save final response
       if (saveAIResponse && currentConversationId) {
-        await saveAIResponse(accumulatedResponse, currentConversationId);
+        // We use persist: false because the backend /api/ai/chat already saves the assistant message for audit/metadata purposes
+        await saveAIResponse(accumulatedResponse, currentConversationId, { persist: false });
       }
 
       setStreamingContent('');

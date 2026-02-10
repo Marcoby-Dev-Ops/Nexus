@@ -103,10 +103,10 @@ async function getOrCreateConversation(userId, providedId, title = 'New Conversa
 }
 
 // Helper to save message
-async function saveMessage(conversationId, role, content) {
+async function saveMessage(conversationId, role, content, metadata = {}) {
     const result = await query(
-        'INSERT INTO ai_messages (conversation_id, role, content) VALUES ($1, $2, $3) RETURNING id',
-        [conversationId, role, content]
+        'INSERT INTO ai_messages (conversation_id, role, content, metadata) VALUES ($1, $2, $3, $4) RETURNING id',
+        [conversationId, role, content, JSON.stringify(metadata)]
     );
 
     if (result.error) {
@@ -131,7 +131,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         messages,
         stream = true,
         conversationId: providedConvId,
-        agentId: requestedAgentId
+        agentId: requestedAgentId,
+        attachments = []
     } = req.body;
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -246,7 +247,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
         // Save the last user message
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.role === 'user') {
-            await saveMessage(conversationId, 'user', lastMessage.content);
+            const userMetadata = {
+                ...(lastMessage.metadata || {}),
+                attachments: attachments || lastMessage.metadata?.attachments || []
+            };
+            await saveMessage(conversationId, 'user', lastMessage.content, userMetadata);
         }
 
         const lastUserMessage = getLastUserMessage(messages);
@@ -376,7 +381,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
             // Audit: Save Assistant Response
             if (content) {
-                await saveMessage(conversationId, 'assistant', content);
+                const assistantMetadata = {
+                    model: data.model || 'openclaw',
+                    usage: data.usage || null,
+                    modelWay: modelWayMetadata
+                };
+                await saveMessage(conversationId, 'assistant', content, assistantMetadata);
             }
 
             // If client wanted stream, emit it as an SSE event sequence
@@ -415,7 +425,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
             // Audit: Save Assistant Response
             if (content) {
-                await saveMessage(conversationId, 'assistant', content);
+                const assistantMetadata = {
+                    model: data.model || 'openclaw',
+                    usage: data.usage || null,
+                    modelWay: modelWayMetadata
+                };
+                await saveMessage(conversationId, 'assistant', content, assistantMetadata);
             }
 
             const response = structureResponse(content, modelWayMetadata, {
@@ -445,7 +460,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 if (done) {
                     // Audit: Save collected assistant response
                     if (fullAssistantContent) {
-                        await saveMessage(conversationId, 'assistant', fullAssistantContent);
+                        const assistantMetadata = {
+                            model: 'openclaw:stream',
+                            modelWay: modelWayMetadata
+                        };
+                        await saveMessage(conversationId, 'assistant', fullAssistantContent, assistantMetadata);
                     }
                     writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                     res.write('data: [DONE]\n\n');
@@ -467,7 +486,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                         if (dataStr === '[DONE]') {
                             // Audit: Save collected assistant response on upstream done
                             if (fullAssistantContent) {
-                                await saveMessage(conversationId, 'assistant', fullAssistantContent);
+                                const assistantMetadata = {
+                                    model: 'openclaw:stream',
+                                    modelWay: modelWayMetadata
+                                };
+                                await saveMessage(conversationId, 'assistant', fullAssistantContent, assistantMetadata);
                                 fullAssistantContent = ''; // Prevent double save if loop continues
                             }
                             writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));

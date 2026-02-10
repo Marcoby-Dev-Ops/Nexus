@@ -102,8 +102,8 @@ export interface ChatState {
 }
 
 export interface ChatActions {
-  sendMessage: (content: string, conversationId: string, attachments?: FileAttachment[]) => Promise<void>;
-  saveAIResponse: (content: string, conversationId: string) => Promise<void>;
+  sendMessage: (content: string, conversationId: string, attachments?: FileAttachment[], options?: { persist?: boolean }) => Promise<void>;
+  saveAIResponse: (content: string, conversationId: string, options?: { persist?: boolean }) => Promise<void>;
   fetchMessages: (conversationId: string) => Promise<void>;
   fetchConversations: () => Promise<void>;
   createConversation: (title: string, model: string, systemPrompt?: string, userId?: string) => Promise<string>;
