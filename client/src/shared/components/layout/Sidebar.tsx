@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   MessageSquare,
@@ -8,17 +8,52 @@ import {
   FileText,
   Sparkles,
   Pencil,
-  X
+  Check
 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { useAuth } from '@/hooks/index';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
+import type { Conversation } from '@/shared/types/chat';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+interface TimeGroup {
+  label: string;
+  conversations: Conversation[];
+}
+
+function groupConversationsByTime(convs: Conversation[]): TimeGroup[] {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today.getTime() - 86400000);
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000);
+
+  const groups: TimeGroup[] = [
+    { label: 'Today', conversations: [] },
+    { label: 'Yesterday', conversations: [] },
+    { label: 'Previous 7 Days', conversations: [] },
+    { label: 'Older', conversations: [] }
+  ];
+
+  convs.forEach(conv => {
+    const date = new Date(conv.updated_at || conv.created_at);
+    if (date >= today) {
+      groups[0].conversations.push(conv);
+    } else if (date >= yesterday) {
+      groups[1].conversations.push(conv);
+    } else if (date >= sevenDaysAgo) {
+      groups[2].conversations.push(conv);
+    } else {
+      groups[3].conversations.push(conv);
+    }
+  });
+
+  return groups.filter(g => g.conversations.length > 0);
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
@@ -27,16 +62,23 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Inline rename state
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const renameInputRef = useRef<HTMLInputElement>(null);
+
   // Connect to AIChatStore
   const {
     conversations,
-    conversationsLoading,
+    isLoading,
     currentConversation,
     fetchConversations,
     deleteConversation,
     setCurrentConversationById,
-    cleanupEmptyConversations,
-    setConversationId
+    cleanEmptyConversations,
+    clearMessages,
+    setCurrentConversation,
+    renameConversation
   } = useAIChatStore();
 
   useEffect(() => {
@@ -45,33 +87,31 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, [user, fetchConversations, conversations.length]);
 
+  // Focus rename input when editing starts
+  useEffect(() => {
+    if (editingId && renameInputRef.current) {
+      renameInputRef.current.focus();
+      renameInputRef.current.select();
+    }
+  }, [editingId]);
+
   const handleConversationSelect = async (convId: string) => {
+    if (editingId) return; // Don't navigate while renaming
     await setCurrentConversationById(convId);
-    setConversationId(convId); // Ensure ID is set in store for ChatPage to pick up
     if (location.pathname !== '/chat') {
       navigate('/chat');
     }
-    // On mobile, we might want to close the sidebar? 
-    // But this component is the "Utility Panel", controlled by UnifiedLayout.
-    // If we want to auto-close on mobile, we'd need to know if we are on mobile.
-    // The parent controls visibility via `isOpen`, but passed `onClose`.
-    // Let's call onClose if window width is small (handled by parent logic usually, but we can hint it).
     if (window.innerWidth < 768) {
       onClose();
     }
   };
 
   const handleNewConversation = () => {
-    // Clear current conversation in store
-    useAIChatStore.getState().setConversationId(null);
-    useAIChatStore.getState().setCurrentConversation(null);
-    useAIChatStore.getState().clearMessages();
+    setCurrentConversation(null);
+    clearMessages();
 
     if (location.pathname !== '/chat') {
       navigate('/chat');
-    } else {
-      // If already on chat page, just ensuring state is clear is enough
-      // The ChatPage should react to null conversationId by showing empty state
     }
 
     if (window.innerWidth < 768) {
@@ -106,9 +146,37 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
+  const handleStartRename = (conv: Conversation, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(conv.id);
+    setEditTitle(conv.title || '');
+  };
+
+  const handleFinishRename = async (convId: string) => {
+    const trimmed = editTitle.trim();
+    if (trimmed && trimmed !== conversations.find(c => c.id === convId)?.title) {
+      await renameConversation(convId, trimmed);
+      toast({
+        title: "Renamed",
+        description: "Conversation renamed.",
+        type: "success"
+      });
+    }
+    setEditingId(null);
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent, convId: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleFinishRename(convId);
+    } else if (e.key === 'Escape') {
+      setEditingId(null);
+    }
+  };
+
   const handleCleanupEmptyConversations = async () => {
     try {
-      await cleanupEmptyConversations();
+      await cleanEmptyConversations();
       toast({
         title: "Cleanup complete",
         description: "Empty conversations removed.",
@@ -123,13 +191,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
-  // Only render content if open (though parent manages width/visibility, rendering null here saves performance)
-  // But parent uses CSS transition, so we should keep content rendered but maybe hidden?
-  // Parent uses `w-0` and `overflow-hidden`, so content is hidden.
-  // We'll render full content.
-
   const nonEmptyConversations = conversations.filter(c => c.message_count > 0);
   const emptyConversationsCount = conversations.length - nonEmptyConversations.length;
+  const timeGroups = groupConversationsByTime(nonEmptyConversations);
 
   return (
     <div className="flex flex-col h-full bg-muted/10 border-r border-border/40">
@@ -169,11 +233,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-2">
-          <h3 className="px-2 text-xs font-medium text-muted-foreground/60 mt-4 mb-2">
-            Recent Conversations
-          </h3>
-
-          {conversationsLoading ? (
+          {isLoading && conversations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Sparkles className="w-4 h-4 animate-spin mb-2" />
               <span className="text-xs">Loading...</span>
@@ -196,27 +256,73 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 </Button>
               )}
 
-              {nonEmptyConversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={cn(
-                    "group flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors hover:bg-muted/50 cursor-pointer",
-                    currentConversation?.id === conv.id ? "bg-muted text-foreground font-medium" : "text-muted-foreground"
-                  )}
-                  onClick={() => handleConversationSelect(conv.id)}
-                >
-                  <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
-                  <div className="flex-1 truncate">
-                    {conv.title || "Untitled Conversation"}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => handleDeleteConversation(conv.id, e)}
-                  >
-                    <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
-                  </Button>
+              {timeGroups.map(group => (
+                <div key={group.label}>
+                  <h4 className="px-2 text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider mt-4 mb-1.5">
+                    {group.label}
+                  </h4>
+                  {group.conversations.map((conv) => (
+                    <div
+                      key={conv.id}
+                      className={cn(
+                        "group flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors cursor-pointer",
+                        editingId === conv.id
+                          ? "bg-muted text-foreground"
+                          : currentConversation?.id === conv.id
+                            ? "bg-muted text-foreground font-medium"
+                            : "text-muted-foreground hover:bg-muted/50"
+                      )}
+                      onClick={() => handleConversationSelect(conv.id)}
+                    >
+                      <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
+
+                      {editingId === conv.id ? (
+                        <input
+                          ref={renameInputRef}
+                          className="flex-1 bg-transparent border-b border-primary text-sm text-foreground outline-none px-0 py-0 min-w-0"
+                          value={editTitle}
+                          onChange={(e) => setEditTitle(e.target.value)}
+                          onKeyDown={(e) => handleRenameKeyDown(e, conv.id)}
+                          onBlur={() => handleFinishRename(conv.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ) : (
+                        <div className="flex-1 truncate">
+                          {conv.title || "Untitled Conversation"}
+                        </div>
+                      )}
+
+                      {editingId === conv.id ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 shrink-0"
+                          onClick={(e) => { e.stopPropagation(); handleFinishRename(conv.id); }}
+                        >
+                          <Check className="w-3 h-3 text-primary" />
+                        </Button>
+                      ) : (
+                        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => handleStartRename(conv, e)}
+                          >
+                            <Pencil className="w-3 h-3 text-muted-foreground hover:text-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={(e) => handleDeleteConversation(conv.id, e)}
+                          >
+                            <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>

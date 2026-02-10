@@ -14,6 +14,14 @@ import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 // Initialize AI Service
 const conversationalAIService = new ConversationalAIService();
 
+function generateTitle(message: string, maxLen = 50): string {
+  const cleaned = message.replace(/\n/g, ' ').trim();
+  if (cleaned.length <= maxLen) return cleaned;
+  const truncated = cleaned.substring(0, maxLen);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return (lastSpace > maxLen * 0.3 ? truncated.substring(0, lastSpace) : truncated) + '...';
+}
+
 export const ChatPage: React.FC = () => {
   const { user } = useAuth();
   const { profile } = useUserProfile();
@@ -60,6 +68,13 @@ export const ChatPage: React.FC = () => {
     }
   }, [user, fetchConversations]);
 
+  // Reset streaming state when switching conversations
+  useEffect(() => {
+    setIsStreaming(false);
+    setStreamingContent('');
+    setLocalIsLoading(false);
+  }, [currentConversation?.id]);
+
   const conversationId = currentConversation?.id;
 
   const handleSendMessage = async (message: string, attachments?: any[]) => {
@@ -71,7 +86,7 @@ export const ChatPage: React.FC = () => {
 
       if (!currentConversationId) {
         if (createConversation) {
-          const title = message.slice(0, 50);
+          const title = generateTitle(message);
           currentConversationId = await createConversation(title, 'gpt-4', undefined, user.id);
         } else {
           // Fallback if somehow not available (should not happen based on store check)

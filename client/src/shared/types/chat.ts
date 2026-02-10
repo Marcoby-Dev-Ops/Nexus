@@ -109,6 +109,7 @@ export interface ChatActions {
   clearMessages: () => void;
   setCurrentConversation: (conversation: Conversation | null) => void;
   setCurrentConversationById: (conversationId: string) => Promise<void>;
+  renameConversation: (conversationId: string, newTitle: string) => Promise<void>;
 }
 
 export interface ChatQuotas {

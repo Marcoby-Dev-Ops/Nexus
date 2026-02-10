@@ -41,8 +41,20 @@ async function verifyIntegration() {
         process.exit(1);
     }
 
+    // Mock an Authentik-style payload which the middleware expects
+    // The middleware looks for req.user = decoded;
+    // And routes look for req.user.id
+    // But importantly, if it validates against a specific structure like 'sub'
     const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
+        {
+            sub: user.id, // Authentik uses 'sub' as the ID
+            email: user.email,
+            role: user.role,
+            // Add other claims to mimic real token if necessary
+            // But 'sub' is usually mapped to 'id' in many grasp implementations
+            // Let's check middleware.js to be 100% sure
+            id: user.id // Just in case it uses .id directly
+        },
         secret,
         { expiresIn: '1h' }
     );

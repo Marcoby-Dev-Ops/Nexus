@@ -396,4 +396,166 @@ router.get('/modelway/intents', authenticateToken, (req, res) => {
     });
 });
 
+/**
+ * GET /api/ai/conversations
+ * List non-archived conversations for the authenticated user
+ */
+router.get('/conversations', authenticateToken, async (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+        const result = await query(
+            `SELECT id, title, model, system_prompt, message_count, is_archived,
+                    context, created_at, updated_at, user_id
+             FROM ai_conversations
+             WHERE user_id = $1 AND is_archived = false
+             ORDER BY updated_at DESC
+             LIMIT 200`,
+            [userId],
+            req.user.jwtPayload
+        );
+
+        if (result.error) {
+            logger.error('Failed to fetch conversations', { error: result.error, userId });
+            return res.status(500).json({ success: false, error: 'Failed to fetch conversations' });
+        }
+
+        res.json({ success: true, data: result.data || [] });
+    } catch (error) {
+        logger.error('Error fetching conversations', { error: error.message, userId });
+        res.status(500).json({ success: false, error: 'Failed to fetch conversations' });
+    }
+});
+
+/**
+ * GET /api/ai/conversations/:id/messages
+ * Fetch all messages for a conversation with ownership check
+ */
+router.get('/conversations/:id/messages', authenticateToken, async (req, res) => {
+    const userId = req.user?.id;
+    const conversationId = req.params.id;
+
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+        // Verify ownership
+        const convCheck = await query(
+            'SELECT id FROM ai_conversations WHERE id = $1 AND user_id = $2',
+            [conversationId, userId],
+            req.user.jwtPayload
+        );
+
+        if (!convCheck.data || convCheck.data.length === 0) {
+            return res.status(404).json({ success: false, error: 'Conversation not found' });
+        }
+
+        const result = await query(
+            `SELECT id, conversation_id, role, content, metadata, created_at, updated_at
+             FROM ai_messages
+             WHERE conversation_id = $1
+             ORDER BY created_at ASC`,
+            [conversationId],
+            req.user.jwtPayload
+        );
+
+        if (result.error) {
+            logger.error('Failed to fetch messages', { error: result.error, conversationId });
+            return res.status(500).json({ success: false, error: 'Failed to fetch messages' });
+        }
+
+        res.json({ success: true, data: result.data || [] });
+    } catch (error) {
+        logger.error('Error fetching messages', { error: error.message, conversationId });
+        res.status(500).json({ success: false, error: 'Failed to fetch messages' });
+    }
+});
+
+/**
+ * PATCH /api/ai/conversations/:id
+ * Update conversation title or archived status
+ */
+router.patch('/conversations/:id', authenticateToken, async (req, res) => {
+    const userId = req.user?.id;
+    const conversationId = req.params.id;
+    const { title, is_archived } = req.body;
+
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+        const updates = [];
+        const values = [];
+        let paramIdx = 1;
+
+        if (title !== undefined) {
+            updates.push(`title = $${paramIdx++}`);
+            values.push(String(title).substring(0, 255));
+        }
+        if (is_archived !== undefined) {
+            updates.push(`is_archived = $${paramIdx++}`);
+            values.push(Boolean(is_archived));
+        }
+
+        if (updates.length === 0) {
+            return res.status(400).json({ success: false, error: 'No fields to update' });
+        }
+
+        updates.push('updated_at = NOW()');
+        values.push(conversationId, userId);
+
+        const result = await query(
+            `UPDATE ai_conversations SET ${updates.join(', ')}
+             WHERE id = $${paramIdx++} AND user_id = $${paramIdx}
+             RETURNING *`,
+            values,
+            req.user.jwtPayload
+        );
+
+        if (result.error || !result.data || result.data.length === 0) {
+            return res.status(404).json({ success: false, error: 'Conversation not found' });
+        }
+
+        res.json({ success: true, data: result.data[0] });
+    } catch (error) {
+        logger.error('Error updating conversation', { error: error.message, conversationId });
+        res.status(500).json({ success: false, error: 'Failed to update conversation' });
+    }
+});
+
+/**
+ * DELETE /api/ai/conversations/:id
+ * Hard delete a conversation (messages cascade via FK)
+ */
+router.delete('/conversations/:id', authenticateToken, async (req, res) => {
+    const userId = req.user?.id;
+    const conversationId = req.params.id;
+
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+        const result = await query(
+            'DELETE FROM ai_conversations WHERE id = $1 AND user_id = $2 RETURNING id',
+            [conversationId, userId],
+            req.user.jwtPayload
+        );
+
+        if (result.error || !result.data || result.data.length === 0) {
+            return res.status(404).json({ success: false, error: 'Conversation not found' });
+        }
+
+        res.json({ success: true, data: { id: conversationId, deleted: true } });
+    } catch (error) {
+        logger.error('Error deleting conversation', { error: error.message, conversationId });
+        res.status(500).json({ success: false, error: 'Failed to delete conversation' });
+    }
+});
+
 module.exports = router;
