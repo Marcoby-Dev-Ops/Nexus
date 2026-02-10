@@ -24,7 +24,8 @@ const INTENT_TYPES = {
   PROGRESS: { id: 'progress', name: '📈 Progress', emoji: '📈', description: 'Summarize status, progress, and next actions' },
   PERFORMANCE: { id: 'performance', name: '📊 Performance', emoji: '📊', description: 'Analyze metrics, KPIs, and business outcomes' },
   GROWTH: { id: 'growth', name: '🚀 Growth', emoji: '🚀', description: 'Identify growth opportunities and strategic paths' },
-  ASSIST: { id: 'assist', name: '🤝 Assist', emoji: '🤝', description: 'General assistance, tasks, and problem solving' }
+  ASSIST: { id: 'assist', name: '🤝 Assist', emoji: '🤝', description: 'General assistance, tasks, and problem solving' },
+  SWITCH: { id: 'switch', name: '🔄 Switch', emoji: '🔄', description: 'Switch to a different conversation topic' }
 };
 
 const PHASES = {
@@ -46,6 +47,9 @@ function detectIntent(messages) {
   // Jumpstart-aligned intent detection (Strategic & External first)
   if (lastMessage.includes('growth') || lastMessage.includes('opportunity') || lastMessage.includes('strategy') || lastMessage.includes('scale') || lastMessage.includes('current events') || lastMessage.includes('news') || lastMessage.includes('synthesis')) {
     return INTENT_TYPES.GROWTH;
+  }
+  if (lastMessage.includes('continue this:') || lastMessage.includes('switch to:')) {
+    return INTENT_TYPES.SWITCH;
   }
   if (lastMessage.includes('performance') || lastMessage.includes('metric') || lastMessage.includes('analysis') || lastMessage.includes('results') || lastMessage.includes('kpi') || lastMessage.includes('trends')) {
     return INTENT_TYPES.PERFORMANCE;

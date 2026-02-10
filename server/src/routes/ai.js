@@ -12,7 +12,8 @@ const {
     detectIntent,
     determinePhase,
     getLastUserMessage,
-    shouldRefuseDirectExecutionInDiscovery
+    shouldRefuseDirectExecutionInDiscovery,
+    resolveTopicToConversationId
 } = require('../services/aiChatOrchestration');
 require('../../loadEnv');
 
@@ -159,7 +160,48 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // Persist Conversation and User Message
         const conversationId = await getOrCreateConversation(userId, providedConvId);
+        const lastUserMessage = getLastUserMessage(messages);
         const intent = detectIntent(messages);
+
+        // Handle Switching Intent
+        if (intent.id === 'switch') {
+            const targetId = await resolveTopicToConversationId(userId, lastUserMessage, query);
+            if (targetId) {
+                const switchMetadata = buildModelWayMetadata(intent, determinePhase(messages), targetId);
+                const switchContent = `🔄 **Switching Context**\n\nI've located the conversation for: "${lastUserMessage.replace(/continue this:|switch to:/i, '').trim()}". Switching your active session now...`;
+
+                if (stream) {
+                    beginSseStream(res);
+                    writeSseEvent(res, {
+                        metadata: {
+                            modelWay: switchMetadata,
+                            switchTarget: targetId
+                        }
+                    });
+                    writeSseEvent(res, { content: switchContent });
+                    res.write('data: [DONE]\n\n');
+                    res.end();
+                    return;
+                }
+
+                return res.json(structureResponse(switchContent, switchMetadata, {
+                    success: true,
+                    content: switchContent,
+                    switchTarget: targetId
+                }));
+            } else {
+                const failContent = `⚠️ **Conversation Not Found**\n\nI couldn't find a conversation matching: "${lastUserMessage.replace(/continue this:|switch to:/i, '').trim()}". Please check the title and try again.`;
+                if (stream) {
+                    beginSseStream(res);
+                    writeSseEvent(res, { content: failContent });
+                    res.write('data: [DONE]\n\n');
+                    res.end();
+                    return;
+                }
+                return res.status(404).json({ success: false, error: 'Conversation not found' });
+            }
+        }
+
         const phase = determinePhase(messages);
         const modelWayMetadata = buildModelWayMetadata(intent, phase, conversationId);
         conversations.set(conversationId, {

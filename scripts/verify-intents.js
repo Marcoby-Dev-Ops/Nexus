@@ -4,7 +4,7 @@ const path = require('path');
 // Mock messages for testing detection
 const testCases = [
     { prompt: 'Summarize my progress and propose next actions', expected: 'progress' },
-    { prompt: 'Continue this: /new', expected: 'progress' }, // Default for short/new
+    { prompt: 'Continue this: /new', expected: 'switch' }, // Default for short/new
     { prompt: 'Summarize recent performance', expected: 'performance' },
     { prompt: 'Identify growth opportunities', expected: 'growth' },
     { prompt: 'Analyze our Q1 metrics', expected: 'performance' },

@@ -3,7 +3,8 @@ const INTENT_TYPES = {
   SOLVE: { id: 'solve', name: 'Solve', emoji: '🛠', description: 'Solve a problem, debug, fix issues' },
   WRITE: { id: 'write', name: 'Write', emoji: '✍️', description: 'Draft content, emails, documents' },
   DECIDE: { id: 'decide', name: 'Decide', emoji: '📊', description: 'Make decisions, analyze options' },
-  LEARN: { id: 'learn', name: 'Learn', emoji: '📚', description: 'Learn, research, understand concepts' }
+  LEARN: { id: 'learn', name: 'Learn', emoji: '📚', description: 'Learn, research, understand concepts' },
+  SWITCH: { id: 'switch', name: 'Switch', emoji: '🔄', description: 'Switch to a different conversation' }
 };
 
 const PHASES = {
@@ -38,8 +39,28 @@ function detectIntent(messages = []) {
   if (/(write|draft|email|document|copy)/.test(lastMessage)) return INTENT_TYPES.WRITE;
   if (/(decide|choose|option|tradeoff|analysis)/.test(lastMessage)) return INTENT_TYPES.DECIDE;
   if (/(learn|research|understand|explain|teach)/.test(lastMessage)) return INTENT_TYPES.LEARN;
+  if (/(continue this:|switch to:)/i.test(lastMessage)) return INTENT_TYPES.SWITCH;
 
   return INTENT_TYPES.BRAINSTORM;
+}
+
+/**
+ * Resolves a topic string to a conversation ID.
+ * Matches by title (exact or partial)
+ */
+async function resolveTopicToConversationId(userId, topic, queryFn) {
+  const normalizedTopic = topic.replace(/continue this:|switch to:/i, '').trim();
+  if (!normalizedTopic) return null;
+
+  // Search by exact title first, then ILIKE
+  const result = await queryFn(
+    `SELECT id FROM ai_conversations 
+     WHERE user_id = $1 AND (title = $2 OR title ILIKE $3) 
+     ORDER BY updated_at DESC LIMIT 1`,
+    [userId, normalizedTopic, `%${normalizedTopic}%`]
+  );
+
+  return result.data?.[0]?.id || null;
 }
 
 function determinePhase(messages = []) {
@@ -105,5 +126,6 @@ module.exports = {
   detectIntent,
   determinePhase,
   getLastUserMessage,
-  shouldRefuseDirectExecutionInDiscovery
+  shouldRefuseDirectExecutionInDiscovery,
+  resolveTopicToConversationId
 };
