@@ -1,0 +1,12 @@
+name: "Nexus CodeQL Config"
+
+paths-ignore:
+  - "docs/**"
+  - "integration/**"
+  - "node_modules/**"
+  - "**/dist/**"
+  - "**/build/**"
+  - "**/coverage/**"
+  - "**/media/**"
+  - "client/out/**"
+  - "server/src/check_functions.js"
