@@ -12,7 +12,7 @@ import AIChatPage from '@/pages/ai/ChatPage';
 // Minimal ChatPage for V1: just a single chat interface, no sidebar, no quick start, no context switching
 const ChatPage: React.FC = () => {
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full min-h-0 flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-hidden">
         <AIChatPage />
       </div>

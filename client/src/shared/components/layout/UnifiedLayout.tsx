@@ -12,7 +12,7 @@ interface UnifiedLayoutProps {
 export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
   // Changed to false by default for utility panel behavior
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, session, loading, initialized } = useAuth();
+  const { loading, initialized } = useAuth();
   const { isPublicRoute, redirectInProgress } = useRedirectManager();
 
   // For public routes, render children without auth context
@@ -36,7 +36,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
 
   return (
     <HeaderProvider>
-      <div className="h-full bg-background flex flex-col overflow-hidden">
+      <div className="h-full min-h-0 bg-background flex flex-col overflow-hidden supports-[height:100dvh]:h-[100dvh]">
         {/* Skip link for keyboard users */}
         <a
           href="#main-content"
@@ -64,7 +64,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           </div>
 
           {/* Main content area */}
-          <main id="main-content" role="main" className="flex-1 overflow-y-auto relative bg-background">
+          <main id="main-content" role="main" className="flex-1 min-h-0 overflow-y-auto relative bg-background">
             {children}
           </main>
         </div>

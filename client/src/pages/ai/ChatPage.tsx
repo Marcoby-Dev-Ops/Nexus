@@ -213,7 +213,7 @@ export const ChatPage: React.FC = () => {
   const displayName = profile?.display_name || profile?.full_name || profile?.first_name || user?.name || "User";
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full min-h-0 bg-background">
       {/* Chat Interface */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <React.Suspense fallback={
