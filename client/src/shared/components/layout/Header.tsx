@@ -1,12 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks';
-import { useUserProfile } from '@/shared/contexts/UserContext';
 import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
-import { OrgSwitcher } from '@/shared/components/layout/OrgSwitcher';
 import { Settings, LogOut, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react';
-import { ThemeToggleAdvanced } from '@/components/ui/theme-toggle-advanced';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { navItems } from './navConfig';
 
@@ -16,8 +14,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }) => {
-  const { user, signIn, signOut } = useAuth();
-  const { profile } = useUserProfile();
+  const { user, signOut } = useAuth();
   const { pageTitle, pageSubtitle } = useHeaderContext();
   const navigate = useNavigate();
   const location = useLocation();
@@ -28,17 +25,8 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
     try {
       await signOut();
       window.location.href = 'https://identity.marcoby.com/if/flow/default-invalidation-flow/';
-    } catch (error) {
-      console.error('Sign out failed', error);
-      window.location.href = '/login';
-    }
-  };
-
-  const handleSignIn = async () => {
-    try {
-      await signIn();
     } catch {
-      // Handle sign in error silently
+      window.location.href = '/login';
     }
   };
 
@@ -172,7 +160,12 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
                     <Settings className="h-4 w-4" />
                     <span>Settings</span>
                   </button>
-                  <ThemeToggleAdvanced />
+                  <div className="px-2 py-1.5">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Appearance</span>
+                      <ThemeToggle />
+                    </div>
+                  </div>
                 </div>
                 <div className="p-1 border-t">
                   <button
