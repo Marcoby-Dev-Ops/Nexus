@@ -221,8 +221,8 @@
     color: hsl(var(--foreground));
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    -webkit-user-select: none;
-    user-select: none;
+    -webkit-user-select: text;
+    user-select: text;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     line-height: 1.65;
