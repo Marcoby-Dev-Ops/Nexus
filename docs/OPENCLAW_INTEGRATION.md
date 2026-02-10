@@ -23,8 +23,17 @@ To enable the integration, configure the following environment variables in `Nex
 
 | Variable | Description | Default |
 | :--- | :--- | :--- |
-| `OPENCLAW_API_URL` | The HTTP endpoint of your OpenClaw instance. | `http://localhost:18789/v1` |
-| `OPENCLAW_API_KEY` | The API specific to your OpenClaw instance context. | `sk-openclaw-local` |
+| `OPENCLAW_API_URL` | URL of the OpenClaw gateway. | `http://localhost:18789/v1` |
+| `OPENCLAW_API_KEY` | API key for the OpenClaw gateway. | `sk-openclaw-local` |
+| `BRAVE_API_KEY` | (Optional) API key for web search capabilities (Brave Search). | |
+| `PERPLEXITY_API_KEY` | (Optional) API key for Perplexity search. | |
+
+### Autonomous Tools
+
+OpenClaw supports several autonomous tools that can be enabled per-request or per-agent. To use these tools, the corresponding API keys must be present in OpenClaw's `.env` file and, where applicable, passed from Nexus for observability.
+
+#### Web Research
+The `web_search` tool is automatically enabled in the Model-Way Framework for the `LEARN` intent. This requires a valid `BRAVE_API_KEY` to be configured in both Nexus and OpenClaw.
 
 > **Note:** If running in Docker/Coolify, use the internal container name (e.g., `http://openclaw:18790/v1`) to avoid public internet routing.
 

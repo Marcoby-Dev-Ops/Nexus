@@ -11,18 +11,18 @@ const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
 
 // Model-Way Framework Constants
 const INTENT_TYPES = {
-  BRAINSTORM: { id: 'brainstorm', name: '🧠 Brainstorm', emoji: '🧠', description: 'Generate ideas, explore possibilities' },
-  SOLVE: { id: 'solve', name: '🛠 Solve', emoji: '🛠', description: 'Solve a problem, debug, fix issues' },
-  WRITE: { id: 'write', name: '✍️ Write', emoji: '✍️', description: 'Draft content, emails, documents' },
-  DECIDE: { id: 'decide', name: '📊 Decide', emoji: '📊', description: 'Make decisions, analyze options' },
-  LEARN: { id: 'learn', name: '📚 Learn', emoji: '📚', description: 'Learn, research, understand concepts' }
+    BRAINSTORM: { id: 'brainstorm', name: '🧠 Brainstorm', emoji: '🧠', description: 'Generate ideas, explore possibilities' },
+    SOLVE: { id: 'solve', name: '🛠 Solve', emoji: '🛠', description: 'Solve a problem, debug, fix issues' },
+    WRITE: { id: 'write', name: '✍️ Write', emoji: '✍️', description: 'Draft content, emails, documents' },
+    DECIDE: { id: 'decide', name: '📊 Decide', emoji: '📊', description: 'Make decisions, analyze options' },
+    LEARN: { id: 'learn', name: '📚 Learn', emoji: '📚', description: 'Learn, research, understand concepts' }
 };
 
 const PHASES = {
-  DISCOVERY: 'discovery',
-  SYNTHESIS: 'synthesis', 
-  DECISION: 'decision',
-  EXECUTION: 'execution'
+    DISCOVERY: 'discovery',
+    SYNTHESIS: 'synthesis',
+    DECISION: 'decision',
+    EXECUTION: 'execution'
 };
 
 // In-memory conversation tracking (in production, use database)
@@ -32,49 +32,49 @@ const conversations = new Map();
  * Model-Way: Detect intent from messages
  */
 function detectIntent(messages) {
-  const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
-  
-  // Simple keyword-based intent detection
-  if (lastMessage.includes('brainstorm') || lastMessage.includes('idea') || lastMessage.includes('creative')) {
+    const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+
+    // Simple keyword-based intent detection
+    if (lastMessage.includes('brainstorm') || lastMessage.includes('idea') || lastMessage.includes('creative')) {
+        return INTENT_TYPES.BRAINSTORM;
+    }
+    if (lastMessage.includes('solve') || lastMessage.includes('problem') || lastMessage.includes('fix') || lastMessage.includes('debug')) {
+        return INTENT_TYPES.SOLVE;
+    }
+    if (lastMessage.includes('write') || lastMessage.includes('draft') || lastMessage.includes('email') || lastMessage.includes('document')) {
+        return INTENT_TYPES.WRITE;
+    }
+    if (lastMessage.includes('decide') || lastMessage.includes('choose') || lastMessage.includes('option') || lastMessage.includes('analysis')) {
+        return INTENT_TYPES.DECIDE;
+    }
+    if (lastMessage.includes('learn') || lastMessage.includes('research') || lastMessage.includes('understand') || lastMessage.includes('explain')) {
+        return INTENT_TYPES.LEARN;
+    }
+
+    // Default to brainstorming for new conversations
     return INTENT_TYPES.BRAINSTORM;
-  }
-  if (lastMessage.includes('solve') || lastMessage.includes('problem') || lastMessage.includes('fix') || lastMessage.includes('debug')) {
-    return INTENT_TYPES.SOLVE;
-  }
-  if (lastMessage.includes('write') || lastMessage.includes('draft') || lastMessage.includes('email') || lastMessage.includes('document')) {
-    return INTENT_TYPES.WRITE;
-  }
-  if (lastMessage.includes('decide') || lastMessage.includes('choose') || lastMessage.includes('option') || lastMessage.includes('analysis')) {
-    return INTENT_TYPES.DECIDE;
-  }
-  if (lastMessage.includes('learn') || lastMessage.includes('research') || lastMessage.includes('understand') || lastMessage.includes('explain')) {
-    return INTENT_TYPES.LEARN;
-  }
-  
-  // Default to brainstorming for new conversations
-  return INTENT_TYPES.BRAINSTORM;
 }
 
 /**
  * Model-Way: Determine current phase based on conversation
  */
 function determinePhase(conversationId, messages) {
-  const conversation = conversations.get(conversationId) || { phase: PHASES.DISCOVERY, messageCount: 0 };
-  
-  // Simple phase progression based on message count
-  const messageCount = messages.length;
-  
-  if (messageCount <= 2) return PHASES.DISCOVERY;
-  if (messageCount <= 4) return PHASES.SYNTHESIS;
-  if (messageCount <= 6) return PHASES.DECISION;
-  return PHASES.EXECUTION;
+    const conversation = conversations.get(conversationId) || { phase: PHASES.DISCOVERY, messageCount: 0 };
+
+    // Simple phase progression based on message count
+    const messageCount = messages.length;
+
+    if (messageCount <= 2) return PHASES.DISCOVERY;
+    if (messageCount <= 4) return PHASES.SYNTHESIS;
+    if (messageCount <= 6) return PHASES.DECISION;
+    return PHASES.EXECUTION;
 }
 
 /**
  * Model-Way: Scaffold system prompt based on intent and phase
  */
 function scaffoldSystemPrompt(intent, phase, userId, originalSystemPrompt = '') {
-  const modelWayPrompt = `You are a Nexus AI assistant using the Model-Way Framework.
+    const modelWayPrompt = `You are a Nexus AI assistant using the Model-Way Framework.
 
 User: ${userId}
 Intent: ${intent.name} (${intent.description})
@@ -82,78 +82,78 @@ Current Phase: ${phase.charAt(0).toUpperCase() + phase.slice(1)}
 
 Please structure your response according to the Model-Way Framework.`;
 
-  const phasePrompts = {
-    [PHASES.DISCOVERY]: `We're in the Discovery phase. Focus on:
+    const phasePrompts = {
+        [PHASES.DISCOVERY]: `We're in the Discovery phase. Focus on:
 - Asking clarifying questions
 - Exploring the problem space
 - Identifying key variables and constraints
 - Gathering initial insights
 
 Keep responses exploratory and open-ended.`,
-    
-    [PHASES.SYNTHESIS]: `We're in the Synthesis phase. Focus on:
+
+        [PHASES.SYNTHESIS]: `We're in the Synthesis phase. Focus on:
 - Organizing information and patterns
 - Connecting dots between insights
 - Identifying core principles or themes
 - Preparing for decision-making
 
 Structure your response with clear sections and summaries.`,
-    
-    [PHASES.DECISION]: `We're in the Decision phase. Focus on:
+
+        [PHASES.DECISION]: `We're in the Decision phase. Focus on:
 - Presenting clear options with pros/cons
 - Making recommendations with rationale
 - Assessing risks and opportunities
 - Providing actionable next steps
 
 Be decisive and recommendation-oriented.`,
-    
-    [PHASES.EXECUTION]: `We're in the Execution phase. Focus on:
+
+        [PHASES.EXECUTION]: `We're in the Execution phase. Focus on:
 - Concrete action steps
 - Timeline and responsibilities
 - Success metrics and checkpoints
 - Potential obstacles and solutions
 
 Be specific, actionable, and practical.`
-  };
-  
-  const intentPrompts = {
-    [INTENT_TYPES.BRAINSTORM.id]: `Intent: Brainstorming
+    };
+
+    const intentPrompts = {
+        [INTENT_TYPES.BRAINSTORM.id]: `Intent: Brainstorming
 - Generate diverse ideas without judgment
 - Encourage creative thinking
 - Build on ideas with "yes, and..."
 - Quantity over quality initially`,
-    
-    [INTENT_TYPES.SOLVE.id]: `Intent: Problem Solving
+
+        [INTENT_TYPES.SOLVE.id]: `Intent: Problem Solving
 - Define the problem clearly
 - Analyze root causes
 - Generate potential solutions
 - Evaluate and recommend best approach`,
-    
-    [INTENT_TYPES.WRITE.id]: `Intent: Writing
+
+        [INTENT_TYPES.WRITE.id]: `Intent: Writing
 - Understand audience and purpose
 - Structure content logically
 - Use appropriate tone and style
 - Provide drafts with clear next steps`,
-    
-    [INTENT_TYPES.DECIDE.id]: `Intent: Decision Making
+
+        [INTENT_TYPES.DECIDE.id]: `Intent: Decision Making
 - Frame the decision clearly
 - Identify criteria for evaluation
 - Analyze options objectively
 - Make and justify recommendations`,
-    
-    [INTENT_TYPES.LEARN.id]: `Intent: Learning
+
+        [INTENT_TYPES.LEARN.id]: `Intent: Learning
 - Assess current knowledge level
 - Provide clear explanations
 - Use examples and analogies
 - Suggest resources for deeper learning`
-  };
-  
-  // Combine original system prompt with Model-Way scaffolding
-  const combinedPrompt = originalSystemPrompt 
-    ? `${originalSystemPrompt}\n\n${modelWayPrompt}`
-    : modelWayPrompt;
-  
-  return `${combinedPrompt}
+    };
+
+    // Combine original system prompt with Model-Way scaffolding
+    const combinedPrompt = originalSystemPrompt
+        ? `${originalSystemPrompt}\n\n${modelWayPrompt}`
+        : modelWayPrompt;
+
+    return `${combinedPrompt}
 
 ${phasePrompts[phase]}
 
@@ -166,35 +166,35 @@ Remember: You're using the Model-Way Framework to teach effective AI collaborati
  * Model-Way: Structure the response with metadata
  */
 function structureResponse(content, intent, phase, conversationId, originalResponse = {}) {
-  const phaseProgress = {
-    [PHASES.DISCOVERY]: 25,
-    [PHASES.SYNTHESIS]: 50,
-    [PHASES.DECISION]: 75,
-    [PHASES.EXECUTION]: 100
-  };
-  
-  return {
-    ...originalResponse,
-    content,
-    metadata: {
-      ...(originalResponse.metadata || {}),
-      modelWay: {
-        intent: {
-          id: intent.id,
-          name: intent.name,
-          emoji: intent.emoji,
-          description: intent.description
-        },
-        phase: {
-          id: phase,
-          name: phase.charAt(0).toUpperCase() + phase.slice(1),
-          progress: phaseProgress[phase] || 0
-        },
-        conversationId,
-        timestamp: new Date().toISOString()
-      }
-    }
-  };
+    const phaseProgress = {
+        [PHASES.DISCOVERY]: 25,
+        [PHASES.SYNTHESIS]: 50,
+        [PHASES.DECISION]: 75,
+        [PHASES.EXECUTION]: 100
+    };
+
+    return {
+        ...originalResponse,
+        content,
+        metadata: {
+            ...(originalResponse.metadata || {}),
+            modelWay: {
+                intent: {
+                    id: intent.id,
+                    name: intent.name,
+                    emoji: intent.emoji,
+                    description: intent.description
+                },
+                phase: {
+                    id: phase,
+                    name: phase.charAt(0).toUpperCase() + phase.slice(1),
+                    progress: phaseProgress[phase] || 0
+                },
+                conversationId,
+                timestamp: new Date().toISOString()
+            }
+        }
+    };
 }
 
 /**
@@ -219,7 +219,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const conversationId = providedConvId || `conv-${userId}-${Date.now()}`;
         const intent = detectIntent(messages);
         const phase = determinePhase(conversationId, messages);
-        
+
         // Update conversation tracking
         conversations.set(conversationId, {
             intent,
@@ -227,10 +227,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
             messageCount: messages.length,
             lastUpdated: new Date().toISOString()
         });
-        
+
         // Scaffold system prompt with Model-Way Framework
         const modelWaySystemPrompt = scaffoldSystemPrompt(intent, phase, userId, system);
-        
+
         // Build messages array with Model-Way system prompt
         const openClawMessages = [];
 
@@ -251,6 +251,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
             stream: stream,
             user: userId // Critical for OpenClaw memory
         };
+
+        // Model-Way: Attach tools based on intent
+        if (intent.id === INTENT_TYPES.LEARN.id) {
+            openClawPayload.tools = ['web_search'];
+            logger.info('Attaching web_search tool for LEARN intent', { userId, conversationId });
+        }
 
         logger.info('Proxying chat request to OpenClaw with Model-Way Framework', {
             userId,
