@@ -87,8 +87,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const isCustomAgentName = normalizedAgentName.length > 0
     && !['assistant', 'executive assistant', 'executive-assistant'].includes(normalizedAgentName.toLowerCase());
   const thinkingLabel = `${isCustomAgentName ? normalizedAgentName : 'Agent'} is thinking`;
-  const isLongRunning = streamingElapsedSeconds >= 12;
-
   const formatDuration = (totalSeconds: number) => {
     if (totalSeconds < 60) return `${totalSeconds}s`;
     const minutes = Math.floor(totalSeconds / 60);
@@ -178,7 +176,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                     isRecording={isRecording}
                     setIsRecording={setIsRecording}
                     thinkingLabel={thinkingLabel}
-                    busyElapsedSeconds={streamingElapsedSeconds}
                     inline
                   />
                 </div>
@@ -234,11 +231,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                         <div className="mt-2 h-1.5 w-56 max-w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                           <div className="h-full w-1/3 rounded-full bg-primary animate-pulse" />
                         </div>
-                        {isLongRunning && (
-                          <div className="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
-                            Still working on a longer request...
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -266,7 +258,6 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           isRecording={isRecording}
           setIsRecording={setIsRecording}
           thinkingLabel={thinkingLabel}
-          busyElapsedSeconds={streamingElapsedSeconds}
         />
       )}
     </div>

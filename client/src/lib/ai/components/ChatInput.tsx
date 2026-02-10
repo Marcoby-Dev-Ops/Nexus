@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { Textarea } from '@/shared/components/ui/Textarea';
 import { Button } from '@/shared/components/ui/Button';
-import { Paperclip, Mic, MicOff, Send, StopCircle, Plus, Sparkles } from 'lucide-react';
+import { Paperclip, Mic, MicOff, Send, StopCircle, Plus } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { FileAttachment } from '@/shared/types/chat';
 
@@ -18,9 +18,7 @@ interface ChatInputProps {
   isRecording: boolean;
   setIsRecording: (recording: boolean) => void;
   thinkingLabel?: string;
-  busyElapsedSeconds?: number;
   inline?: boolean;
-  showSignature?: boolean;
 }
 
 interface ChatInputRef {
@@ -40,18 +38,9 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   isRecording,
   setIsRecording,
   thinkingLabel = "Agent is thinking",
-  busyElapsedSeconds = 0,
-  inline = false,
-  showSignature = true
+  inline = false
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const formatDuration = (totalSeconds: number) => {
-    if (totalSeconds < 60) return `${totalSeconds}s`;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}m ${seconds}s`;
-  };
 
   // Expose focus method to parent component
   useImperativeHandle(ref, () => ({
@@ -143,18 +132,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
         )}
 
         <div className="relative">
-          {showSignature && (
-            <div className="mb-2.5 flex items-center justify-between px-1">
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-2.5 py-1 text-[11px] font-medium tracking-wide text-primary/90">
-                <Sparkles className="h-3 w-3" />
-                Nexus Intelligence
-              </div>
-              <span className="hidden sm:inline text-[11px] text-muted-foreground">
-                Business-aware assistant
-              </span>
-            </div>
-          )}
-
           {/* Input Container */}
           <div className="relative bg-card/80 focus-within:bg-card rounded-2xl border border-input/70 focus-within:border-ring transition-colors shadow-sm">
             {/* Attachment Button */}
@@ -174,7 +151,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isStreaming ? `${thinkingLabel}...` : placeholder}
+              placeholder={placeholder}
               disabled={disabled || isStreaming}
               className={cn(
                 "min-h-[50px] max-h-[200px] resize-none border-0 bg-transparent text-foreground placeholder:text-muted-foreground",
@@ -220,16 +197,6 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               </Button>
             </div>
           </div>
-
-          {isStreaming && (
-            <div className="mt-2 flex items-center justify-between rounded-md border border-border/60 bg-muted/35 px-3 py-2 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                <span>{thinkingLabel}...</span>
-              </div>
-              <span className="font-medium text-foreground">{formatDuration(busyElapsedSeconds)}</span>
-            </div>
-          )}
 
           {!inline && (
             <p className="text-xs text-muted-foreground text-center mt-2">
