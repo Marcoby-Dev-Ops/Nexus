@@ -19,6 +19,7 @@ interface ChatInputProps {
   setIsRecording: (recording: boolean) => void;
   thinkingLabel?: string;
   busyElapsedSeconds?: number;
+  inline?: boolean;
 }
 
 interface ChatInputRef {
@@ -38,7 +39,8 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   isRecording,
   setIsRecording,
   thinkingLabel = "Agent is thinking",
-  busyElapsedSeconds = 0
+  busyElapsedSeconds = 0,
+  inline = false
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -103,8 +105,13 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   };
 
   return (
-    <div className="border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4 flex-shrink-0">
-      <div className="max-w-4xl mx-auto">
+    <div className={cn(
+      "p-4 md:p-5 flex-shrink-0",
+      inline
+        ? "bg-transparent border-0 pt-3 md:pt-4"
+        : "border-t border-border/70 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70"
+    )}>
+      <div className="max-w-5xl mx-auto">
         {/* Attachments Display */}
         {attachments.length > 0 && (
           <div className="mb-4">
@@ -135,7 +142,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
 
         <div className="relative">
           {/* Input Container */}
-          <div className="relative bg-muted/30 focus-within:bg-muted/50 rounded-2xl border border-input focus-within:border-ring transition-colors">
+          <div className="relative bg-card/80 focus-within:bg-card rounded-2xl border border-input/70 focus-within:border-ring transition-colors shadow-sm">
             {/* Attachment Button */}
             <Button
               variant="ghost"
@@ -158,7 +165,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               className={cn(
                 "min-h-[52px] max-h-[200px] resize-none border-0 bg-transparent text-foreground placeholder:text-muted-foreground",
                 "pl-12 pr-20 py-3 focus:ring-0 focus:outline-none",
-                "text-base leading-relaxed"
+                "text-[1.02rem] leading-relaxed"
               )}
               rows={1}
             />
@@ -187,8 +194,8 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
                 className={cn(
                   "rounded-full w-8 h-8 p-0 transition-colors",
                   isStreaming
-                    ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                    : "bg-primary hover:bg-primary/90 text-primary-foreground"
+                    ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-sm"
+                    : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm"
                 )}
               >
                 {isStreaming ? (
@@ -201,7 +208,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
           </div>
 
           {isStreaming && (
-            <div className="mt-2 flex items-center justify-between rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-xs">
+            <div className="mt-2 flex items-center justify-between rounded-md border border-border/60 bg-muted/35 px-3 py-2 text-sm">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                 <span>{thinkingLabel}...</span>
@@ -210,10 +217,11 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
             </div>
           )}
 
-          {/* Disclaimer */}
-          <p className="text-xs text-muted-foreground text-center mt-2">
-            Nexus AI can make mistakes. Check important information.
-          </p>
+          {!inline && (
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Nexus AI can make mistakes. Check important information.
+            </p>
+          )}
         </div>
       </div>
     </div>

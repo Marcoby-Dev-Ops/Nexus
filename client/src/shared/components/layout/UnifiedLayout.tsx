@@ -55,7 +55,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           {/* Utility Panel (formerly Sidebar) */}
           <div className={`
              border-r bg-muted/10 transition-all duration-300 ease-in-out
-             ${sidebarOpen ? 'w-80 translate-x-0' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
+             ${sidebarOpen ? 'w-[22rem] translate-x-0' : 'w-0 -translate-x-full overflow-hidden opacity-0'}
           `}>
             <Sidebar
               isOpen={sidebarOpen}

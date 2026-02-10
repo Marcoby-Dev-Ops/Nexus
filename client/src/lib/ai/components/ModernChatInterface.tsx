@@ -147,20 +147,45 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const handleInputSubmit = () => {
     handleSendMessage(input, attachments);
   };
+  const isEmptyState = messages.length === 0;
 
   return (
-    <div className={cn("flex flex-col h-full bg-white dark:bg-gray-950", className)}>
+    <div className={cn("relative flex flex-col h-full bg-background", className)}>
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.12),transparent_46%)] dark:bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.18),transparent_52%)]" />
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto min-h-0 pl-4 pr-2 py-4 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700">
-        <div className="max-w-3xl mx-auto space-y-6">
-          {messages.length === 0 ? (
-            <ChatWelcome
-              userName={userName}
-              agentName={agentName}
-              onSuggestionClick={(suggestion) => handleSendMessage(suggestion)}
-            />
+      <div className="relative flex-1 overflow-y-auto min-h-0 px-6 py-6 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700">
+        <div className="max-w-5xl mx-auto space-y-6 min-h-full">
+          {isEmptyState ? (
+            <div className="mx-auto flex min-h-full w-full max-w-4xl items-center justify-center py-8">
+              <div className="w-full">
+                <ChatWelcome
+                  userName={userName}
+                  agentName={agentName}
+                  onSuggestionClick={(suggestion) => handleSendMessage(suggestion)}
+                />
+                <div className="mx-auto mt-6 w-full max-w-3xl">
+                  <ChatInput
+                    ref={chatInputRef}
+                    input={input}
+                    setInput={setInput}
+                    attachments={attachments}
+                    setAttachments={setAttachments}
+                    onSendMessage={handleInputSubmit}
+                    onStopGeneration={onStopGeneration}
+                    isStreaming={isStreaming}
+                    disabled={disabled}
+                    placeholder={placeholder}
+                    isRecording={isRecording}
+                    setIsRecording={setIsRecording}
+                    thinkingLabel={thinkingLabel}
+                    busyElapsedSeconds={streamingElapsedSeconds}
+                    inline
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
-            <div className="space-y-6 pb-4">
+            <div className="space-y-7 pb-4">
               {messages.map((message, index) => {
                 // Check if this is a consecutive message from the same role
                 const isConsecutive = index > 0 && messages[index - 1].role === message.role;
@@ -189,7 +214,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                       <Bot className="h-5 w-5 text-white" />
                     </div>
                     <div className="space-y-2 overflow-hidden">
-                      <div className="min-h-[20px] p-3 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm">
+                      <div className="min-h-[20px] p-4 rounded-xl bg-card/90 border border-border/70 shadow-sm text-sm">
                         <div className="flex items-center space-x-2">
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -226,22 +251,24 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
       </div>
 
       {/* Input Area - Fixed at bottom */}
-      <ChatInput
-        ref={chatInputRef}
-        input={input}
-        setInput={setInput}
-        attachments={attachments}
-        setAttachments={setAttachments}
-        onSendMessage={handleInputSubmit}
-        onStopGeneration={onStopGeneration}
-        isStreaming={isStreaming}
-        disabled={disabled}
-        placeholder={placeholder}
-        isRecording={isRecording}
-        setIsRecording={setIsRecording}
-        thinkingLabel={thinkingLabel}
-        busyElapsedSeconds={streamingElapsedSeconds}
-      />
+      {!isEmptyState && (
+        <ChatInput
+          ref={chatInputRef}
+          input={input}
+          setInput={setInput}
+          attachments={attachments}
+          setAttachments={setAttachments}
+          onSendMessage={handleInputSubmit}
+          onStopGeneration={onStopGeneration}
+          isStreaming={isStreaming}
+          disabled={disabled}
+          placeholder={placeholder}
+          isRecording={isRecording}
+          setIsRecording={setIsRecording}
+          thinkingLabel={thinkingLabel}
+          busyElapsedSeconds={streamingElapsedSeconds}
+        />
+      )}
     </div>
   );
 };
