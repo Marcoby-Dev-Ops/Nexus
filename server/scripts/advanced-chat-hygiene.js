@@ -48,12 +48,16 @@ async function runHygiene() {
         // --- Phase 2: AI Titling ---
         logger.info('Phase 2: AI Titling for substantive threads...');
 
+        const genericTitles = [
+            'New Conversation', 'Untitled Conversation', '',
+            'Yo', 'Hello', 'Hi', 'Hey', 'hello', 'hi', 'hey', 'yo'
+        ];
         const genericThreadsQuery = `
             SELECT c.id, c.title, 
                    (SELECT json_agg(m.content ORDER BY m.created_at ASC) 
                     FROM (SELECT content, created_at FROM ai_messages WHERE conversation_id = c.id LIMIT 3) m) as first_messages
             FROM ai_conversations c
-            WHERE (c.title = 'New Conversation' OR c.title = 'Untitled Conversation' OR c.title IS NULL OR c.title = '')
+            WHERE (c.title IS NULL OR c.title = ANY($1))
             AND c.id IN (
                 SELECT conversation_id 
                 FROM ai_messages 
@@ -63,7 +67,7 @@ async function runHygiene() {
             AND c.is_archived = false
         `;
 
-        const { data: genericThreads } = await query(genericThreadsQuery);
+        const { data: genericThreads } = await query(genericThreadsQuery, [genericTitles]);
         logger.info(`Found ${genericThreads.length} threads needing better titles.`);
 
         const BATCH_SIZE = 5;
