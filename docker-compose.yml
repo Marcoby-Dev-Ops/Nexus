@@ -14,7 +14,7 @@ services:
       OPENCLAW_API_URL: ${OPENCLAW_API_URL:-http://localhost:18789/v1}
       OPENCLAW_API_KEY: ${OPENCLAW_API_KEY:-sk-openclaw-local}
       # Container-to-container connectivity overrides
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/nexus_db
+      DATABASE_URL: postgresql://nexus:postgres@postgres:5432/nexus_db
       REDIS_URL: redis://redis:6379
     ports:
       - "3001:3001"
