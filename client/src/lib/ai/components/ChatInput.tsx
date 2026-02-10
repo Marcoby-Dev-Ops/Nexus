@@ -17,6 +17,8 @@ interface ChatInputProps {
   placeholder?: string;
   isRecording: boolean;
   setIsRecording: (recording: boolean) => void;
+  thinkingLabel?: string;
+  busyElapsedSeconds?: number;
 }
 
 interface ChatInputRef {
@@ -34,9 +36,18 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
   disabled = false,
   placeholder = "Ask anything...",
   isRecording,
-  setIsRecording
+  setIsRecording,
+  thinkingLabel = "Agent is thinking",
+  busyElapsedSeconds = 0
 }, ref) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const formatDuration = (totalSeconds: number) => {
+    if (totalSeconds < 60) return `${totalSeconds}s`;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+  };
 
   // Expose focus method to parent component
   useImperativeHandle(ref, () => ({
@@ -142,7 +153,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder={isStreaming ? 'Assistant is thinking...' : placeholder}
+              placeholder={isStreaming ? `${thinkingLabel}...` : placeholder}
               disabled={disabled || isStreaming}
               className={cn(
                 "min-h-[52px] max-h-[200px] resize-none border-0 bg-transparent text-foreground placeholder:text-muted-foreground",
@@ -188,6 +199,16 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               </Button>
             </div>
           </div>
+
+          {isStreaming && (
+            <div className="mt-2 flex items-center justify-between rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-xs">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <span>{thinkingLabel}...</span>
+              </div>
+              <span className="font-medium text-foreground">{formatDuration(busyElapsedSeconds)}</span>
+            </div>
+          )}
 
           {/* Disclaimer */}
           <p className="text-xs text-muted-foreground text-center mt-2">

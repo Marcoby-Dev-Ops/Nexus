@@ -59,6 +59,7 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [streamingElapsedSeconds, setStreamingElapsedSeconds] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   /* const { addToast } = useToast(); */
@@ -82,6 +83,18 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   };
 
   const agentColor = getAgentColor(agentName);
+  const normalizedAgentName = agentName?.trim() || '';
+  const isCustomAgentName = normalizedAgentName.length > 0
+    && !['assistant', 'executive assistant', 'executive-assistant'].includes(normalizedAgentName.toLowerCase());
+  const thinkingLabel = `${isCustomAgentName ? normalizedAgentName : 'Agent'} is thinking`;
+  const isLongRunning = streamingElapsedSeconds >= 12;
+
+  const formatDuration = (totalSeconds: number) => {
+    if (totalSeconds < 60) return `${totalSeconds}s`;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+  };
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -91,6 +104,22 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    if (!isStreaming) {
+      setStreamingElapsedSeconds(0);
+      return;
+    }
+
+    const startedAt = Date.now();
+    setStreamingElapsedSeconds(0);
+
+    const intervalId = window.setInterval(() => {
+      setStreamingElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isStreaming]);
 
   const handleCopy = (content: string) => {
     navigator.clipboard.writeText(content);
@@ -166,10 +195,23 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
+                        <div className="mt-2 flex items-center gap-2 text-xs text-blue-500 dark:text-blue-300">
+                          <Brain className="w-3 h-3" />
+                          <span>{thinkingLabel}</span>
+                          <span className="text-muted-foreground">({formatDuration(streamingElapsedSeconds)})</span>
+                        </div>
                         {ragEnabled && (
-                          <div className="flex items-center space-x-1 text-xs text-blue-400 mt-2">
-                            <Brain className="w-3 h-3" />
-                            <span>Querying knowledge base...</span>
+                          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                            <Database className="w-3 h-3" />
+                            <span>Reviewing memory and business context</span>
+                          </div>
+                        )}
+                        <div className="mt-2 h-1.5 w-56 max-w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                          <div className="h-full w-1/3 rounded-full bg-primary animate-pulse" />
+                        </div>
+                        {isLongRunning && (
+                          <div className="mt-2 text-xs font-medium text-amber-600 dark:text-amber-400">
+                            Still working on a longer request...
                           </div>
                         )}
                       </div>
@@ -197,6 +239,8 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
         placeholder={placeholder}
         isRecording={isRecording}
         setIsRecording={setIsRecording}
+        thinkingLabel={thinkingLabel}
+        busyElapsedSeconds={streamingElapsedSeconds}
       />
     </div>
   );
