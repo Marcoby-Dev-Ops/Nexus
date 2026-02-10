@@ -211,7 +211,7 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       // Proactively clean empty conversations to keep history organized
       if (result.data && result.data.length > 0) {
         const emptyCount = result.data.filter((c: any) => !c.message_count || c.message_count <= 1).length;
-        if (emptyCount > 5) {
+        if (emptyCount > 0) {
           get().cleanEmptyConversations();
         }
       }

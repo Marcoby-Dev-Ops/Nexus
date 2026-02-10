@@ -293,19 +293,34 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                           <div className="truncate text-[0.92rem]">
                             {conv.title || "Untitled Conversation"}
                           </div>
-                          {/* Continuity Tag */}
-                          {conv.context?.modelWay?.intent && (
-                            <div className="flex gap-1.5 mt-0.5">
-                              <span className={cn(
-                                "text-[0.65rem] px-1.5 py-0 rounded-full font-semibold uppercase tracking-tight border shadow-sm",
-                                conv.context.modelWay.intent === 'strategy' ? "bg-purple-500/10 text-purple-600 border-purple-200/50" :
-                                  conv.context.modelWay.intent === 'discovery' ? "bg-amber-500/10 text-amber-600 border-amber-200/50" :
-                                    conv.context.modelWay.intent === 'action' ? "bg-emerald-500/10 text-emerald-600 border-emerald-200/50" :
-                                      conv.context.modelWay.intent === 'synthesis' ? "bg-blue-500/10 text-blue-600 border-blue-200/50" :
-                                        "bg-gray-500/10 text-gray-600 border-gray-200/50"
-                              )}>
-                                {conv.context.modelWay.intent}
-                              </span>
+                          {/* Continuity Tags */}
+                          {conv.context?.modelWay && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {conv.context.modelWay.intent && (
+                                <span className={cn(
+                                  "text-[0.6rem] px-1.5 py-0 rounded-full font-bold uppercase tracking-tighter border shadow-sm",
+                                  conv.context.modelWay.intent === 'brainstorm' ? "bg-purple-500/10 text-purple-600 border-purple-200/50" :
+                                    conv.context.modelWay.intent === 'solve' ? "bg-red-500/10 text-red-600 border-red-200/50" :
+                                      conv.context.modelWay.intent === 'write' ? "bg-blue-500/10 text-blue-600 border-blue-200/50" :
+                                        conv.context.modelWay.intent === 'decide' ? "bg-amber-500/10 text-amber-600 border-amber-200/50" :
+                                          conv.context.modelWay.intent === 'learn' ? "bg-teal-500/10 text-teal-600 border-teal-200/50" :
+                                            "bg-gray-500/10 text-gray-600 border-gray-200/50"
+                                )}>
+                                  {conv.context.modelWay.intent}
+                                </span>
+                              )}
+                              {conv.context.modelWay.phase && (
+                                <span className={cn(
+                                  "text-[0.6rem] px-1.5 py-0 rounded-full font-bold uppercase tracking-tighter border shadow-sm",
+                                  conv.context.modelWay.phase === 'discovery' ? "bg-indigo-500/10 text-indigo-600 border-indigo-200/50" :
+                                    conv.context.modelWay.phase === 'synthesis' ? "bg-sky-500/10 text-sky-600 border-sky-200/50" :
+                                      conv.context.modelWay.phase === 'decision' ? "bg-orange-500/10 text-orange-600 border-orange-200/50" :
+                                        conv.context.modelWay.phase === 'execution' ? "bg-emerald-500/10 text-emerald-600 border-emerald-200/50" :
+                                          "bg-gray-500/10 text-gray-600 border-gray-200/50"
+                                )}>
+                                  {conv.context.modelWay.phase}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>

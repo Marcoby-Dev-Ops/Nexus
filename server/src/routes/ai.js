@@ -220,13 +220,19 @@ router.post('/chat', authenticateToken, async (req, res) => {
             [intent.id, phase, lastUserMessage.substring(0, 100), conversationId]
         );
 
-        // AUTO-TITLING: If the conversation has a generic title, update it based on the first real message
+        // AUTO-TITLING: If the conversation has a generic or redundant title, update it
         const currentConv = await query('SELECT title FROM ai_conversations WHERE id = $1', [conversationId]);
         const currentTitle = currentConv.data?.[0]?.title;
-        if (currentTitle === 'New Conversation' || currentTitle === 'Untitled Conversation') {
+        const isGeneric = !currentTitle ||
+            currentTitle === 'New Conversation' ||
+            currentTitle === 'Untitled Conversation' ||
+            currentTitle.toLowerCase().startsWith('continue this:') ||
+            currentTitle.toLowerCase().startsWith('switch to:');
+
+        if (isGeneric) {
             const newTitle = lastUserMessage.replace(/^(continue this:|switch to:|hey|hi|hello|yo)\s*/i, '').trim();
-            if (newTitle && newTitle.length > 3) {
-                const truncatedTitle = newTitle.substring(0, 50) + (newTitle.length > 50 ? '...' : '');
+            if (newTitle && newTitle.length > 5) {
+                const truncatedTitle = newTitle.substring(0, 60) + (newTitle.length > 60 ? '...' : '');
                 await query('UPDATE ai_conversations SET title = $1 WHERE id = $2', [truncatedTitle, conversationId]);
             }
         }
