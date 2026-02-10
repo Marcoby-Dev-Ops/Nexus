@@ -34,6 +34,13 @@ interface ModernChatInterfaceProps {
   ragSources?: any[];
   ragRecommendations?: string[];
   businessContext?: Record<string, any> | null;
+  suggestions?: string[];
+  streamStatus?: {
+    stage: string;
+    label: string;
+    detail?: string | null;
+    timestamp?: string;
+  } | null;
 }
 
 const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
@@ -54,7 +61,9 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   knowledgeTypes,
   ragSources,
   ragRecommendations,
-  businessContext
+  businessContext,
+  suggestions,
+  streamStatus
 }) => {
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
@@ -87,6 +96,11 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const isCustomAgentName = normalizedAgentName.length > 0
     && !['assistant', 'executive assistant', 'executive-assistant'].includes(normalizedAgentName.toLowerCase());
   const thinkingLabel = `${isCustomAgentName ? normalizedAgentName : 'Agent'} is thinking`;
+  const statusActor = isCustomAgentName ? normalizedAgentName : 'Agent';
+  const statusLabel = streamStatus?.label
+    ? streamStatus.label.replace(/^Agent is\s+/i, `${statusActor} is `)
+    : thinkingLabel;
+  const statusDetail = streamStatus?.detail || (ragEnabled ? 'Business context is attached from backend memory.' : null);
   const formatDuration = (totalSeconds: number) => {
     if (totalSeconds < 60) return `${totalSeconds}s`;
     const minutes = Math.floor(totalSeconds / 60);
@@ -152,16 +166,17 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.12),transparent_46%)] dark:bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.18),transparent_52%)]" />
       {/* Messages Area */}
       <div className="relative flex-1 overflow-y-auto min-h-0 px-5 py-5 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700">
-        <div className="max-w-5xl mx-auto space-y-5 min-h-full">
+        <div className="max-w-4xl mx-auto space-y-5 min-h-full">
           {isEmptyState ? (
-            <div className="mx-auto flex min-h-full w-full max-w-4xl items-center justify-center py-4">
-              <div className="w-full">
+            <div className="mx-auto flex min-h-full w-full items-center justify-center py-4">
+              <div className="w-full max-w-3xl">
                 <ChatWelcome
                   userName={userName}
                   agentName={agentName}
                   onSuggestionClick={(suggestion) => handleSendMessage(suggestion)}
+                  suggestions={suggestions}
                 />
-                <div className="mx-auto mt-5 w-full max-w-3xl">
+                <div className="mt-5 w-full">
                   <ChatInput
                     ref={chatInputRef}
                     input={input}
@@ -219,13 +234,13 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                         </div>
                         <div className="mt-2 flex items-center gap-2 text-xs text-blue-500 dark:text-blue-300">
                           <Brain className="w-3 h-3" />
-                          <span>{thinkingLabel}</span>
+                          <span>{statusLabel}</span>
                           <span className="text-muted-foreground">({formatDuration(streamingElapsedSeconds)})</span>
                         </div>
-                        {ragEnabled && (
+                        {statusDetail && (
                           <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                             <Database className="w-3 h-3" />
-                            <span>Reviewing memory and business context</span>
+                            <span>{statusDetail}</span>
                           </div>
                         )}
                         <div className="mt-2 h-1.5 w-56 max-w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
 import { useAuthStore } from '@/core/auth/authStore';
 import { Button } from '@/shared/components/ui/Button';
@@ -11,7 +11,7 @@ import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { Sparkles, X } from 'lucide-react';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import { useSearchParams } from 'react-router-dom';
-import type { StreamRuntimeMetadata } from '@/services/ai/ConversationalAIService';
+import type { StreamRuntimeMetadata, StreamRuntimeStatus } from '@/services/ai/ConversationalAIService';
 
 // Initialize AI Service
 const conversationalAIService = new ConversationalAIService();
@@ -63,6 +63,8 @@ export const ChatPage: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState('');
   const [contextInjectedForStream, setContextInjectedForStream] = useState(false);
+  const [streamStatus, setStreamStatus] = useState<StreamRuntimeStatus | null>(null);
+  const [contextChips, setContextChips] = useState<string[]>([]);
 
   // Knowledge context state
   const ragEnabled = contextInjectedForStream;
@@ -91,9 +93,51 @@ export const ChatPage: React.FC = () => {
     setStreamingContent('');
     setLocalIsLoading(false);
     setContextInjectedForStream(false);
+    setStreamStatus(null);
   }, [currentConversation?.id]);
 
   const conversationId = currentConversation?.id;
+
+  const getAccessToken = () => {
+    const storeState = useAuthStore.getState();
+    const session = storeState.session;
+    return session?.session?.accessToken || session?.accessToken || '';
+  };
+
+  const loadContextChips = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const token = getAccessToken();
+      if (!token) return;
+
+      const query = new URLSearchParams({
+        agentId: requestedAgentId,
+        limit: '4'
+      });
+
+      if (conversationId) {
+        query.set('conversationId', conversationId);
+      }
+
+      const response = await fetch(`/api/knowledge/context-chips?${query.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) return;
+      const payload = await response.json();
+      const chips = Array.isArray(payload?.data?.chips) ? payload.data.chips : [];
+      setContextChips(chips.filter((chip: unknown): chip is string => typeof chip === 'string' && chip.trim().length > 0));
+    } catch {
+      // Keep fallback chips in ChatWelcome if API is unavailable.
+    }
+  }, [user, requestedAgentId, conversationId]);
+
+  useEffect(() => {
+    loadContextChips();
+  }, [loadContextChips]);
 
   const handleSendMessage = async (message: string, attachments?: any[]) => {
     if (!message.trim() || !user) return;
@@ -124,6 +168,7 @@ export const ChatPage: React.FC = () => {
       setLocalIsLoading(true);
       setIsStreaming(true);
       setContextInjectedForStream(false);
+      setStreamStatus({ stage: 'thinking', label: 'Agent is thinking', detail: 'Preparing response.' });
 
       // Use Conversational AI Service (Streaming)
       const orgId = 'default';
@@ -139,9 +184,7 @@ export const ChatPage: React.FC = () => {
       setStreamingContent('');
 
       // Get auth token from Zustand auth store
-      const storeState = useAuthStore.getState();
-      const session = storeState.session;
-      const token = session?.session?.accessToken || session?.accessToken || '';
+      const token = getAccessToken();
 
       await conversationalAIService.streamMessage(
         message,
@@ -163,6 +206,9 @@ export const ChatPage: React.FC = () => {
           if (typeof metadata.contextInjected === 'boolean') {
             setContextInjectedForStream(metadata.contextInjected);
           }
+        },
+        (status: StreamRuntimeStatus) => {
+          setStreamStatus(status);
         }
       );
 
@@ -175,6 +221,7 @@ export const ChatPage: React.FC = () => {
 
       // Refresh conversations to update snippets/order
       await fetchConversations();
+      await loadContextChips();
 
     } catch (error) {
       logger.error('Chat error', { error });
@@ -187,12 +234,14 @@ export const ChatPage: React.FC = () => {
     } finally {
       setLocalIsLoading(false);
       setIsStreaming(false);
+      setStreamStatus(null);
     }
   };
 
   const handleStopGeneration = () => {
     setIsStreaming(false);
     setLocalIsLoading(false);
+    setStreamStatus(null);
   };
 
   // Show error state if there's an error
@@ -269,6 +318,8 @@ export const ChatPage: React.FC = () => {
             ragSources={ragSources}
             ragRecommendations={ragRecommendations}
             businessContext={businessContextData}
+            suggestions={contextChips}
+            streamStatus={streamStatus}
           />
         </React.Suspense>
       </div>

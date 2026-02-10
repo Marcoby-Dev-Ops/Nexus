@@ -125,6 +125,66 @@ function buildSystemContext(blocks = []) {
   return sections.join('\n\n');
 }
 
+function buildTimeAwareChip() {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Prioritize my most important work for this morning';
+  if (hour < 18) return 'What should I focus on for the rest of today?';
+  return 'Summarize progress and propose next actions';
+}
+
+function extractProjectTitles(contextBlocks = []) {
+  const activeProjectsBlock = contextBlocks.find((block) => block?.id === 'active-projects');
+  if (!activeProjectsBlock?.content || typeof activeProjectsBlock.content !== 'string') return [];
+
+  return activeProjectsBlock.content
+    .split('\n')
+    .map((line) => {
+      const match = line.match(/^\d+\.\s*(.+?)\s*\[/);
+      return match?.[1]?.trim() || '';
+    })
+    .filter(Boolean)
+    .slice(0, 2);
+}
+
+function extractRecentUserTopic(contextBlocks = []) {
+  const recentConversationBlock = contextBlocks.find((block) => block?.domain === 'conversation');
+  if (!recentConversationBlock?.content || typeof recentConversationBlock.content !== 'string') return '';
+
+  const firstUserLine = recentConversationBlock.content
+    .split('\n')
+    .find((line) => line.toUpperCase().startsWith('USER:'));
+
+  if (!firstUserLine) return '';
+  return truncateText(firstUserLine.replace(/^USER:\s*/i, '').trim(), 100);
+}
+
+function buildContextChips(contextBlocks = []) {
+  const chips = [];
+  const projectTitles = extractProjectTitles(contextBlocks);
+  const recentTopic = extractRecentUserTopic(contextBlocks);
+
+  chips.push(buildTimeAwareChip());
+
+  if (recentTopic) {
+    chips.push(`Continue this: ${recentTopic}`);
+  }
+
+  for (const title of projectTitles) {
+    chips.push(`What should we do next on "${title}"?`);
+  }
+
+  const defaults = [
+    'Summarize recent performance',
+    'Identify growth opportunities',
+    'Draft a quarterly report',
+    'Surface risks I should address now'
+  ];
+
+  chips.push(...defaults);
+
+  return uniqueStrings(chips).slice(0, 4);
+}
+
 function createKnowledgeContextService(deps = {}) {
   const dbQuery = deps.query || query;
   const snapshotBuilder = deps.buildAssistantCoreSnapshot || buildAssistantCoreSnapshot;
@@ -563,5 +623,6 @@ const defaultService = createKnowledgeContextService();
 module.exports = {
   HORIZONS,
   createKnowledgeContextService,
-  assembleKnowledgeContext: defaultService.assembleKnowledgeContext
+  assembleKnowledgeContext: defaultService.assembleKnowledgeContext,
+  buildContextChips
 };

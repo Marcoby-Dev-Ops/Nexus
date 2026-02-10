@@ -137,7 +137,14 @@ export default function ChatMessage({
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted/50 text-foreground border border-border'
         )}>
-          <div className="prose prose-sm dark:prose-invert max-w-none break-words text-[0.96rem] leading-relaxed">
+          <div
+            className="prose prose-sm dark:prose-invert max-w-none break-words text-[0.96rem] leading-relaxed select-text"
+            style={{
+              WebkitUserSelect: 'text',
+              userSelect: 'text',
+              WebkitTouchCallout: 'default'
+            }}
+          >
             {renderContent(message.content)}
           </div>
 

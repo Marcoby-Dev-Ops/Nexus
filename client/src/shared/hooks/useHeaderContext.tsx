@@ -6,6 +6,9 @@ interface HeaderContextType {
   pageSubtitle: string | null;
   pageIcon: ReactNode | null;
   pageActions: ReactNode | null;
+  setPageTitle: (title: string | null) => void;
+  setPageSubtitle: (subtitle: string | null) => void;
+  setPageIcon: (icon: ReactNode | null) => void;
   setHeaderContent: (title: string | null, subtitle?: string | null, actions?: ReactNode | null) => void;
   setPageActions: (actions: ReactNode | null) => void;
   clearHeaderContent: () => void;
@@ -26,21 +29,35 @@ interface HeaderProviderProps {
 }
 
 export const HeaderProvider: React.FC<HeaderProviderProps> = ({ children }) => {
-  const [pageTitle, setPageTitle] = useState<string | null>(null);
-  const [pageSubtitle, setPageSubtitle] = useState<string | null>(null);
+  const [pageTitle, setPageTitleState] = useState<string | null>(null);
+  const [pageSubtitle, setPageSubtitleState] = useState<string | null>(null);
+  const [pageIcon, setPageIconState] = useState<ReactNode | null>(null);
   const [pageActions, setPageActions] = useState<ReactNode | null>(null);
 
+  const setPageTitle = (title: string | null) => {
+    setPageTitleState(title);
+  };
+
+  const setPageSubtitle = (subtitle: string | null) => {
+    setPageSubtitleState(subtitle);
+  };
+
+  const setPageIcon = (icon: ReactNode | null) => {
+    setPageIconState(icon);
+  };
+
   const setHeaderContent = (title: string | null, subtitle?: string | null, actions?: ReactNode | null) => {
-    setPageTitle(title);
-    setPageSubtitle(subtitle || null);
+    setPageTitleState(title);
+    setPageSubtitleState(subtitle || null);
     if (actions !== undefined) {
       setPageActions(actions);
     }
   };
 
   const clearHeaderContent = () => {
-    setPageTitle(null);
-    setPageSubtitle(null);
+    setPageTitleState(null);
+    setPageSubtitleState(null);
+    setPageIconState(null);
     setPageActions(null);
   };
 
@@ -48,7 +65,11 @@ export const HeaderProvider: React.FC<HeaderProviderProps> = ({ children }) => {
     <HeaderContext.Provider value={{
       pageTitle,
       pageSubtitle,
+      pageIcon,
       pageActions,
+      setPageTitle,
+      setPageSubtitle,
+      setPageIcon,
       setHeaderContent,
       setPageActions,
       clearHeaderContent,

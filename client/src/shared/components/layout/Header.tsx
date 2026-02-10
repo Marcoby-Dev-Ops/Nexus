@@ -53,10 +53,10 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center px-4 sm:px-6 lg:px-8">
+      <div className="flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8">
 
         {/* LEFT: Toggle, Logo, Breadcrumbs */}
-        <div className="flex items-center gap-4 min-w-[200px]">
+        <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-none md:gap-4 md:min-w-[200px]">
           <Button
             variant="ghost"
             size="icon"
@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
             {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
           </Button>
 
-          <Link to="/" className="flex items-center gap-2 font-heading text-lg tracking-tight mr-4">
+          <Link to="/" className="mr-1 md:mr-4 flex items-center gap-2 font-heading text-base md:text-lg tracking-tight">
             <span className="text-primary">Nexus</span>
           </Link>
 
@@ -86,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
         </div>
 
         {/* CENTER: Main Navigation */}
-        <div className="flex-1 flex justify-center">
+        <div className="hidden md:flex flex-1 justify-center">
           <nav className="flex items-center space-x-1">
             {navItems.filter(item => item.category === 'overview' || item.name === 'Settings').map((item) => (
               <Link
@@ -110,7 +110,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
         </div>
 
         {/* RIGHT: Status, Search, Profile */}
-        <div className="flex items-center gap-4 justify-end min-w-[200px]">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-4 justify-end">
           {/* System Status */}
           <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground" title="System Healthy">
             <span className="relative flex h-2 w-2">
@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
           </div>
 
           {/* Search Placeholder */}
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-muted-foreground">
             <Search className="h-4 w-4" />
           </Button>
 
@@ -131,7 +131,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center gap-2 outline-none p-1 rounded-full hover:bg-muted transition-colors"
             >
-              <Avatar className="h-8 w-8 border border-border">
+              <Avatar className="h-7 w-7 md:h-8 md:w-8 border border-border">
                 <AvatarImage src={/* user?.avatar_url || */ undefined} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
                   {user?.firstName?.[0]}{user?.lastName?.[0]}
@@ -180,6 +180,27 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
             )}
           </div>
         </div>
+      </div>
+
+      {/* Mobile navigation strip */}
+      <div className="md:hidden border-t border-border/60 px-2 py-1.5">
+        <nav className="flex items-center gap-1 overflow-x-auto whitespace-nowrap scrollbar-none">
+          {navItems.filter(item => item.category === 'overview' || item.name === 'Settings').map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`
+                px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+                ${isActive(item.path)
+                  ? 'text-primary bg-primary/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }
+              `}
+            >
+              {item.name}
+            </Link>
+          ))}
+        </nav>
       </div>
     </header>
   );

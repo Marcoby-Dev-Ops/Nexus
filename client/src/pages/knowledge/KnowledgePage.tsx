@@ -1,80 +1,25 @@
 /**
- * Knowledge Page
+ * Knowledge Page (MVP Foundation)
  *
- * Read-only working knowledge graph entrypoint for:
- * - Assistant Core (how Nexus is configured to behave)
- * - About You (what Nexus currently knows about the user/company)
+ * Read-only knowledge graph focused on:
+ * - User Knowledge (what Nexus knows about the user/business)
+ * - Agent Knowledge (assistant identity + operating memory)
+ *
+ * Source of truth is backend knowledge routes.
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Brain,
-  Building2,
-  CheckCircle,
-  RefreshCw,
-  Shield,
-  Target,
-  User
-} from 'lucide-react';
+import { Bot, Brain, Database, RefreshCw, Shield, User } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useSearchParams } from 'react-router-dom';
 
-interface UserProfile {
-  name: string;
-  role: string;
-  preferences: string;
-  updatedAt?: string;
-}
-
-interface BusinessProfile {
-  name: string;
-  industry: string;
-  size: string;
-  stage: string;
-  description: string;
-  updatedAt?: string;
-}
-
-interface Initiative {
-  id: string;
-  title: string;
-  description: string;
-  status: 'active' | 'planned' | 'completed';
-}
-
-interface Insight {
-  id: string;
-  title: string;
-  content: string;
-  created_at: string;
-}
-
-interface KnowledgeState {
-  user: UserProfile;
-  business: BusinessProfile;
-  initiatives: Initiative[];
-  insights: Insight[];
-  conversationCount: number;
-  assistantCore: {
-    version: string;
-    digest: string;
-    agentId: string;
-    agentName: string;
-    agentRole: string;
-    availableAgents: Array<{
-      id: string;
-      name: string;
-      role: string;
-    }>;
-    facts: KnowledgeFact[];
-  };
-  context: KnowledgeContext;
-}
-
+type MemoryHorizon = 'short' | 'medium' | 'long';
 type ConfidenceLevel = 'high' | 'medium';
+
+const HORIZON_ORDER: MemoryHorizon[] = ['short', 'medium', 'long'];
 
 interface KnowledgeFact {
   id: string;
@@ -84,8 +29,6 @@ interface KnowledgeFact {
   confidence: ConfidenceLevel;
   updatedAt: string;
 }
-
-type MemoryHorizon = 'short' | 'medium' | 'long';
 
 interface KnowledgeContextBlock {
   id: string;
@@ -108,16 +51,37 @@ interface KnowledgeContext {
   tokenEstimate: number;
 }
 
+interface AssistantCore {
+  version: string;
+  digest: string;
+  agentId: string;
+  agentName: string;
+  agentRole: string;
+  availableAgents: Array<{
+    id: string;
+    name: string;
+    role: string;
+  }>;
+  facts: KnowledgeFact[];
+}
+
+interface UserSnapshot {
+  name: string;
+  role: string;
+  email: string;
+}
+
+interface KnowledgeState {
+  user: UserSnapshot;
+  assistantCore: AssistantCore;
+  context: KnowledgeContext;
+}
+
 function formatShortDate(value?: string): string {
   if (!value) return 'Unknown';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'Unknown';
   return d.toLocaleDateString();
-}
-
-function confidenceClasses(level: ConfidenceLevel): string {
-  if (level === 'high') return 'text-emerald-300 bg-emerald-500/15';
-  return 'text-amber-300 bg-amber-500/15';
 }
 
 function normalizeKnowledgeFact(raw: unknown): KnowledgeFact | null {
@@ -168,10 +132,33 @@ function normalizeContextBlock(raw: unknown): KnowledgeContextBlock | null {
   };
 }
 
-function horizonClasses(horizon: MemoryHorizon): string {
-  if (horizon === 'short') return 'text-emerald-300 bg-emerald-500/15';
-  if (horizon === 'medium') return 'text-amber-300 bg-amber-500/15';
-  return 'text-sky-300 bg-sky-500/15';
+function horizonPillClasses(horizon: MemoryHorizon): string {
+  if (horizon === 'short') return 'text-emerald-300 bg-emerald-500/15 border-emerald-500/25';
+  if (horizon === 'medium') return 'text-amber-300 bg-amber-500/15 border-amber-500/25';
+  return 'text-sky-300 bg-sky-500/15 border-sky-500/25';
+}
+
+function horizonLabel(horizon: MemoryHorizon): string {
+  if (horizon === 'short') return 'Short-Term';
+  if (horizon === 'medium') return 'Medium-Term';
+  return 'Long-Term';
+}
+
+function confidenceClasses(level: ConfidenceLevel): string {
+  if (level === 'high') return 'text-emerald-300 bg-emerald-500/15 border-emerald-500/25';
+  return 'text-amber-300 bg-amber-500/15 border-amber-500/25';
+}
+
+function groupBlocksByHorizon(blocks: KnowledgeContextBlock[]): Record<MemoryHorizon, KnowledgeContextBlock[]> {
+  return {
+    short: blocks.filter((block) => block.horizon === 'short'),
+    medium: blocks.filter((block) => block.horizon === 'medium'),
+    long: blocks.filter((block) => block.horizon === 'long')
+  };
+}
+
+function sortBlocks(blocks: KnowledgeContextBlock[]): KnowledgeContextBlock[] {
+  return [...blocks].sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
 }
 
 export default function KnowledgePage() {
@@ -182,12 +169,16 @@ export default function KnowledgePage() {
   const urlAgentId = searchParams.get('agent') || 'executive-assistant';
   const previousUrlAgentIdRef = useRef(urlAgentId);
 
+  const [selectedAgentId, setSelectedAgentId] = useState(urlAgentId);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
   const [data, setData] = useState<KnowledgeState>({
-    user: { name: '', role: '', preferences: '' },
-    business: { name: '', industry: '', size: '', stage: '', description: '' },
-    initiatives: [],
-    insights: [],
-    conversationCount: 0,
+    user: {
+      name: '',
+      role: '',
+      email: ''
+    },
     assistantCore: {
       version: 'unknown',
       digest: 'unknown',
@@ -205,9 +196,6 @@ export default function KnowledgePage() {
       tokenEstimate: 0
     }
   });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedAgentId, setSelectedAgentId] = useState(urlAgentId);
 
   useEffect(() => {
     setPageTitle('Knowledge');
@@ -226,67 +214,58 @@ export default function KnowledgePage() {
   }, [urlAgentId]);
 
   const loadKnowledge = useCallback(async (showToast = false) => {
-    setLoading(prev => (showToast ? prev : true));
+    setLoading((prev) => (showToast ? prev : true));
     setRefreshing(showToast);
+
     try {
-      const userRes = await fetchWithAuth('/api/me');
-      const userData = userRes.ok ? await userRes.json() : { data: null };
-
-      const companyRes = await fetchWithAuth('/api/companies/current');
-      const companyData = companyRes.ok ? await companyRes.json() : { data: null };
-
-      const ticketsRes = await fetchWithAuth('/api/db/brain_tickets?limit=10&order=created_at.desc');
-      const ticketsData = ticketsRes.ok ? await ticketsRes.json() : { data: [] };
-
-      const thoughtsRes = await fetchWithAuth('/api/db/thoughts?limit=10&order=created_at.desc');
-      const thoughtsData = thoughtsRes.ok ? await thoughtsRes.json() : { data: [] };
-
-      const convRes = await fetchWithAuth('/api/audit/conversations?limit=1');
-      const convData = convRes.ok ? await convRes.json() : { data: { pagination: { total: 0 } } };
+      const meRes = await fetchWithAuth('/api/me');
+      const mePayload = meRes.ok ? await meRes.json() : { data: null };
 
       const assistantCoreRes = await fetchWithAuth(`/api/knowledge/assistant-core?agentId=${encodeURIComponent(selectedAgentId)}`);
       const assistantCorePayload = assistantCoreRes.ok ? await assistantCoreRes.json() : { data: null };
-      const contextRes = await fetchWithAuth(`/api/knowledge/context?agentId=${encodeURIComponent(selectedAgentId)}&maxBlocks=10`);
+
+      const contextRes = await fetchWithAuth(`/api/knowledge/context?agentId=${encodeURIComponent(selectedAgentId)}&maxBlocks=12`);
       const contextPayload = contextRes.ok ? await contextRes.json() : { data: null };
 
-      const profile = userData.data || {};
-      const company = companyData.data || {};
-      const assistantCoreData = assistantCorePayload.data && typeof assistantCorePayload.data === 'object'
-        ? assistantCorePayload.data
+      const meData = mePayload?.data && typeof mePayload.data === 'object'
+        ? (mePayload.data as Record<string, unknown>)
         : {};
 
-      const assistantCoreFactsRaw = Array.isArray((assistantCoreData as { facts?: unknown[] }).facts)
-        ? (assistantCoreData as { facts: unknown[] }).facts
-        : [];
+      const assistantCoreData = assistantCorePayload?.data && typeof assistantCorePayload.data === 'object'
+        ? (assistantCorePayload.data as Record<string, unknown>)
+        : {};
+
+      const contextData = contextPayload?.data && typeof contextPayload.data === 'object'
+        ? (contextPayload.data as Record<string, unknown>)
+        : {};
+
+      const assistantCoreFactsRaw = Array.isArray(assistantCoreData.facts) ? assistantCoreData.facts : [];
       const assistantCoreFacts = assistantCoreFactsRaw
         .map(normalizeKnowledgeFact)
         .filter((fact): fact is KnowledgeFact => fact !== null);
-      const availableAgentsRaw = Array.isArray((assistantCoreData as { availableAgents?: unknown[] }).availableAgents)
-        ? (assistantCoreData as { availableAgents: unknown[] }).availableAgents
-        : [];
+
+      const availableAgentsRaw = Array.isArray(assistantCoreData.availableAgents) ? assistantCoreData.availableAgents : [];
       const availableAgents = availableAgentsRaw
         .filter((agent): agent is { id: string; name: string; role: string } => {
           if (!agent || typeof agent !== 'object') return false;
           const candidate = agent as Record<string, unknown>;
           return typeof candidate.id === 'string' && typeof candidate.name === 'string' && typeof candidate.role === 'string';
         });
-      const resolvedAgentId = typeof (assistantCoreData as { agentId?: unknown }).agentId === 'string'
-        ? (assistantCoreData as { agentId: string }).agentId
-        : selectedAgentId;
+
+      const resolvedAgentId = typeof assistantCoreData.agentId === 'string' ? assistantCoreData.agentId : selectedAgentId;
       if (resolvedAgentId !== selectedAgentId) {
         setSelectedAgentId(resolvedAgentId);
       }
 
-      const contextData = contextPayload.data && typeof contextPayload.data === 'object'
-        ? contextPayload.data as Record<string, unknown>
-        : {};
       const contextBlocksRaw = Array.isArray(contextData.contextBlocks) ? contextData.contextBlocks : [];
       const contextBlocks = contextBlocksRaw
         .map(normalizeContextBlock)
         .filter((block): block is KnowledgeContextBlock => block !== null);
+
       const horizonUsageRaw = contextData.horizonUsage && typeof contextData.horizonUsage === 'object'
-        ? contextData.horizonUsage as Record<string, unknown>
+        ? (contextData.horizonUsage as Record<string, unknown>)
         : {};
+
       const sourcesRaw = Array.isArray(contextData.sources) ? contextData.sources : [];
       const sources = sourcesRaw
         .filter((source): source is { id: string; type: string } => {
@@ -295,48 +274,28 @@ export default function KnowledgePage() {
           return typeof candidate.id === 'string' && typeof candidate.type === 'string';
         });
 
+      const firstName = typeof meData.first_name === 'string' ? meData.first_name : '';
+      const lastName = typeof meData.last_name === 'string' ? meData.last_name : '';
+      const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+
       setData({
         user: {
-          name: profile.display_name || profile.name || '',
-          role: profile.role || profile.job_title || '',
-          preferences: profile.preferences?.communication_style || '',
-          updatedAt: profile.updated_at
+          name:
+            (typeof meData.display_name === 'string' && meData.display_name)
+            || (typeof meData.name === 'string' && meData.name)
+            || fullName,
+          role:
+            (typeof meData.role === 'string' && meData.role)
+            || (typeof meData.job_title === 'string' && meData.job_title)
+            || '',
+          email: typeof meData.email === 'string' ? meData.email : ''
         },
-        business: {
-          name: company.name || '',
-          industry: company.industry || '',
-          size: company.size || company.employee_count || '',
-          stage: company.stage || '',
-          description: company.description || '',
-          updatedAt: company.updated_at
-        },
-        initiatives: (ticketsData.data || []).map((t: any) => ({
-          id: t.id,
-          title: t.title,
-          description: t.description || '',
-          status: t.status === 'open' ? 'active' : t.status === 'closed' ? 'completed' : 'planned'
-        })),
-        insights: (thoughtsData.data || []).map((t: any) => ({
-          id: t.id,
-          title: t.title,
-          content: t.content,
-          created_at: t.created_at
-        })),
-        conversationCount: convData.data?.pagination?.total || 0,
         assistantCore: {
-          version: typeof (assistantCoreData as { version?: unknown }).version === 'string'
-            ? (assistantCoreData as { version: string }).version
-            : 'unknown',
-          digest: typeof (assistantCoreData as { digest?: unknown }).digest === 'string'
-            ? (assistantCoreData as { digest: string }).digest
-            : 'unknown',
+          version: typeof assistantCoreData.version === 'string' ? assistantCoreData.version : 'unknown',
+          digest: typeof assistantCoreData.digest === 'string' ? assistantCoreData.digest : 'unknown',
           agentId: resolvedAgentId,
-          agentName: typeof (assistantCoreData as { agentName?: unknown }).agentName === 'string'
-            ? (assistantCoreData as { agentName: string }).agentName
-            : 'Unknown',
-          agentRole: typeof (assistantCoreData as { agentRole?: unknown }).agentRole === 'string'
-            ? (assistantCoreData as { agentRole: string }).agentRole
-            : 'Unknown',
+          agentName: typeof assistantCoreData.agentName === 'string' ? assistantCoreData.agentName : 'Unknown',
+          agentRole: typeof assistantCoreData.agentRole === 'string' ? assistantCoreData.agentRole : 'Unknown',
           availableAgents,
           facts: assistantCoreFacts
         },
@@ -354,7 +313,7 @@ export default function KnowledgePage() {
       });
 
       if (showToast) {
-        toast({ title: 'Knowledge refreshed', description: 'Latest working knowledge has been synced.' });
+        toast({ title: 'Knowledge refreshed', description: 'Latest read-only knowledge has been synced from backend.' });
       }
     } catch {
       if (showToast) {
@@ -374,77 +333,21 @@ export default function KnowledgePage() {
     loadKnowledge();
   }, [loadKnowledge]);
 
-  const aboutYouFacts: KnowledgeFact[] = useMemo(() => {
-    const facts: KnowledgeFact[] = [];
+  const availableAgents = data.assistantCore.availableAgents.length > 0
+    ? data.assistantCore.availableAgents
+    : [{ id: data.assistantCore.agentId, name: data.assistantCore.agentName, role: data.assistantCore.agentRole }];
 
-    if (data.user.name) {
-      facts.push({
-        id: 'user-name',
-        label: 'Name',
-        value: data.user.name,
-        source: 'User profile',
-        confidence: 'high',
-        updatedAt: data.user.updatedAt || new Date().toISOString()
-      });
-    }
+  const userKnowledgeBlocks = useMemo(
+    () => sortBlocks(data.context.contextBlocks.filter((block) => block.subjectType === 'user')),
+    [data.context.contextBlocks]
+  );
+  const agentKnowledgeBlocks = useMemo(
+    () => sortBlocks(data.context.contextBlocks.filter((block) => block.subjectType === 'agent')),
+    [data.context.contextBlocks]
+  );
 
-    if (data.user.role) {
-      facts.push({
-        id: 'user-role',
-        label: 'Role',
-        value: data.user.role,
-        source: 'User profile',
-        confidence: 'high',
-        updatedAt: data.user.updatedAt || new Date().toISOString()
-      });
-    }
-
-    if (data.user.preferences) {
-      facts.push({
-        id: 'user-preferences',
-        label: 'Communication Preference',
-        value: data.user.preferences,
-        source: 'User preferences',
-        confidence: 'medium',
-        updatedAt: data.user.updatedAt || new Date().toISOString()
-      });
-    }
-
-    if (data.business.name) {
-      facts.push({
-        id: 'business-name',
-        label: 'Company',
-        value: data.business.name,
-        source: 'Company profile',
-        confidence: 'high',
-        updatedAt: data.business.updatedAt || new Date().toISOString()
-      });
-    }
-
-    if (data.business.industry) {
-      facts.push({
-        id: 'business-industry',
-        label: 'Industry',
-        value: data.business.industry,
-        source: 'Company profile',
-        confidence: 'high',
-        updatedAt: data.business.updatedAt || new Date().toISOString()
-      });
-    }
-
-    if (data.business.stage) {
-      facts.push({
-        id: 'business-stage',
-        label: 'Stage',
-        value: data.business.stage,
-        source: 'Company profile',
-        confidence: 'medium',
-        updatedAt: data.business.updatedAt || new Date().toISOString()
-      });
-    }
-
-    return facts;
-  }, [data.business, data.user]);
+  const userByHorizon = useMemo(() => groupBlocksByHorizon(userKnowledgeBlocks), [userKnowledgeBlocks]);
+  const agentByHorizon = useMemo(() => groupBlocksByHorizon(agentKnowledgeBlocks), [agentKnowledgeBlocks]);
 
   if (loading) {
     return (
@@ -454,21 +357,13 @@ export default function KnowledgePage() {
     );
   }
 
-  const activeInitiatives = data.initiatives.filter(i => i.status === 'active').slice(0, 3);
-  const assistantCoreFacts = data.assistantCore.facts;
-  const availableAgents = data.assistantCore.availableAgents.length > 0
-    ? data.assistantCore.availableAgents
-    : [{ id: data.assistantCore.agentId, name: data.assistantCore.agentName, role: data.assistantCore.agentRole }];
-  const domainCount = [assistantCoreFacts.length > 0, aboutYouFacts.length > 0].filter(Boolean).length;
-  const memoryBlocks = data.context.contextBlocks;
-
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
+    <div className="p-6 max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-100">Knowledge Graph</h1>
+          <h1 className="text-2xl font-semibold text-slate-100">Knowledge Foundation</h1>
           <p className="text-slate-400 mt-1">
-            Structured working knowledge Nexus uses to reason and personalize responses.
+            Read-only structured knowledge graph for user and agent memory horizons.
           </p>
         </div>
         <Button
@@ -482,21 +377,73 @@ export default function KnowledgePage() {
         </Button>
       </div>
 
+      <div className="rounded-xl border border-slate-700 bg-slate-900/40 p-4 text-xs text-slate-400">
+        Backend source of truth: <span className="text-slate-200">/api/knowledge/assistant-core</span> and{' '}
+        <span className="text-slate-200">/api/knowledge/context</span>. Editing is intentionally disabled in MVP.
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="rounded-xl border border-slate-700 bg-slate-800/60 p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-indigo-300" />
-            <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Assistant Core</h2>
+            <User className="h-4 w-4 text-blue-300" />
+            <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">User Knowledge</h2>
           </div>
           <p className="text-sm text-slate-400">
-            Runtime behavior definitions for the assistant. This card is read-only.
+            What Nexus currently knows about you and your business context.
           </p>
+
+          <div className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3 text-sm">
+            <p className="text-slate-100 font-medium">{data.user.name || 'Unknown user'}</p>
+            <p className="text-slate-400 text-xs mt-1">
+              {data.user.role || 'Role not set'}{data.user.email ? ` • ${data.user.email}` : ''}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {HORIZON_ORDER.map((horizon) => (
+              <div key={horizon} className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${horizonPillClasses(horizon)}`}>
+                    {horizonLabel(horizon)}
+                  </span>
+                  <span className="text-xs text-slate-500">{userByHorizon[horizon].length} blocks</span>
+                </div>
+
+                {userByHorizon[horizon].length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {userByHorizon[horizon].map((block) => (
+                      <article key={block.id} className="rounded-md border border-slate-700/60 bg-slate-950/40 p-2.5">
+                        <p className="text-sm font-medium text-slate-100">{block.title}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {block.domain} • {block.source} • {formatShortDate(block.updatedAt)}
+                        </p>
+                        <p className="text-sm text-slate-300 mt-2 whitespace-pre-wrap">{block.content}</p>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-3">No {horizonLabel(horizon).toLowerCase()} user blocks yet.</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-700 bg-slate-800/60 p-5 space-y-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-indigo-300" />
+            <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Agent Knowledge</h2>
+          </div>
+          <p className="text-sm text-slate-400">
+            Assistant core identity and memory blocks used to keep agent behavior consistent.
+          </p>
+
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <label htmlFor="assistant-core-agent" className="text-xs text-slate-400 uppercase tracking-wide">
-              Assistant
+            <label htmlFor="knowledge-agent" className="text-xs text-slate-400 uppercase tracking-wide">
+              Agent
             </label>
             <select
-              id="assistant-core-agent"
+              id="knowledge-agent"
               value={selectedAgentId}
               onChange={(e) => setSelectedAgentId(e.target.value)}
               className="bg-slate-900 border border-slate-700 rounded-md px-2 py-1 text-sm text-slate-200 max-w-xs"
@@ -508,91 +455,67 @@ export default function KnowledgePage() {
               ))}
             </select>
           </div>
-          <p className="text-xs text-slate-500">
-            Agent: {data.assistantCore.agentName} ({data.assistantCore.agentRole}) | Version: {data.assistantCore.version} | Digest: {data.assistantCore.digest}
-          </p>
-          <div className="space-y-3">
-            {assistantCoreFacts.length > 0 ? assistantCoreFacts.map((fact) => (
-              <div key={fact.id} className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">{fact.label}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${confidenceClasses(fact.confidence)}`}>
-                    {fact.confidence}
-                  </span>
-                </div>
-                <p className="text-sm text-slate-100 mt-1">{fact.value}</p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Source: {fact.source} | Updated: {formatShortDate(fact.updatedAt)}
-                </p>
-              </div>
-            )) : (
-              <div className="rounded-lg border border-dashed border-slate-700 p-4 text-sm text-slate-500">
-                Assistant core facts are unavailable. Try refreshing.
-              </div>
-            )}
-          </div>
-        </section>
 
-        <section className="rounded-xl border border-slate-700 bg-slate-800/60 p-5 space-y-4">
-          <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-blue-300" />
-            <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">About You</h2>
+          <div className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3 text-sm">
+            <p className="text-slate-100 font-medium">{data.assistantCore.agentName}</p>
+            <p className="text-slate-400 text-xs mt-1">
+              {data.assistantCore.agentRole} • v{data.assistantCore.version} • {data.assistantCore.digest}
+            </p>
           </div>
-          <p className="text-sm text-slate-400">
-            Current user and company facts used for context injection and recommendations.
-          </p>
-          <div className="space-y-3">
-            {aboutYouFacts.length > 0 ? aboutYouFacts.map((fact) => (
-              <div key={fact.id} className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
+
+          <div className="space-y-2">
+            {data.assistantCore.facts.length > 0 ? data.assistantCore.facts.map((fact) => (
+              <div key={fact.id} className="rounded-md border border-slate-700/60 bg-slate-950/40 p-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-slate-400 uppercase tracking-wide">{fact.label}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${confidenceClasses(fact.confidence)}`}>
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${confidenceClasses(fact.confidence)}`}>
                     {fact.confidence}
                   </span>
                 </div>
                 <p className="text-sm text-slate-100 mt-1">{fact.value}</p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Source: {fact.source} | Updated: {formatShortDate(fact.updatedAt)}
-                </p>
               </div>
             )) : (
-              <div className="rounded-lg border border-dashed border-slate-700 p-4 text-sm text-slate-500">
-                No personal knowledge facts are available yet. Complete profile and company setup to enrich this domain.
-              </div>
+              <p className="text-xs text-slate-500">Agent core facts are unavailable.</p>
             )}
+          </div>
+
+          <div className="space-y-3">
+            {HORIZON_ORDER.map((horizon) => (
+              <div key={horizon} className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${horizonPillClasses(horizon)}`}>
+                    {horizonLabel(horizon)}
+                  </span>
+                  <span className="text-xs text-slate-500">{agentByHorizon[horizon].length} blocks</span>
+                </div>
+
+                {agentByHorizon[horizon].length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {agentByHorizon[horizon].map((block) => (
+                      <article key={block.id} className="rounded-md border border-slate-700/60 bg-slate-950/40 p-2.5">
+                        <p className="text-sm font-medium text-slate-100">{block.title}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          {block.domain} • {block.source} • {formatShortDate(block.updatedAt)}
+                        </p>
+                        <p className="text-sm text-slate-300 mt-2 whitespace-pre-wrap">{block.content}</p>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-3">No {horizonLabel(horizon).toLowerCase()} agent blocks yet.</p>
+                )}
+              </div>
+            ))}
           </div>
         </section>
       </div>
 
-      <section className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Target className="h-4 w-4 text-orange-300" />
-          <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Current Focus</h3>
-        </div>
-        {activeInitiatives.length > 0 ? (
-          <div className="space-y-2">
-            {activeInitiatives.map((initiative) => (
-              <div key={initiative.id} className="flex items-start gap-2 text-slate-300">
-                <CheckCircle className="h-4 w-4 text-orange-300 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">{initiative.title}</p>
-                  {initiative.description ? (
-                    <p className="text-xs text-slate-500">{initiative.description.substring(0, 120)}</p>
-                  ) : null}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">No active initiatives yet.</p>
-        )}
-      </section>
-
       <section className="rounded-xl border border-slate-700 bg-slate-800/50 p-5">
         <div className="flex items-center gap-2 mb-3">
-          <Brain className="h-4 w-4 text-emerald-300" />
-          <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Memory Horizons</h3>
+          <Database className="h-4 w-4 text-emerald-300" />
+          <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Context Metrics</h3>
         </div>
+
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm">
           <div className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
             <p className="text-slate-500">Short</p>
@@ -615,64 +538,15 @@ export default function KnowledgePage() {
             <p className="text-slate-100 font-medium text-xs truncate">{data.context.contextDigest}</p>
           </div>
         </div>
+
         <p className="text-xs text-slate-500 mt-3">
-          Sources: {data.context.sources.length > 0 ? data.context.sources.map((s) => s.id).join(', ') : 'none'}
+          Sources: {data.context.sources.length > 0 ? data.context.sources.map((source) => source.id).join(', ') : 'none'}
         </p>
       </section>
 
-      <section className="rounded-xl border border-slate-700 bg-slate-800/50 p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-teal-300" />
-          <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Context Blocks</h3>
-        </div>
-        {memoryBlocks.length > 0 ? (
-          <div className="space-y-3">
-            {memoryBlocks.map((block) => (
-              <div key={block.id} className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs text-slate-400 uppercase tracking-wide">{block.title}</p>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${horizonClasses(block.horizon)}`}>
-                    {block.horizon}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  {block.subjectType} • {block.domain}
-                </p>
-                <p className="text-sm text-slate-100 mt-2 whitespace-pre-wrap">{block.content}</p>
-                <p className="text-xs text-slate-500 mt-2">
-                  Source: {block.source} | Updated: {formatShortDate(block.updatedAt)}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-slate-500">No context blocks assembled yet.</p>
-        )}
-      </section>
-
-      <section className="rounded-xl border border-slate-700 bg-slate-800/50 p-5">
-        <div className="flex items-center gap-2 mb-3">
-          <Building2 className="h-4 w-4 text-green-300" />
-          <h3 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">Domain Snapshot</h3>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-          <div className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
-            <p className="text-slate-500">Conversations</p>
-            <p className="text-slate-100 font-medium">{data.conversationCount}</p>
-          </div>
-          <div className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
-            <p className="text-slate-500">Insights</p>
-            <p className="text-slate-100 font-medium">{data.insights.length}</p>
-          </div>
-          <div className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
-            <p className="text-slate-500">Active Initiatives</p>
-            <p className="text-slate-100 font-medium">{activeInitiatives.length}</p>
-          </div>
-          <div className="rounded-lg border border-slate-700/70 bg-slate-900/40 p-3">
-            <p className="text-slate-500">Knowledge Domains</p>
-            <p className="text-slate-100 font-medium">{domainCount} Active</p>
-          </div>
-        </div>
+      <section className="rounded-xl border border-dashed border-slate-700 bg-slate-900/25 p-4 flex items-center gap-2 text-xs text-slate-400">
+        <Bot className="h-4 w-4 text-indigo-300" />
+        Future enhancement path: editable memory curation, shared/platform knowledge card, and multi-agent comparative view.
       </section>
     </div>
   );

@@ -32,6 +32,13 @@ export interface StreamRuntimeMetadata {
   modelWay?: unknown;
 }
 
+export interface StreamRuntimeStatus {
+  stage: string;
+  label: string;
+  detail?: string | null;
+  timestamp?: string;
+}
+
 export interface ClientKnowledgeBase {
   thoughts: Array<{
     id: string;
@@ -176,7 +183,8 @@ export class ConversationalAIService extends BaseService {
     authToken: string,
     conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
     runtime: ChatRuntimeOptions = {},
-    onMetadata?: (metadata: StreamRuntimeMetadata) => void
+    onMetadata?: (metadata: StreamRuntimeMetadata) => void,
+    onStatus?: (status: StreamRuntimeStatus) => void
   ): Promise<void> {
 
     // Build messages array with history (last 10 exchanges max to stay within context limits)
@@ -233,6 +241,9 @@ export class ConversationalAIService extends BaseService {
               const data = JSON.parse(dataStr);
               if (data?.metadata && onMetadata) {
                 onMetadata(data.metadata as StreamRuntimeMetadata);
+              }
+              if (data?.status && onStatus) {
+                onStatus(data.status as StreamRuntimeStatus);
               }
               if (data.error) {
                 onToken(`\n[Error: ${data.error}]`);

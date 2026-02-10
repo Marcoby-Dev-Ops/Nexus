@@ -2,7 +2,7 @@ const { Router } = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { logger } = require('../utils/logger');
 const { buildAssistantCoreSnapshot } = require('../config/assistantCore');
-const { assembleKnowledgeContext } = require('../services/knowledgeContextService');
+const { assembleKnowledgeContext, buildContextChips } = require('../services/knowledgeContextService');
 
 const router = Router();
 router.use(authenticateToken);
@@ -85,6 +85,53 @@ router.get('/context', async (req, res) => {
     return res.status(500).json({
       success: false,
       error: 'Failed to assemble knowledge context'
+    });
+  }
+});
+
+/**
+ * GET /api/knowledge/context-chips
+ * Returns backend-generated quick action chips based on live knowledge context.
+ */
+router.get('/context-chips', async (req, res) => {
+  try {
+    const requestedAgentId = typeof req.query.agentId === 'string' ? req.query.agentId : undefined;
+    const conversationId = typeof req.query.conversationId === 'string' ? req.query.conversationId : undefined;
+    const rawLimit = typeof req.query.limit === 'string' ? Number.parseInt(req.query.limit, 10) : 4;
+    const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(rawLimit, 8)) : 4;
+
+    const context = await assembleKnowledgeContext({
+      userId: req.user?.id,
+      jwtPayload: req.user?.jwtPayload,
+      agentId: requestedAgentId,
+      conversationId,
+      includeShort: true,
+      includeMedium: true,
+      includeLong: true,
+      maxBlocks: 10
+    });
+
+    const chips = buildContextChips(context.contextBlocks).slice(0, limit);
+
+    return res.json({
+      success: true,
+      data: {
+        chips,
+        contextDigest: context.contextDigest,
+        resolved: context.resolved
+      }
+    });
+  } catch (error) {
+    logger.error('Failed to build context chips', {
+      userId: req.user?.id,
+      requestedAgentId: req.query.agentId,
+      conversationId: req.query.conversationId,
+      error: error instanceof Error ? error.message : String(error)
+    });
+
+    return res.status(500).json({
+      success: false,
+      error: 'Failed to build context chips'
     });
   }
 });

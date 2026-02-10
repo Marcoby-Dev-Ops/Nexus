@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { createKnowledgeContextService } = require('../src/services/knowledgeContextService');
+const { createKnowledgeContextService, buildContextChips } = require('../src/services/knowledgeContextService');
 
 function buildMockQuery() {
   return async (sql) => {
@@ -183,4 +183,29 @@ test('assembleKnowledgeContext respects horizon filters', async () => {
   assert.equal(data.horizonUsage.medium, 0);
   assert.equal(data.horizonUsage.long, 0);
   assert.equal(data.horizonUsage.short, data.contextBlocks.length);
+});
+
+test('buildContextChips derives project and conversation-aware chips', () => {
+  const chips = buildContextChips([
+    {
+      id: 'active-projects',
+      domain: 'execution',
+      content: [
+        '1. Knowledge foundation [active/high] | Build graph primitives',
+        '2. Context API [in_progress/high] | Expose deterministic blocks'
+      ].join('\n')
+    },
+    {
+      id: 'conversation-conv-1',
+      domain: 'conversation',
+      content: [
+        'USER: Help me design the first knowledge cards',
+        'ASSISTANT: Start with user and agent memory blocks'
+      ].join('\n')
+    }
+  ]);
+
+  assert.equal(chips.length, 4);
+  assert.equal(chips.some((chip) => chip.includes('Knowledge foundation')), true);
+  assert.equal(chips.some((chip) => chip.includes('Continue this:')), true);
 });

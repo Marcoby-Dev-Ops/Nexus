@@ -102,7 +102,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
         ? "bg-transparent border-0 pt-3 md:pt-4"
         : "border-t border-border/70 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/70"
     )}>
-      <div className="max-w-5xl mx-auto">
+      <div className={cn(inline ? "w-full" : "max-w-5xl mx-auto")}>
         {/* Attachments Display */}
         {attachments.length > 0 && (
           <div className="mb-4">

@@ -42,6 +42,29 @@ function structureResponse(content, modelWayMetadata, originalResponse = {}) {
     };
 }
 
+function writeSseEvent(res, payload) {
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+function beginSseStream(res) {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+}
+
+function buildStreamStatus(stage, label, detail) {
+    return {
+        status: {
+            stage,
+            label,
+            detail: detail || null,
+            timestamp: new Date().toISOString()
+        }
+    };
+}
+
 /**
  * POST /api/ai/chat
  * Streaming chat endpoint - Pure Proxy to OpenClaw
@@ -109,6 +132,22 @@ router.post('/chat', authenticateToken, async (req, res) => {
         return res.status(400).json({ success: false, error: 'Messages array is required' });
     }
 
+    let keepAliveIntervalId = null;
+    const startKeepAlive = () => {
+        if (!stream || keepAliveIntervalId) return;
+        keepAliveIntervalId = setInterval(() => {
+            if (!res.writableEnded) {
+                res.write(': keepalive\n\n');
+            }
+        }, 15000);
+    };
+    const stopKeepAlive = () => {
+        if (keepAliveIntervalId) {
+            clearInterval(keepAliveIntervalId);
+            keepAliveIntervalId = null;
+        }
+    };
+
     try {
         const resolvedAgentId = normalizeAgentId(typeof requestedAgentId === 'string' ? requestedAgentId : undefined);
         const openClawAgentId = toOpenClawAgentId(resolvedAgentId);
@@ -141,19 +180,16 @@ router.post('/chat', authenticateToken, async (req, res) => {
             await saveMessage(conversationId, 'assistant', refusalContent);
 
             if (stream) {
-                res.setHeader('Content-Type', 'text/event-stream');
-                res.setHeader('Cache-Control', 'no-cache');
-                res.setHeader('Connection', 'keep-alive');
-                res.setHeader('X-Accel-Buffering', 'no');
-                res.flushHeaders();
+                beginSseStream(res);
 
-                res.write(`data: ${JSON.stringify({
+                writeSseEvent(res, buildStreamStatus('policy_guard', 'Discovery guard active', 'Nexus requested one clarifying input before implementation.'));
+                writeSseEvent(res, {
                     metadata: {
                         modelWay: modelWayMetadata,
                         contextInjected: false
                     }
-                })}\n\n`);
-                res.write(`data: ${JSON.stringify({ content: refusalContent })}\n\n`);
+                });
+                writeSseEvent(res, { content: refusalContent });
                 res.write('data: [DONE]\n\n');
                 res.end();
                 return;
@@ -165,6 +201,18 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 model: 'nexus:policy-guard',
                 usage: null
             }));
+        }
+
+        if (stream) {
+            beginSseStream(res);
+            startKeepAlive();
+            writeSseEvent(res, buildStreamStatus('accepted', 'Request accepted', 'Preparing context and connecting to agent runtime.'));
+            writeSseEvent(res, {
+                metadata: {
+                    modelWay: modelWayMetadata,
+                    contextInjected: false
+                }
+            });
         }
 
         let contextSystemMessage = null;
@@ -196,6 +244,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
             });
         }
         const contextInjected = Boolean(contextSystemMessage);
+        if (stream && contextInjected) {
+            writeSseEvent(res, buildStreamStatus('context_ready', 'Context ready', 'Business context was injected from backend knowledge.'));
+        }
 
         // Strip any system messages from client and inject deterministic backend context
         const openClawMessages = buildOpenClawMessages(messages, contextSystemMessage);
@@ -252,27 +303,18 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
             // If client wanted stream, emit it as an SSE event sequence
             if (stream) {
-                res.setHeader('Content-Type', 'text/event-stream');
-                res.setHeader('Cache-Control', 'no-cache');
-                res.setHeader('Connection', 'keep-alive');
-                res.setHeader('X-Accel-Buffering', 'no');
-                res.flushHeaders();
-
-                // 1. Metadata event (Minimal for compatibility)
-                res.write(`data: ${JSON.stringify({
-                    metadata: {
-                        modelWay: modelWayMetadata,
-                        contextInjected
-                    }
-                })}\n\n`);
+                writeSseEvent(res, buildStreamStatus('thinking', 'Agent is thinking', 'Preparing response with orchestration metadata.'));
+                writeSseEvent(res, buildStreamStatus('responding', 'Agent is responding', 'Streaming response started.'));
 
                 // 2. Content event
                 if (content) {
-                    res.write(`data: ${JSON.stringify({ content })}\n\n`);
+                    writeSseEvent(res, { content });
                 }
 
                 // 3. Done event
+                writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                 res.write('data: [DONE]\n\n');
+                stopKeepAlive();
                 res.end();
                 return;
             } else {
@@ -310,19 +352,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
         }
 
         // Streaming: set up SSE with metadata in initial event
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
-        res.flushHeaders();
-
-        // Send metadata as first event
-        res.write(`data: ${JSON.stringify({
-            metadata: {
-                modelWay: modelWayMetadata,
-                contextInjected
-            }
-        })}\n\n`);
+        writeSseEvent(res, buildStreamStatus('thinking', 'Agent is thinking', 'Preparing response stream.'));
+        writeSseEvent(res, buildStreamStatus('responding', 'Agent is responding', 'Streaming response started.'));
 
         const reader = openClawResponse.body.getReader();
         const decoder = new TextDecoder();
@@ -338,7 +369,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     if (fullAssistantContent) {
                         await saveMessage(conversationId, 'assistant', fullAssistantContent);
                     }
+                    writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                     res.write('data: [DONE]\n\n');
+                    stopKeepAlive();
                     break;
                 }
 
@@ -359,7 +392,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
                                 await saveMessage(conversationId, 'assistant', fullAssistantContent);
                                 fullAssistantContent = ''; // Prevent double save if loop continues
                             }
+                            writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                             res.write('data: [DONE]\n\n');
+                            stopKeepAlive();
                             continue;
                         }
 
@@ -385,8 +420,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
             if (fullAssistantContent) {
                 saveMessage(conversationId, 'assistant', fullAssistantContent).catch(e => logger.error('Failed to save partial message', e));
             }
-            res.write(`data: ${JSON.stringify({ error: streamErr.message })}\n\n`);
+            writeSseEvent(res, buildStreamStatus('error', 'Response interrupted', streamErr.message));
+            writeSseEvent(res, { error: streamErr.message });
         } finally {
+            stopKeepAlive();
             res.end();
         }
 
@@ -396,10 +433,12 @@ router.post('/chat', authenticateToken, async (req, res) => {
             stack: error.stack,
             userId
         });
+        stopKeepAlive();
 
         // If headers already sent (streaming started), send error via SSE
         if (res.headersSent) {
-            res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+            writeSseEvent(res, buildStreamStatus('error', 'Request failed', error.message));
+            writeSseEvent(res, { error: error.message });
             res.end();
         } else {
             res.status(500).json({
