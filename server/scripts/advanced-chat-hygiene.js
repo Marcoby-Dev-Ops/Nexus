@@ -22,11 +22,15 @@ async function runHygiene() {
 
         const shortThreadsQuery = `
             SELECT id, title FROM ai_conversations
-            WHERE id IN (
-                SELECT conversation_id 
-                FROM ai_messages 
-                GROUP BY conversation_id 
-                HAVING COUNT(*) <= 2
+            WHERE (
+                id NOT IN (SELECT DISTINCT conversation_id FROM ai_messages)
+                OR 
+                id IN (
+                    SELECT conversation_id 
+                    FROM ai_messages 
+                    GROUP BY conversation_id 
+                    HAVING COUNT(*) <= 2
+                )
             )
             AND updated_at < NOW() - INTERVAL '24 hours'
             AND is_archived = false
