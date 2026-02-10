@@ -60,7 +60,7 @@ export const DemoBanner: React.FC<DemoBannerProps> = ({
                 <span className="font-medium">
                   {demoUser.name} ({demoUser.role})
                 </span>
-            // This file has been moved to ARCHIVE_2026_02/demo/DemoBanner.tsx
+              </div>
             )}
 
             <div className="flex items-center space-x-2">

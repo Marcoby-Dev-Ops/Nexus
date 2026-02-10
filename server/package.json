@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "test": "jest",
+    "test": "node --test __tests__/*.test.js",
     "type-check": "tsc --project tsconfig.json --noEmit",
     "migrate": "node src/database/migrate.js",
     "migrate:status": "node -e \"const MigrationRunner = require('./src/database/migrate'); new MigrationRunner().getMigrationStatus().then(console.log).catch(console.error)\"",
