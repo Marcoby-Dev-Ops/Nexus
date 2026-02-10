@@ -6,7 +6,7 @@ require('../../loadEnv');
 const router = express.Router();
 
 // OpenClaw configuration
-const OPENCLAW_API_URL = process.env.OPENCLAW_API_URL || 'http://localhost:18789/v1';
+const OPENCLAW_API_URL = process.env.OPENCLAW_API_URL || 'http://127.0.0.1:18790/v1';
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
 
 // Model-Way Framework Constants - Preserved for metadata consistency
@@ -56,6 +56,51 @@ function structureResponse(content, conversationId, originalResponse = {}) {
  * POST /api/ai/chat
  * Streaming chat endpoint - Pure Proxy to OpenClaw
  */
+// Database helpers
+const { query } = require('../database/connection');
+
+// Helper to get or create conversation
+async function getOrCreateConversation(userId, providedId, title = 'New Conversation') {
+    // If providedId is a valid UUID, check if it exists
+    if (providedId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(providedId)) {
+        const check = await query('SELECT id FROM ai_conversations WHERE id = $1 AND user_id = $2', [providedId, userId]);
+        if (check.data && check.data.length > 0) {
+            return check.data[0].id;
+        }
+    }
+
+    // Create new conversation
+    const result = await query(
+        'INSERT INTO ai_conversations (user_id, title) VALUES ($1, $2) RETURNING id',
+        [userId, title]
+    );
+
+    if (result.error) {
+        logger.error('Failed to create conversation', { error: result.error, userId });
+        throw new Error('Failed to start conversation');
+    }
+
+    return result.data[0].id;
+}
+
+// Helper to save message
+async function saveMessage(conversationId, role, content) {
+    const result = await query(
+        'INSERT INTO ai_messages (conversation_id, role, content) VALUES ($1, $2, $3) RETURNING id',
+        [conversationId, role, content]
+    );
+
+    if (result.error) {
+        logger.error('Failed to save message', { error: result.error, conversationId, role });
+        // Don't throw, just log - we don't want to break the chat flow if audit fails momentarily
+    }
+    return result.data?.[0]?.id;
+}
+
+/**
+ * POST /api/ai/chat
+ * Streaming chat endpoint - Pure Proxy to OpenClaw
+ */
 router.post('/chat', authenticateToken, async (req, res) => {
     const userId = req.user?.id;
 
@@ -70,7 +115,19 @@ router.post('/chat', authenticateToken, async (req, res) => {
     }
 
     try {
-        const conversationId = providedConvId || `conv-${userId}-${Date.now()}`;
+        // Persist Conversation and User Message
+        const conversationId = await getOrCreateConversation(userId, providedConvId);
+
+        // Save the last user message (assuming the array is history + new message)
+        // Ideally we save all new ones, but usually client sends history. 
+        // We'll simplisticly save the LAST message having role 'user' to avoid dupes if client resends whole history?
+        // Better: The client usually sends the NEW prompt. Nexus assumes 'messages' is the full context.
+        // We really should only save the *newest* user message.
+        // Simple logic: Find the last message in array. If it's user, save it.
+        const lastMessage = messages[messages.length - 1];
+        if (lastMessage.role === 'user') {
+            await saveMessage(conversationId, 'user', lastMessage.content);
+        }
 
         // Strip any system messages from client - let OpenClaw's soul/system docs handle personality
         const userMessages = messages.filter(m => m.role !== 'system');
@@ -114,6 +171,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             // Handle non-streaming upstream response from Bridge
             const data = await openClawResponse.json();
             const content = data.choices?.[0]?.message?.content || '';
+
+            // Audit: Save Assistant Response
+            if (content) {
+                await saveMessage(conversationId, 'assistant', content);
+            }
 
             // If client wanted stream, emit it as an SSE event sequence
             if (stream) {
@@ -162,6 +224,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
             const data = await openClawResponse.json();
             const content = data.choices?.[0]?.message?.content || '';
 
+            // Audit: Save Assistant Response
+            if (content) {
+                await saveMessage(conversationId, 'assistant', content);
+            }
+
             const response = structureResponse(content, conversationId, {
                 success: true,
                 content,
@@ -195,12 +262,17 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const reader = openClawResponse.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
+        let fullAssistantContent = ''; // Accumulate for audit
 
         try {
             while (true) {
                 const { done, value } = await reader.read();
 
                 if (done) {
+                    // Audit: Save collected assistant response
+                    if (fullAssistantContent) {
+                        await saveMessage(conversationId, 'assistant', fullAssistantContent);
+                    }
                     res.write('data: [DONE]\n\n');
                     break;
                 }
@@ -217,6 +289,11 @@ router.post('/chat', authenticateToken, async (req, res) => {
                         const dataStr = trimmed.slice(6);
 
                         if (dataStr === '[DONE]') {
+                            // Audit: Save collected assistant response on upstream done
+                            if (fullAssistantContent) {
+                                await saveMessage(conversationId, 'assistant', fullAssistantContent);
+                                fullAssistantContent = ''; // Prevent double save if loop continues
+                            }
                             res.write('data: [DONE]\n\n');
                             continue;
                         }
@@ -226,6 +303,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                             const content = chunk.choices?.[0]?.delta?.content;
 
                             if (content) {
+                                fullAssistantContent += content;
                                 // Forward the content to the client
                                 res.write(`data: ${JSON.stringify({ content })}\n\n`);
                             }
@@ -238,6 +316,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
             }
         } catch (streamErr) {
             logger.error('Stream reading error', { error: streamErr.message });
+            // Attempt to save partial content if error occurs
+            if (fullAssistantContent) {
+                saveMessage(conversationId, 'assistant', fullAssistantContent).catch(e => logger.error('Failed to save partial message', e));
+            }
             res.write(`data: ${JSON.stringify({ error: streamErr.message })}\n\n`);
         } finally {
             res.end();
