@@ -254,7 +254,6 @@ router.post('/chat', authenticateToken, async (req, res) => {
             await saveMessage(conversationId, 'user', lastMessage.content, userMetadata);
         }
 
-        const lastUserMessage = getLastUserMessage(messages);
         if (shouldRefuseDirectExecutionInDiscovery(phase, lastUserMessage)) {
             const refusalContent = buildDiscoveryRefusalMessage();
             await saveMessage(conversationId, 'assistant', refusalContent);
