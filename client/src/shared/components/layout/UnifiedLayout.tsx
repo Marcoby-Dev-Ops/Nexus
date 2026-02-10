@@ -36,7 +36,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
 
   return (
     <HeaderProvider>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="h-full bg-background flex flex-col overflow-hidden">
         {/* Skip link for keyboard users */}
         <a
           href="#main-content"
@@ -51,7 +51,7 @@ export const UnifiedLayout: React.FC<UnifiedLayoutProps> = ({ children }) => {
           isSidebarOpen={sidebarOpen}
         />
 
-        <div className="flex flex-1 overflow-hidden h-[calc(100vh-3.5rem)]">
+        <div className="flex flex-1 min-h-0 overflow-hidden">
           {/* Utility Panel (formerly Sidebar) */}
           <div className={`
              border-r bg-muted/10 transition-all duration-300 ease-in-out

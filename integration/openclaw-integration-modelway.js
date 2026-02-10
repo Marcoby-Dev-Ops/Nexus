@@ -30,7 +30,7 @@ const INTENT_TYPES = {
 
 const PHASES = {
   DISCOVERY: 'discovery',
-  SYNTHESIS: 'synthesis', 
+  SYNTHESIS: 'synthesis',
   DECISION: 'decision',
   EXECUTION: 'execution'
 };
@@ -43,7 +43,7 @@ const conversations = new Map();
  */
 function detectIntent(messages) {
   const lastMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
-  
+
   // Simple keyword-based intent detection
   if (lastMessage.includes('brainstorm') || lastMessage.includes('idea') || lastMessage.includes('creative')) {
     return INTENT_TYPES.BRAINSTORM;
@@ -60,7 +60,7 @@ function detectIntent(messages) {
   if (lastMessage.includes('learn') || lastMessage.includes('research') || lastMessage.includes('understand') || lastMessage.includes('explain')) {
     return INTENT_TYPES.LEARN;
   }
-  
+
   // Default to brainstorming for new conversations
   return INTENT_TYPES.BRAINSTORM;
 }
@@ -70,10 +70,10 @@ function detectIntent(messages) {
  */
 function determinePhase(conversationId, messages) {
   const conversation = conversations.get(conversationId) || { phase: PHASES.DISCOVERY, messageCount: 0 };
-  
+
   // Simple phase progression based on message count
   const messageCount = messages.length;
-  
+
   if (messageCount <= 2) return PHASES.DISCOVERY;
   if (messageCount <= 4) return PHASES.SYNTHESIS;
   if (messageCount <= 6) return PHASES.DECISION;
@@ -100,7 +100,7 @@ Please structure your response according to the Model-Way Framework.`;
 - Gathering initial insights
 
 Keep responses exploratory and open-ended.`,
-    
+
     [PHASES.SYNTHESIS]: `We're in the Synthesis phase. Focus on:
 - Organizing information and patterns
 - Connecting dots between insights
@@ -108,7 +108,7 @@ Keep responses exploratory and open-ended.`,
 - Preparing for decision-making
 
 Structure your response with clear sections and summaries.`,
-    
+
     [PHASES.DECISION]: `We're in the Decision phase. Focus on:
 - Presenting clear options with pros/cons
 - Making recommendations with rationale
@@ -116,7 +116,7 @@ Structure your response with clear sections and summaries.`,
 - Providing actionable next steps
 
 Be decisive and recommendation-oriented.`,
-    
+
     [PHASES.EXECUTION]: `We're in the Execution phase. Focus on:
 - Concrete action steps
 - Timeline and responsibilities
@@ -125,39 +125,39 @@ Be decisive and recommendation-oriented.`,
 
 Be specific, actionable, and practical.`
   };
-  
+
   const intentPrompts = {
     [INTENT_TYPES.BRAINSTORM.id]: `Intent: Brainstorming
 - Generate diverse ideas without judgment
 - Encourage creative thinking
 - Build on ideas with "yes, and..."
 - Quantity over quality initially`,
-    
+
     [INTENT_TYPES.SOLVE.id]: `Intent: Problem Solving
 - Define the problem clearly
 - Analyze root causes
 - Generate potential solutions
 - Evaluate and recommend best approach`,
-    
+
     [INTENT_TYPES.WRITE.id]: `Intent: Writing
 - Understand audience and purpose
 - Structure content logically
 - Use appropriate tone and style
 - Provide drafts with clear next steps`,
-    
+
     [INTENT_TYPES.DECIDE.id]: `Intent: Decision Making
 - Frame the decision clearly
 - Identify criteria for evaluation
 - Analyze options objectively
 - Make and justify recommendations`,
-    
+
     [INTENT_TYPES.LEARN.id]: `Intent: Learning
 - Assess current knowledge level
 - Provide clear explanations
 - Use examples and analogies
 - Suggest resources for deeper learning`
   };
-  
+
   return `${basePrompt}
 
 ${phasePrompts[phase]}
@@ -177,7 +177,7 @@ function structureResponse(content, intent, phase, conversationId) {
     [PHASES.DECISION]: 75,
     [PHASES.EXECUTION]: 100
   };
-  
+
   return {
     content,
     metadata: {
@@ -209,7 +209,7 @@ async function callOpenClawWithModelWay(messages, userId, conversationId) {
     const intent = detectIntent(messages);
     const phase = determinePhase(conversationId, messages);
     const systemPrompt = scaffoldSystemPrompt(intent, phase, userId);
-    
+
     // Update conversation tracking
     conversations.set(conversationId, {
       intent,
@@ -217,127 +217,56 @@ async function callOpenClawWithModelWay(messages, userId, conversationId) {
       messageCount: messages.length,
       lastUpdated: new Date().toISOString()
     });
-    
+
     // Build enhanced messages with system prompt
+    // Filter out any existing system messages to avoid confusion/duplication
+    const userMessages = messages.filter(m => m.role !== 'system');
+
     const enhancedMessages = [
       { role: 'system', content: systemPrompt },
-      ...messages
+      ...userMessages
     ];
-    
-    // Extract last user message for simulation
-    const lastUserMessage = messages
-      .filter(m => m.role === 'user')
-      .slice(-1)[0]?.content || '';
-    
-    // Simulate OpenClaw response with Model-Way structure
-    await new Promise(resolve => setTimeout(resolve, 800));
-    
-    const responseTemplates = {
-      [INTENT_TYPES.BRAINSTORM.id]: `🧠 **Brainstorming Session** (${phase} phase)
 
-Based on your request: "${lastUserMessage.substring(0, 100)}..."
+    console.log(`[Model-Way] Calling OpenClaw Engine (Phase: ${phase}, Intent: ${intent.name})`);
 
-**Ideas Generated:**
-1. Idea A: [Description]
-2. Idea B: [Description] 
-3. Idea C: [Description]
+    // Call Real OpenClaw Engine
+    // We use the internal Docker DNS or localhost depending on how this script is running
+    // If running in container: http://openclaw:18789/v1
+    // If running on host: http://localhost:18789/v1
+    const openClawUrl = process.env.OPENCLAW_API_URL || 'http://localhost:18789/v1';
 
-**Next Phase Actions:**
-- Which idea resonates most?
-- Should we dive deeper into any of these?
-- Need more variations or constraints?
+    const response = await fetch(`${openClawUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.OPENCLAW_API_KEY || 'sk-openclaw-local'}`
+      },
+      body: JSON.stringify({
+        messages: enhancedMessages,
+        model: process.env.OPENCLAW_MODEL || 'openclaw-default',
+        temperature: 0.7,
+        user: userId
+      })
+    });
 
-*Model-Way Framework: Using structured brainstorming to generate creative options.*`,
-      
-      [INTENT_TYPES.SOLVE.id]: `🛠 **Problem Solving** (${phase} phase)
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`OpenClaw Engine Error (${response.status}): ${errText}`);
+    }
 
-Problem: "${lastUserMessage.substring(0, 100)}..."
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content || 'No response generated.';
 
-**Analysis:**
-- Root causes identified: [List]
-- Constraints: [List]
-- Available resources: [List]
+    return structureResponse(content, intent, phase, conversationId);
 
-**Potential Solutions:**
-1. Solution A: [Description with pros/cons]
-2. Solution B: [Description with pros/cons]
-
-**Recommended Approach:** [Based on ${phase} phase analysis]
-
-*Model-Way Framework: Systematic problem-solving with clear phases.*`,
-      
-      [INTENT_TYPES.WRITE.id]: `✍️ **Writing Assistance** (${phase} phase)
-
-Writing task: "${lastUserMessage.substring(0, 100)}..."
-
-**Structure Outline:**
-1. Introduction: [Key points]
-2. Main sections: [Breakdown]
-3. Conclusion: [Summary]
-
-**Tone & Style:** Professional/Business
-
-**Draft Snippet:** [Example paragraph]
-
-**Next Steps:** Review, revise, or proceed to next section?
-
-*Model-Way Framework: Structured writing process for better outcomes.*`,
-      
-      [INTENT_TYPES.DECIDE.id]: `📊 **Decision Making** (${phase} phase)
-
-Decision to make: "${lastUserMessage.substring(0, 100)}..."
-
-**Decision Criteria:**
-1. [Criterion 1]
-2. [Criterion 2]
-3. [Criterion 3]
-
-**Options Analysis:**
-- Option A: [Analysis]
-- Option B: [Analysis]
-- Option C: [Analysis]
-
-**Recommendation:** [Based on ${phase} phase evaluation]
-
-*Model-Way Framework: Data-driven decision process.*`,
-      
-      [INTENT_TYPES.LEARN.id]: `📚 **Learning Session** (${phase} phase)
-
-Learning goal: "${lastUserMessage.substring(0, 100)}..."
-
-**Key Concepts:**
-1. [Concept 1 with explanation]
-2. [Concept 2 with explanation]
-3. [Concept 3 with explanation]
-
-**Examples & Applications:**
-- [Example 1]
-- [Example 2]
-
-**Check Understanding:**
-- Question 1: [To test comprehension]
-- Question 2: [To test application]
-
-*Model-Way Framework: Structured learning for deeper understanding.*`
-    };
-    
-    const responseContent = responseTemplates[intent.id] || `**Nexus Model-Way Framework**
-    
-Intent: ${intent.name}
-Phase: ${phase}
-    
-Your request is being processed with structured AI collaboration.
-    
-This demonstrates the Model-Way Framework in action.`;
-    
-    return structureResponse(responseContent, intent, phase, conversationId);
-    
   } catch (error) {
     console.error('Model-Way processing failed:', error);
+
+    // Fallback if engine is down, but still mark as "Model-Way" to show the framework is active
     return structureResponse(
-      `I'm your Nexus AI assistant using the Model-Way Framework.\n\n**Integration Status**: Model-Way Framework active\n**Next**: Real OpenClaw integration coming soon.\n\nHow can I help with structured collaboration today?`,
-      INTENT_TYPES.BRAINSTORM,
-      PHASES.DISCOVERY,
+      `⚠️ **Connection Error**\n\nI successfully analyzed your intent (${intent?.name || 'Unknown'}) and phase (${phase || 'Unknown'}), but the OpenClaw Engine is currently unreachable.\n\nError: ${error.message}\n\nPlease ensure OpenClaw is running at port 18789.`,
+      intent || INTENT_TYPES.BRAINSTORM,
+      phase || PHASES.DISCOVERY,
       conversationId
     );
   }
@@ -380,17 +309,17 @@ app.get('/v1/modelway/intents', (req, res) => {
 app.post('/v1/chat/completions', async (req, res) => {
   try {
     const { messages, model, user, conversationId: providedConvId } = req.body;
-    
+
     const userId = user || 'anonymous';
     const conversationId = providedConvId || `conv-${userId}-${Date.now()}`;
-    
+
     console.log('Model-Way Chat Request:', {
       conversationId,
       userId,
       messageCount: messages?.length,
       model
     });
-    
+
     if (!messages || messages.length === 0) {
       return res.status(400).json({
         error: {
@@ -399,10 +328,10 @@ app.post('/v1/chat/completions', async (req, res) => {
         }
       });
     }
-    
+
     // Process with Model-Way Framework
     const { content, metadata } = await callOpenClawWithModelWay(messages, userId, conversationId);
-    
+
     // Format as OpenAI-compatible response
     const response = {
       id: 'chatcmpl-' + Date.now(),
@@ -427,15 +356,15 @@ app.post('/v1/chat/completions', async (req, res) => {
       // Include Model-Way metadata in response
       nexus_metadata: metadata
     };
-    
+
     console.log('Model-Way Response Generated:', {
       conversationId,
       intent: metadata.modelWay.intent.name,
       phase: metadata.modelWay.phase.name
     });
-    
+
     res.json(response);
-    
+
   } catch (error) {
     console.error('Model-Way Integration error:', error);
     res.status(500).json({
@@ -455,13 +384,13 @@ app.get('/v1/modelway/demo', async (req, res) => {
     const testMessages = [
       { role: 'user', content: 'I need help deciding which marketing strategy to use for our new product.' }
     ];
-    
+
     const { content, metadata } = await callOpenClawWithModelWay(
-      testMessages, 
-      'demo-user', 
+      testMessages,
+      'demo-user',
       'demo-conversation'
     );
-    
+
     res.json({
       success: true,
       demo: 'modelway-framework',
@@ -473,7 +402,7 @@ app.get('/v1/modelway/demo', async (req, res) => {
         version: '1.0.0'
       }
     });
-    
+
   } catch (error) {
     res.status(500).json({
       success: false,
