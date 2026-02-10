@@ -53,12 +53,12 @@ async function runHygiene() {
                    (SELECT json_agg(m.content ORDER BY m.created_at ASC) 
                     FROM (SELECT content, created_at FROM ai_messages WHERE conversation_id = c.id LIMIT 3) m) as first_messages
             FROM ai_conversations c
-            WHERE (c.title = 'New Conversation' OR c.title = 'Untitled Conversation' OR c.title IS NULL)
+            WHERE (c.title = 'New Conversation' OR c.title = 'Untitled Conversation' OR c.title IS NULL OR c.title = '')
             AND c.id IN (
                 SELECT conversation_id 
                 FROM ai_messages 
                 GROUP BY conversation_id 
-                HAVING COUNT(*) > 2
+                HAVING COUNT(*) >= 1
             )
             AND c.is_archived = false
         `;
