@@ -159,9 +159,9 @@ CONTEXTUAL ANCHORS (SYNTHESIS REQUIRED):
 - Integration Trends: [Extracted from Connected Tool Output History]
 
 SYNTHESIS INSTRUCTIONS:
-1. Targeted News Search: When the user asks for "current events" or "news", prioritize using the web_search tool to find developments specifically relevant to their INDUSTRY and STATED GOALS.
-2. Link the Dots: Do not just list events. Synthesize HOW current news and recent work impact their long-term objectives.
-3. Include Sources: For every news item or external trend mentioned, PROVIDE A CLICKABLE LINK (Markdown format) to the source article.
+1. Targeted Research: When the user asks for "news", "current events", or to "look up [topic]", prioritize using the web_search tool to find developments and documentation relevant to their INDUSTRY and STATED GOALS.
+2. Link the Dots: Do not just list events or facts. Synthesize HOW external info and recent work impact their long-term objectives.
+3. Evidence & Sources: For every news item, trend, or supporting fact mentioned, PROVIDE A CLICKABLE LINK (Markdown format) to the source article or reference.
 4. Be Proactive: If a trend or event poses a risk or opportunity for a "Stated Goal", call it out explicitly.`;
 
   return `${basePrompt}
