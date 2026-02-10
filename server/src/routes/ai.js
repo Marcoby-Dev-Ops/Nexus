@@ -158,17 +158,15 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const resolvedAgentId = normalizeAgentId(typeof requestedAgentId === 'string' ? requestedAgentId : undefined);
         const openClawAgentId = toOpenClawAgentId(resolvedAgentId);
 
-        // Persist Conversation and User Message
-        const conversationId = await getOrCreateConversation(userId, providedConvId);
         const lastUserMessage = getLastUserMessage(messages);
         const intent = detectIntent(messages);
 
-        // Handle Switching Intent
+        // Handle Switching Intent BEFORE creating a conversation to prevent dummy threads
         if (intent.id === 'switch') {
             const targetId = await resolveTopicToConversationId(userId, lastUserMessage, query);
             if (targetId) {
                 const switchMetadata = buildModelWayMetadata(intent, determinePhase(messages), targetId);
-                const switchContent = `🔄 **Switching Context**\n\nI've located the conversation for: "${lastUserMessage.replace(/continue this:|switch to:/i, '').trim()}". Switching your active session now...`;
+                const switchContent = `🔄 **Switching Context**\n\nI've located the conversation for: "${lastUserMessage.replace(/continue this:|switch to:/gi, '').trim()}". Switching your active session now...`;
 
                 if (stream) {
                     beginSseStream(res);
@@ -190,7 +188,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     switchTarget: targetId
                 }));
             } else {
-                const failContent = `⚠️ **Conversation Not Found**\n\nI couldn't find a conversation matching: "${lastUserMessage.replace(/continue this:|switch to:/i, '').trim()}". Please check the title and try again.`;
+                const failContent = `⚠️ **Conversation Not Found**\n\nI couldn't find a conversation matching: "${lastUserMessage.replace(/continue this:|switch to:/gi, '').trim()}". Please check the title and try again.`;
                 if (stream) {
                     beginSseStream(res);
                     writeSseEvent(res, { content: failContent });
@@ -202,20 +200,44 @@ router.post('/chat', authenticateToken, async (req, res) => {
             }
         }
 
+        // Persist Conversation and User Message
+        const conversationId = await getOrCreateConversation(userId, providedConvId);
+
         const phase = determinePhase(messages);
         const modelWayMetadata = buildModelWayMetadata(intent, phase, conversationId);
+
+        // PERSIST METADATA for continuity organization
+        // Update the conversation context with intent and phase for Sidebar display
+        await query(
+            `UPDATE ai_conversations 
+             SET context = jsonb_set(
+                COALESCE(context, '{}'::jsonb), 
+                '{modelWay}', 
+                jsonb_build_object('intent', $1::text, 'phase', $2::text, 'last_topic', $3::text)
+             ),
+             updated_at = NOW()
+             WHERE id = $4`,
+            [intent.id, phase, lastUserMessage.substring(0, 100), conversationId]
+        );
+
+        // AUTO-TITLING: If the conversation has a generic title, update it based on the first real message
+        const currentConv = await query('SELECT title FROM ai_conversations WHERE id = $1', [conversationId]);
+        const currentTitle = currentConv.data?.[0]?.title;
+        if (currentTitle === 'New Conversation' || currentTitle === 'Untitled Conversation') {
+            const newTitle = lastUserMessage.replace(/^(continue this:|switch to:|hey|hi|hello|yo)\s*/i, '').trim();
+            if (newTitle && newTitle.length > 3) {
+                const truncatedTitle = newTitle.substring(0, 50) + (newTitle.length > 50 ? '...' : '');
+                await query('UPDATE ai_conversations SET title = $1 WHERE id = $2', [truncatedTitle, conversationId]);
+            }
+        }
+
         conversations.set(conversationId, {
             intent: intent.id,
             phase,
             updatedAt: new Date().toISOString()
         });
 
-        // Save the last user message (assuming the array is history + new message)
-        // Ideally we save all new ones, but usually client sends history. 
-        // We'll simplisticly save the LAST message having role 'user' to avoid dupes if client resends whole history?
-        // Better: The client usually sends the NEW prompt. Nexus assumes 'messages' is the full context.
-        // We really should only save the *newest* user message.
-        // Simple logic: Find the last message in array. If it's user, save it.
+        // Save the last user message
         const lastMessage = messages[messages.length - 1];
         if (lastMessage.role === 'user') {
             await saveMessage(conversationId, 'user', lastMessage.content);

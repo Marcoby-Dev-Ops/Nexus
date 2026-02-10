@@ -19,6 +19,11 @@ export interface Conversation {
     context_length?: number;
     temperature?: number;
     max_tokens?: number;
+    modelWay?: {
+      intent: string;
+      phase: string;
+      last_topic?: string;
+    };
   };
 }
 

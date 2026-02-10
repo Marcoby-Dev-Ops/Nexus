@@ -30,6 +30,7 @@ export interface ChatRuntimeOptions {
 export interface StreamRuntimeMetadata {
   contextInjected?: boolean;
   modelWay?: unknown;
+  switchTarget?: string;
 }
 
 export interface StreamRuntimeStatus {
@@ -103,7 +104,7 @@ export class ConversationalAIService extends BaseService {
       return this.createResponse(context);
     } catch (error) {
       logger.error('Error initializing conversation context', { error });
-      return this.handleError('Failed to initialize conversation context', error);
+      return this.handleError('Failed to initialize conversation context', String(error));
     }
   }
 
@@ -113,29 +114,28 @@ export class ConversationalAIService extends BaseService {
   private async loadClientKnowledgeBase(userId: string, organizationId: string): Promise<ClientKnowledgeBase> {
     try {
       // Fixed table name: thoughts → personal_thoughts
-      const thoughtsResponse = await selectData(
-        'personal_thoughts',
-        'id, title, content, created_at',
-        { user_id: userId },
-        'created_at DESC',
-        10
-      );
+      const thoughtsResponse = await selectData({
+        table: 'personal_thoughts',
+        columns: 'id, title, content, created_at',
+        filters: { user_id: userId },
+        limit: 10
+      });
 
       // brain_tickets table doesn't exist - skip for now
-      const brainTicketsResponse = { success: false, data: [] };
+      const brainTicketsResponse = { success: false, data: [] as never[] };
 
       // user_contexts table doesn't exist - skip for now
-      const userContextsResponse = { success: false, data: [] };
+      const userContextsResponse = { success: false, data: [] as never[] };
 
       // Fixed columns: removed industry, size (don't exist)
       // Only query if organizationId is a valid UUID, skip if "default"
-      let companyResponse = { success: false, data: [] };
+      let companyResponse: any = { success: false, data: [] as any[] };
       if (organizationId && organizationId !== 'default' && organizationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        companyResponse = await selectData(
-          'companies',
-          'name',
-          { id: organizationId }
-        );
+        companyResponse = await selectData({
+          table: 'companies',
+          columns: 'name',
+          filters: { id: organizationId }
+        });
       }
 
       // Fetch user profile for personalization - removed job_title and preferences (don't exist)

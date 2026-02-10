@@ -55,6 +55,7 @@ export const ChatPage: React.FC = () => {
     isLoading: conversationsLoading,
     error,
     currentConversation,
+    setCurrentConversationById,
     // Add additional keys for streaming if available, otherwise we use local state
   } = useAIChatStore();
 
@@ -143,10 +144,14 @@ export const ChatPage: React.FC = () => {
     if (!message.trim() || !user) return;
 
     try {
+      // Check if this is an explicit switching command to avoid creating dummy "New Chat" threads
+      const lowerMessage = message.toLowerCase();
+      const isExplicitSwitch = lowerMessage.startsWith('continue this:') || lowerMessage.startsWith('switch to:');
+
       // Create or get conversation
       let currentConversationId = conversationId;
 
-      if (!currentConversationId) {
+      if (!currentConversationId && !isExplicitSwitch) {
         if (createConversation) {
           const title = generateTitle(message);
           currentConversationId = await createConversation(title, 'gpt-4', undefined, user.id);
@@ -156,12 +161,9 @@ export const ChatPage: React.FC = () => {
         }
       }
 
-      // IMMEDIATELY save and display the user message via store
+      // save and display the user message via store (only if not a switch or inside an existing conversation)
       if (currentConversationId) {
         await sendMessage(message, currentConversationId, attachments || []);
-      } else {
-        // If we couldn't create one, we can't proceed with store `sendMessage`.
-        throw new Error("Could not create conversation");
       }
 
       // Now set loading states for AI response
@@ -205,6 +207,16 @@ export const ChatPage: React.FC = () => {
         (metadata: StreamRuntimeMetadata) => {
           if (typeof metadata.contextInjected === 'boolean') {
             setContextInjectedForStream(metadata.contextInjected);
+          }
+          if (metadata.switchTarget && currentConversationId !== metadata.switchTarget) {
+            logger.info('Switch intent detected, navigating to conversation', { target: metadata.switchTarget });
+            setTimeout(() => {
+              setCurrentConversationById(metadata.switchTarget!);
+              toast({
+                title: "Context Switched",
+                description: "Switched to requested conversation.",
+              });
+            }, 1000); // Small delay to let user see "Switching..." message if any
           }
         },
         (status: StreamRuntimeStatus) => {

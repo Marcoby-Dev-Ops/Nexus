@@ -155,7 +155,9 @@ function extractRecentUserTopic(contextBlocks = []) {
     .find((line) => line.toUpperCase().startsWith('USER:'));
 
   if (!firstUserLine) return '';
-  return truncateText(firstUserLine.replace(/^USER:\s*/i, '').trim(), 100);
+  const rawTopic = firstUserLine.replace(/^USER:\s*/i, '').trim();
+  // Strip any existing model-way command prefixes to avoid stacking "Continue this: Continue this: ..."
+  return truncateText(rawTopic.replace(/^(continue this:|switch to:|what's going on today\?)\s*/i, '').trim(), 100);
 }
 
 function buildContextChips(contextBlocks = []) {

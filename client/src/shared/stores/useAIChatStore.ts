@@ -208,6 +208,14 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
         isLoading: false
       });
 
+      // Proactively clean empty conversations to keep history organized
+      if (result.data && result.data.length > 0) {
+        const emptyCount = result.data.filter((c: any) => !c.message_count || c.message_count <= 1).length;
+        if (emptyCount > 5) {
+          get().cleanEmptyConversations();
+        }
+      }
+
     } catch (err) {
       logger.error('Error fetching conversations', { err });
       set({ error: 'Error fetching conversations', isLoading: false });
@@ -321,7 +329,20 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
   cleanEmptyConversations: async () => {
     try {
       const state = get();
-      const emptyConvs = state.conversations.filter(conv => !conv.is_archived && (conv.message_count === 0 || !conv.message_count));
+      const emptyConvs = state.conversations.filter(conv => {
+        if (conv.is_archived) return false;
+
+        // Strictly empty
+        if (!conv.message_count || conv.message_count === 0) return true;
+
+        // Generic "New Conversation" with very low engagement
+        if ((conv.title === 'New Conversation' || conv.title === 'Untitled Conversation') && conv.message_count <= 2) {
+          return true;
+        }
+
+        return false;
+      });
+
       for (const conv of emptyConvs) {
         // Archive empty conversation
         await get().updateConversation(conv.id, { is_archived: true });

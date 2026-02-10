@@ -49,7 +49,8 @@ function detectIntent(messages = []) {
  * Matches by title (exact or partial)
  */
 async function resolveTopicToConversationId(userId, topic, queryFn) {
-  const normalizedTopic = topic.replace(/continue this:|switch to:/i, '').trim();
+  // Use global flag /g to strip multiple prefixes if they somehow accumulated
+  let normalizedTopic = topic.replace(/continue this:|switch to:/gi, '').trim();
   if (!normalizedTopic) return null;
 
   // Search by exact title first, then ILIKE

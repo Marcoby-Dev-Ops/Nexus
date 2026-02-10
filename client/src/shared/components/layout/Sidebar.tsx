@@ -121,7 +121,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     toast({
       title: "New conversation",
       description: "Ready to start a new conversation!",
-      type: "success"
+      variant: "success"
     });
   };
 
@@ -133,14 +133,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         toast({
           title: "Conversation deleted",
           description: "The conversation has been removed.",
-          type: "success"
+          variant: "success"
         });
       } catch (error) {
         console.error('Failed to delete conversation', error);
         toast({
           title: "Error",
           description: "Failed to delete conversation",
-          type: "error"
+          variant: "destructive"
         });
       }
     }
@@ -159,7 +159,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       toast({
         title: "Renamed",
         description: "Conversation renamed.",
-        type: "success"
+        variant: "success"
       });
     }
     setEditingId(null);
@@ -180,13 +180,13 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       toast({
         title: "Cleanup complete",
         description: "Empty conversations removed.",
-        type: "success"
+        variant: "success"
       });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to cleanup conversations",
-        type: "error"
+        variant: "destructive"
       });
     }
   };
@@ -249,10 +249,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   variant="ghost"
                   size="sm"
                   onClick={handleCleanupEmptyConversations}
-                  className="w-full text-sm text-muted-foreground hover:text-foreground h-8 justify-start px-2 mb-2"
+                  className="w-full text-xs text-muted-foreground/60 hover:text-foreground h-7 justify-start px-2 mb-2 bg-muted/30"
                 >
                   <Trash2 className="w-3 h-3 mr-2" />
-                  Cleanup {emptyConversationsCount} empty chats
+                  Clear {emptyConversationsCount} ghost threads
                 </Button>
               )}
 
@@ -277,18 +277,37 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                       <MessageSquare className="w-4 h-4 shrink-0 opacity-70" />
 
                       {editingId === conv.id ? (
-                        <input
-                          ref={renameInputRef}
-                          className="flex-1 bg-transparent border-b border-primary text-sm text-foreground outline-none px-0 py-0 min-w-0"
-                          value={editTitle}
-                          onChange={(e) => setEditTitle(e.target.value)}
-                          onKeyDown={(e) => handleRenameKeyDown(e, conv.id)}
-                          onBlur={() => handleFinishRename(conv.id)}
-                          onClick={(e) => e.stopPropagation()}
-                        />
+                        <div className="flex-1 min-w-0">
+                          <input
+                            ref={renameInputRef}
+                            className="w-full bg-transparent border-b border-primary text-sm text-foreground outline-none px-0 py-0"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            onKeyDown={(e) => handleRenameKeyDown(e, conv.id)}
+                            onBlur={() => handleFinishRename(conv.id)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
                       ) : (
-                        <div className="flex-1 truncate">
-                          {conv.title || "Untitled Conversation"}
+                        <div className="flex-1 min-w-0 flex flex-col">
+                          <div className="truncate text-[0.92rem]">
+                            {conv.title || "Untitled Conversation"}
+                          </div>
+                          {/* Continuity Tag */}
+                          {conv.context?.modelWay?.intent && (
+                            <div className="flex gap-1.5 mt-0.5">
+                              <span className={cn(
+                                "text-[0.65rem] px-1.5 py-0 rounded-full font-semibold uppercase tracking-tight border shadow-sm",
+                                conv.context.modelWay.intent === 'strategy' ? "bg-purple-500/10 text-purple-600 border-purple-200/50" :
+                                  conv.context.modelWay.intent === 'discovery' ? "bg-amber-500/10 text-amber-600 border-amber-200/50" :
+                                    conv.context.modelWay.intent === 'action' ? "bg-emerald-500/10 text-emerald-600 border-emerald-200/50" :
+                                      conv.context.modelWay.intent === 'synthesis' ? "bg-blue-500/10 text-blue-600 border-blue-200/50" :
+                                        "bg-gray-500/10 text-gray-600 border-gray-200/50"
+                              )}>
+                                {conv.context.modelWay.intent}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       )}
 
