@@ -148,7 +148,7 @@
     "@cdmx/authentik-diag-mcp": "^0.1.1",
     "@cdmx/authentik-mcp": "^0.1.1",
     "@chromatic-com/storybook": "^4.1.1",
-    "@eslint/js": "^9.32.0",
+    "@eslint/js": "^9.39.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@storybook/addon-a11y": "^9.1.8",
     "@storybook/addon-docs": "^9.1.1",
