@@ -25,12 +25,32 @@ Use a hybrid inventory model:
 - Assign from warm pool when available
 - Purchase/provision on-demand when pool is depleted
 
-Recommended default server profile:
-- 4 vCPU
-- 8 GB RAM
-- 120-160 GB NVMe
+## Multi-User Capacity Planning (Required)
+Nexus must be sized from planned tenant usage, not a fixed one-size baseline.
+
+Sizing inputs required at order time:
+- `planned_users_30d`: expected active users in first 30 days
+- `planned_users_180d`: expected active users in first 6 months
+- `peak_concurrent_users`: expected simultaneous sessions
+- `ai_intensity`: low/medium/high (how much OpenClaw + model usage per user)
+- `integration_intensity`: low/medium/high (sync jobs, webhooks, automations)
+
+Recommended initial sizing matrix (single tenant):
+- 1-25 users: 4 vCPU, 8 GB RAM, 160 GB NVMe
+- 26-75 users: 6 vCPU, 16 GB RAM, 240 GB NVMe
+- 76-150 users: 8 vCPU, 24 GB RAM, 320 GB NVMe
+- 151-300 users: 12 vCPU, 32 GB RAM, 480 GB NVMe
+- 300+ users: split-tier architecture (dedicated DB + app scaling) instead of single VPS
+
+Adjustments:
+- If `ai_intensity=high`, increase one tier
+- If `integration_intensity=high`, increase storage by +30% and RAM by +25%
+- If customer requires aggressive SLA or bursts, increase one tier
+
+Platform requirements:
 - KVM virtualization
 - Ubuntu 22.04/24.04 LTS
+- NVMe preferred
 
 ## Phase 1: Before Submitting Order to Marcoby
 The following must be collected and validated before the order is submitted:
@@ -46,6 +66,7 @@ The following must be collected and validated before the order is submitted:
 - Region/data residency requirement
 - Expected user count and workload profile
 - Required integrations (if any)
+- Capacity inputs (`planned_users_30d`, `planned_users_180d`, `peak_concurrent_users`, `ai_intensity`, `integration_intensity`)
 
 3. Identity and access prerequisites
 - Marcoby Identity organization reference (new or existing)
@@ -80,6 +101,7 @@ Exit criteria:
 
 3. Capacity decision
 - Check warm-pool inventory by region/plan
+- Match capacity tier to expected multi-user load
 - If available: reserve VPS and attach order ID
 - If unavailable: purchase/provision new VPS and attach order ID
 
@@ -115,6 +137,7 @@ Exit criteria:
 - Host hardened
 - Monitoring + backup active
 - Preflight passes minimum threshold
+- Capacity tier matches validated user-growth profile
 
 ## Phase 4: OpenClaw Setup
 
@@ -202,6 +225,19 @@ Exit criteria:
 - Backup job success confirmed
 - TLS cert validity verified
 - Audit logs and access logs available
+
+## Scale Triggers (Multi-User)
+Scale up before customer impact using these thresholds:
+- CPU: sustained > 70% for 15+ minutes during peak windows
+- RAM: sustained > 75% for 15+ minutes
+- Disk: > 80% used
+- API p95 latency: above agreed SLO for 3 consecutive intervals
+- Queue/job delay: > 2x normal baseline during business hours
+
+Scale policy:
+- First scale event: vertical upgrade one tier
+- Repeated saturation within 14 days: split services (app and DB isolation)
+- Enterprise/high-growth tenants: plan migration to multi-node architecture early
 
 ## Failure and Rollback Policy
 - If deployment fails before handoff: rebuild host from baseline image and redeploy
