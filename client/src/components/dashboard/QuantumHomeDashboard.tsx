@@ -677,7 +677,10 @@ const QuantumHomeDashboard: React.FC<QuantumHomeDashboardProps> = ({ className =
         return;
       }
 
-      const response = await quantumBusinessService.getQuantumProfile(organizationId);
+      // Normalize organization id to ignore legacy placeholders
+      const { normalizeOrgId } = await import('@/shared/utils/organization');
+      const normalizedOrgId = normalizeOrgId(organizationId) || (profile?.organization_id ?? null);
+      const response = await quantumBusinessService.getQuantumProfile(normalizedOrgId || '');
       
       if (response.success && response.data) {
         console.log('✅ Quantum profile loaded successfully:', {

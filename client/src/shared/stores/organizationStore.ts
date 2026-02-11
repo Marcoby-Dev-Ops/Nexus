@@ -254,7 +254,16 @@ export const getOrganizationMembers = async (orgId: string): Promise<Organizatio
 export const useOrganizationStore = create<OrgStoreState>()(
   devtools((set, get) => ({
     orgs: [],
-    activeOrgId: localStorage.getItem('active_org_id') ?? null,
+    // Treat a stored value of 'default' as unset (legacy placeholder)
+    activeOrgId: (function() {
+      try {
+        const v = localStorage.getItem('active_org_id');
+        if (!v) return null;
+        return v === 'default' ? null : v;
+      } catch (e) {
+        return null;
+      }
+    })(),
     loading: false,
     currentOrg: null,
     currentOrgMembers: [],

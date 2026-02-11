@@ -12,6 +12,7 @@ import type { ServiceResponse } from '@/core/services/BaseService';
 import { logger } from '@/shared/utils/logger';
 import { quantumBusinessService } from '@/services/business/QuantumBusinessService';
 import { selectData } from '@/lib/database';
+import { normalizeOrgId } from '@/shared/utils/organization';
 
 export interface ConversationContext {
   userId: string;
@@ -87,7 +88,8 @@ export class ConversationalAIService extends BaseService {
       logger.info('Initializing conversation context with knowledgebase', { userId, organizationId });
 
       // Get existing business data
-      const quantumProfile = await quantumBusinessService.getQuantumProfile(organizationId);
+      const normalizedOrgId = normalizeOrgId(organizationId);
+      const quantumProfile = await quantumBusinessService.getQuantumProfile(normalizedOrgId as unknown as string);
 
       // Load client knowledgebase
       const knowledgeBase = await this.loadClientKnowledgeBase(userId, organizationId);
@@ -130,11 +132,12 @@ export class ConversationalAIService extends BaseService {
       // Fixed columns: removed industry, size (don't exist)
       // Only query if organizationId is a valid UUID, skip if "default"
       let companyResponse: any = { success: false, data: [] as any[] };
-      if (organizationId && organizationId !== 'default' && organizationId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      const normalizedOrgId = normalizeOrgId(organizationId);
+      if (normalizedOrgId) {
         companyResponse = await selectData({
           table: 'companies',
           columns: 'name',
-          filters: { id: organizationId }
+          filters: { id: normalizedOrgId }
         });
       }
 

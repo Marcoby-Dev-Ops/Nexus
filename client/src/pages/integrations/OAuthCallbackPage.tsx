@@ -3,10 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useOAuthIntegrations } from '../../integrations/hooks/useOAuthIntegrations';
 import { Button } from '../../shared/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../shared/components/ui/Card';
-import { 
-  CheckCircle, 
-  AlertCircle, 
-  Loader2, 
+import {
+  CheckCircle,
+  AlertCircle,
+  Loader2,
   ExternalLink,
   ArrowLeft
 } from 'lucide-react';
@@ -18,7 +18,7 @@ export const OAuthCallbackPage: React.FC = () => {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-  
+
   // Get OAuth state from session storage
   const [oauthState, setOauthState] = useState({
     state: '',
@@ -61,13 +61,14 @@ export const OAuthCallbackPage: React.FC = () => {
         code,
         state,
         userId: storedUserId || userId,
-        redirectUri: `${window.location.origin}/integrations/oauth/callback`
+        redirectUri: `${window.location.origin}/integrations/oauth/callback`,
+        provider: storedProvider as OAuthProvider
       })
         .then((result) => {
           if (result.success) {
             setStatus('success');
             setMessage(result.message || 'Integration connected successfully!');
-            
+
             // Clean up session storage
             sessionStorage.removeItem('oauth_state');
             sessionStorage.removeItem('oauth_provider');
@@ -148,7 +149,7 @@ export const OAuthCallbackPage: React.FC = () => {
             {status === 'success' ? 'Integration Connected!' : 'Setup Failed'}
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="text-center space-y-4">
           {status === 'success' ? (
             <>

@@ -319,6 +319,10 @@ app.use('/api/rpc', dbLimiter, rpcRoutes);
 // OpenClaw integration routes
 app.use('/api/openclaw', openclawIntegrationRoutes);
 
+// OAuth routes
+const oauthRoutes = require('./src/routes/oauth');
+app.use('/api/oauth', authLimiter, oauthRoutes);
+
 // Graceful shutdown handling
 const gracefulShutdown = async (signal) => {
   logger.info(`Received ${signal}, starting graceful shutdown...`);

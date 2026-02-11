@@ -1,8 +1,8 @@
 import { ApiManager } from '../ApiManager';
-import type { 
-  OAuthIntegration, 
-  OAuthConnectionRequest, 
-  OAuthCallbackRequest, 
+import type {
+  OAuthIntegration,
+  OAuthConnectionRequest,
+  OAuthCallbackRequest,
   OAuthConnectionResult,
   ManualSyncRequest,
   ManualSyncResult,
@@ -21,13 +21,13 @@ export class OAuthIntegrationService {
    */
   async startOAuthFlow(request: OAuthConnectionRequest): Promise<{ authUrl: string; state: string }> {
     try {
-      const response: any = await this.apiManager.get(`/api/oauth-providers/${request.provider}/start`, {
+      const response: any = await this.apiManager.get(`/api/oauth/${request.provider}/start`, {
         params: {
           userId: request.userId,
           redirectUri: request.redirectUri
         }
       });
-      
+
       return {
         authUrl: response.authUrl,
         state: response.state
@@ -43,13 +43,13 @@ export class OAuthIntegrationService {
    */
   async completeOAuthFlow(request: OAuthCallbackRequest): Promise<OAuthConnectionResult> {
     try {
-      const response: any = await this.apiManager.post(`/api/oauth-providers/${request.provider}/callback`, {
+      const response: any = await this.apiManager.post(`/api/oauth/${request.provider}/callback`, {
         code: request.code,
         state: request.state,
         userId: request.userId,
         redirectUri: request.redirectUri
       });
-      
+
       return response;
     } catch (error) {
       console.error('Error completing OAuth flow:', error);
@@ -62,7 +62,7 @@ export class OAuthIntegrationService {
    */
   async getUserOAuthIntegrations(userId: string): Promise<OAuthIntegration[]> {
     try {
-      const response: any = await this.apiManager.get(`/api/oauth-providers/integrations/${userId}`);
+      const response: any = await this.apiManager.get(`/api/oauth/integrations/${userId}`);
       return response.integrations || [];
     } catch (error) {
       console.error('Error getting OAuth integrations:', error);
@@ -75,7 +75,7 @@ export class OAuthIntegrationService {
    */
   async disconnectIntegration(integrationId: string, userId: string): Promise<void> {
     try {
-      await this.apiManager.post(`/api/oauth-providers/disconnect/${integrationId}`, {
+      await this.apiManager.post(`/api/oauth/disconnect/${integrationId}`, {
         userId
       });
     } catch (error) {
@@ -89,8 +89,8 @@ export class OAuthIntegrationService {
    */
   async manualSync(request: ManualSyncRequest): Promise<ManualSyncResult> {
     try {
-      const response = await this.apiManager.post('/api/oauth-providers/sync', request);
-      return response;
+      const response = await this.apiManager.post('/api/oauth/sync', request);
+      return response as ManualSyncResult;
     } catch (error) {
       console.error('Error during manual sync:', error);
       throw new Error('Failed to sync integration');
@@ -102,7 +102,7 @@ export class OAuthIntegrationService {
    */
   async getSyncHistory(integrationId: string, userId: string): Promise<any> {
     try {
-      const response: any = await this.apiManager.get(`/api/oauth-providers/sync/history/${integrationId}`, {
+      const response: any = await this.apiManager.get(`/api/oauth/sync/history/${integrationId}`, {
         params: { userId }
       });
       return response.history;
@@ -117,10 +117,10 @@ export class OAuthIntegrationService {
    */
   async testConnection(provider: OAuthProvider, accessToken: string): Promise<{ connected: boolean }> {
     try {
-      const response = await this.apiManager.post(`/api/oauth-providers/${provider}/test`, {
+      const response = await this.apiManager.post(`/api/oauth/${provider}/test`, {
         accessToken
       });
-      return response;
+      return response as { connected: boolean };
     } catch (error) {
       console.error('Error testing connection:', error);
       throw new Error('Failed to test connection');
@@ -146,7 +146,7 @@ export class OAuthIntegrationService {
   async hasProviderConnection(userId: string, provider: OAuthProvider): Promise<boolean> {
     try {
       const integrations = await this.getUserOAuthIntegrations(userId);
-      return integrations.some(integration => 
+      return integrations.some(integration =>
         integration.provider === provider && integration.status === 'connected'
       );
     } catch (error) {
@@ -176,7 +176,13 @@ export class OAuthIntegrationService {
       };
 
       integrations.forEach(integration => {
-        summary[integration.status]++;
+        const status = integration.status;
+        if (status === 'active') {
+          summary.connected++;
+        } else if (status in summary) {
+          // @ts-ignore
+          summary[status]++;
+        }
       });
 
       return summary;

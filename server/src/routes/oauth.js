@@ -4,6 +4,10 @@ const crypto = require('crypto');
 
 const router = express.Router();
 const { logger } = require('../src/utils/logger');
+const userProfileService = require('../src/services/UserProfileService');
+const { query } = require('../database/connection');
+
+
 
 // Helper function to generate random strings
 function generateRandomString(length) {
@@ -60,15 +64,15 @@ function getOAuthProviders() {
     paypal: {
       clientId: process.env.PAYPAL_CLIENT_ID,
       clientSecret: process.env.PAYPAL_CLIENT_SECRET,
-      authorizationUrl: process.env.PAYPAL_ENV === 'live' 
-        ? 'https://www.paypal.com/signin/authorize' 
+      authorizationUrl: process.env.PAYPAL_ENV === 'live'
+        ? 'https://www.paypal.com/signin/authorize'
         : 'https://www.sandbox.paypal.com/signin/authorize',
       tokenUrl: process.env.PAYPAL_ENV === 'live'
         ? 'https://api.paypal.com/v1/oauth2/token'
         : 'https://api.sandbox.paypal.com/v1/oauth2/token',
       scope: 'openid profile https://uri.paypal.com/services/paypalattributes',
-      baseUrl: process.env.PAYPAL_ENV === 'live' 
-        ? 'https://www.paypal.com' 
+      baseUrl: process.env.PAYPAL_ENV === 'live'
+        ? 'https://www.paypal.com'
         : 'https://www.sandbox.paypal.com',
     },
     microsoft: {
@@ -119,7 +123,7 @@ const TokenRefreshSchema = z.object({
 router.get('/config/:provider', (req, res) => {
   const { provider } = req.params;
   const config = getOAuthProviders()[provider];
-  
+
   if (!config) {
     return res.status(404).json({ error: 'Provider not found' });
   }
@@ -168,11 +172,11 @@ router.post('/state', async (req, res) => {
     }
 
     const { userId, integrationSlug, redirectUri } = OAuthStateSchema.parse(req.body);
-    
+
     // Generate state and code verifier
     const state = generateRandomString(32);
     const codeVerifier = generateRandomString(128);
-    
+
     const oauthState = {
       state,
       codeVerifier,
@@ -206,7 +210,7 @@ router.post('/state', async (req, res) => {
 router.post('/token', async (req, res) => {
   try {
     const { provider, code, redirectUri, codeVerifier, state } = req.body;
-    
+
     const config = getOAuthProviders()[provider];
     if (!config) {
       return res.status(404).json({ error: 'Provider not found' });
@@ -216,7 +220,7 @@ router.post('/token', async (req, res) => {
     if (state) {
       try {
         const oauthState = oauthStates.get(state);
-        
+
         if (!oauthState || oauthState.expiresAt < Date.now()) {
           console.error('Invalid or expired OAuth state');
           return res.status(400).json({ error: 'Invalid or expired OAuth state' });
@@ -224,7 +228,7 @@ router.post('/token', async (req, res) => {
 
         // Clean up the used state
         oauthStates.delete(state);
-        
+
         // Use the stored code verifier if available
         if (oauthState.codeVerifier && !codeVerifier) {
           codeVerifier = oauthState.codeVerifier;
@@ -268,9 +272,9 @@ router.post('/token', async (req, res) => {
     const tokenData = await response.json();
 
     if (!response.ok) {
-      return res.status(400).json({ 
-        error: 'Token exchange failed', 
-        details: tokenData.error_description || tokenData.error 
+      return res.status(400).json({
+        error: 'Token exchange failed',
+        details: tokenData.error_description || tokenData.error
       });
     }
 
@@ -338,7 +342,7 @@ async function handleUserinfo(req, res) {
     const provider = (req.body && req.body.provider) || (req.query && req.query.provider) || 'authentik';
     const accessToken = getAccessTokenFromRequest(req);
 
-    
+
     const config = getOAuthProviders()[provider];
     if (!config) {
       return res.status(404).json({ error: 'Provider not found' });
@@ -371,7 +375,7 @@ async function handleUserinfo(req, res) {
           statusText: userResponse.statusText,
           detailsPreview: details ? details.slice(0, 500) : ''
         });
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'Failed to get user info',
           status: userResponse.status,
           details
@@ -389,7 +393,7 @@ async function handleUserinfo(req, res) {
       });
 
       if (!userResponse.ok) {
-        return res.status(400).json({ 
+        return res.status(400).json({
           error: 'Failed to get user info',
           details: await userResponse.text()
         });
@@ -414,7 +418,7 @@ router.get('/userinfo', handleUserinfo);
 router.post('/refresh', async (req, res) => {
   try {
     const { provider, refreshToken } = TokenRefreshSchema.parse(req.body);
-    
+
     const config = getOAuthProviders()[provider];
     if (!config) {
       return res.status(404).json({ error: 'Provider not found' });
@@ -438,9 +442,9 @@ router.post('/refresh', async (req, res) => {
     const tokenData = await response.json();
 
     if (!response.ok) {
-      return res.status(400).json({ 
-        error: 'Token refresh failed', 
-        details: tokenData.error_description || tokenData.error 
+      return res.status(400).json({
+        error: 'Token refresh failed',
+        details: tokenData.error_description || tokenData.error
       });
     }
 
@@ -467,8 +471,256 @@ router.post('/refresh', async (req, res) => {
   }
 });
 
+/**
+ * POST /:provider/callback
+ * Handles OAuth callback, exchanges code for token, and syncs user profile
+ */
+router.post('/:provider/callback', async (req, res) => {
+  try {
+    const { provider } = req.params;
+    const { code, state, redirectUri } = req.body;
+
+    // 1. Validate State and get userId
+    let oauthState;
+    let userId;
+    let codeVerifier;
+
+    if (state) {
+      oauthState = oauthStates.get(state);
+      if (!oauthState || oauthState.expiresAt < Date.now()) {
+        return res.status(400).json({ error: 'Invalid or expired OAuth state' });
+      }
+      userId = oauthState.userId;
+      codeVerifier = oauthState.codeVerifier;
+      // Clean up state
+      oauthStates.delete(state);
+    } else {
+      // If no state (unlikely for secure flows), we can't trust the userId from body
+      // But for some flows maybe we allow it if authenticated?
+      // For now enforce state
+      return res.status(400).json({ error: 'State parameter is required' });
+    }
+
+    const config = getOAuthProviders()[provider];
+    if (!config) {
+      return res.status(404).json({ error: 'Provider not found' });
+    }
+
+    // 2. Exchange Token
+    const params = new URLSearchParams({
+      grant_type: 'authorization_code',
+      client_id: config.clientId,
+      client_secret: config.clientSecret,
+      code,
+      redirect_uri: redirectUri,
+    });
+
+    if (codeVerifier) {
+      params.append('code_verifier', codeVerifier);
+    }
+
+    const tokenResponse = await fetch(config.tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params,
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenResponse.ok) {
+      logger.error('Token exchange failed', { provider, error: tokenData });
+      return res.status(400).json({
+        error: 'Token exchange failed',
+        details: tokenData.error_description || tokenData.error
+      });
+    }
+
+    const accessToken = tokenData.access_token;
+
+    // 3. Fetch User Info
+    let userInfo = {};
+    const userInfoUrl = config.userInfoUrl ||
+      (provider === 'github' ? 'https://api.github.com/user' :
+        provider === 'google' ? 'https://www.googleapis.com/oauth2/v2/userinfo' :
+          provider === 'linkedin' ? 'https://api.linkedin.com/v2/me' : // LinkedIn requires specific projection usually
+            null);
+
+    if (userInfoUrl) {
+      const uiRes = await fetch(userInfoUrl, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Accept': 'application/json',
+          ...(provider === 'github' ? { 'User-Agent': 'Nexus-App' } : {})
+        }
+      });
+      if (uiRes.ok) {
+        userInfo = await uiRes.json();
+      } else {
+        logger.warn('Failed to fetch user info', { provider, status: uiRes.status });
+      }
+    } else if (provider === 'authentik' && tokenData.id_token) {
+      // Authentik puts info in id_token usually
+      const idTokenPayload = decodeJwtPayload(tokenData.id_token);
+      if (idTokenPayload) userInfo = idTokenPayload;
+    }
+
+    // 4. Update Profile
+    const updateData = {};
+
+    // Map fields based on provider
+    if (provider === 'linkedin') {
+      const profileUrl = `https://www.linkedin.com/in/${userInfo.vanityName || userInfo.id}`; // simplified
+      updateData.linkedin_url = profileUrl;
+    } else if (provider === 'github') {
+      updateData.github_url = userInfo.html_url || userInfo.url;
+    } else if (provider === 'twitter') {
+      updateData.twitter_url = `https://twitter.com/${userInfo.screen_name || userInfo.username}`;
+    } else if (provider === 'google' || provider === 'google_workspace') {
+      // Google doesn't give a "profile link" usually
+    }
+
+    if (userInfo.blog || userInfo.website) {
+      updateData.website = userInfo.blog || userInfo.website;
+    }
+
+    // Update social_links jsonb
+    try {
+      const { profile } = await userProfileService.getUserProfile(userId);
+      let socialLinks = (profile && profile.social_links) ? profile.social_links : [];
+      if (typeof socialLinks === 'string') {
+        try { socialLinks = JSON.parse(socialLinks); } catch (e) { socialLinks = []; }
+      }
+
+      // Update or add specific provider link
+      const existingIdx = socialLinks.findIndex(l => l.provider === provider);
+      const newLink = {
+        provider,
+        username: userInfo.login || userInfo.username || userInfo.email,
+        url: updateData[`${provider}_url`] || updateData.website || null
+      };
+
+      if (existingIdx >= 0) {
+        socialLinks[existingIdx] = { ...socialLinks[existingIdx], ...newLink };
+      } else {
+        socialLinks.push(newLink);
+      }
+
+      updateData.social_links = JSON.stringify(socialLinks);
+
+      // Perform update
+      await userProfileService.updateProfileData(userId, updateData);
+      logger.info(`Updated user profile with ${provider} data`, { userId });
+
+    } catch (err) {
+      logger.error('Failed to update user profile during OAuth callback', { error: err.message });
+    }
+
+    return res.json({
+      success: true,
+      message: `Successfully connected ${provider}`,
+      data: {
+        ...tokenData,
+        user: userInfo
+      }
+    });
+
+  } catch (error) {
+    logger.error('OAuth callback error', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+
+
+/**
+ * GET /integrations/:userId
+ * Get user's connected integrations
+ */
+router.get('/integrations/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // In a real app, verify req.user.id === userId or is admin
+    const result = await query(
+      `SELECT ui.*, i.name as integration_name, i.provider 
+       FROM user_integrations ui
+       LEFT JOIN integrations i ON ui.integration_id = i.id
+       WHERE ui.user_id = $1`,
+      [userId]
+    );
+
+    const integrations = (result.data || []).map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      provider: row.integration_slug, // Fallback to slug if provider join is null
+      name: row.integration_name || row.integration_slug,
+      status: row.status,
+      connectedAt: row.created_at,
+      lastSyncAt: row.last_sync_at,
+      config: row.settings || {}
+    }));
+
+    res.json({ integrations });
+  } catch (error) {
+    logger.error('Failed to get integrations', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /disconnect/:integrationId
+ * Disconnect an integration
+ */
+router.post('/disconnect/:integrationId', async (req, res) => {
+  try {
+    const { integrationId } = req.params;
+    const { userId } = req.body; // Optional security check
+
+    await query('DELETE FROM user_integrations WHERE id = $1', [integrationId]);
+
+    // Also clear from social links if applicable?
+    // This is complex because we don't know which social link corresponds to this integration easily
+    // unless we query first. For now, just delete the integration record.
+
+    res.json({ success: true });
+  } catch (error) {
+    logger.error('Failed to disconnect integration', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /sync
+ * Manual sync trigger
+ */
+router.post('/sync', async (req, res) => {
+  try {
+    const { integrationId, userId } = req.body;
+    // Logic to trigger sync job would go here
+    // For now, update last_sync_at
+
+    if (integrationId) {
+      await query(
+        'UPDATE user_integrations SET last_sync_at = NOW() WHERE id = $1',
+        [integrationId]
+      );
+    }
+
+    res.json({
+      success: true,
+      syncedAt: new Date().toISOString(),
+      message: 'Sync started'
+    });
+  } catch (error) {
+    logger.error('Sync trigger failed', { error: error.message });
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Utility function to generate random strings
 function generateRandomString(length) {
+
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
   for (let i = 0; i < length; i++) {

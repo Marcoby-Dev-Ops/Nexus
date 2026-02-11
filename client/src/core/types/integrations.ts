@@ -22,29 +22,29 @@ export interface Integration {
   category: IntegrationCategory;
   difficulty: IntegrationDifficulty;
   authType: IntegrationType;
-  
+
   // Setup Information
   estimatedSetupTime: string;
   features: string[];
   description?: string;
-  
+
   // Support & Documentation
   documentation?: string;
   supportUrl?: string;
   videoTutorial?: string;
   prerequisites?: string[];
-  
+
   // Troubleshooting
   commonIssues?: Array<{
     issue: string;
     solution: string;
     category: 'auth' | 'permissions' | 'network' | 'configuration';
   }>;
-  
+
   // Configuration Schema
   configSchema?: Record<string, unknown>;
   defaultConfig?: Record<string, unknown>;
-  
+
   // Platform Metadata
   isActive: boolean;
   isBeta?: boolean;
@@ -53,7 +53,7 @@ export interface Integration {
     requestsPerMinute: number;
     requestsPerHour: number;
   };
-  
+
   // Timestamps
   createdat: string;
   updated_at?: string;
@@ -69,7 +69,7 @@ export interface OAuthIntegration {
   integrationName: string;
   integrationType: 'oauth';
   status: IntegrationStatus;
-  
+
   // OAuth-specific fields
   accessToken?: string;
   refreshToken?: string;
@@ -78,15 +78,15 @@ export interface OAuthIntegration {
   externalAccountId?: string;
   tenantId?: string;
   lastError?: string;
-  
+
   // Mail sync (for Microsoft 365)
   mailSyncEnabled?: boolean;
   mailFolders?: string[];
   mailSyncFromDate?: string;
-  
+
   // Sync information
   lastSyncAt?: string;
-  
+
   // Timestamps
   createdAt: string;
   updatedAt: string;
@@ -109,6 +109,7 @@ export interface OAuthCallbackRequest {
   state: string;
   userId: string;
   redirectUri: string;
+  provider: OAuthProvider;
 }
 
 /**
@@ -156,23 +157,23 @@ export interface SetupStep {
   title: string;
   description: string;
   type: SetupStepType;
-  
+
   // State Management
   completed: boolean;
   optional?: boolean;
   canSkip?: boolean;
-  
+
   // UX Information
   estimatedTime?: string;
   helpText?: string;
   troubleshootingUrl?: string;
-  
+
   // Validation
   validation?: {
     required: boolean;
     validator?: (data: unknown) => ValidationResult;
   };
-  
+
   // Analytics
   analytics?: {
     dropOffRate?: number;
@@ -295,7 +296,7 @@ export interface UseIntegrationSetupReturn {
   connectionStatus: ConnectionStatus;
   errors: IntegrationError[];
   analytics: SetupAnalytics;
-  
+
   // Actions
   nextStep: () => void;
   previousStep: () => void;
@@ -304,7 +305,7 @@ export interface UseIntegrationSetupReturn {
   validateStep: (stepId: string) => Promise<ValidationResult>;
   resetSetup: () => void;
   completeSetup: () => Promise<void>;
-  
+
   // Utilities
   getStepProgress: () => number;
   getEstimatedTimeRemaining: () => string;

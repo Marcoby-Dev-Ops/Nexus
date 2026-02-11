@@ -1,0 +1,35 @@
+<!--
+  Authentik login HTML snippet for Custom HTML (Login customization).
+  Option A (recommended): Paste the contents of
+    /client/public/marcoby_authentik_logos/authentik-login.css
+  into Authentik -> Login -> Custom CSS, then paste the body below
+  into Authentik -> Login -> Custom HTML.
+
+  Option B (serve from Nexus): Ensure Nexus serves files from
+  `/marcoby_authentik_logos/` (this repo already places assets there),
+  then in Authentik Custom HTML include the <link> tag below and
+  use absolute URLs (https://napp.marcoby.net/...).
+-->
+
+<!-- Optional if serving the CSS from Nexus: -->
+<!--
+<link rel="stylesheet" href="/marcoby_authentik_logos/authentik-login.css">
+-->
+
+<div class="ak-login-bg-container" aria-hidden="true">
+  <div class="ak-blob b1" aria-hidden="true"></div>
+  <div class="ak-blob b2" aria-hidden="true"></div>
+  <div class="ak-blob b3" aria-hidden="true"></div>
+
+  <!-- small particles placed for depth; adjust positions as desired -->
+  <div class="ak-particle" style="left:8%; top:18%;"></div>
+  <div class="ak-particle" style="left:78%; top:8%; animation-delay:0.6s"></div>
+  <div class="ak-particle" style="left:56%; top:78%; animation-delay:1s"></div>
+
+  <!-- Branding/logo: update the src to match your asset name if different -->
+  <img class="ak-login-logo" src="/marcoby_authentik_logos/brand_logo.svg" alt="Brand logo" />
+</div>
+
+<!-- Small note for Authentik: place this snippet above or inside the main login wrapper
+     so the blobs are behind the form. If CSS is inlined into Authentik, remove
+     the optional <link> above. -->

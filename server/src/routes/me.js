@@ -77,7 +77,19 @@ router.patch('/', async (req, res) => {
     const updates = req.body;
 
     // Build dynamic update query
-    const allowedFields = ['display_name', 'first_name', 'last_name', 'role', 'job_title', 'preferences'];
+    const allowedFields = [
+      'display_name',
+      'first_name',
+      'last_name',
+      'role',
+      'job_title',
+      'preferences',
+      'website',
+      'linkedin_url',
+      'github_url',
+      'twitter_url',
+      'social_links'
+    ];
     const updateParts = [];
     const values = [];
     let paramIndex = 1;
@@ -242,10 +254,10 @@ router.get('/contact', authLimiter, async (req, res) => {
     const canExposePhone = (() => {
       // Allow if running in development or test for local/dev convenience
       if (['development', 'test'].includes(process.env.NODE_ENV)) return true;
-  const roleAllows = req.user && (req.user.role === 'user' || req.user.role === 'admin');
-  const tokenAllows = jwtPayload && (jwtPayload.allow_phone === true || jwtPayload.allow_phone === 'true');
-  // Allow if either the role is sufficient (requesting own data) or the token explicitly allows phone access.
-  return Boolean(roleAllows || tokenAllows);
+      const roleAllows = req.user && (req.user.role === 'user' || req.user.role === 'admin');
+      const tokenAllows = jwtPayload && (jwtPayload.allow_phone === true || jwtPayload.allow_phone === 'true');
+      // Allow if either the role is sufficient (requesting own data) or the token explicitly allows phone access.
+      return Boolean(roleAllows || tokenAllows);
     })();
 
     const payload = {

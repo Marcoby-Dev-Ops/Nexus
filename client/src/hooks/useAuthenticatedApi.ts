@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/index';
-import { postgres } from '@/lib/postgres';
+import { getAuthHeaders } from '@/lib/api-client';
+import { getApiBaseUrl } from '@/core/apiBase';
 
 interface UseAuthenticatedApiOptions {
   /** Delay in milliseconds to wait after auth is ready before allowing API calls */
@@ -22,6 +23,8 @@ interface UseAuthenticatedApiReturn {
   checkAuth: () => Promise<boolean>;
   /** Function to wait for authentication to be ready */
   waitForAuth: () => Promise<boolean>;
+  /** Function to make authenticated fetch requests */
+  fetchWithAuth: (url: string, options?: RequestInit) => Promise<Response>;
 }
 
 /**
@@ -86,6 +89,31 @@ export function useAuthenticatedApi(options: UseAuthenticatedApiOptions = {}): U
     return false;
   }, [checkAuth, maxRetries, retryDelay]);
 
+  /**
+   * Make an authenticated fetch request
+   */
+  const fetchWithAuth = useCallback(async (url: string, options: RequestInit = {}): Promise<Response> => {
+    // Wait for auth to be ready if not already
+    if (!isReady) {
+      const ready = await waitForAuth();
+      if (!ready) {
+        throw new Error('Authentication failed - cannot make request');
+      }
+    }
+
+    const headers = await getAuthHeaders();
+    const baseUrl = getApiBaseUrl();
+    const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
+
+    return fetch(fullUrl, {
+      ...options,
+      headers: {
+        ...headers,
+        ...options.headers,
+      },
+    });
+  }, [isReady, waitForAuth]);
+
   // Check authentication when auth context changes
   useEffect(() => {
     if (user?.id && authInitialized && !authLoading) {
@@ -105,6 +133,7 @@ export function useAuthenticatedApi(options: UseAuthenticatedApiOptions = {}): U
     isChecking,
     error,
     checkAuth,
-    waitForAuth
+    waitForAuth,
+    fetchWithAuth
   };
 }

@@ -153,6 +153,7 @@ const USER_SCOPED_TABLES = [
   'user_integrations',
   'tasks',
   'thoughts',
+  'personal_thoughts',
   'documents',
   'user_activities',
   'next_best_actions',
@@ -291,7 +292,7 @@ router.get('/:table', authenticateToken, async (req, res) => {
     };
 
     // Add user-based filtering for security (only for tables that don't use RLS)
-    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'documents',
+    if (['user_profiles', 'user_integrations', 'tasks', 'thoughts', 'personal_thoughts', 'documents',
       'user_activities', 'next_best_actions', 'user_action_executions', 'insight_feedback', 'initiative_acceptances', 'user_contexts'].includes(table)) {
       sql += ` WHERE user_id = $${paramIndex}`;
       params.push(userId);

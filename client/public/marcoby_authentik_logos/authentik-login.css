@@ -1,0 +1,79 @@
+/* Authentik login custom styles to match Nexus login visuals
+   Drop this CSS into Authentik Customization (Login -> Custom CSS)
+   or serve it from Nexus and reference it from Authentik's custom HTML.
+*/
+:root{
+  --accent-1: #16a34a; /* green-600 */
+  --accent-2: #10b981; /* emerald-500 */
+  --bg-overlay: rgba(2,6,23,0.28);
+}
+
+/* Full-screen background image (same as Nexus) */
+body.authentik-login {
+  background-color: #08121a;
+  background-image: url('/marcoby_authentik_logos/flow_background.jpg');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+}
+
+/* Subtle dark overlay so form text reads well */
+.ak-login-root::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(8,18,26,0.45), rgba(2,6,23,0.6));
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Floating colorful blobs similar to Nexus login */
+.ak-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(36px);
+  opacity: 0.18;
+  mix-blend-mode: screen;
+  animation: blobMove 8s infinite ease-in-out;
+}
+.ak-blob.b1{ width: 280px; height: 280px; background: var(--accent-2); top: -40px; left: -20px; }
+.ak-blob.b2{ width: 280px; height: 280px; background: #34d399; top: -20px; right: -40px; animation-delay: 2s; }
+.ak-blob.b3{ width: 300px; height: 300px; background: #0ea5a3; bottom: -60px; left: 16%; animation-delay: 4s; }
+
+@keyframes blobMove {
+  0%,100%{ transform: translateY(0) scale(1); }
+  50%{ transform: translateY(18px) scale(1.05); }
+}
+
+/* Floating particle dots (small) */
+.ak-particle { position: absolute; width: 6px; height: 6px; background: rgba(255,255,255,0.08); border-radius: 50%; animation: floatPulse 3s infinite; }
+@keyframes floatPulse { 0%{opacity:.08; transform: translateY(0);} 50%{opacity: .22; transform: translateY(-6px);} 100%{opacity:.08; transform: translateY(0);} }
+
+/* Login card styling tweaks to match Nexus look */
+.ak-login-card {
+  position: relative;
+  z-index: 5; /* above background/overlays */
+  background: rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  border-radius: 16px;
+}
+
+/* Branding image (logo) styling used on Nexus login */
+.ak-login-logo { display:block; margin: 0 auto 1rem auto; width: 16rem; height: auto; filter: drop-shadow(0 12px 24px rgba(2,6,23,0.6)); transform-origin:center; animation: floatLogo 6s ease-in-out infinite; }
+@keyframes floatLogo { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-6px);} }
+
+/* Button accent */
+.ak-login-card .ak-btn-primary { background: linear-gradient(90deg, var(--accent-1), var(--accent-2)); border: none; box-shadow: 0 6px 20px rgba(16,185,129,0.12); }
+
+/* Utility to position blobs/particles via Authentik custom HTML wrapper */
+.ak-login-bg-container{ position: fixed; inset:0; pointer-events:none; z-index:0; }
+
+/* Make sure form content remains readable on small screens */
+@media (max-width: 640px){
+  .ak-blob{ display:none; }
+  .ak-login-root::before{ background: linear-gradient(180deg, rgba(8,18,26,0.65), rgba(2,6,23,0.75)); }
+}
+
+/* End of custom styles */

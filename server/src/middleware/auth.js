@@ -21,6 +21,11 @@ async function getOrCreateUserProfile(authentikUserId, userEmail = null, jwtPayl
       wasCreated: result.created 
     });
     
+    // Prefer returning the internal profile.user_id when available
+    if (result.profile && result.profile.user_id) {
+      return result.profile.user_id;
+    }
+
     return authentikUserId;
 
   } catch (error) {

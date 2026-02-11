@@ -152,7 +152,9 @@ export class ConsolidatedBusinessService extends BaseService {
   
   async getQuantumBusinessData(companyId: string): Promise<ServiceResponse<any>> {
     try {
-      return await this.quantum.getQuantumProfile(companyId);
+      const { normalizeOrgId } = await import('@/shared/utils/organization');
+      const normalized = normalizeOrgId(companyId);
+      return await this.quantum.getQuantumProfile(normalized || '');
     } catch (error) {
       return this.handleError(`Failed to get quantum business data: ${error}`);
     }

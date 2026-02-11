@@ -18,13 +18,166 @@ const router = Router();
 router.get('/link/twitter', authenticateToken, async (req, res) => {
   try {
     const next = req.query.next || process.env.FRONTEND_URL || 'https://napp.marcoby.net/profile';
+
+    // Create an OAuth state via the local oauth state endpoint so the
+    // token exchange can validate the request later. We POST to our own
+    // /api/oauth/state route which will store the state and codeVerifier.
+    const localStateUrl = `${req.protocol}://${req.get('host')}/api/oauth/state`;
+    const body = JSON.stringify({ userId: String(req.user.id), integrationSlug: 'twitter', redirectUri: next });
+
+    const stateResp = await fetch(localStateUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body
+    });
+
+    if (!stateResp.ok) {
+      const txt = await stateResp.text().catch(() => '');
+      logger.error('Failed to create OAuth state', { status: stateResp.status, details: txt });
+      return res.status(500).json({ success: false, error: 'Failed to initialize OAuth state' });
+    }
+
+    const stateData = await stateResp.json();
+    const state = stateData.data && stateData.data.state ? stateData.data.state : null;
+    if (!state) {
+      logger.error('OAuth state response malformed', { body: stateData });
+      return res.status(500).json({ success: false, error: 'Invalid OAuth state' });
+    }
+
     // Use provider slug 'twitter' (the provider you created in Authentik)
     const providerStart = `${AUTHENTIK_BASE_URL.replace(/\/+$/, '')}/if/flow/twitter/start`;
-    const redirectUrl = `${providerStart}?next=${encodeURIComponent(next)}`;
+    const redirectUrl = `${providerStart}?state=${encodeURIComponent(state)}&next=${encodeURIComponent(next)}`;
     return res.redirect(302, redirectUrl);
   } catch (err) {
     logger.error('Failed to redirect to Authentik provider start', { error: err?.message || err });
     return res.status(500).json({ success: false, error: 'Failed to start provider link' });
+  }
+});
+
+// POST /api/auth/sync/twitter - pull mapped Twitter attributes from Authentik and persist to Nexus profile
+router.post('/sync/twitter', authenticateToken, async (req, res) => {
+  try {
+    const authentikUserId = String(req.user.id);
+    if (!AUTHENTIK_BASE_URL || !AUTHENTIK_API_TOKEN) {
+      return res.status(500).json({ success: false, error: 'Authentik integration not configured' });
+    }
+
+    const userResp = await fetch(`${AUTHENTIK_BASE_URL.replace(/\/+$/, '')}/api/v3/core/users/${encodeURIComponent(authentikUserId)}/`, {
+      headers: { 'Authorization': `Bearer ${AUTHENTIK_API_TOKEN}`, 'Accept': 'application/json' }
+    });
+
+    if (!userResp.ok) {
+      const txt = await userResp.text().catch(() => '');
+      logger.error('Failed to fetch Authentik user for sync', { status: userResp.status, details: txt });
+      return res.status(500).json({ success: false, error: 'Failed to fetch user from Authentik' });
+    }
+
+    const akUser = await userResp.json();
+
+    // Extract mapped fields. Try attributes first, then fallback to common fields.
+    const attrs = akUser.attributes || {};
+    const twitterName = attrs.twitter_name || akUser.name || '';
+    const twitterUsername = attrs.twitter_username || attrs.preferred_username || '';
+    const twitterLocation = attrs.twitter_location || attrs.location || '';
+    const twitterProfileUrl = attrs.twitter_profile_url || attrs.url || '';
+    const twitterDescription = attrs.twitter_description || attrs.description || '';
+
+    // Map into Nexus profile fields
+    const updateData = {};
+    if (twitterName) {
+      const parts = String(twitterName).trim().split(/\s+/);
+      updateData.first_name = parts.shift() || '';
+      updateData.last_name = parts.join(' ') || null;
+    }
+    if (twitterLocation) updateData.location = twitterLocation;
+    if (twitterDescription) updateData.bio = twitterDescription;
+    if (twitterProfileUrl) updateData.website = twitterProfileUrl;
+
+    // Ensure social_links contains twitter entry
+    try {
+      const { success, profile } = await userProfileService.getUserProfile(req.user.id);
+      let socialLinks = (profile && profile.social_links) ? profile.social_links : null;
+      if (!socialLinks) socialLinks = [];
+      // Remove existing twitter entry
+      socialLinks = socialLinks.filter(s => s.provider !== 'twitter');
+      socialLinks.push({ provider: 'twitter', username: twitterUsername || null, url: twitterProfileUrl || null });
+      updateData.social_links = JSON.stringify(socialLinks);
+    } catch (e) {
+      logger.warn('Failed to read existing social_links, will set new', { error: e.message });
+      updateData.social_links = JSON.stringify([{ provider: 'twitter', username: twitterUsername || null, url: twitterProfileUrl || null }]);
+    }
+
+    // Persist updates to user profile
+    const result = await userProfileService.updateProfileData(req.user.id, updateData, req.user.jwtPayload);
+    if (!result.success) {
+      logger.error('Failed to update Nexus profile with Twitter data', { error: result.error });
+      return res.status(500).json({ success: false, error: 'Failed to update Nexus profile' });
+    }
+
+    return res.json({ success: true, profile: result.profile });
+  } catch (error) {
+    logger.error('sync/twitter failed', { error: error.message });
+    return res.status(500).json({ success: false, error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/auth/unlink/twitter - remove Twitter attributes from Authentik user and clear Nexus social_links
+router.delete('/unlink/twitter', authenticateToken, async (req, res) => {
+  try {
+    const authentikUserId = String(req.user.id);
+    if (!AUTHENTIK_BASE_URL || !AUTHENTIK_API_TOKEN) {
+      return res.status(500).json({ success: false, error: 'Authentik integration not configured' });
+    }
+
+    // Fetch current user
+    const userResp = await fetch(`${AUTHENTIK_BASE_URL.replace(/\/+$/, '')}/api/v3/core/users/${encodeURIComponent(authentikUserId)}/`, {
+      headers: { 'Authorization': `Bearer ${AUTHENTIK_API_TOKEN}`, 'Accept': 'application/json' }
+    });
+    if (!userResp.ok) {
+      const txt = await userResp.text().catch(() => '');
+      logger.error('Failed to fetch Authentik user for unlink', { status: userResp.status, details: txt });
+      return res.status(500).json({ success: false, error: 'Failed to fetch user from Authentik' });
+    }
+
+    const akUser = await userResp.json();
+    const attrs = akUser.attributes || {};
+
+    // Remove twitter-related attribute keys
+    ['twitter_name','twitter_username','twitter_location','twitter_profile_url','twitter_description'].forEach(k => delete attrs[k]);
+
+    // Update Authentik user attributes
+    const updateBody = { ...akUser, attributes: attrs };
+    const updateResp = await fetch(`${AUTHENTIK_BASE_URL.replace(/\/+$/, '')}/api/v3/core/users/${encodeURIComponent(authentikUserId)}/`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${AUTHENTIK_API_TOKEN}` },
+      body: JSON.stringify(updateBody)
+    });
+    if (!updateResp.ok) {
+      const txt = await updateResp.text().catch(() => '');
+      logger.error('Failed to update Authentik user to unlink twitter', { status: updateResp.status, details: txt });
+      return res.status(500).json({ success: false, error: 'Failed to update Authentik user' });
+    }
+
+    // Remove twitter from Nexus social_links
+    try {
+      const { success, profile } = await userProfileService.getUserProfile(req.user.id);
+      let socialLinks = (profile && profile.social_links) ? profile.social_links : null;
+      if (socialLinks) {
+        // ensure it's parsed
+        if (typeof socialLinks === 'string') {
+          try { socialLinks = JSON.parse(socialLinks); } catch (e) { socialLinks = []; }
+        }
+        socialLinks = socialLinks.filter(s => s.provider !== 'twitter');
+        await userProfileService.updateProfileData(req.user.id, { social_links: JSON.stringify(socialLinks) }, req.user.jwtPayload);
+      }
+    } catch (e) {
+      logger.warn('Failed to update Nexus social_links on unlink', { error: e.message });
+    }
+
+    return res.json({ success: true });
+  } catch (error) {
+    logger.error('unlink/twitter failed', { error: error.message });
+    return res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

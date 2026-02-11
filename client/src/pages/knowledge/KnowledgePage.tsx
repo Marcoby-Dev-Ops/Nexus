@@ -9,12 +9,14 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, Brain, Database, RefreshCw, Shield, User } from 'lucide-react';
+import { Bot, Brain, Database, RefreshCw, Shield, User, TrendingUp } from 'lucide-react';
 import { Button } from '@/shared/components/ui/Button';
 import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useSearchParams } from 'react-router-dom';
+import { ContinuousImprovementDashboard } from '@/lib/ai/components/ContinuousImprovementDashboard';
+import { useAuth } from '@/hooks/index';
 
 type MemoryHorizon = 'short' | 'medium' | 'long';
 type ConfidenceLevel = 'high' | 'medium';
@@ -164,6 +166,7 @@ function sortBlocks(blocks: KnowledgeContextBlock[]): KnowledgeContextBlock[] {
 export default function KnowledgePage() {
   const { setPageTitle, setPageIcon } = useHeaderContext();
   const { fetchWithAuth } = useAuthenticatedApi();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const urlAgentId = searchParams.get('agent') || 'executive-assistant';
@@ -506,6 +509,19 @@ export default function KnowledgePage() {
                 )}
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-slate-700 bg-slate-800/60 p-5 space-y-4 lg:col-span-2">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-emerald-300" />
+            <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wide">AI Performance & Improvement</h2>
+          </div>
+          <p className="text-sm text-slate-400">
+            Nexus performance metrics and behavioral improvements over time.
+          </p>
+          <div className="bg-slate-900/40 rounded-lg border border-slate-700/70 p-4">
+            <ContinuousImprovementDashboard userId={user?.id || ''} timeframe="month" />
           </div>
         </section>
       </div>

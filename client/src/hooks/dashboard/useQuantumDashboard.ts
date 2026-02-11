@@ -48,7 +48,10 @@ export function useQuantumDashboard() {
 
   const loadQuantumProfile = async () => {
     try {
-      if (!user?.id || !activeOrgId) {
+      // Normalize organization id: ignore legacy placeholder 'default' and fall back to profile.organization_id
+      const normalizedOrgId = (activeOrgId && activeOrgId !== 'default') ? activeOrgId : (profile?.organization_id || null);
+
+      if (!user?.id || !normalizedOrgId) {
         // Provide mock data when no user/org
         setData(prev => ({ 
           ...prev, 
@@ -63,7 +66,7 @@ export function useQuantumDashboard() {
       }
 
   // QuantumBusinessService exposes getQuantumProfile(organizationId)
-  const profileResult = await quantumBusinessService.getQuantumProfile(activeOrgId);
+  const profileResult = await quantumBusinessService.getQuantumProfile(normalizedOrgId as string);
       if (profileResult.success && profileResult.data) {
         setData(prev => ({ ...prev, quantumProfile: profileResult.data }));
       } else {
