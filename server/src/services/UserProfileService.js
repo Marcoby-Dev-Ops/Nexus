@@ -35,7 +35,7 @@ class UserProfileService {
       if (existingResult.data && existingResult.data.length > 0) {
         // Profile exists, sync with latest Authentik data and update last activity
         const authentikData = this.extractAuthentikUserData(jwtPayload);
-        
+
         // Prepare update data with Authentik sync + activity update
         const updateData = {
           ...authentikData.profileData,
@@ -46,17 +46,33 @@ class UserProfileService {
         // Only update if we have Authentik data to sync
         if (Object.keys(authentikData.profileData).length > 0) {
           try {
-            const syncResult = await this.updateProfileData(userId, authentikData.profileData, jwtPayload);
-            if (syncResult.success) {
-              logger.info('User profile synced with Authentik data on login', { 
-                userId, 
-                updatedFields: Object.keys(authentikData.profileData)
-              });
+            const currentProfile = existingResult.data[0];
+            const safeUpdateData = {};
+
+            // "Fill-only" strategy: Only update fields that are missing/empty in DB
+            Object.entries(authentikData.profileData).forEach(([key, paramValue]) => {
+              const dbValue = currentProfile[key];
+              // Check if DB value is effectively empty
+              const isDbValueEmpty = !dbValue || dbValue === '' || dbValue === 'User';
+
+              if (isDbValueEmpty && paramValue) {
+                safeUpdateData[key] = paramValue;
+              }
+            });
+
+            if (Object.keys(safeUpdateData).length > 0) {
+              const syncResult = await this.updateProfileData(userId, safeUpdateData, jwtPayload);
+              if (syncResult.success) {
+                logger.info('User profile synced with Authentik data (fill-only)', {
+                  userId,
+                  updatedFields: Object.keys(safeUpdateData)
+                });
+              }
             }
           } catch (syncError) {
-            logger.warn('Failed to sync Authentik data on login', { 
-              userId, 
-              error: syncError.message 
+            logger.warn('Failed to sync Authentik data on login', {
+              userId,
+              error: syncError.message
             });
           }
         }
@@ -81,9 +97,9 @@ class UserProfileService {
 
       // Profile doesn't exist, create basic profile first
       logger.info('Profile not found, creating basic profile', { userId });
-      
+
       const basicProfile = await this.createBasicProfile(userId, userEmail, additionalData, jwtPayload);
-      
+
       if (!basicProfile.success) {
         throw new Error(basicProfile.error);
       }
@@ -91,19 +107,19 @@ class UserProfileService {
       logger.info('Basic user profile created', { userId });
       // Extract comprehensive Authentik signup data and sync to user profile
       const authentikData = this.extractAuthentikUserData(jwtPayload);
-      
+
       // Update user profile with Authentik data
       if (Object.keys(authentikData.profileData).length > 0) {
         try {
           await this.updateProfileData(userId, authentikData.profileData, jwtPayload);
-          logger.info('User profile updated with Authentik data', { 
-            userId, 
-            updatedFields: Object.keys(authentikData.profileData) 
+          logger.info('User profile updated with Authentik data', {
+            userId,
+            updatedFields: Object.keys(authentikData.profileData)
           });
         } catch (updateError) {
-          logger.warn('Failed to update profile with Authentik data', { 
-            userId, 
-            error: updateError.message 
+          logger.warn('Failed to update profile with Authentik data', {
+            userId,
+            error: updateError.message
           });
         }
       }
@@ -156,18 +172,18 @@ class UserProfileService {
     try {
       // Extract Authentik data for initial profile creation
       const authentikData = this.extractAuthentikUserData(jwtPayload);
-      
+
       // Merge Authentik data with defaults and additional data
       const email = userEmail || authentikData.profileData.email || `${userId}@authentik.local`;
-      const displayName = authentikData.profileData.display_name || 
-                         (authentikData.profileData.first_name && authentikData.profileData.last_name) 
-                           ? `${authentikData.profileData.first_name} ${authentikData.profileData.last_name}`.trim()
-                           : 'User';
+      const displayName = authentikData.profileData.display_name ||
+        (authentikData.profileData.first_name && authentikData.profileData.last_name)
+        ? `${authentikData.profileData.first_name} ${authentikData.profileData.last_name}`.trim()
+        : 'User';
       const completionPercentage = authentikData.profileData.profile_completion_percentage || 0;
       const signupCompleted = authentikData.profileData.signup_completed || false;
       const onboardingCompleted = authentikData.profileData.onboarding_completed || false;
       const businessProfileCompleted = authentikData.profileData.business_profile_completed || false;
-      
+
       // Create the initial profile with Authentik data
       const result = await query(
         `INSERT INTO user_profiles (
@@ -587,33 +603,33 @@ class UserProfileService {
     }
 
     const attrs = jwtPayload.attributes || {};
-    
+
     // Extract user profile data
     const profileData = {};
-    
+
     // Basic user information
     if (jwtPayload.email) profileData.email = jwtPayload.email;
     if (jwtPayload.name) profileData.display_name = jwtPayload.name;
     if (attrs.first_name) profileData.first_name = attrs.first_name;
     if (attrs.last_name) profileData.last_name = attrs.last_name;
     if (attrs.phone) profileData.phone = attrs.phone;
-    
+
     // Professional information
     if (attrs.business_name) profileData.company_name = attrs.business_name;
-    
+
     // Signup completion tracking
     if (attrs.signup_completed === true) {
       profileData.signup_completed = true;
       profileData.onboarding_completed = attrs.enrollment_flow_completed === true;
       profileData.business_profile_completed = attrs.business_profile_completed === true;
     }
-    
+
     // Calculate profile completion percentage based on available data
     const completionFields = [
       'first_name', 'last_name', 'email', 'phone', 'company_name',
       'signup_completed', 'business_profile_completed'
     ];
-    const completedFields = completionFields.filter(field => 
+    const completedFields = completionFields.filter(field =>
       profileData[field] || attrs[field] || jwtPayload[field]
     ).length;
     const completionPercentage = Math.round((completedFields / completionFields.length) * 100);
@@ -632,7 +648,7 @@ class UserProfileService {
       domain: jwtPayload.domain || null
     };
 
-    logger.info('Extracted Authentik user data', { 
+    logger.info('Extracted Authentik user data', {
       hasProfileData: Object.keys(profileData).length > 0,
       hasCompanyData: Object.values(companyData).some(v => v !== null),
       profileFields: Object.keys(profileData),
