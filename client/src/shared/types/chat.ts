@@ -115,6 +115,14 @@ export interface ChatActions {
   setCurrentConversation: (conversation: Conversation | null) => void;
   setCurrentConversationById: (conversationId: string) => Promise<void>;
   renameConversation: (conversationId: string, newTitle: string) => Promise<void>;
+  searchConversations: (queryStr: string) => Promise<SearchResult[]>;
+}
+
+export interface SearchResult {
+  id: string;
+  title: string;
+  updated_at: string;
+  snippet?: string;
 }
 
 export interface ChatQuotas {

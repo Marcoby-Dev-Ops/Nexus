@@ -601,7 +601,59 @@ router.get('/modelway/intents', authenticateToken, (req, res) => {
 });
 
 /**
- * GET /api/ai/conversations
+ * GET /api/ai/search
+ * Global search across conversation titles and message content
+ */
+router.get('/search', authenticateToken, async (req, res) => {
+    const userId = req.user?.id;
+    const { q } = req.query;
+
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    if (!q || q.trim().length < 2) {
+        return res.json({ success: true, data: [] });
+    }
+
+    try {
+        const searchTerm = `%${q}%`;
+        const result = await query(
+            `SELECT DISTINCT ON (c.id)
+                c.id, 
+                c.title, 
+                c.updated_at,
+                (
+                    SELECT content 
+                    FROM ai_messages m2 
+                    WHERE m2.conversation_id = c.id 
+                    AND m2.content ILIKE $2
+                    ORDER BY m2.created_at DESC
+                    LIMIT 1
+                ) as snippet
+             FROM ai_conversations c
+             LEFT JOIN ai_messages m ON c.id = m.conversation_id
+             WHERE c.user_id = $1
+             AND (c.title ILIKE $2 OR m.content ILIKE $2)
+             ORDER BY c.id, c.updated_at DESC
+             LIMIT 20`,
+            [userId, searchTerm],
+            req.user.jwtPayload
+        );
+
+        if (result.error) {
+            logger.error('Search failed', { error: result.error, userId, q });
+            return res.status(500).json({ success: false, error: 'Search failed' });
+        }
+
+        res.json({ success: true, data: result.data || [] });
+    } catch (error) {
+        logger.error('Search error', { error: error.message, userId, q });
+        res.status(500).json({ success: false, error: 'Search failed' });
+    }
+});
+
+/**
  * List non-archived conversations for the authenticated user
  */
 router.get('/conversations', authenticateToken, async (req, res) => {
@@ -631,6 +683,44 @@ router.get('/conversations', authenticateToken, async (req, res) => {
     } catch (error) {
         logger.error('Error fetching conversations', { error: error.message, userId });
         res.status(500).json({ success: false, error: 'Failed to fetch conversations' });
+    }
+});
+
+/**
+ * GET /api/ai/conversations/:id
+ * Get a single conversation by ID
+ */
+router.get('/conversations/:id', authenticateToken, async (req, res) => {
+    const userId = req.user?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+        const result = await query(
+            `SELECT id, title, model, system_prompt, message_count, is_archived,
+                context, created_at, updated_at, user_id
+             FROM ai_conversations
+             WHERE id = $1 AND user_id = $2`,
+            [id, userId],
+            req.user.jwtPayload
+        );
+
+        if (result.error) {
+            logger.error('Failed to fetch conversation', { error: result.error, userId, id });
+            return res.status(500).json({ success: false, error: 'Failed to fetch conversation' });
+        }
+
+        if (!result.data || result.data.length === 0) {
+            return res.status(404).json({ success: false, error: 'Conversation not found' });
+        }
+
+        res.json({ success: true, data: result.data[0] });
+    } catch (error) {
+        logger.error('Error fetching conversation', { error: error.message, userId, id });
+        res.status(500).json({ success: false, error: 'Failed to fetch conversation' });
     }
 });
 

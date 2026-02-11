@@ -214,14 +214,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <Button
             variant="ghost"
             className="w-full justify-start gap-2 h-10 text-[0.95rem] font-medium text-muted-foreground"
-            onClick={() => { navigate('/search'); if (window.innerWidth < 768) onClose(); }}
-          >
-            <Search className="w-4 h-4" />
-            <span>Search</span>
-          </Button>
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2 h-10 text-[0.95rem] font-medium text-muted-foreground"
             onClick={() => { navigate('/documents'); if (window.innerWidth < 768) onClose(); }}
           >
             <FileText className="w-4 h-4" />

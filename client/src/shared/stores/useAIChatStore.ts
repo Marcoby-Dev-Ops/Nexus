@@ -393,7 +393,25 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
 
   setCurrentConversationById: async (conversationId: string) => {
     const state = get();
-    const conversation = state.conversations.find(conv => conv.id === conversationId);
+    let conversation = state.conversations.find(conv => conv.id === conversationId);
+
+    if (!conversation) {
+      try {
+        const headers = await getAuthHeaders();
+        const response = await fetch(`/api/ai/conversations/${conversationId}`, { headers });
+        const result = await response.json();
+        if (result.success && result.data) {
+          conversation = result.data;
+          // Add to local state if missing
+          set(store => ({
+            conversations: [conversation!, ...store.conversations]
+          }));
+        }
+      } catch (err) {
+        logger.error('Failed to fetch conversation by ID', { conversationId, err });
+      }
+    }
+
     if (conversation) {
       set({ currentConversation: conversation, messages: [] });
       await get().fetchMessages(conversationId);
@@ -427,4 +445,22 @@ export const useAIChatStore = create<ChatState & ChatActions>((set, get) => ({
       logger.error('Error renaming conversation', { err });
     }
   },
-})); 
+
+  searchConversations: async (queryStr: string) => {
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`/api/ai/search?q=${encodeURIComponent(queryStr)}`, { headers });
+      const result = await response.json();
+
+      if (!result.success) {
+        logger.error('Search failed', { error: result.error });
+        return [];
+      }
+
+      return result.data || [];
+    } catch (err) {
+      logger.error('Error during search', { err });
+      return [];
+    }
+  },
+}));

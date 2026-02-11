@@ -5,7 +5,8 @@ import { Button } from '@/shared/components/ui/Button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/Avatar';
 import { Settings, LogOut, Search, PanelLeftOpen, PanelLeftClose, User } from 'lucide-react';
 import { ThemeToggle } from '@/shared/components/ui/theme-toggle';
-import { useHeaderContext } from '@/shared/hooks/useHeaderContext';
+import { useHeaderContext, HeaderProvider } from '@/shared/hooks/useHeaderContext';
+import { GlobalSearch } from './GlobalSearch';
 import { navItems } from './navConfig';
 
 interface HeaderProps {
@@ -51,9 +52,13 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
 
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8">
+        {/* Global Search Component */}
+        <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
         {/* LEFT: Toggle, Logo, Breadcrumbs */}
         <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-none md:gap-4 md:min-w-[200px]">
@@ -120,8 +125,14 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
             <span>System Healthy</span>
           </div>
 
-          {/* Search Placeholder */}
-          <Button variant="ghost" size="icon" className="hidden sm:inline-flex h-8 w-8 text-muted-foreground">
+          {/* Global Search Trigger */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-foreground"
+            onClick={() => setIsSearchOpen(true)}
+            title="Search conversations (CMD+K)"
+          >
             <Search className="h-4 w-4" />
           </Button>
 
