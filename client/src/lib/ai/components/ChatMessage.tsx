@@ -4,13 +4,14 @@ import { Badge } from '@/shared/components/ui/Badge';
 import { Button } from '@/shared/components/ui/Button';
 import { Copy, ThumbsUp, ThumbsDown, User, Bot } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
-import type { ChatMessage as ChatMessageType } from '@/shared/types/chat';
+import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/github-dark.css'; // Or any other style
 
 import { getGravatarUrl } from '@/shared/utils/gravatar';
+import { ATTACHMENT_ONLY_PLACEHOLDER } from '@/shared/constants/chat';
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -40,6 +41,12 @@ export default function ChatMessage({
   // Ensure metadata exists
   const metadata = message.metadata || {};
   const pacingAnalysis = metadata.pacing_analysis;
+  const messageAttachments = Array.isArray(metadata.attachments)
+    ? (metadata.attachments as FileAttachment[])
+    : [];
+  const hasAttachments = messageAttachments.length > 0;
+  const isAttachmentOnlyMessage = message.content === ATTACHMENT_ONLY_PLACEHOLDER && hasAttachments;
+  const renderedContent = isAttachmentOnlyMessage ? 'Attached files:' : message.content;
 
   // Custom component to handle media URLs within markdown
   const MediaLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
@@ -161,9 +168,37 @@ export default function ChatMessage({
                 }
               }}
             >
-              {message.content}
+              {renderedContent}
             </ReactMarkdown>
           </div>
+
+          {hasAttachments && (
+            <div className="mt-3 flex flex-col gap-2">
+              {messageAttachments.map((attachment) => {
+                const link = attachment.downloadUrl || attachment.url;
+                return (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center justify-between gap-2 rounded-md border border-border/70 bg-background/60 px-3 py-2 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{attachment.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(attachment.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                    {link ? (
+                      <Button size="sm" variant="outline" asChild>
+                        <a href={link} target="_blank" rel="noopener noreferrer">Open</a>
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No link</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Pacing Analysis Badge */}
           {pacingAnalysis && pacingAnalysis.follows_pacing_rules !== undefined && (

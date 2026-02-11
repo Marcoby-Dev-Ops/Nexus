@@ -1,4 +1,6 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const { authenticateToken } = require('../middleware/auth');
 const { logger } = require('../utils/logger');
 const { normalizeAgentId } = require('../config/agentCatalog');
@@ -32,6 +34,10 @@ function buildOpenClawSessionId(userId, conversationId) {
 // OpenClaw configuration
 const OPENCLAW_API_URL = process.env.OPENCLAW_API_URL || 'http://127.0.0.1:18790/v1';
 const OPENCLAW_API_KEY = process.env.OPENCLAW_API_KEY || 'sk-openclaw-local';
+const MAX_ATTACHMENT_CONTEXT_BYTES = 200 * 1024;
+const MAX_ATTACHMENT_PREVIEW_CHARS = 4000;
+const DOCUMENT_LINK_REGEX = /\b(?:https?:\/\/[^\s)]+|\/api\/chat\/attachments\/[^\s)]+|\/media\/[^\s)]+)\b/gi;
+const DOCUMENT_EXTENSION_REGEX = /\.(pdf|doc|docx|txt|md|rtf|csv|xlsx|xls|ppt|pptx|json)(?:[?#].*)?$/i;
 
 // In-memory conversation tracking (in production, use database)
 const conversations = new Map();
@@ -116,6 +122,224 @@ async function saveMessage(conversationId, role, content, metadata = {}) {
     return result.data?.[0]?.id;
 }
 
+function normalizeIncomingAttachments(attachments) {
+    if (!Array.isArray(attachments)) return [];
+    return attachments
+        .filter((attachment) => attachment && typeof attachment === 'object')
+        .map((attachment) => ({
+            id: typeof attachment.id === 'string' ? attachment.id : null,
+            name: typeof attachment.name === 'string' ? attachment.name : 'Attachment',
+            type: typeof attachment.type === 'string' ? attachment.type : 'application/octet-stream',
+            size: Number.isFinite(attachment.size) ? attachment.size : null,
+            url: typeof attachment.url === 'string' ? attachment.url : '',
+            downloadUrl: typeof attachment.downloadUrl === 'string' ? attachment.downloadUrl : ''
+        }))
+        .filter((attachment) => attachment.id);
+}
+
+function toAttachmentMetadataRow(attachmentRow) {
+    const downloadUrl = `/api/chat/attachments/${attachmentRow.id}/download`;
+    return {
+        id: attachmentRow.id,
+        name: attachmentRow.file_name,
+        size: Number(attachmentRow.file_size) || 0,
+        type: attachmentRow.file_type || 'application/octet-stream',
+        url: downloadUrl,
+        downloadUrl,
+        status: 'uploaded'
+    };
+}
+
+function isLikelyTextAttachment(attachmentRow) {
+    const type = String(attachmentRow.file_type || '').toLowerCase();
+    const fileName = String(attachmentRow.file_name || '').toLowerCase();
+
+    if (
+        type.startsWith('text/')
+        || type.includes('json')
+        || type.includes('xml')
+        || type.includes('csv')
+        || type.includes('markdown')
+    ) {
+        return true;
+    }
+
+    return /\.(txt|md|markdown|json|csv|xml|yaml|yml)$/i.test(fileName);
+}
+
+async function readAttachmentPreview(attachmentRow) {
+    try {
+        if (!isLikelyTextAttachment(attachmentRow)) return '';
+        const fileSize = Number(attachmentRow.file_size) || 0;
+        if (fileSize > MAX_ATTACHMENT_CONTEXT_BYTES) return '';
+
+        const absolutePath = path.isAbsolute(attachmentRow.storage_path)
+            ? attachmentRow.storage_path
+            : path.join(process.cwd(), attachmentRow.storage_path);
+
+        if (!fs.existsSync(absolutePath)) return '';
+
+        const content = await fs.promises.readFile(absolutePath, 'utf8');
+        if (!content) return '';
+        if (content.length <= MAX_ATTACHMENT_PREVIEW_CHARS) return content;
+        return `${content.slice(0, MAX_ATTACHMENT_PREVIEW_CHARS)}\n...[truncated]`;
+    } catch (error) {
+        logger.warn('Failed to read attachment preview', {
+            attachmentId: attachmentRow.id,
+            error: error instanceof Error ? error.message : String(error)
+        });
+        return '';
+    }
+}
+
+async function fetchStoredAttachments(conversationId, userId, attachmentRefs, jwtPayload) {
+    if (!attachmentRefs.length) return [];
+    const attachmentIds = [...new Set(attachmentRefs.map((item) => item.id).filter(Boolean))];
+    if (!attachmentIds.length) return [];
+
+    const result = await query(
+        `SELECT id, file_name, file_type, file_size, storage_path, created_at
+         FROM ai_message_attachments
+         WHERE conversation_id = $1
+           AND user_id = $2
+           AND id = ANY($3::uuid[])`,
+        [conversationId, userId, attachmentIds],
+        jwtPayload
+    );
+
+    if (result.error) {
+        logger.error('Failed to load attachment metadata for OpenClaw context', {
+            userId,
+            conversationId,
+            error: result.error
+        });
+        return [];
+    }
+
+    return result.data || [];
+}
+
+async function buildAttachmentContext(storedAttachments) {
+    if (!storedAttachments.length) return '';
+
+    const blocks = [];
+    for (const attachment of storedAttachments) {
+        const downloadUrl = `/api/chat/attachments/${attachment.id}/download`;
+        const metaLine = `- ${attachment.file_name} (${attachment.file_type || 'unknown'}, ${Number(attachment.file_size) || 0} bytes)`;
+        const preview = await readAttachmentPreview(attachment);
+        if (preview) {
+            blocks.push(`${metaLine}\n  Download URL: ${downloadUrl}\n  Preview:\n"""\n${preview}\n"""`);
+        } else {
+            blocks.push(`${metaLine}\n  Download URL: ${downloadUrl}`);
+        }
+    }
+
+    return [
+        'User uploaded attachments available for this request:',
+        ...blocks,
+        'If asked to create a document, provide a direct downloadable link and include the final file name.'
+    ].join('\n');
+}
+
+function normalizeGeneratedAttachment(item, index = 0) {
+    if (!item || typeof item !== 'object') return null;
+    const name = typeof item.name === 'string'
+        ? item.name
+        : (typeof item.fileName === 'string' ? item.fileName : `Generated document ${index + 1}`);
+    const type = typeof item.type === 'string'
+        ? item.type
+        : (typeof item.mimeType === 'string' ? item.mimeType : 'application/octet-stream');
+    const size = Number.isFinite(item.size) ? item.size : 0;
+    const url = typeof item.url === 'string'
+        ? item.url
+        : (typeof item.downloadUrl === 'string' ? item.downloadUrl : '');
+    const downloadUrl = typeof item.downloadUrl === 'string' ? item.downloadUrl : url;
+
+    if (!url && !downloadUrl) return null;
+
+    return {
+        id: typeof item.id === 'string' ? item.id : `generated-${Date.now()}-${index}`,
+        name,
+        size,
+        type,
+        url: url || downloadUrl,
+        downloadUrl: downloadUrl || url,
+        status: 'uploaded'
+    };
+}
+
+function extractGeneratedAttachmentsFromPayload(payload) {
+    if (!payload || typeof payload !== 'object') return [];
+
+    const candidates = [];
+    const direct = [
+        payload.attachments,
+        payload.generatedAttachments,
+        payload.nexus_attachments,
+        payload?.nexus?.generatedAttachments,
+        payload?.nexus?.attachments,
+        payload?.metadata?.attachments,
+        payload?.metadata?.generatedAttachments,
+        payload?.choices?.[0]?.message?.attachments,
+        payload?.choices?.[0]?.delta?.attachments
+    ];
+
+    for (const bucket of direct) {
+        if (Array.isArray(bucket)) {
+            for (const item of bucket) {
+                candidates.push(item);
+            }
+        }
+    }
+
+    return candidates
+        .map((candidate, index) => normalizeGeneratedAttachment(candidate, index))
+        .filter(Boolean);
+}
+
+function extractGeneratedAttachmentsFromText(content) {
+    if (!content || typeof content !== 'string') return [];
+    const matches = content.match(DOCUMENT_LINK_REGEX) || [];
+    const results = [];
+
+    for (const [index, rawMatch] of matches.entries()) {
+        const sanitized = rawMatch.replace(/[),.;]+$/, '');
+        const isDownloadRoute = sanitized.includes('/api/chat/attachments/');
+        if (!isDownloadRoute && !DOCUMENT_EXTENSION_REGEX.test(sanitized)) continue;
+        const fileName = sanitized.split('/').pop() || `generated-document-${index + 1}`;
+        results.push({
+            id: `generated-link-${index + 1}`,
+            name: decodeURIComponent(fileName),
+            size: 0,
+            type: 'application/octet-stream',
+            url: sanitized,
+            downloadUrl: sanitized,
+            status: 'uploaded'
+        });
+    }
+
+    return results;
+}
+
+function mergeUniqueAttachments(...attachmentSets) {
+    const merged = [];
+    const seen = new Set();
+
+    for (const set of attachmentSets) {
+        if (!Array.isArray(set)) continue;
+        for (const attachment of set) {
+            if (!attachment) continue;
+            const key = `${attachment.downloadUrl || attachment.url || ''}::${attachment.name || ''}`;
+            if (!key || key === '::') continue;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            merged.push(attachment);
+        }
+    }
+
+    return merged;
+}
+
 /**
  * POST /api/ai/chat
  * Streaming chat endpoint - Pure Proxy to OpenClaw
@@ -140,11 +364,24 @@ router.post('/chat', authenticateToken, async (req, res) => {
     }
 
     let keepAliveIntervalId = null;
+    const streamStartedAt = Date.now();
+    let keepAliveTick = 0;
+    let keepAliveFrames = ['Reviewing your request'];
+    const setKeepAliveFrames = (frames = []) => {
+        const filtered = frames.filter((frame) => typeof frame === 'string' && frame.trim().length > 0);
+        keepAliveFrames = filtered.length > 0 ? filtered : ['Reviewing your request'];
+    };
     const startKeepAlive = () => {
         if (!stream || keepAliveIntervalId) return;
         keepAliveIntervalId = setInterval(() => {
             if (!res.writableEnded) {
-                res.write(': keepalive\n\n');
+                keepAliveTick += 1;
+                const elapsedSeconds = Math.floor((Date.now() - streamStartedAt) / 1000);
+                const frame = keepAliveFrames[keepAliveTick % keepAliveFrames.length];
+                writeSseEvent(
+                    res,
+                    buildStreamStatus('processing', 'Agent is still working', `${frame} (${elapsedSeconds}s elapsed)`)
+                );
             }
         }, 15000);
     };
@@ -203,9 +440,23 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // Persist Conversation and User Message
         const conversationId = await getOrCreateConversation(userId, providedConvId);
+        const incomingAttachmentRefs = normalizeIncomingAttachments(attachments);
+        const storedAttachments = await fetchStoredAttachments(
+            conversationId,
+            userId,
+            incomingAttachmentRefs,
+            req.user?.jwtPayload
+        );
+        const userAttachmentMetadata = storedAttachments.map(toAttachmentMetadataRow);
 
         const phase = determinePhase(messages);
         const modelWayMetadata = buildModelWayMetadata(intent, phase, conversationId);
+        const historyTurns = messages.filter((item) => item?.role === 'user' || item?.role === 'assistant').length;
+        setKeepAliveFrames([
+            `Understanding your request (${intent.name}, ${phase} phase)`,
+            `Reviewing ${historyTurns} recent conversation turns`,
+            `Checking ${userAttachmentMetadata.length} uploaded attachment${userAttachmentMetadata.length === 1 ? '' : 's'}`
+        ]);
 
         // PERSIST METADATA for continuity organization
         // Update the conversation context with intent and phase for Sidebar display
@@ -249,7 +500,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         if (lastMessage.role === 'user') {
             const userMetadata = {
                 ...(lastMessage.metadata || {}),
-                attachments: attachments || lastMessage.metadata?.attachments || []
+                attachments: userAttachmentMetadata
             };
             await saveMessage(conversationId, 'user', lastMessage.content, userMetadata);
         }
@@ -286,6 +537,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
             beginSseStream(res);
             startKeepAlive();
             writeSseEvent(res, buildStreamStatus('accepted', 'Request accepted', 'Preparing context and connecting to agent runtime.'));
+            writeSseEvent(
+                res,
+                buildStreamStatus(
+                    'context_loading',
+                    'Loading business context',
+                    `Reviewing ${historyTurns} recent turns and ${userAttachmentMetadata.length} attachment${userAttachmentMetadata.length === 1 ? '' : 's'}.`
+                )
+            );
             writeSseEvent(res, {
                 metadata: {
                     modelWay: modelWayMetadata,
@@ -322,9 +581,22 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 error: contextError instanceof Error ? contextError.message : String(contextError)
             });
         }
+        const attachmentContext = await buildAttachmentContext(storedAttachments);
+        if (attachmentContext) {
+            contextSystemMessage = contextSystemMessage
+                ? `${contextSystemMessage}\n\n${attachmentContext}`
+                : attachmentContext;
+        }
         const contextInjected = Boolean(contextSystemMessage);
+        setKeepAliveFrames([
+            `Synthesizing context for ${intent.name} (${phase})`,
+            `Preparing agent instructions for ${resolvedAgentId}`,
+            `Waiting for OpenClaw to generate the response`
+        ]);
         if (stream && contextInjected) {
             writeSseEvent(res, buildStreamStatus('context_ready', 'Context ready', 'Business context was injected from backend knowledge.'));
+        } else if (stream) {
+            writeSseEvent(res, buildStreamStatus('context_ready', 'Context ready', 'Proceeding with conversation context only.'));
         }
 
         // Strip any system messages from client and inject deterministic backend context
@@ -337,7 +609,13 @@ router.post('/chat', authenticateToken, async (req, res) => {
             model: 'openclaw:main', // Route through OpenClaw agent runtime
             messages: openClawMessages,
             stream: stream,
-            user: openClawSessionId // Isolate OpenClaw memory by Nexus conversation
+            user: openClawSessionId, // Isolate OpenClaw memory by Nexus conversation
+            conversationId,
+            nexus: {
+                conversationId,
+                userId,
+                attachments: userAttachmentMetadata
+            }
         };
 
         logger.info('Chat proxy request', {
@@ -350,9 +628,20 @@ router.post('/chat', authenticateToken, async (req, res) => {
             openClawAgentId,
             openClawSessionId,
             injectedContext: contextInjected,
+            attachmentCount: userAttachmentMetadata.length,
             stream,
             endpoint: `${OPENCLAW_API_URL}/chat/completions`
         });
+        if (stream) {
+            writeSseEvent(
+                res,
+                buildStreamStatus(
+                    'openclaw_request',
+                    'Handing off to OpenClaw',
+                    `Sending enriched prompt to ${openClawAgentId} for final response generation.`
+                )
+            );
+        }
 
         // Call OpenClaw Chat Completions API
         const openClawResponse = await fetch(`${OPENCLAW_API_URL}/chat/completions`, {
@@ -369,6 +658,16 @@ router.post('/chat', authenticateToken, async (req, res) => {
             const errorText = await openClawResponse.text();
             throw new Error(`OpenClaw API error: ${openClawResponse.status} - ${errorText}`);
         }
+        if (stream) {
+            writeSseEvent(
+                res,
+                buildStreamStatus(
+                    'openclaw_connected',
+                    'OpenClaw connected',
+                    'Generating final answer now.'
+                )
+            );
+        }
 
         // Check if upstream response is JSON (non-streaming)
         const contentType = openClawResponse.headers.get('content-type');
@@ -377,15 +676,20 @@ router.post('/chat', authenticateToken, async (req, res) => {
             // Handle non-streaming upstream response from Bridge
             const data = await openClawResponse.json();
             const content = data.choices?.[0]?.message?.content || '';
+            const generatedAttachments = mergeUniqueAttachments(
+                extractGeneratedAttachmentsFromPayload(data),
+                extractGeneratedAttachmentsFromText(content)
+            );
 
             // Audit: Save Assistant Response
-            if (content) {
+            if (content || generatedAttachments.length) {
                 const assistantMetadata = {
                     model: data.model || 'openclaw',
                     usage: data.usage || null,
-                    modelWay: modelWayMetadata
+                    modelWay: modelWayMetadata,
+                    attachments: generatedAttachments
                 };
-                await saveMessage(conversationId, 'assistant', content, assistantMetadata);
+                await saveMessage(conversationId, 'assistant', content || 'Generated documents attached.', assistantMetadata);
             }
 
             // If client wanted stream, emit it as an SSE event sequence
@@ -396,6 +700,9 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 // 2. Content event
                 if (content) {
                     writeSseEvent(res, { content });
+                }
+                if (generatedAttachments.length) {
+                    writeSseEvent(res, { metadata: { generatedAttachments } });
                 }
 
                 // 3. Done event
@@ -410,7 +717,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
                     success: true,
                     content,
                     model: data.model,
-                    usage: data.usage
+                    usage: data.usage,
+                    attachments: generatedAttachments
                 }
                 );
                 return res.json(response);
@@ -421,22 +729,28 @@ router.post('/chat', authenticateToken, async (req, res) => {
             // Non-streaming: return JSON response
             const data = await openClawResponse.json();
             const content = data.choices?.[0]?.message?.content || '';
+            const generatedAttachments = mergeUniqueAttachments(
+                extractGeneratedAttachmentsFromPayload(data),
+                extractGeneratedAttachmentsFromText(content)
+            );
 
             // Audit: Save Assistant Response
-            if (content) {
+            if (content || generatedAttachments.length) {
                 const assistantMetadata = {
                     model: data.model || 'openclaw',
                     usage: data.usage || null,
-                    modelWay: modelWayMetadata
+                    modelWay: modelWayMetadata,
+                    attachments: generatedAttachments
                 };
-                await saveMessage(conversationId, 'assistant', content, assistantMetadata);
+                await saveMessage(conversationId, 'assistant', content || 'Generated documents attached.', assistantMetadata);
             }
 
             const response = structureResponse(content, modelWayMetadata, {
                 success: true,
                 content,
                 model: data.model,
-                usage: data.usage
+                usage: data.usage,
+                attachments: generatedAttachments
             }
             );
 
@@ -451,6 +765,7 @@ router.post('/chat', authenticateToken, async (req, res) => {
         const decoder = new TextDecoder();
         let buffer = '';
         let fullAssistantContent = ''; // Accumulate for audit
+        let generatedAttachmentCandidates = [];
 
         try {
             while (true) {
@@ -459,11 +774,19 @@ router.post('/chat', authenticateToken, async (req, res) => {
                 if (done) {
                     // Audit: Save collected assistant response
                     if (fullAssistantContent) {
+                        const generatedAttachments = mergeUniqueAttachments(
+                            generatedAttachmentCandidates,
+                            extractGeneratedAttachmentsFromText(fullAssistantContent)
+                        );
                         const assistantMetadata = {
                             model: 'openclaw:stream',
-                            modelWay: modelWayMetadata
+                            modelWay: modelWayMetadata,
+                            attachments: generatedAttachments
                         };
                         await saveMessage(conversationId, 'assistant', fullAssistantContent, assistantMetadata);
+                        if (generatedAttachments.length) {
+                            writeSseEvent(res, { metadata: { generatedAttachments } });
+                        }
                     }
                     writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
                     res.write('data: [DONE]\n\n');
@@ -485,11 +808,19 @@ router.post('/chat', authenticateToken, async (req, res) => {
                         if (dataStr === '[DONE]') {
                             // Audit: Save collected assistant response on upstream done
                             if (fullAssistantContent) {
+                                const generatedAttachments = mergeUniqueAttachments(
+                                    generatedAttachmentCandidates,
+                                    extractGeneratedAttachmentsFromText(fullAssistantContent)
+                                );
                                 const assistantMetadata = {
                                     model: 'openclaw:stream',
-                                    modelWay: modelWayMetadata
+                                    modelWay: modelWayMetadata,
+                                    attachments: generatedAttachments
                                 };
                                 await saveMessage(conversationId, 'assistant', fullAssistantContent, assistantMetadata);
+                                if (generatedAttachments.length) {
+                                    writeSseEvent(res, { metadata: { generatedAttachments } });
+                                }
                                 fullAssistantContent = ''; // Prevent double save if loop continues
                             }
                             writeSseEvent(res, buildStreamStatus('completed', 'Response complete', null));
@@ -500,6 +831,10 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
                         try {
                             const chunk = JSON.parse(dataStr);
+                            const chunkAttachments = extractGeneratedAttachmentsFromPayload(chunk);
+                            if (chunkAttachments.length) {
+                                generatedAttachmentCandidates = mergeUniqueAttachments(generatedAttachmentCandidates, chunkAttachments);
+                            }
                             const content = chunk.choices?.[0]?.delta?.content;
 
                             if (content) {
@@ -518,7 +853,18 @@ router.post('/chat', authenticateToken, async (req, res) => {
             logger.error('Stream reading error', { error: streamErr.message });
             // Attempt to save partial content if error occurs
             if (fullAssistantContent) {
-                saveMessage(conversationId, 'assistant', fullAssistantContent).catch(e => logger.error('Failed to save partial message', e));
+                const generatedAttachments = mergeUniqueAttachments(
+                    generatedAttachmentCandidates,
+                    extractGeneratedAttachmentsFromText(fullAssistantContent)
+                );
+                saveMessage(conversationId, 'assistant', fullAssistantContent, {
+                    model: 'openclaw:stream-partial',
+                    modelWay: modelWayMetadata,
+                    attachments: generatedAttachments
+                }).catch(e => logger.error('Failed to save partial message', e));
+                if (generatedAttachments.length) {
+                    writeSseEvent(res, { metadata: { generatedAttachments } });
+                }
             }
             writeSseEvent(res, buildStreamStatus('error', 'Response interrupted', streamErr.message));
             writeSseEvent(res, { error: streamErr.message });

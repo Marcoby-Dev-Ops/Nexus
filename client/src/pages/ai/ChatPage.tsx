@@ -12,6 +12,9 @@ import { Sparkles, X } from 'lucide-react';
 import { useAIChatStore } from '@/shared/stores/useAIChatStore';
 import { useSearchParams } from 'react-router-dom';
 import type { StreamRuntimeMetadata, StreamRuntimeStatus } from '@/services/ai/ConversationalAIService';
+import type { FileAttachment } from '@/shared/types/chat';
+import { chatAttachmentService } from '@/lib/ai/services/chatAttachmentService';
+import { ATTACHMENT_ONLY_PLACEHOLDER } from '@/shared/constants/chat';
 
 // Initialize AI Service
 const conversationalAIService = new ConversationalAIService();
@@ -22,6 +25,65 @@ function generateTitle(message: string, maxLen = 50): string {
   const truncated = cleaned.substring(0, maxLen);
   const lastSpace = truncated.lastIndexOf(' ');
   return (lastSpace > maxLen * 0.3 ? truncated.substring(0, lastSpace) : truncated) + '...';
+}
+
+function generateAttachmentTitle(attachments: FileAttachment[]): string {
+  if (!attachments.length) return 'New Conversation';
+  if (attachments.length === 1) return `File: ${attachments[0].name}`;
+  return `Files: ${attachments[0].name} +${attachments.length - 1}`;
+}
+
+function buildAttachmentSummary(attachments: FileAttachment[]): string {
+  if (!attachments.length) return '';
+  const lines = attachments.map((attachment) => `- ${attachment.name}`);
+  return `\n\nAttached files:\n${lines.join('\n')}`;
+}
+
+function toRuntimeAttachments(attachments: FileAttachment[]) {
+  return attachments.map((attachment) => ({
+    id: attachment.id,
+    name: attachment.name,
+    size: attachment.size,
+    type: attachment.type,
+    url: attachment.url || attachment.downloadUrl || '',
+    downloadUrl: attachment.downloadUrl || attachment.url || ''
+  }));
+}
+
+type GeneratedAttachment = {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url?: string;
+  downloadUrl?: string;
+};
+
+function mergeGeneratedAttachments(existing: GeneratedAttachment[], incoming: GeneratedAttachment[]): GeneratedAttachment[] {
+  const byKey = new Map<string, GeneratedAttachment>();
+  for (const attachment of [...existing, ...incoming]) {
+    const link = attachment.downloadUrl || attachment.url || '';
+    const key = `${link}::${attachment.name}`;
+    if (!link || !attachment.name || byKey.has(key)) continue;
+    byKey.set(key, attachment);
+  }
+  return Array.from(byKey.values());
+}
+
+function appendGeneratedAttachmentSummary(content: string, attachments: GeneratedAttachment[]): string {
+  if (!attachments.length) return content;
+  const missingLinks = attachments.filter((attachment) => {
+    const link = attachment.downloadUrl || attachment.url || '';
+    return link && !content.includes(link);
+  });
+  if (!missingLinks.length) return content;
+
+  const lines = missingLinks.map((attachment) => {
+    const link = attachment.downloadUrl || attachment.url || '';
+    return `- [${attachment.name}](${link})`;
+  });
+
+  return `${content}\n\nGenerated files:\n${lines.join('\n')}`;
 }
 
 export const ChatPage: React.FC = () => {
@@ -140,12 +202,16 @@ export const ChatPage: React.FC = () => {
     loadContextChips();
   }, [loadContextChips]);
 
-  const handleSendMessage = async (message: string, attachments?: any[]) => {
-    if (!message.trim() || !user) return;
+  const handleSendMessage = async (message: string, attachments: FileAttachment[] = []) => {
+    if (!user) return;
+
+    const trimmedMessage = message.trim();
+    const hasAttachments = attachments.length > 0;
+    if (!trimmedMessage && !hasAttachments) return;
 
     try {
       // Check if this is an explicit switching command to avoid creating dummy "New Chat" threads
-      const lowerMessage = message.toLowerCase();
+      const lowerMessage = trimmedMessage.toLowerCase();
       const isExplicitSwitch = lowerMessage.startsWith('continue this:') || lowerMessage.startsWith('switch to:');
 
       // Create or get conversation
@@ -153,7 +219,7 @@ export const ChatPage: React.FC = () => {
 
       if (!currentConversationId && !isExplicitSwitch) {
         if (createConversation) {
-          const title = generateTitle(message);
+          const title = trimmedMessage ? generateTitle(trimmedMessage) : generateAttachmentTitle(attachments);
           currentConversationId = await createConversation(title, 'gpt-4', undefined, user.id);
         } else {
           // Fallback if somehow not available (should not happen based on store check)
@@ -161,10 +227,34 @@ export const ChatPage: React.FC = () => {
         }
       }
 
+      let uploadedAttachments: FileAttachment[] = [];
+      if (hasAttachments) {
+        if (!currentConversationId) {
+          throw new Error('Select or create a conversation before uploading files.');
+        }
+
+        const filesToUpload = attachments
+          .map((attachment) => attachment.file)
+          .filter((file): file is File => file instanceof File);
+
+        if (filesToUpload.length !== attachments.length) {
+          throw new Error('Some selected files are missing file data. Please re-attach and try again.');
+        }
+
+        uploadedAttachments = await chatAttachmentService.uploadAttachments({
+          conversationId: currentConversationId,
+          files: filesToUpload
+        });
+      }
+
+      const messageContent = trimmedMessage || ATTACHMENT_ONLY_PLACEHOLDER;
+      const runtimeAttachments = toRuntimeAttachments(uploadedAttachments);
+      const aiMessage = `${messageContent}${buildAttachmentSummary(runtimeAttachments)}`;
+
       // save and display the user message via store (only if not a switch or inside an existing conversation)
       if (currentConversationId) {
         // We use persist: false because the backend /api/ai/chat already saves the user message for audit/metadata purposes
-        await sendMessage(message, currentConversationId, attachments || [], { persist: false });
+        await sendMessage(messageContent, currentConversationId, runtimeAttachments, { persist: false });
       }
 
       // Now set loading states for AI response
@@ -184,13 +274,14 @@ export const ChatPage: React.FC = () => {
       };
 
       let accumulatedResponse = '';
+      let generatedAttachmentsFromStream: GeneratedAttachment[] = [];
       setStreamingContent('');
 
       // Get auth token from Zustand auth store
       const token = getAccessToken();
 
       await conversationalAIService.streamMessage(
-        message,
+        aiMessage,
         aiContext,
         (chunk) => {
           accumulatedResponse += chunk;
@@ -203,11 +294,18 @@ export const ChatPage: React.FC = () => {
           .map((msg) => ({ role: msg.role as 'user' | 'assistant', content: msg.content })),
         {
           conversationId: currentConversationId || undefined,
-          agentId: requestedAgentId
+          agentId: requestedAgentId,
+          attachments: runtimeAttachments
         },
         (metadata: StreamRuntimeMetadata) => {
           if (typeof metadata.contextInjected === 'boolean') {
             setContextInjectedForStream(metadata.contextInjected);
+          }
+          if (Array.isArray(metadata.generatedAttachments) && metadata.generatedAttachments.length > 0) {
+            generatedAttachmentsFromStream = mergeGeneratedAttachments(
+              generatedAttachmentsFromStream,
+              metadata.generatedAttachments
+            );
           }
           if (metadata.switchTarget && currentConversationId !== metadata.switchTarget) {
             logger.info('Switch intent detected, navigating to conversation', { target: metadata.switchTarget });
@@ -227,8 +325,9 @@ export const ChatPage: React.FC = () => {
 
       // Save final response
       if (saveAIResponse && currentConversationId) {
+        const finalResponse = appendGeneratedAttachmentSummary(accumulatedResponse, generatedAttachmentsFromStream);
         // We use persist: false because the backend /api/ai/chat already saves the assistant message for audit/metadata purposes
-        await saveAIResponse(accumulatedResponse, currentConversationId, { persist: false });
+        await saveAIResponse(finalResponse, currentConversationId, { persist: false });
       }
 
       setStreamingContent('');

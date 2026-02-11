@@ -255,18 +255,18 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                           <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                         </div>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-blue-500 dark:text-blue-300">
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-blue-500 dark:text-blue-300 leading-relaxed">
                           <Brain className="w-3 h-3" />
                           <span>{statusLabel}</span>
                           <span className="text-muted-foreground">({formatDuration(streamingElapsedSeconds)})</span>
                         </div>
                         {statusDetail && (
-                          <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground leading-relaxed">
                             <Database className="w-3 h-3" />
                             <span>{statusDetail}</span>
                           </div>
                         )}
-                        <div className="mt-2 h-1.5 w-56 max-w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div className="mt-2 h-1.5 w-full max-w-56 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                           <div className="h-full w-1/3 rounded-full bg-primary animate-pulse" />
                         </div>
                       </div>

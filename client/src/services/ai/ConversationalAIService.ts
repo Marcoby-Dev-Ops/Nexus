@@ -26,12 +26,28 @@ export interface ConversationContext {
 export interface ChatRuntimeOptions {
   agentId?: string;
   conversationId?: string;
+  attachments?: Array<{
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    url?: string;
+    downloadUrl?: string;
+  }>;
 }
 
 export interface StreamRuntimeMetadata {
   contextInjected?: boolean;
   modelWay?: unknown;
   switchTarget?: string;
+  generatedAttachments?: Array<{
+    id: string;
+    name: string;
+    size: number;
+    type: string;
+    url?: string;
+    downloadUrl?: string;
+  }>;
 }
 
 export interface StreamRuntimeStatus {
@@ -211,7 +227,8 @@ export class ConversationalAIService extends BaseService {
           stream: true,
           userId: context.userId,
           conversationId: runtime.conversationId,
-          agentId: runtime.agentId
+          agentId: runtime.agentId,
+          attachments: runtime.attachments || []
         })
       });
 
