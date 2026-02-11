@@ -274,18 +274,28 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   private normalizeProfileData(rawData: any): any {
     if (!rawData) return rawData;
 
-    // Debug logging for raw data input
+    // Resilient unwrapping: Handle nested { success: true, data/profile: { ... } } structures recursively
+    let unwrapped = rawData;
+    while (unwrapped && typeof unwrapped === 'object' && !Array.isArray(unwrapped)) {
+      if (unwrapped.success === true && (unwrapped.data || unwrapped.profile)) {
+        unwrapped = unwrapped.data ?? unwrapped.profile;
+      } else {
+        break;
+      }
+    }
+
+    // Debug logging for normalized data input
     this.logger.info('normalizeProfileData - Input:', {
-      rawData: rawData,
-      company_id: rawData.company_id,
-      hasCompanyId: !!rawData.company_id
+      rawData: unwrapped,
+      company_id: unwrapped.company_id,
+      hasCompanyId: !!unwrapped.company_id
     });
 
     // Derive a human-readable location from address JSON when location is missing
-    let derivedLocation = rawData?.location;
-    if ((!derivedLocation || (typeof derivedLocation === 'string' && derivedLocation.trim().length === 0)) && rawData?.address) {
+    let derivedLocation = unwrapped?.location;
+    if ((!derivedLocation || (typeof derivedLocation === 'string' && derivedLocation.trim().length === 0)) && unwrapped?.address) {
       try {
-        const addr = rawData.address;
+        const addr = unwrapped.address;
         const display = addr.display_name || addr.formatted || addr.formatted_address;
         const parts: string[] = [];
         if (addr.city || addr.town || addr.village) parts.push(addr.city || addr.town || addr.village);
@@ -299,33 +309,33 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
     }
 
     return {
-      ...rawData,
-      location: derivedLocation ?? rawData.location ?? null,
-      avatar_url: this.sanitizeUrl(rawData.avatar_url, 'avatar_url'),
-      linkedin_url: this.sanitizeUrl(rawData.linkedin_url, 'linkedin_url'),
-      github_url: this.sanitizeUrl(rawData.github_url, 'github_url'),
-      twitter_url: this.sanitizeUrl(rawData.twitter_url, 'twitter_url'),
+      ...unwrapped,
+      location: derivedLocation ?? unwrapped.location ?? null,
+      avatar_url: this.sanitizeUrl(unwrapped.avatar_url, 'avatar_url'),
+      linkedin_url: this.sanitizeUrl(unwrapped.linkedin_url, 'linkedin_url'),
+      github_url: this.sanitizeUrl(unwrapped.github_url, 'github_url'),
+      twitter_url: this.sanitizeUrl(unwrapped.twitter_url, 'twitter_url'),
       // Ensure skills is properly formatted as array
-      skills: rawData.skills ? (
-        Array.isArray(rawData.skills)
-          ? rawData.skills
-          : typeof rawData.skills === 'string'
-            ? rawData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+      skills: unwrapped.skills ? (
+        Array.isArray(unwrapped.skills)
+          ? unwrapped.skills
+          : typeof unwrapped.skills === 'string'
+            ? unwrapped.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
             : []
       ) : null,
       // Ensure other array fields are properly formatted
-      certifications: rawData.certifications ? (
-        Array.isArray(rawData.certifications)
-          ? rawData.certifications
-          : typeof rawData.certifications === 'string'
-            ? rawData.certifications.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+      certifications: unwrapped.certifications ? (
+        Array.isArray(unwrapped.certifications)
+          ? unwrapped.certifications
+          : typeof unwrapped.certifications === 'string'
+            ? unwrapped.certifications.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
             : []
       ) : null,
-      direct_reports: rawData.direct_reports ? (
-        Array.isArray(rawData.direct_reports)
-          ? rawData.direct_reports
-          : typeof rawData.direct_reports === 'string'
-            ? rawData.direct_reports.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+      direct_reports: unwrapped.direct_reports ? (
+        Array.isArray(unwrapped.direct_reports)
+          ? unwrapped.direct_reports
+          : typeof unwrapped.direct_reports === 'string'
+            ? unwrapped.direct_reports.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
             : []
       ) : null
     };
@@ -524,17 +534,13 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       try {
         const profileResult = await selectData<UserProfile>(this.config.tableName, '*', { user_id: userId });
 
-        // Handle nested response structure
-        let rows = profileResult.data as any;
-        if (rows && !Array.isArray(rows) && rows.data && Array.isArray(rows.data)) {
-          rows = rows.data;
-        }
-
+        const rows = profileResult.data as any;
         if (rows && Array.isArray(rows) && rows.length > 0) {
           const rawData = rows[0];
+          const normalizedData = this.normalizeProfileData(rawData);
           const profileData = {
-            ...this.normalizeProfileData(rawData),
-            id: rawData.id ?? (rawData as any).user_id,
+            ...normalizedData,
+            id: normalizedData.id ?? normalizedData.user_id,
             external_user_id: userId,
           };
           const validatedData = this.config.schema.parse(profileData);
@@ -599,17 +605,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
 
         this.clearUserCache(userId);
 
-        let rawData = serviceResponse.data as any;
-
-        // Handle nested profile structure (e.g. { success: true, profile: {...} } or { success: true, data: {...} })
-        if (rawData && typeof rawData === 'object') {
-          if ('profile' in rawData) {
-            rawData = rawData.profile;
-          } else if ('data' in rawData) {
-            rawData = rawData.data;
-          }
-        }
-        const normalizedData = this.normalizeProfileData(rawData);
+        const normalizedData = this.normalizeProfileData(serviceResponse.data);
         const updatedProfileData = {
           ...normalizedData,
           id: normalizedData.id ?? normalizedData.user_id,
