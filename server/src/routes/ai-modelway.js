@@ -144,8 +144,12 @@ Be specific, actionable, and practical.`
         [INTENT_TYPES.LEARN.id]: `Intent: Learning
 - Assess current knowledge level
 - Provide clear explanations
-- Use examples and analogies
-- Suggest resources for deeper learning`
+- Use "web_search" or "advanced_scrape" (if available) to gather information
+- If a specific capability is missing:
+  1. FIRST, USE "search_skills" to check for existing solutions (e.g., "ghost-cms", "linear", etc.)
+  2. If found, USE "install_skill" to acquire it
+  3. If NOT found, PROPOSE CREATING A SKILL using "create_skill"
+- Use examples and analogies`
     };
 
     // Combine original system prompt with Model-Way scaffolding
@@ -254,8 +258,14 @@ router.post('/chat', authenticateToken, async (req, res) => {
 
         // Model-Way: Attach tools based on intent
         if (intent.id === INTENT_TYPES.LEARN.id) {
-            openClawPayload.tools = ['web_search'];
-            logger.info('Attaching web_search tool for LEARN intent', { userId, conversationId });
+            // "Learning" now includes the ability to learn new skills (create tools)
+            // Also include web-utils (scrape, summarize) for discovery
+            openClawPayload.tools = ['web_search', 'advanced_scrape', 'summarize_strategy', 'create_skill', 'implement_action', 'list_skills', 'search_skills', 'install_skill'];
+            logger.info('Attaching learning tools for LEARN intent', { userId, conversationId });
+        } else if (intent.id === INTENT_TYPES.SOLVE.id) {
+            // "Solve" should also have access to create tools if it gets stuck
+            openClawPayload.tools = ['web_search', 'advanced_scrape', 'summarize_strategy', 'create_skill', 'implement_action', 'list_skills', 'search_skills', 'install_skill'];
+            logger.info('Attaching learning tools for SOLVE intent', { userId, conversationId });
         }
 
         logger.info('Proxying chat request to OpenClaw with Model-Way Framework', {
