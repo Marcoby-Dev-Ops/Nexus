@@ -599,7 +599,12 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
 
         this.clearUserCache(userId);
 
-        const rawData = serviceResponse.data as any;
+        let rawData = serviceResponse.data as any;
+
+        // Handle nested profile structure (e.g. { success: true, profile: {...} })
+        if (rawData && typeof rawData === 'object' && 'profile' in rawData) {
+          rawData = rawData.profile;
+        }
         const normalizedData = this.normalizeProfileData(rawData);
         const updatedProfileData = {
           ...normalizedData,
