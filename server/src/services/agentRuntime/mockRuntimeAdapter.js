@@ -20,10 +20,78 @@ class MockRuntimeAdapter {
       streaming: true,
       tools: true,
       healthCheck: true,
-      controlPlane: false,
+      controlPlane: true,
       supportsAgentHeader: false,
-      supportsConversationIsolation: true
+      supportsConversationIsolation: true,
+      controlResources: ['agents', 'sessions', 'channels', 'plugins'],
+      controlProxy: true
     };
+  }
+
+  buildControlPayload(resource, query = {}) {
+    return {
+      resource,
+      items: [],
+      query,
+      runtime: this.id
+    };
+  }
+
+  async getControlPlaneStatus() {
+    return {
+      available: true,
+      checks: {
+        agents: { available: true, status: 200 },
+        sessions: { available: true, status: 200 },
+        channels: { available: true, status: 200 },
+        plugins: { available: true, status: 200 }
+      }
+    };
+  }
+
+  async listAgents(options = {}) {
+    return new Response(JSON.stringify(this.buildControlPayload('agents', options.query)), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+
+  async listSessions(options = {}) {
+    return new Response(JSON.stringify(this.buildControlPayload('sessions', options.query)), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+
+  async listChannels(options = {}) {
+    return new Response(JSON.stringify(this.buildControlPayload('channels', options.query)), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+
+  async listPlugins(options = {}) {
+    return new Response(JSON.stringify(this.buildControlPayload('plugins', options.query)), {
+      status: 200,
+      headers: { 'content-type': 'application/json' }
+    });
+  }
+
+  async controlPlaneRequest(options = {}) {
+    const payload = {
+      method: String(options.method || 'GET').toUpperCase(),
+      path: options.path || '/',
+      query: options.query || {},
+      body: options.body || null,
+      runtime: this.id
+    };
+
+    return new Response(JSON.stringify(payload), {
+      status: 200,
+      headers: {
+        'content-type': 'application/json'
+      }
+    });
   }
 
   buildCompletionContent(payload = {}) {

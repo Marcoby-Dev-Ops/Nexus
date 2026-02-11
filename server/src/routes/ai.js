@@ -83,6 +83,12 @@ const MAX_PPTX_CONTEXT_BYTES = 20 * 1024 * 1024;
 const MAX_ATTACHMENT_PREVIEW_CHARS = 4000;
 const DOCUMENT_LINK_REGEX = /\b(?:https?:\/\/[^\s)]+|\/api\/chat\/attachments\/[^\s)]+|\/media\/[^\s)]+)\b/gi;
 const DOCUMENT_EXTENSION_REGEX = /\.(pdf|doc|docx|txt|md|rtf|csv|xlsx|xls|ppt|pptx|json)(?:[?#].*)?$/i;
+const CONTROL_RESOURCE_METHODS = {
+    agents: 'listAgents',
+    sessions: 'listSessions',
+    channels: 'listChannels',
+    plugins: 'listPlugins'
+};
 
 // In-memory conversation tracking (in production, use database)
 const conversations = new Map();
@@ -1206,6 +1212,175 @@ router.get('/runtime', authenticateToken, async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.message || 'Failed to inspect runtime'
+        });
+    }
+});
+
+async function readRuntimeResponsePayload(response) {
+    const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('application/json')) {
+        return response.json();
+    }
+    return { raw: await response.text() };
+}
+
+function getRuntimeControlQuery(req) {
+    const query = {};
+    Object.entries(req.query || {}).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        query[key] = value;
+    });
+    return query;
+}
+
+router.get('/runtime/control', authenticateToken, async (req, res) => {
+    try {
+        const runtimeInfo = agentRuntime.getRuntimeInfo();
+        const capabilities = agentRuntime.getCapabilities();
+
+        if (!capabilities.controlPlane) {
+            return res.status(501).json({
+                success: false,
+                error: 'Active runtime does not support control-plane operations',
+                runtime: runtimeInfo.id
+            });
+        }
+
+        if (typeof agentRuntime.getControlPlaneStatus !== 'function') {
+            return res.status(501).json({
+                success: false,
+                error: 'Control-plane status method is not available on this runtime',
+                runtime: runtimeInfo.id
+            });
+        }
+
+        const status = await agentRuntime.getControlPlaneStatus({ query: getRuntimeControlQuery(req) });
+
+        return res.json({
+            success: true,
+            runtime: runtimeInfo,
+            capabilities,
+            controlPlane: status
+        });
+    } catch (error) {
+        return res.status(502).json({
+            success: false,
+            error: error.message || 'Failed to query runtime control-plane'
+        });
+    }
+});
+
+router.post('/runtime/control/proxy', authenticateToken, async (req, res) => {
+    try {
+        const runtimeInfo = agentRuntime.getRuntimeInfo();
+        const capabilities = agentRuntime.getCapabilities();
+        const { method = 'GET', path: requestPath = '/', query = {}, body = undefined, timeoutMs } = req.body || {};
+
+        if (!capabilities.controlPlane || !capabilities.controlProxy) {
+            return res.status(501).json({
+                success: false,
+                error: 'Active runtime does not support control-plane proxy operations',
+                runtime: runtimeInfo.id
+            });
+        }
+
+        if (typeof agentRuntime.controlPlaneRequest !== 'function') {
+            return res.status(501).json({
+                success: false,
+                error: 'Control-plane proxy method is not available on this runtime',
+                runtime: runtimeInfo.id
+            });
+        }
+
+        const safePath = String(requestPath || '').trim();
+        if (!safePath.startsWith('/')) {
+            return res.status(400).json({
+                success: false,
+                error: 'path must start with "/"'
+            });
+        }
+
+        const upperMethod = String(method || 'GET').toUpperCase();
+        const allowedMethods = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
+        if (!allowedMethods.has(upperMethod)) {
+            return res.status(400).json({
+                success: false,
+                error: `Unsupported method "${upperMethod}". Allowed methods: ${[...allowedMethods].join(', ')}`
+            });
+        }
+
+        const response = await agentRuntime.controlPlaneRequest({
+            method: upperMethod,
+            path: safePath,
+            query,
+            body,
+            timeoutMs
+        });
+        const payload = await readRuntimeResponsePayload(response);
+
+        return res.status(response.status).json({
+            success: response.ok,
+            runtime: runtimeInfo.id,
+            request: {
+                method: upperMethod,
+                path: safePath
+            },
+            data: payload
+        });
+    } catch (error) {
+        return res.status(502).json({
+            success: false,
+            error: error.message || 'Runtime control-plane proxy request failed'
+        });
+    }
+});
+
+router.get('/runtime/control/:resource', authenticateToken, async (req, res) => {
+    try {
+        const runtimeInfo = agentRuntime.getRuntimeInfo();
+        const capabilities = agentRuntime.getCapabilities();
+        const resource = String(req.params.resource || '').toLowerCase();
+        const methodName = CONTROL_RESOURCE_METHODS[resource];
+
+        if (!methodName) {
+            return res.status(404).json({
+                success: false,
+                error: `Unsupported control resource "${resource}"`,
+                supportedResources: Object.keys(CONTROL_RESOURCE_METHODS)
+            });
+        }
+
+        if (!capabilities.controlPlane) {
+            return res.status(501).json({
+                success: false,
+                error: 'Active runtime does not support control-plane operations',
+                runtime: runtimeInfo.id
+            });
+        }
+
+        if (typeof agentRuntime[methodName] !== 'function') {
+            return res.status(501).json({
+                success: false,
+                error: `Control resource method "${methodName}" is not available on runtime`,
+                runtime: runtimeInfo.id
+            });
+        }
+
+        const response = await agentRuntime[methodName]({
+            query: getRuntimeControlQuery(req)
+        });
+        const payload = await readRuntimeResponsePayload(response);
+
+        return res.status(response.status).json({
+            success: response.ok,
+            runtime: runtimeInfo.id,
+            resource,
+            data: payload
+        });
+    } catch (error) {
+        return res.status(502).json({
+            success: false,
+            error: error.message || 'Failed to query runtime control resource'
         });
     }
 });
