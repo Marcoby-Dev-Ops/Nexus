@@ -531,8 +531,24 @@ export async function insertOne<T = any>(
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
   const response = await client.post<T>('/api/db/insert', { table, data });
 
-  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
-    response.data = (response.data as any).data;
+  if (response.success && response.data) {
+    // Handle nested response structure
+    let data = response.data;
+    if (typeof data === 'object' && 'data' in (data as any)) {
+      data = (data as any).data;
+    }
+
+    // Unwrap array if needed
+    if (Array.isArray(data) && data.length > 0) {
+      response.data = data[0];
+    } else if (Array.isArray(data) && data.length === 0) {
+      // This might be valid for insert if it failed silently or return nothing, 
+      // but usually insert returns the inserted row. 
+      // Keep as is or set to undefined/null if strict.
+      // For now, let's assume if it came back as empty array, it might be an issue or just no return (if select wasn't used)
+    } else {
+      response.data = data;
+    }
   }
 
   return response;
@@ -546,8 +562,19 @@ export async function updateOne<T = any>(
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
   const response = await client.post<T>('/api/db/update', { table, filters, data });
 
-  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
-    response.data = (response.data as any).data;
+  if (response.success && response.data) {
+    // Handle nested response structure
+    let data = response.data;
+    if (typeof data === 'object' && 'data' in (data as any)) {
+      data = (data as any).data;
+    }
+
+    // Unwrap array if needed
+    if (Array.isArray(data) && data.length > 0) {
+      response.data = data[0];
+    } else {
+      response.data = data;
+    }
   }
 
   return response;
@@ -561,8 +588,19 @@ export async function upsertOne<T = any>(
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
   const response = await client.post<T>(`/api/db/${table}/upsert`, { data, onConflict });
 
-  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
-    response.data = (response.data as any).data;
+  if (response.success && response.data) {
+    // Handle nested response structure
+    let data = response.data;
+    if (typeof data === 'object' && 'data' in (data as any)) {
+      data = (data as any).data;
+    }
+
+    // Unwrap array if needed
+    if (Array.isArray(data) && data.length > 0) {
+      response.data = data[0];
+    } else {
+      response.data = data;
+    }
   }
 
   return response;
@@ -575,8 +613,19 @@ export async function deleteOne<T = any>(
   const client = new ApiClient({ baseUrl: getApiBaseUrl() });
   const response = await client.post<T>('/api/db/delete', { table, filters });
 
-  if (response.success && response.data && typeof response.data === 'object' && 'data' in (response.data as any)) {
-    response.data = (response.data as any).data;
+  if (response.success && response.data) {
+    // Handle nested response structure
+    let data = response.data;
+    if (typeof data === 'object' && 'data' in (data as any)) {
+      data = (data as any).data;
+    }
+
+    // Unwrap array if needed
+    if (Array.isArray(data) && data.length > 0) {
+      response.data = data[0];
+    } else {
+      response.data = data;
+    }
   }
 
   return response;
