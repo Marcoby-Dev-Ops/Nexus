@@ -97,7 +97,7 @@ async function runHygiene() {
                         const newTitle = response.data.message.trim().replace(/^["']|["']$/g, '');
 
                         if (!DRY_RUN) {
-                            await query('UPDATE ai_conversations SET title = $1, updated_at = NOW() WHERE id = $2', [newTitle, thread.id]);
+                            await query('UPDATE ai_conversations SET title = $1 WHERE id = $2', [newTitle, thread.id]);
                             logger.info(`Updated thread ${thread.id}: "${thread.title}" -> "${newTitle}"`);
                         } else {
                             logger.info(`[DRY RUN] Would update thread ${thread.id}: "${thread.title}" -> "${newTitle}"`);
