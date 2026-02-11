@@ -56,7 +56,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8">
+      <div className="relative flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8">
         {/* Global Search Component */}
         <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
@@ -91,8 +91,8 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
         </div>
 
         {/* CENTER: Main Navigation */}
-        <div className="hidden md:flex flex-1 justify-center">
-          <nav className="flex items-center space-x-1">
+        <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 max-w-[60%] lg:max-w-2xl overflow-x-auto">
+          <nav className="flex items-center justify-center space-x-3 whitespace-nowrap">
             {navItems.filter(item => item.category === 'overview' || item.name === 'Settings').map((item) => (
               <Link
                 key={item.path}
