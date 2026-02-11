@@ -7,6 +7,7 @@
     "dev": "cd client && pnpm dev",
     "build": "cd client && pnpm build",
     "start": "cd server && pnpm start",
+    "ops:preflight": "bash ./scripts/nexus-preflight.sh",
     "client:type-check": "pnpm --filter nexus-client -w run type-check",
     "client:lint": "pnpm --filter nexus-client -w run lint",
     "install:client": "cd client && pnpm install",

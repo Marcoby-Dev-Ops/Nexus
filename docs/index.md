@@ -15,6 +15,7 @@
 - [AI Capabilities Summary](implementation/AI_CAPABILITIES_SUMMARY.md)
 - [Deployment Guide](deployment/DEPLOYMENT.md)
 - [Nexus Rollout Runbook (Marcoby)](deployment/NEXUS_ROLLOUT_RUNBOOK.md)
+- [Nexus Offer and Beta Operations Plan](strategy/NEXUS_OFFER_AND_BETA_OPERATIONS_PLAN.md)
 - [Testing Checklist](testing/TESTING_CHECKLIST.md)
 
 ## Development Guides

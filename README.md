@@ -42,6 +42,36 @@ Nexus is designed to be deployed via **Coolify** as a composite stack.
     - `POSTGRES_URL`: Connection string to the `vector_db`.
 3.  **Deploy**. Coolify will build the Docker container and start the services.
 
+### Server Readiness Check (Preflight)
+Before deploying, run the host readiness check on the target server:
+
+```bash
+bash ./scripts/nexus-preflight.sh
+# or
+pnpm ops:preflight
+```
+
+The script validates CPU, RAM, free disk, current load, Docker availability, and basic outbound networking.
+
+Exit codes:
+- `0`: PASS
+- `1`: WARN
+- `2`: FAIL
+
+You can override thresholds:
+
+```bash
+MIN_VCPU=4 MIN_RAM_GB=8 MIN_DISK_FREE_GB=120 bash ./scripts/nexus-preflight.sh
+```
+
+Remote pull/run pattern (replace with your repo URL):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<org>/<repo>/<branch>/scripts/nexus-preflight.sh -o nexus-preflight.sh
+chmod +x nexus-preflight.sh
+./nexus-preflight.sh
+```
+
 ### OpenClaw Integration (Required)
 Nexus relies on **OpenClaw** for its agentic capabilities.
 

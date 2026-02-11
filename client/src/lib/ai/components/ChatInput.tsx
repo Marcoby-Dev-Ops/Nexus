@@ -73,7 +73,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
       const files = Array.from((e.target as HTMLInputElement).files || []);
       if (files.length > 0) {
         const newAttachments = files.map(file => ({
-          id: `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
           name: file.name,
           size: file.size,
           type: file.type,
@@ -85,6 +85,31 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
       }
     };
     input.click();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    if (disabled || isStreaming) return;
+
+    const pastedFiles = Array.from(e.clipboardData?.items || [])
+      .filter((item) => item.kind === 'file')
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => file !== null);
+
+    if (pastedFiles.length === 0) return;
+
+    e.preventDefault();
+
+    const newAttachments = pastedFiles.map((file) => ({
+      id: `file_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`,
+      name: file.name || `pasted-image-${Date.now()}.png`,
+      size: file.size,
+      type: file.type,
+      url: URL.createObjectURL(file),
+      file,
+      status: 'pending' as const,
+    }));
+
+    setAttachments([...attachments, ...newAttachments]);
   };
 
   const removeAttachment = (attachmentId: string) => {
@@ -150,6 +175,7 @@ const ChatInput = forwardRef<ChatInputRef, ChatInputProps>(({
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onPaste={handlePaste}
               onKeyPress={handleKeyPress}
               placeholder={placeholder}
               disabled={disabled || isStreaming}
