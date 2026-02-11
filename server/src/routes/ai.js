@@ -155,6 +155,62 @@ function buildStreamStatus(stage, label, detail) {
 // Database helpers
 const { query } = require('../database/connection');
 
+async function requireInstanceOwner(req, res, next) {
+    try {
+        const userId = req.user?.id;
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                error: 'Unauthorized'
+            });
+        }
+
+        const tokenRoles = Array.isArray(req.user?.jwtPayload?.roles)
+            ? req.user.jwtPayload.roles.map((role) => String(role || '').toLowerCase())
+            : [];
+        const tokenRoleClaim = String(req.user?.jwtPayload?.role || '').toLowerCase();
+        if (tokenRoles.includes('owner') || tokenRoleClaim === 'owner') {
+            return next();
+        }
+
+        const ownershipResult = await query(
+            'SELECT role FROM user_profiles WHERE user_id = $1 LIMIT 1',
+            [userId],
+            req.user?.jwtPayload
+        );
+
+        if (ownershipResult.error) {
+            logger.error('Failed to verify owner role for runtime control', {
+                userId,
+                error: ownershipResult.error
+            });
+            return res.status(500).json({
+                success: false,
+                error: 'Failed to verify permissions'
+            });
+        }
+
+        const profileRole = String(ownershipResult.data?.[0]?.role || '').toLowerCase();
+        if (profileRole !== 'owner') {
+            return res.status(403).json({
+                success: false,
+                error: 'Owner role required'
+            });
+        }
+
+        return next();
+    } catch (error) {
+        logger.error('Runtime control owner check failed', {
+            userId: req.user?.id,
+            error: error.message
+        });
+        return res.status(500).json({
+            success: false,
+            error: 'Permission check failed'
+        });
+    }
+}
+
 // Helper to get or create conversation
 async function getOrCreateConversation(userId, providedId, title = 'New Conversation') {
     // If providedId is a valid UUID, check if it exists
@@ -1233,7 +1289,7 @@ function getRuntimeControlQuery(req) {
     return query;
 }
 
-router.get('/runtime/control', authenticateToken, async (req, res) => {
+router.get('/runtime/control', authenticateToken, requireInstanceOwner, async (req, res) => {
     try {
         const runtimeInfo = agentRuntime.getRuntimeInfo();
         const capabilities = agentRuntime.getCapabilities();
@@ -1270,7 +1326,7 @@ router.get('/runtime/control', authenticateToken, async (req, res) => {
     }
 });
 
-router.post('/runtime/control/proxy', authenticateToken, async (req, res) => {
+router.post('/runtime/control/proxy', authenticateToken, requireInstanceOwner, async (req, res) => {
     try {
         const runtimeInfo = agentRuntime.getRuntimeInfo();
         const capabilities = agentRuntime.getCapabilities();
@@ -1335,7 +1391,7 @@ router.post('/runtime/control/proxy', authenticateToken, async (req, res) => {
     }
 });
 
-router.get('/runtime/control/:resource', authenticateToken, async (req, res) => {
+router.get('/runtime/control/:resource', authenticateToken, requireInstanceOwner, async (req, res) => {
     try {
         const runtimeInfo = agentRuntime.getRuntimeInfo();
         const capabilities = agentRuntime.getCapabilities();
