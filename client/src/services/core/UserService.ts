@@ -188,6 +188,39 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   }
 
   /**
+   * Extract a canonical profile object from common API/RPC envelopes.
+   */
+  private extractProfileRecord(input: any): any {
+    let current = input;
+    const seen = new Set<any>();
+    let depth = 0;
+
+    while (current && typeof current === 'object' && !seen.has(current) && depth < 12) {
+      seen.add(current);
+      depth += 1;
+
+      if (Array.isArray(current)) {
+        current = current.length > 0 ? current[0] : null;
+        continue;
+      }
+
+      if ('profile' in current && current.profile && typeof current.profile === 'object') {
+        current = current.profile;
+        continue;
+      }
+
+      if ('data' in current && current.data && typeof current.data === 'object') {
+        current = current.data;
+        continue;
+      }
+
+      break;
+    }
+
+    return current;
+  }
+
+  /**
    * Get cached profile or fetch from database
    */
   private async getCachedOrFetchProfile(userId: string): Promise<any> {
@@ -233,7 +266,10 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
       throw new Error('Invalid user profile data returned from ensure_user_profile');
     }
 
-
+    profileData = this.extractProfileRecord(profileData);
+    if (!profileData || typeof profileData !== 'object') {
+      throw new Error('Unable to extract profile record from ensure_user_profile response');
+    }
 
     // Cache the result
     this.profileCache.set(userId, { data: profileData, timestamp: now });
@@ -274,29 +310,7 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   private normalizeProfileData(rawData: any): any {
     if (!rawData) return rawData;
 
-    // Resilient unwrapping: Handle nested envelopes such as:
-    // - { success: true, data: { ... } }
-    // - { profile: { ... } }
-    // - { data: { data: { ... } } }
-    // - [ { ... } ]
-    let unwrapped = rawData;
-    const seen = new Set<any>();
-    while (unwrapped && typeof unwrapped === 'object' && !seen.has(unwrapped)) {
-      seen.add(unwrapped);
-      if (Array.isArray(unwrapped)) {
-        if (unwrapped.length > 0) {
-          unwrapped = unwrapped[0];
-        } else {
-          break; // Empty array
-        }
-      } else if ('profile' in unwrapped && unwrapped.profile && typeof unwrapped.profile === 'object') {
-        unwrapped = unwrapped.profile;
-      } else if ('data' in unwrapped && unwrapped.data && typeof unwrapped.data === 'object') {
-        unwrapped = unwrapped.data;
-      } else {
-        break;
-      }
-    }
+    const unwrapped = this.extractProfileRecord(rawData);
 
     // Debug logging for normalized data input
     this.logger.info('normalizeProfileData - Input:', {
