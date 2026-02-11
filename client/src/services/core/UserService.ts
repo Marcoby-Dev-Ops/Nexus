@@ -601,9 +601,13 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
 
         let rawData = serviceResponse.data as any;
 
-        // Handle nested profile structure (e.g. { success: true, profile: {...} })
-        if (rawData && typeof rawData === 'object' && 'profile' in rawData) {
-          rawData = rawData.profile;
+        // Handle nested profile structure (e.g. { success: true, profile: {...} } or { success: true, data: {...} })
+        if (rawData && typeof rawData === 'object') {
+          if ('profile' in rawData) {
+            rawData = rawData.profile;
+          } else if ('data' in rawData) {
+            rawData = rawData.data;
+          }
         }
         const normalizedData = this.normalizeProfileData(rawData);
         const updatedProfileData = {
