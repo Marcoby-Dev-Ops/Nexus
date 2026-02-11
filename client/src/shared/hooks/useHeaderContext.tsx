@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 interface HeaderContextType {
   pageTitle: string | null;
@@ -32,48 +32,65 @@ export const HeaderProvider: React.FC<HeaderProviderProps> = ({ children }) => {
   const [pageTitle, setPageTitleState] = useState<string | null>(null);
   const [pageSubtitle, setPageSubtitleState] = useState<string | null>(null);
   const [pageIcon, setPageIconState] = useState<ReactNode | null>(null);
-  const [pageActions, setPageActions] = useState<ReactNode | null>(null);
+  const [pageActions, setPageActionsState] = useState<ReactNode | null>(null);
 
-  const setPageTitle = (title: string | null) => {
+  const setPageTitle = useCallback((title: string | null) => {
     setPageTitleState(title);
-  };
+  }, []);
 
-  const setPageSubtitle = (subtitle: string | null) => {
+  const setPageSubtitle = useCallback((subtitle: string | null) => {
     setPageSubtitleState(subtitle);
-  };
+  }, []);
 
-  const setPageIcon = (icon: ReactNode | null) => {
+  const setPageIcon = useCallback((icon: ReactNode | null) => {
     setPageIconState(icon);
-  };
+  }, []);
 
-  const setHeaderContent = (title: string | null, subtitle?: string | null, actions?: ReactNode | null) => {
+  const setPageActions = useCallback((actions: ReactNode | null) => {
+    setPageActionsState(actions);
+  }, []);
+
+  const setHeaderContent = useCallback((title: string | null, subtitle?: string | null, actions?: ReactNode | null) => {
     setPageTitleState(title);
     setPageSubtitleState(subtitle || null);
     if (actions !== undefined) {
-      setPageActions(actions);
+      setPageActionsState(actions);
     }
-  };
+  }, []);
 
-  const clearHeaderContent = () => {
+  const clearHeaderContent = useCallback(() => {
     setPageTitleState(null);
     setPageSubtitleState(null);
     setPageIconState(null);
-    setPageActions(null);
-  };
+    setPageActionsState(null);
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    pageTitle,
+    pageSubtitle,
+    pageIcon,
+    pageActions,
+    setPageTitle,
+    setPageSubtitle,
+    setPageIcon,
+    setHeaderContent,
+    setPageActions,
+    clearHeaderContent,
+  }), [
+    pageTitle,
+    pageSubtitle,
+    pageIcon,
+    pageActions,
+    setPageTitle,
+    setPageSubtitle,
+    setPageIcon,
+    setHeaderContent,
+    setPageActions,
+    clearHeaderContent
+  ]);
 
   return (
-    <HeaderContext.Provider value={{
-      pageTitle,
-      pageSubtitle,
-      pageIcon,
-      pageActions,
-      setPageTitle,
-      setPageSubtitle,
-      setPageIcon,
-      setHeaderContent,
-      setPageActions,
-      clearHeaderContent,
-    }}>
+    <HeaderContext.Provider value={contextValue}>
       {children}
     </HeaderContext.Provider>
   );

@@ -87,12 +87,8 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
 
   // Generate a consistent agent color based on name
   const getAgentColor = (name: string) => {
-    const colors = ['bg-blue-600', 'bg-purple-600', 'bg-indigo-600', 'bg-teal-600', 'bg-emerald-600'];
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return colors[Math.abs(hash) % colors.length];
+    // Use the app's primary color for brand consistency
+    return 'bg-primary';
   };
 
   const agentColor = getAgentColor(agentName);
