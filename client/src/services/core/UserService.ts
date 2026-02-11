@@ -596,24 +596,44 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
           updated_at: new Date().toISOString()
         };
 
-        // Fix: Use correct signature updateOne(table, filters, data)
-        const result = await updateOne<UserProfile>(
-          this.config.tableName,
-          { user_id: existingProfile.user_id },
-          updateData
-        );
+        // Try likely user_id candidates. The db route adds its own user_id scope, so a
+        // mismatch here can silently return no updated row.
+        const userIdCandidates = Array.from(new Set([
+          existingProfile?.user_id,
+          userId,
+        ].filter((value): value is string => typeof value === 'string' && value.trim().length > 0)));
 
-        const serviceResponse = this.convertApiResponse<UserProfile>(result);
+        let updatedRow: UserProfile | null = null;
+        for (const candidateUserId of userIdCandidates) {
+          const result = await updateOne<UserProfile>(
+            this.config.tableName,
+            { user_id: candidateUserId },
+            updateData
+          );
 
-        if (!serviceResponse.success) {
-          return serviceResponse;
+          const serviceResponse = this.convertApiResponse<UserProfile>(result);
+          if (!serviceResponse.success) {
+            return serviceResponse;
+          }
+
+          if (serviceResponse.data) {
+            updatedRow = serviceResponse.data;
+            break;
+          }
+        }
+
+        if (!updatedRow) {
+          throw new Error('Profile update returned no row. Check user_id mapping/scoping.');
         }
 
         this.clearUserCache(userId);
 
-        const normalizedData = this.normalizeProfileData(serviceResponse.data);
+        // Re-read canonical profile after update to avoid validating partial update responses.
+        const freshProfile = await this.getCachedOrFetchProfile(userId);
+        const normalizedData = this.normalizeProfileData(freshProfile ?? updatedRow);
         const updatedProfileData = {
           ...normalizedData,
+          id: normalizedData?.id ?? normalizedData?.user_id ?? userId,
           external_user_id: userId
         };
 
