@@ -274,10 +274,17 @@ export class UserService extends BaseService implements CrudServiceInterface<Use
   private normalizeProfileData(rawData: any): any {
     if (!rawData) return rawData;
 
-    // Resilient unwrapping: Handle nested { success: true, data/profile: { ... } } structures recursively
+    // Resilient unwrapping: Handle nested { success: true, data/profile: { ... } } structures 
+    // and arrays recursively until we find a flat profile object.
     let unwrapped = rawData;
-    while (unwrapped && typeof unwrapped === 'object' && !Array.isArray(unwrapped)) {
-      if (unwrapped.success === true && (unwrapped.data || unwrapped.profile)) {
+    while (unwrapped && typeof unwrapped === 'object') {
+      if (Array.isArray(unwrapped)) {
+        if (unwrapped.length > 0) {
+          unwrapped = unwrapped[0];
+        } else {
+          break; // Empty array
+        }
+      } else if (unwrapped.success === true && (unwrapped.data || unwrapped.profile)) {
         unwrapped = unwrapped.data ?? unwrapped.profile;
       } else {
         break;
