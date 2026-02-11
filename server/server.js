@@ -36,6 +36,7 @@ const rpcRoutes = require('./src/routes/rpc');
 const aiRoutes = require('./src/routes/ai');
 const vectorRoutes = require('./src/routes/vector');
 const knowledgeRoutes = require('./src/routes/knowledge');
+const { getAgentRuntime } = require('./src/services/agentRuntime');
 
 // Import OpenClaw integration routes
 const openclawIntegrationRoutes = require('./routes/openclaw-integration');
@@ -234,6 +235,12 @@ app.use((req, res, next) => {
 app.get('/health', async (req, res) => {
   try {
     const verbose = process.env.HEALTH_VERBOSE === 'true' || process.env.NODE_ENV !== 'production';
+    const runtime = getAgentRuntime();
+    const runtimeInfo = runtime.getRuntimeInfo();
+    const runtimeCapabilities = runtime.getCapabilities();
+    const runtimeRequired = (
+      process.env.AGENT_RUNTIME || 'openclaw'
+    ).toLowerCase() !== 'mock' && process.env.HEALTH_REQUIRE_RUNTIME !== 'false';
 
     const baseStatus = {
       status: 'ok'
@@ -248,6 +255,47 @@ app.get('/health', async (req, res) => {
       memory: process.memoryUsage(),
       checks: {}
     } : { ...baseStatus };
+
+    // Agent runtime (OpenClaw) health check
+    try {
+      const runtimeHealthResponse = await runtime.healthCheck({ timeoutMs: 5000 });
+      const runtimeOk = runtimeHealthResponse.ok;
+      const runtimeSummary = {
+        status: runtimeOk ? 'ok' : 'error',
+        runtime: runtimeInfo.id,
+        required: runtimeRequired
+      };
+
+      if (verbose) {
+        healthStatus.checks = healthStatus.checks || {};
+        healthStatus.checks.runtime = {
+          ...runtimeSummary,
+          url: runtimeInfo.baseUrl,
+          statusCode: runtimeHealthResponse.status,
+          capabilities: runtimeCapabilities
+        };
+      } else {
+        healthStatus.runtime = runtimeOk ? 'ok' : 'error';
+      }
+    } catch (runtimeError) {
+      const runtimeSummary = {
+        status: runtimeRequired ? 'error' : 'degraded',
+        runtime: runtimeInfo.id,
+        required: runtimeRequired,
+        error: runtimeError.message
+      };
+
+      if (verbose) {
+        healthStatus.checks = healthStatus.checks || {};
+        healthStatus.checks.runtime = {
+          ...runtimeSummary,
+          url: runtimeInfo.baseUrl,
+          capabilities: runtimeCapabilities
+        };
+      } else {
+        healthStatus.runtime = runtimeRequired ? 'error' : 'degraded';
+      }
+    }
 
     // Database health check
     try {
@@ -279,7 +327,11 @@ app.get('/health', async (req, res) => {
     // Overall health status
     const checks = healthStatus.checks ? Object.values(healthStatus.checks) : [];
     const dbOk = healthStatus.database ? healthStatus.database === 'ok' : true;
-    const allChecksPassed = checks.every(check => check.status === 'ok') && dbOk;
+    const runtimeCheck = healthStatus.checks?.runtime;
+    const runtimeOk = runtimeCheck
+      ? (runtimeCheck.required ? runtimeCheck.status === 'ok' : runtimeCheck.status !== 'error')
+      : (healthStatus.runtime ? (runtimeRequired ? healthStatus.runtime === 'ok' : healthStatus.runtime !== 'error') : true);
+    const allChecksPassed = checks.every(check => check.status === 'ok' || (!runtimeRequired && check.runtime && check.status === 'degraded')) && dbOk && runtimeOk;
     healthStatus.status = allChecksPassed ? 'ok' : 'degraded';
 
     const statusCode = allChecksPassed ? 200 : 503;
