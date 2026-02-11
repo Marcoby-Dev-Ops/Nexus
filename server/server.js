@@ -238,9 +238,11 @@ app.get('/health', async (req, res) => {
     const runtime = getAgentRuntime();
     const runtimeInfo = runtime.getRuntimeInfo();
     const runtimeCapabilities = runtime.getCapabilities();
+    // Runtime readiness should be opt-in for /health so orchestrators don't
+    // recycle a healthy API process when OpenClaw is temporarily unavailable.
     const runtimeRequired = (
       process.env.AGENT_RUNTIME || 'openclaw'
-    ).toLowerCase() !== 'mock' && process.env.HEALTH_REQUIRE_RUNTIME !== 'false';
+    ).toLowerCase() !== 'mock' && process.env.HEALTH_REQUIRE_RUNTIME === 'true';
 
     const baseStatus = {
       status: 'ok'
