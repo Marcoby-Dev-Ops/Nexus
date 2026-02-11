@@ -20,6 +20,7 @@ import {
   Shield,
   Bell,
   Key,
+  Twitter,
   Settings
 } from 'lucide-react';
 
@@ -405,6 +406,26 @@ export default function ProfilePage() {
               }}
             >
               Change
+            </Button>
+          </div>
+
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex items-center gap-3">
+              <Twitter className="h-5 w-5 text-blue-500" />
+              <div>
+                <p className="font-medium">Twitter</p>
+                <p className="text-sm text-muted-foreground">Connect your Twitter account to enrich your profile</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const next = `${window.location.origin}/profile`;
+                window.location.href = `/api/auth/link/twitter?next=${encodeURIComponent(next)}`;
+              }}
+            >
+              Connect Twitter
             </Button>
           </div>
 

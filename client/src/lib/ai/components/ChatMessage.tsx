@@ -5,10 +5,10 @@ import { Button } from '@/shared/components/ui/Button';
 import { Copy, ThumbsUp, ThumbsDown, User, Bot } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType } from '@/shared/types/chat';
-// import TransparencyDisplay from './TransparencyDisplay'; // Commenting out if not confirmed, but let's assume it exists or remove if not found.
-// Previous search didn't confirm it yet, but I'll leave the import and if it fails I'll fix.
-// Actually, I should probably remove it if I'm not sure, or better, check if it exists.
-// I'll assume it exists or I'll implement a fallback.
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeHighlight from 'rehype-highlight';
+import 'highlight.js/styles/github-dark.css'; // Or any other style
 
 import { getGravatarUrl } from '@/shared/utils/gravatar';
 
@@ -32,48 +32,6 @@ export default function ChatMessage({
   userName
 }: ChatMessageProps) {
 
-  // Helper: detect and render /media URLs as images or file links
-  const renderContent = (content: string) => {
-    // Regex for /media/filename.ext
-    const mediaRegex = /(https?:\/\/[^\s]+\/media\/[^\s]+|\/media\/[^\s]+)/g;
-    const parts = content.split(mediaRegex);
-    return parts.map((part, idx) => {
-      if (mediaRegex.test(part)) {
-        const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(part);
-        const isDoc = /\.(pdf|docx?|xlsx?|csv|pptx?|txt)$/i.test(part);
-        const url = part.startsWith('http') ? part : `${window.location.origin}${part}`;
-        if (isImage) {
-          return (
-            <div key={idx} className="my-2">
-              <img src={url} alt="Generated" className="max-w-xs rounded shadow border border-gray-700" style={{ maxHeight: 240 }} />
-              <div className="flex gap-2 mt-1">
-                <Button size="icon" variant="ghost" onClick={() => navigator.clipboard.writeText(url)} className="h-6 w-6">
-                  <Copy className="h-3 w-3" />
-                </Button>
-                <Button size="sm" variant="ghost" asChild><a href={url} download target="_blank" rel="noopener noreferrer">Download</a></Button>
-              </div>
-            </div>
-          );
-        } else if (isDoc) {
-          return (
-            <div key={idx} className="my-2">
-              <a href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-400">{url.split('/').pop()}</a>
-              <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(url)} className="ml-2">Copy Link</Button>
-            </div>
-          );
-        } else {
-          return (
-            <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="underline text-blue-400">{url}</a>
-          );
-        }
-      }
-      // Plain text, preserve line breaks
-      return part.split('\n').map((line, i) => (
-        <React.Fragment key={i}>{line}{i < part.split('\n').length - 1 && <br />}</React.Fragment>
-      ));
-    });
-  };
-
   // Ensure message has required properties
   if (!message || !message.content || !message.role) {
     return null;
@@ -82,6 +40,38 @@ export default function ChatMessage({
   // Ensure metadata exists
   const metadata = message.metadata || {};
   const pacingAnalysis = metadata.pacing_analysis;
+
+  // Custom component to handle media URLs within markdown
+  const MediaLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
+    const mediaRegex = /(\/media\/[^\s]+|https?:\/\/[^\s]+\/media\/[^\s]+)/;
+    if (mediaRegex.test(href)) {
+      const isImage = /\.(png|jpe?g|gif|webp|svg)$/i.test(href);
+      const isDoc = /\.(pdf|docx?|xlsx?|csv|pptx?|txt)$/i.test(href);
+      const url = href.startsWith('http') ? href : `${window.location.origin}${href}`;
+
+      if (isImage) {
+        return (
+          <div className="my-2 not-prose">
+            <img src={url} alt="Generated" className="max-w-xs rounded shadow border border-border" style={{ maxHeight: 240 }} />
+            <div className="flex gap-2 mt-1">
+              <Button size="icon" variant="ghost" onClick={() => navigator.clipboard.writeText(url)} className="h-6 w-6">
+                <Copy className="h-3 w-3" />
+              </Button>
+              <Button size="sm" variant="ghost" asChild><a href={url} download target="_blank" rel="noopener noreferrer">Download</a></Button>
+            </div>
+          </div>
+        );
+      } else if (isDoc) {
+        return (
+          <div className="my-2 not-prose flex items-center">
+            <a href={url} target="_blank" rel="noopener noreferrer" className="underline text-primary hover:text-primary/80">{href.split('/').pop()}</a>
+            <Button size="sm" variant="ghost" onClick={() => navigator.clipboard.writeText(url)} className="ml-2 h-8 px-2">Copy Link</Button>
+          </div>
+        );
+      }
+    }
+    return <a href={href} target="_blank" rel="noopener noreferrer" className="underline text-primary hover:text-primary/80">{children}</a>;
+  };
 
   return (
     <div
@@ -145,7 +135,34 @@ export default function ChatMessage({
               WebkitTouchCallout: 'default'
             }}
           >
-            {renderContent(message.content)}
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+              components={{
+                a: MediaLink as any,
+                // Ensure list items and other block elements look good
+                p: ({ children }: { children: React.ReactNode }) => <p className="mb-2 last:mb-0">{children}</p>,
+                ul: ({ children }: { children: React.ReactNode }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                ol: ({ children }: { children: React.ReactNode }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                li: ({ children }: { children: React.ReactNode }) => <li className="mb-1">{children}</li>,
+                code: ({ node, inline, className, children, ...props }: any) => {
+                  const match = /language-(\w+)/.exec(className || '');
+                  return !inline ? (
+                    <div className="relative group/code my-2">
+                      <pre className={cn("rounded-md p-3 overflow-x-auto bg-black/30 border border-border/50", className)}>
+                        <code {...props}>{children}</code>
+                      </pre>
+                    </div>
+                  ) : (
+                    <code className={cn("bg-muted px-1.5 py-0.5 rounded text-xs font-mono", className)} {...props}>
+                      {children}
+                    </code>
+                  );
+                }
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
           </div>
 
           {/* Pacing Analysis Badge */}

@@ -13,6 +13,21 @@ const userProfileService = require('../services/UserProfileService');
 const companyService = require('../services/CompanyService');
 const router = Router();
 
+// Helper: start linking an external provider via Authentik
+// Redirects an authenticated Nexus user to the Authentik provider start endpoint
+router.get('/link/twitter', authenticateToken, async (req, res) => {
+  try {
+    const next = req.query.next || process.env.FRONTEND_URL || 'https://napp.marcoby.net/profile';
+    // Use provider slug 'twitter' (the provider you created in Authentik)
+    const providerStart = `${AUTHENTIK_BASE_URL.replace(/\/+$/, '')}/if/flow/twitter/start`;
+    const redirectUrl = `${providerStart}?next=${encodeURIComponent(next)}`;
+    return res.redirect(302, redirectUrl);
+  } catch (err) {
+    logger.error('Failed to redirect to Authentik provider start', { error: err?.message || err });
+    return res.status(500).json({ success: false, error: 'Failed to start provider link' });
+  }
+});
+
 // POST /api/auth/create-user - Create new user in Authentik
 router.post('/create-user', async (req, res) => {
   try {

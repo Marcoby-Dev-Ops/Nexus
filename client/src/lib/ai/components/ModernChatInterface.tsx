@@ -7,6 +7,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Avatar, AvatarFallback } from '@/shared/components/ui/Avatar';
 import { useToast } from '@/shared/ui/components/Toast';
+import { Button } from '@/shared/components/ui/Button';
 import { Bot, Brain, Database } from 'lucide-react';
 import { cn } from '@/shared/lib/utils';
 import type { ChatMessage as ChatMessageType, FileAttachment } from '@/shared/types/chat';
@@ -70,7 +71,10 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   const [isRecording, setIsRecording] = useState(false);
   const [streamingElapsedSeconds, setStreamingElapsedSeconds] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   /* const { addToast } = useToast(); */
   // useToast from shared/ui/components/Toast returns { showToast, toast }
   // ModernChatInterface was using addToast. 
@@ -109,9 +113,28 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
   };
 
   // Auto-scroll to bottom
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback((force = false) => {
+    if (force || isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isAtBottom]);
+
+  const handleScroll = useCallback(() => {
+    if (!scrollContainerRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const atBottom = scrollHeight - scrollTop - clientHeight < 100;
+
+    setIsAtBottom(atBottom);
+    setShowScrollButton(!atBottom && isStreaming);
+  }, [isStreaming]);
+
+  // Handle scroll button click
+  const handleScrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
+    setIsAtBottom(true);
+    setShowScrollButton(false);
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -165,7 +188,11 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
     <div className={cn("relative flex flex-col h-full bg-background", className)}>
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.12),transparent_46%)] dark:bg-[radial-gradient(ellipse_at_top,hsla(var(--primary),0.18),transparent_52%)]" />
       {/* Messages Area */}
-      <div className="relative flex-1 overflow-y-auto min-h-0 px-5 py-5 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="relative flex-1 overflow-y-auto min-h-0 px-5 py-5 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-800 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-gray-700"
+      >
         <div className="max-w-4xl mx-auto space-y-5 min-h-full">
           {isEmptyState ? (
             <div className="mx-auto flex min-h-full w-full items-center justify-center py-4">
@@ -255,6 +282,21 @@ const ModernChatInterface: React.FC<ModernChatInterfaceProps> = ({
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Floating Scroll Button */}
+        {showScrollButton && (
+          <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-20 animate-in fade-in slide-in-from-bottom-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleScrollToBottom}
+              className="rounded-full shadow-lg border border-border bg-background/80 backdrop-blur-sm gap-2 px-4"
+            >
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              New messages below
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Input Area - Fixed at bottom */}
