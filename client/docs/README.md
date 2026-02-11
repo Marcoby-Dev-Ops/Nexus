@@ -17,6 +17,7 @@ This directory contains documentation specific to the client-side (frontend) of 
 ### Development Guides
 - **[Getting Started](./GETTING_STARTED.md)** - Frontend development setup
 - **[Development Practices](./DEVELOPMENT_PRACTICES.md)** - Frontend coding standards
+- **[Product Polish Checklist](./PRODUCT_POLISH_CHECKLIST.md)** - Release-quality UX, accessibility, mobile, and performance gate
 
 ## 🚀 Quick Start
 
@@ -35,5 +36,5 @@ When adding new client-side documentation:
 
 ---
 
-*Last updated: 2025-01-22*
+*Last updated: 2026-02-11*
 *Maintained by: Frontend Development Team*

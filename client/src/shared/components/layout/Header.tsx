@@ -55,53 +55,53 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="relative flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="relative flex h-14 items-center gap-2 px-3 sm:px-6 lg:px-8 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         {/* Global Search Component */}
         <GlobalSearch open={isSearchOpen} onOpenChange={setIsSearchOpen} />
 
         {/* LEFT: Toggle, Logo, Breadcrumbs */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-none md:gap-4 md:min-w-[200px]">
+        <div className="flex min-w-0 items-center gap-2 md:gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={onSidebarToggle}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground"
             title={isSidebarOpen ? "Close utility panel" : "Open utility panel"}
           >
             {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
           </Button>
 
-          <Link to="/" className="mr-1 md:mr-4 flex items-center gap-2 font-heading text-base md:text-lg tracking-tight">
+          <Link to="/" className="mr-1 shrink-0 md:mr-4 flex items-center gap-2 font-heading text-base md:text-lg tracking-tight">
             <span className="text-primary">Nexus</span>
           </Link>
 
           {/* Breadcrumbs / Page Title */}
           {(pageTitle || pageSubtitle) && (
-            <div className="hidden md:flex items-center text-sm text-muted-foreground border-l pl-4 h-6">
-              {pageTitle}
+            <div className="hidden md:flex min-w-0 items-center text-sm text-muted-foreground border-l pl-4 h-6">
+              <span className="truncate">{pageTitle}</span>
               {pageSubtitle && (
                 <>
-                  <span className="mx-2">/</span>
-                  <span className="text-foreground font-emphasis">{pageSubtitle}</span>
+                  <span className="mx-2 shrink-0">/</span>
+                  <span className="truncate text-foreground font-emphasis">{pageSubtitle}</span>
                 </>
               )}
             </div>
           )}
         </div>
 
-        {/* CENTER: Main Navigation */}
-        <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2 max-w-[60%] lg:max-w-2xl overflow-x-auto">
-          <nav className="flex items-center justify-center space-x-3 whitespace-nowrap">
+        {/* CENTER: Main Navigation + Search Launcher */}
+        <div className="hidden md:flex justify-self-center max-w-[48vw] lg:max-w-[44rem] overflow-x-auto">
+          <nav className="flex items-center justify-center gap-1 whitespace-nowrap">
             {navItems.filter(item => item.category === 'overview' || item.name === 'Settings').map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 className={`
-                  px-4 py-2 text-sm font-emphasis transition-colors relative group
+                  relative inline-flex h-9 items-center rounded-md px-4 text-sm font-emphasis transition-colors
                   ${isActive(item.path)
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/70'
                   }
                 `}
               >
@@ -111,27 +111,39 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
                 )}
               </Link>
             ))}
+            <Button
+              variant="ghost"
+              className="h-9 gap-2 px-3 text-muted-foreground hover:text-foreground"
+              onClick={() => setIsSearchOpen(true)}
+              title="Search conversations (CMD+K)"
+            >
+              <Search className="h-4 w-4" />
+              <span className="hidden lg:inline">Search</span>
+              <kbd className="hidden xl:inline pointer-events-none select-none rounded border border-border/70 bg-muted/70 px-1.5 py-0.5 text-[10px] leading-none text-muted-foreground">
+                ⌘K
+              </kbd>
+            </Button>
           </nav>
         </div>
 
-        {/* RIGHT: Status, Search, Profile */}
-        <div className="flex items-center gap-1 sm:gap-2 md:gap-4 justify-end">
+        {/* RIGHT: Status, Profile */}
+        <div className="ml-auto flex items-center justify-self-end gap-1 sm:gap-2 md:gap-4">
           {/* System Status */}
           <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground" title="System Healthy">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
-            <span>System Healthy</span>
+            <span className="hidden xl:inline">System Healthy</span>
           </div>
 
-          {/* Global Search Trigger */}
+          {/* Mobile Search Trigger */}
           <Button
             variant="ghost"
             size="icon"
-            className="hidden sm:inline-flex h-8 w-8 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 text-muted-foreground hover:text-foreground md:hidden"
             onClick={() => setIsSearchOpen(true)}
-            title="Search conversations (CMD+K)"
+            title="Search conversations"
           >
             <Search className="h-4 w-4" />
           </Button>
@@ -201,7 +213,7 @@ export const Header: React.FC<HeaderProps> = ({ onSidebarToggle, isSidebarOpen }
               key={item.path}
               to={item.path}
               className={`
-                px-3 py-1.5 rounded-md text-xs font-medium transition-colors
+                inline-flex h-9 items-center px-3 rounded-md text-xs font-medium transition-colors
                 ${isActive(item.path)
                   ? 'text-primary bg-primary/10'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'

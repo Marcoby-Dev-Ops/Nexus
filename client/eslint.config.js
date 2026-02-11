@@ -161,6 +161,8 @@ export default tseslint.config(js.configs.recommended, ...tseslint.configs.recom
 
     'docs/**',
     'archive/**',
+    'ARCHIVE_2026_02/**',
+    '**/ARCHIVE_2026_02/**',
     'backups/**',
     'public/**',
   'src/stories/**',
